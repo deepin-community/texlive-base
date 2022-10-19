@@ -1,0 +1,132 @@
+\documentclass[a4paper,article,oneside,10pt]{memoir}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{babel}
+\usepackage{kpfonts,microtype}
+
+\usepackage{listings,xspace,showexpl}
+
+\usepackage[hidelinks]{hyperref}
+
+\frenchspacing
+
+
+\lstset{
+	language=[LaTeX]TeX,
+	basicstyle=\ttfamily\small,
+	commentstyle=\itshape\ttfamily\small,
+	escapechar=\%,
+	alsoletter={\\,0,1,2,3,4,5,6,7,8,9,'},
+	breaklines=true,
+	breakindent={0pt},
+	captionpos=t,
+	tabsize=2,
+	inputencoding=utf8,
+	extendedchars=true,
+	mathescape=true,
+}
+
+\newcommand\strctttex{\texttt{stricttex}\xspace}
+
+\title{\strctttex\ -- strictly balanced brackets and numbers in command names (v0.2$\beta$)}
+\date{\today}
+\author{Sebastian \O rsted (\href{mailto:sorsted@gmail.com}{sorsted@gmail.com})}
+
+\hypersetup{
+	pdfauthor={Sebastian \O rsted},
+	pdftitle={leftindex -- left indices with better spacing},
+}
+
+\begin{document}
+
+\maketitle
+
+\noindent 
+The \strctttex package is a small, Lua\LaTeX-only package providing you with three, sometimes useful features:
+\begin{itemize}
+	\item It allows you to make brackets \lstinline![...]! ``strict'', meaning that each~\lstinline![!
+	must be balanced by a~\lstinline!]!.
+	\item It allows you to use numbers in command names, so
+	that you can do stuff like~\lstinline!\newcommand\pi12{\pi_{12}}!.
+	\item It allows you to use numbers \emph{and} primes in command names,
+	so that you can do stuff like~\lstinline!\newcommand\pi'12{\pi '_{12}}!.
+\end{itemize}
+
+\chapter*{Making brackets strict}
+
+The package provides the commands
+\begin{lstlisting}
+\StrictBracketsOn
+\StrictBracketsOff
+\end{lstlisting}
+Between these two commands,
+all left brackets~\lstinline![! are replaced by~\lstinline![$\{$!,
+and all right brackets~\lstinline!]! by~\lstinline!$\}$]!. This forces the brackets to be properly balanced. This is extremely useful in come packages, such as Seman\TeX, where you can then
+do things that would otherwise cause errors, e.g.
+\begin{lstlisting}[mathescape=false]
+\StrictBracketsOn
+	$ \vf[upper=\vx[upper=2,lower=3]] $
+\StrictBracketsOff
+\end{lstlisting}
+Normal brackets can still be accessed by using the standard \TeX\ commands 
+\lstinline!\lbrack! and \lstinline!\rbrack!.
+The replacement algorithm has two important exceptions:
+\begin{itemize}
+	\item \emph{No} replacements apply to the commands~\lstinline!\[...\]!, which can therefore be used as normal.
+	\item If you absolute \emph{need} ordinary brackets,
+	you can write \lstinline!<[>! and~\lstinline!<]>! to access them. This works
+	in all contexts, so e.g. \lstinline!\<[>! and~\lstinline!\<]>! will work
+	just like \lstinline!\[! and~\lstinline!\]!.
+\end{itemize}
+
+\newpage
+
+\chapter*{Allowing numbers (and possibly primes) in commands}
+
+The package provides the commands
+\begin{lstlisting}
+\NumbersInCommandsOn
+\NumbersInCommandsOff
+\NumbersAndPrimesInCommandsOn
+\NumbersAndPrimesInCommandsOff
+\end{lstlisting}
+The first pair of commands allows you to define commands containing numbers. So the following will work:
+\begin{lstlisting}
+\NumbersInCommandsOn
+\newcommand\pi12{\pi_{12}}
+\newcommand\pi13{\pi_{13}}
+\newcommand\pi23{\pi_{23}}
+\newcommand\pi12comma34{\pi_{12,34}}
+\NumbersInCommandsOff
+\end{lstlisting}
+Internally, what happens is that if a command is immediately followed by a number,
+that numbers is replaced by a text string, i.e.
+\lstinline!0!~gets replaced by~\lstinline!numberZERO!,
+\lstinline!1!~gets replaced by~\lstinline!numberONE!,
+etc. These long names have been chosen to prevent name clashes.
+In other words, the code that is eventually passed to \TeX\ is
+\begin{lstlisting}
+\newcommand\pinumberONEnumberTWO{\pi_{12}}
+\newcommand\pinumberONEnumberTHREE{\pi_{13}}
+\newcommand\pinumberTWOnumberTHREE{\pi_{23}}
+\newcommand\pinumberONEnumberTWOcommanumberTHREEnumberFOUR{\pi_{12,34}}
+\end{lstlisting}
+Needless to say, stuff like \lstinline!\kern11pt! will no longer work and will have to be
+replaced by~\lstinline!\kern 11pt!.
+
+The commands \lstinline!\NumbersAndPrimesInCommandsOn! and~\lstinline!\...Off! work almost the same way, except they also allow
+you to use \emph{primes}. So the following will work:
+\begin{lstlisting}
+\NumbersAndPrimesInCommandsOn
+\newcommand\pi'12{\pi '_{12}}
+\NumbersAndPrimesInCommandsOff
+\end{lstlisting}
+Internally, the algorithm works as before, except the prime~\lstinline!'! gets
+replaced by \lstinline!symbolPRIME!. So what is eventually passed to \TeX\ is
+\begin{lstlisting}
+\newcommand\pisymbolPRIMEnumberONEnumberTWO{\pi '_{12}}
+\end{lstlisting}
+
+
+\end{document}

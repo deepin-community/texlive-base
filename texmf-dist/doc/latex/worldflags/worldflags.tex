@@ -1,0 +1,1368 @@
+% =============================================================================
+% Flags of the world with TikZ                       Wilhelm Haager, 2021-05-12
+% =============================================================================
+\documentclass[11pt,a4paper,headsepline,fleqn]{scrreprt}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[american]{babel}
+\usepackage[width=150mm,height=230mm]{geometry}
+\usepackage{helvet}
+\usepackage[bitstream-charter]{mathdesign}
+\usepackage{charter}
+\usepackage[nottoc,numbib]{tocbibind}  % bibliography as numbered chapter
+\usepackage{array}
+\usepackage{ragged2e}
+\usepackage{tabularx}
+\usepackage{graphicx}
+\usepackage{verbatimbox}
+\usepackage{xcolor}
+\usepackage{pifont}
+\usepackage{scrlayer-scrpage}
+   \pagestyle{scrheadings}
+   \clearpairofpagestyles
+   \KOMAoptions{headsepline}
+   \setkomafont{pagehead}{\small\rmfamily\slshape}
+   \setkomafont{pagenumber}{\small\rmfamily\slshape}
+   \lehead{\pagemark}
+   \rehead{Worldflags}
+   \lohead{Worldflags}
+   \rohead{\pagemark}
+   \def\chapterheadstartvskip{\vspace*{0mm}}
+   \def\chapterpagestyle{scrheadings}
+\raggedbottom
+
+\usepackage{worldflags}
+
+\definecolor{emphcolor}{rgb}{0.6,0.1,0}
+\definecolor{tablefcolor}{rgb}{0.8,0.7,0.5}
+\colorlet{tablecolor}{tablefcolor!40}
+\definecolor{codecolor}{rgb}{0.23,0.37,0.17}
+\colorlet{cbcolor}{codecolor!20} % codebox background
+\colorlet{cfcolor}{codecolor!40} % codebox frame
+\colorlet{ctcolor}{codecolor!60} % codebox text
+\definecolor{rcolor}{rgb}{1,0.66,0.14}
+\colorlet{rbcolor}{rcolor!20} % resultbox background
+\colorlet{rfcolor}{rcolor!50} % resultbox frame
+\colorlet{rtcolor}{rcolor!80} % resultbox text
+
+\def\tb{\textbackslash}
+\let\ti=\textit
+\let\tt=\texttt
+\def\m{\mbox{}}
+\def\xx#1{\mbox{}\foreach \n in {1,...,#1}{~}}
+\def\colwidth{45mm} % with of the left hand column in tables
+\def\command#1{{\color{emphcolor}\texttt{#1}}}
+
+\parskip\bigskipamount
+\parindent0pt
+
+
+% Befehle zur tabellarischen Flaggendarstellung:
+% ----------------------------------------------
+\newcount\zaehler\zaehler0
+\newcount\flaggenproz\flaggenproz4
+\newdimen\spaltenbreite\spaltenbreite\textwidth
+\divide\spaltenbreite by\flaggenproz
+
+\def\show#1#2{%
+\spaltenbreite\textwidth\divide\spaltenbreite by\flaggenproz
+ \advance\zaehler by 1%
+ \parbox{\spaltenbreite}{%
+    \centering
+    \makebox[0pt]{\worldflag{#2}}{\small \ifx.#1.\else\\#1\fi\ifx.#2.\else
+       \\(#2)\fi}}%
+ \ifnum\zaehler=\flaggenproz\zaehler0\par\fi
+}
+\def\flaggenprozeile#1{\flaggenproz#1\zaehler0}
+
+% ------------------------------------------------------------------------
+% Frames
+% ------------------------------------------------------------------------
+
+\long\def\wideframe#1{{\fboxsep5mm\fboxrule0.5pt%
+  \newdimen\pbwidth\pbwidth\textwidth
+  \advance\pbwidth by -2\fboxsep
+  \advance\pbwidth by -2\fboxrule
+  \fcolorbox{tablefcolor}{tablecolor}%
+  {\begin{minipage}{\pbwidth}#1\end{minipage}}}}
+
+\long\def\codebox#1#2{\begin{minipage}[t]{#1\textwidth}
+  \fboxsep1mm\fboxrule0.5pt%
+  \newdimen\pbwidth\pbwidth\textwidth
+  \advance\pbwidth by -2\fboxsep
+  \advance\pbwidth by -2\fboxrule
+  \fcolorbox{cfcolor}{cbcolor}%
+  {\begin{minipage}[t]{\pbwidth}%
+  {\footnotesize\sffamily\bfseries\color{ctcolor}Code:\\[\smallskipamount]}%
+  \footnotesize\ttfamily\color{codecolor}#2\end{minipage}}
+  \end{minipage}}
+
+\long\def\resultbox#1#2{\begin{minipage}[t]{#1\textwidth}
+  \fboxsep1mm\fboxrule0.5pt%
+  \newdimen\pbwidth\pbwidth\textwidth
+  \advance\pbwidth by -2\fboxsep
+  \advance\pbwidth by -2\fboxrule
+  \fcolorbox{rfcolor}{rbcolor}%
+  {\begin{minipage}[t]{\pbwidth}%
+  {\footnotesize\sffamily\bfseries\color{rtcolor}Result:\\[\smallskipamount]}%
+  \small#2\end{minipage}}
+  \end{minipage}}
+
+% Weird hack from stackexchange to enable § as shortverb-character with utf8:
+\begingroup\uccode`~="C2 \uppercase{\endgroup
+\DeclareUnicodeCharacter{00A7}{\verb~}}
+\begingroup\uccode`~="A7 \uppercase{\endgroup\def~}{}
+
+\begin{document}
+% --------------------------------------------------------------------------
+% titlepage
+% --------------------------------------------------------------------------
+\title{Worldflags}
+\subtitle{Drawing flags with TikZ}
+\author{\slshape Wilhelm Haager\\\slshape wilhelm.haager@htlstp.ac.at}
+\vfill
+\vfill
+\date{2021-05-12}
+\vfill
+\maketitle
+
+% --------------------------------------------------------------------------
+% table of contents
+% --------------------------------------------------------------------------
+ \tableofcontents
+
+% --------------------------------------------------------------------------
+\chapter{Introduction}
+% --------------------------------------------------------------------------
+
+\emph{Worldflags} is a package for drawing flags using TikZ.
+Currently the national flags of all independent nations are included,
+additionally some other flags of various organizations;
+there's more to come.
+
+A particular flag is selected via a parameter; for national flags that is the
+two-letter country code (i.\,e. the domain name).
+A flag can be drawn in two ways:
+\begin{itemize}
+\item as a single TikZ-picture within ordinary text
+\item as a picture element \emph{within} a TikZ-picture
+\end{itemize}
+
+The appearance of a flag (size, frame etc.) can be adapted using
+optional parameters.
+
+The description of every flag resides in a particular flag description file
+{\color{emphcolor}\texttt{worldflag\_}\textit{xx}\texttt{.tex}},
+wherein \textit{xx} is the parameter for selecting a particular flag,
+as listed in section \ref{FLAGS}.
+That saves memory and computing time on the one hand,
+as only the required flags have to be loaded.
+On the other hand, the package can easily be extended by adding new
+flag description files.
+
+Some flags with complicated emblems (e.\,g. Afghanistan, Ecuador)
+require a lot of memory. Thus an expansion of \TeX's main memory size
+is recommended.
+
+The flag descriptions are based on the construction sheets in
+\cite{VEXILLAMUNDI}
+(thanks to Mello Luchten\-berg for that great website),
+complex emblems have been taken from the svg-files on Wikipedia
+and have been translated into Tikz via Inkscape
+(with a reasonable amount of manual post editing).
+
+% --------------------------------------------------------------------------
+\chapter{Usage}
+% --------------------------------------------------------------------------
+
+\section{Flags as single TikZ-pictures}
+% ------------------------------------------------
+%{\color{emphcolor}§worldflag[§\textit{opts}§]{§\textit{xx}§}§} draws the flag
+%\textit{xx} with the Options \textit{opts}.  \the\textwidth
+
+% +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+\wideframe{
+\textsl{Commands:}\\[\medskipamount]
+\begin{tabularx}{\textwidth}{@{}>{\RaggedRight}p{\colwidth}X@{}}
+{\m\color{emphcolor}\texttt{\tb worldflag[}\textit{opts}\texttt{]\{}\textit{xx}\texttt{\}}}
+&
+draws the flag \textit{xx} with the optional parameters \textit{opts} as a particular TikZ-picture.\\[\medskipamount]
+{\m\color{emphcolor}\texttt{\tb flagsdefault[}\textit{opts}\texttt{]}}
+&
+sets default values for the options \textit{opts} for subsequent flags.
+\end{tabularx}
+
+\bigskip
+\textsl{Options:}\\[\medskipamount]
+\begin{tabularx}{\textwidth}{@{}p{\colwidth}X@{}}
+{\m\color{emphcolor}\texttt{width=}\textit{dimension}}
+&
+sets the flag width, default: $15\,\mathrm{mm}$.\\[\medskipamount]
+{\m\color{emphcolor}\texttt{length=}\textit{dimension}}
+&
+sets the flag length; if set to 0\,pt (default), the length is calculated according to the proper aspect ratio of the flag.\\[\medskipamount]
+{\m\color{emphcolor}\texttt{framewidth=}\textit{dimension}}
+&
+sets the line width of the frame around the flag, default: 0.2\,mm.\\[\medskipamount]
+{\m\color{emphcolor}\texttt{framecolor=}\textit{colorname}}
+&
+sets the color of the flag frame, default: \texttt{black!60}.\\[\medskipamount]
+{\m\color{emphcolor}\texttt{stretch=}\textit{number}}
+&
+controls stretching and shrinking of geometric shapes when the aspect ratio differs from its proper value.\\[\medskipamount]
+{\m\color{emphcolor}\texttt{grid}}
+&
+causes a millimeter-grid drawn on the flag as an aid for constructing new flags.\\[\medskipamount]
+{\m\color{emphcolor}\texttt{noemblem}}
+&
+supresses the drawing of an emblem, which is part of many flags.\\[\medskipamount]
+{\m\color{emphcolor}\texttt{emblem}}
+&
+enforces the drawing of an emblem onto the flag which is otherwise supressed (currently only applies to the flags of Austria and Germany).\\[\medskipamount]
+{\m\color{emphcolor}\texttt{emblemdefault}}
+&
+restores the default behavior for drawing emblems.\\[\medskipamount]
+\end{tabularx}}
+% +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+\bigskip
+\command{\tb worldflag\{{\rmfamily\itshape xx}\}} draws a flag,
+selected by the parameter \textit{xx}, as a single TikZ-picture.
+Section \ref{FLAGS} lists all available flags and their selection code \textit{xx}.
+Various properties of the flag can be specified with additional optional parameters
+as key-value pairs.
+
+\command{\tb flagsdefault[{\rmfamily\itshape opts}]} specifies default values
+for the Options {\rmfamily\itshape opts} for subsequent flags.
+
+The \emph{width} of a flag defaults to 15\,mm, it can be overridden with the option
+\command{width}.
+If one of the dimensions \emph{width} or \emph{length} is set to 0\,pt
+(which is the default value for \emph{length}), its value
+results from the proper aspect ratio width/length, which is proprietary to every flag.
+E.\,g. the Swiss flag is quadratic, it has an aspect ratio of 1:1,
+the British flag has an aspect ratio of 1:2.
+If \command{width} is set to 0\,pt, \command{length} \emph{must} be specified.
+If both dimensions are specified, flags loose their proper aspect ratio
+but get the same size:
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+\codebox{0.45}{\tb worldflag\{CH\}\\\tb worldflag\{GB\}\\
+   proper sizes\tb\tb[6pt]\\
+   \tb worldflag[length=22.5mm]\{CH\}\\\tb worldflag[length=22.5mm]\{GB\}\\
+   distorted}\hfill
+\resultbox{0.54}{\worldflag{CH} \worldflag{GB} proper sizes\\[6pt]
+   \worldflag[length=22.5mm]{CH} \worldflag[length=22.5mm]{GB} distorted}
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+\medskip
+If both width and length of a flag are specified, which differs from ist
+proper aspect ratio, some geometries on the flag will unavoidably
+get distorted.
+There is presumably no general rule whether certain \emph{distances} on the flag
+should remain unchanged in that case, or certain \emph{ratios}
+-- as flag owners do not intend to distort their flags --
+but that behavior can be influenced for many flags applying the option
+\command{stretch}.
+If stretch is set to 0 (which is default), certain \emph{distances} and
+\emph{sizes} on the flag remain unchanged, when the flag is stretched;
+if set to 1, certain \emph{ratios} remain unchanged in that case.
+Values within the range of 0\dots 1 are possible to get a compromise
+between both cases.
+
+The following examples illustrate that behavior:
+
+\begin{tabularx}{\textwidth}{@{}llX@{}}
+Canada: & \command{stretch=0} & The \emph{size} of the maple leaf remains unchanged.\\
+        & \command{stretch=1} & The \emph{ratio} of the widths -- maple leaf and pale -- remains unchanged; the maple leaf has to shrink.
+\end{tabularx}
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+\codebox{0.45}{
+   \tb flagsdefault[width=12mm]
+   \tb worldflag\{CA\}\\
+   \tb worldflag[length=18mm]\{CA\}\\
+   \tb worldflag[length=18mm,stretch=1]\{CA\} }\hfill
+\resultbox{0.54}{%
+   \flagsdefault[width=12mm]
+   \worldflag{CA}
+   \worldflag[length=18mm]{CA}
+   \worldflag[length=18mm,stretch=1]{CA}
+   }
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+\begin{tabularx}{\textwidth}{@{}llX@{}}
+Denmark: & \command{stretch=0} & The \emph{distance} from the vertical bar to the hoist remains unchanged.\\
+         & \command{stretch=1} & The \emph{ratio} of the distances to the hoist and to the fly remains unchanged.
+\end{tabularx}
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+\codebox{0.45}{
+   \tb flagsdefault[width=12mm]
+   \tb worldflag\{DK\}\\
+   \tb worldflag[length=18mm]\{DK\}\\
+   \tb worldflag[length=18mm,stretch=1]\{DK\} }\hfill
+\resultbox{0.54}{%
+   \flagsdefault[width=12mm]
+   \worldflag{DK}
+   \worldflag[length=25mm]{DK}
+   \worldflag[length=25mm,stretch=1]{DK}
+   }
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+\medskip
+The option \command{grid} causes a millimeter-grid drawn over the flag.
+That is primarily a measuring aid for the construction of new flags.
+
+The options \command{framecolor} and \command{framewidth} set the color
+and the line width of the frame drawn around the flag, respectively.
+The default value for the line width is 0.2\,mm, the default color is
+\texttt{black!60}.
+If \command{framewidth} is set to 0\,mm (or 0\,pt), no frame is drawn at all.
+
+\flagsdefault[length=0mm,width=15mm]
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+\codebox{0.45}{
+   \tb flagsdefault[framecolor=blue]
+   \tb worldflag[grid]\{IT\}\\
+   \tb worldflag[framewidth=1mm]\{IT\}\\
+   \tb worldflag[framewidth=0mm]\{IT\} }\hfill
+\resultbox{0.54}{%
+   \flagsdefault[framecolor=blue]
+   \worldflag[grid]{IT}
+   \worldflag[framewidth=1mm]{IT}
+   \worldflag[framewidth=0mm]{IT}
+   }
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+\medskip
+Many flags have an emblem on it,
+e.\,g. a coat of arms or a special symbol.
+Those emblems are often very complex and require a lot of computing time and
+memory.
+The depiction of such an emblem can be supressed with the option
+\command{noemblem}, either for the sake of saving computing time
+(for drafts) or just because simplified version of the flag is required.
+Some countries distinguish between a \emph{civil} flag without an emblem
+and a \emph{state} flag containing an emblem.
+
+Some flags don't have an emblem by default, but an emblem is available
+for special purposes.
+In that case the depiction of the emblem can be enforced with the option
+\command{emblem}.
+Currently that only applies to the country flags of Austria and Germany
+(more will come).
+The option \command{emblemdefault} restores the default behavior for drawing
+emblems.
+
+
+\flagsdefault[length=25mm,width=15mm]
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+\codebox{0.45}{%
+   \tb worldflag\{AT\}\\
+   \tb worldflag[emblem]\{AT\}\\
+   \tb worldflag[noemblem]\{AT\}\tb\tb[6pt]\\
+   \tb worldflag\{HR\}\\
+   \tb worldflag[emblem]\{HR\}\\
+   \tb worldflag[noemblem]\{HR\}%
+   }\hfill
+\resultbox{0.54}{%
+   \worldflag{AT}
+   \worldflag[emblem]{AT}
+   \worldflag[noemblem]{AT}\\[6pt]
+   \worldflag{HR}
+   \worldflag[emblem]{HR}
+   \worldflag[noemblem]{HR}%
+   }
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+\medskip
+The emblem (i.\,e. the coat of arms) in the Austrian flag is supressed by default,
+the emblem in the Croatian flag is depicted default.
+
+\section{Flags as picture elements within a TikZ-picture}\label{SECTION_PIC}
+% ------------------------------------------------
+
+Within a Tikz-picture the flags are available as \emph{pic}-Elements
+named \command{worldflag}.
+A particular flag is selected with the option \command{country}.
+Unlike \emph{nodes}, \emph{pic}-elements cannot be referenced by name,
+but named nodes and coordinates within the \emph{pic}-element can be referenced.
+Hence every flag has special coordinates for referencing:
+
+\qquad{\divide\tabcolsep by 3
+\begin{tabular}{@{}lclllcl}
+\command{-0}  & \dots & center of flag &~~~& & & \\
+\command{-nw} & \dots & upper left corner  (``north-west'')&~~~& \command{-n} & \dots & top edge center (``north'') \\
+\command{-ne} & \dots & upper right corner (``north-east'')&~~~& \command{-e} & \dots & fly edge center (``east'') \\
+\command{-sw} & \dots & lower left corner  (``south-west'') &~~~& \command{-w}& \dots & hoist edge center (``west'')  \\
+\command{-se} & \dots & lower right corner (``south-east'') &~~~& \command{-s}& \dots & bottom edge center (``south'')
+\end{tabular}
+}
+
+\newpage
+
+
+% +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+\wideframe{
+\textsl{Commands:}\\[\medskipamount]
+\begin{tabularx}{\textwidth}{@{}>{\RaggedRight}p{\colwidth}X@{}}
+{\m\color{emphcolor}\makebox[0pt][l]{\texttt{\tb pic (}\textit{xy}\texttt{) [country=}\textit{xx\,, \dots}\texttt{]~at }\textit{pos}\texttt{ \{worldflag\};}}}
+& \\
+& draws the flag \textit{xx} and gives it the name \textit{xy}; the flag is centerd at the coordinate \textit{pos}.\\[\medskipamount]
+{\m\color{emphcolor}\texttt{\tb flagsdefault[}\textit{opts}\texttt{]}}
+&
+sets default values for the options \textit{opts}.
+\end{tabularx}
+
+\bigskip
+\textsl{Options:}\\[\medskipamount]
+\begin{tabularx}{\textwidth}{@{}p{\colwidth}X@{}}
+{\m\color{emphcolor}\texttt{width=}\textit{dimension}}
+&
+sets the flag width, default: $15\,\mathrm{mm}$.\\[\medskipamount]
+{\m\color{emphcolor}\texttt{length=}\textit{dimension}}
+&
+sets the flag length; if set to 0\,pt (default), the length is calculated according to the proper aspect ratio of the flag.\\[\medskipamount]
+{\m\color{emphcolor}\texttt{framewidth=}\textit{dimension}}
+&
+sets the line width of the frame around the flag, default: 0.2\,mm.\\[\medskipamount]
+{\m\color{emphcolor}\texttt{framecolor=}\textit{colorname}}
+&
+sets the color of the flag frame, default: \texttt{black!60}.\\[\medskipamount]
+{\m\color{emphcolor}\texttt{stretch=}\textit{number}}
+&
+controls stretching and shrinking of geometric shapes when the aspect ratio differs from its proper value.\\[\medskipamount]
+{\m\color{emphcolor}\texttt{grid}}
+&
+causes a millimeter-grid drawn on the flag.\\[\medskipamount]
+{\m\color{emphcolor}\texttt{noemblem}}
+&
+supresses the drawing of an emblem onto the flag.\\[\medskipamount]
+{\m\color{emphcolor}\texttt{emblem}}
+&
+enforces the drawing of an emblem onto the flag.\\[\medskipamount]
+{\m\color{emphcolor}\texttt{emblemdefault}}
+&
+restores the default behavior for drawing emblems.\\[\medskipamount]
+{\m\color{emphcolor}\texttt{rotate=}$\alpha$}
+&
+rotates the flag $\alpha$ degrees around its center.\\[\medskipamount]
+{\m\color{emphcolor}\texttt{turn=}$\beta$}
+&
+rotates the flag $\beta$ degrees around the (imaginary) flagpole.\\[\medskipamount]
+{\m\color{emphcolor}\texttt{hang=}$\gamma$}
+&
+lets the flag ``hang down'' $\gamma$ degrees from the (imaginary) flag pole.\\[\medskipamount]
+\end{tabularx}}
+% +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The following example illustrates the usage of the special coordinates:
+
+\flagsdefault[length=25mm,width=15mm]
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+\codebox{0.63}{%
+   \tb begin{tikzpicture}[draw=cyan,>=stealth,x=1mm,y=1mm]\\
+   \tb pic (de) [country=DE,emblem] \{worldflag\};\\
+   \tb draw (de-e){-}-++(45:5)\\
+   \xx6 node [above right,cyan] \{fly\};\\
+   \tb draw (de-w)--++(45:14)\\\mbox{}~~~~~~node [above right,cyan] \{hoist\};\\
+   \tb draw (de-0)--++(45:14)\\\mbox{}~~~~~~node [above right,cyan] \{coat of arms\};\\
+   \tb draw (de-nw)--++(-5,0) (de-sw)--++(-5,0);\\
+   \tb draw [<->] (\$(de-nw)-(4,0)\$){-}-(\$(de-sw)-(4,0)\$)\\\mbox{}~~~~~~node [midway,above,rotate=90,cyan] \{width\};\\
+   \tb draw [<->] (\$(de-sw)-(0,6)\$){-}-(\$(de-se)-(0,6)\$)\\\mbox{}~~~~~~node [midway,above,cyan] \{length\};\\
+   \tb end{tikzpicture}%
+   }\hfill
+\resultbox{0.36}{%
+   \begin{tikzpicture}[draw=cyan,>=stealth,x=1mm,y=1mm]
+   \pic (de) [country=DE,emblem] {worldflag};
+   \draw (de-e)--++(45:5) node [above right,cyan] {fly};
+   \draw (de-w)--++(45:14) node [above right,cyan] {hoist};
+   \draw (de-0)--++(45:14) node [above right,cyan] {coat of arms};
+   \draw (de-nw)--++(-5,0) (de-sw)--++(-5,0);
+   \draw [<->] ($(de-nw)-(4,0)$)--($(de-sw)-(4,0)$) node [midway,above,rotate=90,cyan] {width};
+   \draw (de-sw)--++(0,-7) (de-se)--++(0,-7);
+   \draw [<->] ($(de-sw)-(0,6)$)--($(de-se)-(0,6)$) node [midway,above,cyan] {length};
+   \end{tikzpicture}
+   }
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+% **************************************************************************
+% \fi % Ende Kommentar
+% **************************************************************************
+
+\newpage
+The option \command{rotate} causes the flag to be rotated around the
+flag center with a given angle in degree.
+
+Note: That option is not proprietary to flags, it is a general option for
+\emph{any} {pic}-element.
+Hence it is \emph{not} possible to give it a default value
+% -- unlike all other options --
+with the command \texttt{flagsdefault}.
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+\codebox{0.53}{%
+   \tb begin\{tikzpicture\}\\
+   \tb flagsdefault[width=12mm,length=18mm]\\
+   \tb foreach \tb c/\tb n in \{HU/0,SK/1,IT/6,SI/7\}\\
+   \xx3\tb pic [country=\tb c,rotate=\tb n*45]\\
+   \xx7 at (\tb n*45:24mm) \{worldflag\};\\
+   \tb foreach \tb c/\tb n in \{CZ/2,DE/3,LI/4,CH/5\}\\
+   \xx3\tb pic [country=\tb c,rotate=\tb n*45-180]\\
+   \xx7 at (\tb n*45:24mm) \{worldflag\};\\
+   \tb end\{tikzpicture\}
+   }\hfill
+\resultbox{0.46}{%
+   \begin{tikzpicture}
+   \flagsdefault[width=12mm,length=18mm]
+   \foreach \c/\n in {HU/0,SK/1,IT/6,SI/7}
+   \pic [country=\c,rotate=\n*45] at (\n*45:24mm) {worldflag};
+   \foreach \c/\n in {CZ/2,DE/3,LI/4,CH/5}
+   \pic [country=\c,rotate=\n*45-180] at (\n*45:24mm) {worldflag};
+   \end{tikzpicture}
+   }
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The option \command{turn} lets the flag rotate around the imaginary flagpole
+with a given angle $\beta$ (in degrees).
+The length of the flag will \emph{seemingly} shrink with a factor of $\cos\beta$.
+With a value of $\beta\!=\!180$ the flag will just appear mirrored.
+The option \command{hang} lets the flag ``hang down'' from the imaginary flagpole
+with a given angle $\gamma$ (in degrees);
+the flag will be sheared and compressed accordingly.
+
+The following example shows a combination of
+\command{rotate}, \command{turn} and \command{hang}.
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+\codebox{0.53}{%
+   \tb begin\{tikzpicture\}[x=1mm,y=1mm]\\
+   \tb def\tb w\{30\}\\
+   \tb def\tb d\{20\}\\
+   \tb pgfdeclarehorizontalshading\{flagpole\}\\
+   \xx3\{30mm\}\{color(0mm)=(white);\\
+   \xx3color(1mm)=(brown); color(2mm)=(black)\}\\
+   \tb flagsdefault[width=15mm,hang=20]\\
+   \tb pic (gb) [country=GB,rotate=-\tb w]\\
+   \xx5at (\tb d,0) \{worldflag\};\\
+   \tb pic (us) [country=US,rotate=\tb w,turn=180]\\
+   \xx5at (-\tb d,0) \{worldflag\};\\
+   \tb fill [shading=flagpole,shading angle=-\tb w,\\
+   \xx6rotate around=\{-\tb w:(gb-nw)\}]\\
+   \xx6(gb-nw)-|++(-2,-60)-|cycle;\\
+   \tb fill [shading=flagpole,shading angle=\tb w,\\
+   \xx6rotate around=\{\tb w:(us-nw)\}]\\
+   \xx6(us-nw)-|++(2,-60)-|cycle;\\
+   \tb end\{tikzpicture\}
+   }\hfill
+\resultbox{0.46}{%
+   \begin{tikzpicture}[x=1mm,y=1mm]
+   \def\w{30}
+   \def\d{20}
+   \pgfdeclarehorizontalshading{flagpole}{30mm}
+   {color(0mm)=(white); color(1mm)=(brown); color(2mm)=(black)}
+   \flagsdefault[width=15mm,hang=20]
+   \pic (gb)[country=GB,rotate=-\w] at (\d,0) {worldflag};
+   \pic (us)[country=US,rotate=\w,turn=180] at (-\d,0) {worldflag};
+   \fill [shading=flagpole,shading angle=-\w,rotate around={-\w:(gb-nw)}] (gb-nw)-|++(-2,-60)-|cycle;
+   \fill [shading=flagpole,shading angle=\w,rotate around={\w:(us-nw)}] (us-nw)-|++(2,-60)-|cycle;
+   \end{tikzpicture}
+   }
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+% --------------------------------------------------------------------------
+\chapter{Internals}
+% --------------------------------------------------------------------------
+
+This section is intended for those who want to \emph{extend} the worldflag
+package and {create} new flags.
+Those who just want to \emph{use} the package and {draw} existing flags,
+need not read it.
+
+Evey flag resides in a particular ``flag description file''
+named \command{worldflag\_}\textit{\color{emphcolor}xx}\command{.tex}, wherein
+\textit{\color{emphcolor}xx} is the code for selecting a flag.
+Extending the package with new flags is quite easy:
+Just a flag description file for every new flag has to be written and put into
+a directory, where \TeX\ can find it.
+No configuraion files, no other actions; that's it.
+
+\section{Flag description file}\label{SEC_FLAG_DESCRIPTION}
+% -----------------------------
+
+Every flag description file has the following structure:
+
+{\color{emphcolor}\small
+\tt{\tb begin\{flagdescription\}\{$\xi$\}}~~~{\normalsize\color{black}\ding{192}}\\
+\tt{\tb definecolor\{red\}\{RGB\}\{}\ti{r}\tt{,}\ti{g}\tt{,}\ti{b}\tt{\}}~~~{\normalsize\color{black}\ding{193}}\\
+\tt{\tb definecolor\{gold\}\{RGB\}\{}\ti{r}\tt{,}\ti{g}\tt{,}\ti{b}\tt{\}}\\
+\xx9\makebox[0pt]{$\vdots$}\\
+\xx9{\makebox[0pt]{\normalsize\color{black}\ding{194}}}\\
+\xx9\makebox[0pt]{$\vdots$}\\
+\tt{\tb framecode\{}\ti{code}\tt{\}}~~~{\normalsize\color{black}\ding{195}}\\
+\tt{\tb end\{flagdescription\}}~~~{\normalsize\color{black}\ding{196}}\\
+}
+
+\begin{itemize}
+\item[\ding{192}]
+All commands describing the geometry of a flag have to be within
+the environment \command{flagdescription}.
+This environmant requires a parameter
+\emph{\color{emphcolor}$\xi$}, which specifies the proper aspect ratio
+\emph{width/length} of a flag.
+Using that parameter, the flag length is calculatend from the flag width
+(or vice versa).
+As \command{$\xi$} is further processed using \tt{\tb pgfmathparse},
+is can be specified as a floating point number or as a ratio of two
+(preferably integer) numbers.
+
+Furthermore, two nested scopes are opened:
+The outer scope sets the drawing unit to \command{\tb flagwidth}
+(note: the top edge of a flag has always a \ti{y}-coordinate of 1)
+and performs the coordinate transformation according to the options
+\command{turn} and \command{hang}.
+The inner scope shifts the coordinate system to the flag center.
+That shift is only for rotation and positioning of the flag within a
+TikZ-picture.
+For the flag description the origin of the coordinate system remains on the
+lower left corner of the flag.
+
+In the sequel, the special coordinates
+\command{-0}, \command{-n}, \command{-ne}, \command{-e}, \command{-se},
+\command{-s}, \command{-sw}, \command{-w} and \command{-nw}
+are established -- as described in section \ref{SECTION_PIC}.
+
+\item[\ding{193}]
+Every flag has proprietary shadings of colors.
+Hence even common colors have to be redefined for every flag separately.
+
+\item[\ding{194}]
+TikZ commands for drawing and filling of shapes make up the core of
+a flag description file.
+A couple of macros (see section \ref{SEC_MACROS})
+for common geometric figures facilitate the creation of the flag image.
+
+\item[\ding{195}]
+\emph{\color{emphcolor}code} is the drawing path for te frame around the flag.
+In (the most common) case of a rectangular shape of the flag
+(an exception is e.\,g. the flag of Nepal) \ti{code} can be left empty;
+a rectangular frame is drawn automatically in that case.
+
+The line width, set with the option \command{framewidth}, is stored in the
+dimension register \command{\tb flagframe};
+the frame color, set with the option \command{framecolor}, is stored in the
+macro \command{\tb framecolor}.
+
+\item[\ding{196}]
+At the end of the environment a millimeter-grid is drawn onto the flag, if invoked with the option
+\command{grid} and the two previously opened scopes are closed again.
+\end{itemize}
+
+\section{Variables}
+% -----------------
+
+The properties of a flag are kept in variables,
+which are dimension registers or macros.
+Those variables are either set by the user via specifying options or are calculated
+internally.
+Most of those variables are used internally, only the following few variables
+are used in the code for the flag description:
+
+ % +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+\wideframe{
+\textsl{Dimension registers:}\\[\medskipamount]
+\begin{tabularx}{\textwidth}{@{}>{\RaggedRight}p{\colwidth}X@{}}
+{\m\color{emphcolor}\texttt{\tb flagwidth}}
+&
+width of the flag (vertical extent)\\[\medskipamount]
+{\m\color{emphcolor}\texttt{\tb flaglength}}
+&
+length of the flag (horizontal extent)\\[\medskipamount]
+\end{tabularx}
+
+\bigskip
+\begin{tabularx}{\textwidth}{@{}>{\RaggedRight}p{\colwidth}X@{}}
+\textsl{Macro:}\\[\medskipamount]
+{\m\color{emphcolor}\texttt{\tb stretchfactor}}
+&
+factor for stretching of certain geometries\\[\medskipamount]
+\end{tabularx}}
+% +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+\command{\tb flagwidth} and \command{\tb flaglength} specify the width and
+length of a flag.
+They are set by the user with the options \command{width} and \command{length}
+or are calculaterd from each other at the begin of the environment
+\command{flagdescription} internally.
+\command{\tb flagwidth} is the unit for coordinates and lengths
+in the flag description.
+
+\command{\tb stretchfactor} is a factor for stretching certain \ti{x}-coordinates,
+when the whole flag is stretched (or compressed),
+i.\,e. when the aspect ratio differs from its proper value.
+It is calculated from the user option \command{stretch}
+(stored in the macro \command{\tb flagstretch})
+as follows and can be used in the flag description:
+\[
+f_s = 1 + \frac{l-l_0}{l_0}\cdot s, \quad
+\parbox[t]{0.7\textwidth}{%
+with\quad
+\begin{tabular}[t]{@{}l@{~\dots~}l}
+$f_s$ & the variable \tt{\tb stretchfactor} \\
+$l_0$ & proper aspect ratio of the flag \\
+$l$   & actual aspect ratio of the flag \\
+$s$   & value of the user specified option \tt{stretch} \\
+\end{tabular}}
+\]
+
+In the following example the yellow diamonds keep their
+\emph{distances} to the
+borders of the flag (hoist and fly, respectively), when the flag is stretched
+or compressed,
+the white diamonds keep their \emph{relative positions} on the flag
+in that case.
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+\codebox{0.70}{%
+   \tb def\tb diamond\#1\#2\{\tb begin\{scope\}[shift=\{\#2\}]     \\
+   \xx4\tb fill [\#1] (3/20,0)--(0,4/20)--(-3/20,0)--(0,-4/20);     \\
+   \xx4\tb end\{scope\}\}\%                                          \\
+   \tb def\tb drawflag\{\%                                           \\
+   \xx4\tb begin\{tikzpicture\}                                        \\
+   \xx4\tb begin\{flagdescription\}\{2/3\}                             \\
+   \xx4\xx3\tb background\{cyan\}                                        \\
+   \xx4\xx3\tb diamond\{yellow\}\{(0.5,0.75)\}                           \\
+   \xx4\xx3\tb diamond\{yellow\}\{(\$(\tb flaglength,0.75)-(0.5,0)\$)\}    \\
+   \xx4\xx3\tb diamond\{white\}\{(0.5*\tb stretchfactor,0.25)\}          \\
+   \xx4\xx3\tb diamond\{white\}\\\xx7\xx3\{(\$(\tb flaglength,0.25)-(0.5*\tb stretchfactor,0)\$)\}
+   \xx4\tb end\{flagdescription\}  \\
+   \xx4\tb end\{tikzpicture\}\}\%    \\
+   \tb drawflag\tb par\tb medskip \\
+   \tb newdimen\tb flaglength\tb flaglength=40mm  \\
+   \tb def\tb flagstretch\{1\}%                   \\
+   \tb drawflag
+   }
+\resultbox{0.29}{%
+   \def\diamond#1#2{%
+   \begin{scope}[shift={#2}]
+      \fill [#1] (3/20,0)--(0,4/20)--(-3/20,0)--(0,-4/20);
+   \end{scope}}%
+   \def\drawflag{%
+   \begin{tikzpicture}
+   \begin{flagdescription}{2/3}
+     \background{cyan}
+     \diamond{yellow}{(0.5,0.75)}
+     \diamond{yellow}{($(\flaglength,0.75)-(0.5,0)$)}
+     \diamond{white}{(0.5*\stretchfactor,0.25)}
+     \diamond{white}{($(\flaglength,0.25)-(0.5*\stretchfactor,0)$)}
+   \end{flagdescription}
+   \end{tikzpicture}}%
+   \drawflag\par\medskip
+   \newdimen\flaglength\flaglength=40mm
+   \def\flagstretch{1}%
+   \drawflag
+}
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+\section{Commands}\label{SEC_MACROS}
+% ----------------------------------
+
+A couple of commands for common geometric elements on flags facilitate
+the flag description.
+To avoid accidental name clashes with other packages,
+the visibility of those commands is confined to the environment
+\command{flagdescription}.
+
+
+ % +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+\wideframe{
+\begin{tabularx}{\textwidth}{@{}>{\RaggedRight}p{\colwidth}>{\RaggedRight}X@{}}
+{\m\color{emphcolor}\tt{\tb begin\{flagdescription\}\{}$\xi$\tt{\}}}
+&
+\\
+\qquad $\vdots$ & \\
+{\m\color{emphcolor}\tt{\tb end\{flagdescription\}}}
+&
+environment for the flag  with aspect ratio $\xi$\\[\medskipamount]
+\end{tabularx}
+
+\bigskip
+\begin{tabularx}{\textwidth}{@{}>{\RaggedRight}p{\colwidth}X@{}}
+\textsl{Geometric flag elements:}
+\\[\medskipamount] % --------------------------
+{\m\color{emphcolor}\tt{\tb framecode\{}\ti{path}\tt{\}}}
+& drawing path for the frame around the flag; if \emph{path} is empty, a rectangular frame is drawn.
+\\[\medskipamount] % --------------------------
+{\m\color{emphcolor}\tt{\tb hstripesII\{}{$c_1$}\tt{\}\{}{$c_2$}\tt{\}}}
+& partitions the flag into two horizontal stripes with the colors $c_1$ and $c_2$.
+\\[\medskipamount] % --------------------------
+{\m\color{emphcolor}\tt{\tb hstripesIII\{}{$c_1$}\tt{\}\{}{$c_2$}\tt{\}\{}{$c_3$}\tt{\}}}
+& three horizontal stripes with the colors $c_1$, \dots\ $c_3$
+\\[\medskipamount] % --------------------------
+{\m\color{emphcolor}\tt{\tb hstripesIV\{}{$c_1$}\tt{\}\{}{$c_2$}\tt{\}\{}{$c_3$}\tt{\}\{}{$c_4$}\tt{\}}}
+& \qquad four horizontal stripes with the colors $c_1$, \dots\ $c_4$
+\\[\medskipamount] % --------------------------
+{\m\color{emphcolor}\tt{\tb vstripesII\{}{$c_1$}\tt{\}\{}{$C_2$}\tt{\}}}
+& partitions the flag into two vertical stripes with the colors $c_1$ and $c_2$.
+\\[\medskipamount] % --------------------------
+{\m\color{emphcolor}\tt{\tb vstripesIII\{}{$c_1$}\tt{\}\{}{$c_2$}\tt{\}\{}{$c_3$}\tt{\}}}
+& three vertical stripes with the colors $c_1$, \dots\ $c_3$
+\\[\medskipamount] % --------------------------
+{\m\color{emphcolor}\tt{\tb hbar\{}{$c$}\tt{\}\{}{$y$}\tt{\}\{}{$w$}\tt{\}}}
+& horizontal bar with the color $c$ and the line width $w$ at the \ti{y}-coordinate $y$
+\\[\medskipamount] % --------------------------
+{\m\color{emphcolor}\tt{\tb vbar\{}{$c$}\tt{\}\{}{$x$}\tt{\}\{}{$w$}\tt{\}}}
+& vertical bar with the color $c$ and the line width $w$ at the \ti{x}-coordinate $x$
+\\[\medskipamount] % --------------------------
+{\m\color{emphcolor}\tt{\tb chevron\{}{$c$}\tt{\}\{}{$x$}\tt{\}}}
+& isosceles triangle at the hoist with the color $c$ and the vertex at the \ti{x}-coordinate $x$
+\\[\medskipamount] % --------------------------
+{\m\color{emphcolor}\tt{\tb starV\{}{$c$}\tt{\}\{}{$p$}\tt{\}\{}{$r$}\tt{\}\{}{$\alpha$}\tt{\}}}
+& 5-pointed star as a compex polygon with the fill color $c$, an outer raduis $r$, an angle $\alpha$ at the coordinate $p$
+\\[\medskipamount] % --------------------------
+{\m\color{emphcolor}\tt{\tb starVI\{}{$c$}\tt{\}\{}{$p$}\tt{\}\{}{$r$}\tt{\}\{}{$\alpha$}\tt{\}}}
+& 6-pointed star as a compex polygon with the fill color $c$, an outer raduis $r$, an angle $\alpha$ at the coordinate $p$
+\\[\medskipamount] % --------------------------
+{\m\color{emphcolor}\tt{\tb starn\{}{$c$}\tt{\}\{}{$n$}\tt{\}\{}{$p$}\tt{\}\{}{$r_1$}\tt{\}\{}{$r_2$}\tt{\}\{}{$\alpha$}\tt{\}}}
+& \qquad n-pointed star with the fill color $c$, an outer raduis $r_1$, an inner raduis $r_2$ and an angle $\alpha$ at the coordinate $p$
+\\[\medskipamount] % --------------------------
+{\m\color{emphcolor}\tt{\tb moon\{}{$c$}\tt{\}\{}{$p_1$}\tt{\}\{}{$r_1$}\tt{\}\{}{$p_2$}\tt{\}\{}{$r_2$}\tt{\}}}
+& crescent moon with the fill color $c$, as a difference set of two generating circles with the radii $r_1$, $r_2$, and center coordinates $p_1$ and $p_2$
+\\[\medskipamount] % --------------------------
+{\m\color{emphcolor}\tt{\tb unionjack\{}{$x_1$}\tt{\}\{}{$y_1$}\tt{\}\{}{$x_2$}\tt{\}\{}{$y_2$}\tt{\}}}
+& \qquad Union Jack between the coordinates $(x_1,y_1)$ and $(x_2,y_2)$
+\\[\medskipamount] % --------------------------
+\end{tabularx}}
+% +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+\medskip
+The macros
+\command{\tb hstripesII}, \command{\tb hstripesIII}, \command{\tb hstripesIV},
+\command{\tb vstripesII}, \command{\tb vstripesIII} partition the flag into an
+according number of horizontal or vertical colored stripes.
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ \codebox{0.65}{%
+ \tb begin\{tikzpicture\}
+  \tb begin\{flagdescription\}\{3/4\}        \\
+  \xx3\tb hstripesIII\{cyan\}\{white\}\{red\}\\
+  \tb end\{flagdescription\}
+  \tb end\{tikzpicture\}                     \\
+  \tb quad                                   \\
+  \tb begin\{tikzpicture\}
+  \tb begin\{flagdescription\}\{3/4\}        \\
+  \xx3\tb vstripesIII\{cyan\}\{white\}\{red\}\\
+   \tb end\{flagdescription\}
+      \tb end\{tikzpicture\}                 \\
+    }\hfill
+\resultbox{0.34}{%
+  \begin{tikzpicture}
+  \begin{flagdescription}{3/4}
+    \hstripesIII{cyan}{white}{red}
+  \end{flagdescription}
+  \end{tikzpicture}
+  \quad
+  \begin{tikzpicture}
+  \begin{flagdescription}{3/4}
+    \vstripesIII{cyan}{white}{red}
+   \end{flagdescription}
+   \end{tikzpicture}
+}
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+\command{\tb background} fills the entire rectangular area of the flag with
+color; note: a flag needs neither a frame around it nor a background on principle.
+\command{\tb hbar} draws a horizontal bar of given width and color
+at a specified \ti{y}-coordinate across the flag;
+\command{\tb vbar} does the same vertically.
+\command{\tb chevron} draws an isosceles triangle with a given height over
+the hoist.
+
+ %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ \codebox{0.65}{%
+   \tb begin\{tikzpicture\}
+   \tb begin\{flagdescription\}\{3/4\} \\
+   \xx3\tb background\{cyan\}              \\
+   \xx3\tb hbar\{white\}\{0.5\}\{0.3\}     \\
+   \xx3\tb vbar\{white\}\{0.5\}\{0.3\}     \\
+   \tb end\{flagdescription\}
+   \tb end\{tikzpicture\}              \\
+   \tb quad                            \\
+   \tb begin\{tikzpicture\}
+   \tb begin\{flagdescription\}\{3/4\}
+   \xx3\tb chevron\{cyan\}\{1\}            \\
+   \xx3\tb framecode{}                       \\
+   \tb end\{flagdescription\}
+   \tb end\{tikzpicture\}
+    }\hfill
+\resultbox{0.34}{%
+   \begin{tikzpicture}
+   \begin{flagdescription}{3/4}
+   \background{cyan}
+   \hbar{white}{0.5}{0.3}
+   \vbar{white}{0.5}{0.3}
+   \end{flagdescription}
+   \end{tikzpicture}
+   \quad
+   \begin{tikzpicture}
+   \begin{flagdescription}{3/4}
+   \chevron{cyan}{1}
+   \framecode{}
+   \end{flagdescription}
+   \end{tikzpicture}
+}
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+\command{\tb Union Jack} draws the Union Jack
+(which is part of a couple of flags)
+between a lower left and an upper right point.
+Their coordinates -- $x_1$, $y_1$, $x_2$,$y_2$ -- are separate
+parameters, which \emph{must} be specified as dimensions
+(i.\,e. using a unit), not just as numbers.
+The colors \command{blue}, \command{red} and \command{white}
+can be redefined arbitrarily.
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+\codebox{0.65}{%
+   \tb begin\{tikzpicture\}
+   \tb begin\{flagdescription\}\{3/4\}  \\
+   \tb unionjack\{0mm\}\{0mm\}\{\tb flaglength\}\{\tb flagwidth\} \\
+   \tb end\{flagdescription\}
+   \tb end\{tikzpicture\} \\
+   \tb quad                \\
+   \tb begin\{tikzpicture\}
+   \tb begin\{flagdescription\}\{3/4\} \\
+   \tb colorlet\{blue\}\{black\}  \\
+   \tb definecolor\{red\}\{rgb\}\{0.9,0.6,0\} \\
+   \tb unionjack\{0mm\}\{5mm\}\{10mm\}\{\tb flagwidth\}\\
+   \tb framecode{}\\
+   \tb end\{flagdescription\}
+   \tb end\{tikzpicture\}  \\
+   }
+\resultbox{0.34}{%
+   \begin{tikzpicture}
+   \begin{flagdescription}{3/4}
+   \unionjack{0mm}{0mm}{\flaglength}{\flagwidth}
+   \end{flagdescription}
+   \end{tikzpicture}
+   \quad
+   \begin{tikzpicture}
+   \begin{flagdescription}{3/4}
+   \colorlet{blue}{black}
+   \definecolor{red}{rgb}{0.9,0.6,0}
+   \unionjack{0mm}{5mm}{10mm}{\flagwidth}
+   \framecode{}
+   \end{flagdescription}
+   \end{tikzpicture}
+}
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The various types of stars \command{\tb starV} \command{\tb starVI}
+\command{\tb starn} and \command{\tb moon} are self-explanatory.
+In the following example \tt{\tb starn} and \tt{\tb moon}
+are overlayed with the generating circles.
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+\codebox{0.65}{%
+   \tb begin\{tikzpicture\}
+   \tb begin\{flagdescription\}\{1/3\}\\
+   \xx3\tb background\{cyan\}\\
+     \xx3\tb starV\{white\}\{(1,0.5)\}\{0.3\}\{0\}\\
+     \xx3\tb starVI\{white\}\{(2,0.5)\}\{0.3\}\{0\}\\
+%    \xx3\tb framecode{}\\
+   \tb end\{flagdescription\}
+   \tb end\{tikzpicture\}\\
+   \tb par\tb medskip\\
+   \tb begin\{tikzpicture\}
+   \tb begin\{flagdescription\}\{1/3\}\\
+     \xx3\tb background\{cyan\}\\
+     \xx3\tb starn\{white\}\{9\}\{(2,0.5)\}\{0.4\}\{0.15\}\{0\} \\
+     \xx3\tb draw (2,0.5)circle(0.4) (2,0.5)circle(0.15); \\
+     \xx3\tb moon\{white\}\{(1,0.45)\}\{0.4\}\{(1.1,0.6)\}\{0.36\}\\
+     \xx3\tb draw (1,0.45)circle(0.4) (1.1,0.6)circle(0.36);\\
+%    \xx3\tb framecode{}\\
+   \tb end\{flagdescription\}
+   \tb end\{tikzpicture\}
+   }
+\resultbox{0.34}{%
+   \begin{tikzpicture}
+   \begin{flagdescription}{1/3}
+     \background{cyan}
+     \starV{white}{(1,0.5)}{0.3}{0}
+     \starVI{white}{(2,0.5)}{0.3}{0}
+%     \framecode{}
+   \end{flagdescription}
+   \end{tikzpicture}
+   \par\medskip
+   \begin{tikzpicture}
+   \begin{flagdescription}{1/3}
+     \background{cyan}
+     \starn{white}{9}{(2,0.5)}{0.4}{0.15}{0}
+     \draw (2,0.5)circle(0.4) (2,0.5) circle(0.15);
+     \moon{white}{(1,0.45)}{0.4}{(1.1,0.6)}{0.36}
+     \draw (1,0.45)circle(0.4) (1.1,0.6)circle(0.36);
+%     \framecode{}
+   \end{flagdescription}
+   \end{tikzpicture}
+}
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+% --------------------------------------------------------------------------
+\chapter{Flags}\label{FLAGS}
+% --------------------------------------------------------------------------
+
+\flagsdefault[width=18mm,length=30mm,stretch=0.5]
+
+\section{National Flags of sovereign states}
+% ------------------------------------------
+\flaggenprozeile{4}
+\show{Afghanistan}{AF}
+\show{Albania}{AL}
+\show{Algeria}{DZ}
+\show{Andorra}{AD}
+\show{Angola}{AO}
+\show{Antigua \& Barbuda}{AG}
+\show{Argentina}{AR}
+\show{Armenia}{AM}
+\show{Australia}{AU}
+\show{Austria}{AT}
+\show{Azerbaijan}{AZ}
+\show{Bahamas}{BS}
+\show{Bahrein}{BH}
+\show{Bangladesh}{BD}
+\show{Barbados}{BB}
+\show{Belarus}{BY}
+\show{Belgium}{BE}
+\show{Belize}{BZ}
+\show{Benin}{BJ}
+\show{Bhutan}{BT}
+\show{Bolivia}{BO}
+\show{Bosnia \& Herzogovina}{BA}
+\show{Botswana}{BW}
+\show{Brazil}{BR}
+\show{Brunei}{BN}
+\show{Bulgaria}{BG}
+\show{Burkina Faso}{BF}
+\show{Burundi}{BI}
+\show{Cambodia}{KH}
+\show{Cameroon}{CM}
+\show{Canada}{CA}
+\show{Cape Verde}{CV}
+\show{Central African Rep.}{CF}
+\show{Chad}{TD}
+\show{Chile}{CL}
+\show{China}{CN}
+\show{Colombia}{CO}
+\show{Comoros}{KM}
+\show{Congo, Democratic Rep.}{CD}
+\show{Congo, Republic}{CG}
+\show{Cook Islands}{CK}
+\show{Costa Rica}{CR}
+\show{Croatia}{HR}
+\show{Cuba}{CU}
+\show{Cyprus}{CY}
+\show{Czech Republic}{CZ}
+\show{Denmark}{DK}
+\show{Djibouti}{DJ}
+\show{Dominica}{DM}
+\show{Dominican Republic}{DO}
+\show{East Timor}{TL}
+\show{Ecuador}{EC}
+\show{Egypt}{EG}
+\show{EL Salvador}{SV}
+\show{Equatorial Guinea}{GQ}
+\show{Eritrea}{ER}
+\show{Estonia}{EE}
+\show{Eswatini}{SZ}
+\show{Ethiopia}{ET}
+\show{Fiji}{FJ}
+\show{Finnland}{FI}
+\show{France}{FR}
+\show{Gabon}{GA}
+\show{Gambia}{GM}
+\show{Georgia}{GE}
+\show{Germany}{DE}
+\show{Ghana}{GH}
+\show{Greece}{GR}
+\show{Grenada}{GD}
+\show{Guatemala}{GT}
+\show{Guinea}{GN}
+\show{Guinea Bissau}{GW}
+\show{Guyana}{GY}
+\show{Haiti}{HT}
+\show{Honduras}{HN}
+\show{Hungary}{HU}
+\show{Iceland}{IS}
+\show{India}{IN}
+\show{Indonesia}{ID}
+\show{Iran}{IR}
+\show{Iraq}{IQ}
+\show{Ireland}{IE}
+\show{Israel}{IL}
+\show{Italy}{IT}
+\show{Ivory Coast}{CI}
+\show{Jamaica}{JM}
+\show{Japan}{JP}
+\show{Jordan}{JO}
+\show{Kazakhstan}{KZ}
+\show{Kenya}{KE}
+\show{Kiribati}{KI}
+\show{Korea, North}{KP}
+\show{Korea, South}{KR}
+\show{Kosovo}{KO}
+\show{Kuwait}{KW}
+\show{Kyrgystan}{KG}
+\show{Laos}{LA}
+\show{Latvia}{LV}
+\show{Lebanon}{LB}
+\show{Lesotho}{LS}
+\show{Liberia}{LR}
+\show{Libya}{LY}
+\show{Liechtenstein}{LI}
+\show{Lithuania}{LT}
+\show{Luxembourg}{LU}
+\show{Madagaskar}{MG}
+\show{Malawi}{MW}
+\show{Malaysia}{MY}
+\show{Maledives}{MV}
+\show{Mali}{ML}
+\show{Malta}{MT}
+\show{Marshall Islands}{MH}
+\show{Mauritania}{MR}
+\show{Mauritius}{MU}
+\show{Mexico}{MX}
+\show{Micronesia}{FM}
+\show{Moldova}{MD}
+\show{Mongolia}{MN}
+\show{Montenegro}{ME}
+\show{Morocco}{MA}
+\show{Mozambique}{MZ}
+\show{Myanmar}{MM}
+\show{Namibia}{NA}
+\show{Nauru}{NR}
+\show{Nepal}{NP}
+\show{Netherlands}{NL}
+\show{New Zealsnd}{NZ}
+\show{Nicaragua}{NI}
+\show{Niger}{NE}
+\show{Nigeria}{NG}
+\show{North Macedonia}{MK}
+\show{Norway}{NO}
+\show{Oman}{OM}
+\show{Pakistan}{PK}
+\show{Palau}{PW}
+\show{Palestine}{PS}
+\show{Panama}{PA}
+\show{Papua New Guinea}{PG}
+\show{Paraguay}{PY}
+\show{Peru}{PE}
+\show{Philippines}{PH}
+\show{Poland}{PL}
+\show{Portugal}{pt}
+\show{Quatar}{QA}
+\show{Romania}{RO}
+\show{Russia}{RU}
+\show{Rwanda}{RW}
+\show{St. Kitts \& Nevis}{KN}
+\show{St. Lucia}{LC}
+\show{St. Vincent}{VC}
+\show{Samoa}{WS}
+\show{San Marino}{SM}
+\show{Sao Tome \& Principe}{ST}
+\show{Saudi Arabia}{SA}
+\show{Senegal}{SN}
+\show{Serbia}{RS}
+\show{Seychelles}{SC}
+\show{Sierra Leone}{SL}
+\show{Singapore}{SG}
+\show{Slovakia}{SK}
+\show{Slovenia}{SI}
+\show{Solomon Islands}{SB}
+\show{Somalia}{SO}
+\show{South Africa}{ZA}
+\show{South Sudan}{SS}
+\show{Spain}{ES}
+\show{Sri Lanka}{LK}
+\show{Sudan}{SD}
+\show{Suriname}{SR}
+\show{Sweden}{SE}
+\show{Switzerland}{CH}
+\show{Syria}{SY}
+\show{Taiwan}{TW}
+\show{Tajikistan}{TJ}
+\show{Tanzania}{TZ}
+\show{Thailand}{TH}
+\show{Togo}{TG}
+\show{Tonga}{TO}
+\show{Trinidad \& Tobago}{TT}
+\show{Tunisia}{TN}
+\show{Turkey}{TR}
+\show{Turkmenistan}{TM}
+\show{Tuvalu}{TV}
+\show{Uganda}{UG}
+\show{Ukraine}{UA}
+\show{United Arab Emirates}{AE}
+\show{United Kingdom}{GB}
+\show{United States}{US}
+\show{Uruguay}{UY}
+\show{Uzbekistan}{UZ}
+\show{Vanuatu}{VU}
+\show{Vatican}{VA}
+\show{Venezuela}{VE}
+\show{Vietnam}{VN}
+\show{Yemen}{YE}
+\show{Zambia}{ZM}
+\show{Zimbabwe}{ZW}
+
+\section{Flags of other countries and territories}
+% ------------------------------------------------
+
+\flaggenprozeile{4}
+\show{Abkhazia}{Abkhazia}
+\show{\AA land}{AX}
+\show{Antarctica}{AQ}
+\show{Artsakh}{Artsakh}
+\show{Bonaire}{Bonaire}
+\show{Faroe Islands}{FO}
+\show{French Guiana}{GF}
+\show{Gibraltar}{GI}
+\show{Greenland}{GL}
+\show{Guernsey}{GG}
+\show{Isle of Man}{IM}
+\show{Jersey}{JE}
+\show{Niue}{NU}
+\show{Puerto Rico}{PR}
+\show{Reunion}{RE}
+\show{St.\,Eustasius}{StEustasius}
+\show{Somaliland}{Somaliland}
+\show{Tibet}{Tibet}
+\show{Transnistria}{Transnistria}
+\show{Western Sahara}{EH}
+
+\section{Austrian federal states}
+% -------------------------------
+
+\flaggenprozeile{4}
+\show{Vienna}{AT-W}
+\show{Lower Austria}{AT-N}
+\show{Upper Austria}{AT-O}
+\show{Salzburg}{AT-S}
+\show{The Tyrol}{AT-T}
+\show{Vorarlberg}{AT-V}
+\show{Carinthia}{AT-K}
+\show{Styria}{AT-St}
+\show{Burgenland}{AT-B}
+
+
+
+\section{Other Flags}
+% ----------------------
+
+\flaggenprozeile{4}
+\show{European Union}{EU}
+\show{United Nations}{UNO}
+\show{WHO}{WHO}
+\show{UNESCO}{UNESCO}
+\show{NATO}{NATO}
+\show{Christian Flag}{Christian}
+\show{Buddhist Flag}{Buddhism}
+\show{Red Cross}{RedCross}
+\show{Red Crescent}{RedCrescent}
+\show{Red Crystal}{RedCrystal}
+\show{Olympics}{Olympics}
+\show{Jolly Roger}{JollyRoger}
+\show{Rainbow flag}{Rainbow}
+\show{Esperanto Movement}{Esperanto}
+
+
+\section{Nautical Signal Flags}
+% -----------------------------
+
+\flagsdefault[width=18mm,length=25mm]
+\flaggenprozeile{5}
+\show{}{A}
+\show{}{B}
+\show{}{C}
+\show{}{D}
+\show{}{E}
+\show{}{F}
+\show{}{G}
+\show{}{H}
+\show{}{I}
+\show{}{J}
+\show{}{K}
+\show{}{L}
+\show{}{M}
+\show{}{N}
+\show{}{O}
+\show{}{P}
+\show{}{Q}
+\show{}{R}
+\show{}{S}
+\show{}{T}
+\show{}{U}
+\show{}{V}
+\show{}{W}
+\show{}{X}
+\show{}{Y}
+\show{}{Z}\par\bigskip
+
+\flagsdefault[width=0mm,length=25mm]
+\flaggenprozeile{5}
+\show{}{0}
+\show{}{1}
+\show{}{2}
+\show{}{3}
+\show{}{4}
+\show{}{5}
+\show{}{6}
+\show{}{7}
+\show{}{8}
+\show{}{9}
+
+
+
+
+
+% --------------------------------------------------------------------------
+% Links
+% --------------------------------------------------------------------------
+{
+\raggedright
+\def\web#1{{\color{emphcolor}\texttt{#1}}: }
+\def\txt#1{#1}
+\def\bibname{Links}
+% \addcontentsline{toc}{chapter}{\bibname}
+
+\begin{thebibliography}{88}
+% ---------------------------------------------------------------------------
+\bibitem{VEXILLAMUNDI}
+\web{http://www.vexilla-mundi.com}
+\txt{Comprehensive website with flags of all nations including construction
+     sheets, historical flags, flags of many cities and regions.}
+% ---------------------------------------------------------------------------
+\bibitem{FOTW}
+\web{https://www.fotw.info}
+\txt{Website of the FOTW (``Flags Of The World''), vexillological association
+ and internet resource; many background informations about flags and vexillology.}
+% ---------------------------------------------------------------------------
+\bibitem{FLAGS}
+\web{https://www.flags.net}
+\txt{World Flags Database; another comprehensive collection of flags
+from all over the world.}
+% ---------------------------------------------------------------------------
+\bibitem{WELTFLAGGEN}
+\web{https://www.welt-flaggen.de}
+\txt{Flags of and information about all countries of the world;
+contains flag quizzes.}
+
+% ---------------------------------------------------------------------------
+\bibitem{NATIONALFLAGGEN}
+\web{https://www.nationalflaggen.de}
+\txt{Provides various images and animated gifs of all national flags.}
+\end{thebibliography}
+% ---------------------------------------------------------------------------
+}
+
+\end{document}

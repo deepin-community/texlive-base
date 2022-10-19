@@ -1,0 +1,616 @@
+\documentclass{l3doc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{metalogo}
+\usepackage{tikz}
+\usepackage[normalem]{ulem}
+\usepackage{tcolorbox}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{colortbl}
+\usepackage{scrextend}
+\usepackage{graphicx}
+\usepackage{luaprogtable}
+
+\tcbuselibrary{breakable,listings, skins}
+
+\newcommand{\thispkg}{\pkg{luaprogtable}}
+
+\title{The \href{https://github.com/xziyue/luaprogtable}{\thispkg}\ package: programmatic table interface for \LuaLaTeX}
+\author{\href{https://www.alanshawn.com}{Ziyue ``Alan'' Xiang}\\
+{\scriptsize\ttfamily ziyue.alan.xiang@gmail.com}}
+\date{\today}
+
+\NewDocumentEnvironment{optiondetail}{m}{%
+\par\bigskip\noindent \textbf{Description of #1} \medskip%
+}{\bigskip}
+
+\NewDocumentEnvironment{authornote}{}{
+\paragraph{Author's note}
+}{\medskip}
+
+\ExplSyntaxOn
+
+\dim_new:N \g_enum_indent_dim
+
+\NewDocumentEnvironment{optionitem}{mm}{
+\par\noindent\texttt{#1~=~#2}\smallskip
+\dim_gset:Nn \g_enum_indent_dim {\l__codedoc_trial_width_dim}
+\begin{addmargin}[2em]{0em}
+}{\end{addmargin}\medskip}
+
+\newlist{optionlst}{enumerate}{10}
+\setlist[optionlst]{label={}, font=\ttfamily, left=\g_enum_indent_dim}
+
+\newcommand{\optiondf}[1]{\uline{#1}}
+
+\ExplSyntaxOff
+
+\newtcblisting{tablesample}{enhanced jigsaw, breakable, colback=white, colframe=black!20}
+
+
+\begin{document}
+
+\pagenumbering{Roman}
+
+\maketitle
+\tableofcontents
+
+\clearpage
+
+\pagenumbering{arabic}
+
+
+\begin{documentation}
+
+\section{Introduction}
+
+The \LaTeX3 project provides \LaTeX\ users with a handful of macros to interpret and  manipulate various types of objects (e.g. integers, floating point numbers, token lists, sequences, \ldots) However, there is few existing function that allows users to interact with tables in a programmatic fashion. For example, if a user needs to modify the content of the cell on 20\textsuperscript{th} row and 8\textsuperscript{th} column, he/she needs to navigate the correct cell location among a pile of |&|'s and |\\|'s, which is very inefficient and error-prone. It is very difficult for someone to modify a cell based on the content within it using \LaTeX\ macros.
+
+\thispkg\ aims to tackle these problems by providing a series of \emph{programmatic} interface for tables. The \cs{LPTGetCellData} and \cs{LPTSetCell} commands allow one to access and alter the content of a single cell. The \env{lptview} environment allows one to modify a small sub-view of a larger table.
+
+\section{Basic Usage}
+
+\subsection{Concepts}
+
+\begin{itemize}
+\item Coordinate system
+
+This package uses a 1-indexed row-column-order coordinate system.
+
+\begin{center}
+    \ExplSyntaxOn
+    \int_new:N \l_tmpc_int
+    
+    \begin{tikzpicture}
+        \int_set:Nn \l_tmpa_int {1}
+        
+        \int_do_while:nNnn { \l_tmpa_int } < { 5 } {
+            \int_set:Nn \l_tmpb_int {0}
+            \int_set:Nn \l_tmpc_int { \l_tmpa_int }
+            \int_do_while:nNnn {\l_tmpb_int} < {\l_tmpa_int} {
+                \node[minimum~width=1.5cm, 
+                minimum~height=0.6cm,
+                outer~sep=0cm, draw=black] at 
+                (\fp_eval:n {1.5 * \l_tmpb_int}cm, \fp_eval:n {0.6 * \l_tmpa_int }cm) 
+                {\small (\int_eval:n {5 - \l_tmpa_int},~ \int_eval:n {\l_tmpb_int + 1}) };
+                \int_incr:N \l_tmpb_int
+            }
+            \int_incr:N \l_tmpa_int
+        }
+    \end{tikzpicture}
+    \ExplSyntaxOff
+\end{center}
+
+\item \hypertarget{index-expr}{Index expressions}
+
+This package adopts a \emph{Pythonic} indexing convention: each \emph{component} is delimited by `|,|'; within each component, a \emph{range} is separated by a colon (`|:|'). For example, the expression |1,2,3:5| has three components, where the first and second components contain a single index 1, 2, respectively; the third component holds the range $[3, 5]$.
+
+To comply with \LaTeX\ conventions, both ends of a range are \emph{inclusive}. Therefore, the range |3:5| is made up of three indices, namely 3, 4 and 5. Negative indices indicate reverse access. For example, |-1| refers to the last element; the range |3:-1| contains all indices between 3 and the last element (both ends included).
+
+
+\item \hypertarget{view-expr}{View expressions}
+
+In \LaTeX , tables are usually constructed with `|&|' and `|\\|'. However, it is very difficult to write a simple parser for this syntax, because these special symbols can appear in other environments with different meanings. For simplicity, \thispkg\ builds table using \emph{view expressions}. In view expressions, each column is enclosed with braces (|{}|); rows are broken with |\\|. For example, the view expression on the right is equivalent to traditional \LaTeX\ table notation on the left. Note that \textbf{one cannot abbreviate outermost braces in view expressions}.
+
+\begin{center}
+\begin{BVerbatim}[gobble=0]
+a & b & c & d \\
+e & f & g & h \\
+i & j & k & l
+\end{BVerbatim}
+\hspace{1cm}
+\begin{BVerbatim}[gobble=0]
+{a} {b} {c} {d} \\
+{e} {f} {g} {h} \\
+{i} {j} {k} {l}
+\end{BVerbatim}
+\end{center}
+
+Sometimes table cells can span across multiple rows/columns. Because \thispkg\ cannot parse \LaTeX\ content, one needs to specify the shape of the cell explicitly for these scenarios. The shape of a cell can be altered by adding |[]| after the closing brace. If a cell spans $n$ columns, one can type |[-n]|; if a cell spans $n$ rows, one can type \verb`[|n]`. For example, view expression (2) is equivalent to traditional \LaTeX\ table (1).
+
+\begin{enumerate}[label=(\arabic*)]
+\item 
+\begin{BVerbatim}[baseline=t, gobble=0]
+\multirow{3}{*}{a} & b & c & d             \\
+                   & \multicolumn{3}{c}{e} \\
+                   & f & g & h
+\end{BVerbatim}
+
+
+\item 
+\begin{BVerbatim}[baseline=t, gobble=0]
+{\multirow{3}{*}{a}}[|3] {b} {c} {d}                 \\
+                         {\multicolumn{3}{c}{e}}[-3] \\
+                         {f} {g} {h}
+\end{BVerbatim}
+
+\end{enumerate}
+
+
+\end{itemize}
+
+\subsection{Creating a new table}
+
+% \LPTNewTable{table1}{5}{|c|c|c|c|c|}[nrows=5, input method=file]
+\begin{function}{\LPTNewTable}
+    \begin{syntax}
+    \cs{LPTNewTable} \Arg{table name} \Arg{num cols} \Arg{table preamble} \oarg{table options}
+    \end{syntax}
+    
+    Creates a new table named after \meta{table name}. The name of the new table must not be the same as existing ones. The number of columns specified in \meta{num cols} needs to match \meta{table preamble} for the table to work correctly. In general, \meta{table name} should not contain comma and back slash. Starting and trailing white spaces in \meta{table name} will be ignored.
+
+    \begin{optiondetail}{\meta{table options}}
+        \begin{optionitem}{backend}{\optiondf{\{tabular\}}}
+            Specifies the table environment to be used for this table. Apart from |tabular|, one can also use |longtable|, |tabu| and so on. However, the corresponding package must be loaded manually.
+        \end{optionitem}
+        \begin{optionitem}{default before line}{\optiondf{\{\}}}
+            Specifies the default line style before each row.
+        \end{optionitem}
+        \begin{optionitem}{default after line}{\optiondf{\{\}}}
+            Specifies the default line style after each row.
+        \end{optionitem}
+        \begin{optionitem}{default after spacing}{\optiondf{\{\}}}
+            Specifies the default additional spacing after each row. This is achieved by appending |[<dim expr>]| to each row.
+        \end{optionitem}
+        \begin{optionitem}{input method}{file,\optiondf{stringbuffer}}
+            Specifies how \LaTeX\ will read the table source generated by \thispkg.
+            \begin{optionlst}
+            \item[file] The constructed table source will be saved to file system as:
+            \begin{verbatim}
+            \jobname_<table name>.table
+            \end{verbatim}
+            
+            It is then read into \LaTeX\ by |\input| macro. This is ideal for debug purposes because the source is visible to the user.
+            \item[stringbuffer] The constructed table source will be fed into \LaTeX\  directly, without the need of file system operations. On \LaTeX\ side, this is still achieved by calling |\input|. However, the corresponding file callback functions on Lua side are changed, which allows \LaTeX\ to read from Lua string buffers directly.
+            \end{optionlst}
+        \end{optionitem}
+        \begin{optionitem}{nrows}{\optiondf{\{0\}}}
+            Specifies the number of rows in the table.
+        \end{optionitem}
+    \end{optiondetail}
+    
+\end{function}
+
+\subsection{Selecting current table}
+
+\begin{function}{\LPTSetCurrentTable}
+    \begin{syntax}
+        \cs{LPTSetCurrentTable} \Arg{table name}
+    \end{syntax}
+    
+    For many subsequent commands, there is no need to specify \meta{table name} repeatedly: they fetch this information from a global variable. This macro sets the global variable for current table.
+\end{function}
+
+\begin{function}{\LPTGetCurrentTable}
+    \begin{syntax}
+        \cs{LPTGetCurrentTable}
+    \end{syntax}
+    
+    Get the Lua-escaped name of current table.
+\end{function}
+
+\subsection{Modifying table rows}
+
+\begin{function}{\LPTAddRow}
+
+    \begin{syntax}
+        \cs{LPTAddRow} \oarg{row options}
+    \end{syntax}
+    
+    This command appends one more row to the current table. If an option is not specified in \meta{row options}, the default value is taken from \meta{table options} of the table.
+    
+    \begin{optiondetail}{\meta{row options}}
+        \begin{optionitem}{before line}{\optiondf{\{\}}}
+            Specifies the line before this row.
+        \end{optionitem}
+        \begin{optionitem}{after line}{\optiondf{\{\}}}
+            Specifies the line after this row.
+        \end{optionitem}
+        \begin{optionitem}{after spacing}{\optiondf{\{\}}}
+            Specifies the extra spacing after this row.
+        \end{optionitem}
+    \end{optiondetail}
+
+\end{function}
+
+
+\begin{function}{\LPTSetRowProp}
+
+    \begin{syntax}
+        \cs{LPTSetRowProp} \Arg{index expr} \Arg{row options}
+    \end{syntax}
+    
+    This command modifies the properties of rows specified in \meta{index expr}. In this case, \meta{index expr} can point to multiple rows. For example, the index expression |:3,4,6| will trigger the modification of 5 rows, namely row 1, 2, 3, 4 and 6.
+    
+    \begin{optiondetail}{\meta{row options}}
+        \begin{optionitem}{before line}{\optiondf{\{\}}}
+            Specifies the line before this row.
+        \end{optionitem}
+        \begin{optionitem}{after line}{\optiondf{\{\}}}
+            Specifies the line after this row.
+        \end{optionitem}
+        \begin{optionitem}{after spacing}{\optiondf{\{\}}}
+            Specifies the extra spacing after this row.
+        \end{optionitem}
+    \end{optiondetail}
+
+\end{function}
+
+\subsection{Modifying table contents}
+
+\begin{environment}{lptview}
+
+\begin{syntax}
+|\begin{lptview}| \Arg{index expr}
+\Arg{view expr}
+|\end{lptview}|
+\end{syntax}
+
+This environment creates a sub-view of current table. The sub-view region is specified by \meta{index expr}, and the content of this sub-view is specified by \meta{view expr}. The index expression should always consist of two components, where the first defines the range of rows and the second defines the range of columns.
+\end{environment}
+
+
+\begin{environment}{lptfill}
+
+\begin{syntax}
+|\begin{lptfill}| \Arg{index expr}
+\Arg{content}
+|\end{lptfill}|
+\end{syntax}
+
+This environment fills table region specified by \meta{index expr} with \meta{content}. When \meta{index expr} is empty, the entire table is filled. Even when \meta{index expr} is empty, the braces surrounding it cannot be abbreviated.
+
+\end{environment}
+
+\subsection{Using table source}
+
+\begin{function}{\LPTUseTable}
+
+\begin{syntax}
+\cs{LPTUseTable}
+\end{syntax}
+
+Reads the source of current table into input stream.
+
+\end{function}
+
+\subsection{Deleting existing tables}
+
+\begin{function}{\LPTDeleteTable}
+
+\begin{syntax}
+\cs{LPTDeleteTable} \Arg{table name}
+\end{syntax}
+
+Remove a table from Lua storage to save memory.
+
+\end{function}
+
+\section{Advanced Usage}
+
+\subsection{Internal design}
+
+In Lua, each cell is a \emph{class} with three attributes: |data|, |shape| and |parent|. Apparently, |data| holds the content of the cell. By default, the |shape| of all cells is |{1,1}|; the parent of all cells is |nil|. When there is a cell that spans multiple rows/columns, the top-left cell will be considered \emph{parent cell}, and the remaining cells in the region would have |shape| set to |nil| and |parent| set to the coordinates of parent cell.
+
+\subsection{Programmatic interface}
+
+The following macros allow one to access and modify table cells programmatically.
+
+\begin{function}{\LPTSetCell}
+
+\begin{syntax}
+\cs{LPTSetCell} \Arg{index expr} \oarg{shape} \Arg{content}
+\end{syntax}
+
+Set the content of the cell specified in \meta{index expr} to \meta{content}. The index expression should always consist of two components, where each component only points to one integer. The shape is given by |<row span>, <column span>|. By default, the shape of a cell is |1,1|. When a cell occupies more then one cell space, the shape of its children cells will be set to |nil| automatically.
+
+\begin{authornote}
+\cs{LPTSetCell} is not completely identical to \env{lptview}. More concretely, \env{lptview} and \env{lptfill} override \LuaLaTeX 's |process_input_buffer| callback, which allows Lua side to receive verbatim content as is. However, the \meta{content} of \cs{LPTSetCell} needs to be processed by \cs{tl_to_str:n} before being passed to Lua. While the outcome is the same most of the time, \cs{tl_to_str:n} does append an empty space after macros, which stops verbatim commands from working properly.
+\end{authornote}
+
+\end{function}
+
+\begin{function}{\LPTFill}
+\begin{syntax}
+\cs{LPTFill} \Arg{index expr} \Arg{content}
+\end{syntax}
+
+Fills table region specified by \meta{index expr} with \meta{content}. When \meta{index expr} is empty, the entire table is filled.
+
+\end{function}
+
+\begin{function}{\LPTGetTableNames}
+\begin{syntax}
+\cs{LPTGetTableNames}
+\end{syntax}
+
+Returns a comma-separated string containing the names of all tables.
+\end{function}
+
+\begin{function}{\LPTGetTableShape}
+\begin{syntax}
+\cs{LPTGetTableShape}
+\end{syntax}
+
+Returns the shape of the current table as a token list string. The number of rows is stored in first group; the number of columns is stored in second group.
+\end{function}
+
+\begin{function}{\LPTGetCellData}
+\begin{syntax}
+\cs{LPTGetCellData} \Arg{index expr}
+\end{syntax}
+
+Returns the data of the cell specified by \meta{index expr}.
+\end{function}
+
+\begin{function}{\LPTGetCellShape}
+\begin{syntax}
+\cs{LPTGetCellShape} \Arg{index expr}
+\end{syntax}
+
+Returns the shape of the cell specified by \meta{index expr} as a token list string. The number of rows is stored in first group; the number of columns is stored in second group. When the shape is |nil|, the macro returns |\c_novalue_tl|.
+\end{function}
+
+\begin{function}{\LPTGetCellParent}
+\begin{syntax}
+\cs{LPTGetCellParent} \Arg{index expr}
+\end{syntax}
+
+Returns the coordinates of the parent of the cell specified by \meta{index expr} as a token list string. The row index is stored in first group; the column index is stored in second group. When the parent is |nil|, the macro returns |\c_novalue_tl|.
+\end{function}
+
+\section{Examples}
+
+\subsection{Creating and filling a table}
+
+\begin{tablesample}
+\LPTNewTable{oruVVAVhbMD0}{3}{|c|c|c|}[
+    default after line=\hline, 
+    nrows=3]
+\LPTSetCurrentTable{oruVVAVhbMD0}
+\LPTSetRowProp{1}{before line=\hline}
+\begin{lptfill}{}
+\verb|#&_^|
+\end{lptfill}
+\LPTUseTable
+\end{tablesample}
+
+
+\subsection{Changing sub-table}
+
+\begin{tablesample}
+\LPTNewTable{IAs5OwqBcv0R}{4}{|c|c|c|c|}[
+    default after line=\cline{2-4}, 
+    nrows=4]
+\LPTSetCurrentTable{IAs5OwqBcv0R}
+\LPTFill{:-2,:-2}{Lorem}
+\LPTFill{-1,2:-2}{Sit}
+\LPTFill{:,-1}{Dolor}
+\LPTSetRowProp{1}{before line=\hline}
+\LPTSetRowProp{-1}{after line=\hline}
+\begin{lptview}{:, 1}
+{ \multirow{4}{*}{\rotatebox{90}{Ipsum}} }[|4] \\ \\ \\
+\end{lptview}
+\LPTUseTable
+\end{tablesample}
+
+\begin{tablesample}
+\LPTNewTable{4Fz0h0ES2zU9}{6}{|c|c|c|c|c|c|}[
+    default after line=\hline, 
+    nrows=6]
+\LPTSetCurrentTable{4Fz0h0ES2zU9}
+\begin{lptfill}{}
+\verb|Lorem|
+\end{lptfill}
+\LPTSetRowProp{1}{before line=\hline}
+\LPTSetRowProp{3}{after line=\cline{1-2}\cline{5-6}}
+\begin{lptview}{3:4, 3:4}
+{ \multicolumn{2}{c|}{\multirow{2}{*}{Ipsum}} }[-2]\\
+{ \multicolumn{2}{c|}{} }[-2]
+\end{lptview}
+\LPTUseTable
+\end{tablesample}
+
+\subsection{Modifying row spacing}
+
+\begin{tablesample}
+\LPTNewTable{KSDJ4C6wUgXL}{4}{|c|c|c|c|}[
+    default after line=\hline, 
+    nrows=4]
+\LPTSetCurrentTable{KSDJ4C6wUgXL}
+\LPTFill{}{$\int_a^b f(x) dx$}
+\LPTSetRowProp{1}{before line=\hline}
+\LPTSetRowProp{-2:-1}{after spacing=1em}
+\LPTUseTable
+\end{tablesample}
+
+\subsection{Sequentially constructing a table}
+
+\begin{tablesample}
+\LPTNewTable{yTvLL6PEYgoE}{3}{ccc}
+\LPTSetCurrentTable{yTvLL6PEYgoE}
+\LPTAddRow[before line=\toprule, after line=\midrule]
+\begin{lptview}{-1,:}
+{Field 1} {Field 2} {Field 3}
+\end{lptview}
+\LPTAddRow
+\begin{lptview}{-1,:}
+{Data 1} {Data 2} {Data 3}
+\end{lptview}
+\LPTAddRow[after line=\bottomrule]
+\begin{lptview}{-1,:}
+{Data 4} {\multicolumn{2}{c}{Data 5}}[-2]
+\end{lptview}
+\LPTUseTable
+\end{tablesample}
+
+\subsection{Change the color of cells based on value}
+
+\begin{tablesample}
+\LPTNewTable{hJXHnablQ14y}{8}{cccccccc}[nrows=8]
+\LPTSetCurrentTable{hJXHnablQ14y}
+\begin{lptview}{:,:}
+{20} {90} {43} {36} {73} {72} {77} {68} \\
+{60} {48} {41} {52} {39} {31} {90} {65} \\
+{81} {47} {58} {62} {67} {35} {49} {51} \\
+{85} {41} {59} {69} {46} {77} {46} {39} \\
+{24} {64} {69} {64} {89} {90} {64} {67} \\
+{27} {75} {47} {40} {43} {63} {29} {27} \\
+{86} {21} {40} {79} {55} {40} {36} {40} \\
+{71} {63} {65} {53} {74} {58} {75} {63}
+\end{lptview}
+\ExplSyntaxOn
+\int_step_inline:nn {8} {
+    \int_step_inline:nn {8} {
+        \str_set:Nx \l_tmpa_str {\LPTGetCellData{#1,##1}}
+        \tl_set:Nx \l_tmpa_tl {\int_eval:n {100 - \l_tmpa_str}}
+        \str_set:Nx \l_tmpb_str {\exp_not:N\cellcolor{black!\l_tmpa_str}
+            \exp_not:N\color{blue!\l_tmpa_tl}\l_tmpa_str}
+        \exp_args:Nno \LPTSetCell {#1,##1} {\l_tmpb_str}
+    }
+}
+\ExplSyntaxOff
+\LPTUseTable
+\end{tablesample}
+
+\subsection{Listing the name and shape of all tables}
+
+
+\begin{tablesample}
+\ExplSyntaxOn
+\clist_set:Nx \l_tmpa_clist {\LPTGetTableNames}
+\LPTNewTable{oOnXsQcb7f8j}{2}{cc}
+\LPTSetCurrentTable{oOnXsQcb7f8j}
+\LPTAddRow
+\begin{lptview}{1,:}
+{Table~Name} {Shape}
+\end{lptview}
+\clist_map_inline:Nn \l_tmpa_clist {
+    \LPTAddRow
+    \LPTSetCell{-1,1}{\texttt{#1}}
+    \LPTSetCurrentTable{#1}
+    \tl_set:Nx \l_tmpa_tl {\LPTGetTableShape}
+    \LPTSetCurrentTable{oOnXsQcb7f8j}
+    \tl_set:Nx \l_tmpb_tl {$(\tl_item:Nn \l_tmpa_tl {1}, 
+        \tl_item:Nn \l_tmpa_tl {2})$}
+    \exp_args:Nno \LPTSetCell {-1,2} {\l_tmpb_tl}
+}
+\LPTSetRowProp{1}{before~line=\toprule, after~line=\midrule}
+\LPTSetRowProp{-1}{after~line=\bottomrule}
+\LPTUseTable
+\ExplSyntaxOff
+\end{tablesample}
+
+\section{Test cases}
+
+\subsection*{Testing robustness of table modification}
+
+\begin{tablesample}
+\LPTNewTable{mnEfCpDkN3OL}{6}{|c|c|c|c|c|c|}[
+    default after line=\hline, 
+    nrows=6]
+\LPTSetCurrentTable{mnEfCpDkN3OL}
+\begin{lptfill}{}
+\verb|Lorem|
+\end{lptfill}
+\LPTSetRowProp{1}{before line=\hline}
+\LPTSetRowProp{3}{after line=\cline{1-2}\cline{5-6}}
+\begin{lptview}{3:4, 3:4}
+{ \multicolumn{2}{c|}{\multirow{2}{*}{Ipsum}} }[-2]\\
+{ \multicolumn{2}{c|}{} }[-2]
+\end{lptview}
+\LPTUseTable\par\vspace*{1em}
+\begin{lptview}{3:4, 3:4}
+{ \multicolumn{2}{c|}{Change} }[-2]\\
+{ \multicolumn{2}{c|}{Change} }[-2]
+\end{lptview}
+\LPTUseTable\par\vspace*{1em}
+\begin{lptview}{3:4, 3:4}
+{A} {B}\\
+{C} {D}
+\end{lptview}
+\LPTUseTable
+\end{tablesample}
+
+
+\begin{tablesample}
+\LPTNewTable{869CviFSrnEy}{6}{|c|c|c|c|c|c|}[
+    default after line=\hline, 
+    nrows=6]
+\LPTSetCurrentTable{869CviFSrnEy}
+\begin{lptfill}{}
+\verb|Lorem|
+\end{lptfill}
+\LPTSetRowProp{1}{before line=\hline}
+\LPTSetRowProp{3}{after line=\cline{1-2}\cline{5-6}}
+\LPTSetCell{3,3}[1,2]{\multicolumn{2}{c|}{\multirow{2}{*}{Ipsum}}}
+\LPTSetCell{4,3}[1,2]{\multicolumn{2}{c|}{}}
+\LPTUseTable\par\vspace*{1em}
+\LPTSetCell{3,3}[1,2]{\multicolumn{2}{c|}{Change}}
+\LPTSetCell{4,3}[1,2]{\multicolumn{2}{c|}{Change}}
+\LPTUseTable\par\vspace*{1em}
+Notice how \verb|Lorem| appears because we haven't changed
+the values of cell $(3,4)$ and $(4,4)$.\par
+\LPTSetCell{3,3}{A}
+\LPTSetCell{4,3}{C}
+\LPTUseTable\par\vspace*{1em}
+\end{tablesample}
+
+\subsection*{Testing other functions}
+
+\begin{tablesample}
+\LPTNewTable{kCYKq42SyQtf}{5}{|c|c|c|c|c|}[
+    default after line=\hline, 
+    nrows=6]
+\LPTSetCurrentTable{kCYKq42SyQtf}
+\LPTSetRowProp{1}{before line=\hline}
+\ExplSyntaxOn
+\int_step_inline:nn {6} {
+    \int_step_inline:nn {5} {
+        \tl_set:Nx \l_tmpa_tl {\LPTGetCellShape{#1,##1}}
+        \tl_set:Nx \l_tmpb_tl {shape=\tl_item:Nn \l_tmpa_tl {1},
+            \tl_item:Nn \l_tmpa_tl {2}}
+        \exp_args:Nno \LPTSetCell {#1,##1} {\l_tmpb_tl}
+    }
+}
+\ExplSyntaxOff
+\LPTUseTable\par\vspace*{1em}
+\ExplSyntaxOn
+\int_step_inline:nn {6} {
+    \int_step_inline:nn {5} {
+        \tl_set:Nx \l_tmpa_tl {\LPTGetCellParent{#1,##1}}
+        \tl_if_eq:NNTF \l_tmpa_tl \c_novalue_tl {
+            \LPTSetCell {#1,##1} {NoP}
+        }{
+            \LPTSetCell {#1,##1} {HasP}
+        }
+    }
+}
+\LPTUseTable
+\ExplSyntaxOff
+\end{tablesample}
+
+\end{documentation}
+
+\end{document}

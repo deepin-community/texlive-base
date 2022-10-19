@@ -1,0 +1,381 @@
+%!TEX program = arara
+% arara: xelatex: {shell: yes, synctex: yes}
+% arara: xelatex: {shell: yes, synctex: yes}
+% arara: makeindex: {style: tzplot} 
+% arara: xelatex: {shell: yes, synctex: yes}
+% arara: xelatex: {shell: yes, synctex: yes}
+
+%% 2021/03/20 v1.0.1
+\def\tmpdate{2021/03/20}
+\def\tmpversion{1.0.1}
+
+%------------------------------------------------------
+\def\myincludeonly{%
+\includeonly{%
+tzplot-doc-A-v\tmpversion,  % getting ready
+tzplot-doc-B-v\tmpversion,  % intuitive introductions (getting started)
+tzplot-doc-C-v\tmpversion,  % points, lines, and curves
+tzplot-doc-D-v\tmpversion,  % plotting graphs
+%tzplot-eco-v\tmpversion,    % economics
+}}
+%------------------------------------------------------
+
+\documentclass[a4paper,amsmath,chapter]{oblivoir}
+
+\gdef\clearforchapter{} % no clearpage for chapter
+
+\usepackage{tzplot}
+
+% ndh
+\usepackage{etoolbox}
+\input{tzplot-oblivoirpartstyle}
+
+\usepackage{fapapersize}
+\usefapapersize{*,*,30mm,*,28mm,*}
+%\setsecnumdepth{subsubsection}
+%\settocdepth{subsubsection}
+%\setlength\cftsubsubsectionindent{4.5em}
+
+\renewcommand*\contentsname{Contents}
+\renewcommand*\figurename{Figure}
+\renewcommand*\tablename{Table}
+\renewcommand*\abstractname{Abstract}
+\renewcommand*\indexname{Index}
+\renewcommand*\pagerefname{\kern-4pt}
+
+\hypersetup{pdfborder={0 0 0}} % to suppress the hyperlink red box
+
+%%====================================== (ndh)
+\SetHangulspace{1.025}{1}
+%%% part 
+\renewcommand*\prepartnum{\noindent\partnamefont\textsc{Part}\space}
+\renewcommand*\partnamenum{}
+\renewcommand*\postpartnum{}
+\renewcommand*\hparttitlehead{Part\space\thepart}
+\renewcommand*\beforepartskip{\vskip 0pt plus 2pt minus 0pt}
+\renewcommand*\midpartskip{\newline}
+\renewcommand*\afterpartskip{\vskip 2\onelineskip}
+
+%\makeatletter
+%\patchcmd\@part{\centering}{}{}{}
+%\makeatother
+\renewcommand*\obparttitlealignment{}
+
+\renewcommand\partnumfont{\bfseries\Large}
+\renewcommand\partnamefont{\partnumfont}
+\renewcommand\parttitlefont{\bfseries\LARGE}
+
+%%% for toc
+\setlength\cftpartnumwidth{5.2em}
+\setlength\cftchapternumwidth{1.8em}
+\setlength\cftsectionindent{1.8em}
+\setlength\cftsectionnumwidth{2.7em}
+\setlength\cftsubsectionindent{4.5em}
+\setlength\cftsubsectionnumwidth{3em}
+
+%%% chapter style
+\makechapterstyle{tzdoc}{%
+	\reparticle
+	\renewcommand\prechapternum{}
+	\renewcommand\postchapternum{}
+	\renewcommand\hchaptertitlehead{\thechapter}
+}
+%%================================
+
+%\usepackage{xparse}  %% oblivoir loads xparse
+\usepackage{tikz}
+
+
+\usepackage{makecell}
+\usepackage{multido}
+\usepackage[normalem]{ulem} % [normalem] to correct the pdf bookmark broken characters
+\usepackage{idxlayout}
+
+
+\usepackage{tcolorbox}
+\tcbuselibrary{minted,listings,breakable}
+\tcbset{%
+  listing engine=minted,breakable,
+  after={\par\vspace{.5\baselineskip}\noindent}
+}
+\tcbset{%
+  colback=yellow!5!white,
+  colframe=blue!30,
+  listing outside text,
+  righthand width=.3\linewidth,
+  center upper,
+  center lower,
+  sidebyside gap=5pt,
+  listing options={%
+    style=tcblatex,
+    keywordstyle=\color{blue},
+    commentstyle=\color{black!20!green},
+    morekeyword={
+      tzline,tzlines,tzdot,tzdots,
+      tznode,tznodes
+    },
+  }
+}
+
+\newtcblisting{tzdef}[1]{colback=blue!5!white,listing only,#1}
+\newtcblisting{tzsty}[1]{colback=green!5!white,listing only,#1}
+\newtcblisting{tztikz}[1]{colback=white,colframe=gray!15,listing only,#1}
+\newtcblisting{tzcode}[2][]{righthand width=\expandafter#2\linewidth,#1}
+
+\NewDocumentEnvironment{mytcblisting}{O{}}
+{ \medskip
+  \begin{tcblisting}{#1} 
+}
+{ \end{tcblisting} 
+  \medskip
+}
+
+
+\linespread{1}
+
+\newcommand*\Tikz{Ti\textit{k}Z}
+\let\TikZ\Tikz
+
+\newenvironment{keywords}{%
+	\par\vskip2pt
+	\noindent\hangfrom{\textsc{Keywords: }}%
+}
+
+
+%% index
+%\renewcommand\cmd[1]{\cmdprint{#1}}
+\ExplSyntaxOn
+\renewcommand \cmd [1]
+{
+  \texorpdfstring 
+    { \cmdprint {#1} }
+    { \textbackslash \cs_to_str:N #1 }
+}
+\ExplSyntaxOff
+
+\newcommand\xem[1]{\emph{#1}}
+\newcommand\xw[1]{\cmd{#1}}
+\newcommand\xttw[1]{\texttt{#1}}
+\newcommand\pkg[1]{\textsf{#1}}
+\newcommand\env[1]{\textsf{#1}}
+% index
+\newcommand\isw[1]{#1\index{#1}}                        % simple word in text/index
+\newcommand\ixsw[1]{\cmd{#1}\index{#1}}      % texttt in text, simple word in index
+\newcommand\iisw[1]{\textit{#1}\index{#1}}     % textit in text, simple word in index
+\newcommand\iscw[1]{\textsc{#1}\index{#1@\textsc{#1}}}  % textsc in text/index
+\newcommand\ixxw[1]{\texttt{#1}\index{#1@\texttt{#1}}}  % texttt in text/index
+\newcommand\ixw[1]{\textsf{#1}\index{#1@\textsf{#1}}}   % textsf in text/index
+\newcommand\ixttw[1]{\texttt{#1}\index{#1@\texttt{#1}}} % texttt in text/index
+\newcommand\ipkg[1]{\textsf{#1}\index{#1@\textsf{#1}}}
+\newcommand\ienv[1]{\textsf{#1}\index{#1@\textsf{#1}}}
+
+\makeatletter
+\newcommand{\icmd}[1]{\cmdprint{#1}%
+  \index{\expandafter\@gobble\string#1@\string\cmdprint{\string#1}}}
+\makeatother
+
+\makeindex
+
+
+%% lazy macros
+\newcommand\mysection[1]{\pagebreak[3]\section[\normalsize #1]{\Huge #1}}
+\NewDocumentCommand\mysubsection{sm}
+{\IfBooleanTF #1
+  {\pagebreak[3]\subsection{#2}}
+  {\pagebreak[3]\subsection{\protect\cmd{#2}}}
+}
+\NewDocumentCommand\mysubsubsection{sm}
+{\IfBooleanTF #1
+  {\pagebreak[3]\subsubsection{#2}}
+  {\pagebreak[3]\subsubsection{\protect\cmd{#2}}}
+}
+
+\NewExpandableDocumentCommand\xcol{mO{c|}m}
+  {\multicolumn{#1}{#2}{\ensuremath{#3}}}
+
+%% more lazy macros
+\newcommand\xbigskip[1]{\multido{}{#1}\bigskip}
+\newcommand\xmedskip[1]{\multido{}{#1}\medskip}
+\newcommand\xsmallskip[1]{\multido{}{#1}\smallskip}
+\def\hpara{\hangpara{1.52em}{1}}
+\def\listdivider{\leavevmode\smallskip\hrule width 1.5em\smallskip}
+
+\newcommand\remark{\bigskip\noindent \textbf{Remark: }}
+\newcommand\warning{\bigskip\noindent \textbf{Warning: }}
+\newcommand\threeways{\textsc{Three Ways}}
+
+
+%\parindent=0pt
+
+\title{\texttt{tzplot.sty} \\ Plot Graphs with \Tikz\ Abbreviations}\author{In-Sung Cho \\  \texttt{ischo <at> ktug.org}}
+\date{Economics, Kongju National University\\[3pt] 
+      \tmpdate\quad version \tmpversion}
+
+\def\tmpclearpage{\clearpage}
+
+\AtBeginDocument{\MakeShortVerb{\|}}
+
+%%% english based document: \flushbottom
+%%% korean document: \raggedbottom (by default in oblivoir)
+\AddToHook{env/document/before}{\flushbottom}
+%%% same as \AtBeginDocument
+\AddToHook{env/document/begin}{%
+	\chapterstyle{tzdoc}
+%	\pagestyle{headings}
+}
+
+\myincludeonly
+
+%=============================================================
+\begin{document}
+
+\frontmatter
+\maketitle
+
+\renewcommand{\abstracttextfont}{\normalfont\small\noindent\ignorespaces}
+\begin{abstract}
+This is a \LaTeX{} package that provides \Tikz\ based macros to make it easy to draw graphs.
+The macros provided in the \pkg{tzplot} package are just \emph{abbreviations} for \Tikz\ codes, which can be complicated, but using the package, hopefully, makes drawing easier, especially when drawing repeatedly. The macros were chosen and developed with an emphasis on drawing graphs in \emph{economics}.
+
+\begin{keywords}
+lines, dots, curves, axes, functions, 
+projection, ticks, intersections, tangent lines
+\end{keywords}
+\end{abstract}
+
+\tableofcontents*
+
+\mainmatter
+
+\include{tzplot-doc-A-v\tmpversion}
+
+\include{tzplot-doc-B-v\tmpversion}
+
+\include{tzplot-doc-C-v\tmpversion}
+
+\include{tzplot-doc-D-v\tmpversion}
+
+%\include{tzplot-eco-v\tmpversion}
+
+
+\chapter*{Version history}
+\addcontentsline{toc}{chapter}{Version history}
+
+\begin{itemize}
+\item v\tmpversion (\tmpdate)
+  \begin{itemize}
+  \item revised the document with typo corrections
+  \item added the option |<code.append>| to |\tzframe|, |\tzcircle|, and |\tzellipse|
+  \item added aliases: |\let\tzrectangle\tzframe| and |\let\tzoval\tzellipse|
+  \end{itemize}
+\item v1.0 (2021/02/28) uploaded to CTAN
+\item v0.999a (2021/02/27)
+  \begin{itemize}
+  \item writing document
+  \item some |\tz<...>AtBegin| and |\tz<...>AtEnd| not documented
+  \end{itemize}
+\item v0.999 (2021/02/24)
+  \begin{itemize}
+  \item fixed the title. ``Plot Graphs with \Tikz\ Abbreviations"
+  \item changed the default |\tzpathstyle| and |\tzlinkstyle| from `|--|' to `|to|' (no harm)
+  \item added |\tzpathlayer| and |\settzpathlayer|, for later use. (currently not used)
+  \item removed explanation of the option |<+or++>| in the document (considering to remove later)
+  \item changed the delimiter |<path style>| to |[<path style>]| in |\tzpath| and |\tzlink(s)| (critical change)
+  \item added |text opactiy=1| everywhere |fill opacity=.3| is used
+  \end{itemize}
+%%%\item v0.99j (2021/02/18)
+%%%  \begin{itemize}
+%%%  \item added |\tzplotcurve*| to show dots
+%%%  \item discarded |<code.append>| for |\tznode| and the like.
+%%%  \end{itemize}
+%%%\item v0.99i (2021/02/17)
+%%%  \begin{itemize}
+%%%  \item added |\tzaxes*| to set the current state as a |bounding box|
+%%%  \item redefined |\tztangentat| and |\tztangent|
+%%%    \begin{itemize}
+%%%    \item Now the tangent line is drawn over the domain, which is mandatory.
+%%%    \end{itemize}
+%%%  \item redefined |\tzsecantat| and |\tzsecant|
+%%%    \begin{itemize}
+%%%    \item Now the secant line is drawn over the domain, when the optional domain is given.
+%%%    \item If there is no domain option, it draw a secant line segment.
+%%%    \end{itemize}
+%%%  \end{itemize}
+%%%\item v0.99h (2021/02/12)
+%%%  \begin{itemize}
+%%%  \item redefined |\tztangentat| and |\tztangent|
+%%%    \begin{itemize}
+%%%    \item to resolve the discrepancy issue, when repeated
+%%%    \item if two mandatory arguments are the same, no redefine |(bbTop)| and |(bbBottom)|
+%%%    \item and clear for every start of |\tikzpicture|
+%%%    \end{itemize}
+%%%  \item redefined |\tzslopeat| and |\tzslope| to resolve the discrepancy issue
+%%%  \item redefined |\tzbezier+| 
+%%%        to make the last coordinate relative to the first
+%%%  \item redefined |\tzparabola+| 
+%%%        to make the last coordinate relative to the first
+%%%  \end{itemize}
+%%%\item v0.99g (2021/02/10)
+%%%  \begin{itemize}
+%%%  \item added |\tzbbox|
+%%%  \item added |\tzhelplines*| to make it serve as a bounding box
+%%%  \item added |\tzspy|
+%%%  \end{itemize}
+%%%\item v0.99f (2021/02/01)
+%%%  \begin{itemize}
+%%%  \item added |\settztangentlayer|, |\tzsecantlayer|, and |\tzslopelayer|
+%%%  \item corrected |\tzvfn|, |\tzhfn| for |<shift coor>|
+%%%  \item corrected |\tztangent|, |\tztangentat| to resolve `inconsistent' issue
+%%%  \item changed |\xdef| to |\def|
+%%%  \end{itemize}
+%%%\item v0.99e (2021/01/25)
+%%%  \begin{itemize}
+%%%  \item redefined |\tzsecant| to resolve \Tikz\ issue of path name with layer.
+%%%  \item added |\tzsnake|.
+%%%  \end{itemize}
+%%%\item v0.99d (2021/01/20)
+%%%  \begin{itemize}
+%%%  \item applied |<shift coor>| to (almost) all macros.
+%%%  \end{itemize}
+%%%\item v0.99c (2021/01/14)
+%%%  \begin{itemize}
+%%%  \item redesigned macros for |<shift coor>|
+%%%  \end{itemize}
+%%%\item v0.99b (2021/01/14)
+%%%  \begin{itemize}
+%%%  \item corrected y ticks position with ticks: |\tztikcs|, |\tzticksy|
+%%%  \item changed the order of arguments for consistency: |\tzplot|, |\tzplotcurve|
+%%%  \item redefined |\tzhfn| and |\tzvfn| to have a mandatory argument
+%%%  \item added |<shift coor>| to macros related to lines or curves: 
+%%%  \end{itemize}
+%%%\item v0.99a (2021/01/12)
+%%%  \begin{itemize}
+%%%  \item to do: |<shift coor>| for |\tzto|, |\tzfn|, |\tzline|, ...
+%%%  \item to do: |\tzconvexcomb| and |\tzconvexcombs|
+%%%  \end{itemize}
+\end{itemize}
+
+
+\chapter*{Acknowledgement}
+\addcontentsline{toc}{chapter}{Acknowledgement}
+
+I am grateful to Kangsoo Kim of KTUG (Korean TeX Users Group) who has written many packages including |oblivoir.cls| for helping to implement the idea of the semicolon version with |expl3|.
+
+\chapter*{References}
+\addcontentsline{toc}{chapter}{Reference}
+
+\hpara{}Casteleyn, Jean Pierre~(2016), ``Visual PSTricks," version 2.30.
+
+\hpara{}\uline{\hphantom{Casteleyn, Jean Pierre}}~(2018), ``Visual TikZ," version 0.66.
+
+\hpara{}Tantau, Till~(2020), ``\TikZ\ and PGF: Manual for version 3.1.8b," \url{http://sourceforge.net/projects/pgf}.
+
+\clearpage
+\printindex
+
+\end{document}
+
+%% ====================================================
+%% ====================================================
+%% ====================================================
+

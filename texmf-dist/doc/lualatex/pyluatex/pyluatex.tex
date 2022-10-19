@@ -1,0 +1,266 @@
+\documentclass{article}
+\usepackage{helvet}
+\usepackage{courier}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{parskip}
+\linespread{1.2}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage[listings,breakable,xparse]{tcolorbox}
+\tcbset{breakable,listing only,size=fbox,colframe=black!10,boxrule=3pt,colback=black!10}
+\NewTotalTCBox{\inlcode}{ v }{
+    on line,boxsep=0pt,left=0.5ex,right=0.5ex,top=0pt,bottom=0pt,
+    boxrule=0pt}{\lstinline[style=tcblatex]|#1|\rule[-.3\baselineskip]{0pt}{0.9\baselineskip}}
+\usepackage{url}
+\title{The \emph{pyluatex} package}
+\author{Tobias Enderle\\\url{https://github.com/tndrle/PyLuaTeX}}
+\date{v0.3.0 (2021/08/07)}
+\begin{document}
+\maketitle
+\raggedright
+
+\textbf{Execute Python code on the fly in your \LaTeX{} documents}
+
+PyLuaTeX allows you to execute Python code and to include the resulting output in your \LaTeX{} documents in a \textit{single compilation run}.
+\LaTeX{} documents must be compiled with Lua\LaTeX{} for this to work.
+
+
+\section{Example}
+\begin{enumerate}
+\item  \LaTeX{} document \inlcode|example.tex|\\[0.5ex]
+\textbf{Note:} PyLuaTeX starts Python 3 using the command \inlcode|python3| by default.
+If \inlcode|python3| does not start Python 3 on your system, find the correct command
+and replace \inlcode|\usepackage{pyluatex}| with \inlcode|\usepackage[executable={your python command}]{pyluatex}|.
+For example, \inlcode|\usepackage[executable=python.exe]{pyluatex}|.
+\begin{tcblisting}{breakable,listing only,
+    size=fbox,colframe=black!8,boxrule=3pt,colback=black!8}
+\documentclass{article}
+
+\usepackage{pyluatex}
+
+\begin{python}
+import math
+import random
+
+random.seed(0)
+
+greeting = 'Hello PyLuaTeX!'
+\end{python}
+
+\newcommand{\randint}[2]{\py{random.randint(#1, #2)}}
+
+\begin{document}
+\py{greeting}
+
+$\sqrt{371} = \py{math.sqrt(371)}$
+
+\randint{2}{5}
+\end{document}
+\end{tcblisting}
+\item  Compile using Lua\LaTeX{} (shell escape is required)
+\begin{tcblisting}{breakable,listing only,
+    size=fbox,colframe=black!8,boxrule=3pt,colback=black!8}
+lualatex -shell-escape example.tex
+\end{tcblisting}
+\end{enumerate}
+\textbf{Note:} Running \LaTeX{} with the shell escape option enabled allows arbitrary code to be
+executed. For this reason, it is recommended to compile trusted documents only.
+
+\subsection{Further Examples}
+The folder \inlcode|example| contains additional example documents:
+\begin{itemize}
+\item \inlcode|readme-example.tex|\\[0.5ex]
+  The example above
+\item \inlcode|sessions.tex|\\[0.5ex]
+  Demonstrates the use of different Python sessions in a document
+\item \inlcode|data-visualization.tex|\\[0.5ex]
+  Demonstrates the visualization of data using \textit{pgfplots} and \textit{pandas}
+\item \inlcode|matplotlib-external.tex|\\[0.5ex]
+  Demonstrates how \textit{matplotlib} plots can be generated and included in a document
+\item \inlcode|matplotlib-pgf.tex|\\[0.5ex]
+  Demonstrates how \textit{matplotlib} plots can be generated and included in a document using \textit{PGF}
+\item \inlcode|typesetting-example.tex|\\[0.5ex]
+  The code typesetting example below
+\item \inlcode|typesetting-listings.tex|\\[0.5ex]
+  A detailed example for typesetting code and output with the \textit{listings} package
+\item \inlcode|typesetting-minted.tex|\\[0.5ex]
+  A detailed example for typesetting code and output with the \textit{minted} package
+\end{itemize}
+For more intricate use cases have a look at our tests in the folder \inlcode|test|.
+
+\section{Installation}
+PyLuaTeX is available in TeX Live, MiKTeX, and on CTAN\footnote{\url{https://ctan.org/pkg/pyluatex}} as \inlcode|pyluatex|.
+
+To install PyLuaTeX in \textbf{TeX Live} run \inlcode|tlmgr install pyluatex|.\\[0.5ex]
+In \textbf{MiKTeX}, PyLuaTeX can be installed in the \textit{MiKTeX Console}.
+
+To install PyLuaTeX \textbf{manually}, do the following steps:
+\begin{enumerate}
+\item  Locate your local \textit{TEXMF} folder\\[0.5ex]
+The location of this folder may vary. Typical defaults for TeX Live are \inlcode|~/texmf| for Linux,
+\inlcode|~/Library/texmf| for macOS, and \inlcode|C:\Users\<user name>\texmf| for Windows.
+If you are lucky, the command \inlcode|kpsewhich -var-value=TEXMFHOME| tells you the location.
+For MiKTeX, the folder can be found and configured in the \textit{MiKTeX Console}.
+\item  Download the latest release\footnote{\url{https://github.com/tndrle/PyLuaTeX/releases/latest}} of PyLuaTeX
+\item  Put the downloaded files in the folder \inlcode|TEXMF/tex/latex/pyluatex| (where \inlcode|TEXMF| is the folder located in 1.)\\[0.5ex]
+The final folder structure must be
+\begin{tcblisting}{breakable,listing only,
+    size=fbox,colframe=black!8,boxrule=3pt,colback=black!8}
+TEXMF/tex/latex/pyluatex/
+|-- pyluatex-interpreter.py
+|-- pyluatex-json.lua
+|-- pyluatex.lua
+|-- pyluatex.sty
+|-- ...
+\end{tcblisting}
+\end{enumerate}
+\section{Reference}
+PyLuaTeX offers a simple set of options, macros and environments.
+
+Most macros and environments are available as \textit{quiet} versions as well.
+They have the suffix \inlcode|q| in their name, e.g. \inlcode|\pycq| or \inlcode|\pyfileq|.
+The quiet versions suppress any output, even if the Python code explicitly calls \inlcode|print()|.
+This is helpful if you want to process code or output further and do your own typesetting.
+For an example, see the Typesetting Code section.
+
+\subsection{Package Options}
+\begin{itemize}
+\item \inlcode|verbose|\\[0.5ex]
+  If this option is enabled, Python input and output is written to the log file.\\[0.5ex]
+  \textit{Example:} \inlcode|\usepackage[verbose]{pyluatex}|
+\item \inlcode|executable|\\[0.5ex]
+  Specifies the path to the Python executable. (default: \inlcode|python3|)\\[0.5ex]
+  \textit{Example:} \inlcode|\usepackage[executable=/usr/local/bin/python3]{pyluatex}|
+\end{itemize}
+\subsection{Macros}
+\begin{itemize}
+\item \inlcode|\py{code}|\\[0.5ex]
+  Executes (object-like) \inlcode|code| and writes its string representation to the document.\\[0.5ex]
+  \textit{Example:} \inlcode|\py{3 + 7}|
+\item \inlcode|\pyq{code}|\\[0.5ex]
+  Executes (object-like) \inlcode|code|. Any output is suppressed.\\[0.5ex]
+  \textit{Example:} \inlcode|\pyq{3 + 7}|
+\item \inlcode|\pyc{code}|\\[0.5ex]
+  Executes \inlcode|code|. Output (e.g. from a call to \inlcode|print()|) is written to the document.\\[0.5ex]
+  \textit{Examples:} \inlcode|\pyc{x = 5}|, \inlcode|\pyc{print('hello')}|
+\item \inlcode|\pycq{code}|\\[0.5ex]
+  Executes \inlcode|code|. Any output is suppressed.\\[0.5ex]
+  \textit{Example:} \inlcode|\pycq{x = 5}|
+\item \inlcode|\pyfile{path}|\\[0.5ex]
+  Executes the Python file specified by \inlcode|path|. Output (e.g. from a call to \inlcode|print()|) is written to the document.\\[0.5ex]
+  \textit{Example:} \inlcode|\pyfile{main.py}|
+\item \inlcode|\pyfileq{path}|\\[0.5ex]
+  Executes the Python file specified by \inlcode|path|. Any output is suppressed.\\[0.5ex]
+  \textit{Example:} \inlcode|\pyfileq{main.py}|
+\item \inlcode|\pysession{session}|\\[0.5ex]
+  Selects \inlcode|session| as Python session for subsequent Python code.\\[0.5ex]
+  The session that is active at the beginning is \inlcode|default|.\\[0.5ex]
+  \textit{Example:} \inlcode|\pysession{main}|
+\end{itemize}
+\subsection{Environments}
+\begin{itemize}
+\item \inlcode|python|\\[0.5ex]
+  Executes the provided block of Python code.\\[0.5ex]
+  The environment handles characters like \inlcode|_|, \inlcode|#|, \inlcode|%|, \inlcode|\|, etc.\\[0.5ex]
+  Code on the same line as \inlcode|\begin{python}| is ignored, i.e., code must start on the next line.\\[0.5ex]
+  If leading spaces are present they are gobbled automatically up to the first level of indentation.\\[0.5ex]
+  \textit{Example:}
+  \begin{tcblisting}{breakable,listing only,
+    size=fbox,colframe=black!8,boxrule=3pt,colback=black!8}
+\begin{python}
+    x = 'Hello PyLuaTeX'
+    print(x)
+\end{python}
+\end{tcblisting}
+\item \inlcode|pythonq|\\[0.5ex]
+  Same as the \inlcode|python| environment, but any output is suppressed.
+\end{itemize}
+You can create your own environments based on the \inlcode|python| and \inlcode|pythonq| environments.
+However, since they are verbatim environments, you have to use the macro \inlcode|\PyLTVerbatimEnv|
+in your environment definition, e.g.
+\begin{tcblisting}{breakable,listing only,
+    size=fbox,colframe=black!8,boxrule=3pt,colback=black!8}
+\newenvironment{custompy}
+{\PyLTVerbatimEnv\begin{python}}
+{\end{python}}
+\end{tcblisting}
+
+\section{Requirements}
+\begin{itemize}
+\item Lua\LaTeX{}
+\item Python 3
+\item Linux, macOS or Windows
+\end{itemize}
+Our automated tests currently use TeX Live 2021 and Python 3.7+ on
+Ubuntu 20.04, macOS Catalina 10.15 and Windows Server 2019.
+
+\section{Typesetting Code}
+Sometimes, in addition to having Python code executed and the output written to your document, you also want to show the code itself in your document.
+PyLuaTeX does not offer any macros or environments that directly typeset code.
+However, PyLuaTeX has a \textbf{code and output buffer} which you can use to create your own typesetting functionality.
+This provides a lot of flexibility for your typesetting.
+
+After a PyLuaTeX macro or environment has been executed, the corresponding Python code and output can be accessed via the Lua functions \inlcode|pyluatex.get_last_code()| and \inlcode|pyluatex.get_last_output()|, respectively.
+Both functions return a Lua table\footnote{\url{https://www.lua.org/pil/2.5.html}} (basically an array) where each table item corresponds to a line of code or output.
+
+A simple example for typesetting code and output using the \textit{listings} package would be:
+\begin{tcblisting}{breakable,listing only,
+    size=fbox,colframe=black!8,boxrule=3pt,colback=black!8}
+\documentclass{article}
+
+\usepackage{pyluatex}
+\usepackage{listings}
+\usepackage{luacode}
+
+\begin{luacode}
+function pytypeset()
+    tex.print("\\begin{lstlisting}[language=Python]")
+    tex.print(pyluatex.get_last_code())
+    tex.print("\\end{lstlisting}")
+    tex.print("") -- ensure newline
+end
+\end{luacode}
+
+\newcommand*{\pytypeset}{%
+    \noindent\textbf{Input:}
+    \directlua{pytypeset()}
+    \textbf{Output:}
+    \begin{center}
+        \directlua{tex.print(pyluatex.get_last_output())}
+    \end{center}
+}
+
+\begin{document}
+
+\begin{pythonq}
+greeting = 'Hello PyLuaTeX!'
+print(greeting)
+\end{pythonq}
+\pytypeset
+
+\end{document}
+\end{tcblisting}
+
+Notice that we use the \inlcode|pythonq| environment, which suppresses any output.
+After that, the custom macro \inlcode|\pytypeset| is responsible for typesetting the code and its output.
+
+Using a different code listings package like \textit{minted}, or typesetting inline code is very easy.
+You can also define your own environments that combine Python code and typesetting.
+See the \inlcode|typesetting-*.tex| examples in the \inlcode|example| folder.
+
+\section{How It Works}
+PyLuaTeX runs a Python \inlcode|InteractiveInterpreter|\footnote{\url{https://docs.python.org/3/library/code.html#code.InteractiveInterpreter}} (actually several if you use different sessions) in the background for on the fly code execution.
+Python code from your \LaTeX{} file is sent to the background interpreter through a TCP socket.
+This approach allows your Python code to be executed and the output to be integrated in your \LaTeX{} file in a single compilation run.
+No additional processing steps are needed.
+No intermediate files have to be written.
+No placeholders have to be inserted.
+
+\section{License}
+LPPL 1.3c\footnote{\url{http://www.latex-project.org/lppl.txt}} for \LaTeX{} code and
+MIT license\footnote{\url{https://opensource.org/licenses/MIT}} for Python and Lua code.
+
+We use the great json.lua\footnote{\url{https://github.com/rxi/json.lua}} library under the terms
+of the MIT license\footnote{\url{https://opensource.org/licenses/MIT}}.
+\end{document}
