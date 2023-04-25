@@ -1,7 +1,7 @@
 divert(-1)
-   svg.m4                       Initialization for SVG output.
+   svg.m4                       Initialization for svg output.
 
-* Circuit_macros Version 9.6, copyright (c) 2021 J. D. Aplevich under      *
+* Circuit_macros Version 10.1, copyright (c) 2022 J. D. Aplevich under     *
 * the LaTeX Project Public Licence in file Licence.txt. The files of       *
 * this distribution may be redistributed or modified provided that this    *
 * copyright notice is included and provided that modifications are clearly *
@@ -48,13 +48,15 @@ divert(-1)
                             text)
                             Note: nominal ht = text height in drawing units,
                               e.g. 12bp__ for 12pt text
-                              actual height = nominal ht * dptextratio '
-define(`svg_font',`ifinstr(`$2',:,
+                            actual height = nominal ht * dptextratio '
+define(`svg_font',`m4thtmp=textht; ifinstr(`$2',:,
    `stacksplit_(`m4svgf',`$2',:)
-    ifelse(m4svgf,,,dptextratio = m4svgf; )popdef(`m4svgf')dnl
-    ifelse(m4svgf,,,`textht=(m4svgf)*dptextratio; ')undefine(`m4svgf')',
-   `dptextratio=svgfontratio(`$1'); dnl
-    ifelse(`$2',,,textht=(`$2')*dptextratio; )')dnl
+    ifelse(m4svgf,,,`ifelse(`$4',,,`m4trtmp=dptextratio;') dnl
+      dptextratio = m4svgf;')popdef(`m4svgf')dnl
+    ifelse(m4svgf,,,`ifelse(`$4',,,`m4thtmp=textht;') dnl
+      textht=(m4svgf)*dptextratio; ')undefine(`m4svgf')',
+   `ifelse(`$4',,,`m4trtmp=dptextratio;') dptextratio=svgfontratio(`$1'); dnl
+    ifelse(`$2',,,m4thtmp=textht; textht=(`$2')*dptextratio; )')dnl
   ifelse(`$3',,,`textoffset=`$3'; ')
 command "<g patsubst(ifelse(`$1',,,
 index(`$1',font),0,`$1',
@@ -62,7 +64,7 @@ index(`$1',style),0,`$1',
 style="font-family:`$1'")
 ,",\\")>"
   `$4'
-  ifelse(`$4',,,`command "</g>"')')
+  ifelse(`$4',,,`command "</g>"; textht=m4thtmp; dptextratio=m4trtmp;')')
 
 `e.g. svg_font(Times) 
       svg_font(Times,12bp__:0.66) 
@@ -198,6 +200,7 @@ define(`svg_gt',`svg_symbol(&`#'62;)')
 define(`svg_leq',`svg_symbol(&`#'8804;)')
 define(`svg_geq',`svg_symbol(&`#'8805;)')
 define(`svg_prime',`svg_symbol(&`#'8242;)')
+define(`svg_grave',`svg_symbol(&`#'96;)')
 define(`svg_ensp',`svg_symbol(&`#'8194;)')
 define(`svg_emsp',`svg_symbol(&`#'8195;)')
 define(`svg_thinsp',`svg_symbol(&`#'8201;)')
@@ -206,6 +209,7 @@ define(`svg_pound',`svg_symbol(&`#'35;)')
 define(`svg_circ',`svg_symbol(&`#'710;)')
 define(`svg_deg',`svg_symbol(&`#'176;)')
 define(`svg_equiv',`svg_symbol(&`#'8801;)')
+define(`svg_tilde',`svg_symbol(&`#'126;)')
 ')
 
 define(`svgcolor',`sprintf("rgb(%g,%g,%g)",\
@@ -241,7 +245,7 @@ define(`svg_rot_init',`
   | sed -e \"s/x=\\"\([0-9.]*\)\\" y=\\"\([0-9.]*\)\\".*/\1 \2/\" dnl
   > _file_.cor" )
  if retcode != 0 then { print "
-   Awk failure
+   Awk failure.
    Awk and sed are required by svg_rot to rotate svg text.
    " } 
  svgrot_k = 0
@@ -253,7 +257,7 @@ define(`svg_rot_init',`
  svgrot_i = 0
 
  ifdef(`svg_rot_',,`
-#                          `svg_rot(degrees,"text" [at position]) 
+#                          `svg_rot(degrees,"text",[at position]) 
 #                           Rotate text degrees ccw
 #                           Requires svg_rot_init(filename)
 #                           which uses both awk and sed.
@@ -262,9 +266,11 @@ define(`svg_rot_init',`
   if "$`'1" != "" then { svg_rang = -($`'1) } else { svg_rang = -90 }
   if svgrot_k != 0 then { svgrot_i +=1
     command sprintf("<g transform=\"rotate(%g %g %g)\">",svg_rang,\
-      svg_rx[svgrot_i],svg_ry[svgrot_i]) }\
+      svg_rx[svgrot_i]+textht/2*sind(svg_rang),\
+      svg_ry[svgrot_i]+textht/2*(1-cosd(svg_rang))) }\
   else { command sprintf("<g transform=\"rotate(%g)\">",svg_rang) }
-$`'2
+  if "$`'3"=="" then { $`'2 } \
+  else { $`'2 $`'3 - (sind(svg_rang),(cosd(svg_rang)-1))*textht/2 }
  command "</g>" } }
  define(`svg_rot_')
  ')

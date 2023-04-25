@@ -6,7 +6,7 @@
 %%
 %% scrkernel-version.dtx  (with options: `class,article,long')
 %% 
-%% Copyright (c) 1994-2019 Markus Kohm [komascript at gmx info]
+%% Copyright (c) 1994-2022 Markus Kohm [komascript at gmx info]
 %% 
 %% This file was generated from file(s) of the KOMA-Script bundle.
 %% ---------------------------------------------------------------
@@ -21,7 +21,7 @@
 %% `lppl.txt' or `lppl-de.txt' for additional information.
 %% 
 %% The list of files belonging to KOMA-Script distribution is given in
-%% the file `manifest.txt'.  See also `lppl.txt' or `lppl-de.txt' for
+%% the file `MANIFEST.md'.  See also `lppl.txt' or `lppl-de.txt' for
 %% additional information.
 %% 
 %% If this file is a beta version, you may not be allowed to distribute
@@ -38,7 +38,7 @@
 %% find a complete unmodified copy of LaTeX2e at
 %% <http://mirror.ctan.org/tex-archive/macros/latex/base/>.
 %% 
-%%% From File: $Id: scrkernel-version.dtx 3609 2021-06-25 08:18:08Z kohm $
+%%% From File: $Id: scrkernel-version.dtx 3962 2022-10-12 06:33:06Z kohm $
 \begingroup
   \catcode`\@11\relax
   \ifx\KOMAScriptVersion\undefined
@@ -60,7 +60,7 @@
       \fi
     }
   \fi
-  \@CheckKOMAScriptVersion{2021/06/25 v3.34 KOMA-Script}%
+  \@CheckKOMAScriptVersion{2022/10/12 v3.38 KOMA-Script}%
 \endgroup
 \providecommand*{\scr@clsextension}{\@clsextension}
 \AtBeginDocument{%
@@ -77,7 +77,7 @@
 \newcommand*{\KOMALongClassFileName}{\KOMALongClassName.\@clsextension}
 \edef\KOMALongClassFileName{\KOMALongClassFileName}
 \ProvidesClass{\KOMALongClassName}[%
-  2021/06/25 v3.34 KOMA-Script
+  2022/10/12 v3.38 KOMA-Script
   document class (\ClassName)%
 ]
 \let\ClassName\relax

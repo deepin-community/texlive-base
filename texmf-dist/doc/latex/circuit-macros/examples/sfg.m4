@@ -14,7 +14,7 @@ T:[
      sfgline(,K/M)
  DDY2: sfgnode(,\ddot{y}_2,sfgbelow rjust)
      sfgline(,s^{-1})
- DY2: sfgnode(,`\dot{y}_2=x_2',sfgbelow ljust)
+ DY2: sfgnode(,\d`'ot{y}_2=x_2,sfgbelow ljust) dnl dot is an m4 macro
      sfgline(,s^{-1})
  Y2: sfgnode(,y_2=x_1,sfgbelow ljust)
  
@@ -23,6 +23,7 @@ T:[
    sfgarc(from Y2 to DDY2,-K/M,above,ccw,sf)
    sfgarc(from Y2 to Y1,1,sfgabove,,sf)
  ]
+#showbox_(,"T")
 
 # Graph 2
 B: [
@@ -39,6 +40,7 @@ B: [
      sfgself(at X1,R,\;a_{11},ljust,cw,1.5)
      sfgself(at X2,-90,a_{22},sfgbelow)
  ] with .w at T.e + (linewid/2,-linewid/4)
+#showbox_(,"B")
 
 # Graph 3
 G3: [#sfg_init( 0.85,0.35/2 )   # change node spacing and increase node size
@@ -50,6 +52,7 @@ G3: [#sfg_init( 0.85,0.35/2 )   # change node spacing and increase node size
  sfgarc(from N2 to N1,F_2,sfgabove,ccw,)
  sfgarc(from N3 to N1,F_3,sfgbelow,ccw,1.4)
 ] with .nw at T.sw
+#showbox_(,"G3")
 
 A: [#sfg_init( 0.75,0.15 )
   sfg_wid = 0.75
@@ -65,6 +68,7 @@ A: [#sfg_init( 0.75,0.15 )
    sfgself(at R,-90,e,sfgabove,cw)
    arrow right linewid*2/3 from R.e
  ] with .w at G3.e+(linewid/2,0)
+#showbox_(,"A")
 
 G4: [sfg_init( 2.0,0.25/2 )   # change node spacing and increase node size
  s1 = 0.9
@@ -85,6 +89,33 @@ G4: [sfg_init( 2.0,0.25/2 )   # change node spacing and increase node size
  sfgline(right_ sfg_wid/2,\nu+3\lambda,below,->)
  {"$\ldots$" wid 0.3 ljust}
  ] with .nw at G3.sw+(0,-0.15)
+#showbox_(,"G4")
+
+# https://tex.stackexchange.com/questions/637455/tikz-how-to-set-exact-position-of-node
+G5: [sfg_init( 1.75,0.25/2 )   # change node spacing and increase node size
+ Dstar: sfgnode(,*)
+ D0: sfgnode(at Dstar+(2,0),\diamond_0)
+ sfgline(,`1-r_{x{-}1,x}-q^i_{x{-}1,x}',,->)
+ Ddots: sfgnode(,\cdots)
+ sfgline(,`1-r_{x{-}4,x}-q^i_{x{-}4,x}',,->)
+ D5: sfgnode(,\diamond_5)
+ DD: sfgnode(at D0+(0,-1.0),\dagger)
+ sfgself(at Dstar,L,,,,0.5)
+ "$`1-i_x-q^a_x'$" wid 45bp__ at Dstar + (-0.3,0.25)
+ sfgself(at DD,D,1\mathstrut,above_,,0.5)
+ sfgself(at D5,R,,,,0.5)
+ "$`1-q^i_x-r_x'$" wid 47bp__ at D5 + (0.3,0.25)
+ sfgarc(from D0 to Dstar ->,`r_{x,x}\mathstrut',below_,ccw)
+ sfgarc(from Dstar to D0 ->,`i_x\mathstrut',above_,ccw)
+ sfgarc(from Dstar to DD ->,`q^a_x\mathstrut',above_ ljust_,ccw)
+ sfgline(from D0 to DD,`\;q^i_{x,x}',ljust,->)
+ sfgarc(from Ddots to Dstar,`r_{j,x}\mathstrut',below_,ccw,,->)
+ sfgarc(from Ddots to DD ->,`q^i_{x{-}j,x}\mathstrut',above_ rjust_,)
+ sfgarc(from D5 to Dstar ->,`r_x\mathstrut',below_,ccw)
+ sfgarc(from D5 to DD ->,`q^i_x\mathstrut',above_ rjust_,)
+ ] with .nw at G4.sw+(0,-0.15)
+#howbox_(,"G5")
+
  move from (T.w,G4.s)-(7bp__,6bp__) to B.ne+(15bp__,6bp__)
 ]
 #showbox_

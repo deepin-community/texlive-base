@@ -53,6 +53,8 @@ and the derived files           tikzmark.ins,
                                 tikzmark.pdf,
                                 tikzlibrarytikzmark.code.tex, and
                                 tikzmarklibrarylistings.code.tex
+                                tikzmarklibraryhighlighting.code.tex
+                                tikzmarklibraryams.code.tex
 
 \endpostamble
 \usedir{tex/latex/tikzmark}
@@ -62,9 +64,12 @@ and the derived files           tikzmark.ins,
 \generate{
   \file{tikzmarklibrarylistings.code.tex}{\from{\jobname.dtx}{listings}}
 }
-%\generate{
-% \file{tikzmarklibraryhighlight.code.tex}{\from{\jobname.dtx}{highlight}}
-%}
+\generate{
+  \file{tikzmarklibraryhighlighting.code.tex}{\from{\jobname.dtx}{highlighting}}
+}
+\generate{
+  \file{tikzmarklibraryams.code.tex}{\from{\jobname.dtx}{ams}}
+}
 %</install>
 %<install>\endbatchfile
 %<*internal>
@@ -91,8 +96,8 @@ and the derived files           tikzmark.ins,
 %\usepackage{morefloats}
 \usepackage{listings}
 \usepackage{tikz}
-\usetikzlibrary{fit,arrows,tikzmark,shadows,decorations.pathreplacing,calc}
-\usetikzmarklibrary{listings}
+\usetikzlibrary{fit,arrows.meta,tikzmark,shadows,decorations.pathreplacing,calc}
+\usetikzmarklibrary{ams,listings,highlighting}
 
 %\usepackage[numbered]{hypdoc}
 \definecolor{lstbgcolor}{rgb}{0.9,0.9,0.9} 
@@ -206,7 +211,7 @@ and the derived files           tikzmark.ins,
 %</driver>
 % \fi
 %
-% \CheckSum{1178}
+% \CheckSum{1891}
 %
 % \CharacterTable
 %  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
@@ -235,8 +240,16 @@ and the derived files           tikzmark.ins,
 % \changes{1.7}{2019/05/07}{Added conditions to test if a tikzmark is on a particular page}
 % \changes{1.8}{2019/10/04}{Fixed some bugs with subnode and tikzmarknode inside maths}
 % \changes{1.10}{2021/02/16}{Tikzmarknode is now prefix and suffix aware, and added a test to see if a picture id has been saved to the aux file for times when pictures are thrown away, eg in AMS's text command}
+% \changes{1.11}{2021/08/16}{Tikzmark inside a tikzpicture was not applying any surrounding transformation before saving the coordinates.  Code for adjusting a pic's location based on an internal coordinate.}
+% \changes{1.12}{2021/08/24}{Experimental library for creating pseudo-nodes around AMSMath equation alignment boxes.}
+% \changes{1.14}{2022/01/28}{Reimplementing the highlighting code using LaTeX3 hooks.}
+% \changes{1.15}{2022/08/24}{Improvements to highlighting code}
 %
 % \DoNotIndex{\newcommand,\newenvironment}
+% \pdfstringdefDisableCommands{%
+%  \def\\{}%
+%  \def\url#1{<#1>}%
+% }
 %
 % \GetFileInfo{tikzlibrarytikzmark.code.tex}
 % \providecommand*{\url}{\texttt}
@@ -382,6 +395,8 @@ and the derived files           tikzmark.ins,
 %
 % This package defines the following commands and usable stuff.
 %
+% \subsection{Core Commands}
+%
 % \begin{enumerate}
 % \item \Verb+\tikzmark+\oarg{drawing command}\marg{name}
 %
@@ -459,7 +474,7 @@ and the derived files           tikzmark.ins,
 % In such a situation, when defining nodes then the last one ``wins'' in that each node remembers the id of the last processed picture.
 % However, only the one that is actually used has its location remembered on the page (since the others don't have a position).
 % This can lead to the situation whereby a node becomes disassociated from its picture and so using it for later reference fails.
-% This key tries to get around that situation by checking the \Verb+aux+ file to see if the current picture was actually typeset last time (by checking for the presence of the remembered location) and if it find that it wasn't, it quietly appends the string \Verb+discard-+ to each node name.
+% This key tries to get around that situation by checking the \Verb+aux+ file to see if the current picture was actually typeset last time (by checking for the presence of the remembered location) and if it finds that it wasn't, it quietly appends the string \Verb+discard-+ to each node name.
 % The idea being that the version of the picture that is actually typeset will not have this happen and so its nodes ``survive''.
 %
 % \item \Verb+/tikz/maybe define node=#1+
@@ -504,7 +519,35 @@ and the derived files           tikzmark.ins,
 %
 % This was inspired by the question \href{http://tex.stackexchange.com/q/302517/86}{using tikzmark subnode with overlays beamer} on TeX-SX.
 %
-% \item \Verb+\subnode[options]{name}{content}+
+% \end{enumerate}
+%
+% \subsection{Pic and Scope Positioning}
+%
+% \Verb+scope anchor+, \Verb+pic anchor+, and \Verb+surround pic+.
+%
+% These keys can be used to enable advanced positioning of \Verb+scope+s and \Verb+pic+s.
+% The standard positioning of a \Verb+pic+ places its internal origin at the location specified on the \Verb!\pic! command.
+% This is more limited than what is available to a \Verb+node+ whereby any of the defined anchors can be placed at the given position.
+% The key \Verb+pic anchor+ allows a little more flexibility to \Verb+pic+ positioning by allowing a \Verb+pic anchor+ to be defined and used as the point to place at the given position.
+%
+% When invoking the \Verb!pic! the key \Verb!pic anchor={coordinate}! can be used to specify a point inside the \Verb!pic! to use as the anchor.
+% This point is evaluated inside the \Verb!pic! so if using a node then the node name should be specified as if inside the \Verb!pic!.
+%
+% The node positioning syntax, things like \Verb!below! and \Verb!below=5pt of!, sets the anchor of the following node.
+% Using \Verb!pic anchor! without a coordinate uses this anchor on the bounding box of the pic when positioning the pic.
+%
+% Internally, this works by adjusting the location of the \Verb!pic!'s surrounding scope.
+% So the code can equally be used on \Verb!scope!s.
+% For a \Verb!scope!, use the \Verb!scope anchor! version on the scope directly.
+% The keys \Verb!name! and \Verb!anchor! can be used on the scope as if on a \Verb!node! with the same effect on the positioning.
+%
+% The key \Verb!surround pic! saves the bounding box of the pic as if it were the boundary of a rectangular node, using the name of the pic as the name of the node.
+%
+% This was inspired by the questions \href{https://tex.stackexchange.com/q/185279/86}{Anchoring TiKZ pics} and \href{https://tex.stackexchange.com/q/567245/86}{Reposition Tikz Scope After Size Known}.
+%
+% \subsection{Subnodes}
+%
+% \Verb+\subnode[options]{name}{content}+
 %
 % This produces a pseudo-node named \Verb+name+ around the \Verb+content+.
 % The design purpose of this is to create a ``subnode'' inside a TikZ node.
@@ -525,9 +568,12 @@ and the derived files           tikzmark.ins,
 % The simplest way to turn a pseudo-node into a more normal node is to use the \Verb+fit+ library.
 % Using the above example, \Verb+\node[fit=(a),draw,inner sep=0pt] {};+ would draw a rectangle around the word \Verb+sub+ of exactly the same size as would appear had a normal node been created.
 %
-% Using a sneaky trick with \Verb+\mathchoice+, \Verb+subnode+ works inside a math environment.  The spacing either side might not be quite right as although it detects the math style it doesn't got beyond that.
+% Using a sneaky trick with \Verb+\mathchoice+, \Verb+subnode+ works inside a math environment.
+% The spacing either side might not be quite right as although it detects the math style it doesn't got beyond that.
 %
-% \item \emph{Node saving}
+% Note that because of the way that this works, the outer \Verb!tikzpicture! must have the \Verb!remember picture! option set.
+%
+% \subsection{Node saving}
 %
 % The node saving system takes the information stored about a node and saves it for later use.
 % That later use can be in the same document, in which case it should be saved just to the memory of the current TeX process, or it can be used earlier in the same document or another document altogether (in particular, if the nodes are defined in a \Verb+tikzpicture+ that has been externalised, this can be used to import the node information into the main file) in which cases the node data is saved to a file.
@@ -539,9 +585,18 @@ and the derived files           tikzmark.ins,
 % The keys for working with saving and restoring nodes are as follows.
 %
 % \begin{itemize}
-% \item \Verb+save node+
+% \item \Verb+save node+,  \Verb+save node=<name>+
 %
-% This is the key to put on a node that is to be saved.
+% This is the key that indicates a node to be saved.
+% The version with no argument is to be used directly in the keys for a node and it saves that node.
+% With an argument then it saves a node that has been declared somewhere in the current tikz picture (it may not always be convenient to issue the \Verb+save node+ key directly on the node itself).
+% Since the list is saved up to the end of the picture, this can be invoked before the node is defined.
+%
+% \item \Verb+\SaveNode[group name]{name}+
+%
+% This command is for outside a tikzpicture and saves the named node directly.
+% The optional argument is a group name for saving to a group.
+% If this is not specified then the node is saved to a file.
 %
 % \item \Verb+set node group=<name>+
 %
@@ -579,21 +634,17 @@ and the derived files           tikzmark.ins,
 % If there is a transformation in place on the containing node, this key applies that transformation to all the nodes in the inner picture.
 %
 % \end{itemize}
-% \end{enumerate}
 %
-% \section{Examples and Extras}
+% \section{Examples}
 %
 % The \Verb+\tikzmark+ command has been used in numerous answers on \href{http://tex.stackexchange.com}{TeX-SX}.
-% The plan is to gather some of these into extra libraries which can be loaded via \Verb+\usetikzmarklibrary+.
-%
-% At present, this is the code listings library (which works with the \Verb+listings+ package).
-% One that is in development (as it has featured much on the TeX-SX website) is highlighting, however this is not so straightforward to implement so is still under development.
 %
 % \subsection{Basic Examples}
 %
 % A simple example of the \Verb+\tikzmark+ macro is the following.
 %
 % \begin{example}
+% \tikzset{tikzmark prefix=ex1-}
 % \[
 %  \tikzmark{a} e^{i \pi/2} = i
 % \]
@@ -602,6 +653,7 @@ and the derived files           tikzmark.ins,
 % \end{example}
 %
 % \begin{example}
+% \tikzset{tikzmark prefix=ex2-}
 % \begin{itemize}
 % \item A first item,\tikzmark{b}
 % \item A second item,\tikzmark{c}
@@ -613,6 +665,7 @@ and the derived files           tikzmark.ins,
 % \end{example}
 %
 % \begin{example}
+% \tikzset{tikzmark prefix=ex3-}
 % \begin{tikzpicture}[remember picture]
 % \node (a) at (0,0) {This has a \subnode{sub}{subnode} in it};
 % \draw[->] (0,-1) to[bend right] (sub);
@@ -622,7 +675,7 @@ and the derived files           tikzmark.ins,
 % An example using \Verb+\tikzmark+ inside a \Verb+tikzpicture+
 %
 % \begin{example}
-% \tikzset{tikzmark prefix=ex3-}
+% \tikzset{tikzmark prefix=ex4-}
 % \begin{tikzpicture}[remember picture,overlay]
 % \draw[->,line width=1mm,cyan] (pic cs:a) to[bend left] (pic cs:b);
 % \end{tikzpicture}
@@ -638,6 +691,7 @@ and the derived files           tikzmark.ins,
 % The \Verb+\tikmarknode+ puts a node around some text, which can be referred to later, and adds a \Verb+\tikzmark+ at its origin.
 %
 % \begin{example}
+% \tikzset{tikzmark prefix=ex5-}
 % Putting a node around \tikzmarknode{txt}{some text} means we can connect text together, including in maths:
 % \[
 % \tikzmarknode{a}{\sum_{k=1}^n} k^{\tikzmarknode{b}{2}}
@@ -719,6 +773,13 @@ and the derived files           tikzmark.ins,
 % \fbox{\IfFileExists{tikzrefextnodes.pdf}{\includegraphics{tikzrefextnodes}}{}}
 % \end{center}
 %
+% \section{Additional Libraries}
+%
+% Some of the more ambitious uses of \Verb!\tikzmark! involve a fair bit of extra code and so are worth gathering in to extra libraries of their own.
+% These can be loaded via \Verb+\usetikzmarklibrary+.
+%
+% At present, there are three libraries: one for code listings which works with the \Verb+listings+ package, one for AMSMath equations, and one for highlighting.
+%
 % \subsection{Code Listings}
 %
 % If the \Verb+listings+ package has been loaded then issuing
@@ -749,6 +810,7 @@ and the derived files           tikzmark.ins,
 % The following example shows this, where the red dots are the \Verb+start+, the blue are \Verb+end+, and the green are \Verb+first+.
 %
 % \begin{example}
+% \tikzset{tikzmark prefix=ex6-}
 % \begin{tikzpicture}[remember picture]
 % \foreach \k in {0,...,7} {
 % \iftikzmark{line-code-\k-start}{\fill[red,overlay] (pic cs:line-code-\k-start) circle[radius=4pt];}{\message{No start for \k}}
@@ -788,7 +850,215 @@ and the derived files           tikzmark.ins,
 % \end{lstlisting}
 % \end{example}
 %
+% \subsection{AMS Equation Environments}
 %
+% \textbf{This is an experimental library.}
+%
+% If the \Verb+amsmath+ package has been loaded then issuing
+%
+% \Verb+\usetikzmarklibrary{ams}+
+%
+% \noindent loads some code that places pseudo-nodes around the boxes that are used in AMSMath's various equation alignment environments, such as \Verb!align! and \Verb!gather!.
+% These environments work by constructing boxes with each of the pieces of the equations that are then put together into the grid.
+% This library hooks in to the unboxing code, before the box is typeset then it measures it and stores that information in various macros as if it were a TikZ node.
+% The aim is that this doesn't disturb the placement, but as far as TikZ is concerned then there is a node there that can be referred to later.
+%
+% As it is experimental, even if this library is loaded then it isn't automatically switched on.
+% To do that, use either the \Verb!tikzmarkmath! environment or the \Verb!\tikzmarkmath! command.
+% Each has an optional argument which is a prefix for the node names (the default is \Verb!equation!).
+% The node names are then of the form \Verb!<prefix>-<number>!.
+% The numbering is held in a counter called \Verb!tikzmarkequation! and is reset when the command is invoked or the environment is started.
+% As usual, redefining \Verb!\thetikzmarkequation! changes the styling of the \Verb!<number>!.
+%
+% To disable the marking, either end the environment or use \Verb!\endtikzmarkmath!.
+% The ending command explicitly removes the hook rather than rely on \TeX\ groupings.
+% It also prints out the number of nodes created to the log file and terminal.
+% This can be useful with figuring out which nodes to use, since the box that this library hooks into is used many times.
+% For example, equation numbers are included with this.
+%
+% The box is also used when assembling a \Verb!\sqrt[3]{4}! command, and as that uses \Verb!\mathchoice! then there are more boxes created than used.
+% So the count of number of nodes created can be more than are actually there.
+%
+% \begin{example}
+% \begin{tikzmarkmath}[pythagoras]
+% 
+% \begin{gather}
+% a^2 = b^2 + c^2
+% \end{gather}
+% 
+% \begin{gather}
+% a = \sqrt[2]{b^2 + c^2}
+% \end{gather}
+% \end{tikzmarkmath}
+% 
+% \begin{tikzpicture}[remember picture, overlay]
+% \foreach \k in {1,2,3,7,8} {
+%   \draw[red]  (pic cs:pythagoras-\k) -- ++(135:1) node[draw,red,circle,font=\tiny,above left] {\k};
+%   \node[draw,blue,fit=(pythagoras-\k),inner sep=0pt] {};
+% }
+% \end{tikzpicture}
+% % \end{example}
+%
+%
+% \subsection{Highlighting}
+%
+% I've returned to the highlighting library.
+% The \LaTeX3 hook mechanism makes a couple of things possible that were tricky before.
+%
+% The idea of the highlighting mechanism is to use two \Verb!\tikzmark!s to mark a start and end of a region to be highlighted.
+% The region is considered to be formed by lines of text, with the first mark at the baseline of the start and the second at the baseline of the end.
+%
+% The highlighting itself is done by inserting code in the shipout routine before the page itself is laid out.
+% So the highlighting is on a separate layer to the text itself, which can be either behind or in front of the text layer.
+% The hook mechanisem also makes it relatively simple to support page breaks between the start and end of highlighting.
+%
+% Since the highlighting is separate to the flow of the text, it doesn't make sense to use an environment to mark the start and end of the highlighting so instead there are two commands: \Verb!\StartHighlighting[options]! and \Verb!\StopHighlighting!, or a single command \Verb!\Highlight[options]{text}! that just highlights the \Verb!text!.
+% At the moment, nesting highlighting is not supported.
+%
+% The optional argument to \Verb!\StartHighlighting! (or \Verb!\Highlight!) consists of key-value pairs that control the behaviour of the highlighted region.
+% There are particular keys in the \Verb!/tikz/highlighter! family which control the size of the highlighted region.
+%
+% The keys are as follows:
+%
+% \begin{itemize}
+% \item \texttt{direction}
+% \item \texttt{layer}
+% \item \texttt{initial height}
+% \item \texttt{initial depth}
+% \item \texttt{initial offset}
+% \item \texttt{final height}
+% \item \texttt{final depth}
+% \item \texttt{final offset}
+% \item \texttt{left margin}
+% \item \texttt{right margin}
+% \item \texttt{height}
+% \item \texttt{depth}
+% \item \texttt{offset}
+% \item \texttt{margin}
+% \end{itemize}
+%
+% The highlighting code draws a region which can be styled with standard TikZ keys, more of which in a moment.
+% Although it is a single region, the \emph{intention} is to simulate using an actual highlighter.
+% The first key, \Verb!direction!, is used to draw the region as if the highlighter were used in a particular direction.
+% The options are \Verb!horizontal!, \Verb!vertical!, or \Verb!box!.
+% The default is \Verb!horizontal!.
+%
+% The second key, \Verb!layer!, determines whether the highlighter is rendered on the \Verb!background! or \Verb!foreground! layer.
+% Using the \Verb!background! layer puts the highlighting underneath the text, which will make the text easier to read.
+% The \Verb!foreground! option puts the highlighting over the text, which can be used to fade the text.
+% The default is \Verb!background!.
+%
+% The shape of the region depends on a few things, such as whether the highlighting starts and ends on the same line.
+%
+% \begin{tikzpicture}[>=Latex]
+% \fill (0,0) circle[radius=2pt];
+% \fill (4,0) circle[radius=2pt];
+% \draw (-1,-1) rectangle (5,1);
+% \draw[dashed] (0,0) -- (4,0);
+% \draw[<->] (0,0) -- +(-1,0);
+% \draw[<->] (0,0) -- +(0,1);
+% \draw[<->] (4,0) -- +(0,-1);
+% \draw[<->] (4,0) -- +(1,0);
+% \draw[<-] (-.5,0) to[out=90,in=-90] +(-1,1.5) node[above] {initial offset};
+% \draw[<-] (4.5,0) to[out=90,in=-90] +(1,1.5) node[above] {final offset};
+% \draw[<-] (0,.5) to[out=0,in=180] +(1,1.5) node[right] {initial height};
+% \draw[<-] (4,-.5) to[out=0,in=180] +(1,-1.5) node[right] {final depth};
+% \node[anchor=base] at (2,0) {Single line};
+% \end{tikzpicture}
+%
+% \begin{tikzpicture}[>=Latex]
+% \fill (0,0) circle[radius=2pt];
+% \draw (-1,-1) rectangle (4,1);
+% \draw[dashed] (0,0) -- (4,0);
+% \draw[<->] (0,0) -- +(-1,0);
+% \draw[<->] (0,0) -- +(0,1);
+% \draw[<->] (0,0) -- +(0,-1);
+% \draw[<-] (-.5,0) to[out=90,in=-90] +(-1,1.5) node[above] {initial offset};
+% \draw[<-] (0,.5) to[out=0,in=180] +(1,1.5) node[right] {initial height};
+% \draw[<-] (0,-.5) to[out=0,in=180] +(1,-1.5) node[right] {initial depth};
+% \node[anchor=base] at (2,0) {Split line};
+% \begin{scope}[yshift=-3cm,xshift=-5cm]
+% \fill (4,0) circle[radius=2pt];
+% \draw (0,-1) rectangle (5,1);
+% \draw[dashed] (0,0) -- (4,0);
+% \draw[<->] (4,0) -- +(1,0);
+% \draw[<->] (4,0) -- +(0,1);
+% \draw[<->] (4,0) -- +(0,-1);
+% \draw[<-] (4.5,0) to[out=90,in=180] +(2.5,0) node[right] {final offset};
+% \draw[<-] (4,.5) to[out=180,in=0] +(-1,1.5) node[left] {final height};
+% \draw[<-] (4,-.5) to[out=0,in=180] +(1.5,-1) node[right] {final depth};
+% \node[anchor=base] at (2,0) {Split line};
+% \end{scope}
+% \end{tikzpicture}
+%
+% \begin{tikzpicture}[>=Latex]
+% \fill (0,0) circle[radius=2pt];
+% \fill (4,0) circle[radius=2pt];
+% \fill (-4,-1) circle[radius=2pt];
+% \fill (4,-1) circle[radius=2pt];
+% \fill (-4,-2) circle[radius=2pt];
+% \fill (0,-2) circle[radius=2pt];
+% \draw (-1,0) -- (-1,1) -- (5,1) -- (5,-2) -- (1,-2) -- (1,-3) -- (-5,-3) -- (-5,0) -- cycle;
+% \draw[dashed] (0,0) -- (4,0);
+% \draw[dashed] (-4,-1) -- (4,-1);
+% \draw[dashed] (-4,-2) -- (0,-2);
+% \draw[<->] (0,0) -- +(-1,0);
+% \draw[<->] (0,0) -- +(0,1);
+% \draw[<->] (4,0) -- +(1,0);
+% \draw[<->] (0,-2) -- +(1,0);
+% \draw[<->] (0,-2) -- +(0,-1);
+% \draw[<->] (-4,-2) -- +(-1,0);
+% \draw[<-] (-.5,0) to[out=90,in=0] +(-1,.5) node[left] {initial offset};
+% \draw[<-] (0,.5) to[out=0,in=180] +(1,0) node[right] {initial height};
+% \draw[<-] (4.5,0) to[out=90,in=-90] +(1,1.5) node[above] {right margin};
+% \draw[<-] (.5,-2) to[out=-90,in=180] +(1,-.5) node[right] {final offset};
+% \draw[<-] (0,-2.5) to[out=180,in=0] +(-1,0) node[left] {final depth};
+% \draw[<-] (-4.5,-2) to[out=90,in=-90] +(-1,1.5) node[above] {left margin};
+% \node[anchor=base] at (0,-1) {Multiple lines};
+% \end{tikzpicture}
+%
+% The \texttt{vertical} regions and the \texttt{box} are defined similarly.
+% With the vertical regions then the meaning of the \Verb!height!, \Verb!depth!, and \Verb!offset! are rotated \(90^\circ\), and the vertial regions don't stretch to the page boundaries.
+% The \texttt{box} region is always a rectangle.
+%
+% Once the region is defined, it can be styled using options directly on the \Verb!StartHighlighting! or \Verb!\Highlight! command and by using the following styles:
+%
+% \begin{itemize}
+% \item \texttt{every highlight picture}
+% \item \texttt{every <direction> highlight picture}
+% \item \texttt{every <layer> highlight picture}
+% \item \texttt{every highlight path}
+% \item \texttt{every <direction> highlight path}
+% \item \texttt{every <layer> highlight path}
+% \item \texttt{highlight path}
+% \item \texttt{<direction> highlight path}
+% \item \texttt{<layer> highlight path}
+% \end{itemize}
+%
+% The \Verb!picture! keys are for the surrounding \Verb!tikzpicture!, while the \Verb!path! keys are for the path itself.
+%
+% Lastly, a word about scoping the options.
+% Since the code that actually renders the highlighting is processed when the page is shipped out, it may well be that the settings in force when the highlighting was defined have changed.
+% The keys that adjust the size of the region (in the \Verb!highlighter! family) are saved at the moment of invocation but keys such as the colour or whether to fill or draw the path are not.
+% Therefore, it is wise to use styles that persist to set the rendering styles.
+%
+% \begin{example}
+% The sun was shining on the sea, shining with all its might.
+% \StartHighlighting[fill=cyan!50]
+% And this was very odd because it was the middle of the night.
+% \StopHighlighting
+% The moon was up there sulkily because she thought the sun had no
+% business to be there after the day was done.
+% \StartHighlighting[fill=magenta!50]
+% ``It's very rude of him,'' she said, ``to come and spoil the fun.''
+% \StopHighlighting
+
+% \noindent The sun was shining on the sea, shining with all its might.
+% And this was very odd because it was the middle of the night.
+% \StartHighlighting[fill=yellow!50]
+% The moon was up there sulkily because she thought the sun had no business to be there after the day was done\StopHighlighting.
+% ``It's very rude of him,'' she said, ``to come and spoil the fun.''
+% \end{example}
 %
 % \section{Acknowledgements}
 %
@@ -810,8 +1080,8 @@ and the derived files           tikzmark.ins,
 % The \Verb+save nodes+ code uses \LaTeX3.
 %    \begin{macrocode}
 \ProvidesFile{tikzlibrarytikzmark.code.tex}[%
-  2021/02/16
-  v1.10
+  2022/08/24
+  v1.15
   TikZ library for marking positions in a document]
 \RequirePackage{expl3, l3keys2e, xparse}
 %    \end{macrocode}
@@ -959,6 +1229,79 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
   tikzmark prefix/.initial=,%
   tikzmark suffix/.initial=,%
+  tikzmark clear ixes/.style={
+    tikzmark prefix={},
+    tikzmark suffix={}
+  },
+%    \end{macrocode}
+% Tikzmarks can be used to adjust the position of a scope or pic so that an internally defined coordinate is used to locate the scope or pic.
+%
+% The key used to adjust the location is \Verb!scope anchor={coordinate}! for \Verb!scope!s and \Verb!pic anchor={coordinate}! for \Verb!pic!s, where \Verb!coordinate! is evaluated internally to the \Verb!scope! or \Verb!pic!, so can use node names.
+%    \begin{macrocode}
+  scope anchor location/.initial={(0,0)},
+  scope anchor location/.default=@auto,
+  pic anchor/.style={
+    scope anchor location={#1},
+    next pic/.append style={
+      adjust scope position,
+    }
+  },
+  scope anchor/.style={
+    scope anchor location={#1},
+    adjust scope position,
+  },
+%    \end{macrocode}
+% The code that does the adjustment is added to the \Verb!pic! on its enclosing scope using the \Verb!every pic! key.
+%    \begin{macrocode}  
+  adjust scope position/.code={%
+    \pgfutil@ifundefined{tikz@fig@name}%
+    {\let\tikz@fig@name=\pgfutil@empty}{}%
+    \tikz@resetexpandcount%
+    \tikz@fig@mustbenamed
+    \pgfkeysgetvalue{/tikz/scope anchor location}\tkzmk@anchor
+    \ifx\tkzmk@anchor\tikz@auto@text
+    \tikzset{local bounding box/.expanded=\tikz@fig@name}%
+    \def\tkzmk@anchor{(\tikz@fig@name.\tikz@anchor)}%
+    \fi
+    \tikz@scan@one@point
+    \pgfutil@firstofone(pic cs:\tikz@fig@name-origin)\relax
+    \pgf@xa=\pgf@x
+    \pgf@ya=\pgf@y
+    \tikz@scan@one@point
+    \pgfutil@firstofone(pic cs:\tikz@fig@name-anchor)\relax
+    \advance\pgf@xa by -\pgf@x
+    \advance\pgf@ya by -\pgf@y
+    \tikzset{
+      shift={(\the\pgf@xa,\the\pgf@ya)},
+      execute at end scope={%
+        \tikzmark{\tikz@fig@name-origin}{(0,0)}%
+        \tikzmark{\tikz@fig@name-anchor}{\tkzmk@anchor}%
+      }
+    }
+  },
+%    \end{macrocode}
+%
+% To install this code on a pic, we hook in to the pic's enclosing scope using the \Verb+every pic+ key.
+% To avoid this bubbling down to pics within pics, we clear it once it has been executed.
+% So any code that triggers this adjustment adds \Verb!adjust pic position! to the !next pic! style.
+%    \begin{macrocode}
+  every pic/.append style={
+    next pic/.try,
+    next pic/.style={}
+  },
+%    \end{macrocode}
+%  
+% This code remembers the bounding box of a pic, saving it as if it were a node.
+%    \begin{macrocode}
+  save pic bounding box/.code={
+    \tikz@fig@mustbenamed
+    \tikzset{local bounding box/.expanded=\tikz@fig@name}
+  },
+  surround pic/.style={
+    next pic/.append style={
+      save pic bounding box
+    }
+  },
 }
 %    \end{macrocode}
 %
@@ -987,11 +1330,25 @@ and the derived files           tikzmark.ins,
 % \end{macro}
 %
 % \begin{macro}{\tikzmarkalias}
-% Alias a tikzmark to another name (used in tikzmarknode)
+% Alias a tikzmark to another name (used in tikzmarknode).
+% The alias is saved to the aux-file so that it is available prior to the definition.
+% The private one doesn't use the prefix-suffix for greater internal flexibility.
+% The public one does.
 %    \begin{macrocode}
+\def\@tikzmarkalias#1#2{%
+  \@ifundefined{save@pt@#2}{}{%
+    \pgf@node@gnamelet{save@pt@#1}{save@pt@#2}%
+    \pgf@node@gnamelet{save@pt@#1@offset}{save@pt@#2@offset}%
+    \protected@write\pgfutil@auxout{}{%
+      \string\savepointas%
+      {#1}{\csname save@pt@#2\endcsname}%
+      \expandafter\expandafter\expandafter
+      \@gobble\csname save@pt@#2@offset\endcsname
+    }%
+  }%
+}
 \def\tikzmarkalias#1#2{%
-  \pgf@node@gnamelet{save@pt@#1}{save@pt@#2}%
-  \pgf@node@gnamelet{save@pt@#1@offset}{save@pt@#2@offset}%
+  \@tikzmarkalias{\tikzmark@pp@name{#1}}{\tikzmark@pp@name{#2}}%
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1017,7 +1374,8 @@ and the derived files           tikzmark.ins,
     \tmk@labeldef#1,(0pt,0pt)\@nil
   \fi
   \@ifundefined{save@pt@\tmk@label}{%
-    \tikz@scan@one@point\pgfutil@firstofone\tmk@def
+    \expandafter\tikz@scan@one@point
+    \expandafter\pgfutil@firstofone\tmk@def\relax
   }{%
     \pgfsys@getposition{\csname save@pt@\tmk@label\endcsname}%
     \save@orig@pic%
@@ -1076,7 +1434,9 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
 \def\tikzmark@inside#1#2{%
   \tikzset{remember picture}%
+  \tikz@resetexpandcount%
   \tikz@scan@one@point\pgfutil@firstofone#2\relax
+  \pgf@pos@transform{\pgf@x}{\pgf@y}%
   \protected@write\pgfutil@auxout{}{%
     \string\savepointas%
     {\tikzmark@pp@name{#1}}{\pgfpictureid}{\the\pgf@x}{\the\pgf@y}}%
@@ -1103,18 +1463,22 @@ and the derived files           tikzmark.ins,
 % \begin{macro}{\pgfmark}
 %    \begin{macrocode}
 \newcommand\pgfmark[1]{%
-    \bgroup
-    \global\advance\pgf@picture@serial@count by1\relax%
-    \edef\pgfpictureid{pgfid\the\pgf@picture@serial@count}%
-      \pgfsys@markposition{\pgfpictureid}%
-    \edef\pgf@temp{%
-      \noexpand\write\noexpand\pgfutil@auxout{%
-        \string\savepicturepage{\pgfpictureid}{\noexpand\arabic{page}}}}%
-    \pgf@temp
-    \protected@write\pgfutil@auxout{}{%
-      \string\savepointas{\tikzmark@pp@name{#1}}{\pgfpictureid}{0pt}{0pt}}%
-    \egroup
-  }
+  \bgroup
+  \global\advance\pgf@picture@serial@count by1\relax%
+  \edef\pgfpictureid{pgfid\the\pgf@picture@serial@count}%
+  \pgfsys@markposition{\pgfpictureid}%
+  \edef\pgf@temp{%
+    \noexpand\write\noexpand\pgfutil@auxout{%
+      \string\savepicturepage
+      {\pgfpictureid}{\noexpand\arabic{page}}%
+    }%
+  }%
+  \pgf@temp
+  \protected@write\pgfutil@auxout{}{%
+    \string\savepointas
+    {\tikzmark@pp@name{#1}}{\pgfpictureid}{0pt}{0pt}}%
+  \egroup
+}
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1183,7 +1547,9 @@ and the derived files           tikzmark.ins,
   \@ifundefined{save@pt@\tikzmark@pp@name{#1}}{%
     \tikzmark@false
   }{%
-    \@ifundefined{save@pg@\csname save@pt@\tikzmark@pp@name{#1}\endcsname}{%
+    \@ifundefined{save@pg@%
+      \csname save@pt@\tikzmark@pp@name{#1}\endcsname%
+    }{%
       \tikzmark@false
     }{%
       \ifnum\csname save@pg@%
@@ -1206,7 +1572,9 @@ and the derived files           tikzmark.ins,
   \@ifundefined{save@pt@\tikzmark@pp@name{#1}}{%
     \tikzmark@false
   }{%
-    \@ifundefined{save@pg@\csname save@pt@\tikzmark@pp@name{#1}\endcsname}{%
+    \@ifundefined{save@pg@%
+      \csname save@pt@\tikzmark@pp@name{#1}\endcsname%
+    }{%
       \tikzmark@false
     }{%
       \ifnum\csname save@pg@%
@@ -1225,13 +1593,15 @@ and the derived files           tikzmark.ins,
 %
 % \begin{macro}{\subnode}
 % Note: much of this code was inevitably adapted from the node defining code in the TikZ/PGF sources.
+%
+% The \Verb!\pgfmark! applies the current tikzmark prefix/suffix.
+% The current node prefix/suffix is applied by using the \Verb!name=! key.
 %    \begin{macrocode}
 \def\subnode@#1#2#3{%
   \begingroup
   \pgfmark{#2}%
   \setbox\pgfnodeparttextbox=\hbox\bgroup #3\egroup
-  \def\tikz@fig@name{#2}%
-  \tikzset{every subnode/.try,#1}%
+  \tikzset{every subnode/.try,#1,name=#2}%
   \pgfpointorigin
   \tikz@scan@one@point\pgfutil@firstofone(pic cs:#2)\relax
   \advance\pgf@x by .5\wd\pgfnodeparttextbox
@@ -1251,24 +1621,30 @@ and the derived files           tikzmark.ins,
       \pgf@x=-\pgf@x%
       \pgf@y=-\pgf@y%
     }%
-    \expandafter\pgfsavepgf@process\csname pgf@sh@sa@\tikz@fig@name\endcsname{%
+    \expandafter\pgfsavepgf@process
+    \csname pgf@sh@sa@\tikz@fig@name\endcsname{%
       \pgf@sh@reanchor{rectangle}{center}% FIXME : this is double work!
     }%
     % Save the saved points and the transformation matrix
     \edef\pgf@node@name{\tikz@fig@name}%
     \ifx\pgf@node@name\pgfutil@empty%
     \else%
-    \expandafter\xdef\csname pgf@sh@ns@\pgf@node@name\endcsname{rectangle}%
+    \expandafter\xdef
+    \csname pgf@sh@ns@\pgf@node@name\endcsname{rectangle}%
     \edef\pgf@sh@@temp{%
-      \noexpand\gdef\expandafter\noexpand\csname pgf@sh@np@\pgf@node@name\endcsname}%
+      \noexpand\gdef\expandafter
+      \noexpand\csname pgf@sh@np@\pgf@node@name\endcsname}%
     \expandafter\pgf@sh@@temp\expandafter{%
       \pgf@sh@savedpoints}%
     \edef\pgf@sh@@temp{%
-      \noexpand\gdef\expandafter\noexpand\csname pgf@sh@ma@\pgf@node@name\endcsname}% MW
+      \noexpand\gdef\expandafter
+      \noexpand\csname pgf@sh@ma@\pgf@node@name\endcsname}% MW
     \expandafter\pgf@sh@@temp\expandafter{\pgf@sh@savedmacros}% MW
     \pgfgettransform\pgf@temp
-    \expandafter\xdef\csname pgf@sh@nt@\pgf@node@name\endcsname{\pgf@temp}%
-    \expandafter\xdef\csname pgf@sh@pi@\pgf@node@name\endcsname{\pgfpictureid}%
+    \expandafter\xdef
+    \csname pgf@sh@nt@\pgf@node@name\endcsname{\pgf@temp}%
+    \expandafter\xdef
+    \csname pgf@sh@pi@\pgf@node@name\endcsname{\pgfpictureid}%
     \fi%
   }%
   \egroup
@@ -1291,31 +1667,34 @@ and the derived files           tikzmark.ins,
   \def\tzmk@prfx{pgf@sys@pdf@mark@pos@pgfid}%
   \edef\tzmk@pic{\tzmk@prfx\the\pgf@picture@serial@count}
   \expandafter\ifx\csname\tzmk@pic\endcsname\relax
-  \edef\tzmk@pic{\tzmk@prfx\the\numexpr\the\pgf@picture@serial@count-1\relax}%
+  \edef\tzmk@pic%
+  {\tzmk@prfx\the\numexpr\the\pgf@picture@serial@count-1\relax}%
   \expandafter\ifx\csname\tzmk@pic\endcsname\relax
-\edef\tzmk@pic{\tzmk@prfx\the\numexpr\the\pgf@picture@serial@count-2\relax}%
+  \edef\tzmk@pic%
+  {\tzmk@prfx\the\numexpr\the\pgf@picture@serial@count-2\relax}%
   \expandafter\ifx\csname\tzmk@pic\endcsname\relax
-\edef\tzmk@pic{\tzmk@prfx\the\numexpr\the\pgf@picture@serial@count-3\relax}%
+  \edef\tzmk@pic%
+  {\tzmk@prfx\the\numexpr\the\pgf@picture@serial@count-3\relax}%
   \expandafter\ifx\csname\tzmk@pic\endcsname\relax
-  \pgfutil@ifundefined{pgf@sh@ns@#2}{%
-    \pgfnodealias{#2}{#2-t}%
-    \tikzmarkalias{#2}{#2-t}%
+  \pgfutil@ifundefined{pgf@sh@ns@\tikz@pp@name{#2}}{%
+    \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-t}}%
+    \@tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-t}}%
   }{}%
   \else
-    \pgfnodealias{#2}{#2-d}%
-    \tikzmarkalias{#2}{#2-d}%
+    \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-d}}%
+    \@tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-d}}%
   \fi
   \else
-    \pgfnodealias{#2}{#2-t}%
-    \tikzmarkalias{#2}{#2-t}%
+    \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-t}}%
+    \@tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-t}}%
   \fi
   \else
-    \pgfnodealias{#2}{#2-s}%
-    \tikzmarkalias{#2}{#2-s}%
+    \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-s}}%
+    \@tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-s}}%
   \fi
   \else
-    \pgfnodealias{#2}{#2-ss}%
-    \tikzmarkalias{#2}{#2-ss}%
+    \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-ss}}%
+    \@tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-ss}}%
   \fi
   \else
     \subnode@{#1}{#2}{#3}%
@@ -1366,31 +1745,34 @@ and the derived files           tikzmark.ins,
   \def\tzmk@prfx{pgf@sys@pdf@mark@pos@pgfid}%
   \edef\tzmk@pic{\tzmk@prfx\the\pgf@picture@serial@count}%
   \expandafter\ifx\csname\tzmk@pic\endcsname\relax
-  \edef\tzmk@pic{\tzmk@prfx\the\numexpr\the\pgf@picture@serial@count-1\relax}%
+  \edef\tzmk@pic%
+  {\tzmk@prfx\the\numexpr\the\pgf@picture@serial@count-1\relax}%
   \expandafter\ifx\csname\tzmk@pic\endcsname\relax
-\edef\tzmk@pic{\tzmk@prfx\the\numexpr\the\pgf@picture@serial@count-2\relax}%
+  \edef\tzmk@pic%
+  {\tzmk@prfx\the\numexpr\the\pgf@picture@serial@count-2\relax}%
   \expandafter\ifx\csname\tzmk@pic\endcsname\relax
-\edef\tzmk@pic{\tzmk@prfx\the\numexpr\the\pgf@picture@serial@count-3\relax}%
+  \edef\tzmk@pic%
+  {\tzmk@prfx\the\numexpr\the\pgf@picture@serial@count-3\relax}%
   \expandafter\ifx\csname\tzmk@pic\endcsname\relax
   \pgfutil@ifundefined{pgf@sh@ns@\tikz@pp@name{#2}}{%
     \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-t}}%
-    \tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-t}}%
+    \@tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-t}}%
   }{}%
   \else
     \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-d}}%
-    \tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-d}}%
+    \@tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-d}}%
   \fi
   \else
     \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-t}}%
-    \tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-t}}%
+    \@tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-t}}%
   \fi
   \else
     \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-s}}%
-    \tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-s}}%
+    \@tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-s}}%
   \fi
   \else
     \pgfnodealias{\tikz@pp@name{#2}}{\tikz@pp@name{#2-ss}}%
-    \tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-ss}}%
+    \@tikzmarkalias{\tikzmark@pp@name{#2}}{\tikzmark@pp@name{#2-ss}}%
   \fi
   \else
     \tikzmarknode@{#1}{#2}{#3}%
@@ -1399,6 +1781,80 @@ and the derived files           tikzmark.ins,
 %    \end{macrocode}
 % \end{macro}
 %
+% \begin{macro}{\tikzmark@box}
+% This macro takes a name and a box.
+% It pretends that there is a tight-fitting rectangular PGF node around that box with the given name, and saves the required information so that that node can be used later on in a tikzpicture drawing.
+%
+% It does not actually build a node, and it doesn't create a TikZ drawing.
+% Rather, it measures the box and uses that information to define the various macros that store the information about the node.
+%
+% Apart from assigning a load of macros, it does also place a \Verb+\pgfmark+ just before the box.
+% This is needed to be able to locate the node on the page.
+%
+% The command is defined with an \Verb!@! because it is more likely to be used in other packages than by a user.
+%    \begin{macrocode}
+\def\tikzmark@box#1#2{%
+  \begingroup
+  \pgfmark{#1}%
+  \let\pgfnodeparttextbox=#2%
+  \edef\pgfpictureid{pgfid\the\pgf@picture@serial@count}%
+  \def\tikz@fig@name{#1}%
+  \pgfpointorigin
+  \advance\pgf@x by .5\wd\pgfnodeparttextbox
+  \advance\pgf@y by .5\ht\pgfnodeparttextbox
+  \advance\pgf@y by -.5\dp\pgfnodeparttextbox
+  \pgftransformshift{}%
+  \setbox\@tempboxa=\hbox\bgroup
+  {%
+    \tikzset{
+      inner sep=0pt, 
+      minimum size=0pt, 
+      outer sep=0pt, 
+      anchor=base
+    }%
+    \let\pgf@sh@savedmacros=\pgfutil@empty% MW
+    \let\pgf@sh@savedpoints=\pgfutil@empty
+    \def\pgf@sm@shape@name{rectangle}% CJ % TT added prefix!
+    \pgf@sh@s@rectangle
+    \pgf@sh@savedpoints
+    \pgf@sh@savedmacros% MW
+    \pgftransformshift{%
+      \pgf@sh@reanchor{rectangle}{center}%
+      \pgf@x=-\pgf@x
+      \pgf@y=-\pgf@y
+    }%
+    \expandafter\pgfsavepgf@process
+    \csname pgf@sh@sa@\tikz@fig@name\endcsname{%
+      \pgf@sh@reanchor{rectangle}{center}% FIXME : this is double work!
+    }%
+    % Save the saved points and the transformation matrix
+    \edef\pgf@node@name{\tikz@fig@name}%
+    \ifx\pgf@node@name\pgfutil@empty
+    \else
+    \expandafter\xdef
+    \csname pgf@sh@ns@\pgf@node@name\endcsname{rectangle}%
+    \edef\pgf@sh@@temp{%
+      \noexpand\gdef\expandafter
+      \noexpand\csname pgf@sh@np@\pgf@node@name\endcsname}%
+    \expandafter\pgf@sh@@temp\expandafter{%
+      \pgf@sh@savedpoints}%
+    \edef\pgf@sh@@temp{%
+      \noexpand\gdef\expandafter
+      \noexpand\csname pgf@sh@ma@\pgf@node@name\endcsname}% MW
+    \expandafter\pgf@sh@@temp\expandafter{\pgf@sh@savedmacros}% MW
+    \pgfgettransform\pgf@temp
+    \expandafter\xdef
+    \csname pgf@sh@nt@\pgf@node@name\endcsname{\pgf@temp}%
+    \expandafter\xdef
+    \csname pgf@sh@pi@\pgf@node@name\endcsname{\pgfpictureid}%
+    \fi
+  }%
+  \egroup
+  \endgroup
+  \box#2%
+}
+%    \end{macrocode}
+% \end{macro}
 %
 % \begin{macro}{\usetikzmarklibrary}
 %    \begin{macrocode}
@@ -1407,28 +1863,33 @@ and the derived files           tikzmark.ins,
   }%}
 \def\use@tikzmarklibrary[#1]{\use@@tikzmarklibrary{#1}}
 \def\use@@tikzmarklibrary#1{%
-  \edef\pgf@list{#1}%
-  \pgfutil@for\pgf@temp:=\pgf@list\do{%
-    \expandafter\pgfkeys@spdef\expandafter\pgf@temp\expandafter{\pgf@temp}%
+    \edef\pgf@list{#1}%
+    \pgfutil@for\pgf@temp:=\pgf@list\do{%
+      \expandafter\pgfkeys@spdef
+      \expandafter\pgf@temp\expandafter{\pgf@temp}%
     \ifx\pgf@temp\pgfutil@empty
     \else
-      \expandafter\ifx\csname tikzmark@library@\pgf@temp @loaded\endcsname\relax%
+      \expandafter\ifx
+      \csname tikzmark@library@\pgf@temp @loaded\endcsname\relax%
       \expandafter\global\expandafter\let%
-      \csname tikzmark@library@\pgf@temp @loaded\endcsname=\pgfutil@empty%
-      \expandafter\edef\csname tikzmark@library@#1@atcode\endcsname{\the\catcode`\@}
-      \expandafter\edef\csname tikzmark@library@#1@barcode\endcsname{\the\catcode`\|}
+      \csname tikzmark@library@\pgf@temp @loaded\endcsname
+      =\pgfutil@empty%
+      \expandafter\edef
+      \csname tikzmark@library@#1@atcode\endcsname{\the\catcode`\@}
+      \expandafter\edef
+      \csname tikzmark@library@#1@barcode\endcsname{\the\catcode`\|}
       \catcode`\@=11
       \catcode`\|=12
       \pgfutil@InputIfFileExists{tikzmarklibrary\pgf@temp.code.tex}{}{
-          \PackageError{tikzmark}{I did not find the tikzmark extras library '\pgf@temp'.}{}
-        }%
+        \PackageError{tikzmark}{
+          I did not find the tikzmark extras library '\pgf@temp'.}{}
+      }%
       \catcode`\@=\csname tikzmark@library@#1@atcode\endcsname
       \catcode`\|=\csname tikzmark@library@#1@barcode\endcsname
       \fi%
     \fi
   }%
 }
-
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1436,8 +1897,17 @@ and the derived files           tikzmark.ins,
 %
 %    \begin{macrocode}  
 \ExplSyntaxOn
+\cs_new_protected:Nn \tikzmark_tl_put_right_braced:Nn
+ {
+  \tl_put_right:Nn #1 { { #2 } }
+ }
+\cs_generate_variant:Nn \tikzmark_tl_put_right_braced:Nn { NV, cV, cv, Nx, cx }
 %    \end{macrocode}
 %
+% This is how we handle return values from functions
+%    \begin{macrocode}
+\tl_new:N \g__sn_output_tl
+%    \end{macrocode}  
 % We save our information in a ``property list'', which is L3's
 % version of an associative array or dictionary.  They keys will give
 % the ability to store several groups of nodes and restore them at
@@ -1462,9 +1932,10 @@ and the derived files           tikzmark.ins,
 \tl_new:N \l__sn_group_tl
 %    \end{macrocode}
 %
-% We store up the nodes in a list and save them at the end of a given tikzpicture.    
+% We store up the nodes in a list and save them at the end of a given tikzpicture.
+% Has to be global as we're often in a group.    
 %    \begin{macrocode}    
-\clist_new:N \l__sn_nodes_clist
+\clist_new:N \g__sn_nodes_clist
 %    \end{macrocode}
 %
 % This boolean is for whether we save to a file or not.
@@ -1475,9 +1946,19 @@ and the derived files           tikzmark.ins,
 % This boolean is for whether we are in the preamble or not.
 %    \begin{macrocode}
 \bool_new:N \g__sn_preamble_bool
-\bool_set_true:N \g__sn_preamble_bool
+\bool_gset_true:N \g__sn_preamble_bool
 %    \end{macrocode}
 %
+% Key interface for setting some of the options
+%    \begin{macrocode}
+\keys_define:nn {tikzmark / save nodes}
+{
+  file .bool_set:N = \l__sn_file_bool,
+  group  .tl_set:N = \l__sn_group_tl,
+}
+%    \end{macrocode}
+%
+%    
 %    \begin{macrocode}    
 \msg_new:nnn {tikzmark} {no file} {File~ "#1"~ doesn't~ exist.}
 \msg_new:nnn {tikzmark} {loading nodes} {Loading~ nodes~ from~ "#1".}
@@ -1547,43 +2028,40 @@ and the derived files           tikzmark.ins,
 %
 % \begingroup
 % \catcode`_=12
-% \begin{macro}{\save_nodes:Nn}
+% \begin{macro}{\process_node:Nn}
 % This is the command that actually does the work.  It constructs a
 % token list which contains the code that will restore the node data
 % when invoked.  The two arguments are the token list to store this in
-% and a comma separated list of the node names to be saved.
+% and the node name to be saved.
 %    \begin{macrocode}
-\cs_new_nopar:Npn \save_nodes:Nn #1#2
+\cs_new_nopar:Npn \__sn_process_node:n #1
 {
+  \group_begin:
 %    \end{macrocode}
-% Clear our token lists
+% Clear our token list
 %    \begin{macrocode}
   \tl_clear:N \l__sn_tmpa_tl
 %    \end{macrocode}
 % Set the centre of the picture
 %    \begin{macrocode}  
-  \tikz_scan_point:NNn \l__sn_x_dim \l__sn_y_dim {(current~ bounding~ box.center)}
+  \tikz_scan_point:NNn \l__sn_x_dim \l__sn_y_dim
+  {(current~ bounding~ box.center)}
   \dim_set:Nn \l__sn_x_dim {-\l__sn_x_dim}
   \dim_set:Nn \l__sn_y_dim {-\l__sn_y_dim}
   \tl_set:Nx \l__sn_centre_tl {
     {1}{0}{0}{1}{\dim_use:N \l__sn_x_dim}{\dim_use:N \l__sn_y_dim}
   }
 %    \end{macrocode}  
-% Iterate over the list of node names
-%    \begin{macrocode}
-  \clist_map_inline:nn {#2}
-  {
-%    \end{macrocode}  
 % Test to see if the node has been defined
 %    \begin{macrocode}
-    \tl_if_exist:cT {pgf@sh@ns@##1}
-    {
-%    \end{macrocode}  
+  \tl_if_exist:cT {pgf@sh@ns@#1}
+  {
+%    \end{macrocode}
 % The node information is stored in a series of macros of the form
 % \Verb+\pgf@sh@XX@nodename+ where XX is one of the following.
 %    \begin{macrocode}
-      \clist_map_inline:nn {ns,np,ma,pi}
-      {
+    \clist_map_inline:nn {ns,np,ma,pi}
+    {
 %    \end{macrocode}  
 % Our token list will look like:
 %
@@ -1594,36 +2072,36 @@ and the derived files           tikzmark.ins,
 %
 % This part puts the \Verb+\tl_set:cn {pgf@sh@XX@nodename}+ in place
 %    \begin{macrocode}
-        \tl_put_right:Nn \l__sn_tmpa_tl
-        {
-          \tl_gset:cn {pgf@sh@####1@ \tikz_set_node_name:n{##1} }
-        }
-%    \end{macrocode}  
+      \tl_put_right:Nn \l__sn_tmpa_tl
+      {
+        \tl_gset:cn {pgf@sh@##1@ \tikz_set_node_name:n{#1} }
+      }
+%    \end{macrocode}
 % Now we put the current contents in place.  We're doing this in
 % an expansive context to get at the contents.  The \Verb+\exp_not:v+
 % part takes the current value of \Verb+\pgf@sh@XX@nodename+ and puts
 % it in place, preventing further expansion.
 %    \begin{macrocode}
-        \tl_if_exist:cTF {pgf@sh@####1@##1}
-        {
-          \tl_put_right:Nx \l__sn_tmpa_tl {
-            {\exp_not:v {pgf@sh@####1@ \tikz_set_node_name:n {##1}}}
-          }
-        }
-        {
-          \tl_put_right:Nx \l__sn_tmpa_tl {{}}
-        }
-      }
-      \tl_put_right:Nn \l__sn_tmpa_tl
+      \tl_if_exist:cTF {pgf@sh@##1@#1}
       {
-        \tl_gset:cn {pgf@sh@nt@ \tikz_set_node_name:n{##1} }
-      }
-      \compose_transformations:NVv \l__sn_tmpb_tl \l__sn_centre_tl {pgf@sh@nt@##1}
-      \tl_put_right:Nx \l__sn_tmpa_tl {{\exp_not:V \l__sn_tmpb_tl}}
-      \tl_put_right:Nn \l__sn_tmpa_tl {
-        \transform_node:Nn \l__sn_transformation_tl {
-          \tikz_set_node_name:n{##1}
+        \tl_put_right:Nx \l__sn_tmpa_tl {
+          {\exp_not:v {pgf@sh@##1@ \tikz_set_node_name:n {#1}}}
         }
+      }
+      {
+        \tl_put_right:Nx \l__sn_tmpa_tl {{}}
+      }
+    }
+    \tl_put_right:Nn \l__sn_tmpa_tl
+    {
+      \tl_gset:cn {pgf@sh@nt@ \tikz_set_node_name:n{#1} }
+    }
+    \compose_transformations:NVv
+    \l__sn_tmpb_tl \l__sn_centre_tl {pgf@sh@nt@#1}
+    \tl_put_right:Nx \l__sn_tmpa_tl {{\exp_not:V \l__sn_tmpb_tl}}
+    \tl_put_right:Nn \l__sn_tmpa_tl {
+      \transform_node:Nn \l__sn_transformation_tl {
+        \tikz_set_node_name:n{#1}
       }
     }
   }
@@ -1631,7 +2109,20 @@ and the derived files           tikzmark.ins,
 % Once we've assembled our token list, we store it in the given
 % token list
 %    \begin{macrocode}
-  \tl_set_eq:NN #1 \l__sn_tmpa_tl
+  \tl_gset_eq:NN \g__sn_output_tl \l__sn_tmpa_tl
+  \group_end:
+}
+\cs_new_protected_nopar:Npn \process_node:Nn #1#2
+{
+  \__sn_process_node:n {#2}
+  \tl_set_eq:NN #1 \g__sn_output_tl
+  \tl_gclear:N \g__sn_output_tl
+}
+\cs_new_protected_nopar:Npn \process_gnode:Nn #1#2
+{
+  \__sn_process_node:n {#2}
+  \tl_gset_eq:NN #1 \g__sn_output_tl
+  \tl_gclear:N \g__sn_output_tl
 }
 %    \end{macrocode}  
 % \end{macro}
@@ -1641,7 +2132,12 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
 \cs_new_nopar:Npn \save_nodes_to_list:nn #1#2
 {
-  \save_nodes:Nn \l__sn_tmpa_tl {#2}
+  \tl_clear:N \l__sn_tmpa_tl
+  \clist_map_inline:nn {#2}
+  {
+    \process_node:Nn \l__sn_tmpb_tl {##1}
+    \tl_put_right:NV \l__sn_tmpa_tl \l__sn_tmpb_tl
+  }
   \prop_gput:NnV \g__sn_prop {#1} \l__sn_tmpa_tl
 }
 %    \end{macrocode}
@@ -1650,24 +2146,27 @@ and the derived files           tikzmark.ins,
 % \begin{macro}{\save_nodes_to_file:n}
 % Save the nodes to a file
 %    \begin{macrocode}
+\cs_generate_variant:Nn \iow_now:Nn {NV}
 \cs_new_nopar:Npn \save_nodes_to_file:n #1
 {
-  \save_nodes:Nn \l__sn_tmpa_tl {#1}
+  \sn_open_stream:
+  \clist_map_inline:nn {#1}
+  {
+    \process_node:Nn \l__sn_tmpa_tl {##1}
 %    \end{macrocode}  
 % Save the token list to the nodes file so that on reading it back in, we restore the node definitions
 %    \begin{macrocode}
-  \sn_open_stream:
-  \iow_now:Nx \g__sn_stream
-  {
-    \iow_newline:
-    \exp_not:V \l__sn_tmpa_tl
-    \iow_newline:
+    \iow_now:Nx \g__sn_stream
+    {
+      \iow_newline:
+      \exp_not:V \l__sn_tmpa_tl
+    }
   }
 }
 %    \end{macrocode}
 % \end{macro}
 %    \begin{macrocode}
-\cs_generate_variant:Nn \save_nodes_to_list:nn {VV}
+\cs_generate_variant:Nn \save_nodes_to_list:nn {VV, Vn}
 \cs_generate_variant:Nn \save_nodes_to_file:n {V}
 %    \end{macrocode}
 %
@@ -1702,6 +2201,7 @@ and the derived files           tikzmark.ins,
     \msg_warning:nnn {tikzmark} {no file} {#1}
   }
 }
+\cs_generate_variant:Nn \restore_nodes_from_file:n {x}
 \AtBeginDocument{\bool_gset_false:N \g__sn_preamble_bool}
 %    \end{macrocode}
 % \end{macro}
@@ -1781,7 +2281,8 @@ and the derived files           tikzmark.ins,
 % \end{macro}
 %
 %    \begin{macrocode}
-\cs_generate_variant:Nn \compose_transformations:Nnn {cVv,NVv,NVn,NvV,NnV}
+\cs_generate_variant:Nn \compose_transformations:Nnn
+{cVv,NVv,NVn,NvV,NnV}
 %    \end{macrocode}
 %
 % \begin{macro}{\transform_node:Nn}
@@ -1800,8 +2301,12 @@ and the derived files           tikzmark.ins,
   \tl_set_eq:Nc \l__sn_transformation_tl {pgf@sh@nt@#1}
   \tikz_scan_point:NNn \l__sn_x_dim \l__sn_y_dim {(#1.center)}
     
-  \dim_set:Nn \l__sn_x_dim {\l__sn_x_dim - \tl_item:cn {pgf@sh@nt@#1}{5}}
-  \dim_set:Nn \l__sn_y_dim {\l__sn_y_dim - \tl_item:cn {pgf@sh@nt@#1}{6}}
+  \dim_set:Nn \l__sn_x_dim {
+    \l__sn_x_dim - \tl_item:cn {pgf@sh@nt@#1}{5}
+  }
+  \dim_set:Nn \l__sn_y_dim {
+    \l__sn_y_dim - \tl_item:cn {pgf@sh@nt@#1}{6}
+  }
     
   \compose_transformations:NnV  \l__sn_transformation_tl {
     {1}{0}{0}{1}{\dim_use:N \l__sn_x_dim}{\dim_use:N \l__sn_y_dim}
@@ -1849,15 +2354,22 @@ and the derived files           tikzmark.ins,
     }
   },
 %    \end{macrocode}  
-% Append current node to the list of nodes to be saved
+% Append current node or named node to the list of nodes to be saved
 %    \begin{macrocode}
   save~ node/.code={
-    \tikz_fig_must_be_named:
-    \pgfkeysalso{append~ after~ command={
-        \pgfextra{
-          \clist_gput_right:Nv \l__sn_nodes_clist {tikz@last@fig@name}
+    \tl_if_eq:nnTF {#1} {\pgfkeysnovalue}
+    {
+      \tikz_fig_must_be_named:
+      \pgfkeysalso{
+        append~ after~ command={
+          \pgfextra{
+            \clist_gput_right:Nv \g__sn_nodes_clist {tikz@last@fig@name}
+          }
         }
       }
+    }
+    {
+      \clist_gput_right:Nn \g__sn_nodes_clist {#1}
     }
   },
 %    \end{macrocode}  
@@ -1866,14 +2378,14 @@ and the derived files           tikzmark.ins,
   restore~ nodes~ from~ file/.code={
     \bool_if:NTF \g__sn_preamble_bool
     {
-      \restore_nodes_from_file:n {#1}
+      \restore_nodes_from_file:x {#1}
     }
     {
       \tikz_fig_must_be_named:
       \pgfkeysalso{append~ after~ command={
           \pgfextra{
             \scope
-            \split_argument:NNn \tikzset \restore_nodes_from_file:n {#1}
+            \split_argument:NNn \tikzset \restore_nodes_from_file:x {#1}
             \endscope
           }
         }
@@ -1929,22 +2441,51 @@ and the derived files           tikzmark.ins,
 %    \begin{macrocode}
 \cs_new_nopar:Npn \maybe_save_nodes:
 {
-  \clist_if_empty:NF \l__sn_nodes_clist
+  \clist_if_empty:NF \g__sn_nodes_clist
   {
     \bool_if:NTF \l__sn_file_bool
     {
-      \save_nodes_to_file:V \l__sn_nodes_clist
+      \save_nodes_to_file:V \g__sn_nodes_clist
     }
     {
       \tl_if_empty:NF \l__sn_group_tl
       {
-        \save_nodes_to_list:VV \l__sn_group_tl \l__sn_nodes_clist
+        \save_nodes_to_list:VV \l__sn_group_tl \g__sn_nodes_clist
       }
     }
-    \clist_gclear:N \l__sn_nodes_clist
+    \clist_gclear:N \g__sn_nodes_clist
   }
 }
-%    \end{macrocode}  
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\SaveNode}
+% Command for saving a node outside a TikZ picture.
+%    \begin{macrocode}
+\DeclareDocumentCommand \SaveNode { o m }
+{
+  \group_begin:
+  \IfNoValueF {#1}
+  {
+    \keys_set:nn {tikzmark / save nodes}
+    {
+      file=false,
+      group=#1
+    }
+  }
+  \bool_if:NTF \l__sn_file_bool
+  {
+    \save_nodes_to_file:n {#2}
+  }
+  {
+    \tl_if_empty:NF \l__sn_group_tl
+    {
+      \save_nodes_to_list:Vn \l__sn_group_tl {#2}
+    }
+  }
+  \group_end:
+}
+%    \end{macrocode}
 % \end{macro}
 % \endgroup
 %    \begin{macrocode}
@@ -2039,14 +2580,775 @@ and the derived files           tikzmark.ins,
 %
 % \begin{macrocode}
 }{%
-    \PackageError{tikzmark listings}{The listings package has not been loaded.}{}
+  \PackageError{tikzmark listings}%
+  {The listings package has not been loaded.}{}
 }
 %    \end{macrocode}
 % \iffalse
 %</listings>
 % \fi
 %
+% \subsection{AMS Math}
 %
+% This tikzmark library defines a routine that puts a pseudo-node (using \Verb+\tikzmark@box+) around all the pieces used in constructing the various math environments that the AMS Math package provides, such as \Verb+gather+ and \Verb+align+.
+% All of these (and their labels) work by putting various pieces into a box and then typesetting that box in the cells of an \Verb+halign+.
+% By using \Verb+\tikzmark@box+, this can be infiltrated to put nodes around each of those boxes as it is placed.
+%
+% \iffalse
+%<*ams>
+% \fi
+%    \begin{macrocode}
+\@ifpackageloaded{amsmath}{%
+%    \end{macrocode}
+%
+% \begin{macro}{tikzmarkmath}
+%
+% Defines an environment in which any AMS mathematical aligned environments get nodes around each piece of their contents.
+%
+% Start by saving the original \Verb+\boxz@+ command. 
+%    \begin{macrocode}
+  \let\tikzmark@ams@boxz@=\boxz@
+%    \end{macrocode}
+%
+% We'll need a counter to keep track of the nodes.
+%    \begin{macrocode}
+  \newcounter{tikzmarkequation}
+%    \end{macrocode}
+%
+% The nodes will be labelled \Verb!<name>-<number>!.
+% By default the name is \Verb!equation! but this can be customised.
+%    \begin{macrocode}
+  \def\tikzmark@ams@name{equation}
+%    \end{macrocode}
+%
+% This is the substitute command.
+% I don't know if the \Verb=\ifmeasuring@= actually does anything, but it's here just in case at the moment.
+%    \begin{macrocode}
+  \def\tikzmark@boxz@{%
+    \ifmeasuring@
+    \tikzmark@ams@boxz@
+    \else
+    \stepcounter{tikzmarkequation}%
+    \tikzmark@box{\tikzmark@ams@name-\thetikzmarkequation}{\z@}%
+    \fi
+  }
+%    \end{macrocode}
+%
+% This is the environment that sets the node name and swaps out the box code.
+% At the end of the environment we swap back the code so that the commands can be used as standalone \Verb+\tikzmarkmath+ and \Verb+\endtikzmarkmath+ in occasions when it isn't appropriate to use an environment (for example, if it crosses sections, or if it is wanted to turn on this feature for an entire document).
+% At the end of the environment, the number of nodes is written out to the terminal and log file to make it easier to keep track.
+%    \begin{macrocode}
+  \newenvironment{tikzmarkmath}[1][equation]{%
+    \def\tikzmark@ams@name{#1}%
+    \setcounter{tikzmarkequation}{0}%
+    \let\boxz@=\tikzmark@boxz@
+  }{%
+    \let\boxz@=\tikzmark@ams@boxz@
+    \message{%
+      Tikzmark math environment
+      \tikzmark@ams@name\space had
+      \the\value{tikzmarkequation} nodes in it
+    }%
+  }
+%    \end{macrocode}
+% \end{macro}
+% \begin{macrocode}
+}{%
+  \PackageError{tikzmark AMS}%
+  {The amsmath package has not been loaded.}%
+  {}
+}
+%    \end{macrocode}
+% \iffalse
+%</ams>
+% \fi
+%
+% \iffalse
+%<*highlighting>
+% \fi
+%
+% \subsection{Highlighting}
+%
+% An early use of \Verb!\tikzmark! was to add highlighting to text by drawing over or under the text between two tikzmarks, for example the question \href{http://tex.stackexchange.com/q/46434/86}{How to "highlight" text/formulas with tikz?}.
+%
+% I was never totally happy with the overall mechanism, so didn't include it in the main tikzmark package.
+% Recently, I had occasion to revisit it and by using the new \LaTeX3 hook facility I got something that I was sufficiently happy with to add to the main package.
+%
+% The key idea is to hook into the \texttt{shipout/background} routine to insert the highlighting behind the text.
+% This allows us to draw the highlighting before the page is laid out and so is under the text.
+%
+% \LaTeX3 makes life just that little bit easier.
+%    \begin{macrocode}
+\ExplSyntaxOn
+%    \end{macrocode}
+%
+% Since the code that draws the highlighting will probably be very separate from the code that defines it, when storing the highlighting code then we want to expand the tikzmark full name.
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \tikzmark_fix_name:Nn #1#2
+{
+  \tl_set:Nx #1 {\tikzmark@pp@name{#2}}
+}
+%    \end{macrocode}
+%
+% \begin{macro}{\StartHighlighting,\EndHighlighting,\Highlight}
+% These are the user interfaces for highlighting a section.
+% The first command inserts the drawing code into the relevant hook and places a tikzmark at the current location.
+% The second command indicates when the highlighting should stop.
+% The third is a short cut for highlighting its argument.
+%
+% These are commands rather than an environment to allow it to span, for example, different parts of an aligned equation.
+%    \begin{macrocode}
+\tl_new:N \g__tikzmark_highlighter_tl
+\tl_set:Nn \g__tikzmark_highlighter_tl {tikzmark~ highlighter~}
+\int_new:N \g__tikzmark_highlighter_int
+\tl_new:N \l__tikzmark_start_tl
+\tl_new:N \l__tikzmark_end_tl
+\tl_new:N \l__tikzmark_highlighter_name_tl
+\tl_new:N \l__tikzmark_tmpa_tl
+\tl_new:N \l__tikzmark_tmpb_tl
+\tl_new:N \l__tikzmark_tmpc_tl
+
+\cs_new_protected_nopar:Npn \tikzmark_bake_highlighter:N #1
+{
+  \tl_clear:N #1
+  \clist_map_inline:nn {direction,layer}
+  {
+    \tl_put_right:Nx #1 {
+      /tikz/highlighter/##1=\pgfkeysvalueof{/tikz/highlighter/##1},
+    }
+  }
+  \clist_map_inline:nn {
+    initial~ height,
+    initial~ depth,
+    initial~ offset,
+    final~ height,
+    final~ depth,
+    final~ offset,
+    left~ margin,
+    right~ margin,
+    top~ margin,
+    bottom~ margin,
+  }
+  {
+    \tl_put_right:Nx #1 {
+      /tikz/highlighter/##1=\dim_eval:n {\pgfkeysvalueof{/tikz/highlighter/##1}},
+    }
+  }
+}
+
+\cs_new_protected_nopar:Npn \tikzmark_start_highlighting:n #1
+{
+  \int_gincr:N \g__tikzmark_highlighter_int
+  \tl_set:Nx \l__tikzmark_highlighter_name_tl
+  {
+    \tl_use:N \g__tikzmark_highlighter_tl
+    \int_use:N \g__tikzmark_highlighter_int
+  }
+  \tl_set:Nn \l__tikzmark_tmpb_tl
+  {
+    every~ highlighter/.try,
+  }
+  \tikzmark_bake_highlighter:N \l__tikzmark_tmpc_tl
+  \tl_put_right:NV \l__tikzmark_tmpb_tl \l__tikzmark_tmpc_tl
+  \tl_put_right:Nn \l__tikzmark_tmpb_tl {#1}
+  \tikzmark_process_highlighting:VV
+  \l__tikzmark_tmpb_tl
+  \l__tikzmark_highlighter_name_tl
+  \tikzmark{highlight-start-\tl_use:N \l__tikzmark_highlighter_name_tl}
+}
+\cs_new_protected_nopar:Npn \tikzmark_end_highlighting:
+{
+  \tl_set:Nx \l__tikzmark_highlighter_name_tl
+  {
+    \tl_use:N \g__tikzmark_highlighter_tl
+    \int_use:N \g__tikzmark_highlighter_int
+  }
+  \tikzmark{highlight-end-\tl_use:N \l__tikzmark_highlighter_name_tl}
+}
+
+\NewDocumentCommand \StartHighlighting {O{}}
+{%
+  \tikzmark_start_highlighting:n {#1}
+}
+\NewDocumentCommand \StopHighlighting {}
+{%
+  \tikzmark_end_highlighting:
+}
+\NewDocumentCommand \Highlight {O{} m}
+{%
+  \tikzmark_start_highlighting:n {#1}
+  #2
+  \tikzmark_end_highlighting:
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% The following code inserts the drawing command into the shipout hook.
+%    \begin{macrocode}
+%    \end{macrocode}
+% We need an ordinary colon, rather than a \LaTeX3 one
+%    \begin{macrocode}
+\tl_const:Nx \c__tikzmark_colon_tl
+{
+  \char_generate:nn {`:} {12}
+}
+
+\cs_generate_variant:Nn \hook_gput_next_code:nn {nV}
+%    \end{macrocode}
+% 
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \tikzmark_highlight_or_shunt:nnnn #1#2#3#4
+{
+%    \end{macrocode}
+% First, test to check if the tikzmarks are actually defined yet,
+% if not then bail out.
+%    \begin{macrocode}
+  \bool_lazy_all:nT
+  {
+    {\tl_if_exist_p:c {save@pt@\tikzmark@pp@name{#2}}}
+    {\tl_if_exist_p:c {save@pg@\tl_use:c{save@pt@\tikzmark@pp@name{#2}}}}
+    {\tl_if_exist_p:c {save@pt@\tikzmark@pp@name{#3}}}
+    {\tl_if_exist_p:c {save@pg@\tl_use:c{save@pt@\tikzmark@pp@name{#3}}}}
+  }
+  {
+%    \end{macrocode}
+% Okay, so all the tikzmarks are defined. Now see if we're on the
+% right page.  Is our start tikzmark in the future?
+%    \begin{macrocode}
+    \int_compare:nTF
+    {
+      \tl_use:c {save@pg@\tl_use:c{save@pt@\tikzmark@pp@name{#2}}}
+      >
+      \the\value{page}
+    }
+    {
+%    \end{macrocode}
+% It is, so we just punt our highlighting down the line
+%    \begin{macrocode}
+      \hook_gput_next_code:nn {#1} {
+        \tikzmark_highlight_or_shunt:nnnn {#1}{#2}{#3}{#4}
+      }
+    }
+    {
+%    \end{macrocode}
+% It isn't, so we have some highlighting to do.
+% We need to build our highlighting code.
+%    \begin{macrocode}
+      \tl_set:Nn \l__tikzmark_tmpa_tl {#4}
+%    \end{macrocode}
+% Is our starting tikzmark on \emph{this} page?
+%    \begin{macrocode}
+      \int_compare:nTF
+      {
+        \tl_use:c {save@pg@\tl_use:c{save@pt@\tikzmark@pp@name{#2}}}
+        =
+        \the\value{page}
+      }
+      {
+%    \end{macrocode}
+% It is, so we use the starting tikzmark as our first coordinate.
+%    \begin{macrocode}
+        \tl_put_right:Nx \l__tikzmark_tmpa_tl
+        {
+          {
+            pic~ cs
+            \tl_use:N \c__tikzmark_colon_tl
+            #2
+          }
+        }
+      }
+      {
+%    \end{macrocode}
+% It isn't, so we use the north west corner of the page
+%    \begin{macrocode}
+        \tl_put_right:Nn \l__tikzmark_tmpa_tl
+        {
+          {
+            page.north~ west
+          }
+        }
+      }
+%    \end{macrocode}
+% Is our ending tikzmark on \emph{this} page?
+%    \begin{macrocode}
+      \int_compare:nTF
+      {
+        \tl_use:c {save@pg@\tl_use:c{save@pt@\tikzmark@pp@name{#3}}}
+        =
+        \the\value{page}
+      }
+      {
+%    \end{macrocode}
+% It is, so we use the ending tikzmark as our second coordinate.
+%    \begin{macrocode}
+        \tl_put_right:Nx \l__tikzmark_tmpa_tl
+        {
+          {
+            pic~ cs
+            \tl_use:N \c__tikzmark_colon_tl
+            #3
+          }
+        }
+      }
+      {
+%    \end{macrocode}
+% It isn't, so we use the south east corner of the page, and
+% we have to shunt the code to the next page.
+%    \begin{macrocode}
+        \tl_put_right:Nn \l__tikzmark_tmpa_tl
+        {
+          {
+            page.south~ east
+          }
+        }
+        \hook_gput_next_code:nn {#1} {
+          \tikzmark_highlight_or_shunt:nnnn {#1}{#2}{#3}{#4}
+        }
+      }
+%    \end{macrocode}
+% We've built our highlighting code, now's time to execute it.
+%    \begin{macrocode}
+      \tl_use:N \l__tikzmark_tmpa_tl
+    }
+  }
+}
+%    \end{macrocode}
+% 
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \tikzmark_process_highlighting:nn #1#2
+{
+  \pgfkeys{/tikz/highlighter/configuration/.activate~ family}
+  \pgfkeysfiltered{/tikz/.cd,highlighter/direction,highlighter/layer,#1}
+
+  \tikzmark_fix_name:Nn \l__tikzmark_start_tl {highlight-start-#2}
+  \tikzmark_fix_name:Nn \l__tikzmark_end_tl {highlight-end-#2}
+  \tl_set:Nx \l__tikzmark_tmpa_tl {\pgfkeysvalueof{/tikz/highlighter/direction}}
+  \tl_clear:N \l__tikzmark_tmpb_tl
+  \tl_clear:N \l__tikzmark_tmpc_tl
+  \tl_if_eq:NnTF \l__tikzmark_tmpa_tl {vertical}
+  {
+    \tl_put_right:Nn \l__tikzmark_tmpb_tl
+    {
+      \vl@draw
+    }
+  }
+  {
+    \tl_if_eq:NnTF \l__tikzmark_tmpa_tl {box}
+    {
+      \tl_put_right:Nn \l__tikzmark_tmpb_tl
+      {
+        \box@draw
+      }
+    }
+    {
+      \tl_put_right:Nn \l__tikzmark_tmpb_tl
+      {
+        \hl@draw
+      }
+    }
+  }
+  
+  \tl_put_right:Nn \l__tikzmark_tmpb_tl
+  {
+    {tikzmark~ clear~ ixes,#1}
+  }
+
+  \tl_set:Nx \l__tikzmark_tmpa_tl {\pgfkeysvalueof{/tikz/highlighter/layer}}
+  \tl_set:Nn \l__tikzmark_tmpc_tl
+  {
+    \tikzmark_highlight_or_shunt:nnnn
+  }
+  \tl_if_eq:NnTF \l__tikzmark_tmpa_tl {foreground}
+  {
+    \tl_put_right:Nn \l__tikzmark_tmpc_tl {{shipout/foreground}}
+  }
+  {
+    \tl_put_right:Nn \l__tikzmark_tmpc_tl {{shipout/background}}
+  }
+
+  \tikzmark_tl_put_right_braced:NV \l__tikzmark_tmpc_tl \l__tikzmark_start_tl
+  \tikzmark_tl_put_right_braced:NV \l__tikzmark_tmpc_tl \l__tikzmark_end_tl
+  \tikzmark_tl_put_right_braced:NV \l__tikzmark_tmpc_tl \l__tikzmark_tmpb_tl
+ 
+  \tl_if_eq:NnTF \l__tikzmark_tmpa_tl {foreground}
+  {
+    \hook_gput_next_code:nV {shipout/foreground} \l__tikzmark_tmpc_tl
+  }
+  {
+    \hook_gput_next_code:nV {shipout/background} \l__tikzmark_tmpc_tl
+  }
+}
+\cs_generate_variant:Nn  \tikzmark_process_highlighting:nn {nV,VV}
+\ExplSyntaxOff
+%    \end{macrocode}
+%
+% The command that draws the horizontal highligher or fader.
+% This fills a shape determined by two coordinates assumed to be (in effect) on the baseline of the start and end of the region to be highlighted.
+%    \begin{macrocode}
+\def\hl@draw#1#2#3{%
+  \pgfkeys{/tikz/highlighter/configuration/.activate family}
+  \pgfkeysfiltered{/tikz/.cd,highlighter/direction,highlighter/layer,#1}
+  \begin{tikzpicture}[
+    remember picture,
+    overlay,
+    highlight picture action,
+    #1,
+  ]%
+%
+  \page@node
+%
+  \tikz@scan@one@point\pgfutil@firstofone(#2)\relax
+  \pgf@ya=\pgf@y
+  \tikz@scan@one@point\pgfutil@firstofone(#3)\relax
+  \pgf@yb=\pgf@y
+%
+  \ifdim\pgf@ya=\pgf@yb
+%
+  \path (#2)
+  ++(-1*\pgfkeysvalueof{/tikz/highlighter/initial offset},
+  \pgfkeysvalueof{/tikz/highlighter/initial height})
+  coordinate (start);
+%
+  \path (#3)
+  ++(\pgfkeysvalueof{/tikz/highlighter/final offset},
+  -1*\pgfkeysvalueof{/tikz/highlighter/final depth})
+  coordinate (end);
+%
+  \path[
+    highlight action,
+    #1
+  ] (start) rectangle (end);
+%
+  \else
+%
+  \path (page.east)
+  ++(\pgfkeysvalueof{/tikz/highlighter/right margin},0pt)
+  coordinate (east);
+%
+  \path (page.west)
+  ++(-1*\pgfkeysvalueof{/tikz/highlighter/left margin},0pt)
+  coordinate (west);
+%
+  \pgfmathsetlength\pgf@x{%
+    \pgfkeysvalueof{/tikz/highlighter/initial height}%
+  }%
+%
+  \advance\pgf@yb by \pgf@x\relax
+%
+  \pgfmathsetlength\pgf@x{%
+    -1*\pgfkeysvalueof{/tikz/highlighter/final depth}%
+  }%
+%
+  \advance\pgf@ya by \pgf@x\relax
+%
+  \ifdim\pgf@yb>\pgf@ya
+%
+  \path (#2)
+  ++(-1*\pgfkeysvalueof{/tikz/highlighter/initial offset},
+  \pgfkeysvalueof{/tikz/highlighter/initial height}) 
+  coordinate (start);
+%
+  \path (#2)
+  ++(0pt,-1*\pgfkeysvalueof{/tikz/highlighter/final depth}) 
+  coordinate (end);
+%
+  \path[
+    highlight action,
+    #1
+  ] (start) rectangle (end -| east);
+%
+  \path (#3)
+  ++(0pt,\pgfkeysvalueof{/tikz/highlighter/initial height}) 
+  coordinate (start);
+%
+  \path (#3)
+  ++(\pgfkeysvalueof{/tikz/highlighter/final offset},
+  -1*\pgfkeysvalueof{/tikz/highlighter/final depth}) 
+  coordinate (end);
+%
+  \path[
+    highlight action,
+    #1
+  ] (start -| west) rectangle (end);
+%
+  \else
+%
+  \path (#2)
+  ++(-1*\pgfkeysvalueof{/tikz/highlighter/initial offset},
+  \pgfkeysvalueof{/tikz/highlighter/initial height}) 
+  coordinate (tl);
+%
+  \path (#2)
+  ++(-1*\pgfkeysvalueof{/tikz/highlighter/initial offset},
+  -1*\pgfkeysvalueof{/tikz/highlighter/initial depth}) 
+  coordinate (start);
+%
+  \path (#3)
+  ++(\pgfkeysvalueof{/tikz/highlighter/final offset},
+  -1*\pgfkeysvalueof{/tikz/highlighter/final depth}) 
+  coordinate (end);
+%
+  \path (#3)
+  ++(\pgfkeysvalueof{/tikz/highlighter/final offset},
+  \pgfkeysvalueof{/tikz/highlighter/final height}) 
+  coordinate (mr);
+%
+  \path[
+    highlight action,
+    #1
+  ] (start) -- (tl) -- (tl -| east) -- (mr -| east) -- (mr) --
+  (end) -- (end -| west) -- (start -| west) -- cycle;
+%
+  \fi
+  \fi
+  \end{tikzpicture}%
+}
+%    \end{macrocode}
+%
+% This one draws a box.
+%    \begin{macrocode}
+\def\box@draw#1#2#3{%
+  \pgfkeys{/tikz/highlighter/configuration/.activate family}
+  \pgfkeysfiltered{/tikz/.cd,highlighter/direction,highlighter/layer,#1}
+  \begin{tikzpicture}[
+    remember picture,
+    overlay,
+    highlight picture action,
+    #1,
+  ]%
+%
+  \tikz@scan@one@point\pgfutil@firstofone(#2)\relax
+  \pgf@xa=\pgf@x
+  \tikz@scan@one@point\pgfutil@firstofone(#3)\relax
+  \pgf@xb=\pgf@x
+%
+  \def\tkmk@high@bscale{1}%
+  \ifdim\pgf@xa>\pgf@xb
+  \def\tkmk@high@bscale{-1}%
+  \fi
+%
+  \path (#2)
+  ++({\tkmk@high@bscale*(-1)*\pgfkeysvalueof{/tikz/highlighter/initial offset}},
+  \pgfkeysvalueof{/tikz/highlighter/initial height})
+  coordinate (start);
+%
+  \path (#3)
+  ++(\tkmk@high@bscale*\pgfkeysvalueof{/tikz/highlighter/final offset},
+  -1*\pgfkeysvalueof{/tikz/highlighter/final depth})
+  coordinate (end);
+%
+  \path[
+    highlight action,
+    #1
+  ] (start) rectangle (end);
+  \end{tikzpicture}%
+}
+%    \end{macrocode}
+%
+% In this one the region is defined vertically.
+%    \begin{macrocode}
+\def\vl@draw#1#2#3{%
+  \pgfkeys{/tikz/highlighter/configuration/.activate family}
+  \pgfkeysfiltered{/tikz/.cd,highlighter/direction,highlighter/layer,#1}
+  \begin{tikzpicture}[
+    remember picture,
+    overlay,
+    highlight picture action,
+    #1,
+  ]%
+%
+  \tikz@scan@one@point\pgfutil@firstofone(#2)\relax
+  \pgf@ya=\pgf@y
+  \pgf@xa=\pgf@x
+  \tikz@scan@one@point\pgfutil@firstofone(#3)\relax
+  \pgf@yb=\pgf@y
+  \pgf@xb=\pgf@x
+%
+  \pgfmathsetlength\pgf@y{%
+    \pgfkeysvalueof{/tikz/highlighter/initial offset}%
+  }%
+  \advance\pgf@yb by \pgf@y
+  \pgfmathsetlength\pgf@y{%
+    -1*\pgfkeysvalueof{/tikz/highlighter/final offset}%
+  }%
+  \advance\pgf@ya by \pgf@y
+%
+  \ifdim\pgf@yb>\pgf@ya
+%
+  \ifdim\pgf@xa>\pgf@xb
+%
+  \path (#2)
+  ++(\pgfkeysvalueof{/tikz/highlighter/initial height},
+  \pgfkeysvalueof{/tikz/highlighter/initial offset})
+  coordinate (start);
+%
+  \path (#3)
+  ++(-1*\pgfkeysvalueof{/tikz/highlighter/final depth},
+  -1*\pgfkeysvalueof{/tikz/highlighter/final offset})
+  coordinate (end);
+%  
+  \else
+%
+  \path (#2)
+  ++(-1*\pgfkeysvalueof{/tikz/highlighter/initial depth},
+  \pgfkeysvalueof{/tikz/highlighter/initial offset})
+  coordinate (start);
+%
+  \path (#3)
+  ++(\pgfkeysvalueof{/tikz/highlighter/final height},
+  -1*\pgfkeysvalueof{/tikz/highlighter/final offset})
+  coordinate (end);
+%  
+  \fi
+%
+  \path[
+    highlight action,
+    #1
+  ] (start) rectangle (end);
+%
+  \else
+%
+  \path (#2)
+  ++(\pgfkeysvalueof{/tikz/highlighter/initial height},0)
+  coordinate (tr);
+%
+  \path (#2)
+  ++(0,\pgfkeysvalueof{/tikz/highlighter/initial offset})
+  coordinate (start);
+%
+  \path (#2)
+  ++(-1*\pgfkeysvalueof{/tikz/highlighter/initial depth},0)
+  coordinate (tl);
+%
+  \path (#3)
+  ++(\pgfkeysvalueof{/tikz/highlighter/final height},0)
+  coordinate (br);
+%
+  \path (#3)
+  ++(0,-1*\pgfkeysvalueof{/tikz/highlighter/final offset})
+  coordinate (end);
+%
+  \path (#3)
+  ++(-1*\pgfkeysvalueof{/tikz/highlighter/final depth},0)
+  coordinate (bl);
+%
+  \tikz@scan@one@point\pgfutil@firstofone(#2)\relax
+  \pgf@xa=\pgf@x
+  \tikz@scan@one@point\pgfutil@firstofone(#3)\relax
+  \pgf@xb=\pgf@x
+%
+  \ifdim\pgf@xa<\pgf@xb
+%
+  \path[
+    highlight action,
+    #1
+  ] (tl) |- (start) -| (tr) -| (br) |- (end) -| (bl) -| cycle;
+%
+  \else
+%
+  \path[
+    highlight action,
+    #1
+  ] (tl) |- (start) -| (tr) |- (br) |- (end) -| (bl) |- cycle;
+%
+  \fi
+%
+  \fi
+  \end{tikzpicture}
+}
+%    \end{macrocode}
+%
+% These set various options.
+%    \begin{macrocode}
+\tikzset{%
+  /tikz/highlighter/.is family,
+  /tikz/highlighter/.unknown/.code={%
+    \let\tk@searchname=\pgfkeyscurrentname%
+    \pgfkeysalso{%
+      /tikz/\tk@searchname=#1
+    }
+  },
+  every highlight path/.style={
+    fill=yellow!50,
+    rounded corners,
+  },
+  every foreground highlight path/.style={
+    fill opacity=.5,
+  },
+  highlight picture action/.style={
+    every highlight picture/.try,
+    every \pgfkeysvalueof{/tikz/highlighter/direction} highlight picture/.try,
+    every \pgfkeysvalueof{/tikz/highlighter/layer} highlight picture/.try,
+  },
+  highlight action/.style={
+    every highlight path/.try,
+    every \pgfkeysvalueof{/tikz/highlighter/direction} highlight path/.try,
+    every \pgfkeysvalueof{/tikz/highlighter/layer} highlight path/.try,
+    highlight path/.try,
+    \pgfkeysvalueof{/tikz/highlighter/direction} highlight path/.try,
+    \pgfkeysvalueof{/tikz/highlighter/layer} highlight path/.try,
+  },
+  /tikz/highlighter/.cd,
+  direction/.initial=horizontal,
+  layer/.initial=background,
+  direction/.default=horizontal,
+  layer/.default=background,
+  initial height/.initial=\baselineskip,
+  initial depth/.initial=.5ex,
+  initial offset/.initial=.5\baselineskip,
+  final height/.initial=\baselineskip,
+  final depth/.initial=.5ex,
+  final offset/.initial=.5\baselineskip,
+  left margin/.initial=.5\baselineskip,
+  right margin/.initial=.5\baselineskip,
+  top margin/.initial=.5\baselineskip,
+  bottom margin/.initial=-.5\baselineskip,
+  height/.style={
+    initial height=#1,
+    final height=#1
+  },
+  depth/.style={
+    initial depth=#1,
+    final depth=#1
+  },
+  offset/.style={
+    initial offset=#1,
+    final offset=#1
+  },
+  margin/.style={
+    left margin=#1,
+    right margin=#1,
+    top margin=#1,
+    bottom margin=#1,
+  },
+  /tikz/highlighter/configuration/.is family,
+  /tikz/highlighter/direction/.belongs to family=/tikz/highlighter/configuration,
+  /tikz/highlighter/layer/.belongs to family=/tikz/highlighter/configuration,
+}
+%    \end{macrocode}
+%
+%
+%    \begin{macrocode}
+\def\page@node{
+  \path (current page.north west)
+  ++(\hoffset + 1in + \oddsidemargin + \leftskip,
+  -\voffset - 1in - \topmargin - \headheight - \headsep)
+  node[
+    minimum width=\textwidth - \leftskip - \rightskip,
+    minimum height=\textheight,
+    anchor=north west,
+    line width=0mm,
+    inner sep=0pt,
+    outer sep=0pt,
+  ] (page) {};
+}
+%    \end{macrocode}
+%
+%
+%
+% \iffalse
+%</highlighting>
+% \fi
 %
 % \Finale
 \endinput

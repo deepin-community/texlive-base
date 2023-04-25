@@ -2,10 +2,11 @@
 # ArrowFn.m4
 # https://tex.stackexchange.com/questions/581089/arrow-function-diagrams
 gen_init
+textoffset = 3bp__
   brad = 0.04
   bht = 0.4
   bwid = 0.25
-define(`rbox',`box rad brad outlined "Orange"')
+define(`rbox',`box rad brad outlined "orange"')
 
 B1: [
   linethick = 1.2

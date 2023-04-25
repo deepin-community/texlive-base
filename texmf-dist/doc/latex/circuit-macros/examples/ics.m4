@@ -243,17 +243,17 @@ define(`HDMI_micro',`[
   D0`$+$', D0\_SH, D0`$-$', CLK`$+$', CLK\_SH, CLK`$-$',
   CEC, GND, SCL, SDA,$+${5}V)
  line from Base.nw+(m4bwid*2/3-lg_pinsep,0) up plen
- r_text(21) at last line.c+(-5bp__,0)
- r_text(SH2) at last line.start + (0,-10bp__)
+ r_text(,21,at last line.c+(-5bp__,0))
+ r_text(,SH2,at last line.start + (0,-10bp__))
  line from Base.nw+(m4bwid*2/3-2*lg_pinsep,0) up plen
- r_text(20) at last line.c+(-5bp__,0)
- r_text(SH1) at last line.start + (0,-10bp__)
+ r_text(,20,at last line.c+(-5bp__,0))
+ r_text(,SH1,at last line.start + (0,-10bp__))
  line from Base.sw+(m4bwid*2/3-lg_pinsep,0) down plen
- r_text(23) at last line.c+(-5bp__,0)
- r_text(SH4) at last line.start + (0, 10bp__)
+ r_text(,23,at last line.c+(-5bp__,0))
+ r_text(,SH4,at last line.start + (0, 10bp__))
  line from Base.sw+(m4bwid*2/3-2*lg_pinsep,0) down plen
- r_text(22) at last line.c+(-5bp__,0)
- r_text(SH3) at last line.start + (0, 10bp__)
+ r_text(,22,at last line.c+(-5bp__,0))
+ r_text(,SH3,at last line.start + (0, 10bp__))
 #
  `$4']')
 
@@ -290,7 +290,7 @@ define(`DIP',`[ pinct= ifelse(`$1',,8,`$1')
    type:I:N)
  setdir_(m4direct,U)
  Body: box ht_ m4bodywid wid_ m4bodylen
- arcs = ifelse(m4dir,right,90,m4dir,up,180,m4dir,left,270,0)
+ arcs = ifelse(m4_dir_,right,90,m4_dir_,up,180,m4_dir_,left,270,0)
  arcd(Body.e_, 0.1/2, arcs,arcs+180)
  np2 = int(pinct/2+0.5)
  define(`m4bxht',`m4pinlen ifelse(m4type,Q,`*(1+(i%%2))')')dnl

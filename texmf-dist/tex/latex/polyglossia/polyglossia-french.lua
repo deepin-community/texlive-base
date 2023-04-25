@@ -1,3 +1,8 @@
+--
+-- polyglossia-punct.lua
+-- part of polyglossia v1.59 -- 2022/11/29
+--
+
 require('polyglossia-punct')
 
 local function set_left_space(lang, char, kern, rubber)

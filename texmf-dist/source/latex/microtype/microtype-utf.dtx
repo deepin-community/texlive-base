@@ -1,59 +1,64 @@
 %\iffalse meta-comment
-% !Mode:: "TeX:DTX:UK"
-% !smartQuote:: "English"
-% !DTXversion:: "2.8b"
+%
 % ------------------------------------------------------------------------
 %                       The `microtype' package
 %         Subliminal refinements towards typographical perfection
-%           Copyright (c) 2004--2021 R Schlicht <w.m.l@gmx.net>
+%           Copyright (c) 2004--2022 R Schlicht <w.m.l@gmx.net>
 %
 % This work may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License, either version 1.3c of this license or (at
 % your option) any later version. The latest version of this license is in:
-% http://www.latex-project.org/lppl.txt, and version 1.3c or later is part
+% https://www.latex-project.org/lppl.txt, and version 1.3c or later is part
 % of all distributions of LaTeX version 2005/12/01 or later.
 %
-% This work has the LPPL maintenance status `author-maintained'.
+% This work has the LPPL maintenance status `maintained'.
 %
-% This work consists of the files microtype.dtx and microtype.ins and the
-% derived files microtype.sty, microtype-pdftex.def, microtype-luatex.def,
-% microtype-xetex.def, microtype.lua and letterspace.sty.
+% This work consists of the files microtype.dtx, microtype-utf.dtx and
+% microtype.ins and the derived files microtype.sty, microtype-pdftex.def,
+% microtype-luatex.def, microtype-xetex.def, microtype.lua, letterspace.sty
+% and microtype-show.sty.
 %
 % Modified versions of the configuration files (*.cfg) may be distributed
 % provided that: (1) the original copyright statement is not removed, and
 % (2) the identification string is changed.
 % ------------------------------------------------------------------------
 %
+%<*!EBGaramond>
 \ProvidesFile
+%</!EBGaramond>
 %<*driver>
-    {\jobname.dtx}[2021/03/14 v2.8c]
+    {\jobname.dtx}[2022/06/23 v3.0f]
 %</driver>
 %<CharisSIL>  {mt-CharisSIL.cfg}[2017/07/07 v1.1 microtype config. file: Charis SIL (RS)]
 %<LatinModernRoman>  {mt-LatinModernRoman.cfg}[2021/02/21 v1.1 microtype config. file: Latin Modern Roman (RS)]
+%<NewComputerModern>  {mt-NewComputerModern.cfg}[2021/11/09 v1.1 microtype config. file: New Computer Modern (AT)]
 %<Palatino>  {mt-Palatino.cfg}[2012/03/10 v1.0 microtype config. file: Palatino and similar fonts (LBD)]
-%<Lato>  {mt-Lato.cfg}[2021/02/22 v1.0 microtype config. file: Lato (RS)]
-%<FontAwesome>  {mt-FontAwesome.cfg}[2021/02/22 v1.0 microtype config. file: Font Awesome (RS)]
+%<TU-basic>  {mt-TU-basic.cfg}[2021/06/22 v1.1 microtype config. file: fonts with basic glyph set (RS)]
+%<TU-empty>  {mt-TU-empty.cfg}[2021/06/22 v1.1 microtype config. file: fonts with nonstandard glyph set (RS)]
 %<*driver>
-\documentclass[10pt,a4paper]{ltxdoc}
+\makeatletter
+\documentclass[10pt,a4paper,doc2]{ltxdoc}
 \usepackage{fontspec}
 \usepackage{luatexbase}
 \RequireLuaModule{luainputenc}
-\makeatletter
 % microtype-doc.sty is 8-bit, and the following is a hack
 \luatexbase@directlua{luatexbase.add_to_callback('process_input_buffer', luainputenc.fake_utf_read, 'luainputenc.fake_utf_read')}
 \usepackage{microtype-doc}
 \luatexbase@directlua{luatexbase.remove_from_callback('process_input_buffer', 'luainputenc.fake_utf_read')}
  \def\setmacrofont#1{\par\def\macro@font{#1}\footnotesize}
+ \defaultfontfeatures{RawFeature={notdef=false},WordSpace=2}
+ \def\normalwordspace{\fontdimen2\font=.5\fontdimen2\font}
  \newfontface\LMR{Latin Modern Roman}
+ \newfontface\NCM{NewCM10-Book.otf}[WordSpace=1]
  \newfontface\CharisSIL{Charis SIL}
  \newfontface\Palatino{TeX Gyre Pagella}
+ \newfontface\EBGaramond{EBGaramond-Regular}
 % \newfontface\Palatino[RawFeature={fallback=charisfallback}]{TeX Gyre Pagella}
 % \directlua{luaotfload.add_fallback("charisfallback",{"CharisSIL:color=F70A12;mode=harf;"})}
- \newfontface\Lato{Lato}
 \usepackage{luacode}
 \tracinglostchars2
 % we replace any missing characters (in Palatino) with CharisSIL
-% the lua code is mostly stolen from http://tex.stackexchange.com/a/120529 and http://tex.stackexchange.com/a/119945
+% the lua code is mostly stolen from https://tex.stackexchange.com/a/120529 and https://tex.stackexchange.com/a/119945
 {\CharisSIL\footnotesize\global\expandafter\let\expandafter\fallbackfont\the\font}
 \begin{luacode}
 local fontcharacters = { }
@@ -96,7 +101,7 @@ local nodeprocessor = function (head)
       lastfont = currfont
       if not characters[char] then
         head = node.insert_before(head,n,node.copy(color_push))
-	node.remove(head,node.next(n)) -- remove .notdef char (new in luaotfload 2.98)
+    --  node.remove(head,node.next(n)) -- remove .notdef char (new in luaotfload 2.98)
         node.insert_after(head,n,node.copy(color_pop))
         n.font = fallbackfont
         if not fontcharacters[fallbackfont][char] then -- not even in Charis SIL
@@ -109,6 +114,36 @@ local nodeprocessor = function (head)
 end
 luatexbase.add_to_callback("pre_linebreak_filter", nodeprocessor, "replace missing glyphs")
 \end{luacode}
+% communicate counters and bookmarks in microtype-utf.tmp
+% (via aux file to get page numbers right)
+\let\UTF@bookmarks\@gobble
+\def\addto@UTF@bookmarks#1{\edef\UTF@bookmarks{\UTF@bookmarks,#1}}
+\def\MT@rempt#1.#2\@nil{#1}
+\def\addtoUTFbookmarks#1{%
+  \protected@write\@auxout{}{%
+    \string\addto@UTF@bookmarks{% page,section,level,heading,label
+      \string\number\numexpr\thepage-\startpage,%
+      \expandafter\MT@rempt\@currentHref\@nil,%
+      \the\c@section@level,\@currentlabelname,#1}}}
+\AddToHook{enddocument/afteraux}{
+  \begingroup
+    \def\setcounter#1#2{\expandafter\ifnum\csname c@#1\endcsname=#2 \else\@tempswatrue\fi}
+    \def\UTF@setbookmarks#1{\MT@ifstreq{#1}{\UTF@bookmarks}\relax\@tempswatrue}
+    \InputIfFileExists{microtype-utf.tmp}\@tempswafalse\@tempswatrue
+    \if@tempswa % only write file if anything has changed
+      \newwrite\utftmp
+      \immediate\openout \utftmp=microtype-utf.tmp
+      \immediate\write   \utftmp{\string\setcounter{CodelineNo}{\the\c@CodelineNo}}
+      \immediate\write   \utftmp{\string\setcounter{footnote}{\the\c@footnote}}
+      \immediate\write   \utftmp{\string\UTF@setbookmarks{\UTF@bookmarks}}
+      \immediate\closeout\utftmp
+    \fi
+  \endgroup}
+\AddToHook{begindocument}{
+  \InputIfFileExists{microtype-code.tmp}\relax\relax
+  \edef\startpage{\thepage}
+  \stepcounter{page}}
+\CodelineIndex
 \DisableCrossrefs
 \RecordChanges
 \begin{document}
@@ -128,25 +163,20 @@ luatexbase.add_to_callback("pre_linebreak_filter", nodeprocessor, "replace missi
 %\changes{v2.5a}{2013/05/15}{include OpenType configuration files}
 %\changes{v2.6}{2015/12/07}{missing characters printed with Charis <SIL>}
 %\ImplementationSettings
-%\InputIfFileExists{microtype-utf.tmp}\relax\relax
-%\edef\startpage{\thepage}
-%\stepcounter{page}
-%
-%\newwrite\utftmp
-%\immediate\openout\utftmp=microtype.tmp
 %
 %\section{OpenType configuration files}
+%\addtoUTFbookmarks{sec:OpenType}
 %
 % These are the configuration files for the following OpenType fonts:\footnote{This is file \file{\jobname.dtx}.}
 %
 %\begin{itemize}
-%   \item {\LMR
-%           Latin Modern Roman}
-%   \item {\CharisSIL
-%           Charis <SIL>}\footnote{Available at \url{http://software.sil.org/charis}.}
-%   \item {\Palatino
-%           Palatino}\footnote{These settings have been contributed by
-%                              \contributor Loren B. Davis <davislo\at eecs.oregonstate.edu>.}
+%   \item {\LMR\normalwordspace Latin Modern Roman}
+%   \item {\NCM New Computer Modern}\footnote{These settings have been contributed by
+%                              \contributor Antonis Tsolomitis <antonis.tsolomitis\at gmail.com>.}
+%   \item {\CharisSIL\normalwordspace Charis <SIL>}
+%   \item {\EBGaramond\normalwordspace <EB> Garamond}
+%   \item {\Palatino Palatino}\footnote{These settings have been contributed by
+%                              \contributor Loren~B. Davis <davislo\at eecs.oregonstate.edu>.}
 %\end{itemize}
 %
 %\noindent
@@ -154,8 +184,7 @@ luatexbase.add_to_callback("pre_linebreak_filter", nodeprocessor, "replace missi
 %
 %\subsection{Character inheritance}
 %\GeneralChanges{Inheritance}
-%\edef\x{\string\def\string\utfsectioni{\number\numexpr\thepage-\startpage\relax}}
-%\immediate\write\expandafter\utftmp\expandafter{\x}
+%\addtoUTFbookmarks{sub:OT-inheritance}
 %
 % OpenType fonts may differ considerably in how complete their arsenal of glyphs is.
 % Therefore, each font family should have their own inheritance settings.
@@ -167,16 +196,26 @@ luatexbase.add_to_callback("pre_linebreak_filter", nodeprocessor, "replace missi
 %%% INHERITANCE
 
 %% for xetex (EU1) and luatex (EU2), resp. both (TU)
-%<*LatinModernRoman>
+%    \end{macrocode}
+%\subsubsection{Latin Modern Roman/New Computer Modern}
+%\addtoUTFbookmarks{subsub:OT-inh-LMR}
+%    \begin{macrocode}
+%<*LatinModernRoman|NewComputerModern>
 \DeclareCharacterInheritance
-   { encoding = {EU1,EU2,TU},
-     family   = Latin Modern Roman }
+   { encoding = {TU,EU1,EU2},
+%<LatinModernRoman>     family   = Latin Modern Roman }
+%<NewComputerModern>     family   = {New Computer Modern} }
 %    \end{macrocode}
 %\changes{v2.8a}{2021/02/21}{specify `ff' ligature as Unicode instead of glyph name}
-%{\setmacrofont\LMR
+%\changes{v3.0}{2021/08/08}{settings for New Computer Modern (provided by
+%                           \contributor Antonis Tsolomitis <antonis.tsolomitis\at gmail.com>)}
+%{\setmacrofont\NCM
 %    \begin{macrocode}
-   { A = {À,Á,Â,Ã,Ä,Å,Ā,Ă,Ą,Ǻ,Ȁ,Ạ,Ả,Ấ,Ầ,Ẩ,Ẫ,Ậ,Ắ,Ằ,Ẳ,Ặ,
-          Α},  % Greek
+   {
+     A = {À,Á,Â,Ã,Ä,Å,Ā,Ă,Ą,Ǻ,Ȁ,Ạ,Ả,Ấ,Ầ,Ẩ,Ẫ,Ậ,Ắ,Ằ,Ẳ,Ặ,
+%<LatinModernRoman>           Α  % Greek
+%<NewComputerModern>           Α,Ά,ᾼ,Ά,Ᾰ,Ᾱ  % Ἁ,Ἂ,Ἃ,Ἄ,Ἅ,Ἆ,Ἇ,ᾈ,ᾉ,ᾊ,ᾋ,ᾌ,ᾍ,ᾎ,ᾏ,Ὰ,  % Greek
+         },
      Æ = {Ǽ},
      B = {฿,
           Β},  % Greek
@@ -184,11 +223,19 @@ luatexbase.add_to_callback("pre_linebreak_filter", nodeprocessor, "replace missi
      D = {Ð,Ď,Đ,Ḍ,Ḏ},
      E = {È,É,Ê,Ë,Ē,Ĕ,Ė,Ę,Ě,Ȅ,Ẹ,Ẻ,Ẽ,Ề,Ế,Ễ,Ể,Ệ,
           Ε},  % Greek
+%<NewComputerModern>  (l)E = {Έ,Ἐ,Ἑ,Ἒ,Ἓ,Ἔ,Ἕ,Ὲ,Έ}, % Greek accents fully protruded left
      G = {Ĝ,Ğ,Ġ,Ģ,Ǧ,Ǵ},
      H = {Ĥ,Ħ,Ḥ,Ḧ,Ḫ,
-          Η},  % Greek
+%<LatinModernRoman>           Η  % Greek
+%<NewComputerModern>           Η,ῌ  % Greek
+          },
+%<NewComputerModern>   (l)H = {Ἠ,Ἡ,Ἢ,Ἣ,Ἤ,Ἥ,Ἦ,Ἧ,ᾘ,ᾙ,ᾚ,ᾛ,ᾜ,ᾝ,ᾞ,ᾟ}, % Greek accents fully protruded left
+%<NewComputerModern>  %(l)/uni1FCC.alt = {/uni1F98.alt},
      I = {Ì,Í,Î,Ï,Ĩ,Ī,Ĭ,Į,İ,Ȉ,Ỉ,Ị,
-          Ι},  % Greek
+%<LatinModernRoman>          Ι  % Greek
+%<NewComputerModern>          Ι,Ῐ,Ῑ  % Greek
+          },
+%<NewComputerModern>  (l)I = {Ἰ,Ἱ,Ἲ,Ἳ,Ἴ,Ἵ,Ἶ,Ἷ,Ὶ,Ί}, % Greek
      J = {Ĵ},
      K = {Ķ,
           Κ},  % Greek
@@ -198,7 +245,9 @@ luatexbase.add_to_callback("pre_linebreak_filter", nodeprocessor, "replace missi
           Ν},  % Greek
      O = {Ò,Ó,Ô,Õ,Ö,Ø,Ō,Ŏ,Ő,Ọ,Ơ,Ǫ,Ǿ,Ȍ,Ỏ,Ố,Ồ,Ổ,Ỗ,Ộ,Ớ,Ờ,Ỡ,Ở,Ợ,
           Ο},  % Greek
+%<NewComputerModern>  (l)O = {Ό,Ὀ,Ὁ,Ὂ,Ὃ,Ὄ,Ὅ,Ὸ}, % Greek accents except Ό that has indep. protrusion numbers (below)
      P = {Ρ},  % Greek
+%<NewComputerModern>  (l)P = {Ῥ}, % Greek accents fully protruded left
      R = {Ŕ,Ŗ,Ř,Ȑ,Ṛ,Ṙ,Ṝ},
      S = {Ś,Ŝ,Ş,Š,Ș,Ṣ},
      T = {Ţ,Ť,Ț,Ṭ,Ṯ,
@@ -207,6 +256,8 @@ luatexbase.add_to_callback("pre_linebreak_filter", nodeprocessor, "replace missi
      W = {Ŵ,Ẁ,Ẃ,Ẅ},
      X = {Χ},  % Greek
      Y = {Ý,Ŷ,Ÿ,Ỵ,Ỷ,Ỹ},
+%<NewComputerModern>     Υ = {Ϋ,Ῠ,Ῡ},
+%<NewComputerModern>  (l)Υ = {Ύ,Ὺ,Ύ,Ὑ,Ὓ,Ὕ,Ὗ},
      Z = {Ź,Ż,Ž,Ẓ,
           Ζ},  % Greek
      a = {à,á,â,ã,ä,å,ā,ă,ą,ǻ,ȁ,ạ,ả,ấ,ầ,ẩ,ẫ,ậ,ắ,ằ,ẳ,ẵ},
@@ -214,7 +265,7 @@ luatexbase.add_to_callback("pre_linebreak_filter", nodeprocessor, "replace missi
      c = {ç,ć,ĉ,ċ,č},
      d = {đ,ḍ,ḏ},
      e = {è,é,ê,ë,ē,ĕ,ė,ę,ě,ȅ,ẹ,ẻ,ẽ,ế,ề,ể,ễ,ệ},
-     f = {ﬀ}, % Unicode 64256, glyph name in Latin Modern: /f_f ; in New Computer Modern: /ff
+     f = {ﬀ}, % Unicode 64256, glyph name in Latin Modern Roman: /f_f ; in New Computer Modern: /ff
      g = {ĝ,ğ,ġ,ģ,ǧ,ǵ},
      h = {ĥ,ħ,ḥ,ḧ,ḫ},
      i = {ì,í,î,ï,ĩ,ī,ĭ,į,ı,ȉ,ỉ,ị},
@@ -222,7 +273,9 @@ luatexbase.add_to_callback("pre_linebreak_filter", nodeprocessor, "replace missi
      k = {ķ},
      l = {ĺ,ļ,ł,ḷ,ḹ}, % ľ,l·
      n = {ñ,ń,ņ,ň,ṅ,ṇ},
-     o = {ò,ó,ô,õ,ö,ø,ō,ŏ,ő,ọ,ơ,ǫ,ǿ,ȍ,ỏ,ố,ồ,ổ,ỗ,ộ,ớ,ờ,ỡ,ở,ợ},
+     o = {ò,ó,ô,õ,ö,ø,ō,ŏ,ő,ọ,ơ,ǫ,ǿ,ȍ,ỏ,ố,ồ,ổ,ỗ,ộ,ớ,ờ,ỡ,ở,ợ
+%<NewComputerModern>         ,ο,ό,ὀ,ὁ,ὂ,ὃ,ὄ,ὅ,ὸ,ό % Greek
+         },
      r = {ŕ,ŗ,ř,ȑ,ṛ,ṙ,ṝ},
      s = {ś,ŝ,ş,š,ș,ṣ},
      t = {ţ,ț,ṭ,ṯ,ẗ}, % ť
@@ -230,14 +283,27 @@ luatexbase.add_to_callback("pre_linebreak_filter", nodeprocessor, "replace missi
      w = {ŵ,ẁ,ẃ,ẅ},
      y = {ý,ŷ,ÿ,ỳ,ỵ,ỷ,ỹ},
      z = {ź,ż,ž,ẓ},
+%<*NewComputerModern>
+     α = {ἁ,ἂ,ἃ,ἄ,ἅ,ἆ,ἇ,ᾀ,ᾁ,ᾂ,ᾃ,ᾄ,ᾅ,ᾆ,ᾇ,ὰ},
+     ε = {έ,ἐ,ἑ,ἒ,ἓ,ἔ,ἕ,ὲ,έ},
+     η = {ἠ,ἡ,ἢ,ἣ,ἤ,ἥ,ἦ,ἧ,ᾐ,ᾑ,ᾒ,ᾓ,ᾔ,ᾕ,ᾖ},
+     ι = {ἰ,ἱ,ὶ,ί,ῐ,ῑ,ϊ,ΐ},
+     ϊ = {ἲ,ἳ,ἴ,ἵ,ἶ,ἷ,ῐ,ῑ,ΐ},
+     υ = {ύ,ὺ,ύ,ὑ,ὓ,ὕ,ὗ,ϋ,ῠ,ῡ,ϋ,ΰ},
+     ω = {ώ,ὠ,ὡ,ὢ,ὣ,ὤ,ὥ,ὦ,ὧ,ᾠ,ᾡ,ᾢ,ᾣ,ᾤ,ᾥ,ᾦ},
+%</NewComputerModern>
    }
 %    \end{macrocode}
 %}
 %    \begin{macrocode}
-%</LatinModernRoman>
+%</LatinModernRoman|NewComputerModern>
+%    \end{macrocode}
+%\subsubsection{Charis SIL}
+%\addtoUTFbookmarks{subsub:OT-inh-Charis}
+%    \begin{macrocode}
 %<*CharisSIL>
 \DeclareCharacterInheritance
-   { encoding = {EU1,EU2,TU},
+   { encoding = {TU,EU1,EU2},
      family   = Charis SIL }
 %    \end{macrocode}
 %{\setmacrofont\CharisSIL
@@ -359,22 +425,242 @@ luatexbase.add_to_callback("pre_linebreak_filter", nodeprocessor, "replace missi
      ү = {ұ},
      Г = {Γ}, % Greek
      П = {Π}, % Greek
-   }
-
    % missing: tipa, math, symbols, ...
+   }
 %    \end{macrocode}
 %}
 %    \begin{macrocode}
 %</CharisSIL>
+%    \end{macrocode}
+%\subsubsection{EB~Garamond}
+%\addtoUTFbookmarks{subsub:OT-inh-EBGaramond}
+%\changes{v3.0}{2021/08/08}{settings for <EB> Garamond (OpenType)}
+%    \begin{macrocode}
+%<*EBGaramond>
+\DeclareCharacterInheritance
+   { encoding = {TU,EU1,EU2},
+     family   = EBGaramond }
+%    \end{macrocode}
+%{\setmacrofont\EBGaramond
+%    \begin{macrocode}
+   {
+     A = {À,Á,Â,Ã,Ä,Å,Ā,Ă,Ą,Ǎ,Ǟ,Ǡ,Ǻ,Ȁ,Ȃ,Ȧ,Ạ,Ả,Ấ,Ầ,Ẩ,Ẫ,Ậ,Ắ,Ằ,Ẳ,Ẵ,Ặ,Å,/Adieresis.deu,
+          А,Ӑ,Ӓ,                % Cyrillic
+          Α,Ά,Ἀ,Ἁ,Ἂ,Ἃ,Ἄ,Ἅ,Ἆ,Ἇ,ᾈ,ᾉ,ᾊ,ᾋ,ᾌ,ᾍ,ᾎ,ᾏ,Ᾰ,Ᾱ,Ὰ,Ά,ᾼ}, % Greek
+% (l)Α   {Ά,Ἀ,Ἁ,Ἂ,Ἃ,Ἄ,Ἅ,Ἆ,Ἇ,ᾈ,ᾉ,ᾊ,ᾋ,ᾌ,ᾍ,ᾎ,ᾏ,Ᾰ,Ᾱ,Ὰ,Ά,ᾼ}, % (accents not protruded)
+     B = {Ḃ,Ḅ,Ḇ,
+          В,                    % Cyrillic
+          Β},                   % Greek
+     C = {Ç,Ć,Ĉ,Ċ,Č,Ḉ,
+          Ϲ,С,Ҫ,                % Cyrillic
+          Ⅽ},                   % Roman numeral
+     D = {Ď,Đ,Ð,Ḋ,Ḍ,Ḏ,Ḑ,Ḓ,
+          Ɖ,Ɗ,                  % Cyrillic
+          Ⅾ},                   % Roman numeral
+     E = {È,É,Ê,Ë,Ē,Ĕ,Ė,Ę,Ě,Ḕ,Ḗ,Ȩ,Ḙ,Ḛ,Ḝ,Ẹ,Ẻ,Ẽ,Ế,Ề,Ể,Ễ,Ệ,Ȅ,Ȇ,
+          Ѐ,Ё,Ӗ,Е,              % Cyrillic
+          Ε},                   % Greek
+  (l)Ε = {Έ,Ἐ,Ἑ,Ἒ,Ἓ,Ἔ,Ἕ,Ὲ,Έ},   % Greek (accents protruded)
+     F = {Ḟ},
+     G = {Ĝ,Ğ,Ġ,Ģ,Ǥ,Ǧ,Ǵ,Ḡ},
+     H = {Ĥ,Ħ,Ȟ,Ḣ,Ḥ,Ḧ,Ḩ,Ḫ,ῌ,Ⱨ,
+          Н,Ң,Ӊ,Ӈ,  %  Ҥ        % Cyrillic
+          Η},                   % Greek
+  (l)Η = {Ή,Ἠ,Ἡ,Ἢ,Ἣ,Ἤ,Ἥ,Ἦ,Ἧ,Ὴ,Ή,ᾘ,ᾙ,ᾚ,ᾛ,ᾜ,ᾝ,ᾞ,ᾟ},
+     I = {Ì,Í,Î,Ï,Ĩ,Ī,Ĭ,Į,İ,Ǐ,Ȉ,Ȋ,Ḭ,Ḯ,Ỉ,Ị,
+          І,Ї,Ӏ,                % Cyrillic
+          Ι,                    % Greek
+          Ⅰ,Ⅱ,Ⅲ},               % Roman numeral
+  (l)Ι = {Ί,Ϊ,Ἰ,Ἱ,Ἲ,Ἳ,Ἴ,Ἵ,Ἶ,Ἷ,Ῐ,Ῑ,Ὶ,Ί}, % Greek
+     J = {Ĵ,
+          Ј},                   % Cyrillic
+     K = {Ķ,Ǩ,Ḱ,Ḳ,Ḵ,Ⱪ,
+          Κ,K},                 % Greek
+     L = {Ĺ,Ļ,Ľ,Ŀ,Ł,Ḷ,Ḹ,Ḻ,Ḽ,Ⱡ,Ɫ,
+          Ⅼ},                   % Roman numeral
+     M = {Ḿ,Ṁ,Ṃ,
+          М,Ӎ,                  % Cyrillic
+          Μ,                    % Greek
+          Ⅿ},                   % Roman numeral
+     N = {Ñ,Ń,Ņ,Ň,Ŋ,Ǹ,Ṅ,Ṇ,Ṉ,Ṋ,
+          Ν},                    % Greek
+     O = {Ò,Ó,Ô,Õ,Ö,Ø,Ō,Ŏ,Ő,Ǒ,Ǫ,Ǭ,Ǿ,Ȍ,Ȏ,Ȫ,Ȭ,Ȯ,Ȱ,Ṍ,Ṏ,Ṑ,Ṓ,Ọ,Ỏ,Ố,Ồ,Ổ,Ỗ,Ộ,Ớ,Ờ,Ở,Ỡ,Ợ,Ơ,/Odieresis.deu,
+          О,Ӧ,Ө,Ӫ,              % Cyrillic
+          Ο,Ό,Ὀ,Ὁ,Ὂ,Ὃ,Ὄ,Ὅ,Ὸ,Ό}, % Greek
+% (l)Ο = {Ό,Ὀ,Ὁ,Ὂ,Ὃ,Ὄ,Ὅ,Ὸ,Ό}, % (accents not protruded)
+     P = {Ṕ,Ṗ,Ᵽ,
+          Р,Ҏ,                  % Cyrillic
+          Ρ},                   % Greek
+  (l)Ρ = {Ῥ},                   % Greek
+     Q = {Ԛ},                   % Cyrillic
+     R = {Ŕ,Ŗ,Ř,Ȑ,Ȓ,Ṙ,Ṛ,Ṝ,Ṟ,Ɽ,},
+     S = {Ś,Ŝ,Ş,Š,Ș,Ṡ,Ṣ,Ṥ,Ṧ,Ṩ,
+          Ѕ},                   % Cyrillic
+     T = {Ţ,Ť,Ŧ,Ț,Ṫ,Ṭ,Ṯ,Ṱ,
+          Т,Ҭ,                  % Cyrillic
+          Τ},                   % Greek
+     U = {Ù,Ú,Û,Ü,Ũ,Ū,Ŭ,Ů,Ű,Ų,Ǔ,Ǖ,Ǘ,Ǚ,Ǜ,Ȕ,Ȗ,Ṳ,Ṵ,Ṷ,Ṹ,Ṻ,Ụ,Ủ,Ứ,Ừ,Ử,Ữ,Ự}, % /Udieresis.deu ?
+     V = {Ṽ,Ṿ,/U.LAT,
+          Ⅴ},                   % Roman numeral
+     W = {Ŵ,Ẁ,Ẃ,Ẅ,Ẇ,Ẉ,
+          Ԝ},                   % Cyrillic
+     X = {Ẋ,Ẍ,
+          Х,Ҳ,Ӽ,Ӿ,              % Cyrillic
+          Χ,                    % Greek
+          Ⅹ},                   % Roman numeral
+     Y = {Ý,Ŷ,Ÿ,Ȳ,Ẏ,Ỳ,Ỵ,Ỷ,Ỹ,
+          Ү,Ұ},  % Cyrillic
+     Z = {Ź,Ż,Ž,Ẑ,Ẓ,Ẕ,Ⱬ,
+          Ζ},                   % Greek
+     a = {à,á,â,ã,ä,å,ā,ă,ą,ǎ,ǟ,ǡ,ǻ,ȁ,ȃ,ȧ,ḁ,ạ,ả,ấ,ầ,ẩ,ẫ,ậ,ắ,ằ,ẳ,ẵ,ặ,ẚ,
+          а,ӑ,ӓ},               % Cyrillic
+     b = {ḃ,ḅ,ḇ},
+     c = {ç,ć,ĉ,ċ,č,ḉ,
+          с,ҫ,                  % Cyrillic
+          ⅽ},                   % Roman numeral
+     d = {ď,đ,ḋ,ḍ,ḏ,ḑ,ḓ,
+          ⅾ},                   % Roman numeral
+     e = {è,é,ê,ë,ē,ĕ,ė,ę,ě,ȩ,ḕ,ḗ,ḙ,ḛ,ḝ,ẹ,ẻ,ẽ,ế,ề,ể,ễ,ệ,ȅ,ȇ,
+          е,ѐ,ё,ӗ},             % Cyrillic
+     f = {ḟ,ﬀ,/f.long,/f.DEU,/f_f},
+     ﬂ = {ﬄ,/longs_l,/longs_longs_l,/f_l},
+     ﬁ = {ﬃ,/longs_i,/longs_longs_i,/f_i},
+     /f.short = {/f_f.short},
+     g = {ĝ,ğ,ġ,ģ,ḡ,ǥ,ǧ,ǵ},
+     h = {ĥ,ħ,ḣ,ḥ,ḧ,ḩ,ḫ,ẖ,ȟ,ⱨ,
+          ԧ,ԧ},                 % Cyrillic
+     i = {ì,í,î,ï,ĩ,ī,ĭ,į,ı,ǐ,ȉ,ȋ,ḭ,ỉ,ị,ḯ,/i.TRK,
+          і,ї,                  % Cyrillic
+          ⅰ,ⅱ,ⅲ},               % Roman numeral
+     j = {ĵ,ǰ,
+          ј},                   % Cyrillic
+     k = {ķ,ǩ,ḱ,ḳ,ḵ,ⱪ},
+     l = {ĺ,ļ,ľ,ŀ,ł,ḷ,ḹ,ḻ,ḽ,ⱡ,
+          ӏ,                    % palochka
+          ⅼ},                   % Roman numeral
+     m = {ḿ,ṁ,ṃ,
+          ⅿ},                   % Roman numeral
+     n = {ñ,ń,ņ,ň,ŋ,ṅ,ṇ,ṉ,ṋ,ǹ}, % ŉ
+     o = {ò,ó,ô,õ,ö,ø,ō,ŏ,ő,ǒ,ǫ,ǭ,ǿ,ȍ,ȏ,ȫ,ȭ,ȯ,ȱ,ṍ,ṏ,ṑ,ṓ,ọ,ỏ,ố,ồ,ổ,ỗ,ộ,ớ,ờ,ở,ỡ,ợ,
+          о,ӧ},                 % Cyrillic
+     p = {ṕ,ṗ,
+          р,ҏ},                 % Cyrillic
+     q = {ԛ},                   % Cyrillic
+     r = {ŕ,ŗ,ř,ȑ,ȓ,ṙ,ṛ,ṝ,ṟ},
+     s = {ś,ŝ,ş,š,ș,ṡ,ṣ,ṥ,ṧ,ṩ,
+          ѕ},                   % Cyrillic
+     t = {ţ,ť,ŧ,ț,ṫ,ṭ,ṯ,ṱ,ẗ},
+     u = {ù,ú,û,ü,ũ,ū,ŭ,ů,ű,ų,ǔ,ǖ,ǘ,ǚ,ǜ,ȕ,ȗ,ṳ,ṵ,ṷ,ṹ,ṻ,ụ,ủ,ứ,ừ,ử,ữ,ự,/u.LATmedi},
+     v = {ṽ,ṿ,
+          ⅴ},                   % Roman numeral
+     w = {ŵ,ẁ,ẃ,ẅ,ẇ,ẉ,ẘ,
+          ԝ},                   % Cyrillic
+     x = {ẋ,ẍ,
+          х,ҳ,                  % Cyrillic
+          ⅹ},                   % Roman numeral
+     y = {ý,ÿ,ŷ,ȳ,ẏ,ẙ,ỳ,ỵ,ỷ,ỹ,
+          у,ӯ,ӱ,ӳ,ў},           % Cyrillic
+     z = {ź,ż,ž,ⱬ,ẑ,ẓ,ẕ},
+     Æ = {Ǣ,Ǽ,
+          Ӕ},                   % Cyrillic
+     æ = {ǣ,ǽ,
+          ӕ},                   % Cyrillic
+     Ǳ = {Ǆ},
+     ǲ = {ǅ},
+     ǳ = {ǆ},
+   % Smallcaps
+     /a.sc = {/A.sc},
+     /ae.sc = {/AE.sc},
+     /d.sc = {/D.sc},
+     /f.sc = {/F.sc},
+     /g.sc = {/G.sc},
+     /j.sc = {/J.sc},
+     /l.sc = {/L.sc},
+     /o.sc = {/O.sc},
+     /oe.sc = {/OE.sc},
+     /q.sc = {/Q.sc},
+     /r.sc = {/R.sc},
+     /t.sc = {/T.sc},
+     /y.sc = {/Y.sc},
+   % Cyrillic
+     Г = {Ґ,Ғ,Ѓ,Ӷ},
+     Ж = {Җ,Ӝ,Ӂ,Ѫ},
+     З = {Ҙ,Ӟ},
+     И = {Й,Ҋ,Ӣ,Ӥ,Ѝ},
+     К = {Қ,Ҝ,Ҟ,Ҡ,Ќ,Ӄ},
+     Л = {Ӆ,Ԓ,Ԯ},
+     П = {Ԥ},
+     У = {Ӯ,Ӱ,Ӳ,Ў},
+     Ц = {Ҵ,Џ},
+     Ч = {Ҷ,Ҹ,Ӌ,Ӵ},
+     Ш = {Щ},
+     Ы = {Ӹ},
+     Ь = {Ҍ},
+     Э = {Ӭ},
+     Ѵ = {Ѷ},
+     Ҽ = {Ҿ},
+     Ә = {Ӛ},
+     г = {ѓ,ґ,ғ,ӷ},
+     ж = {җ,ӂ,ӝ,ѫ},
+     з = {ҙ,ӟ},
+     и = {й,ѝ,ҋ,ӣ,ӥ},
+     к = {ќ,қ,ҝ,ӄ}, % ҟ,ҡ
+     л = {ӆ,ԓ,ԯ},
+     м = {ӎ},
+     н = {ң,ӈ,ӊ,ԩ}, %  ҥ
+     п = {ԥ},
+     т = {ҭ},
+     ц = {ҵ},
+     ч = {ҷ,ҹ,ӌ,ӵ},
+     ш = {щ},
+     ы = {ӹ},
+     э = {ӭ},
+     ѳ = {ө,ӫ},
+     ѵ = {ѷ},
+     ү = {ұ},
+     ҽ = {ҿ},
+     ә = {ӛ},
+   % Greek
+     Υ = {Ϋ,ϒ,ϔ,Ῠ,Ῡ},
+  (l)Υ = {Ύ,ϓ,Ὑ,Ὓ,Ὕ,Ὗ,Ὺ,Ύ},
+  (l)Ω = {Ώ,Ὠ,Ὡ,Ὢ,Ὣ,Ὤ,Ὥ,Ὦ,Ὧ,ᾨ,ᾩ,ᾪ,ᾫ,ᾬ,ᾭ,ᾮ,ᾯ,Ὼ,Ώ},
+     Ω = {ῼ,Ω}, % math
+     Δ = {∆}, % math
+     Π = {∏}, % math
+     α = {ά,ἀ,ἁ,ἂ,ἃ,ἄ,ἅ,ἆ,ἇ,ὰ,ά,ᾀ,ᾁ,ᾂ,ᾃ,ᾄ,ᾅ,ᾆ,ᾇ,ᾰ,ᾱ,ᾲ,ᾳ,ᾴ,ᾶ,ᾷ},
+     ε = {έ,ἐ,ἑ,ἒ,ἓ,ἔ,ἕ,ὲ,έ},
+     η = {ή,ἠ,ἡ,ἢ,ἣ,ἤ,ἥ,ἦ,ἧ,ὴ,ή,ῂ,ῃ,ῄ,ῆ,ῇ,ᾐ,ᾑ,ᾒ,ᾓ,ᾔ,ᾕ,ᾖ,ᾗ},
+     ι = {ί,ϊ,ἰ,ἱ,ἲ,ἳ,ἴ,ἵ,ἶ,ἷ,ὶ,ί,ῐ,ῑ,ῒ,ΐ,ῖ,ῗ,ΐ},
+     ο = {ό,ϙ,ὀ,ὁ,ὂ,ὃ,ὄ,ὅ,ὸ,ό},
+     ρ = {ῤ,ῥ},
+     υ = {ΰ,ϋ,ύ,ὐ,ὑ,ὒ,ὓ,ὔ,ὕ,ὖ,ὗ,ὺ,ύ,ῠ,ῡ,ῢ,ΰ,ῦ,ῧ},
+     ω = {ώ,ὠ,ὡ,ὢ,ὣ,ὤ,ὥ,ὦ,ὧ,ὼ,ώ,ᾠ,ᾡ,ᾢ,ᾣ,ᾤ,ᾥ,ᾦ,ᾧ,ῲ,ῳ,ῴ,ῶ,ῷ},
+   % other
+     ⑴  = {⑵,⑶,⑷,⑸,⑹,⑺,⑻,⑼,⑽,⑾,⑿,⒀,⒁,⒂,⒃,⒄,⒅,⒆,⒇},
+     ⒜  = {⒝,⒞,⒟,⒠,⒡,⒢,⒣,⒤,⒥,⒦,⒧,⒨,⒩,⒪,⒫,⒬,⒭,⒮,⒯,⒰,⒱,⒲,⒳,⒴,⒵},
+     🇦  = {🇧,🇨,🇩,🇪,🇫,🇬,🇭,🇮,🇯,🇰,🇱,🇲,🇳,🇴,🇵,🇶,🇷,🇸,🇹,🇺,🇻,🇼,🇽,🇾,🇿},
+     ! = {‼},
+     ? = {⁇},
+     . = {/onedotenleader},
+     /endash = {/figuredash},
+   }
+%    \end{macrocode}
+%}
+%    \begin{macrocode}
+%</EBGaramond>
+%    \end{macrocode}
+%\subsubsection{Palatino}
+%\addtoUTFbookmarks{subsub:OT-inh-Palatino}
+%    \begin{macrocode}
 %<*Palatino>
 \DeclareCharacterInheritance
-   { encoding = {EU1,EU2,TU},
+   { encoding = {TU,EU1,EU2},
      family = {Palatino} }
 %    \end{macrocode}
 % Unfortunately, I don't have a Palatino variant containing all of the following
 % glyphs. The settings are typeset in \TeX\ Gyre Pagella;
 % missing glyphs, printed in red, are taken from Charis <SIL>;
-% glyphs missing even in Charis <SIL> appear as `\char"FFFD@'.
+% glyphs missing even in Charis <SIL> appear as `\char"FFFD'.
 % To see the real settings, consult \file{mt-Palatino.cfg}.
 %{\setmacrofont\Palatino
 %    \begin{macrocode}
@@ -434,76 +720,92 @@ luatexbase.add_to_callback("pre_linebreak_filter", nodeprocessor, "replace missi
 %    \begin{macrocode}
 %</Palatino>
 %    \end{macrocode}
-% Less characters in the Lato font \dots
+%\subsubsection{Basic glyph set}
+%\addtoUTFbookmarks{subsub:OT-inh-basic}
+% There are quite a few fonts out there that don't even fill the <T1> glyph set.
+% To prevent a plethora of warnings, they may be aliased to the surrogate font
+% |TU-basic|. Examples of such fonts are: Lato, Fontin and Bergamo.
 %\changes{v2.8b}{2021/02/21}{settings for the Lato font (\file{mt-Lato.cfg})
 %                            (reported by \contributor dsedivec <@\at @>)}
 %                            ^^A https://tex.stackexchange.com/questions/380812/microtype-warning-unknown-slot-number-of-character-with-lato-font
+%\changes{v3.0}{2021/06/22}{generalise basic inheritance settings}
 %    \begin{macrocode}
-%<*Lato>
+%<*TU-basic>
 \DeclareCharacterInheritance
    { encoding = {TU,EU1,EU2},
-     family   = {Lato} }
-%    \end{macrocode}
-%{\setmacrofont\Lato
-%    \begin{macrocode}
-   { A = {À,Á,Â,Ã,Ä,Å,Ą},
-     a = {à,á,â,ã,ä,å,ą},
-     C = {Ć,Ç},
-     c = {ć,ç},
+     family   = {TU-basic} }
+   { A = {À,Á,Â,Ã,Ä,Å},
+     a = {à,á,â,ã,ä,å},
+     C = {Ç},
+     c = {ç},
      D = {Ð},
-     E = {È,É,Ê,Ë,Ę},
-     e = {è,é,ê,ë,ę},
+     E = {È,É,Ê,Ë},
+     e = {è,é,ê,ë},
      I = {Ì,Í,Î,Ï},
      i = {ì,í,î,ï,ı},
      L = {Ł},
      l = {ł},
-     N = {Ń,Ñ},
-     n = {ń,ñ},
+     N = {Ñ},
+     n = {ñ},
      O = {Ø,Ò,Ó,Ô,Õ,Ö},
      o = {ø,ò,ó,ô,õ,ö},
-     S = {Ś,Š},
-     s = {ś,š},
+     S = {Š},
+     s = {š},
      U = {Ù,Ú,Û,Ü},
      u = {ù,ú,û,ü},
      Y = {Ý,Ÿ},
+%    \end{macrocode}
+% For some reason, the \"y in the next line comes out as \ss.
+% Don't worry, there's really a |y diaeresis| in the source.
+%    \begin{macrocode}
      y = {ý,ÿ},
-     Z = {Ź,Ż,Ž},
-     z = {ź,ż,ž}
+     Z = {Ž},
+     z = {ž}
    }
+%</TU-basic>
 %    \end{macrocode}
-%}
-%    \begin{macrocode}
-%</Lato>
-%    \end{macrocode}
-% \dots\ and even less in the self-professedly awesone Font Awesome font.
+%\subsubsection{Empty glyph set}
+%\addtoUTFbookmarks{subsub:OT-inh-empty}
+% Other fonts, \eg, the self-professedly awesone Font Awesome font,
+% have no meaningful glyph arsenal at all, and should therefore be
+% aliased so that empty settings are applied.
 %\changes{v2.8b}{2021/02/21}{dummy settings for the Font Awesome font (\file{mt-FontAwesome.cfg})}
+%\changes{v3.0}{2021/06/22}{generalise empty settings}
 %    \begin{macrocode}
-%<*FontAwesome>
+%<*TU-empty>
 \DeclareCharacterInheritance
   { encoding = {TU,EU1,EU2},
-    family   = {FontAwesome} }
+    family   = {TU-empty} }
   { }
-%</FontAwesome>
+%</TU-empty>
 %    \end{macrocode}
 %
 %\subsection{Character protrusion}
 %\GeneralChanges{Protrusion}
-%\edef\x{\string\def\string\utfsectionii{\number\numexpr\thepage-\startpage\relax}}
-%\immediate\write\expandafter\utftmp\expandafter{\x}
+%\addtoUTFbookmarks{sub:OT-protrusion}
 %
 %    \begin{macrocode}
 
 %%% -----------------------------------------------------------------------
 %%% PROTRUSION
 
-%<*LatinModernRoman>
+%    \end{macrocode}
+%\subsubsection{Latin Modern Roman/New Computer Modern}
+%\addtoUTFbookmarks{subsub:OT-prot-LMR}
+%\changes{v3.0}{2021/08/08}{settings for New Computer Modern (provided by
+%                           \contributor Antonis Tsolomitis <antonis.tsolomitis\at gmail.com>)}
+%\changes{v3.0}{2021/08/13}{fix quotation marks in <LMR>}
+%    \begin{macrocode}
+%<*LatinModernRoman|NewComputerModern>
 \SetProtrusion
-   [ name     = LMR-default ]
-   { encoding = {EU1,EU2,TU},
-     family   = Latin Modern Roman }
+%<LatinModernRoman>   [ name     = LMR-default ]
+%<NewComputerModern>   [ name     = NCM-default ]
+%<LatinModernRoman>   { encoding = {TU,EU1,EU2},
+%<LatinModernRoman>     family   = Latin Modern Roman }
+%<NewComputerModern>   { }
    {
 %    \end{macrocode}
-%{\setmacrofont\LMR
+%{\setmacrofont\NCM
 %    \begin{macrocode}
      A = {50,50},
      Æ = {50,  },
@@ -551,8 +853,8 @@ luatexbase.add_to_callback("pre_linebreak_filter", nodeprocessor, "replace missi
      / = {200,300},
     /backslash    = {200,300},
      ' = {300,400}, % /quotesingle
-     ‘ = {500,700},  ’ = {500,600},
-     “ = {500,300},  ” = {200,600},
+     ‘ = {300,400},  ’ = {300,400},
+     “ = {300,300},  ” = {300,300},
      ‚ = {400,400},  „ = {400,400},
      ‹ = {400,400},  › = {300,500},
      « = {300,200},  » = {100,400},
@@ -582,35 +884,161 @@ luatexbase.add_to_callback("pre_linebreak_filter", nodeprocessor, "replace missi
      × = {150,250},
      ÷ = {150,250},
      € = {100,   },
+%<*LatinModernRoman>
     /one.oldstyle   = {100,100},
     /two.oldstyle   = { 50, 50},
     /three.oldstyle = { 30, 80},
     /four.oldstyle  = { 50, 50},
     /seven.oldstyle = { 50, 80},
+%</LatinModernRoman>
+%<*NewComputerModern>
+     Ά = {50,50},   % /Alphatonos
+     Ὰ = {120,50},  %
+     Ἀ = {120,50},  %
+     Ἁ = {80,50},  %
+     Ἂ = {220,50}, %
+     Ἃ = {220,50}, %
+     Ἄ = {170,50}, %
+     Ἅ = {170,50}, %
+     Ἆ = {190,50}, %
+     Ἇ = {190,50}, %
+     ᾈ = {150,50}, %
+     ᾉ = {80,50},  %
+     ᾊ = {220,50}, %
+     ᾋ = {220,50}, %
+     ᾌ = {170,50}, %
+     ᾍ = {170,50}, %
+     ᾎ = {210,50}, %
+     ᾏ = {210,50}, %
+     /uni1FBC.alt = {,205}, % Alpha prosgegrammeni
+     /uni1F88.alt = {50,190}, %Alpha psili prosgegrammeni
+     /uni1F89.alt = {,200}, %Alpha dasia prosgegrammeni
+     /uni1F8A.alt = {130,180}, %Alpha psili baria prosgegrammeni
+     /uni1F8B.alt = {130,190}, %Alpha dasia baria prosgegrammeni
+     /uni1F8C.alt = {100,190}, %Alpha psili oxia prosgegrammeni
+     /uni1F8D.alt = {70,190}, %Alpha dasia oxia prosgegrammeni
+     /uni1F8E.alt = {120,190}, %Alpha psili perispomeni prosgegrammeni
+     /uni1F8F.alt = {120,190}, %Alpha dasia perispomeni prosgegrammeni
+   %
+     /uni1FCC.alt = {,205}, % Eta prosgegrammeni
+     /uni1F98.alt = {185,170}, %Eta psili prosgegrammeni
+     /uni1F99.alt = {185,170}, %Eta dasia prosgegrammeni
+     /uni1F9A.alt = {220,170}, %Eta psili baria prosgegrammeni
+     /uni1F9B.alt = {220,170}, %Eta dasia baria prosgegrammeni
+     /uni1F9C.alt = {220,170}, %Eta psili oxia prosgegrammeni
+     /uni1F9D.alt = {220,170}, %Eta dasia oxia prosgegrammeni
+     /uni1F9E.alt = {255,170}, %Eta psili perispomeni prosgegrammeni
+     /uni1F9F.alt = {255,170}, %Eta dasia perispomeni prosgegrammeni
+   %
+     Ό = {95,50}, %
+%</NewComputerModern>
      Γ = {   ,180}, % /Gamma
-     Δ = {100,100}, % /Delta
+%<LatinModernRoman>     Δ = {100,100}, % /Delta
+%<NewComputerModern>     Δ = {50,50}, % /Delta
      Θ = { 50, 50}, % /Theta
-     Λ = {100,100}, % /Lambda
+%<LatinModernRoman>     Λ = {100,100}, % /Lambda
+%<NewComputerModern>     Λ = {50,50}, % /Lambda
 %    Ξ = {,},       % /Xi
 %    Π = {,},       % /Pi
      Σ = { 50, 50}, % /Sigma
-     Υ = {100,100}, % /Upsilon
+%<LatinModernRoman>     Υ = {100,100}, % /Upsilon
+%<NewComputerModern>     Υ = {80,80}, % /Upsilon
      Φ = { 50, 50}, % /Phi
      Ψ = { 50, 50}, % /Psi
-%    Ω = {,},       % /Omega
+%<*NewComputerModern>
+     Ω = { 20, 30}, % /Omega
+     Ώ = {150,30},
+     Ὠ = {220,30},
+     Ὡ = {205,30},
+     Ὢ = {285,30},
+     Ὣ = {285,30},
+     Ὤ = {270,30},
+     Ὥ = {270,30},
+     Ὦ = {310,30},
+     Ὧ = {310,30},
+     ᾨ = {205,30},
+     ᾩ = {205,30},
+     ᾪ = {285,30},
+     ᾫ = {285,30},
+     ᾬ = {270,30},
+     ᾭ = {270,30},
+     ᾮ = {310,30},
+     ᾯ = {310,30},
+     /uni1FFC.alt = {,230}, % Omega prosgegrammeni
+     /uni1FA8.alt = {185,190}, %Omega psili prosgegrammeni
+     /uni1FA9.alt = {185,190}, %Omega dasia prosgegrammeni
+     /uni1FAA.alt = {220,190}, %Omega psili baria prosgegrammeni
+     /uni1FAB.alt = {220,190}, %Omega dasia baria prosgegrammeni
+     /uni1FAC.alt = {220,190}, %Omega psili oxia prosgegrammeni
+     /uni1FAD.alt = {220,190}, %Omega dasia oxia prosgegrammeni
+     /uni1FAE.alt = {255,190}, %Omega psili perispomeni prosgegrammeni
+     /uni1FAF.alt = {255,190}, %Omega dasia perispomeni prosgegrammeni
+   %
+     α = {,50},
+     γ = {50,50},
+     ζ = {,50},
+     θ = {30,40},
+     ι = {,50},
+     ϊ = {-20,-30},
+     κ = {50,50},
+     λ = {50,50},
+     ν = {50,25},
+     π = {50,50},
+     σ = {,50},
+     ς = {,50},
+     τ = {50,50},
+     χ = {50,50},
+     ψ = {50,50},
+%     /uni1F98.alt = {,},
 %    \end{macrocode}
 %}
+% <CMU> Serif doesn't include |*.end| glyphs, and the OldStyle numbers' names differ.
 %    \begin{macrocode}
    }
 
 \SetProtrusion
-   [ name     = LMR-it ]
-   { encoding = {EU1,EU2,TU},
-     family   = Latin Modern Roman,
-     shape    = {it,sl}       }
+   [ name     = NCM-TU,
+     load     = NCM-default ]
+   { encoding = {TU,EU1,EU2},
+     family   = {New Computer Modern} }
+   {
+     /a.end = {,330},
+     /e.end = {,350},
+     /k.alt = { ,50},
+     /r.end = {,300},
+     /m.end = {,200},
+     /n.end = {,300},
+     /one.oldstyle   = {100,100},
+     /two.oldstyle   = { 50, 50},
+     /three.oldstyle = { 30, 80},
+     /four.oldstyle  = { 50, 50},
+     /seven.oldstyle = { 50, 80},
+   }
+
+\SetProtrusion
+   [ name     = CMU-TU,
+     load     = NCM-default ]
+   { encoding = {TU,EU1,EU2},
+     family   = {CMU Serif} }
+   {
+     /oneoldstyle   = {100,100},
+     /twooldstyle   = { 50, 50},
+     /threeoldstyle = { 30, 80},
+     /fouroldstyle  = { 50, 50},
+     /sevenoldstyle = { 50, 80},
+%</NewComputerModern>
+   }
+
+\SetProtrusion
+%<LatinModernRoman>   [ name     = LMR-it ]
+%<NewComputerModern>   [ name     = NCM-it ]
+%<LatinModernRoman>   { encoding = {TU,EU1,EU2},
+%<LatinModernRoman>     family   = Latin Modern Roman,
+%<LatinModernRoman>     shape    = {it,sl}       }
+%<NewComputerModern>   { }
    {
 %    \end{macrocode}
-%{\setmacrofont\LMR
+%{\setmacrofont\NCM
 %    \begin{macrocode}
      A = {125,100},
      Æ = {125,-55},
@@ -727,6 +1155,7 @@ luatexbase.add_to_callback("pre_linebreak_filter", nodeprocessor, "replace missi
      × = {200,200},
      ÷ = {200,200},
      € = {150,   },
+%<*LatinModernRoman>
     /one.oldstyle   = {100,100},
     /two.oldstyle   = {100, 80},
     /three.oldstyle = { 80, 50},
@@ -735,26 +1164,163 @@ luatexbase.add_to_callback("pre_linebreak_filter", nodeprocessor, "replace missi
     /six.oldstyle   = { 50,   },
     /seven.oldstyle = { 80, 80},
     /eight.oldstyle = { 50,   },
+%</LatinModernRoman>
      Γ = {100,120}, % /Gamma
      Δ = {120,100}, % /Delta
      Θ = {120, 50}, % /Theta
-     Λ = {130,100}, % /Lambda
+%<LatinModernRoman>     Λ = {130,100}, % /Lambda
+%<NewComputerModern>     Λ = {160,100}, % /Lambda
      Ξ = {100,},    % /Xi
      Π = {100,},    % /Pi
      Σ = {100, 50}, % /Sigma
-     Υ = {180,100}, % /Upsilon
+%<LatinModernRoman>     Υ = {180,100}, % /Upsilon
+%<NewComputerModern>     Υ = {260,100}, % /Upsilon
      Φ = {130, 70}, % /Phi
      Ψ = {130, 50}, % /Psi
      Ω = { 50,},    % /Omega
+%<*NewComputerModern>
+     Ὰ = {190,50},  %
+     Ἀ = {220,50},  %
+     Ἁ = {200,50},  %
+     Ἂ = {300,50}, %
+     Ἃ = {300,50}, %
+     Ἄ = {300,50}, %
+     Ἅ = {300,50}, %
+     Ἆ = {320,50}, %
+     Ἇ = {320,50}, %
+     ᾈ = {200,50}, %
+     ᾉ = {200,50},  %
+     ᾊ = {300,50}, %
+     ᾋ = {300,50}, %
+     ᾌ = {300,50}, %
+     ᾍ = {300,50}, %
+     ᾎ = {320,50}, %
+     ᾏ = {320,50}, %
+     /uni1FBC.alt = {,205}, % Alpha prosgegrammeni
+     /uni1F88.alt = {50,190}, %Alpha psili prosgegrammeni
+     /uni1F89.alt = {,200}, %Alpha dasia prosgegrammeni
+     /uni1F8A.alt = {130,180}, %Alpha psili baria prosgegrammeni
+     /uni1F8B.alt = {130,190}, %Alpha dasia baria prosgegrammeni
+     /uni1F8C.alt = {100,190}, %Alpha psili oxia prosgegrammeni
+     /uni1F8D.alt = {70,190}, %Alpha dasia oxia prosgegrammeni
+     /uni1F8E.alt = {120,190}, %Alpha psili perispomeni prosgegrammeni
+     /uni1F8F.alt = {120,190}, %Alpha dasia perispomeni prosgegrammeni
+   %
+     /uni1FCC.alt = {,205}, % Eta prosgegrammeni
+     /uni1F98.alt = {185,170}, %Eta psili prosgegrammeni
+     /uni1F99.alt = {185,170}, %Eta dasia prosgegrammeni
+     /uni1F9A.alt = {220,170}, %Eta psili baria prosgegrammeni
+     /uni1F9B.alt = {220,170}, %Eta dasia baria prosgegrammeni
+     /uni1F9C.alt = {220,170}, %Eta psili oxia prosgegrammeni
+     /uni1F9D.alt = {220,170}, %Eta dasia oxia prosgegrammeni
+     /uni1F9E.alt = {255,170}, %Eta psili perispomeni prosgegrammeni
+     /uni1F9F.alt = {255,170}, %Eta dasia perispomeni prosgegrammeni
+   %
+     Ό = {95,50}, %
+     Ω = {120, 30}, % /Omega
+     Ώ = {160,30},
+     Ὠ = {250,30},
+     Ὡ = {250,30},
+     Ὢ = {300,30},
+     Ὣ = {300,30},
+     Ὤ = {300,30},
+     Ὥ = {300,30},
+     Ὦ = {330,30},
+     Ὧ = {330,30},
+     ῼ = {30,30},
+     ᾨ = {230,30},
+     ᾩ = {230,30},
+     ᾪ = {300,30},
+     ᾫ = {300,30},
+     ᾬ = {300,30},
+     ᾭ = {300,30},
+     ᾮ = {330,30},
+     ᾯ = {330,30},
+     /uni1FFC.alt = {,230}, % Omega prosgegrammeni
+     /uni1FA8.alt = {185,190}, %Omega psili prosgegrammeni
+     /uni1FA9.alt = {185,190}, %Omega dasia prosgegrammeni
+     /uni1FAA.alt = {220,190}, %Omega psili baria prosgegrammeni
+     /uni1FAB.alt = {220,190}, %Omega dasia baria prosgegrammeni
+     /uni1FAC.alt = {220,190}, %Omega psili oxia prosgegrammeni
+     /uni1FAD.alt = {220,190}, %Omega dasia oxia prosgegrammeni
+     /uni1FAE.alt = {255,190}, %Omega psili perispomeni prosgegrammeni
+     /uni1FAF.alt = {255,190}, %Omega dasia perispomeni prosgegrammeni
+   %
+     α = {50,50},
+     γ = {100,50},
+     δ = {30,50},
+     ε = {30,},
+     ζ = {20,50},
+     θ = {30,40},
+     ι = {,50},
+     ϊ = {-20,-30},
+     κ = {50,50},
+     λ = {-20,50},
+     ν = {50,25},
+     ο ={40,},
+     π = {50,50},
+     σ = {40,50},
+     ς = {20,50},
+     τ = {50,50},
+     υ = {80,},
+     φ = {80,},
+     χ = {20,},
+     ψ = {80,},
+%    /uni1F98.alt = {,},
 %    \end{macrocode}
 %}
 %    \begin{macrocode}
    }
-%</LatinModernRoman>
+
+\SetProtrusion
+   [ name     = NCM-it-TU,
+     load     = NCM-it ]
+   { encoding = {TU,EU1,EU2},
+     family   = {New Computer Modern},
+     shape    = {it,sl} }
+   {
+     /a.end = {,330}, %Fix
+     /e.end = {,350}, %Fix
+     /k.alt = {  ,50}, %Fix
+     /r.end = {,300}, %Fix
+     /m.end = {,200}, %Fix
+     /n.end = {,300}, %Fix
+     /one.oldstyle   = {100,100},
+     /two.oldstyle   = {100, 80},
+     /three.oldstyle = { 80, 50},
+     /four.oldstyle  = { 80, 80},
+     /five.oldstyle  = { 50,   },
+     /six.oldstyle   = { 50,   },
+     /seven.oldstyle = { 80, 80},
+     /eight.oldstyle = { 50,   },
+   }
+
+\SetProtrusion
+   [ name     = CMU-it-TU,
+     load     = NCM-it ]
+   { encoding = {TU,EU1,EU2},
+     family   = {CMU Serif},
+     shape    = {it,sl} }
+   {
+     /oneoldstyle   = {100,100},
+     /twooldstyle   = {100, 80},
+     /threeoldstyle = { 80, 50},
+     /fouroldstyle  = { 80, 80},
+     /fiveoldstyle  = { 50,   },
+     /sixoldstyle   = { 50,   },
+     /sevenoldstyle = { 80, 80},
+     /eightoldstyle = { 50,   },
+%</NewComputerModern>
+   }
+%</LatinModernRoman|NewComputerModern>
+%    \end{macrocode}
+%\subsubsection{Charis SIL}
+%\addtoUTFbookmarks{subsub:OT-prot-Charis}
+%    \begin{macrocode}
 %<*CharisSIL>
 \SetProtrusion
    [ name     = Charis-default ]
-   { encoding = {EU1,EU2,TU},
+   { encoding = {TU,EU1,EU2},
      family   = Charis SIL }
    {
 %    \end{macrocode}
@@ -933,7 +1499,7 @@ luatexbase.add_to_callback("pre_linebreak_filter", nodeprocessor, "replace missi
 
 \SetProtrusion
    [ name     = Charis-it   ]
-   { encoding = {EU1,EU2,TU},
+   { encoding = {TU,EU1,EU2},
      family   = Charis SIL,
      shape    = {it,sl}  }
    {
@@ -1087,14 +1653,11 @@ luatexbase.add_to_callback("pre_linebreak_filter", nodeprocessor, "replace missi
    [ name     = Charis-sc,
      load     = Charis-default,
      command  = {MT@get@CHARIS@SC} ]
-   { encoding = {EU1,EU2,TU},
+   { encoding = {TU,EU1,EU2},
      family   = Charis SIL,
      shape    = {sc}  }
    {
-%    \end{macrocode}
-%{\setmacrofont\CharisSIL
-%    \begin{macrocode}
-    % ᴀ = {100,100}, % etc., doesn't work with \textsc
+%     ᴀ = {100,100}, % etc., doesn't work with \textsc
      /a.\MT@CHARIS@SC = {100,100},
      /c.\MT@CHARIS@SC = {50,  },
      /d.\MT@CHARIS@SC = {  ,50},
@@ -1113,15 +1676,307 @@ luatexbase.add_to_callback("pre_linebreak_filter", nodeprocessor, "replace missi
      /w.\MT@CHARIS@SC = {50,50},
      /x.\MT@CHARIS@SC = {50,50},
      /y.\MT@CHARIS@SC = {50,50}
+   }
+%</CharisSIL>
+%    \end{macrocode}
+%\subsubsection{EB~Garamond}
+%\addtoUTFbookmarks{subsub:OT-prot-EBGaramond}
+%\changes{v3.0}{2021/10/25}{settings for <EB> Garamond (OpenType)}
+%    \begin{macrocode}
+%<*EBGaramond>
+\SetProtrusion
+  [ name     = EBGaramond-TU,
+    load     = EBGaramond-T1-LF ]
+  { encoding = {TU,EU1,EU2},
+    family   = EBGaramond }
+  {
+   /one.tosf   = {150,150},
+   /two.tosf   = {50,50},
+   /three.tosf = {50,50},
+   /four.tosf  = {50,50},
+   /five.tosf  = {50,50},
+   /six.tosf   = {50,50},
+   /seven.tosf = {50,80},
+   /eight.tosf = {50,50},
+   /nine.tosf  = {50,50},
+   /one.lf     = {50,50},
+   /two.lf     = {50,50},
+   /four.lf    = {50,50},
+   /seven.lf   = {50,50},
+   /one.osf    = {50,50},
+   /two.osf    = {50,50},
+   /four.osf   = {50,50},
+   /seven.osf  = {50,50},
+%    \end{macrocode}
+%{\setmacrofont\EBGaramond
+%    \begin{macrocode}
+    Ⅳ =  {   , 35},
+    Ⅵ =  { 35,   },
+    Ⅶ  = { 30,   },
+    Ⅷ  = { 25,   },
+    Ⅸ =  {   , 35},
+    Ⅺ =  { 35,   },
+    Ⅻ =  { 30,   },
+    ⅳ =  {   , 25},
+    ⅵ =  { 25,   },
+    ⅶ  = { 20,   },
+    ⅷ  = { 20,   },
+    ⅸ =  {   , 25},
+    ⅺ =  { 25,   },
+    ⅻ  = { 20,   },
+  % textcomp
+   \textquotesingle = {400,500},
+    ˷ = {200,250},
+    ƒ = {   ,100},
+    ₡ = { 50,   },
+    † = {100,100},
+    ‡ = { 80, 80},
+    • = {   ,100},
+    · = {300,400}, % periodcentered
+   /twodotenleader = {150,200},
+   /ellipsis  = {100,150},
+    ℃ = { 80,   },
+    ° = {400,400},
+    ™ = {100,100},
+    © = {100,100},
+    ® = {100,100},
+    ª = {200,200},
+    º = {200,200},
+    ¹ = {200,200},
+    ² = {200,200},
+    ³ = {200,200},
+    ¬ = {200,   },
+    ¶ = {   ,100},
+    − = {300,300}, % minus
+    ± = {150,200},
+    × = {100,150},
+    ÷ = {150,200},
+    € = { 50,100},
+    ¥ = { 50, 50},
+  % Greek
+    Γ = {   ,150},
+    Δ = {100,100},
+    Θ = { 50, 50},
+    Λ = {100,100},
+    Ξ = { 50, 50},
+    Υ = {100,100},
+    Φ = { 50, 50},
+    Ψ = { 50, 50},
+    Ω = {   , 50},
+    ζ = {   , 50},
+    λ = { 50, 50},
+    γ = { 50, 50},
+    π = { 50, 50},
+    ρ = {   , 50},
+    σ = { 50, 50},
+    τ = { 50, 50},
+    χ = { 50, 50},
+    φ = { 50, 50},
+    ϙ = { 50, 50},
+    ψ = { 50, 50},
+  % Cyrillic
+    Г = {   ,150},
+    Д = { 50, 50},
+    Ж = { 50, 50},
+    К = {   , 50},
+    Л = { 50,   },
+    Љ = { 50, 50},
+    З = { 50, 50},
+    У = { 50,100},
+    Ф = { 50, 50},
+    Ч = { 70,   },
+    Я = { 50,   },
+    Ъ = { 50, 50},
+    Ь = {   , 50},
+    ж = { 50, 50},
+    ф = { 50, 50},
+    ъ = { 50, 50},
+    Ѱ = { 50, 50},
+    г = {   , 50},
+    Ѵ = { 50, 50},
+  % other
+    Þ = {   , 50},
+    þ = {   , 50},
+    Ʌ = {100,100},
+    ⑴  = { 35, 65},
+    ⒜  = { 30, 60},
 %    \end{macrocode}
 %}
 %    \begin{macrocode}
-   }
-%</CharisSIL>
+  }
+
+\SetProtrusion
+  [ name     = EBGaramond-it-TU,
+    load     = EBGaramond-it-T1-LF ]
+  { encoding = {TU,EU1,EU2},
+    family   = EBGaramond,
+    shape    = it }
+  {
+   /zero.tosf  = {150,150},
+   /one.tosf   = {150,150},
+   /two.tosf   = {80,80},
+   /three.tosf = {50,80},
+   /four.tosf  = {50,80},
+   /five.tosf  = {50,80},
+   /six.tosf   = {50,50},
+   /seven.tosf = {50,100},
+   /eight.tosf = {50,50},
+   /nine.tosf  = {50,80},
+   /one.lf     = {50,50},
+   /two.lf     = {50,50},
+   /three.lf   = {80,50},
+   /four.lf    = {50,50},
+   /five.lf    = {50,50},
+   /six.lf     = {50,50},
+   /seven.lf   = {50,50},
+   /eight.lf   = {50,50},
+   /nine.lf    = {50,  },
+   /one.osf    = {50,50},
+   /two.osf    = {50,50},
+   /three.osf  = {  ,80},
+   /four.osf   = {50,50},
+   /seven.osf  = {50,50},
+%    \end{macrocode}
+%{\setmacrofont\EBGaramond
+%    \begin{macrocode}
+  % textcomp
+    \textquotesingle = {800,100},
+    − = {300,300}, % minus
+    ˷ = {200,250},
+    † = {200,100},
+    ‡ = { 80, 80},
+    • = {300,   },
+    ℃ = {200,   },
+    ƒ = {100,   },
+    ₡ = {100,   },
+    ™ = {200,   },
+    © = {200,100},
+    ® = {200,100},
+    ¬ = {300,   },
+    ° = {500,100},
+    ± = {200,150},
+    ¹ = {300,100},
+    ² = {300,   },
+    ³ = {300,   },
+    · = {300,500}, % periodcentered
+   /twodotenleader = {150,300},
+   /ellipsis  = {100,200},
+    € = {100,   },
+    × = {200,100},
+    ÷ = {200,200},
+    ¶ = {   ,100},
+    ª = {200,200},
+    º = {200,200},
+    ¥ = { 50, 50},
+  % Greek
+    Δ = {150,   },
+    Θ = { 50,   },
+    Λ = {150,   },
+    Υ = {100, 50},
+    Φ = { 50,   },
+    Χ = { 50,   },
+    Ψ = {100,   },
+    Ω = { 50,   },
+    γ = {   , 50},
+    λ = { 50,   },
+  % Cyrillic
+    Ү = { 50,   },
+    Ч = {100,   },
+    З = {100,   },
+  % other
+    Þ = { 50, 50},
+    þ = {   , 50},
+%    \end{macrocode}
+%}
+%    \begin{macrocode}
+  }
+
+\SetProtrusion
+  [ name     = EBGaramond-sc-TU,
+    load     = EBGaramond-TU ]
+  { encoding = {TU,EU1,EU2},
+    family   = EBGaramond,
+    shape    = sc }
+  {
+%    \end{macrocode}
+%{\setmacrofont\EBGaramond
+%    \begin{macrocode}
+     a = {50,50},
+   \ae = {50,  },
+     d = {  ,50},
+     f = {  ,50},
+     g = {50,  },
+     j = {50,  },
+     l = {  ,50},
+     o = {50,50},
+   \oe = {50,  },
+     q = {50,70},
+     r = {  , 0},
+     t = {50,50},
+     y = {50,50},
+  % Greek
+     α = {50,50},
+     γ = {  ,50},
+     δ = {50,50},
+     λ = {50,50},
+     ο = {50,50},
+     τ = {50,50},
+     υ = {50,50},
+     ψ = {50,50},
+  % Cyrillic
+     т = {50,50},
+%    \end{macrocode}
+%}
+%    \begin{macrocode}
+  }
+
+\SetProtrusion
+  [ name     = EBGaramond-scit-TU,
+    load     = EBGaramond-it-TU ]
+  { encoding = {TU,EU1,EU2},
+    family   = EBGaramond,
+    shape    = scit }
+  {
+%    \end{macrocode}
+%{\setmacrofont\EBGaramond
+%    \begin{macrocode}
+     a = {50,50},
+   \ae = {50,  },
+     d = {  ,50},
+     f = {  ,50},
+     g = {50,  },
+     j = {50,  },
+     l = {  ,50},
+     o = {50,50},
+   \oe = {50,  },
+     q = {50,70},
+     r = {  , 0},
+     t = {50,50},
+     y = {50,50},
+  % Greek
+     α = {50,50},
+     γ = {  ,50},
+     δ = {50,50},
+     λ = {50,50},
+     ο = {50,50},
+     τ = {50,50},
+     υ = {50,50},
+     ψ = {50,50},
+  % Cyrillic
+     т = {50,50},
+%    \end{macrocode}
+%}
+%    \begin{macrocode}
+  }
+%</EBGaramond>
+%    \end{macrocode}
+%\subsubsection{Palatino}
+%\addtoUTFbookmarks{subsub:OT-prot-Palatino}
+%    \begin{macrocode}
 %<*Palatino>
 \SetProtrusion
    [ name     = palatino-default ]
-   { encoding = {EU1,EU2,TU},
+   { encoding = {TU,EU1,EU2},
      family   = {Palatino} }
    {
 %    \end{macrocode}
@@ -1223,7 +2078,7 @@ luatexbase.add_to_callback("pre_linebreak_filter", nodeprocessor, "replace missi
 
 \SetProtrusion
    [ name     = palatino-it   ]
-   { encoding = {EU1,EU2,TU},
+   { encoding = {TU,EU1,EU2},
      family   = {Palatino},
      shape    = {it,sl}  }
    {
@@ -1322,7 +2177,7 @@ luatexbase.add_to_callback("pre_linebreak_filter", nodeprocessor, "replace missi
 \SetProtrusion
    [ name     = palatino-sc,
      load     = palatino-default ]
-   { encoding = {EU1,EU2,TU},
+   { encoding = {TU,EU1,EU2},
      family   = {Palatino},
      shape    = sc }
    {
@@ -1352,18 +2207,26 @@ luatexbase.add_to_callback("pre_linebreak_filter", nodeprocessor, "replace missi
 %    \begin{macrocode}
    }
 %</Palatino>
-%<Lato> %% No settings yet.
-%<*FontAwesome>
+%    \end{macrocode}
+%\subsubsection{Basic glyph set}
+% The protrusion settings will still be loaded from \file{microtype.cfg}.
+%\addtoUTFbookmarks{subsub:OT-prot-basic}
+%    \begin{macrocode}
+%<TU-basic> %% No settings.
+%    \end{macrocode}
+%\subsubsection{Empty glyph set}
+%\addtoUTFbookmarks{subsub:OT-prot-empty}
+%    \begin{macrocode}
+%<*TU-empty>
 \SetProtrusion
    [ name = empty ]
    { encoding = {TU,EU1,EU2},
-     family   = {FontAwesome} }
+     family   = {TU-empty} }
    { }
-%</FontAwesome>
+%</TU-empty>
 
 %    \end{macrocode}
-%\immediate\write   \utftmp{\string\setcounter{CodelineNo}{\the\c@CodelineNo}}
-%\immediate\write   \utftmp{\string\setcounter{footnote}{\the\c@footnote}}
-%\immediate\closeout\utftmp
 %
 \endinput
+%
+% % vim: ts=2:sw=2:et:

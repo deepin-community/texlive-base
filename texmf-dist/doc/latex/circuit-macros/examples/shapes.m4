@@ -6,7 +6,6 @@ divert(-1)
 # shapes.m4
 # 3D structures with complex surfaces and hidden lines are the domain of more
 # sophisticated software packages, but basic shapes can be drawn with pic.
-#threeD_init
 
 #####################################################
 
@@ -14,9 +13,9 @@ divert(-1)
                               [colored "color"])'
 define(`cylinder3D',`[ Start: (0,0)
  xdispl = `$1'; ydispl = `$2'; zdispl = `$3'
- diamc = ifelse(`$4',,(lenc/2),`$4') ; radc = diamc/2
  define(`M4CL',`xdispl,ydispl,zdispl')dnl
  lenc = length3D(M4CL)
+ diamc = ifelse(`$4',,(lenc/2),`$4') ; radc = diamc/2
  cs = dot3D(View3D,M4CL)/lenc
  End: (Project(M4CL))
  az = atan2(ydispl,xdispl)

@@ -1,4 +1,4 @@
-![nodetree](https://raw.githubusercontent.com/Josef-Friedrich/nodetree/master/graphics/packagename.png)
+![nodetree](https://raw.githubusercontent.com/Josef-Friedrich/nodetree/main/graphics/packagename.png)
 
 # Abstract
 
@@ -18,7 +18,7 @@ terminal to generate the document.
 
 # License
 
-Copyright (C) 2016-2020 by Josef Friedrich <josef@friedrich.rocks>
+Copyright (C) 2016-2022 by Josef Friedrich <josef@friedrich.rocks>
 ------------------------------------------------------------------------
 This work may be distributed and/or modified under the conditions of
 the LaTeX Project Public License, either version 1.3 of this license
@@ -32,10 +32,10 @@ version 2005/12/01 or later.
 
 # CTAN
 
-Since July 2016 the cloze package is included in the Comprehensive TeX
+Since July 2016 the nodetree package is included in the Comprehensive TeX
 Archive Network (CTAN).
 
-* TeX archive: http://mirror.ctan.org/tex-archive/macros/luatex/generic/nodetree
+* TeX archive: http://mirror.ctan.org/macros/luatex/generic/nodetree
 * Package page: http://www.ctan.org/pkg/nodetree
 
 # Repository
@@ -85,7 +85,7 @@ nodetree
 \end{document}
 ```
 
-![nodetree](https://raw.githubusercontent.com/Josef-Friedrich/nodetree/master/graphics/math.png)
+![nodetree](https://raw.githubusercontent.com/Josef-Friedrich/nodetree/main/graphics/math.png)
 
 ## The node list of the word 'Office'
 
@@ -99,7 +99,7 @@ Office
 \end{document}
 ```
 
-![nodetree](https://raw.githubusercontent.com/Josef-Friedrich/nodetree/master/graphics/ligatures.png)
+![nodetree](https://raw.githubusercontent.com/Josef-Friedrich/nodetree/main/graphics/ligatures.png)
 
 # Development
 
@@ -150,8 +150,8 @@ if not modules then modules = { } end modules ['nodetree'] = {
 ### Update the copyright year:
 
 ```
-sed -i 's/(C) 2016-2020/(C) 2016-2021/g' nodetree.ins
-sed -i 's/(C) 2016-2020/(C) 2016-2021/g' nodetree.dtx
+sed -i 's/(C) 2016-2022/(C) 2016-2021/g' nodetree.ins
+sed -i 's/(C) 2016-2022/(C) 2016-2021/g' nodetree.dtx
 ```
 
 ### Command line tasks:

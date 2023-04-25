@@ -20,38 +20,37 @@ M4 = m4
 #---------------------------------------------
 DOC = examplespsfrag
 
-FIGS = Adder.eps Alogix.eps ABlogix.eps Antennas.eps Audio.eps AmpTable.eps \
-  AntiqueClock.eps \
-  Bip.eps Btree.eps Byte.eps Buttons.eps \
-  CanLogic.eps CctTable.eps Conn.eps Connectors.eps \
-  Counting.eps Crossbar.eps Crow.eps \
-  Decoder.eps Demultiplexer.eps Dini.eps Diodes.eps Drive.eps \
-  Contact.eps Contacts.eps \
-  Csource.eps \
-  Emarrows.eps Flow.eps Fuses.eps \
-  GrayCode.eps Grounds.eps Headers.eps Heathkit.eps Jack.eps \
-  I2L.eps Inclpdf.eps \
-  Lyap.eps Logic.eps Loglog.eps \
-  MC.eps Mixer.eps MotorControl.eps Multiplexer.eps \
-  NLG.eps NPDT.eps Nport.eps \
-  Opamp.eps Optoiso.eps Pconn.eps PushPull.eps Quantum.eps \
-  Rectifiers.eps Relay.eps Rotbox.eps \
-  Schottky.eps Sierpinski.eps ShiftR.eps Sixpole.eps Sources.eps SQUID.eps \
-  Switches.eps \
-  Tgate.eps Three.eps Timer.eps TTLnand.eps Ttree.eps Tubediags.eps \
-  Windings.eps Variable.eps Xform.eps XOR.eps \
-  control.eps csc.eps diamond.eps \
-  ex00.eps ex01.eps ex02.eps ex03.eps ex04.eps \
-  ex05.eps ex06.eps ex08.eps ex09.eps ex10.eps ex11.eps ex12.eps \
-  ex15.eps ex16.eps ex17.eps ex18.eps ex21.eps exp.eps \
-  fet.eps graysurf.eps lcct.eps pwrsupply.eps quick.eps \
-  random.eps recycle.eps relaycoil.eps rose.eps sfg.eps shapes.eps \
-  thyristor.eps ujt.eps worm.eps
+FIGS = \
+  ABlogix.eps Adder.eps Alogix.eps AmpTable.eps Antennas.eps Arresters.eps \
+  Audio.eps Bip.eps Btree.eps Buttons.eps Byte.eps \
+  Capacitors.eps CanLogic.eps Chips.eps Conn.eps Connectors.eps \
+  Contacts.eps Contact.eps control.eps Crow.eps \
+  csc.eps Csource.eps Decoder.eps \
+  Demultiplexer.eps diamond.eps Dini.eps Diodes.eps Drive.eps \
+  EEP.eps Emarrows.eps Escher.eps EVplugs.eps \
+  ex00.eps ex01.eps ex02.eps ex03.eps ex04.eps ex05.eps ex06.eps ex08.eps \
+  ex09.eps ex10.eps ex11.eps ex12.eps ex15.eps ex16.eps ex17.eps ex18.eps \
+  ex21.eps exp.eps fet.eps Flow.eps Fuses.eps \
+  Geometry.eps GrayCode.eps graysurf.eps Grounds.eps \
+  Headers.eps Heathkit.eps \
+  I2L.eps Incleps.eps Inductors.eps Jack.eps \
+  lcct.eps Logic.eps Loglog.eps MC.eps Mixer.eps MoreTable.eps \
+  MotorControl.eps Multiplexer.eps \
+  NLG.eps NPDT.eps Nport.eps Opamp.eps Optoiso.eps \
+  Pconn.eps Plate.eps PushPull.eps pwrsupply.eps \
+  Quantum.eps quick.eps \
+  random.eps Rectifiers.eps recycle.eps relaycoil.eps Relay.eps \
+  Resistors.eps Rotbox.eps \
+  Schottky.eps sfg.eps shapes.eps ShiftR.eps Sierpinski.eps Sixpole.eps \
+  Smithchart.eps Sources.eps SQUID.eps Switches.eps \
+  Tgate.eps Three.eps thyristor.eps TTLnand.eps Tubediags.eps \
+  UNO.eps ujt.eps Variable.eps Windings.eps worm.eps Xform.eps XOR.eps \
+  rose.eps
 
 LOCALFIGS = ex21
 
 # Files using boxdims macros:
-BOXDIMS = ex09 Crow Inclpdf Loglog TTLnand Opamp Ttree Windings
+BOXDIMS = ex09 Crow Incleps Loglog TTLnand Opamp Btree Windings
 
 # It is advisable to do `make clean' between test examples.
 #---------------------------------------------
@@ -131,7 +130,7 @@ test.pic: test.m4 testlinks
 	$(M4) $(M4MACROS) tstpsfrag.dim test.m4 > test.pic
 
 testlinks:
-	for file in ics.m4 FlowchartDefs.m4 ; do ln -s ../$$file ; done
+	-for file in ics.m4 FlowchartDefs.m4 ; do ln -s ../$$file ; done
 	touch testlinks
 
 clean:
@@ -143,6 +142,7 @@ clean:
 	-if /usr/bin/test -f testlinks ; then \
      ls -l *.m4 | grep '\->' | \
        sed -e 's/^.* \([^ ][^ ]*\) ->.*$$/rm -f \1/' | sh; rm -f testlinks ; fi
+	rm -f FlowchartDefs.m4 ics.m4
 	for file in $(LOCALFIGS); do rm -f $${file}.m4 ; done
 	rm -f *.log *.ps *.aux *.mp *.[0-9] *.[0-9][0-9] *.mpx *.eps *.dim *.pic
 	rm -f core log mpxerr* *links figs.* *.dim dims F_test.* setdim.tex

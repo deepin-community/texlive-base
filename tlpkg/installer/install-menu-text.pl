@@ -1,15 +1,15 @@
 #!/usr/bin/env perl
-# $Id: install-menu-text.pl 57970 2021-02-27 14:17:34Z siepo $
-# install-menu-txt.pl
+# $Id: install-menu-text.pl 63643 2022-06-18 21:43:37Z karl $
 #
-# Copyright 2007-2021 Norbert Preining, Karl Berry
+# Copyright 2007-2022 Norbert Preining, Karl Berry
 # Copyright 2007-2008 Reinhard Kotucha
 # This file is licensed under the GNU General Public License version 2
 # or any later version.
 #
 # This file implements the text based menu system for the TeX Live installer.
 
-use vars qw(@::end_install_hook $::opt_no_cls);
+use vars qw(@::end_install_hook
+            $::opt_no_cls $::opt_select_repository $::run_menu);
 
 our %vars;
 our $opt_in_place;
@@ -154,7 +154,7 @@ sub run_menu_text {
       }
     }
     print "----\n";
-    print "[0] default mirror   http://mirror.ctan.org\n";
+    print "[0] default mirror   https://mirror.ctan.org\n";
     my $local_ind = "a";
     if ($#media_available >= 0) {
       print "Local repositories:\n";
@@ -239,7 +239,7 @@ sub run_menu_text {
     warn "\n";
     warn "Please select a different mirror!  See info above.\n";
     print STDERR "Press Enter to exit... ";
-    $ans = readline (*STDIN);
+    my $ans = readline (*STDIN);
     exit (1);
   }
 
@@ -545,6 +545,10 @@ EOF
   if ("\u$answer" eq '1' and !$opt_in_place) {
     print "New value for TEXDIR [$vars{'TEXDIR'}]: ";
     $answer = &input_dirname ();
+    # update free space information
+    if ($answer ne $vars{'TEXDIR'}) {
+      $vars{'free_size'} = TeXLive::TLUtils::diskfree($answer);
+    }
     $vars{'TEXDIR'} = $answer if $answer ne "";
     my $texdirnoslash;
     if ($vars{'TEXDIR'}=~/^(.*)\/$texlive_release$/) {
@@ -619,10 +623,7 @@ sub input_dirname
   $answer =~ s!\\!/!g if win32();  # switch to forward slashes
 
   if (!$noexpansion) {
-    my $home = getenv('HOME');
-    $home = getenv('USERPROFILE') if win32();
-    $home ||= '~';
-    $answer =~ s/^~/$home/;          # $home expansion
+    $answer = TeXLive::TLUtils::expand_tilde($answer);
   }
 
   if ($answer !~ m/^~/) {
@@ -715,11 +716,11 @@ sub help_menu {
     'R' => \&main_menu,
     'Q' => \&quit
       );
-  my $installer_help="$installerdir/tlpkg/installer/install-tl.html";
+  my $installer_help = "notused/tlpkg/installer/install-tl.html";
 
   clear_screen;
 
-  my @text=html2text "$installer_help";
+  my @text=html2text ($installer_help);
   my $lines=(@text);
   my $overlap=3;
   my $lps=32; # lines per screen - overlap
@@ -840,9 +841,7 @@ EOF
 
   if (unix()) {
     if (("\u$answer" eq 'L') and !$vars{'instopt_portable'}) {
-      my $home = getenv('HOME');
-      $home = getenv('USERPROFILE') if (win32());
-      $home ||= '~';
+      my $home = TeXLive::TLUtils::get_user_home();
       toggle 'instopt_adjustpath';
       if ($vars{'instopt_adjustpath'}) {
         print "New value for binary directory [$sys_bin]: ";
@@ -870,9 +869,7 @@ EOF
     }
   } else {
     if (("\u$answer" eq 'L') and !$vars{'instopt_portable'}) {
-      my $home = getenv('HOME');
-      $home = getenv('USERPROFILE') if (win32());
-      $home ||= '~';
+      my $home = TeXLive::TLUtils::get_user_home;
       toggle 'instopt_adjustpath';
       return $command{'self'};
     }
@@ -958,7 +955,36 @@ sub quit {
 }
 
 sub do_install {
-  $RETURN = $MENU_INSTALL;
+  my $reserve = 100;
+  my $doit = 1;
+  if ($vars{'free_size'} > 0
+      && $vars{'free_size'} + $reserve < $vars{'total_size'}) { 
+    print STDERR <<"EOF";
+*** WARNING ****************************************************
+The installation requires $vars{'total_size'}M of disk space
+but only $vars{'free_size'}M is available.
+
+You probably want to either clean up the destination filesystem,
+or choose a different installation location,
+or reduce what gets installed.
+
+Press Enter to return to the menu, or i to install anyway.
+****************************************************************
+EOF
+    my $ans = readline (*STDIN);
+    $doit = 0;
+    chomp($ans);
+    if ($ans eq "i" or $ans eq "I") {
+      $doit = 1;
+    }
+  }
+  if ($doit) {
+    # set env variable to make install-tl not trip over
+    $ENV{'TEXLIVE_INSTALL_NO_DISKCHECK'} = 1;
+    $RETURN = $MENU_INSTALL;
+  } else {
+    main_menu();
+  }
 }
 
 sub toggle_portable {
@@ -1035,6 +1061,7 @@ sub main_menu {
   }
 
   clear_screen;
+  my $freestring = ($vars{'free_size'} >= 0 ? " (free: $vars{'free_size'} MB)" : "");
   print <<"EOF";
 ======================> TeX Live installation procedure <=====================
 
@@ -1053,7 +1080,7 @@ EOF
  <S> set installation scheme: $vars{'selected_scheme'}
 
  <C> set installation collections:
-     $vars{'n_collections_selected'} collections out of $vars{'n_collections_available'}, disk space required: $vars{'total_size'} MB
+     $vars{'n_collections_selected'} collections out of $vars{'n_collections_available'}, disk space required: $vars{'total_size'} MB$freestring
 EOF
 
   }

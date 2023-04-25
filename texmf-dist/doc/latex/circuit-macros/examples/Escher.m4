@@ -2,6 +2,8 @@
 # Escher.m4
 # https://tex.stackexchange.com/questions/129274/showcase-of-optical-illusions-made-with-tex-latex-luatex-context
 threeD_init
+[]
+ifelse(1,1,`
 [
   u=1/2.54                 # unit size; could use scale for this
 
@@ -107,82 +109,67 @@ define dorgb { gg = $2
     to last line.end-UX*(weststeps+1) then to last line.end \
     then to proj(eaststeps+1,0,-f) then to proj(eaststeps+1,0,eb*f)
   ]
+')
 
 ifelse(1,1,`
+define(`DPL',`(project(`$1',`$2',`$3'))')
+define(`ISL',`
+  S1: `$2'; E1: `$2' + `$3'
+  S2: `$4'; E2: `$4' + `$5'
+  `$1': line from S2 to intersect_(S1,E1,S2,E2) ')
+
 [
-  setview(-45,20)
-  bwid = 2.8
-  bh = 1.5
   bdp = 1.8
-  bth = 0.3
-  A: Project(0,0,0)
-  AA: A+Project(bth,bth,-bth)
-  B: Project(0,bwid,0)
-  BB: B+Project(bth,-bth,-bth)
-  C: Project(bdp,bwid,0)
-  D: Project(bdp,0,0)
-  E: Project(0,0,-bh)
-  F: Project(bdp,0,-bh)
-  G: Project(bdp,bwid,-bh)
-  H: B + Project(0,0,-bh)
+  bwd = 2.8
+  bht = 1.5 
+  bth = bwd/10
+  setview(-45,20,0)
 
-  line from A to B then to C then to D then to A then to E then to F \
-    then to G then to H then to E
-  line from C to G
-  line from A+Project(bth,bth,0) to B+Project(bth,-bth,0) \
-    then to C+Project(-bth,-bth,0)
-  L1: line to D+Project(-bth,bth,0)
-  L2: line to A+Project(bth,bth,0)
-  L4: line from E+Project(bth,bth,0) to H+Project(bth,-bth,0)
-  L3: line to C+Project(-bth,-bth,-bh)
-  line to F+Project(-bth,bth,0) then to A+Project(bth,bth,-bh)
+  L1: line from DPL(0,0,0) to DPL(0,0,bht) \
+    then to DPL(0,bwd,bht) \
+    then to DPL(bdp,bwd,bht) \
+    then to DPL(bdp,bwd,0) \
+    then to DPL(bdp,0,0) \
+    then to DPL(0,0,0)
+  L2: line from DPL(bth,bth,bht) to DPL(bth,bwd-bth,bht) \
+    then to DPL(bdp-bth,bwd-bth,bht) \
+    then to DPL(bdp-bth,bth,bht) \
+    then to DPL(bth,bth,bht)
+  L3: line from DPL(bth,bth,0) to DPL(bth,bwd-bth,0) \
+    then to DPL(bdp-bth,bwd-bth,0) \
+    then to DPL(bdp-bth,bth,0) \
+    then to DPL(bth,bth,0)
+  L4: line from DPL(bdp,bth,bht-bth) to DPL(bdp,bwd-bth,bht-bth) \
+    then to DPL(bdp,bwd-bth,bth) \
+    then to DPL(bth+bth,bwd-bth,bth)
+  L5: line from DPL(bdp-bth,0,bht-bth) to DPL(bth,0,bht-bth) \
+    then to DPL(bth,0,bth) \
+    then to DPL(bth,bwd-bth-bth,bth)
+  L6: line from DPL(0,0,bht) to DPL(bdp,0,bht) \
+    then to DPL(bdp,bwd,bht)
+  L7: line from DPL(0,0,0) to DPL(0,bwd,0) \
+    then to DPL(bdp,bwd,0)
+  ISL(L8,L4.start,UPy_,L4.end,UPz_)
+  ISL(L9,L4.start,UPy_,DPL(0,bwd,0),UPz_)
+  ISL(L10,L4.start,UPy_,L5.end,UPz_)
+  ISL(L11,L5.end,UPy_,L4.start,UPz_)
+  ISL(L12,L5.end,UPy_,DPL(bdp,0,bht),UPz_)
+  ISL(L13,L5.end,UPy_,L5.start,UPz_)
+  ISL(L14,DPL(bdp-bth,bth,bht),UPy_,DPL(bth,bwd-bth-bth,bht-bth),UPz_)
+  ISL(L15,L2.start,UPx_,DPL(bth,bwd-bth-bth,bht-bth),UPy_)
+  ISL(L16,DPL(bdp-bth,bth,bht),UPy_,DPL(bth,bwd-bth,bht),UPz_)
+  ISL(L17,DPL(bdp-bth,bth,bht),UPy_,DPL(bth+bth,bwd-bth,bht-bth),UPz_)
+  ISL(L18,DPL(bdp-bth,bth,bht),UPy_,DPL(bth+bth,bwd-bth,bht-bth),UPx_)
+  ISL(L19,L3.start,UPy_,L5.start+DPL(0,0,-bht+bth+bth),UPx_)
+  ISL(L20,L3.start,UPy_,L5.start+DPL(0,0,-bht+bth+bth),UPz_)
+  ISL(L21,L3.start,UPy_,DPL(bdp-bth,bth,0),UPz_)
+  ISL(L22,L3.start,UPy_,L4.start+DPL(0,0,-bht+bth+bth),UPz_)
+  ISL(L23,DPL(bth,bwd-bth,0),UPx_,L4.start+DPL(0,0,-bht+bth+bth),UPy_)
+  ISL(L24,L5.start,UPx_,DPL(bth,bth,bth),UPz_)
+  ISL(L25,L4.start,UPy_,DPL(bdp-bth,bwd-bth,bth),UPz_)
 
-  L5: line from D+Project(-bth,0,-bth) to A+Project(bth,0,-bth)
-  line to E+Project(bth,0,bth)
-  L6: line to Here+Project(0,bwid-2*bth,0)
-  L7: line from D+Project(0,bth,-bth) to C+Project(0,-bth,-bth)
-    line to G+Project(0,-bth,bth)
-  L8: line to Here+Project(-bdp+2*bth,0,0)
-  Tmp: line invis from L8.start+Project(-bth,0,0) up bh
-  line from Tmp.start to Intersect_(Tmp,L7)
-  Tmp: line invis from L8.end up bh
-  line from L8.end to Intersect_(Tmp,L7)
-  line from Intersect_(Tmp,L1) to BB+Project(bth,0,0)
-  Tmp: line invis to Here+Project(bdp,0,0)
-  line from Tmp.start to Intersect_(Tmp,L1)
-
-  Tmp: line invis from H up bh
-  line from H to Intersect_(Tmp,L7)
-  line from Intersect_(Tmp,L1) to B+Project(bth,-bth,0)
-
-  Tmp: line invis from AA to AA+Project(0,bwid,0)
-  Tmp2: line invis up bh from L6.end
-  line from Intersect_(Tmp,L2) to Intersect_(Tmp2,Tmp) \
-    then to Intersect_(Tmp2,L1)
-  line from L6.end to Intersect_(Tmp2,L7)
-
-  Tmp: line invis down bh from AA
-  line from Intersect_(Tmp,L6) to Intersect_(Tmp,L5)
-
-  Tmp: line invis down bh from D
-  line from D to Intersect_(Tmp,L6)
-  line from Intersect_(Tmp,L4) to F+Project(-bth,bth,0)
-
-  Tmp: line invis from L5.start to L5.start+Project(0,0,-bh)
-  move to E+Project(0,2*bth,0)
-  Tmp2: line invis to Here+Project(bdp,0,0)
-  line from L5.start to Intersect_(Tmp,L6)
-  line from Intersect_(Tmp,L4) to Intersect_(Tmp,Tmp2) \
-    then to Intersect_(Tmp2,L4)
-
-  Tmp: line invis from L7.start to L7.start+Project(0,0,-(bh-bth))
-  line from L7.start to Intersect_(Tmp,L6)
-
-  move to G+Project(-2*bth,0,0)
-  Tmp2: line invis to Here+Project(0,-bwid,0)
-  line from Intersect_(Tmp2,L3) to Intersect_(Tmp,Tmp2)
-  line from Intersect_(Tmp,L4) to Intersect_(Tmp2,Tmp)
-
+ifelse(0,1,`for i=1 to 7 do { exec sprintf("\"L%g.s\" at L%g.start",i,i) }
+  for i=8 to 10 do { exec sprintf("\"L%g\" at L%g",i,i) }')
 ] with .sw at last [].se+(0.2,0)
 ')
 .PE

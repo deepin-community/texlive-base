@@ -1,3 +1,7 @@
+--
+-- polyglossia.lua
+-- part of polyglossia v1.59 -- 2022/11/29
+--
 
 local module_name = "polyglossia"
 local polyglossia_module = {

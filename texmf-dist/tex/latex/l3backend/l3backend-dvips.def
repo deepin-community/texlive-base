@@ -12,7 +12,7 @@
 %% l3backend-pdf.dtx  (with options: `package,dvips')
 %% l3backend-opacity.dtx  (with options: `package,dvips')
 %% 
-%% Copyright (C) 2019-2021 The LaTeX Project
+%% Copyright (C) 2019-2023 The LaTeX Project
 %% 
 %% It may be distributed and/or modified under the conditions of
 %% the LaTeX Project Public License (LPPL), either version 1.3c of
@@ -26,7 +26,7 @@
 %% 
 %% File: l3backend-basics.dtx
 \ProvidesExplFile
-  {l3backend-dvips.def}{2021-08-04}{}
+  {l3backend-dvips.def}{2023-01-16}{}
   {L3 backend support: dvips}
 \cs_if_exist:NTF \__kernel_dependency_version_check:nn
   {
@@ -83,71 +83,103 @@
 \cs_new_protected:Npn \__kernel_backend_scope_end:
   { \__kernel_backend_literal:n { ps:grestore } }
 %% File: l3backend-color.dtx
-\cs_new_protected:Npn \__color_backend_pickup:N #1 { }
-\cs_if_exist:cT { ver@color.sty }
+\cs_new_protected:Npn \__color_backend_pickup:N #1
   {
-    \cs_set_protected:Npn \__color_backend_pickup:N #1
+    \exp_args:NV \tl_if_head_is_space:nTF \current@color
       {
-        \exp_args:NV \tl_if_head_is_space:nTF \current@color
-          {
-            \tl_set:Nx #1
-               {
-                 { \exp_after:wN \use:n \current@color }
-                 { 1 }
-               }
-          }
-          {
-            \exp_last_unbraced:Nx \__color_backend_pickup:w
-              { \current@color } \s__color_stop #1
-          }
+        \tl_set:Nn #1 { { gray } { 0 } }
+        \msg_warning:nnx { color } { unhandled }
+          { \current@color }
       }
-    \cs_new_protected:Npn \__color_backend_pickup:w #1 ~ #2 \s__color_stop #3
-      { \tl_set:Nn #3 { {#1} {#2} } }
+      {
+        \exp_last_unbraced:Nx \__color_backend_pickup:w
+          { \current@color } \s__color_stop #1
+      }
   }
+\cs_new_protected:Npn \__color_backend_pickup:w #1 ~ #2 \s__color_stop #3
+  { \tl_set:Nn #3 { {#1} {#2} } }
 \cs_new_protected:Npn \__color_backend_select_cmyk:n #1
   { \__color_backend_select:n { cmyk ~ #1 } }
 \cs_new_protected:Npn \__color_backend_select_gray:n #1
   { \__color_backend_select:n { gray ~ #1 } }
+\cs_new_protected:Npn \__color_backend_select_named:n #1
+  { \__color_backend_select:n { ~ #1 } }
 \cs_new_protected:Npn \__color_backend_select_rgb:n #1
   { \__color_backend_select:n { rgb ~ #1 } }
 \cs_new_protected:Npn \__color_backend_select:n #1
   {
     \__kernel_backend_literal:n { color~push~ #1 }
     \__kernel_backend_postscript:n { /color.sc ~ { } ~ def }
-    \group_insert_after:N \__color_backend_reset:
   }
 \cs_new_protected:Npn \__color_backend_reset:
   { \__kernel_backend_literal:n { color~pop } }
+\prop_new:N \g__color_backend_colorant_prop
+\cs_new:Npx \__color_backend_devicen_colorants:n #1
+  {
+    \exp_not:N \tl_if_blank:nF {#1}
+      {
+        \c_space_tl
+        << ~
+          /Colorants ~
+            << ~
+              \exp_not:N \__color_backend_devicen_colorants:w #1 ~
+                \exp_not:N \q_recursion_tail \c_space_tl
+                \exp_not:N \q_recursion_stop
+            >> ~
+        >>
+      }
+  }
+\cs_new:Npn \__color_backend_devicen_colorants:w #1 ~
+  {
+    \quark_if_recursion_tail_stop:n {#1}
+    \prop_if_in:NnT \g__color_backend_colorant_prop {#1}
+      {
+        #1 ~
+        \prop_item:Nn \g__color_backend_colorant_prop {#1} ~
+      }
+    \__color_backend_devicen_colorants:w
+  }
 \cs_new_protected:Npn \__color_backend_select_separation:nn #1#2
   { \__color_backend_select:n { separation ~ #1 ~ #2 } }
 \cs_new_eq:NN \__color_backend_select_devicen:nn \__color_backend_select_separation:nn
+\cs_new_protected:Npn \__color_backend_select_iccbased:nn #1#2 { }
 \cs_new_protected:Npx \__color_backend_separation_init:nnnnn #1#2#3#4#5
   {
     \bool_if:NT \g__kernel_backend_header_bool
       {
-        \__kernel_backend_first_shipout:n
+        \exp_args:Nx \__kernel_backend_first_shipout:n
           {
-            \exp_not:N \__color_backend_separation_init_aux:nnnnn
+            \exp_not:N \__color_backend_separation_init_aux:nnnnnn
+              { \exp_not:N \int_use:N \g__color_model_int }
               {#1} {#2} {#3} {#4} {#5}
+          }
+        \prop_gput:Nxx \exp_not:N \g__color_backend_colorant_prop
+          { / \exp_not:N \str_convert_pdfname:n {#1} }
+          {
+            << ~
+              /setcolorspace ~ {} ~
+            >> ~ begin ~
+              color \exp_not:N \int_use:N \g__color_model_int \c_space_tl
+            end
           }
       }
   }
 \cs_generate_variant:Nn \__color_backend_separation_init:nnnnn { nxx }
-\cs_new_protected:Npn \__color_backend_separation_init_aux:nnnnn #1#2#3#4#5
+\cs_new_protected:Npn \__color_backend_separation_init_aux:nnnnnn #1#2#3#4#5#6
   {
     \__kernel_backend_literal:e
       {
         !
         TeXDict ~ begin ~
-        /color \int_use:N \g__color_model_int
+        /color #1
           {
             [ ~
-              /Separation ~ ( \str_convert_pdfname:n {#1} ) ~
-              [ ~ #2 ~ ] ~
+              /Separation ~ ( \str_convert_pdfname:n {#2} ) ~
+              [ ~ #3 ~ ] ~
                 {
-                  \cs_if_exist_use:cF { __color_backend_separation_init_ #2 :nnn }
+                  \cs_if_exist_use:cF { __color_backend_separation_init_ #3 :nnn }
                     { \__color_backend_separation_init:nnn }
-                      {#3} {#4} {#5}
+                      {#4} {#5} {#6}
                 }
             ] ~ setcolorspace
           } ~ def ~
@@ -282,11 +314,13 @@
               [ ~ #1 ~ ] ~
               #2 ~
               { ~ #3 ~ } ~
+              \__color_backend_devicen_colorants:n {#1}
             ] ~ setcolorspace
           } ~ def ~
         end
       }
   }
+\cs_new_protected:Npn \__color_backend_iccbased_init:nnn #1#2#3 { }
 \cs_new_protected:Npn \__color_backend_fill_cmyk:n #1
   { \__color_backend_fill:n { cmyk ~ #1 } }
 \cs_new_protected:Npn \__color_backend_fill_gray:n #1
@@ -296,7 +330,6 @@
 \cs_new_protected:Npn \__color_backend_fill:n #1
   {
     \__kernel_backend_literal:n { color~push~ #1 }
-    \group_insert_after:N \__color_backend_reset:
   }
 \cs_new_protected:Npn \__color_backend_stroke_cmyk:n #1
   { \__kernel_backend_postscript:n { /color.sc { #1 ~ setcmykcolor } def } }
@@ -310,6 +343,8 @@
   { \__kernel_backend_postscript:n { /color.sc { separation ~ #1 ~ #2 } def } }
 \cs_new_eq:NN \__color_backend_fill_devicen:nn \__color_backend_fill_separation:nn
 \cs_new_eq:NN \__color_backend_stroke_devicen:nn \__color_backend_stroke_separation:nn
+\cs_new_eq:NN \__color_backend_fill_reset: \__color_backend_reset:
+\cs_new_protected:Npn \__color_backend_stroke_reset: { }
 %% File: l3backend-box.dtx
 \cs_new_protected:Npn \__box_backend_clip:N #1
   {
@@ -559,18 +594,38 @@
     \__draw_backend_literal:n { @beginspecial }
   }
 %% File: l3backend-graphics.dtx
-\cs_new_eq:NN \__graphics_backend_getbb_eps:n \graphics_read_bb:n
+\cs_new_protected:Npn \__graphics_backend_loaded:n #1
+  {
+    \cs_if_exist:NTF \hook_gput_code:nnn
+      {
+        \hook_gput_code:nnn
+          { file / l3graphics.sty / after }
+          { backend }
+          {#1}
+      }
+      {#1}
+  }
+\__graphics_backend_loaded:n
+  { \seq_set_from_clist:Nn \l_graphics_search_ext_seq { .eps , .ps } }
+\__graphics_backend_loaded:n
+  {
+    \cs_new_eq:NN \__graphics_backend_getbb_eps:n \__graphics_read_bb:n
+    \cs_new_eq:NN \__graphics_backend_getbb_ps:n \__graphics_read_bb:n
+  }
 \cs_new_protected:Npn \__graphics_backend_include_eps:n #1
   {
     \__kernel_backend_literal:x
       {
         PSfile = #1 \c_space_tl
-        llx = \dim_to_decimal_in_bp:n \l_graphics_llx_dim \c_space_tl
-        lly = \dim_to_decimal_in_bp:n \l_graphics_lly_dim \c_space_tl
-        urx = \dim_to_decimal_in_bp:n \l_graphics_urx_dim \c_space_tl
-        ury = \dim_to_decimal_in_bp:n \l_graphics_ury_dim
+        llx = \dim_to_decimal_in_bp:n \l__graphics_llx_dim \c_space_tl
+        lly = \dim_to_decimal_in_bp:n \l__graphics_lly_dim \c_space_tl
+        urx = \dim_to_decimal_in_bp:n \l__graphics_urx_dim \c_space_tl
+        ury = \dim_to_decimal_in_bp:n \l__graphics_ury_dim
       }
   }
+\cs_new_eq:NN \__graphics_backend_include_ps:n \__graphics_backend_include_eps:n
+\__graphics_backend_loaded:n
+  { \cs_new_eq:NN \__graphics_backend_get_pagecount:n \__graphics_get_pagecount:n }
 %% File: l3backend-pdf.dtx
 \box_new:N \l__pdf_internal_box
 \cs_new_protected:Npn \__pdf_backend_pdfmark:n #1
@@ -581,25 +636,29 @@
 \cs_new_protected:Npn \__pdf_backend_info_gput:nn #1#2
   { \__pdf_backend_pdfmark:n { /#1 ~ #2 /DOCINFO } }
 \int_new:N \g__pdf_backend_object_int
-\prop_new:N \g__pdf_backend_object_prop
-\cs_new_protected:Npn \__pdf_backend_object_new:nn #1#2
+\cs_new_protected:Npn \__pdf_backend_object_new:n #1
   {
     \int_gincr:N \g__pdf_backend_object_int
     \int_const:cn
-      { c__pdf_backend_object_ \tl_to_str:n {#1} _int }
+      { c__pdf_object_ \tl_to_str:n {#1} _int }
       { \g__pdf_backend_object_int }
-    \prop_gput:Nnn \g__pdf_backend_object_prop {#1} {#2}
   }
 \cs_new:Npn \__pdf_backend_object_ref:n #1
-  { { pdf.obj \int_use:c { c__pdf_backend_object_ \tl_to_str:n {#1} _int } } }
-\cs_new_protected:Npn \__pdf_backend_object_write:nn #1#2
+  { { pdf.obj \int_use:c { c__pdf_object_ \tl_to_str:n {#1} _int } } }
+\cs_new_protected:Npn \__pdf_backend_object_write:nnn #1#2#3
+  {
+    \__pdf_backend_object_write_aux:nnn
+      { \__pdf_backend_object_ref:n {#1} }
+      {#2} {#3}
+  }
+\cs_generate_variant:Nn \__pdf_backend_object_write:nnn { nnx }
+\cs_new_protected:Npn \__pdf_backend_object_write_aux:nnn #1#2#3
   {
     \__pdf_backend_pdfmark:x
       {
-        /_objdef ~ \__pdf_backend_object_ref:n {#1}
+        /_objdef ~ #1
         /type
-        \str_case_e:nn
-          { \prop_item:Nn \g__pdf_backend_object_prop {#1} }
+        \str_case:nn {#2}
           {
             { array }   { /array }
             { dict }    { /dict }
@@ -608,11 +667,8 @@
           }
         /OBJ
       }
-    \use:c
-      { __pdf_backend_object_write_ \prop_item:Nn \g__pdf_backend_object_prop {#1} :nn }
-      { \__pdf_backend_object_ref:n {#1} } {#2}
+    \use:c { __pdf_backend_object_write_ #2 :nn } {#1} {#3}
   }
-\cs_generate_variant:Nn \__pdf_backend_object_write:nn { nx }
 \cs_new_protected:Npn \__pdf_backend_object_write_array:nn #1#2
   {
     \__pdf_backend_pdfmark:x
@@ -654,22 +710,9 @@
 \cs_new_protected:Npn \__pdf_backend_object_now:nn #1#2
   {
     \int_gincr:N \g__pdf_backend_object_int
-    \__pdf_backend_pdfmark:x
-      {
-        /_objdef ~ { pdf.obj \int_use:N \g__pdf_backend_object_int }
-        /type
-        \str_case:nn
-          {#1}
-          {
-            { array }   { /array }
-            { dict }    { /dict }
-            { fstream } { /stream }
-            { stream }  { /stream }
-          }
-        /OBJ
-      }
-    \exp_args:Nnx \use:c { __pdf_backend_object_write_ #1 :nn }
-      { { pdf.obj \int_use:N \g__pdf_backend_object_int } } {#2}
+    \__pdf_backend_object_write_aux:nnn
+      { { pdf.obj \int_use:N \g__pdf_backend_object_int } }
+      {#1} {#2}
   }
 \cs_generate_variant:Nn \__pdf_backend_object_now:nn { nx }
 \cs_new:Npn \__pdf_backend_object_last:
@@ -985,6 +1028,16 @@
   { \__pdf_backend_pdfmark:n { /#1 ~ #2 /BDC } }
 \cs_new_protected:Npn \__pdf_backend_emc:
   { \__pdf_backend_pdfmark:n { /EMC } }
+\cs_new_protected:Npn \__pdf_backend_pagesize_gset:nn #1#2
+  {
+    \__kernel_backend_first_shipout:n
+      {
+        \__kernel_backend_literal:e
+          {
+            papersize = \dim_eval:n {#1} , \dim_eval:n {#2}
+          }
+      }
+  }
 %% File: l3backend-opacity.dtx
 \cs_new_protected:Npn \__opacity_backend_select:n #1
   {

@@ -13,17 +13,17 @@ PID: [
   arrow
 S1: circle
   line right "$e(s)$" above
-  { arrow right ; box ht bh wid bw "$K_p$"
+  { arrow right ; box ht bh wid bw "$K_P$"
     arrow right linewid-circlerad ; S2: circle }
-  { line up linewid ; arrow right ; box ht bh wid bw "$K_D s$"
-    line to (S2,Here) ; arrow to S2.n }
-  { line down linewid ; arrow right ; box ht bh wid bw "$K_I/s$"
-    line to (S2,Here) ; arrow to S2.s }
+  { arrow up linewid then right ; box ht bh wid bw "$K_D s$"
+    arrow to (S2,Here) then to S2.n }
+  { arrow down linewid then right ; box ht bh wid bw "$K_I/s$"
+    arrow to (S2,Here) then to S2.s }
   arrow right from S2.e "$u(s)$" above
   box "$G(s)$"
   arrow right ; "$y(s)$" above rjust at Here+(0,2pt__)
-  line down boxht*3/2 from last arrow.c then left last arrow.c.x-S1.x
-  arrow to S1.s
+  arrow down boxht*5/4 from last arrow.c then left last arrow.c.x-S1.x \
+    then to S1.s
   "$-\;$" below rjust
 ]
   "(a) $PID$ control" below ljust at PID.sw+(0,-5pt__)
@@ -43,7 +43,7 @@ R: arrow
 S: circle fill
   {"$-$" below ljust at S.s; "$+$" above rjust at S.w+(2bp__,0)}
 { OLP: box invis fill 0.9 wid 3.1 ht 1.4 with .nw at Here+(0.3,boxht*5/4)
-  "\sf plant" at OLP.nw below ljust }
+  "\sf plant" at OLP.sw above ljust }
 U: arrow right 0.4
   {"$u$" at last arrow+(2bp__,0) above }
 Bp: box fill "$B$" 
@@ -139,13 +139,13 @@ boxht = 0.4
 boxwid = boxht
 circlerad = boxht*0.4
 
-define  summer { circle
-  {line from last circle.nw to last circle.se
-  line from last circle.sw to last circle.ne
-  "$$1$" at last circle.n below
-  "$$2$" at last circle.s above
-  "$$3$" at last circle.e rjust
-  "$$4$" at last circle.w ljust}
+define  summer { [ C: circle
+  line from C.nw to C.se
+  line from C.sw to C.ne
+  "$$1$" at C.n+(0,1bp__) below
+  "$$2$" at C.s-(0,1bp__) above
+  "$$3$" at C.e+(1bp__,0) rjust
+  "$$4$" at C.w-(1bp__,0) ljust ]
 }
 define doublebox {[box "$$1$"; arrow; box "$$2$"]}
 
@@ -162,17 +162,17 @@ T: doublebox(H_3,H_4)
 Y: Here
   arrow
   "$S_1$" above
-R1: box "$R_1$" at (T.x,T.y+boxht*3/2)
+R1: box "$R_1$" at (T.x,T.y+boxht*5/4)
   arrow from Y to (Y,R1) then to R1.e
   arrow from R1.w to (S2,R1) then to S2.n
   "$n_1$" ljust at S2.n+(0,boxht/2)
   left
-Rf: doublebox(R_2,R_3) at ((S1.x+T.x)/2,T.y-boxht*3/2)
+Rf: doublebox(R_2,R_3) at ((S1.x+T.x)/2,T.y-boxht*5/4)
   arrow from T to (T,Rf) then to Rf.e
   arrow from Rf.w to (S1,Rf) then to S1.s
   "$n_2$" at S1.s+(0,-boxht/2) ljust
 ] with .nw at Observer.sw + (0,-0.3)
-  "(c) A multiblock example" below ljust at Multiblock.sw+(0,-5pt__)
+  "(c) A multiblock example" below ljust at Multiblock.sw+(0,-3pt__)
 ')
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . #
@@ -190,7 +190,7 @@ E: circle
    box "stabilizer" "$K$"
    arrow "$\delta u$" above
 D: circle
-   line from Gh.e to (D,Gh.e) "$u_{\hbox{\scriptsize ref}}$" above
+   line from Gh.e to (D,Gh.e) "$u_{\hbox{\scriptsize ref}}$" above; corner
    arrow to D.n
    arrow from D.e right "$u$" above
 G: box "plant" "$G$"

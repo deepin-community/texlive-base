@@ -2,7 +2,7 @@
 --
 -- Encode a message into a barcode symbol, in Lua or within a LuaTeX source file
 --
--- Copyright (C) 2020 Roberto Giacomelli
+-- Copyright (C) 2019-2022 Roberto Giacomelli
 --
 -- This program is free software; you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -26,24 +26,34 @@
 
 local Barracuda = {
     _NAME        = "barracuda",
-    _VERSION     = "barracuda v0.0.10",
-    _DATE        = "2020-02-04",
+    _VERSION     = "barracuda v0.0.12",
+    _DATE        = "2022-06-23",
     _DESCRIPTION = "Lua library for barcode printing",
     _URL         = "https://github.com/robitex/barracuda",
     _LICENSE     = "GNU GENERAL PUBLIC LICENSE, Version 2, June 1991",
 }
 
 -- essential sub-module loading
-Barracuda._libgeo   = require "lib-geo.brcd-libgeo"      -- basic vectorial objects
+Barracuda._libgeo   = require "lib-geo.brcd-libgeo"      -- basic vector objects
 Barracuda._gacanvas = require "lib-geo.brcd-gacanvas"    -- ga stream library
 Barracuda._barcode  = require "lib-barcode.brcd-barcode" -- barcode abstract class
+Barracuda._lib_driver = require "lib-driver.brcd-driver" -- abstract driver class
 
 local Barcode = Barracuda._barcode
 Barcode._libgeo = Barracuda._libgeo
 
+-- a reference to Driver class for gaCancas class
+local canvas = Barracuda._gacanvas
+canvas._driver_class = Barracuda._lib_driver
+
 -- return a reference of Barcode abstract class
-function Barracuda:barcode() --> Barcode class object
+function Barracuda:barcode() --> <Barcode class>
     return self._barcode
+end
+
+-- return a reference to the libgeo library
+function Barracuda:libgeo() --> <libgeo library>
+    return self._libgeo
 end
 
 -- encoder costructor (a bridge to Barcode class method)
@@ -55,19 +65,15 @@ end
 
 -- where we place the output driver library
 function Barracuda:get_driver() --> Driver object
-    if not self._lib_driver then
-        self._lib_driver = require "lib-driver.brcd-driver"
-    end
     return self._lib_driver
 end
 
-function Barracuda:new_canvas() --> driver
+function Barracuda:new_canvas() --> canvas
     local gacanvas = self._gacanvas
     return gacanvas:new()
 end
 
 -- high level barcode functions
--- only default options
 -- panic on error
 
 -- save barcode as a graphic external file
@@ -104,7 +110,7 @@ function Barracuda:save(treename, data, filename, id_drv, opt)
         assert(ok, err)
     end
     local canvas = self:new_canvas()
-    symb:append_ga(canvas)
+    symb:draw(canvas)
     local driver = self:get_driver()
     id_drv = id_drv or "svg"
     local ok, err = driver:save(id_drv, canvas, filename)
@@ -144,7 +150,7 @@ function Barracuda:hbox(treename, data, box_name, opt)
         assert(ok, err)
     end
     local canvas = self:new_canvas()
-    symb:append_ga(canvas)
+    symb:draw(canvas)
     local driver = self:get_driver()
     local ok, err = driver:ga_to_hbox(canvas, box_name)
     assert(ok, err)

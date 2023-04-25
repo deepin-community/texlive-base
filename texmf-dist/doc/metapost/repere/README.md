@@ -1,13 +1,23 @@
-Package repere - Version 19.06 - June 11, 2019
+Package repere - Version 23.01 - January 1, 2023
 
-This package provides MetaPost macros for drawing sec­ondary school math­e­mat­ics figures in a coordinate system :
+---
+
+This package provides MetaPost macros for sec­ondary school math­e­mat­ics teachers to draw figures in a coordinate system.
 - axis, grids
 - points, vectors
 - functions (curves, tangents, integrals, sequences)
 - statistic diagrams
 - plane geometry (polygons, circles)
+- arrays and game boards
 
 The doc is in french...
 
-License LPPL 1.3
+---
+
+Author : Olivier Péault
+
+E-mail : o.peault@posteo.net
+
+Licence   : Released under the LaTeX Project Public License v1.3c or later, see http://www.latex-project.org/lppl.txt
+
 

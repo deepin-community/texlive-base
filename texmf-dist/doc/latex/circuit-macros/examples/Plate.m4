@@ -5,10 +5,10 @@
 # See the ASME Y14.5 standard, Figure 6-30. 
 scale = 100/3
 cct_init
-include(ASME_Y14-5.m4)
+ifdef(`ASME_Y14-5_',,`include(ASME_Y14-5.m4)')
 ifsvg(`svg_font(sans-serif,10bp__)',
 `textht = 10bp__*2/3
- iflatex(`command "{\sf"')')
+ ifpostscript(,latexcommand({\sf\small))')
 # ASME Y14.5 specs:
  arrowht = textht*0.8
  arrowwid = textht*0.6
@@ -157,11 +157,11 @@ thinlines_
  for_(0,315,45,`ctrarcr(C,d6/2,(m4x-22.5)*dtor_,(m4x+22.5)*dtor_)
   ctrline(from C+(Rect_(d6-d7/2,m4x)) to C+(Rect_(d7/2,m4x))) ')
  arcdimension_(from C+(0,d7/2) to C+(Rect_(d7/2,135)) with .c at C,
-   8,"8X 45`'iflatex($^\circ$)" wid textht*3.5,15,1)
+   8,"8 X 45`'iflatex($^\circ$)" wid textht*3.5,15,1)
  ifsvg("svg_deg" wid textht*2/3 with .w at last "".e)
  move to C+(0,d6/2)
  arrow <- from Here+(Rect_(8/2,75)) to Here+(Rect_(25,75)) then right_ 3
- "8X" wid 2*textht ljust
+ "8 X" wid 3*textht ljust
  linethick_(1); [Y14_dia_] with .w at last "".e+(1,0)
  "7.9 - 8.1" wid 8*textht ljust
  Y14_frame(Y14_pos_,Y14_dia_;"0.14" wid 3*textht;"(M)","A","C") \
@@ -170,5 +170,6 @@ thinlines_
  ] with .C at Section.Orig+(4.5*scale,0)
 
 
-command iflatex(`"}"',ifsvg(`"</g>"'))
+ifpostscript(,latexcommand(}%))
+ifsvg(command "</g>")
 .PE

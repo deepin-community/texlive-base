@@ -1,17 +1,17 @@
-istgame.sty: Drawing Game Trees with TikZ
+istgame.sty: Draw Game Trees with TikZ
 =========================================
 
 Author: In-Sung Cho
 
 Introduction:
 
-This is a LaTeX package that provides macros based on TikZ to draw a game tree.
+This is a LaTeX package that provides macros based on TikZ to draw game trees.
 The main idea underlying the core macros here is the completion of a whole tree
 by using a sequence of simple 'parent-child' tree structures, 
 with no longer relations involved 
 like the use of grandchildren or great-grandchildren.
-With the istgame package, you can draw a game tree
-as easily as drawing a game tree with pen and paper.
+With the istgame package, you can draw game trees
+as easily as drawing game trees with pen and paper.
 
 Dependencies:
 

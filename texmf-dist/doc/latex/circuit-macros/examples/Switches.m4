@@ -2,130 +2,144 @@
 # Switches.m4
 cct_init
 
-define(`Below',`at last [].s+(0,-10bp__)')
+define(`Below',`at last [].s+(0,-(8 ifelse(`$1',,,+10*(`$1')))bp__)')
 
 movewid = 0.25
+
 # Row 1
   right_; {
-    lswitch; {S:"\tt ls{}witch" Below}
+    lswitch; {"\tt ls{}witch" at last [].s Below}
     move right_
-    lswitch(,,O); {"\tt (,{,}O)" at (last [],S)}
+    lswitch(,,O); {"\tt (,{,}O)" at last [].s Below}
     move right_
-    lswitch(,,C); {"\tt (,{,}C)" at (last [],S)}
+    lswitch(,,C); {"\tt (,{,}C)" at last [].s Below}
     move right_
-    lswitch(,,DA); {"\tt (,{,}DA)" at (last [],S)}
+    lswitch(,,DA); {"\tt (,{,}DA)" at last [].s Below}
     move right_
-    lswitch(,,dDO); {"\tt (,{,}dDO)" at (last [],S)}
+    lswitch(,,dDO); {"\tt (,{,}dDO)" at last [].s Below}
     move right_
-    lswitch(,,uDC); {"\tt (,{,}uDC)" at (last [],S)}
+    lswitch(,,uDC); {"\tt (,{,}uDC)" at last [].s Below}
     }
 # Row 2
-  move down; right_; {
-    lswitch(,,K); {S:"\tt (,{,}K)" Below}
+  move down 0.4; right_; {
+    lswitch(,,K); {"\tt (,{,}K)" at last [].s Below}
     move right_
-    lswitch(,,KD); {"\tt (,{,}KD)" at (last [],S)}
+    lswitch(,,KD); {"\tt (,{,}KD)" at last [].s Below}
     move right_
-    lswitch(,,KOD); {"\tt (,{,}KOD)" at (last [],S)}
+    lswitch(,,KOD); {"\tt (,{,}KOD)" at last [].s Below}
     move right_
-    lswitch(,,KCD); {"\tt (,{,}KCD)" at (last [],S)}
+    lswitch(,,KCD); {"\tt (,{,}KCD)" at last [].s Below}
     move right_
-    bswitch; {"\tt `bswitch'" at (last [],S)}
+    bswitch; {"\tt `bswitch'" at last [].s Below}
     move right_
-    bswitch(,,C); {"\tt (,{,}C)" at (last [],S)}
+    bswitch(,,C); {"\tt (,{,}C)" at last [].s Below}
     }
 # Row 3
-  move down; right_; {
-    D: dswitch(,,); {S: "\tt ds{}witch(,{},)" Below}
+  move down 0.45; right_; {
+    D: dswitch(,,); {"\tt ds{}witch(,{},)" at last [].s Below}
     thinlines_
-    { spline <- from 0.25 along_(D) up 0.1 then up 0.05 left 0.1
-      {"\tt W" rjust}
-      spline <- from D.c+(0,m4sc*2) up 0.1 then up 0.05 left 0.1
-      {"\tt B" rjust }}
+    {spline <- from last [].B.c up 0.1 then up 0.05 left 0.1; "\tt B" rjust}
     thicklines_
     move right_
-    D: dswitch(,,WdBK); {"\tt (,{,}WdBK)" at (last [],S)+(0,-4bp__)}
+    dswitch(,,WdBK); {"\tt (,{,}WdBK)" at last [].s Below}
     thinlines_
-    { spline <- from tr_xy(0,-2) up 0.1 then up 0.10 left 0.1
-      {"\tt dB" rjust}
-      spline <- from tr_xy(4,-2) right 0.1 then right 0.05 up 0.15
+    { spline <- from 0.5 along_(last [].B) up 0.1 then up 0.10 left 0.1
+      {"\tt B" rjust} }
+    { spline <- from last [].K right 0.1 then right 0.05 up 0.15
       {"\tt K" above }}
     thicklines_
     move right_
-    dswitch(,,WBmdDK); {"\tt (,{,}WBmdDK)" at (last [],S)}
+    dswitch(,,WBmdDK); {"\tt (,{,}WBmdDK)" at last [].s Below}
     move right_
-    dswitch(,,WBKTr); {"\tt (,{,}WBKTr)" at (last [],S)}
+    dswitch(,,WBKTr); {"\tt (,{,}WBKTr)" at last [].s Below}
     move right_
-    dswitch(,,WdBL); {"\tt (,{,}WdBL)" at (last [],S+(0,-4bp__))}
+    dswitch(,,WdBL); {"\tt (,{,}WdBL)" at last [].s Below}
     move right_
-    dswitch(,,WBCo); {"\tt (,{,}WBCo)" at (last [],S)}
+    dswitch(,,WBSd); {"\tt (,{,}WBSd)" at last [].s Below}
     }
 # Row 4
-  move down; right_; {
-    dswitch(,,WBKCo); {S: "\tt (,{,}WBKCo)" Below}
+  move down 0.4; right_; {
+    dswitch(,,WBCb); {"\tt (,{,}WBCb)" at last [].s Below}
     move right_
-    dswitch(,,WBCb); {"\tt (,{,}WBCb)" at (last [],S)}
+    dswitch(,,WBcCb); {"\tt (,{,}WBcCb)" at last [].s Below}
     move right_
-    dswitch(,,WBDI); {"\tt (,{,}WBDI)" at (last [],S)}
+    dswitch(,,WBcDI); {"\tt (,{,}WBcDI)" at last [].s Below}
+    thinlines_
+    {arrow <- from last [].DI.start up_ 0.1 right_ 0.15; "\tt DI" ljust}
+    thicklines_
     move right_
-    dswitch(,,WBSd); {"\tt (,{,}WBSd)" at (last [],S)}
+#   dswitch(,,WBDI); {"\tt (,{,}WBDI)" at last [].s Below}
+    dswitch(,,WBKCo); {"\tt (,{,}WBKCo)" at last [].s Below}
     move right_
-    dswitch(,,WBFDI); {"\tt (,{,}WBFDI)" at (last [],S)}
+    dswitch(,,WBFDI); {"\tt (,{,}WBFDI)" at last [].s Below}
     move right_
-    dswitch(,,WBFSd); {"\tt (,{,}WBFSd)" at (last [],S)}
+    dswitch(,,WBFSd); {"\tt (,{,}WBFSd)" at last [].s Below}
     }
 # Row 5
-  move down moveht*5/4; right_; {
-    dswitch(,,WBTh); {S: "\tt (,{,}WBTh)" Below}
+  move down 0.4; right_; {
+    dswitch(,,WBMMR); {"\tt (,{,}WBMMR)" at last [].s Below}
     move right_
-    dswitch(,,WBKC); {"\tt (,{,}WBKC)" at (last [],S)}
+    dswitch(,,WBMM); {"\tt (,{,}WBMM)" at last [].s Below}
     move right_
-    dswitch(,,WBM); {"\tt (,{,}WBM)" at (last [],S)}
+    dswitch(,,WBMR); {"\tt (,{,}WBMR)" at last [].s Below}
     move right_
-    dswitch(,,WBCO); {"\tt (,{,}WBCO)" at (last [],S)}
+    dswitch(,,WBEL); {"\tt (,{,}WBEL)" at last [].s Below}
     move right_
-    dswitch(,,WBMP); {"\tt (,{,}WBMP)" at (last [],S)}
+    dswitch(,,WBLE); {"\tt (,{,}WBLE)" at last [].s Below}
     move right_
-    dswitch(,,WBoKCP); {"\tt (,{,}WBoKCP)" at (last [],S)}
+    dswitch(,,WBoKEL); {"\tt (,{,}WBoKEL)" at last [].s Below}
     }
 # Row 6
-  move down moveht*5/4; right_; {
-    dswitch(,,WBCY); {S: "\tt (,{,}WBCY)" Below}
+  move down moveht+2bp__; right_; {
+    dswitch(,,WBTh); {"\tt (,{,}WBTh)" at last [].s Below}
     move right_
-    dswitch(,,WBCZ); {"\tt (,{,}WBCZ)" at (last [],S)}
+    dswitch(,,WBKC); {"\tt (,{,}WBKC)" at last [].s Below}
+    thinlines_
+    { arrow <- from last [].C.c left 0.2; "\tt C" rjust }
+    thicklines_
     move right_
-    dswitch(,,WBCE); {"\tt (,{,}WBCE)" at (last [],S)}
+    dswitch(,,WBM); {"\tt (,{,}WBM)" at last [].s Below}
     move right_
-    dswitch(,,WBRH); {"\tt (,{,}WBRH)" at (last [],S)}
+    dswitch(,,WBCO); {"\tt (,{,}WBCO)" at last [].s Below}
     move right_
-    dswitch(,,WBRdH); {"\tt (,{,}WBRdH)" at (last [],S)}
-    move right_
-    dswitch(,,WBRHH); {"\tt (,{,}WBRHH)" at (last [],S)}
+    dswitch(,,WBMP); {"\tt (,{,}WBMP)" at last [].s Below}
+    move down_ 2bp__ then right_
+    dswitch(,,WBoKCP); {"\tt (,{,}WBoKCP)" at last [].s Below}
     }
 # Row 7
-  move down moveht; right_; {
-    move down_ 2bp__; right_
-    dswitch(,,WBPr); {S: "\tt (,{,}WBPr)" Below}
+  move down moveht*7/6; right_; {
+    dswitch(,,WBCY); {"\tt (,{,}WBCY)" at last [].s Below}
     move right_
-    dswitch(,,WBPrT); {S: "\tt (,{,}WBPrT)" Below}
-#   move right_
-#   Proxim; {S: "\tt Pro{}xim" Below}
-#   move right_
-#   Magn; {S: "\tt Mag{}n" Below}
-    move down_ 6bp__ then right_
-    dswitch(,,WBPrM); {S: "\tt (,{,}WBPrM)" Below}
+    dswitch(,,WBCZ); {"\tt (,{,}WBCZ)" at last [].s Below}
+    move right_
+    dswitch(,,WBCE); {"\tt (,{,}WBCE)" at last [].s Below}
+    move right_
+    dswitch(,,WBRH); {"\tt (,{,}WBRH)" at last [].s Below}
+    move right_
+    dswitch(,,WBRdH); {"\tt (,{,}WBRdH)" at last [].s Below}
+    move right_
+    dswitch(,,WBRHH); {"\tt (,{,}WBRHH)" at last [].s Below}
     }
 # Row 8
-  move down; right_; {
-    dswitch(,,WBMMR); {S: "\tt (,{,}WBMMR)" Below}
+  move down moveht; right_; {
+    move down_ 2bp__; right_
+    dswitch(,,WBPr); {"\tt (,{,}WBPr)" at last [].s Below}
     move right_
-    dswitch(,,WBMM); {"\tt (,{,}WBMM)" at (last [],S)}
+    dswitch(,,WBPrT); {"\tt (,{,}WBPrT)" at last [].s Below}
+    move down_ 6bp__ then right_
+    dswitch(,,WBPrM); {"\tt (,{,}WBPrM)" at last [].s Below}
     move right_
-    dswitch(,,WBMR); {"\tt (,{,}WBMR)" at (last [],S)}
+    dswitch(,,WBDIGX,text=W); #{"\tt (,{,}WBDIGX,W)" at last [].s Below}
+      {"\tt (,{,}WBDIGX," ljust at last line.start+(0,-15bp__) \
+        "\tt text=W)" ljust}
     move right_
-    dswitch(,,WBEL); {"\tt (,{,}WBEL)" at (last [],S)}
+    dswitch(,,WBDIGC,text=M)
+      {"\tt (,{,}WBDIGC," ljust at last line.start+(0,-15bp__) \
+        "\tt text=M)" ljust}
     move right_
-    dswitch(,,WBLE); {"\tt (,{,}WBLE)" at (last [],S)}
-    move right_
-    dswitch(,,WBoKEL); {"\tt (,{,}WBoKEL)" at (last [],S)}
+    dswitch(,,WBcDIGC,text=M) #
+      {"\tt (,{,}WBcDIGC," ljust at last line.start+(0,-15bp__) \
+        "\tt text=M)" ljust}
     }
+
 .PE

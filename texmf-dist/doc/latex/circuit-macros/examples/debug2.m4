@@ -27,7 +27,7 @@
 %
 % On my Ubuntu machine, boxdims.sty is in
 % /usr/local/lib/localtexmf/tex/latex/local/
-% and on my cygwin machine it is in
+% and on my PC with Cygwin it is in
 % /cygdrive/d/localtexmf/tex/latex/local/
 % but you might choose something like ~/texmf/tex/latex/boxdims/
 %

@@ -138,11 +138,11 @@ define(`cdashl',0.1*scale)
 define(`cgapl',0.03*scale)
 define(`ctrline',`rpoint_(ifelse(`$1',,`to rvec_(linewid,0)',`$1'))
   define(`m4h',ifelse(`$2',,1*scale,`$2'))dnl
-  m4n = int(rp_len/2/(m4h))*2+1
-  for i=1 to m4n do {
-    line to rvec_(rp_len/m4n/2-cdashl/2-cgapl,0)
+  m4xn = int(rp_len/2/(m4h))*2+1
+  for i=1 to m4xn do {
+    line to rvec_(rp_len/m4xn/2-cdashl/2-cgapl,0)
     move to rvec_(cgapl,0); line to rvec_(cdashl,0); move to rvec_(cgapl,0)
-    line to rvec_(rp_len/m4n/2-cdashl/2-cgapl,0) } ')
+    line to rvec_(rp_len/m4xn/2-cdashl/2-cgapl,0) } ')
 
                              `ctrarcr(pos,radius,startang,endang,len)
                               Arc cr centerline'
@@ -164,5 +164,7 @@ define(`ctrarcr',`dnl
       with .c at `$1'
     m5sa = m5sa+m5a
     } ')
+
+define(`ASME_Y14-5_')
 
 divert(0)dnl

@@ -20,9 +20,9 @@ Requirements: The package has only been tested with LuaTeX and
   but other engines only show a warning message.
 
 
-Copyright 2012–2021 Patrick Gundlach (<patrick@gundla.ch>) and others (see Git information)
+Copyright 2012–2023 Patrick Gundlach (<patrick@gundla.ch>) and others (see Git information)
 
-Package version: 0.8
+Package version: 0.9
 
 Public repository: <https://github.com/pgundlach/lvdebug>
 

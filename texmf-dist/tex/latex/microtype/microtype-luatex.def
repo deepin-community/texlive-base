@@ -4,25 +4,26 @@
 %%
 %% The original source files were:
 %%
-%% microtype.dtx  (with options: `luatex-def')
+%% microtype.dtx  (with options: `lua-')
 %% 
 %% ------------------------------------------------------------------------
 %% 
 %%                       The `microtype' package
 %%         Subliminal refinements towards typographical perfection
-%%           Copyright (c) 2004--2021 R Schlicht <w.m.l@gmx.net>
+%%           Copyright (c) 2004--2022 R Schlicht <w.m.l@gmx.net>
 %% 
 %% This work may be distributed and/or modified under the conditions of the
 %% LaTeX Project Public License, either version 1.3c of this license or (at
 %% your option) any later version. The latest version of this license is in:
-%% http://www.latex-project.org/lppl.txt, and version 1.3c or later is part
+%% https://www.latex-project.org/lppl.txt, and version 1.3c or later is part
 %% of all distributions of LaTeX version 2005/12/01 or later.
 %% 
-%% This work has the LPPL maintenance status `author-maintained'.
+%% This work has the LPPL maintenance status `maintained'.
 %% 
-%% This work consists of the files microtype.dtx and microtype.ins and the
-%% derived files microtype.sty, microtype-pdftex.def, microtype-luatex.def,
-%% microtype-xetex.def, microtype.lua and letterspace.sty.
+%% This work consists of the files microtype.dtx, microtype-utf.dtx and
+%% microtype.ins and the derived files microtype.sty, microtype-pdftex.def,
+%% microtype-luatex.def, microtype-xetex.def, microtype.lua, letterspace.sty
+%% and microtype-show.sty.
 %% 
 %% ------------------------------------------------------------------------
 %%   This file contains enginge-specific definitions.
@@ -30,7 +31,7 @@
 %%
 \ProvidesFile
   {microtype-luatex.def}
-  [2021/03/14 v2.8c
+  [2022/06/23 v3.0f
    Definitions specific to
    luatex
    (RS)]
@@ -57,8 +58,8 @@
   #1{\ifnum
   \MT@luatex@no
     <#1 \expandafter\@secondoftwo\else\expandafter\@firstoftwo\fi}
-\@ifl@t@r\fmtversion{2016/01/01}\relax{\RequirePackage{luatexbase}}
-\@ifl@t@r\fmtversion{2017/01/01}\relax{\RequirePackage{luaotfload}}
+\IfFormatAtLeastTF{2016/01/01}\relax{\RequirePackage{luatexbase}}
+\IfFormatAtLeastTF{2017/01/01}\relax{\RequirePackage{luaotfload}}
 \MT@lua{require("microtype")}
 \MT@requires@luatex6{\let\MT@glet\glet}\relax
 \def\MT@ifint#1{\csname\MT@lua{microtype.if_int([[#1]])}\endcsname}
@@ -66,7 +67,7 @@
 \def\MT@ifstreq#1#2{\csname\MT@lua{microtype.if_str_eq([[#1]],[[#2]])}\endcsname}
 \def\MT@if@luaotf@font{\csname\MT@lua{%
   microtype.if_luaotf_font()
- }\endcsname
+  }\endcsname
 }
 \def\MT@do@font#1{%
   \MT@if@luaotf@font{%
@@ -154,15 +155,14 @@
   \ifnum\fontdimen6\MT@font=\z@
     \fontdimen6\MT@font=%
       \MT@requires@luatex4{\pdffeedback fontsize}{\pdffontsize}\MT@font
-    \MT@info{Fixing zero \string\fontdimen 6 for font `\MT@@font'\MessageBreak
+    \MT@info{Fixing zero \@backslashchar fontdimen 6 for font `\MT@@font'\MessageBreak
              (new value: \the\fontdimen6\MT@font)}%
-    \MT@glet@nc{\MT@@font-fake6}\@empty
   \fi
   \edef\MT@dimen@six{\number\fontdimen6\MT@font}%
 }
-\def\MT@protrusion{\MT@maybe@do{pr}}
-\def\MT@set@pr@codes{%
-  \MT@nofamilyfalse
+\def\MT@set@pr@codes
+  {%
+ \MT@nofamilyfalse
   \MT@if@list@exists{%
     \ifMT@nofamily
       \MT@ifdefined@n@TF{\MT@encoding-\MT@family-settings}\relax{%
@@ -181,7 +181,9 @@
     \MT@set@listname
     \MT@let@cn\@tempc{MT@pr@c@\MT@pr@c@name}%
     \expandafter\MT@set@codes\@tempc,\relax,%
-  }\MT@reset@pr@codes
+    \MT@set@pr@prefixheirs
+  }%
+  \MT@reset@pr@codes
 }
 \def\MT@set@all@pr#1#2{%
   \let\MT@temp\@empty
@@ -213,15 +215,17 @@
     \fi
   \fi
 }
-\def\MT@pr@split@val#1,#2\relax{%
-  \def\@tempb{#1}%
-  \MT@ifempty\@tempb\relax{%
-    \MT@scale@to@em
+\def\MT@pr@split@val#1,#2\relax
+  {\def\@tempb{#1}%
+  \MT@ifempty\@tempb
+    \relax
+  {\MT@scale@to@em
     \lpcode\MT@font\MT@char=\MT@the@pr@code
   }%
   \def\@tempb{#2}%
-  \MT@ifempty\@tempb\relax{%
-    \MT@scale@to@em
+  \MT@ifempty\@tempb
+    \relax
+  {\MT@scale@to@em
     \rpcode\MT@font\MT@char=\MT@the@pr@code
   }%
   \MT@ifdefined@c@T\MT@pr@inh@name{%
@@ -243,41 +247,31 @@
   \MT@count=\fontcharwd\MT@font\MT@char\relax
   \ifnum\MT@count=\z@ \MT@info@missing@char \fi
 }
-\def\MT@set@pr@heirs#1{%
-  \lpcode\MT@font #1=\lpcode\MT@font\MT@char\relax
-  \rpcode\MT@font #1=\rpcode\MT@font\MT@char\relax
-}
-\def\MT@preset@pr{%
-  \expandafter\expandafter\expandafter\MT@preset@pr@
-    \csname MT@pr@c@\MT@pr@c@name @preset\endcsname\@nil
-}
-\def\MT@preset@pr@#1,#2\@nil{%
-  \ifx\MT@pr@unit@\@empty
-    \MT@warn@preset@towidth{pr}%
-    \let\MT@preset@aux\MT@preset@aux@factor
-  \else
-    \def\MT@preset@aux{\MT@preset@aux@space2}%
+\def\MT@set@pr@prefixes#1{\MT@set@pr@prefixes@#1}
+\def\MT@set@pr@prefixes@#1#2#3#4%
+  {%
+  \@tempcnta=\z@
+  \ifnum#3>\z@
+    \@tempcnta=\numexpr
+      (\fontcharwd\MT@font#2-\fontcharwd\MT@font#1)%
+      *#3/\MT@dimen@six\relax
   \fi
-  \MT@ifempty{#1}{\let\@tempa\@empty}{\MT@preset@aux{#1}\@tempa}%
-  \MT@ifempty{#2}{\let\@tempb\@empty}{\MT@preset@aux{#2}\@tempb}%
-  \MT@set@all@pr\@tempa\@tempb
+  \lpcode\MT@font #2=\numexpr\lpcode\MT@font#1+\@tempcnta\relax
+  \@tempcnta=\z@
+  \ifnum#4>\z@
+    \@tempcnta=\numexpr
+      (\fontcharwd\MT@font#2-\fontcharwd\MT@font#1)%
+      *#4/\MT@dimen@six\relax
+  \fi
+  \rpcode\MT@font #2=\numexpr\rpcode\MT@font#1+\@tempcnta\relax
 }
-\def\MT@preset@aux@factor#1#2{%
-  \@tempcntb=#1\relax
-  \MT@scale@factor
-  \edef#2{\number\@tempcntb}%
-}
-\def\MT@preset@aux@space#1#2#3{%
-  \def\@tempb{#2}%
-  \MT@get@space@unit#1%
-  \MT@scale@to@em
-  \edef#3{\number\@tempcntb}%
-}
-\def\MT@warn@preset@towidth#1{%
-  \MT@warning@nl{%
-    Cannot preset characters relative to their widths\MessageBreak
-    for \@nameuse{MT@abbr@#1} list `\@nameuse{MT@#1@c@name}'. Presetting them%
-    \MessageBreak relative to 1em instead}%
+\def\MT@prot@addtoken@next#1{%
+  \MT@toks\expandafter{\the\MT@toks#1}%
+  \setbox\MT@tempbox\hbox{\the\MT@toks
+  }\setbox\MT@tempbox\hbox{\unhbox\MT@tempbox
+    \ifnum\lastnodetype=7 \aftergroup\@firstoftwo\else\aftergroup\@secondoftwo\fi}%
+      \MT@prot@get@nexttoken
+      {\MT@prot@l{\the\MT@toks}}%
 }
 \def\MT@expansion{\MT@maybe@do{ex}}
 \def\MT@set@ex@codes@s{%
@@ -416,15 +410,6 @@
   \MT@tracking@
 \def\MT@set@tr@codes{%
   \MT@vinfo{Tracking font `\MT@@font'\on@line}%
-  \MT@ifdefined@n@TF{\MT@@font-fake6}{%
-    \expandafter\ifx\csname\MT@@font-fake6\endcsname\@empty
-      \MT@warning@nl{%
-        Font `\MT@@font' does not specify its\MessageBreak
-        \@backslashchar fontdimen 6 (width of an `em')! Therefore,\MessageBreak
-        \@nameuse{MT@abbr@\MT@feat} will not work with this font}%
-      \MT@glet@nc{\MT@@font-fake6}\relax
-    \fi
-  }{%
   \MT@if@list@exists
     \MT@get@tr@opt
     \relax
@@ -439,10 +424,7 @@
     \expandafter\ifx\MT@lsfont\relax
       \MT@get@ls@basefont
       \MT@if@luaotf@font{%
-        \ifnum\MT@letterspace@<\z@\def\MT@minus{-}\else\let\MT@minus\@empty\fi
-        \global\expandafter\font\MT@lsfont=%
-          \expandafter\MT@exp@two@c\expandafter\MT@ls@fontspec@font
-            \expandafter\fontname\expandafter\font@name\space \@nil
+        \global\expandafter\font\MT@lsfont=\MT@ls@fontspec@font
       }{%
       \global\expandafter\letterspacefont\MT@lsfont\font@name\MT@letterspace@
       }%
@@ -487,7 +469,6 @@
       \noexpand\MT@tr@outer@r
     }%
   \fi
-  }%
 }
 \def\MT@afteraftergroup#1{%
   \MT@maybe@gobble@with@tikz{%
@@ -499,14 +480,8 @@
     }%
   }%
 }
-\def\MT@ls@fontspec@colon#1:#2:#3:#4\@nil{\ifx\\#3\\#1:#2\else#1:#2:#3\fi}
-\def\MT@ls@fontspec@font#1 #2\@nil{%
-  "\MT@ls@fontspec@colon#1:::\relax\@nil
-    kernfactor=\MT@minus \ifnum\MT@letterspace@=1000 1\else 0.%
-         \ifnum\MT@minus\MT@letterspace@<100 0\fi
-         \ifnum\MT@minus\MT@letterspace@<10  0\fi
-        \number\MT@minus\MT@letterspace@ \fi;"
-  \ifx\\#2\\ at \f@size pt\else#2\fi\relax
+\def\MT@ls@fontspec@font{%
+  \MT@lua{microtype.add_ls([[\MT@letterspace@]])}%
 }
 \def\MT@get@tr@opt{%
   \MT@set@listname
@@ -548,6 +523,7 @@
 \DeclareRobustCommand\lslig[1]{%
   {\MT@ifdefined@c@TF\MT@curr@ls{%
      \escapechar\m@ne
+     \xdef\font@name{\csname\curr@fontshape/\f@size\endcsname}%
      \MT@get@ls@basefont
      \MT@outer@kern=\dimexpr\MT@curr@ls sp * \fontdimen6\font@name/2000\relax
      \kern\MT@outer@kern
@@ -560,7 +536,7 @@
   \expandafter\ifx\MT@ls@basefont\relax
     \MT@exp@two@c\MT@glet\MT@ls@basefont\font@name
   \else
-    \MT@exp@two@c\let\font@name\MT@ls@basefont
+    \MT@set@lsbasefont
   \fi
 }
 \def\MT@set@lsbasefont{\MT@exp@two@c\let\font@name\MT@ls@basefont}
@@ -827,19 +803,6 @@
   \gdef\MT@nl@setname{no ligatures}%
   \MT@end@catcodes
 }
-\def\SetProtrusion{%
-  \MT@begin@catcodes
-  \MT@SetProtrusion
-}
-\newcommand*\MT@SetProtrusion[3][]{%
-  \let\MT@extra@context\@empty
-  \MT@set@named@keys{MT@pr@c}{#1}%
-  \def\MT@permutelist{pr@c}%
-  \setkeys{MT@cfg}{#2}%
-  \MT@permute
-  \MT@gdef@n{MT@pr@c@\MT@pr@c@name}{#3}%
-  \MT@end@catcodes
-}
 \def\SetExpansion{%
   \MT@begin@catcodes
   \MT@SetExpansion
@@ -912,15 +875,6 @@
       \fi
     }%
   }
-\define@key{MT@pr@c}{unit}[character]{%
-  \MT@glet@nc{MT@pr@c@\MT@curr@set@name @unit}\@empty
-  \def\@tempa{#1}%
-  \MT@ifstreq\@tempa{character}\relax{%
-    \MT@ifdimen\@tempa
-      {\MT@glet@nc{MT@pr@c@\MT@curr@set@name @unit}\@tempa}%
-      {\MT@warn@nodim{character widths}}%
-  }%
-}
 \define@key{MT@tr@c}{unit}[1em]{%
   \MT@glet@nc{MT@tr@c@\MT@curr@set@name @unit}\@empty
   \def\@tempa{#1}%
@@ -965,6 +919,7 @@
 \def\MT@inh@split#1=#2=#3\relax{%
   \def\@tempa{#1}%
   \ifx\@tempa\@empty \else
+    \expandafter\MT@has@inh@prefix\@tempa()\relax\@nil
     \MT@get@slot
     \ifnum\MT@char > \m@ne
       \let\MT@val\MT@char
@@ -973,7 +928,12 @@
         \ifx\@tempa\@empty \else
           \MT@get@slot
           \ifnum\MT@char > \m@ne
-            \MT@exp@cs\MT@xadd{MT@inh@\MT@listname @\MT@val @}{{\MT@char}}%
+            \ifx\MT@inh@prefix\@empty
+              \MT@exp@cs\MT@xadd{MT@inh@\MT@listname @\MT@val @}{{\MT@char}}%
+            \else
+              \MT@exp@cs\MT@xadd{MT@inh@\MT@listname @prefixes}%
+                  {{{\MT@val}{\MT@char}\MT@inh@prefix@}}%
+            \fi
           \fi
         \fi
       }%
@@ -1201,7 +1161,7 @@
     \MT@check@active@set{ex}%
     \MT@ifdefined@n@TF{showhyphens }{%
       \def\MT@temp##1##2{%
-        \expandafter\CheckCommand\csname showhyphens \endcsname[1]{##1}%
+        \MT@exp@cs\CheckCommand{showhyphens }[1]{##1}%
         \DeclareRobustCommand\showhyphens[1]{##2}}%
     }{%
       \def\MT@temp##1##2{%

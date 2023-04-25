@@ -1,7 +1,7 @@
 divert(-1)
   darrow.m4                     Macros for double lines and arrows
 
-* Circuit_macros Version 9.6, copyright (c) 2021 J. D. Aplevich under      *
+* Circuit_macros Version 10.1, copyright (c) 2022 J. D. Aplevich under     *
 * the LaTeX Project Public Licence in file Licence.txt. The files of       *
 * this distribution may be redistributed or modified provided that this    *
 * copyright notice is included and provided that modifications are clearly *
@@ -80,8 +80,8 @@ define(`dline',`deleminit_(`$1',,`$4')
                    !- closed end with half-width line
                 eg Dline(from A to B,E;ends=|-)'
 define(`Dline',
- `setkey_(`$2',thick,dlthick)
-  setkey_(`$2',ends)pushdef(`m4ends',substr(m4ends,1,eval(len(m4ends)-2)))
+ `pushkey_(`$2',thick,dlthick)
+  pushkey_(`$2',ends)pushdef(`m4ends',substr(m4ends,1,eval(len(m4ends)-2)))
   dline(`$1',ifinstr(`$2',S,t),ifinstr(`$2',E,t),m4thick,m4ends)
   popdef(`m4ends')popdef(`m4ends')popdef(`m4thick')
   ')
@@ -207,12 +207,12 @@ define(`darrow',`deleminit_(`$1',,`$4')
                    !- closed end with half-width line
                 eg Darrow(from A to B,E;ends=<-|)'
 define(`Darrow',
- `setkey_(`$2',thick,dlthick)
-  setkey_(`$2',wid,dlthick*3/2)
-  setkey_(`$2',ht,dlthick)
-  setkey_(`$2',ends)pushdef(`m4ends',substr(m4ends,1,eval(len(m4ends)-2)))
-  darrow(`$1',ifinstr(`$2',S,t),ifinstr(`$2',E,t),m4thick,m4wid,m4ht,m4ends)
-popdef(`m4ends')popdef(`m4ends')popdef(`m4ht')popdef(`m4wid')popdef(`m4thick')')
+ `pushkey_(`$2',thick,dlthick)
+  pushkey_(`$2',wid,dlthick*3/2)
+  pushkey_(`$2',ht,dlthick)
+  pushkey_(`$2',ends)pushdef(`m4ends',substr(m4ends,1,eval(len(m4ends)-2)))
+  darrow(`$1',ifinstr(`$2',S,t),ifinstr(`$2',E,t),m4thick,m4wid,m4ht,m4ends)dnl
+  popdef(`m4ends')popdef(`m4ends')popdef(`m4ht',`m4wid',`m4thick')')
 
                           `dtee([L|R],dlthick) Construct tee with tail right,
                            left, or back along current direction, leaving
@@ -293,11 +293,11 @@ define(`darc',`[ C: (0,0)
                    !- closed end with half-width line
                 eg Darc(C,r,ang1,ang2,ends=<-|)'
 define(`Darc',
- `setkey_(`$5',thick,dlthick)
-  setkey_(`$5',wid,dlthick*1.75)
-  setkey_(`$5',ht,dlthick)
-  setkey_(`$5',ends)pushdef(`m4ends',substr(m4ends,1,eval(len(m4ends)-2)))
-  darc(`$1',`$2',`$3',`$4',m4thick,m4wid,m4ht,m4ends)
-popdef(`m4ends')popdef(`m4ends')popdef(`m4ht')popdef(`m4wid')popdef(`m4thick')')
+ `pushkey_(`$5',thick,dlthick)
+  pushkey_(`$5',wid,dlthick*1.75)
+  pushkey_(`$5',ht,dlthick)
+  pushkey_(`$5',ends)pushdef(`m4ends',substr(m4ends,1,eval(len(m4ends)-2)))
+  darc(`$1',`$2',`$3',`$4',m4thick,m4wid,m4ht,m4ends)dnl
+  popdef(`m4ends')popdef(`m4ends')popdef(`m4ht',`m4wid',`m4thick')')
 
 divert(0)dnl

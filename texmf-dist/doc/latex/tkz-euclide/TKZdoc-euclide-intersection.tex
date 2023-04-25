@@ -1,0 +1,502 @@
+\section{\tkzname{Intersections}}
+
+It is possible to determine the coordinates of the points of intersection between two straight lines, a straight line and a circle, and two circles.
+
+The associated commands have no optional arguments and the user must determine the existence of the intersection points himself.
+
+\subsection{Intersection of two straight lines \tkzcname{tkzInterLL}}
+\begin{NewMacroBox}{tkzInterLL}{\parg{$A,B$}\parg{$C,D$}}%
+Defines the intersection point \tkzname{tkzPointResult} of the two lines $(AB)$ and $(CD)$. The known points are given in pairs (two per line) in brackets, and the resulting point can be retrieved with the macro \tkzcname{tkzDefPoint}.
+\end{NewMacroBox}
+
+\subsubsection{Example of intersection between two straight lines}
+
+\begin{tkzexample}[latex=7cm,small]
+\begin{tikzpicture}[rotate=-45,scale=.75]
+  \tkzDefPoint(2,1){A}   
+  \tkzDefPoint(6,5){B}
+  \tkzDefPoint(3,6){C}   
+  \tkzDefPoint(5,2){D}
+  \tkzDrawLines(A,B C,D)
+  \tkzInterLL(A,B)(C,D)  
+     \tkzGetPoint{I}
+  \tkzDrawPoints[color=blue](A,B,C,D)
+   \tkzDrawPoint[color=red](I)
+\end{tikzpicture}
+\end{tkzexample}
+
+\subsection{Intersection of a straight line and a circle  \tkzcname{tkzInterLC}}
+
+As before, the line is defined by a couple of points. The circle
+ is also defined by a couple:
+\begin{itemize}
+\item $(O,C)$ which is a pair of points, the first is the center and the second is any point on the circle.
+\item $(O,r)$  The $r$ measure is the radius measure.
+\end{itemize}
+
+\begin{NewMacroBox}{tkzInterLC}{\oarg{options}\parg{$A,B$}\parg{$O,C$} or \parg{$O,r$} or \parg{$O,C,D$}}%
+So the arguments are two couples. 
+
+\medskip
+\begin{tabular}{lll}%
+\toprule
+options            & default & definition                         \\ 
+\midrule
+\TOline{N}         {N}    {(O,C) determines the circle}
+\TOline{R}         {N}    {(O, 1 ) unit 1 cm}  
+\TOline{with nodes}{N}    {(O,C,D) CD is a radius}  
+\TOline{common=pt} {}     {pt is common point; tkzFirstPoint gives the other point}
+\TOline{near}      {}     {tkzFirstPoint is the closest point to the first point of the line}
+\bottomrule
+\end{tabular}
+
+\medskip   
+The macro defines the intersection points $I$ and $J$ of the line $(AB)$ and the center circle $O$ with radius $r$ if they exist; otherwise, an error will be reported in the |.log| file. \tkzname{with nodes} avoids you to calculate the radius which is the length of $[CD]$.
+If \tkzname{common} and \tkzname{near} are not used then \tkzname{tkzFirstPoint} is the smallest angle (angle with \tkzname{tkzSecondPoint}  and the center of the circle). 
+\end{NewMacroBox}
+
+\begin{NewMacroBox}{tkzTestInterLC}{\parg{$O,A$}\parg{$O',B$}}%
+So the arguments are two couples which define a line and a circle  with a center and a point on the circle. If there is a non empty intersection between these the line and the circle then the test \tkzcname{iftkzFlagLC} gives true.
+\end{NewMacroBox}
+
+\subsubsection{test line-circle intersection}
+
+\begin{tkzexample}[latex=7cm,small]
+  \begin{tikzpicture}[scale=1]
+    \tkzDefPoints{% x   y   name
+                    3    /4    /I,
+                    3    /2    /P,
+                    0    /2    /La,
+                    8    /3    /Lb}
+  \tkzDrawCircle(I,P)
+  \foreach \i in {1,...,3}{%
+     \coordinate  (Lb) at (8,\i);
+     \tkzDrawLine(La,Lb)
+     \tkzTestInterLC(La,Lb)(I,P)
+      \iftkzFlagLC
+      \tkzInterLC(La,Lb)(I,P)  
+      \tkzGetPoints{a}{b}
+      \tkzDrawPoints(a,b)
+      \fi
+     }
+  \end{tikzpicture}
+\end{tkzexample}
+
+
+\subsubsection{Line-circle intersection}
+
+In the following example, the drawing of the circle uses two points and the intersection of the straight line and the circle uses two pairs of points. We will compare the angles $\widehat{D,E,O}$ and $\widehat{E,D,O}$. These angles are in opposite directions. \tkzname{tkzFirstPoint} is assigned to the point that forms the angle with the smallest measure (counterclockwise direction). The counterclockwide angle  $\widehat{D,E,O}$   has a measure equal to  $360\circ$ minus the measure of  $\widehat{O,E,D}$.
+
+\begin{tkzexample}[latex=7cm,small]
+\begin{tikzpicture}[scale=.75]
+ \tkzInit[xmax=5,ymax=4]
+ \tkzDefPoint(1,1){O} 
+ \tkzDefPoint(-2,4){La} 
+ \tkzDefPoint(5,0){Lb} 
+ \tkzDefPoint(3,3){C}
+ \tkzInterLC(La,Lb)(O,C)  \tkzGetPoints{D}{E}  
+ \tkzMarkAngle[->,size=1.5](E,D,O)
+ \tkzDrawPolygons[new](O,D,E)
+ \tkzMarkAngle[->,size=1.5](D,E,O)
+ \tkzDrawCircle(O,C)
+ \tkzDrawPoints[color=teal](O,La,Lb,C)
+ \tkzDrawPoints[color=red](D,E)
+ \tkzDrawLine(La,Lb)
+ \tkzLabelPoints[above right](O,La,Lb,C,D,E)
+\end{tikzpicture} 
+\end{tkzexample}
+
+\subsubsection{Line passing through the center option \tkzname{common}}
+This case is special. You cannot compare the angles. In this case, the option \tkzname{near} must be used. \tkzname{tkzFirstPoint} is assigned to the point closest to the first point given for the line. Here we want $A$ to be closest to $Lb$.
+
+\begin{tkzexample}[latex=7cm,small]
+\begin{tikzpicture}
+\tkzDefPoints{% x   y   name
+             0    /1    /D,
+             6    /0    /B,
+             3    /3    /O,
+             2    /2    /La,
+             5    /5    /Lb}
+  \tkzDrawCircle(O,D)
+  \tkzDrawLine(La,Lb)
+  \tkzInterLC[near](Lb,La)(O,D)  
+  \tkzGetFirstPoint{A}
+  \tkzDrawSegments(O,A)
+  \tkzDrawPoints(O,D,A,La,Lb)
+  \tkzLabelPoints(O,D,A,La,Lb)
+\end{tikzpicture}
+\end{tkzexample}
+
+\subsubsection{Line-circle intersection with option \tkzname{common}}
+A special case that we often meet, a point of the line is on the circle and we are looking for the other common point.
+\begin{tkzexample}[latex=7cm,small]
+\begin{tikzpicture}[scale=.5]
+ \tkzDefPoints{0/0/O,-5/0/A,2/-2/B,0/5/D}
+ \tkzInterLC[common=A](B,A)(O,D)
+ \tkzGetFirstPoint{C}
+ \tkzDrawPoints(O,A,B)
+ \tkzDrawCircle(O,A)
+ \tkzDrawLine(A,C)
+ \tkzDrawPoint(C)
+ \tkzLabelPoints(A,B,C)
+\end{tikzpicture}
+\end{tkzexample}
+
+
+\subsubsection{Line-circle intersection order of points}
+The idea is to compare the angles formed with the first defining point of the line, a resultant point and the center of the circle. The first point is the one that corresponds to the smallest angle.
+
+As you can see $\widehat{BCO} < \widehat{BEO} $. To tell the truth,$ \widehat{BEO}$ is counterclockwise.
+
+\begin{tkzexample}[latex=6cm,small]
+\begin{tikzpicture}[scale=.5]
+  \tkzDefPoints{0/0/O,5/1/A,2/2/B,3/1/D}
+  \tkzInterLC[common=A](B,D)(O,A) \tkzGetPoints{C}{E}
+  \tkzDrawPoints(O,A,B,D)
+  \tkzDrawCircle(O,A) \tkzDrawLine(E,C)
+  \tkzDrawSegments[dashed](B,O O,C)
+  \tkzMarkAngle[->,size=1.5](B,C,O)
+  \tkzDrawSegments[dashed](O,E)
+  \tkzMarkAngle[->,size=1.5](B,E,O)
+  \tkzDrawPoints(C,E)
+  \tkzLabelPoints[above](O,E)
+  \tkzLabelPoints[right](A,B,C,D)
+\end{tikzpicture}
+\end{tkzexample}
+
+\subsubsection{Example with \tkzcname{foreach}}
+\begin{tkzexample}[latex=7cm,small]
+\begin{tikzpicture}[scale=3,rotate=180]
+\tkzDefPoint(0,1){J} 
+\tkzDefPoint(0,0){O}
+\foreach \i in {0,-5,-10,...,-90}{
+ \tkzDefPoint({2.5*cos(\i*pi/180)},{1+2.5*sin(\i*pi/180)}){P}
+ \tkzInterLC[R](P,J)(O,1)\tkzGetPoints{N}{M}
+ \tkzDrawSegment[color=orange](J,N)
+ \tkzDrawPoints[red](N)} 
+\foreach \i in {-90,-95,...,-175,-180}{
+ \tkzDefPoint({2.5*cos(\i*pi/180)},{1+2.5*sin(\i*pi/180)}){P} 
+ \tkzInterLC[R](P,J)(O,1)\tkzGetPoints{N}{M}
+ \tkzDrawSegment[color=orange](J,M)
+ \tkzDrawPoints[red](M)}   
+\end{tikzpicture} 
+\end{tkzexample}
+
+\subsubsection{Line-circle intersection with option \tkzname{near}}
+$D$ is the point closest to $b$.
+
+\begin{tkzexample}[vbox,small]
+  \begin{tikzpicture}
+    \tkzDefPoints{0/0/A,12/0/C}
+    \tkzDefGoldenRatio(A,C)                          \tkzGetPoint{B}
+    \tkzDefMidPoint(A,C)                             \tkzGetPoint{O}
+    \tkzDefMidPoint(A,B)                             \tkzGetPoint{O_1}
+    \tkzDefMidPoint(B,C)                             \tkzGetPoint{O_2}
+    \tkzDefPointBy[rotation=center O_2 angle 90](C)  \tkzGetPoint{P}
+    \tkzDefPointBy[rotation=center O_1 angle 90](B)  \tkzGetPoint{Q}
+    \tkzDefPointBy[rotation=center B angle 90](C)    \tkzGetPoint{b}
+    \tkzInterLC[near](b,B)(O,A)                      \tkzGetFirstPoint{D}
+    \tkzInterCC(D,B)(O,C)                            \tkzGetPoints{V}{U}
+    \tkzDefPointBy[projection=onto U--V](O_1)        \tkzGetPoint{M}
+    \tkzDefPointBy[projection=onto U--V](O_2)        \tkzGetPoint{N}  
+    \tkzDrawPoints(A,B,C,O,O_1,O_2,D,U,V,M,N,b)
+    \tkzDrawSemiCircles[teal](O,C O_1,B O_2,C)
+    \tkzDrawSegments(A,C B,D U,V A,D C,D M,B B,N)
+    \tkzDrawArc(D,U)(V)
+    \tkzLabelPoints(A,B,C,O,O_1,O_2)
+    \tkzLabelPoints[above](D,U,V,M,N)
+  \end{tikzpicture}
+\end{tkzexample}
+
+
+\subsubsection{More complex example of a line-circle intersection}
+Figure from  \url{http://gogeometry.com/problem/p190_tangent_circle}
+
+\begin{tkzexample}[latex=7cm,small]
+\begin{tikzpicture}[scale=.75]
+ \tkzDefPoint(0,0){A}  
+ \tkzDefPoint(8,0){B}
+ \tkzDefMidPoint(A,B)              \tkzGetPoint{O}
+ \tkzDefMidPoint(O,B)              \tkzGetPoint{O'}
+ \tkzDefLine[tangent from=A](O',B) \tkzGetFirstPoint{E}
+ \tkzInterLC(A,E)(O,B)             \tkzGetFirstPoint{D}
+ \tkzDefPointBy[projection=onto A--B](D)  
+ \tkzGetPoint{F}
+ \tkzDrawCircles(O,B O',B)
+ \tkzDrawSegments(A,D A,B D,F) 
+ \tkzDrawSegments[color=red,line width=1pt,
+     opacity=.4](A,O F,B)
+ \tkzDrawPoints(A,B,O,O',E,D) 
+ \tkzMarkRightAngle(D,F,B)
+ \tkzLabelPoints[below right](A,B,O,O',E,D) 
+\end{tikzpicture}
+\end{tkzexample}
+
+\subsubsection{Circle defined by a center and a measure, and special cases}
+Let's look at some special cases like straight lines tangent to the circle.
+
+\begin{tkzexample}[latex=7cm,small]
+\begin{tikzpicture}[scale=.5]
+ \tkzDefPoint(0,8){A}      \tkzDefPoint(8,0){B}
+ \tkzDefPoint(8,8){C}      \tkzDefPoint(4,4){D}
+ \tkzDefPoint(2,4){E}      \tkzDefPoint(4,2){F}
+ \tkzDefPoint(8,4){G}
+ \tkzInterLC(A,C)(D,G)     \tkzGetPoints{I1}{I2}
+ \tkzInterLC(B,C)(D,G)     \tkzGetPoints{J1}{J2}
+ \tkzInterLC[near](A,B)(D,G)  \tkzGetPoints{K1}{K2}
+ \tkzInterLC(E,F)(D,G)     \tkzGetPoints{E1}{E2}
+ \tkzDrawCircle(D,G)
+ \tkzDrawPoints[color=red](I1,J1,K1,K2,E1,E2)
+ \tkzDrawLines(A,B B,C A,C I2,J2 E1,E2)
+ \tkzDrawPoints[color=blue](A,...,F)
+ \tkzDrawPoints[color=red](I2,J2)
+ \tkzLabelPoints[left](B,D,E,F)
+ \tkzLabelPoints[below left](A,C)
+ \tkzLabelPoints[below=4pt](I1,K1,K2,E2)
+ \tkzLabelPoints[left](J1,E1)
+\end{tikzpicture}
+
+\end{tkzexample}
+
+\subsubsection{Calculation of radius}
+ With \tkzname{pgfmath} and \tkzcname{pgfmathsetmacro}
+
+The radius measurement may be the result of a calculation that is not done within the intersection macro, but before.
+A length can be calculated in several ways. It is possible of course,
+ to use the module \tkzname{pgfmath} and the macro \tkzcname{pgfmathsetmacro}. In some cases, the results obtained are not precise enough, so the following calculation $0.0002 \div 0.0001$ gives $1.98$ with pgfmath while xfp will give $2$. 
+
+With \tkzname{xfp} and \tkzcname{fpeval}:
+
+\begin{tkzexample}[latex=7cm,small]
+  \begin{tikzpicture}
+  \tkzDefPoint(2,2){A}
+  \tkzDefPoint(5,4){B}
+  \tkzDefPoint(4,4){O}
+  \pgfmathsetmacro\tkzLen{\fpeval{0.0002/0.0001}}
+ % or \edef\tkzLen{\fpeval{0.0002/0.0001}}
+  \tkzInterLC[R](A,B)(O, \tkzLen)
+  \tkzGetPoints{I}{J}
+  \tkzDrawCircle(O,I)
+  \tkzDrawPoints[color=blue](A,B)
+  \tkzDrawPoints[color=red](I,J)
+  \tkzDrawLine(I,J)
+\end{tikzpicture}
+  \end{tkzexample}
+
+
+\subsubsection{Option "with nodes"}
+\begin{tkzexample}[latex=8cm,small]
+\begin{tikzpicture}[scale=.75]
+\tkzDefPoints{0/0/A,4/0/B,1/1/D,2/0/E}
+\tkzDefTriangle[equilateral](A,B)
+\tkzGetPoint{C}
+\tkzInterLC[with nodes](D,E)(C,A,B)
+\tkzGetPoints{F}{G}
+\tkzDrawCircle(C,A)
+\tkzDrawPolygon(A,B,C)
+\tkzDrawPoints(A,...,G)
+\tkzDrawLine(F,G)
+\end{tikzpicture}
+\end{tkzexample}
+
+\subsection{Intersection of two circles  \tkzcname{tkzInterCC}}
+
+The most frequent case is that of two circles defined by their center and a point, but as before the option \tkzname{R} allows to use the radius measurements.
+
+\begin{NewMacroBox}{tkzInterCC}{\oarg{options}\parg{$O,A$}\parg{$O',A'$} or \parg{$O,r$}\parg{$O',r'$} or   \parg{$O,A,B$} \parg{$O',C,D$}}%
+\begin{tabular}{lll}%
+options       & default & definition                         \\
+\midrule
+\TOline{N}   {N}    {$OA$ and $O'A'$ are radii, $O$ and $O'$ are the centers.}
+\TOline{R}   {N}    {$r$ and $r'$ are dimensions and measure the radii.}
+\TOline{with nodes} {N}  {in (A,A,C)(C,B,F) AC and BF give the radii. }
+\TOline{common=pt}  {}   {pt is common point; tkzFirstPoint gives the other point.}
+\bottomrule
+\end{tabular}
+
+\medskip
+This macro defines the intersection point(s) $I$ and $J$ of the two center circles $O$ and $O'$. If the two circles do not have a common point then the macro ends with an error that is not handled. If the centers are $O$ and $O'$ and the intersections are $A$ and $B$ then the angles $\widehat{O,A,O'}$ and $\widehat{O,B,O'}$ are in opposite directions. \tkzname{tkzFirstPoint} is assigned to the point that forms the "clockwise" angle.
+\end{NewMacroBox}
+
+\begin{NewMacroBox}{tkzTestInterCC}{\parg{$O,A$}\parg{$O',B$}}%
+So the arguments are two couples which define two circles with a center and a point on the circle. If there is a non empty intersection between these two circles then the test \tkzcname{iftkzFlagCC} gives true.
+\end{NewMacroBox}
+
+\subsubsection{test circle-circle intersection}
+
+\begin{tkzexample}[latex=7cm,small]
+\begin{tikzpicture}[scale=.75]
+  \tkzDefPoints{% x   y   name
+                   0    /0    /A,
+                   2    /0    /B,
+                   4    /0    /I,
+                   1    /0    /P}
+\tkzDrawCircle(A,B)
+\foreach \i in {1,...,3}{%
+   \coordinate  (P) at (\i,0);
+\tkzDrawCircle[new](I,P)
+   \tkzTestInterCC(A,B)(I,P)
+    \iftkzFlagCC
+    \tkzInterCC(A,B)(I,P)  \tkzGetPoints{a}{b}
+    \tkzDrawPoints(a,b)
+    \fi}
+  \end{tikzpicture}
+\end{tkzexample}
+
+\subsubsection{circle-circle intersection with \tkzname{common} point.}
+
+\begin{tkzexample}[latex=7cm,small]
+  \begin{tikzpicture}[scale=.5]
+    \tkzDefPoints{0/0/O,5/-1/A,2/2/B}
+    \tkzDrawPoints(O,A,B)
+    \tkzDrawCircles(O,B A,B)
+    \tkzInterCC[common=B](O,B)(A,B)\tkzGetFirstPoint{C}
+    \tkzDrawPoint(C)
+    \tkzLabelPoints[above](O,A,B,C)
+  \end{tikzpicture}
+\end{tkzexample}
+
+\subsubsection{circle-circle intersection order of points.}
+The idea is to compare the angles formed with the first center, a resultant point and the center of the second circle. The first point is the one that corresponds to the smallest angle.
+
+As you can see $\widehat{ODB} < \widehat{OBE} $
+
+\begin{tkzexample}[latex=7cm,small]
+\begin{tikzpicture}[scale=.5]
+   \pgfkeys{/pgf/number format/.cd,fixed relative,precision=4}
+  \tkzDefPoints{0/0/O,5/-1/A,2/2/B,2/-1/C}
+  \tkzDrawPoints(O,A,B)
+  \tkzDrawCircles(O,A B,C)
+  \tkzInterCC(O,A)(B,C)\tkzGetPoints{D}{E}
+  \tkzDrawPoints(C,D,E)
+  \tkzLabelPoints(O,A,B,C)
+  \tkzLabelPoints[above](D,E) 
+  \tkzDrawSegments[cyan](D,O D,B)
+  \tkzMarkAngle[red,->,size=1.5](O,D,B)
+  \tkzFindAngle(O,D,B)   \tkzGetAngle{an}
+  \tkzLabelAngle(O,D,B){$ \pgfmathprintnumber{\an}$}
+  \tkzDrawSegments[cyan](E,O E,B)
+  \tkzMarkAngle[red,->,size=1.5](O,E,B)  
+  \tkzFindAngle(O,E,B)   \tkzGetAngle{an}
+  \tkzLabelAngle(O,E,B){$ \pgfmathprintnumber{\an}$}  
+\end{tikzpicture}
+\end{tkzexample}
+
+  
+  
+\subsubsection{Construction of an equilateral triangle.}
+$\widehat{A,C,B}$ is a clockwise angle
+\begin{tkzexample}[latex=7cm,small]
+\begin{tikzpicture}[trim left=-1cm,scale=.5]
+ \tkzDefPoint(1,1){A}
+ \tkzDefPoint(5,1){B}
+ \tkzInterCC(A,B)(B,A)\tkzGetPoints{C}{D}
+ \tkzDrawPoint[color=black](C)
+ \tkzDrawCircles(A,B B,A)
+ \tkzCompass[color=red](A,C)
+ \tkzCompass[color=red](B,C)
+ \tkzDrawPolygon(A,B,C)
+ \tkzMarkSegments[mark=s|](A,C B,C)
+ \tkzLabelPoints[](A,B)
+ \tkzLabelPoint[above](C){$C$}
+\end{tikzpicture}
+\end{tkzexample}
+
+
+\subsubsection{Segment trisection}
+ The idea here is to divide a segment with a ruler and a compass into three segments of equal length.
+
+\begin{tkzexample}[latex=7cm,small]
+\begin{tikzpicture}[scale=.6]
+ \tkzDefPoint(0,0){A}
+ \tkzDefPoint(3,2){B}
+ \tkzInterCC(A,B)(B,A)            \tkzGetSecondPoint{D}
+ \tkzInterCC(D,B)(B,A)            \tkzGetPoints{A}{C}
+ \tkzInterCC(D,B)(A,B)            \tkzGetPoints{E}{B}
+ \tkzInterLC[common=D](C,D)(E,D)  \tkzGetFirstPoint{F}
+ \tkzInterLL(A,F)(B,C)            \tkzGetPoint{O}
+ \tkzInterLL(O,D)(A,B)            \tkzGetPoint{H}
+ \tkzInterLL(O,E)(A,B)            \tkzGetPoint{G}
+ \tkzDrawCircles(D,E A,B B,A E,A)
+ \tkzDrawSegments[](O,F O,B O,D O,E)
+ \tkzDrawPoints(A,...,H)
+ \tkzDrawSegments(A,B B,D A,D A,E E,F C,F B,C)
+ \tkzMarkSegments[mark=s|](A,G G,H H,B)
+\end{tikzpicture}
+\end{tkzexample}
+
+\subsubsection{With the option "\tkzimp{with nodes}"}
+\begin{tkzexample}[latex=6cm,small]
+\begin{tikzpicture}[scale=.5]
+ \tkzDefPoints{0/0/A,0/5/B,5/0/C}
+ \tkzDefPoint(54:5){F}
+ \tkzInterCC[with nodes](A,A,C)(C,B,F)
+ \tkzGetPoints{a}{e}
+ \tkzInterCC(A,C)(a,e) \tkzGetFirstPoint{b}
+ \tkzInterCC(A,C)(b,a) \tkzGetFirstPoint{c}
+ \tkzInterCC(A,C)(c,b) \tkzGetFirstPoint{d}
+ \tkzDrawCircle[new](A,C)
+ \tkzDrawPoints(a,b,c,d,e)
+ \tkzDrawPolygon(a,b,c,d,e)
+ \foreach \vertex/\num in {a/36,b/108,c/180,
+                          d/252,e/324}{%
+ \tkzDrawPoint(\vertex)
+ \tkzLabelPoint[label=\num:$\vertex$](\vertex){}
+ \tkzDrawSegment(A,\vertex)
+ }
+\end{tikzpicture}
+\end{tkzexample}
+
+\subsubsection{Mix of intersections}
+\begin{tkzexample}[latex=8cm,small]
+\begin{tikzpicture}[scale = .75]
+  \tkzDefPoint(2,2){A}
+  \tkzDefPoint(0,0){B}
+  \tkzDefPoint(-2,2){C}
+  \tkzDefPoint(0,4){D}
+  \tkzDefPoint(4,2){E}
+  \tkzCircumCenter(A,B,C)\tkzGetPoint{O}
+  \tkzInterCC[R](O,2)(D,2) \tkzGetPoints{M1}{M2}
+  \tkzInterCC(O,A)(D,O) \tkzGetPoints{1}{2}
+  \tkzInterLC(A,E)(B,M1) \tkzGetSecondPoint{M3}
+  \tkzInterLC(O,C)(M3,D) \tkzGetSecondPoint{L}
+  \tkzDrawSegments(C,L)
+  \tkzDrawPoints(A,B,C,D,E,M1,M2,M3,O,L)
+  \tkzDrawSegments(O,E)
+  \tkzDrawSegments[new](C,A D,B)
+  \tkzDrawPoint(O)
+  \tkzDrawCircles[new](M3,D B,M2 D,O)
+  \tkzDrawCircle(O,A)
+  \tkzLabelPoints[below right](A,B,C,D,E,M1,M2,M3,O,L)
+\end{tikzpicture}
+\end{tkzexample}
+
+
+\subsubsection{Altshiller-Court's theorem}
+  The two lines joining the points of intersection of two orthogonal circles to a point on one of the circles met the other circle in two diametricaly oposite points. Altshiller p 176
+
+
+\begin{tkzexample}[vbox,small]
+\begin{tikzpicture}
+  \tkzDefPoints{0/0/P,5/0/Q,3/2/I}
+  \tkzDefCircle[orthogonal from=P](Q,I) 
+  \tkzGetFirstPoint{E}
+  \tkzDrawCircles(P,E Q,E)
+  \tkzInterCC[common=E](P,E)(Q,E) \tkzGetFirstPoint{F}
+  \tkzDefPointOnCircle[through =  center P angle 80 point E] 
+  \tkzGetPoint{A}
+  \tkzInterLC[common=E](A,E)(Q,E)  \tkzGetFirstPoint{C}
+  \tkzInterLL(A,F)(C,Q)  \tkzGetPoint{D}
+  \tkzDrawLines[add=0 and 1](P,Q)
+  \tkzDrawLines[add=0 and 2](A,E)
+  \tkzDrawSegments(P,E E,F F,C A,F C,D)
+  \tkzDrawPoints(P,Q,E,F,A,C,D)
+  \tkzLabelPoints(P,Q,F)
+  \tkzLabelPoints[above](E,A)
+  \tkzLabelPoints[left](D)
+  \tkzLabelPoints[above right](C)
+\end{tikzpicture}
+\end{tkzexample}
+
+
+\endinput

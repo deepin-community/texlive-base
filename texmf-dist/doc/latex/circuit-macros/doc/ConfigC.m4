@@ -3,6 +3,7 @@
 sinclude(Circuit_macros.dim)
 s_init(ConfigC)
 gen_init
+
   aw = linewid/2
   linewid = linewid*2/3
   "{\tt .pic}" above

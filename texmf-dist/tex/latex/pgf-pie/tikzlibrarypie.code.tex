@@ -73,7 +73,12 @@
   % slice
   \draw[line join=round,fill={#6},\pgfpie@style] (pgfpie@O) -- ++({#1}:{#7}) arc ({#1}:{#2}:{#7}) -- cycle;
 
-  \pgfmathparse{min(((#2)-(#1)-10)/110*(-0.3),0)}
+  \pgfpie@ifchangedirection{%
+    \pgfmathparse{min(((#1)-(#2)-10)/110*(-0.3),0)}
+  }{%
+    \pgfmathparse{min(((#2)-(#1)-10)/110*(-0.3),0)}
+  }%
+  
   \pgfmathparse{(max(\pgfmathresult,-0.5) + 0.8)*(#7)}
   \let\pgfpie@innerpos\pgfmathresult
 
@@ -182,6 +187,9 @@
 
 \pgfpie@newif{legend}
 
+\pgfpie@newif{changedirection}
+\pgfqkeys{/pgfpie}{change direction/.is if=pgfpie@changedirection}
+
 \pgfpie@newif{square}
 \pgfqkeys{/pgfpie}{square/.is if=pgfpie@square}
 
@@ -233,13 +241,14 @@
     text=label,
     sum=100,
     rotate=0,
+    change direction=false,
     polar=false,
     square=false,
     cloud=false,
     scale font=false,
     hide number=false,
     hide label=false,
-    every pie/.try,
+    every pie/.try,%
     % load user's parameters
     #1]
 
@@ -430,6 +439,9 @@
     \xdef\pgfpie@theradius{\pgfpie@radius}%
   }
 
+  \pgfpie@ifchangedirection{%
+    \pgfmathsetlength{\pgfpie@angleEnd}{\pgfpie@sum}
+  }{}%
   \xdef\pgfpie@angleBegin{\the\pgfpie@angleEnd}
   % drawing loop
   \foreach \pgfpie@p/\pgfpie@t [count=\pgfpie@i from 0] in {#1}
@@ -441,9 +453,13 @@
       \pgfmathparse{sqrt(\pgfpie@p) * (\pgfpie@polarRadiusUnit)}
       \xdef\pgfpie@theradius{\pgfmathresult}
     }{%
-    % normal pie
-    \pgfmathaddtolength{\pgfpie@angleEnd}{\pgfpie@p}
-    }
+      % normal pie
+      \pgfpie@ifchangedirection{%
+        \pgfmathaddtolength{\pgfpie@angleEnd}{-(\pgfpie@p)}
+      }{%
+        \pgfmathaddtolength{\pgfpie@angleEnd}{\pgfpie@p}
+      }%
+    }%
 
     % find explode
     \pgfpie@findExplode{\pgfpie@i}

@@ -1,9 +1,6 @@
 .PS
 # `CapacitorsMan.m4'
 cct_init
-divert(-1)
-
-divert(0)dnl
 
 movewid = 2 pt__
 hm = 2.05
@@ -26,7 +23,7 @@ vm = 0.28
    move right_ hm
    {capacitor(,N); move ;"`{\tt capacitor(,N)}'" ljust}
    move right_ hm
-   {xtal ; move ;"`{\tt xtal}'" ljust}
+   {capacitor(,CP); move ;"`{\tt capacitor(,CP)}'" ljust}
 }
    move down 0.25; right_
 {  {capacitor(,dC); move ;"`{\tt capacitor(,dC)}'" ljust}
@@ -35,7 +32,6 @@ vm = 0.28
    move right_ hm
    {variable(`capacitor',NN,-30,dimen_/3)
    move ;`"{\tt variable(}`{\tt capacitor',}"' ljust \
-  `"{\enskip\tt NN,-30,dimen\_/3)}"' ljust
-     }
+  `"{\enskip\tt NN,-30,dimen\_/3)}"' ljust }
 }
 .PE

@@ -1,7 +1,7 @@
 divert(-1)
    liblog.m4                    Logic gates
 
-* Circuit_macros Version 9.6, copyright (c) 2021 J. D. Aplevich under      *
+* Circuit_macros Version 10.1, copyright (c) 2022 J. D. Aplevich under     *
 * the LaTeX Project Public Licence in file Licence.txt. The files of       *
 * this distribution may be redistributed or modified provided that this    *
 * copyright notice is included and provided that modifications are clearly *
@@ -76,8 +76,8 @@ define(`NOT_circle',`circle diam N_diam*L_unit')
                                 `LH_symbol([U|D|L|R|degrees][I])
                                  I=inverted
                                  logical hysteresis symbol'
-define(`LH_symbol',`[ define(`m4LH',`$1') dnl
-  sc_draw(`m4LH',I,`define(`m4Hs',-H_ht)',`define(`m4Hs',H_ht)')setdir_(m4LH,R)
+define(`LH_symbol',`[ define(`m4LH',patsubst(`$1',I))dnl
+  define(`m4Hs',ifinstr(`$1',I,-)H_ht)setdir_(m4LH,R)dnl
   line to svec_(H_ht,0) \
     then to svec_(1.1*H_ht,m4Hs)
   line from rsvec_(0.4*H_ht,0) \
@@ -678,7 +678,7 @@ define(`autovsep',`L_unit')      # vertical separation between input gates
                               Draw the gate with input sublayer Sg containing
                               gates G1, G2, ...
 define(`AutoGate',`[ pushdef(`m4nargs',0)dnl
-  lu = L_unit define(`m4dirt',m4dir)
+  lu = L_unit define(`m4dirt',m4_dir_)
 dnl                           Count the arguments (inputs) (could use $# )
   Loopover_(`arg',`define(`m4nargs',incr(m4nargs))',shift($@))dnl
  `#' m4Delch(`$1') gate(m4nargs)
@@ -745,28 +745,28 @@ define(`m4stackdump',`ifdef(`$1',`ifelse($1,,`popdef(`$1')',
 define(`DrawIn',`
 #                             Draw and label input $1
   PrevInput: PrevInput-ifdef(`m4LI',`(0,autoinputsep)',
-   `(ifelse(m4dir,left,-)autoinputsep,0)')
-  In`'$1: PrevInput define(`m4dirt',m4dir)
+   `(ifelse(m4_dir_,left,-)autoinputsep,0)')
+  In`'$1: PrevInput define(`m4dirt',m4_dir_)
 ifinstr(`$2',N,
-` line thick lineth from PrevInput ifdef(`m4LI',m4dir`'_,down_) dimen_/2
+` line thick lineth from PrevInput ifdef(`m4LI',m4_dir_`'_,down_) dimen_/2
   linethick = gatelineth
   NOT_gate
   linethick = lineth
   InNt`'$1: Here',
- `line thick lineth from PrevInput ifdef(`m4LI',m4dir,down) dimen_/4
+ `line thick lineth from PrevInput ifdef(`m4LI',m4_dir_,down) dimen_/4
   Int`'$1: Here')
   m4xpand(m4dirt`'_)
   ')
 define(`DrawInNotIn',`
 #                             Draw and label input $1 inverted and uninverted.
   PrevInput: PrevInput-ifdef(`m4LI',`(0,autoinputsep)',
-   `(ifelse(m4dir,left,-)autoinputsep*2,0)')
-  In`'$1: PrevInput define(`m4dirt',m4dir)
-  line thick lineth from PrevInput ifdef(`m4LI',m4dir,down) dimen_/4
+   `(ifelse(m4_dir_,left,-)autoinputsep*2,0)')
+  In`'$1: PrevInput define(`m4dirt',m4_dir_)
+  line thick lineth from PrevInput ifdef(`m4LI',m4_dir_,down) dimen_/4
   ifdef(`m4LI',`PrevInput: PrevInput-(0,autoinputsep)')
   Int`'$1: dot
-  line thick lineth ifdef(`m4LI',down,m4dir) autoinputsep \
-    then ifdef(`m4LI',m4dir`'_,down_) dimen_/4
+  line thick lineth ifdef(`m4LI',down,m4_dir_) autoinputsep \
+    then ifdef(`m4LI',m4_dir_`'_,down_) dimen_/4
   linethick = gatelineth
   NOT_gate
   linethick = lineth
@@ -915,7 +915,7 @@ dnl
 dnl                           Optional reverse of bare name order
   ifinstr(`$2',R,`stackreverse_(`m4f')')
 dnl                           Get the offset=value if any 
-  setkey_($2,offset,0)dnl
+  pushkey_($2,offset,0)dnl
 dnl                           Place reference for row or column of inputs
 PrevInput: ifdef(`m4LI',dnl
  `ifinstr(`$2',M,
@@ -926,7 +926,7 @@ PrevInput: ifdef(`m4LI',dnl
  `ifinstr(`$2',M,
   `Fx.ne+(-(autoinputsep/2+dimen_/4+m4offset),dimen_`'ifdef(`m4N_',,/4))',
   `Fx.nw+(  autoinputsep/2+dimen_/4+m4offset, dimen_`'ifdef(`m4N_',,/4))')')
-dnl
+  popdef(`m4offset') dnl
 #                             Draw inputs right to left or top to bottom
   stackexec_(`m4f',`m4r',`ifinstr(`$2',N,,`ifdef(X_`'m4f,
    `ifdef(N_`'m4f,`DrawInNotIn(m4f)',`DrawIn(m4f)')',`DrawIn(m4f,N)')')')

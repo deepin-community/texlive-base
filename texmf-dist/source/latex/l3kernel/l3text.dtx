@@ -2,7 +2,7 @@
 %
 %% File: l3text.dtx
 %
-% Copyright (C) 2020,2021 The LaTeX Project
+% Copyright (C) 2020-2023 The LaTeX Project
 %
 % It may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -43,7 +43,7 @@
 %    }^^A
 % }
 %
-% \date{Released 2021-08-27}
+% \date{Released 2023-01-16}
 %
 % \maketitle
 %
@@ -89,7 +89,7 @@
 %
 % \section{Case changing}
 %
-% \begin{function}[EXP, added = 2019-11-20, updated = 2020-02-24]
+% \begin{function}[EXP, added = 2019-11-20, updated = 2022-10-13]
 %   {
 %     \text_lowercase:n,  \text_uppercase:n,  \text_titlecase:n,
 %       \text_titlecase_first:n,
@@ -103,8 +103,9 @@
 %   Takes user input \meta{text} first applies \cs{text_expand}, then
 %   transforms the case of character tokens as specified by the
 %   function name. The category code of letters are not changed by this
-%   process (at least where they can be represented by the engine as a single
-%   token: $8$-bit engines may require active characters).
+%   process when Unicode engines are used; in $8$-bit engines, case changed
+%   charters in the ASCII range will have the current prevailing category code,
+%   while those outside of it will be represented by active characters.
 % \end{function}
 %
 %   Upper- and lowercase have the obvious meanings. Titlecasing may be regarded
@@ -118,7 +119,7 @@
 %   Importantly, notice that these functions are intended for working with
 %   user \emph{text for typesetting}. For case changing programmatic data see
 %   the \pkg{l3str} module and discussion there of \cs{str_lowercase:n},
-%   \cs{str_uppercase:n} and \cs{str_foldcase:n}.
+%   \cs{str_uppercase:n} and \cs{str_casefold:n}.
 %
 %   Case changing does not take place within math mode material so for example
 %   \begin{verbatim}
@@ -129,32 +130,33 @@
 %     SOME TEXT $y = mx + c$ WITH {BRACES}
 %   \end{verbatim}
 %
-%   The arguments of commands listed in \cs{l_text_case_exclude_arg_tl}
-%   are excluded from case changing; the latter are entirely non-textual
+%   The first mandatory argument of commands listed in
+%   \cs{l_text_case_exclude_arg_tl}
+%   is excluded from case changing; the latter are entirely non-textual
 %   content (such as labels).
 %
-%   As is generally true for \pkg{expl3}, these functions are designed to
-%   work with Unicode input only. As such, UTF-8 input is assumed for
-%   \emph{all} engines. When used with \XeTeX{} or \LuaTeX{} a full range of
-%   Unicode transformations are enabled. Specifically, the standard mappings
+%   The standard mappings
 %   here follow those defined by the \href{http://www.unicode.org}^^A
 %   {Unicode Consortium} in \texttt{UnicodeData.txt} and
-%   \texttt{SpecialCasing.txt}. In the case of $8$-bit engines, mappings
-%   are provided for characters which can be represented in output typeset
-%   using the |T1|, |T2| and |LGR| font encodings.
-%   Thus for example \texttt{ä} can be
-%   case-changed using \pdfTeX{}.  For \pTeX{} only the ASCII range is
+%   \texttt{SpecialCasing.txt}. For \pTeX{}, only the ASCII range is
 %   covered as the engine treats input outside of this range as east Asian.
 %
 %   Language-sensitive conversions are enabled using the \meta{language}
 %   argument, and follow Unicode Consortium guidelines. Currently, the
 %   languages recognised for special handling are as follows.
 %   \begin{itemize}
+%     \item Armenian (\texttt{hy} and \texttt{hy-x-yiwn})
+%       The setting \texttt{hy} maps the codepoint U+0587, the ligature of
+%       letters ech and yiwn, to the codepoints for capital ech and vew
+%       when uppercasing: this follows the spelling reform which is used
+%       in Armenia. The alternative \texttt{hy-x-yiwn} maps U+0587 to
+%       capital ech and yiwn on uppercasing (also the output if Armenian
+%       is not selected at all).
 %     \item Azeri and Turkish (\texttt{az} and \texttt{tr}).
 %       The case pairs I/i-dotless and I-dot/i are activated for these
 %       languages. The combining dot mark is removed when lowercasing
 %       I-dot and introduced when upper casing i-dotless.
-%     \item German (\texttt{de-alt}).
+%     \item German (\texttt{de-x-eszett}).
 %       An alternative mapping for German in which the lowercase
 %       \emph{Eszett} maps to a \emph{gro\ss{}es Eszett}. Since there is
 %       a |T1| slot for the \emph{gro\ss{}es Eszett} in |T1|, this
@@ -162,8 +164,10 @@
 %       Unicode \TeX{} engines.
 %     \item Greek (\texttt{el}).
 %       Removes accents from Greek letters when uppercasing; titlecasing
-%       leaves accents in place. (At present this is implemented only
-%       for Unicode engines.)
+%       leaves accents in place. A variant \texttt{el-x-iota} is available
+%       which retains the \textit{ypogegrammeni} (subscript muted iota)
+%       when uppercasing: the standard version converts these to a following
+%       capital iota.
 %     \item Lithuanian (\texttt{lt}).
 %       The lowercase letters i and j should retain a dot above when the
 %       accents grave, acute or tilde are present. This is implemented for
@@ -172,6 +176,8 @@
 %       combining dot is removed when uppercasing in these cases. Note that
 %       \emph{only} the accents used in Lithuanian are covered: the behaviour
 %       of other accents are not modified.
+%     \item Medieval Latin (\texttt{la-xmedieval}).
+%      The characters |u| and |V| are interchanged on case changing.
 %     \item Dutch (\texttt{nl}).
 %       Capitalisation of \texttt{ij} at the beginning of titlecased
 %       input produces \texttt{IJ} rather than \texttt{Ij}. The output
@@ -193,6 +199,29 @@
 %  \cs{l_text_titlecase_check_letter_bool} is \texttt{false}, the first
 %  character is uppercased, and the rest lowercased, irrespective of the nature
 %  of the character.
+%
+% \begin{function}[added = 2022-07-04]
+%   {
+%     \text_declare_case_equivalent:Nn ,
+%     \text_declare_case_equivalent:cn
+%   }
+%   \begin{syntax}
+%     \cs{text_declare_case_equivalent:Nn} \meta{cmd} \Arg{replacement}
+%   \end{syntax}
+%   Declares that the \meta{replacement} tokens should be used whenever the
+%   \meta{cmd} (a single token) is encountered during case changing.
+% \end{function}
+%
+% \begin{function}[EXP, added = 2022-07-04]{\text_case_switch:nnnn}
+%   \begin{syntax}
+%     \cs{text_case_switch:nnnn} \Arg{normal} \Arg{upper} \Arg{lower} \Arg{title}
+%   \end{syntax}
+%   Context-sensitive function which will expand to one of the \meta{normal},
+%   \meta{upper}, \meta{lower} or \meta{title} tokens depending on the current
+%   case changing operation. Outside of case changing, the \meta{normal} tokens
+%   are produced. Within case changing, the appropriate mapping tokens are
+%   inserted.
+% \end{function}
 %
 % \section{Removing formatting from text}
 %
@@ -249,11 +278,13 @@
 % \end{variable}
 %
 % \begin{variable}{\l_text_case_exclude_arg_tl}
-%   Lists commands which are excluded from case changing.
+%   Lists commands where the first mandatory argument is excluded from
+%   case changing.
 % \end{variable}
 %
 % \begin{variable}{\l_text_expand_exclude_tl}
-%   Lists commands which are excluded from expansion.
+%   Lists commands which are excluded from expansion. This protection
+%   includes everything up to and including their first braced argument.
 % \end{variable}
 %
 % \begin{variable}{\l_text_titlecase_check_letter_bool}
@@ -261,6 +292,62 @@
 %   first \emph{letter} in text is considered. The standard setting is
 %   \texttt{true}.
 % \end{variable}
+%
+% \section{Mapping to graphemes}
+%
+% Grapheme splitting is implemented using the algorithm described in Unicode
+% Standard Annex \#29. This includes support for extended grapheme clusters.
+% Text starting with a line feed or carriage return character will drop this
+% due to standard \TeX{} processing. At present extended pictograms are
+% not supported: these may be added in a future release.
+%
+% \begin{function}[rEXP, added = 2022-08-04]{\text_map_function:nN}
+%   \begin{syntax}
+%     \cs{text_map_function:nN} \meta{text} \Arg{function}
+%   \end{syntax}
+%   Takes user input \meta{text} and expands as described for
+%   \cs{text_expand:n}, then maps over the \emph{graphemes} within the
+%   result, passing each grapheme to the \meta{function}.
+%   Broadly a grapheme is a \enquote{user perceived character}:
+%   the Unicode Consortium describe the decomposition of input to
+%   graphemes in depth, and the approach used here implements that
+%   algorithm. The \meta{function} should accept one argument as \meta{balanced
+%   text}: this may be comprise codepoints or may be a control sequence.
+%   With $8$-bit engines, the codepoint(s) themselves may of course be
+%   made up of multiple bytes: the mapping will pass the correct codepoints
+%   independent of the engine in use.
+%   See also \cs{text_map_inline:nn}.
+% \end{function}
+%
+% \begin{function}[added = 2022-08-04]{\text_map_inline:nn}
+%   \begin{syntax}
+%     \cs{text_map_inline:nn} \meta{text} \Arg{inline function}
+%   \end{syntax}
+%   Takes user input \meta{text} and expands as described for
+%   \cs{text_expand:n}, then maps over the \emph{graphemes} within the
+%   result, passing each grapheme to the \meta{inline function}.
+%   Broadly a grapheme is a \enquote{user perceived character}:
+%   the Unicode Consortium describe the decomposition of input to
+%   graphemes in depth, and the approach used here implements that
+%   algorithm. The \meta{inline function} should consist of code which
+%   receives the grapheme as \meta{balanced
+%   text}: this may be comprise codepoints or may be a control sequence.
+%   With $8$-bit engines, the codepoint(s) themselves may of course be
+%   made up of multiple bytes: the mapping will pass the correct codepoints
+%   independent of the engine in use.
+%   See also \cs{text_map_function:nN}.
+% \end{function}
+%
+% \begin{function}[rEXP, added = 2022-08-04]
+%   {\text_map_break:, \text_map_break:n}
+%   \begin{syntax}
+%     \cs{text_map_break:}
+%     \cs{text_map_break:n} \Arg{code}
+%   \end{syntax}
+%   Used to terminate a \cs[no-index]{text_map_\ldots} function before all
+%   entries in the \meta{text} have been processed. This
+%   normally takes place within a conditional statement.
+% \end{function}
 %
 % \end{documentation}
 %
@@ -274,6 +361,10 @@
 %
 %    \begin{macrocode}
 %<@@=text>
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+\cs_generate_variant:Nn \tl_if_head_eq_meaning_p:nN { o }
 %    \end{macrocode}
 %
 % \subsection{Internal auxiliaries}
@@ -315,10 +406,45 @@
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}[EXP]{\@@_if_recursion_tail_stop_do:Nn}
+% \begin{macro}[EXP]{\@@_if_q_recursion_tail_stop_do:Nn}
+% \begin{macro}[EXP]{\@@_if_q_recursion_tail_stop_do:nn}
 %   Functions to query recursion quarks.
 %    \begin{macrocode}
-\__kernel_quark_new_test:N \@@_if_recursion_tail_stop_do:Nn
+\__kernel_quark_new_test:N \@@_if_q_recursion_tail_stop_do:Nn
+\__kernel_quark_new_test:N \@@_if_q_recursion_tail_stop_do:nn
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \begin{variable}{\s_@@_recursion_tail,\s_@@_recursion_stop}
+%   Internal scan marks quarks.
+%    \begin{macrocode}
+\scan_new:N \s_@@_recursion_tail
+\scan_new:N \s_@@_recursion_stop
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{macro}[EXP]{\@@_use_i_delimit_by_s_recursion_stop:nw}
+%   Functions to gobble up to a scan mark.
+%    \begin{macrocode}
+\cs_new:Npn \@@_use_i_delimit_by_s_recursion_stop:nw
+  #1 #2 \s_@@_recursion_stop {#1}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}[EXP]{\@@_if_s_recursion_tail_stop_do:Nn}
+%   Functions to query recursion scan marks. Slower than a quark
+%   test but needed to avoid issues in the outer expansion loop
+%   with unterminated \tn{romannumeral} primitives.
+%    \begin{macrocode}
+\cs_new:Npn \@@_if_s_recursion_tail_stop_do:Nn #1
+  {
+    \bool_lazy_and:nnTF
+      { \cs_if_eq_p:NN \s_@@_recursion_tail #1 }
+      { \str_if_eq_p:nn { \s_@@_recursion_tail } {#1} }
+      { \@@_use_i_delimit_by_s_recursion_stop:nw }
+      { \use_none:n }
+  }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -508,6 +634,163 @@
 %    \end{macrocode}
 % \end{macro}
 %
+% \subsection{Codepoint utilities}
+%
+% For working with codepoints in an engine-neutral way.
+%
+% \begin{macro}[EXP]{\@@_codepoint_process:nN}
+% \begin{macro}[EXP]{\@@_codepoint_process:nNN}
+% \begin{macro}[EXP]{\@@_codepoint_process:nNNN}
+% \begin{macro}[EXP]{\@@_codepoint_process:nNNNN}
+%   Grab a codepoint and apply some code to it: here |#1| should expect one
+%   following \emph{balanced text}.
+%    \begin{macrocode}
+\bool_lazy_or:nnTF
+  { \sys_if_engine_luatex_p: }
+  { \sys_if_engine_xetex_p: }
+  {
+    \cs_new:Npn \@@_codepoint_process:nN #1#2 { #1 {#2} }
+  }
+  {
+    \cs_new:Npn \@@_codepoint_process:nN #1#2
+      {
+        \int_compare:nNnTF { `#2 } > { "80 }
+          {
+            \int_compare:nNnTF { `#2 } < { "E0 }
+              { \@@_codepoint_process:nNN }
+              {
+                 \int_compare:nNnTF { `#2 } < { "F0 }
+                   { \@@_codepoint_process:nNNN }
+                   { \@@_codepoint_process:nNNNN }
+              }
+          }
+          { \use:n }
+            {#1} #2
+      }
+    \cs_new:Npn \@@_codepoint_process:nNN #1#2#3
+      { #1 {#2#3} }
+    \sys_if_engine_ptex:TF
+      {
+        \cs_gset:Npn \@@_codepoint_process:nN #1#2
+          {
+            \int_compare:nNnTF { `#2 } > { "80 }
+              {
+                \int_compare:nNnTF { `#2 } < { "E0 }
+                  { \@@_codepoint_process:nNN }
+                  { \use:n }
+              }
+          { \use:n }
+            {#1} #2
+        }
+      }
+      {
+        \cs_new:Npn \@@_codepoint_process:nNNN #1#2#3#4
+          { #1 {#2#3#4} }
+        \cs_new:Npn \@@_codepoint_process:nNNNN #1#2#3#4#5
+          { #1 {#2#3#4#5} }
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}[EXP, pTF]{\@@_codepoint_compare:nNn}
+% \begin{macro}[EXP]{\@@_codepoint_from_chars:Nw}
+% \begin{macro}[EXP]{\@@_codepoint_from_chars:N}
+% \begin{macro}[EXP]{\@@_codepoint_from_chars:NN}
+% \begin{macro}[EXP]{\@@_codepoint_from_chars:NNN}
+% \begin{macro}[EXP]{\@@_codepoint_from_chars:NNNN}
+%   Allows comparison for all engines using a first \enquote{character} followed
+%   by a codepoint.
+%    \begin{macrocode}
+\bool_lazy_or:nnTF
+  { \sys_if_engine_luatex_p: }
+  { \sys_if_engine_xetex_p: }
+  {
+    \prg_new_conditional:Npnn
+      \@@_codepoint_compare:nNn #1#2#3 { TF , p }
+      {
+        \int_compare:nNnTF {`#1} #2 {#3}
+          \prg_return_true: \prg_return_false:
+      }
+    \cs_new:Npn \@@_codepoint_from_chars:Nw #1 {`#1}
+  }
+  {
+    \prg_new_conditional:Npnn
+      \@@_codepoint_compare:nNn #1#2#3 { TF , p }
+      {
+        \int_compare:nNnTF { \@@_codepoint_from_chars:Nw #1 }
+            #2 {#3}
+          \prg_return_true: \prg_return_false:
+      }
+    \cs_new:Npn \@@_codepoint_from_chars:Nw #1
+      {
+        \if_int_compare:w `#1 > "80 \exp_stop_f:
+          \if_int_compare:w `#1 < "E0 \exp_stop_f:
+            \exp_after:wN \exp_after:wN \exp_after:wN
+              \@@_codepoint_from_chars:NN
+          \else:
+            \if_int_compare:w `#1 < "F0 \exp_stop_f:
+              \exp_after:wN \exp_after:wN \exp_after:wN
+              \exp_after:wN \exp_after:wN \exp_after:wN
+              \exp_after:wN \@@_codepoint_from_chars:NNN
+            \else:
+              \exp_after:wN \exp_after:wN \exp_after:wN
+              \exp_after:wN \exp_after:wN \exp_after:wN
+              \exp_after:wN \@@_codepoint_from_chars:NNNN
+            \fi:
+          \fi:
+        \else:
+          \exp_after:wN \@@_codepoint_from_chars:N
+        \fi:
+          #1
+      }
+    \cs_new:Npn \@@_codepoint_from_chars:N #1 { `#1 }
+    \cs_new:Npn \@@_codepoint_from_chars:NN #1#2
+      { (`#1 - "C0) * "40 + `#2 - "80 }
+    %    \end{macrocode}
+    %   Avoid high chars with p\TeX{}.
+    %    \begin{macrocode}
+    \sys_if_engine_ptex:TF
+      {
+        \cs_gset:Npn \@@_codepoint_from_chars:Nw #1
+          {
+            \if_int_compare:w `#1 > "80 \exp_stop_f:
+              \if_int_compare:w `#1 < "E0 \exp_stop_f:
+                \exp_after:wN \exp_after:wN \exp_after:wN
+                  \@@_codepoint_from_chars:NN
+              \else:
+                \exp_after:wN \exp_after:wN \exp_after:wN
+                  \@@_codepoint_from_chars:N
+              \fi:
+            \else:
+              \exp_after:wN \@@_codepoint_from_chars:N
+            \fi:
+              #1
+          }
+      }
+      {
+        \cs_new:Npn \@@_codepoint_from_chars:NNN #1#2#3
+          { (`#1 - "E0) * "1000 + (`#2 - "80) * "40 + `#3 - "80 }
+        \cs_new:Npn \@@_codepoint_from_chars:NNNN #1#2#3#4
+          {
+              (`#1 - "F0) * "40000 
+            + (`#2 - "80) * "1000
+            + (`#3 - "80) * "40
+            + `#4 - "80
+          }
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
 % \subsection{Configuration variables}
 %
 % \begin{variable}{\l_text_accents_tl, \l_text_letterlike_tl}
@@ -536,10 +819,16 @@
 % \end{variable}
 %
 % \begin{variable}{\l_text_case_exclude_arg_tl}
-%   Non-text arguments.
+%   Non-text arguments, including covering the case of \tn{protected@edef}
+%   applied to \cs{cite}.
 %    \begin{macrocode}
 \tl_new:N \l_text_case_exclude_arg_tl
-\tl_set:Nn \l_text_case_exclude_arg_tl { \begin \cite \end \label \ref }
+\tl_set:Nx \l_text_case_exclude_arg_tl
+  {
+    \exp_not:n { \begin \cite \end \label \ref }
+    \exp_not:c { cite ~ }
+    \exp_not:n { \babelshorthand }
+  }
 %    \end{macrocode}
 % \end{variable}
 %
@@ -560,11 +849,45 @@
 % \end{variable}
 %
 % \begin{variable}{\l_text_expand_exclude_tl}
-%   Commands which need not to expand.
+%   Commands which need not to expand. We start with a somewhat historical
+%   list, and tidy up if possible.
 %    \begin{macrocode}
 \tl_new:N \l_text_expand_exclude_tl
 \tl_set:Nn \l_text_expand_exclude_tl
   { \begin \cite \end \label \ref }
+\bool_lazy_and:nnT
+  { \str_if_eq_p:Vn \fmtname { LaTeX2e } }
+  { \tl_if_exist_p:N \@expl@finalise@setup@@@@ }
+  {
+    \tl_gput_right:Nn \@expl@finalise@setup@@@@
+      {
+        \tl_gput_right:Nn \@kernel@after@begindocument
+          {
+            \group_begin:
+              \cs_set_protected:Npn \@@_tmp:w #1
+                {
+                  \tl_clear:N \l_text_expand_exclude_tl
+                  \tl_map_inline:nn {#1}
+                    {
+                      \bool_lazy_any:nF
+                        {
+                          { \token_if_protected_macro_p:N ##1 }
+                          { \token_if_protected_long_macro_p:N ##1 }
+                          {
+                            \str_if_eq_p:ee
+                              { \cs_replacement_spec:N ##1 }
+                              { \exp_not:n { \protect ##1 } \c_space_tl }
+                          }
+                        }
+                        { \tl_put_right:Nn \l_text_expand_exclude_tl {##1} }
+                    }
+                }
+              \exp_args:NV \@@_tmp:w \l_text_expand_exclude_tl
+            \exp_args:NNNV \group_end:
+            \tl_set:Nn \l_text_expand_exclude_tl \l_text_expand_exclude_tl
+          }
+      }
+  }
 %    \end{macrocode}
 % \end{variable}
 %
@@ -622,20 +945,23 @@
 %     \@@_expand_explicit:N ,
 %     \@@_expand_exclude:N
 %   }
+% \begin{macro}[EXP]{\@@_expand_exclude_switch:Nnnnn}
 % \begin{macro}[EXP]{\@@_expand_exclude:nN}
 % \begin{macro}[EXP]{\@@_expand_exclude:NN}
-% \begin{macro}[EXP]{\@@_expand_exclude:Nn}
+% \begin{macro}[EXP]{\@@_expand_exclude:Nw}
+% \begin{macro}[EXP]{\@@_expand_exclude:Nnn}
 % \begin{macro}[EXP]{\@@_expand_accent:N}
 % \begin{macro}[EXP]{\@@_expand_accent:NN}
 % \begin{macro}[EXP]{\@@_expand_letterlike:N}
 % \begin{macro}[EXP]{\@@_expand_letterlike:NN}
-% \begin{macro}[EXP]{\@@_expand_cs:N, \@@_expand_encoding:N}
-% \begin{macro}[EXP]{\@@_expand_encoding_escape:N}
+% \begin{macro}[EXP]{\@@_expand_cs:N}
+% \begin{macro}[EXP]{\@@_expand_protect:w}
 % \begin{macro}[EXP]{\@@_expand_protect:N}
 % \begin{macro}[EXP]{\@@_expand_protect:nN}
 % \begin{macro}[EXP]{\@@_expand_protect:Nw}
 % \begin{macro}[EXP]{\@@_expand_testopt:N}
 % \begin{macro}[EXP]{\@@_expand_testopt:NNn}
+% \begin{macro}[EXP]{\@@_expand_encoding:N, \@@_expand_encoding_escape:N}
 % \begin{macro}[EXP]{\@@_expand_replace:N}
 % \begin{macro}[EXP]{\@@_expand_replace:n}
 % \begin{macro}[EXP]{\@@_expand_cs_expand:N}
@@ -649,7 +975,9 @@
 %   arbitrary user commands which might be protected \emph{and} take
 %   arguments, and if the expansion code is used in a typesetting
 %   context, that will otherwise explode. (The same issue applies more
-%   clearly to case changing: see the example there.)
+%   clearly to case changing: see the example there.) The outer
+%   loop has to use scan marks as delimiters to protect against
+%   unterminated \tn{romannumeral} usage in the input.
 %    \begin{macrocode}
 \cs_new:Npn \text_expand:n #1
   {
@@ -663,7 +991,7 @@
   {
     \group_align_safe_begin:
     \@@_expand_loop:w #1
-      \q_@@_recursion_tail \q_@@_recursion_stop
+      \s_@@_recursion_tail \s_@@_recursion_stop
     \@@_expand_result:n { }
   }
 %    \end{macrocode}
@@ -686,7 +1014,7 @@
 %   recursively, while spaces are just passed through. Thus all of the
 %   action is in handling \texttt{N}-type tokens.
 %    \begin{macrocode}
-\cs_new:Npn \@@_expand_loop:w #1 \q_@@_recursion_stop
+\cs_new:Npn \@@_expand_loop:w #1 \s_@@_recursion_stop
   {
     \tl_if_head_is_N_type:nTF {#1}
       { \@@_expand_N_type:N }
@@ -695,7 +1023,7 @@
           { \@@_expand_group:n }
           { \@@_expand_space:w }
       }
-    #1 \q_@@_recursion_stop
+    #1 \s_@@_recursion_stop
   }
 \cs_new:Npn \@@_expand_group:n #1
   {
@@ -723,7 +1051,7 @@
 %    \begin{macrocode}
 \cs_new:Npx \@@_expand_N_type:N #1
   {
-    \exp_not:N \@@_if_recursion_tail_stop_do:Nn #1
+    \exp_not:N \@@_if_s_recursion_tail_stop_do:Nn #1
       { \exp_not:N \@@_expand_end:w }
     \exp_not:N \bool_lazy_any:nTF
       {
@@ -802,7 +1130,7 @@
   }
 \cs_new:Npn \@@_expand_math_search:NNN #1#2#3
   {
-    \@@_if_recursion_tail_stop_do:Nn #2
+    \@@_if_q_recursion_tail_stop_do:Nn #2
       { \@@_expand_explicit:N #1 }
     \token_if_eq_meaning:NNTF #1 #2
       {
@@ -814,7 +1142,7 @@
       }
       { \@@_expand_math_search:NNN #1 }
   }
-\cs_new:Npn \@@_expand_math_loop:Nw #1#2 \q_@@_recursion_stop
+\cs_new:Npn \@@_expand_math_loop:Nw #1#2 \s_@@_recursion_stop
   {
     \tl_if_head_is_N_type:nTF {#2}
       { \@@_expand_math_N_type:NN }
@@ -823,11 +1151,11 @@
           { \@@_expand_math_group:Nn }
           { \@@_expand_math_space:Nw }
       }
-    #1#2 \q_@@_recursion_stop
+    #1#2 \s_@@_recursion_stop
   }
 \cs_new:Npn \@@_expand_math_N_type:NN #1#2
   {
-    \@@_if_recursion_tail_stop_do:Nn #2
+    \@@_if_s_recursion_tail_stop_do:Nn #2
       { \@@_expand_end:w }
     \@@_expand_store:n {#2}
     \token_if_eq_meaning:NNTF #2 #1
@@ -839,7 +1167,7 @@
     \@@_expand_store:n { {#2} }
     \@@_expand_math_loop:Nw #1
   }
-\exp_after:wN \cs_new:Npn \exp_after:wN \@@_expand_math_space:Nw 
+\exp_after:wN \cs_new:Npn \exp_after:wN \@@_expand_math_space:Nw
   \exp_after:wN # \exp_after:wN 1 \c_space_tl
   {
     \@@_expand_store:n { ~ }
@@ -847,29 +1175,60 @@
   }
 %    \end{macrocode}
 %   At this stage, either we have a control sequence or a simple character:
-%   split and handle.
+%   split and handle. The need to check for non-protected actives arises
+%   from handling of legacy input encodings: they need to end up in a
+%   representation we can deal with in further processing. The tests for
+%   explicit parts of the \LaTeXe{} UTF-8 mechanism cover the case of
+%   bookmarks, where definitions change and are no longer protected. The
+%   same is true for \pkg{babel} shorthands.
 %    \begin{macrocode}
 \cs_new:Npn \@@_expand_explicit:N #1
   {
     \token_if_cs:NTF #1
       { \@@_expand_exclude:N #1 }
       {
-        \@@_expand_store:n {#1}
-        \@@_expand_loop:w 
+        \bool_lazy_and:nnTF
+          { \token_if_active_p:N #1 }
+          {
+            ! \bool_lazy_any_p:n
+              {
+                { \token_if_protected_macro_p:N #1 }
+                { \token_if_protected_long_macro_p:N #1 }
+                { \tl_if_head_eq_meaning_p:oN {#1} \UTFviii@two@octets }
+                { \tl_if_head_eq_meaning_p:oN {#1} \UTFviii@three@octets }
+                { \tl_if_head_eq_meaning_p:oN {#1} \UTFviii@four@octets }
+                { \tl_if_head_eq_meaning_p:oN {#1} \active@prefix }
+              }
+          }
+          { \exp_after:wN \@@_expand_loop:w #1 }
+          {
+            \@@_expand_store:n {#1}
+            \@@_expand_loop:w
+          }
       }
   }
 %    \end{macrocode}
 %   Next we exclude math commands: this is mainly as there \emph{might} be an
-%   \cs{ensuremath}.
+%   \cs{ensuremath}. The switching command for case needs special handling
+%   as it has to work by meaning.
 %    \begin{macrocode}
 \cs_new:Npn \@@_expand_exclude:N #1
   {
-    \exp_args:Ne \@@_expand_exclude:nN
+    \cs_if_eq:NNTF #1 \text_case_switch:nnnn
+      { \@@_expand_exclude_switch:Nnnnn #1 }
       {
-        \exp_not:V \l_text_math_arg_tl
-        \exp_not:V \l_text_expand_exclude_tl
+        \exp_args:Ne \@@_expand_exclude:nN
+          {
+            \exp_not:V \l_text_math_arg_tl
+            \exp_not:V \l_text_expand_exclude_tl
+          }
+        #1
       }
-    #1
+  }
+\cs_new:Npn \@@_expand_exclude_switch:Nnnnn #1#2#3#4#5
+  {
+    \@@_expand_store:n { #1 {#2} {#3} {#4} {#5} }
+    \@@_expand_loop:w
   }
 \cs_new:Npn \@@_expand_exclude:nN #1#2
   {
@@ -878,18 +1237,20 @@
   }
 \cs_new:Npn \@@_expand_exclude:NN #1#2
   {
-    \@@_if_recursion_tail_stop_do:Nn #2
+    \@@_if_q_recursion_tail_stop_do:Nn #2
       { \@@_expand_accent:N #1 }
     \str_if_eq:nnTF {#1} {#2}
       {
         \@@_use_i_delimit_by_q_recursion_stop:nw
-          { \@@_expand_exclude:Nn #1 }
+          { \@@_expand_exclude:Nw #1 }
       }
       { \@@_expand_exclude:NN #1 }
   }
-\cs_new:Npn \@@_expand_exclude:Nn #1#2
+\cs_new:Npn \@@_expand_exclude:Nw #1#2#
+  { \@@_expand_exclude:Nnn #1 {#2} }
+\cs_new:Npn \@@_expand_exclude:Nnn #1#2#3
   {
-    \@@_expand_store:n { #1 {#2} }
+    \@@_expand_store:n { #1#2 {#3} }
     \@@_expand_loop:w
   }
 %    \end{macrocode}
@@ -903,7 +1264,7 @@
   }
 \cs_new:Npn \@@_expand_accent:NN #1#2
   {
-    \@@_if_recursion_tail_stop_do:Nn #2
+    \@@_if_q_recursion_tail_stop_do:Nn #2
       { \@@_expand_letterlike:N #1 }
     \cs_if_eq:NNTF #2 #1
       {
@@ -927,7 +1288,7 @@
   }
 \cs_new:Npn \@@_expand_letterlike:NN #1#2
   {
-    \@@_if_recursion_tail_stop_do:Nn #2
+    \@@_if_q_recursion_tail_stop_do:Nn #2
       { \@@_expand_cs:N #1 }
     \cs_if_eq:NNTF #2 #1
       {
@@ -942,14 +1303,15 @@
 %    \end{macrocode}
 %   \LaTeXe{}'s \cs{protect} makes life interesting. Where possible, we
 %   simply remove it and replace with the \enquote{parent} command; of course,
-%   the \cs{protect} might be explicit, in which case we need to leave it alone
-%   if it's required. There is also the case of a straight \tn{@protected@testopt}
-%   to cover.
+%   the \cs{protect} might be explicit, in which case we need to leave it alone.
+%   That includes the case where it's not even followed by an \texttt{N}-type
+%   token. There is also the case of a straight \tn{@protected@testopt} to
+%   cover.
 %    \begin{macrocode}
 \cs_new:Npx \@@_expand_cs:N #1
   {
     \exp_not:N \str_if_eq:nnTF {#1} { \exp_not:N \protect }
-      { \exp_not:N \@@_expand_protect:N }
+      { \exp_not:N \@@_expand_protect:w }
       {
         \bool_lazy_and:nnTF
           { \cs_if_exist_p:N \fmtname }
@@ -958,8 +1320,23 @@
           { \exp_not:N \@@_expand_replace:N #1 }
       }
   }
+\cs_new:Npn \@@_expand_protect:w #1 \s_@@_recursion_stop
+  {
+    \tl_if_head_is_N_type:nTF {#1}
+      { \@@_expand_protect:N }
+      {
+        \@@_expand_store:n { \protect }
+        \@@_expand_loop:w
+      }
+        #1 \s_@@_recursion_stop
+  }
 \cs_new:Npn \@@_expand_protect:N #1
   {
+    \@@_if_s_recursion_tail_stop_do:Nn #1
+      {
+        \@@_expand_store:n { \protect }
+        \@@_expand_end:w
+      }
     \exp_args:Ne \@@_expand_protect:nN
       { \cs_to_str:N #1 } #1
   }
@@ -1057,7 +1434,7 @@
     \exp_after:wN \@@_expand_unexpanded_test:w
     \exp:w \exp_end_continue_f:w
   }
-\cs_new:Npn \@@_expand_unexpanded_test:w #1 \q_@@_recursion_stop
+\cs_new:Npn \@@_expand_unexpanded_test:w #1 \s_@@_recursion_stop
   {
     \tl_if_head_is_group:nTF {#1}
       { \@@_expand_unexpanded:n }
@@ -1065,7 +1442,7 @@
         \@@_expand_unexpanded:w
         \tl_if_head_is_N_type:nT {#1} { \@@_expand_unexpanded:N }
       }
-    #1 \q_@@_recursion_stop
+    #1 \s_@@_recursion_stop
   }
 \cs_new:Npn \@@_expand_unexpanded:N #1
   {
@@ -1080,6 +1457,9 @@
     \@@_expand_loop:w
   }
 %    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
 % \end{macro}
 % \end{macro}
 % \end{macro}

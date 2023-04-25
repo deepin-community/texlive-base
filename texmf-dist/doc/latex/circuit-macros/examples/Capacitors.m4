@@ -1,5 +1,5 @@
 .PS
-# `Capacitors.m4'
+# Capacitors.m4
 cct_init
 
 movewid = 2 pt__
@@ -23,16 +23,18 @@ vm = 0.28
    move right_ hm
    {capacitor(,N); move ;"`{\tt capacitor(,N)}'" ljust}
    move right_ hm
-   {xtal ; move ;"`{\tt xtal}'" ljust}
+   {capacitor(,CP); move ;"`{\tt capacitor(,CP)}'" ljust}
 }
    move down 0.25; right_
 {  {capacitor(,dC); move ;"`{\tt capacitor(,dC)}'" ljust}
    move right_ hm
    {capacitor(,dF); move ;"`{\tt capacitor(,dF)}'" ljust}
    move right_ hm
-   {variable(`capacitor',NN,-30,dimen_/3)
-   move ;`"{\tt variable(}`{\tt capacitor',}"' ljust \
-  `"{\enskip\tt NN,-30,dimen\_/3)}"' ljust
-     }
+   {variable(`capacitor',NN,-30,dimen_/3); move
+#    Stacking the strings normally does not work because the .pdf uses the
+#    length of the last line.
+   "`{\tt variable(}{\rm}{\tt capacitor}{\rm}{\tt,}'" ljust
+   "`{\enskip\tt NN,-30,dimen\_/3)}'" ljust at last ""+(0,-12pt__)
+   }
 }
 .PE

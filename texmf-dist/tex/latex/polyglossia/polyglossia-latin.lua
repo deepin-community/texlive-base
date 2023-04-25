@@ -1,3 +1,8 @@
+--
+-- polyglossia-latin.lua
+-- part of polyglossia v1.59 -- 2022/11/29
+--
+
 require('polyglossia-punct')
 
 -- For ecclesiastic Latin (and sometimes for Italian) a very small space is

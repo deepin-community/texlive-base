@@ -1,6 +1,6 @@
-# tkz-doc — Class and package for the documentation of all tkz-* packages.
+# tkz-doc — Class  for the documentation of all tkz-* packages.
 
-Release 1.43c 2020/04/10
+Release 1.45c 2022/07/14
 
 ## Note
 
@@ -23,23 +23,11 @@ The Current Maintainer of this work is Alain Matthes.
 The package `tkz-doc` is present in `TeXLive` and `MiKTeX`, use the
 package manager to install.
 
-For manual installation all files must be moved into the different directories in your
-installation `TDS` tree or in your `TEXMFHOME`:
-
-```
-  doc/README.md -> TDS:doc/latex/tkz-doc/README.md
-  latex/*.*     -> TDS:tex/latex/tkz-doc/*.*
-```
 
 ## How to use it
 
-1. If you want to compile the documentation of a `tkz-*` package, you need to use the lualatex engine.
+ If you want to compile the documentation of a `tkz-*` package, you need to use the lualatex engine. You need to use the package pgfornament if you want to add a frame with the option "cadre".
 
-## History
-
-- v 1.43 Correction of bug about the color. Remove the library `babel` of `TikZ`
-- v 1.42 I added in the version 1.4, an option called `cadre`. If you want to draw the frame of the cover, you need to use this option. In this case, you need to
-install the font `orna4`. By default, no frame.
 
 ## Author
 

@@ -17,6 +17,10 @@ Please go to the official repository at https://github.com/pgf-tikz/pgf or the
 official mailing list at https://tug.org/mailman/listinfo/pgf-tikz to submit
 bug reports, request new features, etc.
 
+We also have a chat on the Matrix network at
+[#pgf-tikz:matrix.org](https://matrix.to/#/#pgf-tikz:matrix.org) ([read-only
+version](https://view.matrix.org/room/!NuxCISwYQJuyWwNsEI:matrix.org/)).
+
 ## Installation
 
 In general you should just use the version of PGF that is shipped by
@@ -34,7 +38,7 @@ $ tlmgr install pgf --reinstall
 
 ## Development
 
-Currently PGF does not have a comprehensive test suite to check for
+Currently PGF only has a very rudimentary test suite to check for
 regressions, so for now we check for bugs by building the manual for
 each commit.  To build the manual locally you can either copy the PGF
 repository into your texmf tree (not recommended) or use the usertree
@@ -45,7 +49,7 @@ $ git clone https://github.com/pgf-tikz/pgf
 $ tlmgr init-usertree --usertree pgf
 $ export TEXMFHOME=$(readlink -f pgf)
 $ cd pgf
-$ texlua build.lua manual luatex
+$ l3build doc -q -H
 ```
 We recommend building at least the version for LuaTeX, as shown in the
 example above because this has the broadest coverage of PGF features.

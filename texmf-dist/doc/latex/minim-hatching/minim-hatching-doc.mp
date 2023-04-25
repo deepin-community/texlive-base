@@ -16,8 +16,8 @@ verbatimtex
 \startmetadata
     author   {Esger Renkema}
     title    {minim-hatching}
-    date     {2021-06-01}
-    version  {2021/1.0}
+    date     {2022-03-03}
+    version  {2022/1.1}
     keywords {MetaPost; tiling patterns}
 stopmetadata
 etex;

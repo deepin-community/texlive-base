@@ -1,0 +1,203 @@
+\documentclass{l3doc}
+
+
+% \usepackage[latin,english]{babel}=15pt
+\usepackage{lipsum}
+\usepackage{linebreaker}
+\usepackage{lua-widow-control}
+\linebreakersetup{debug}
+\usepackage{hyperref}
+\newcommand\authormail[1]{\footnote{\textless\url{#1}\textgreater}}
+\ifdefined\HCode
+\renewcommand\authormail[1]{\space\textless\Link[#1]{}{}#1\EndLink\textgreater}
+\fi
+
+\ifdefined\gitdate\else\def\gitdate{Undefined}\fi
+\ifdefined\version\else\def\version{Undefined}\fi
+
+\usepackage{listings}
+\usepackage{fontspec}
+\setmainfont{TeX Gyre Schola}
+% \setmonofont[Scale=MatchLowercase]{Inconsolatazi4}
+\IfFontExistsTF{Noto Sans Mono Regular}{%
+    \setmonofont[Scale=MatchLowercase]{Noto Sans Mono Regular}
+}{\setmonofont{NotoMono-Regular.ttf}}
+\usepackage{upquote}
+
+\usepackage{microtype}
+
+\newcommand\testbox[1]{%
+  \parbox{150pt}{%
+    \parindent=15pt%
+    \tolerance=1%
+    \pretolerance=1%
+    #1
+  }%
+}
+
+\newcommand\printtest[1]{%
+  \linebreakerdisable%
+  \noindent\testbox{%
+    #1
+    \par\medskip\noindent\hfill\textbf{Without Linebreaker}\hfill\null
+  }%
+  \linebreakerenable%
+  \hfill%
+  \testbox{%
+    #1
+    \par\medskip\noindent\hfill\textbf{With Linebreaker}\hfill\null
+  }%
+}
+
+\title{The \texttt{Linebreaker} package}
+\author{Michal Hoftich\authormail{michal.h21@gmail.com}}
+\date{Version \version\\\gitdate}
+\begin{document}
+\maketitle
+\tableofcontents
+
+\section{Introduction}
+
+This package tries to prevent overflow lines in paragraphs or boxes.
+It changes the Lua\TeX's \verb|linebreak| callback, and it re-typesets the paragraph 
+with increased values of \cmd{\tolerance} and \cmd{\emergencystretch}
+until the overflow doesn't happen. If that doesn't help, it chooses the solution
+with the lowest badness.
+
+
+The advantage of this approach is that paragraphs that have not overflowed are
+typeset with default parameters. These are changed only for problematic
+paragraphs.
+
+The code is experimental, and you may find bugs or clashes with
+other packages. You can send bug reports to the package's repository on 
+Github\footnote{\url{https://github.com/michal-h21/linebreaker}}.
+
+
+
+% \noindent\begin{minipage}{220pt}
+ \def\testtext{%
+The example document given below creates two pages by using Lua code alone. You
+will learn how to access TeX's boxes and counters from the Lua side, shipout a
+page into the PDF file, create horizontal and vertical boxes (hbox and vbox),
+create new nodes and manipulate the nodes links structure. The example covers
+the following node types: rule, whatsit, vlist, hlist and action.
+ }
+
+
+
+\begin{figure}
+\printtest\testtext%
+\caption{Example of Linebreaker's effect}
+\end{figure}
+
+% \end{minipage}
+\newpage
+\section{Usage}
+
+There is only \LaTeX\ package at the moment. Con\TeX t and Plain \TeX\ are not supported.
+You can enable the overflow paragraph handling by loading of the Linebreaker package:
+
+% \begin{lstlisting}{latex}
+% \usepackage[options]{linebreaker}
+\begin{center}
+\cmd{\usepackage}\verb|{linebreaker}|
+\end{center}
+% \end{lstlisting}
+
+\subsection{Enable and disable Linebreaker}
+
+The package owerflow handling is enabled by default. You can disable it and then re-enable using the following commands:
+
+\begin{function}{\linebreakerdisable}
+Disable line-breaking processing. \LaTeX\ will typeset the following paragraphs with the default values for line-breaking.
+\end{function}
+
+\begin{function}{\linebreakerenable}
+Re-enable line-breaking processing after it was disabled by \cmd{\linebreakerdisable}.
+\end{function}
+
+\subsection{Change of Linebreaker parameters}
+
+\begin{function}{\linebreakersetup}
+  Change settings of the line-breaking algorithm.
+  Usage: \cmd{\linebreakersetup}\Arg{options}
+
+
+\end{function}
+
+\subsubsection{Available options for the \cmd{\linebreakersetup} command}
+
+\begin{function}{maxcycles}
+Number of attempts to re-typeset the paragraph.
+\end{function}
+
+\begin{function}{maxemergencystretch}
+Maximal allowed value of \verb|\emergencystretch|.
+\end{function}
+
+\begin{function}{maxtolerance}
+Maximal allowed value of \verb|tolerance|.
+\end{function}
+
+\begin{function}{debug}
+Print debugging info to the terminal output.
+\end{function}
+
+\subsubsection{Example of \cmd{\linebreakersetup} use}
+
+\begin{lstlisting}{latex}
+\linebreakersetup{
+  maxtolerance=90,
+  maxemergencystretch=1em,
+  maxcycles=4
+}
+\end{lstlisting}
+
+
+
+\section{Historical background}
+
+The motivation to create this package was a 
+question\footnote{\url{http://tex.stackexchange.com/q/200989/2891}} by Frank Mittelbach on
+TeX.SE. His idea was to rewrite TeX’s paragraph-building algorithm in Lua to
+allow detection of rivers and similar tasks unsupported by the standard TeX
+line-breaking algorithm.
+
+As a complete rewrite of the line-breaking algorithm seemed too complicated, 
+I tried a different approach. Lua\TeX\ provides  callbacks for working with node lists. 
+It calls these callbacks when actions on the node lists happen, such as 
+ligaturing, kerning, before line-breaking, after line-breaking, and 
+callback that  handles the line-breaking process. 
+
+There is a \verb|tex.linebreak| function, which takes
+node list and table with \TeX\ parameters (like \verb|lineskip|, \verb|baselineskip|, \verb|tolerance|,
+etc.). It returns a new node list, with lines broken into horizontal boxes.
+
+My idea is to process this returned node list, detect problems and call
+`tex.linebreak` with different parameters if lines overflow. At the
+moment, overflow box detection works in most cases, but river detection is unusable, and it needs further corrections.
+
+\section{License}
+
+Permission is granted to copy, distribute and/or modify this software
+under the terms of the LaTeX Project Public License, version 1.3.
+
+\section{Changes}
+
+\begin{description}
+  \item[v0.1a, 2022-03-12]\hfill
+
+    \begin{itemize}
+      \item Fixed fatal error in the function that calculates width of last lines in paragraphs.
+    \end{itemize}
+
+  \item[v0.1, 2022-02-19]\hfill
+
+    \begin{itemize}
+      \item Initial version
+    \end{itemize}
+\end{description}
+
+\end{document}
+

@@ -30,12 +30,12 @@ Alessi:
 
 -   email: <alessi@robertalessi.net>
 
--   website: <http://www.robertalessi.net/ekdosis>
+-   website: <http://www.ekdosis.org>
 
 -   comments, feature requests, bug reports:
-    <https://gitlab.com/ralessi/ekdosis/issues>
+    <http://www.ekdosis.org/issues>
 
--   mailing list, support: <http://www.robertalessi.net/mailman/listinfo/ekdosis> [[mailing list archives](http://www.robertalessi.net/pipermail/ekdosis/)]
+-   mailing list, support: <http://www.ekdosis.org/mailman/listinfo/ekdosis> [[mailing list archives](http://www.ekdosis.org/pipermail/ekdosis/)]
 
 This program is free software: you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -98,7 +98,7 @@ instructions on how to install `ekdosis`, please see above.
 
 Comments, Feature Requests, Bug Reports
 ---------------------------------------
-<https://gitlab.com/ralessi/ekdosis/issues>
+<http://www.ekdosis.org/issues>
 
 
 Download the Repository

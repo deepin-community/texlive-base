@@ -14,7 +14,7 @@
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2021/09/16 v2.21.0 mplib package for LuaTeX]
+    [2022/01/12 v2.23.0 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
@@ -58,11 +58,12 @@
 }
 \long\def\mplibdocode#1\endmplibcode{%
   \endgroup
-  \directlua{luamplib.process_mplibcode([===[\unexpanded{#1}]===])}%
+  \directlua{luamplib.process_mplibcode([===[\unexpanded{#1}]===],"")}%
   \endgroup
 }
 \else
-\newenvironment{mplibcode}{%
+\newenvironment{mplibcode}[1][]{%
+  \global\def\currentmpinstancename{#1}%
   \mplibtmptoks{}\ltxdomplibcode
 }{}
 \def\ltxdomplibcode{%
@@ -76,7 +77,7 @@
   \mplibtmptoks\expandafter{\the\mplibtmptoks#1}%
   \def\mplibtemp@a{#2}%
   \ifx\mplib@mplibcode\mplibtemp@a
-    \directlua{luamplib.process_mplibcode([===[\the\mplibtmptoks]===])}%
+    \directlua{luamplib.process_mplibcode([===[\the\mplibtmptoks]===],"\currentmpinstancename")}%
     \end{mplibcode}%
   \else
     \mplibtmptoks\expandafter{\the\mplibtmptoks\end{#2}}%
@@ -109,26 +110,43 @@
     end
 }}
 \newtoks\mplibtmptoks
-\newtoks\everymplibtoks
-\newtoks\everyendmplibtoks
 \protected\def\everymplib{%
   \begingroup
   \mplibsetupcatcodes
   \mplibdoeverymplib
-}
-\long\def\mplibdoeverymplib#1{%
-  \endgroup
-  \everymplibtoks{#1}%
 }
 \protected\def\everyendmplib{%
   \begingroup
   \mplibsetupcatcodes
   \mplibdoeveryendmplib
 }
-\long\def\mplibdoeveryendmplib#1{%
-  \endgroup
-  \everyendmplibtoks{#1}%
-}
+\ifcsname ver@luamplib.sty\endcsname
+  \newcommand\mplibdoeverymplib[2][]{%
+    \endgroup
+    \directlua{
+      luamplib.everymplib["#1"] = [===[\unexpanded{#2}]===]
+    }%
+  }
+  \newcommand\mplibdoeveryendmplib[2][]{%
+    \endgroup
+    \directlua{
+      luamplib.everyendmplib["#1"] = [===[\unexpanded{#2}]===]
+    }%
+  }
+\else
+  \long\def\mplibdoeverymplib#1{%
+    \endgroup
+    \directlua{
+      luamplib.everymplib[""] = [===[\unexpanded{#1}]===]
+    }%
+  }
+  \long\def\mplibdoeveryendmplib#1{%
+    \endgroup
+    \directlua{
+      luamplib.everyendmplib[""] = [===[\unexpanded{#1}]===]
+    }%
+  }
+\fi
 \def\mpdim#1{ mplibdimen("#1") }
 \def\mpcolor#1#{\domplibcolor{#1}}
 \def\domplibcolor#1#2{ mplibcolor("#1{#2}") }

@@ -1,6 +1,8 @@
 
 \input minim-doc.sty
 
+\chapter Programming macros
+
 This chapter describes the programming helper modules on which all the above 
 modules depend. It mainly concerns register allocation, callback management and 
 format file inclusion.
@@ -78,15 +80,8 @@ name, the number of that register will be returned. You will need this when you
 want to allow your lua code to be included in a format file; it has nothing to 
 do with the tex-side ⟦\countdef⟧ and the like.
 
-For the new allocation macros listed above and (as a special case) for 
-⟦\newbox⟧,
-after saying ⟦\newwhatsit\name⟧, the call ⟦M.new_whatsit('name')⟧ will return 
-the number of ⟦\name⟧. For the other (older) allocation macros, this is not the 
-case. After all, because of the ⟦\countdef⟧ etc. included in ⟦\newcount⟧ etc. 
-you can already use ⟦tex.count['name']⟧ etc. for retrieving tex-side 
-allocations from lua. The exceptions to this are ⟦\newbox⟧, which is why it is 
-included with the new macros, and ⟦\newattribute⟧, for which you can use both 
-methods.
+If you want to access from lua a register defined in tex, the function
+⟦*M.registernumber('name')⟧ will give you the index of register ⟦\name⟧.
 
 Besides ⟦\newluachunkname\name⟧, you can also use
 ⟦*\setluachunkname \name {actual name}⟧
@@ -102,21 +97,24 @@ take no parameters.
 As noted at the beginning of this chapter, the callback functions are only 
 available after you say ⟦local C = require('minim-callbacks')⟧.
 
-This module will override the primitive callback functions with its own 
-⟦*C.register⟧, ⟦*C.find⟧ and ⟦*C.list⟧; the original primitive functions can be 
-found in the ⟦*C.primitives⟧ table.
-
 The simple function of this module is allowing multiple callbacks to co-exist. 
 Different callbacks call for different implementations, and some callbacks can 
-only contain a single function.
-Any callbacks that are already assigned before loading this module will be 
-preserved; this includes the ltluatex callback mechanism if it has already been 
-installed.
+only contain a single function. Its interface matches the primitive interface, 
+with ⟦*C.register(callback, fn)⟧, ⟦*C.find(callback)⟧ and ⟦*C.list()⟧ taking 
+the same arguments. In addition to these, ⟦*C.deregister(fn)⟧ will allow you to 
+remove a callback. This is necessary when you want to remove a callback from 
+a list or from the bottom of a stack. The ⟦fn⟧ variable should point to the 
+same object.
 
-You can create your own callbacks with ⟦*C.new_callback(name, type)⟧. The ⟦type⟧ 
-should be one of the types mentioned below or ⟦'single'⟧ for callbacks that 
-allow only one function. If the ⟦name⟧ is that of a primitive callback, new 
-registrations will target your new callback.
+Any callbacks that are already assigned before loading this module will be 
+preserved and the primitive callback interface is still available, though 
+callbacks registered through the latter will actually use the new functions. 
+Ltluatex may be loaded either before or after this module.
+
+You can create your own callbacks with ⟦*C.new_callback(name, type)⟧. The 
+⟦type⟧ should be one of the types mentioned below or ⟦'single'⟧ for callbacks 
+that allow only one function. If the ⟦name⟧ is that of a primitive callback, 
+new registrations will target your new callback.
 You can call the new callback with ⟦*C.call_callback(name, ...)⟧, adding any 
 number of parameters.
 
@@ -131,7 +129,6 @@ Callbacks of this type are
 ⟦vpack_filter⟧,
 ⟦pre_output_filter⟧ and
 ⟦mlist_to_mlist⟧.
-There is no way of unregistering callbacks of this type.
 
 Similarly, for the ⟦*data⟧ callbacks
 ⟦process_input_buffer⟧,
@@ -153,6 +150,7 @@ will be called. These are
 Register ⟦nil⟧ at the callback to pop a function off the stack.
 
 Finally, for the ⟦*simple⟧ callbacks
+⟦uselanguage⟧,
 ⟦contribute_filter⟧,
 ⟦pre_dump⟧,
 ⟦wrapup_run⟧,
@@ -164,21 +162,50 @@ Finally, for the ⟦*simple⟧ callbacks
 ⟦process_rule⟧.
 all registered functions are called in order with the same arguments.
 
-The new ⟦*mlist_to_mlist⟧ callback is called before ⟦mlist_to_hlist⟧ and should 
-not convert noads to nodes.
+Two callbacks are new:
+the new ⟦*mlist_to_mlist⟧ callback is called before ⟦mlist_to_hlist⟧ and should 
+not convert noads to nodes, while the ⟦*uselanguage⟧ callback is called from 
+⟦\uselanguage⟧.
 
 If you create a new callback with a number for a name, that callback will 
 replace the ⟦*process_rule⟧ callback when its number matches the index property 
 of the rule.
 
+\section Programming helpers
+
+Optional keyword arguments to tex macros can be defined with help of 
+⟦*M.options_scanner()⟧. An example from the definition of minim-pdf’s 
+⟦\outline⟧:
+
+⟦    local s = M.options_scanner()
+        :keyword('open', 'closed')
+        :string('dest')
+        :scan()
+    s.title = token.scan_string()
+    M.add_bookmark(s)⟧
+
+Here, the ⟦keyword⟧ function adds two opposite keywords: if one is present, its 
+value will be set to ⟦true⟧ and the other’s to ⟦false⟧ (the second keyword is 
+optional). The ⟦string⟧ function stores the result of ⟦token.scan_string⟧ under 
+its key. Of the same form you have ⟦int⟧, ⟦glue⟧, ⟦dimen⟧, ⟦argument⟧, ⟦word⟧ 
+and ⟦list⟧. All these take an optional second argument: if ⟦true⟧ then the 
+keyword can be repeated and its values will be stored as a list.
+
+The ⟦scan⟧ function, finally, scans all keywords, which may appear in any 
+order. You can give it a table with default values. In the example given above, 
+the argument ⟦s⟧ to ⟦M.add_bookmark⟧ will consist of a table with at most the 
+following entries: ⟦open⟧, ⟦closed⟧, ⟦dest⟧ and ⟦title⟧, though entries whose 
+keywords do not occur will not be present.
+
+This function is particularly useful when used together with 
+⟦*M.luadef('csname', function, ...)⟧, which defines primitive-like tex macros 
+from lua. There, ⟦function⟧ can be any function (it will be assigned a lua 
+function register) and at the place of the dots you may append ⟦'protected'⟧ 
+and/or ⟦'global'⟧.
+
 
 \section Miscellaneous functions
 
-This section describes functions and macros that are internal to this package, 
-but might be of general usefulness.
-
-For instance, you might find the function ⟦*M.table_to_text(table)⟧ useful when 
-debugging lua code.
 The small functions
 ⟦*M.msg(...)⟧, ⟦*M.log(...)⟧ and ⟦*M.err(...)⟧
 include a call to ⟦M.string.format⟧;
@@ -186,13 +213,23 @@ additionally,
 ⟦*M.amsg(...)⟧ and ⟦*M.alog(...)⟧
 do not start a new line.
 
-Very useful is ⟦*M.luadef('csname', function, ...)⟧ for defining primitive-like 
-tex macros from lua: ⟦function⟧ can be any function (it will be assigned a lua 
-function register) and at the place of the dots you may append ⟦'protected'⟧ 
-and/or ⟦'global'⟧.
-
 Both ⟦*M.unset⟧ and ⟦*\unset⟧ contain the value ⟦-0x7FFFFFFF⟧ that can be used 
 for clearing attributes.
+
+When writing data to pdf literals, ⟦*M.pdf_string(...)⟧, 
+⟦*M.pdf_name(...)⟧ and ⟦*M.pdf_date(...)⟧ may be useful: they produce strings 
+that can be written to the pdf directly. Surrounding ⟦<>⟧ or ⟦()⟧ characters or 
+a leading ⟦/⟧ will be included in the return value. The ⟦M.pdf_date⟧ function 
+expects a value of the form ⟦yyyy[-mm[-dd]]⟧ and returns a date of the form 
+⟦(D:yyyymmdd)⟧.
+The function ⟦M.pdf_string⟧ is also available to tex through the macro 
+⟦*\pdfstring⟧.
+
+Finally the function ⟦*M.table_to_text(table)⟧ may be useful when debugging lua 
+code: it dumps a table as a (lua-readable) string. Cyclic references will spin 
+in into an eternal loop, however.
+
+\section Miscellaneous helper macros
 
 On the tex side, ⟦*\voidbox⟧, ⟦*\ignore⟧, ⟦*\spacechar⟧, ⟦*\unbrace⟧, 
 ⟦*\firstoftwo⟧ and ⟦*\secondoftwo⟧ should be self-explanatory and 

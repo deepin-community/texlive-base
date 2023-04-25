@@ -6,7 +6,7 @@
 %%
 %% lwarp.dtx  (with options: `acronym')
 %% This is a generated file.
-%% Copyright 2016-2020 Brian Dunn
+%% Copyright 2016-2022 Brian Dunn
 %% 
 %% This work may be distributed and/or modified under the
 %% conditions of the LaTeX Project Public License, either version 1.3
@@ -16,7 +16,63 @@
 %% and version 1.3 or later is part of all distributions of LaTeX
 %% version 2005/12/01 or later.
 
-\LWR@ProvidesPackagePass{acronym}[2015/03/21]
+\LWR@ProvidesPackagePass{acronym}[2020/04/17]
+
+\expandafter\def\csname AC@\AC@prefix{}@acro\endcsname#1[#2]#3{%
+  \ifAC@nolist%
+  \else%
+  \ifnum%
+    \ifAC@printonlyused 1%
+    \else\ifAC@printonlyreused 1%
+    \else 0\fi\fi%
+  =1\relax%
+    \ifnum%
+      \ifAC@printonlyused%
+        \expandafter\ifx\csname acused@#1@once\endcsname\AC@used 1 \else 0 \fi%
+      \else\ifAC@printonlyreused%
+        \expandafter\ifx\csname acused@#1@twice\endcsname\AC@used 1 \else 0 \fi%
+      \else 0 \fi\fi%
+    =1\relax%
+      \item[\protect\AC@hypertarget{#1}{%
+        \AC@hyperref[acro:#1]{\aclabelfont{#2}\hfill}%
+      }]\AC@hyperref[acro:#1]{#3}%
+          \ifAC@withpage%
+            \expandafter\ifx\csname r@acro:#1\endcsname\relax%
+               \PackageInfo{acronym}{%
+                 Acronym #1 used in text but not spelled out in
+                 full in text}%
+            \else%
+                \qquad --- %    lwarp
+                \AC@pageref{acro:#1}%
+            \fi%
+          \fi\\%
+    \fi%
+  \else%
+    \item[\protect\AC@hypertarget{#1}{\AC@hyperref[acro:#1]{\aclabelfont{#2}\hfill}}]%
+        \AC@hyperref[acro:#1]{#3}%
+  \fi%
+  \fi%
+  \begingroup
+    \def\acroextra##1{}%
+    \@bsphack
+      \ifAC@printonlyreused%
+        \protected@write\@auxout{}{%
+          \string\newacro{#1}[%
+            \expandafter\ifx\csname acused@#1@twice\endcsname\AC@used%
+              \string\AC@hyperlink{#1}{#2}%
+            \else%
+              {#2}%
+            \fi%
+          ]{#3}%
+        }%
+      \else%
+        \protected@write\@auxout{}{%
+          \string\newacro{#1}[\string\AC@hyperlink{#1}{#2}]{#3}%
+        }%
+      \fi%
+    \@esphack
+  \endgroup
+  \ignorespaces}
 
 \renewcommand{\acfia}[1]{%
   {\textit{\AC@acl{#1}}} (\ifAC@starred\acs*{#1}\else\acs{#1}\fi)}
@@ -24,11 +80,11 @@
 \renewcommand*\AC@acs[1]{%
  \expandafter\AC@get\csname fn@#1\endcsname\@firstoftwo{#1}}
 
-\renewcommand{\@starttoc}[1]{
-\LWR@htmlelementclass{nav}{#1}
-\LetLtxMacro\@verridelabel\@gobble
-\LWR@orig@starttoc{#1}
-\LWR@htmlelementclassend{nav}{#1}
+\renewcommand{\@starttoc}[1]{%
+    \LWR@htmlelementclass{nav}{#1}
+    \LetLtxMacro\@verridelabel\@gobble
+    \LWR@orig@starttoc{#1}
+    \LWR@htmlelementclassend{nav}{#1}
 }
 
 \renewcommand*\AC@und@newl@bel[3]{%
@@ -44,6 +100,26 @@
         \global\expandafter\let\csname#1@#3@cref\endcsname\relax% lwarp
     }%
 }%
+
+\BeforeBeginEnvironment{acronym}{\LWR@stoppars}
+\AfterEndEnvironment{acronym}{\LWR@startpars}
+
+\AtBeginDocument{
+      \LetLtxMacro\AC@hyperlink\hyperlink
+      \LetLtxMacro\AC@hyperref\hyperref
+      \newcommand*\AC@raisedhypertarget[2]{%
+            \hypertarget{#1}{}%
+          #2}%
+      \LetLtxMacro\AC@hypertarget\AC@raisedhypertarget
+      \def\AC@phantomsection{%
+      }%
+}
+
+\appto\LWR@restoreorigformatting{%
+      \LetLtxMacro\AC@hyperlink\@secondoftwo%
+      \LetLtxMacro\AC@hyperref\LWR@nullify@hyperref%
+}
+
 
 \endinput
 %%

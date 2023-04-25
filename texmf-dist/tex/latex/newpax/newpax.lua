@@ -6,7 +6,7 @@
 -- 
 --  newpax.dtx  (with options: `lua')
 --  
---  Copyright (C) 2021 Ulrike Fischer
+--  Copyright (C) 2021,2022 Ulrike Fischer
 --  
 --  It may be distributed and/or modified under the conditions of
 --  the LaTeX Project Public License (LPPL), either version 1.3c of
@@ -20,8 +20,8 @@
 --  
 local ProvidesLuaModule = {
     name          = "newpax",
-    version       = "0.51",       --TAGVERSION
-    date          = "2021-03-07", --TAGDATE
+    version       = "0.53",       --TAGVERSION
+    date          = "2022-09-15", --TAGDATE
     description   = "newpax lua code",
     license       = "The LATEX Project Public License 1.3c"
 }
@@ -206,7 +206,7 @@ end
 -- XXXXXX encode/escape the file name?
 local function outputENTRY_file (file, pdfedoc)
   local bytes       = GETSIZE(pdfedoc)
-  local date        = GETINFO(pdfedoc).CreationDate
+  local date        = (GETINFO(pdfedoc) and GETINFO(pdfedoc).CreationDate) or  "D:22222222222222"
   -- file
   local a = strENTRY_BEG
   a = a .. strCMD_BEG .. constCMD_FILE .. strCMD_END
@@ -325,6 +325,9 @@ end
 
 local function outputKV_uri (pdfedict)
   local type, value, hex = GETFROMDICTIONARY(pdfedict,constKEY_URI)
+  if TYPE(value) == "pdfe.reference" then
+   type,value,hex  = GETFROMREFERENCE(value)
+  end
   local a= strKV_BEG .. constKEY_URI .. strVALUE_BEG
   if hex then
     a = a .. strHEX_STR_BEG .. value .. strHEX_STR_END
@@ -341,15 +344,54 @@ local function outputKV_N (pdfedict)
   return a
 end
 
+-- if a gotoR has a filespec filespec we use this
+-- to output the reference. It is rather crude and handles only names and strings
+local function outputDICT (dictionary)
+ local tkeys = {}
+ local dict = DICTIONARYTOTABLE(dictionary)
+ for name,value in pairs(dict) do
+  table.insert(tkeys,name)
+ end
+ table.sort(tkeys)
+ local a = "<<"
+ for _,k in ipairs (tkeys) do
+   v=dict[k]
+   a = a .. strNAME.. k
+      if v[1]== 5 then -- it is a name
+       b = string.gsub(v[2], "/", "#2F")
+       a = a .. strNAME .. b
+      elseif v[1] == 6 then -- it is a string
+       local b
+       if v[3] then
+         b = "<" .. v[2] .. ">"
+       else
+         b = "(" .. v[2] .. ")"
+       end
+       a = a ..strRECT_SEP .. b
+       -- everything else is ignored for now!
+      end
+    end
+ a = a .. ">>"
+ return a
+end
+
 local function outputKV_gotor (pdfedict) -- action dictionary
   local type, value, hex = GETFROMDICTIONARY(pdfedict,"F")
   local desttype, destvalue, destdetail =  GETFROMDICTIONARY(pdfedict,"D")
   local a = strKV_BEG .. constKEY_FILE .. strVALUE_BEG
-  a =  strKV_BEG .. constKEY_FILE .. strVALUE_BEG
-  if hex then
-    a = a .. strHEX_STR_BEG .. value .. strHEX_STR_end
+  if TYPE(value) == "pdfe.reference" then
+     local x,dictionary  = GETFROMREFERENCE(value)
+     if TYPE(dictionary) == "pdfe.dictionary" then
+       a = a .. outputDICT (dictionary)
+     else
+      print("ERROR!? this is not a dictionary!!")
+     end
   else
-    a = a .. strLIT_STR_BEG .. value .. strLIT_STR_END
+   if hex then
+     a = a .. strHEX_STR_BEG .. value .. strHEX_STR_END
+   else
+     a = a .. strLIT_STR_BEG .. value .. strLIT_STR_END
+   end
   end
   a = a .. strVALUE_END .. strKV_END
   if desttype == 7 then
@@ -380,35 +422,35 @@ local function outputENTRY_dest (destcount,name,pagereftonum,destnamestoref,pdfe
  a = a .. strARG_BEG .. data[2][2] .. strARG_END
  a = a .. strKVS_BEG
  if data[2][2] == constDEST_XYZ then
-   if data[3][2] then
+   if data[3] and data[3][2] then
     a = a .. strKV_BEG .. constKEY_DEST_X .. strVALUE_BEG .. data[3][2] .. strVALUE_END .. strKV_END
    else
     a = a .. strKV_BEG .. constKEY_DEST_X .. strVALUE_BEG .. mediabox[1] .. strVALUE_END .. strKV_END
    end
-   if data[4][2] then
+   if data[4] and data[4][2] then
     a = a .. strKV_BEG .. constKEY_DEST_Y .. strVALUE_BEG .. data[4][2] .. strVALUE_END .. strKV_END
    else
     a = a .. strKV_BEG .. constKEY_DEST_X .. strVALUE_BEG .. mediabox[4] .. strVALUE_END .. strKV_END
    end
-   if data[5][2] then
+   if data[5] and data[5][2] then
     a = a .. strKV_BEG .. constKEY_DEST_ZOOM .. strVALUE_BEG .. data[5][2] .. strVALUE_END .. strKV_END
    end
  elseif data[2][2] == constDEST_FIT  then -- nothing to do
  elseif data[2][2] == constDEST_FITB then -- nothing to do
  elseif data[2][2] == constDEST_FITH then
-   if data[3][2] then
+   if data[3] and data[3][2] then
     a = a .. strKV_BEG .. constKEY_DEST_Y .. strVALUE_BEG .. data[3][2] .. strVALUE_END .. strKV_END
    end
  elseif data[2][2] == constDEST_FITBH then
-   if data[3][2] then
+   if data[3] and data[3][2] then
     a = a .. strKV_BEG .. constKEY_DEST_Y .. strVALUE_BEG  .. data[3][2] .. strVALUE_END .. strKV_END
    end
  elseif data[2][2] == constDEST_FITV then
-   if data[3][2] then
+   if data[3] and data[3][2] then
     a = a .. strKV_BEG .. constKEY_DEST_X .. strVALUE_BEG .. data[3][2] .. strVALUE_END .. strKV_END
    end
  elseif data[2][2] == constDEST_FITBV then
-   if data[3][2] then
+   if data[3] and data[3][2] then
     a = a .. strKV_BEG .. constKEY_DEST_X .. strVALUE_BEG .. data[3][2] .. strVALUE_END .. strKV_END
    end
  elseif data[2][2] == constDEST_FITR and data[6] then

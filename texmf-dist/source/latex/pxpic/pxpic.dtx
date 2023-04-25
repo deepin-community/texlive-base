@@ -54,11 +54,12 @@ and the derived files           pxpic.pdf
   \expandafter\endgroup
 \fi
 %
-\ProvidesFile{pxpic.dtx}[2021-01-16 v1.2 draw pixel pictures]
+\ProvidesFile{pxpic.dtx}[2021-12-12 v1.3 draw pixel pictures]
 \PassOptionsToPackage{full}{textcomp}
 \documentclass{l3doc}
 \RequirePackage[oldstylenums,nott]{kpfonts}
 \usepackage{pxpic}
+\usepackage{hologo}
 \input{glyphtounicode}
 \pdfgentounicode=1
 \RequirePackage{listings}
@@ -135,23 +136,24 @@ and the derived files           pxpic.pdf
   }
 \hypersetup{linkcolor=red!80!black,urlcolor=purple!80!black}
 \DoNotIndex{\advance}
-\DoNotIndex{\baselineskip,\begingroup,\bgroup}
+\DoNotIndex{\baselineskip,\begingroup,\bgroup,\box}
 \DoNotIndex{\csname}
 \DoNotIndex{\def,\detokenize,\dimexpr}
 \DoNotIndex{\edef,\egroup,\ekvdef,\ekvdefNoVal,\ekvifdefinedNoVal,\ekvletkv}
 \DoNotIndex{\ekvparse,\ekvsetdef,\endcsname,\endgroup,\expandafter}
-\DoNotIndex{\hbox,\hskip}
+\DoNotIndex{\hbox,\hskip,\ht}
 \DoNotIndex{\iffalse,\fi}
 \DoNotIndex{\kern}
 \DoNotIndex{\leavevmode,\let,\long,\lower}
 \DoNotIndex{\newcommand,\newdimen}
 \DoNotIndex{\PackageError,\protected,\ProvidesPackage}
 \DoNotIndex{\relax,\RequirePackage}
-\DoNotIndex{\@declaredcolor,\@firstofone,\@gobble,\@ifdefinable,\@ifnextchar}
-\DoNotIndex{\@ifundefined,\@undeclaredcolor}
-\DoNotIndex{\ekv@ifempty,\ekv@name,\z@}
+\DoNotIndex{\setbox}
+\DoNotIndex{\@declaredcolor,\@empty,\@firstofone,\@gobble,\@ifdefinable}
+\DoNotIndex{\@ifnextchar,\@ifundefined,\@undeclaredcolor}
+\DoNotIndex{\ekv@ifempty,\ekv@name,\p@,\z@}
 \DoNotIndex{\unexpanded}
-\DoNotIndex{\vbox,\vrule}
+\DoNotIndex{\vbox,\vrule,\vtop}
 \@ifdefinable\gobbledocstriptag{\def\gobbledocstriptag#1>{}}
 \makeatother
 \newenvironment{options}[1][]
@@ -196,6 +198,28 @@ and the derived files           pxpic.pdf
         {MMMM....MMMM.MM....MM..MMMMM..MMMM.MM...MM.MMMM.......MMM}
       }^^A
   }
+\ExplSyntaxOn
+^^A contains code from https://tex.stackexchange.com/a/25753/117050
+\NewDocumentCommand \codeexample { O{\footnotesize} D(){\leavevmode} +v }
+  {
+    \begin{minipage}[c]{.5\linewidth}
+      #1
+      \newlinechar=\endlinechar
+      \exp_args:Nx \scantokens
+        {
+          \string\begin{lstlisting}
+            #3
+          \string\end{lstlisting}
+        }
+    \end{minipage}
+    \begin{minipage}[c]{.45\linewidth}
+      #2
+      \newlinechar=\endlinechar
+      \exp_args:Nx \scantokens {#3}
+    \end{minipage}
+    \par
+  }
+\ExplSyntaxOff
 \begin{document}
   \title
     {^^A
@@ -212,7 +236,7 @@ and the derived files           pxpic.pdf
           \Large draw pixel pictures^^A
         }{pxpic - draw pixel pictures}^^A
     }
-  \date{2021-01-16 v1.2}
+  \date{2021-12-12 v1.3}
   \author{Jonathan P. Spratte\thanks{\protect\randomize{jspratte@yahoo.de}}}
   \DocInput{pxpic.dtx}
 \end{document}
@@ -258,6 +282,14 @@ and the derived files           pxpic.pdf
 % print this shouldn't be an issue, but some rasterisation algorithms employed
 % by viewers and conversion tools have this deficit.
 %
+% Another thing I should mention: The pictures you can draw with \pxpicname\
+% can't be arbitrary large. Due to the design decision of the output as a single
+% \CS{hbox} and the way the output routine works, pictures are limited by \TeX's
+% memory size to roughly $440\times 440$ pixels in \hologo{pdfLaTeX} with the
+% default settings in \TeX\ Live. The size is unlimited in \hologo{LuaLaTeX},
+% due to dynamic memory allocation. In \hologo{XeLaTeX} the size should be even
+% smaller than in \hologo{pdfLaTeX}.
+%
 % \begin{function}{\pxpic}
 %   \begin{syntax}
 %     \cs{pxpic}\oarg{options}\marg{pixel list}
@@ -268,8 +300,9 @@ and the derived files           pxpic.pdf
 %   contained in an \CS{hbox} and can be used wherever \TeX\ expects an
 %   \CS{hbox}. As a result, when you're in vertical mode a \cs{pxpic} will form
 %   a text line, to prevent this you can use \CS{leavevmode} before it. The
-%   \cs{pxpic} will be bottom aligned, you can change this using \CS{raisebox}
-%   (or, if you want, \TeX's \CS{raise} and \CS{lower} primitives).
+%   \cs{pxpic} will be bottom aligned by default (see the options |b|, |c|, and
+%   |t|), you can further tweak this using \CS{raisebox} (or, if you want,
+%   \TeX's \CS{raise} and \CS{lower} primitives).
 % \end{function}
 %
 % \subsubsection{Examples}
@@ -305,30 +338,18 @@ and the derived files           pxpic.pdf
 %
 % We can draw a small cross rather easily:\par\nobreak
 % \noindent
-% \begin{minipage}[c]{.5\linewidth}\footnotesize
-% \begin{lstlisting}
+% \codeexample$
 % \pxpic
 %   {
 %     {.k}
 %     {kkk}
 %     {.k}
 %   }
-% \end{lstlisting}
-% \end{minipage}
-% \begin{minipage}[c]{.45\linewidth}
-% \leavevmode
-% \pxpic
-%   {
-%     {.k}
-%     {kkk}
-%     {.k}
-%   }
-% \end{minipage}
+% $
 %
 % A small multicoloured grid:\par\nobreak
 % \noindent
-% \begin{minipage}[c]{.5\linewidth}\footnotesize
-% \begin{lstlisting}
+% \codeexample$
 % \pxpic
 %   {
 %     {brgk}
@@ -336,23 +357,11 @@ and the derived files           pxpic.pdf
 %     {gkbr}
 %     {rgkb}
 %   }
-% \end{lstlisting}
-% \end{minipage}
-% \begin{minipage}[c]{.45\linewidth}
-% \leavevmode
-% \pxpic
-%   {
-%     {brgk}
-%     {kbrg}
-%     {gkbr}
-%     {rgkb}
-%   }
-% \end{minipage}
+% $
 %
 % A heart (shamelessly copied example from \pixelart):\par\nobreak
 % \noindent
-% \begin{minipage}[c]{.5\linewidth}\footnotesize
-% \begin{lstlisting}
+% \codeexample$
 % \pxpic
 %   {
 %     {..rr.rr}
@@ -365,40 +374,17 @@ and the derived files           pxpic.pdf
 %     {...rrr}
 %     {....r}
 %   }
-% \end{lstlisting}
-% \end{minipage}
-% \begin{minipage}[c]{.45\linewidth}
-% \leavevmode
-% \pxpic
-%   {
-%     {..rr.rr}
-%     {.rrrrrrr}
-%     {rrrrrrrrr}
-%     {rrrrrrrrr}
-%     {rrrrrrrrr}
-%     {.rrrrrrr}
-%     {..rrrrr}
-%     {...rrr}
-%     {....r}
-%   }
-% \end{minipage}
+% $
 %
 % Using |mode=rgb| to draw a short coloured line:\par\nobreak
 % \noindent
-% \begin{minipage}[c]{.5\linewidth}\footnotesize
-% \begin{lstlisting}
+% \codeexample$
 % \pxpic[mode=rgb]{{{1,0,1}{1,1,0}{0,1,1}}}
-% \end{lstlisting}
-% \end{minipage}
-% \begin{minipage}[c]{.45\linewidth}
-% \leavevmode
-% \pxpic[mode=rgb]{{{1,0,1}{1,1,0}{0,1,1}}}
-% \end{minipage}
+% $
 %
 % A multicoloured grid using skips and |mode=cmy|:\par\nobreak
 % \noindent
-% \begin{minipage}[c]{.5\linewidth}\footnotesize
-% \begin{lstlisting}
+% \codeexample$
 % \pxpic[mode=cmy]
 %   {
 %     {{1,0,1} {1,1,0} {0,1,1} {}     }
@@ -406,33 +392,15 @@ and the derived files           pxpic.pdf
 %     {{0,1,1} {}      {1,0,1} {1,1,0}}
 %     {{1,1,0} {0,1,1} {}      {1,0,1}}
 %   }
-% \end{lstlisting}
-% \end{minipage}
-% \begin{minipage}[c]{.45\linewidth}
-% \leavevmode
-% \pxpic[mode=cmy]
-%   {
-%     {{1,0,1} {1,1,0} {0,1,1} {}     }
-%     {{}      {1,0,1} {1,1,0} {0,1,1}}
-%     {{0,1,1} {}      {1,0,1} {1,1,0}}
-%     {{1,1,0} {0,1,1} {}      {1,0,1}}
-%   }
-% \end{minipage}
+% $
 %
 % Showing the difference between a skipped and a white pixel:\par\nobreak
 % \noindent
-% \begin{minipage}[c]{.5\linewidth}\footnotesize
-% \begin{lstlisting}
+% \codeexample()$
 % \pxpicsetup{colours = {w=white}}
 % \colorbox{gray}{\pxpic{{bbb}{b.b}{bbb}}}
 % \colorbox{gray}{\pxpic{{bbb}{bwb}{bbb}}}
-% \end{lstlisting}
-% \end{minipage}
-% \begin{minipage}[c]{.45\linewidth}
-% \pxpicsetup{colours = {w=white}}
-% \colorbox{gray}{\pxpic{{bbb}{b.b}{bbb}}}
-% \colorbox{gray}{\pxpic{{bbb}{bwb}{bbb}}}
-% \end{minipage}
+% $
 %
 % \enlargethispage{1.1\baselineskip}
 % A biggish example: Tux.\footnote{Source:
@@ -440,8 +408,7 @@ and the derived files           pxpic.pdf
 % put two rows of pixels per code line to reduce the size a bit and the code is
 % displayed tinily.\par\nobreak
 % \noindent
-% \begin{minipage}[c]{.5\linewidth}\tiny
-% \begin{lstlisting}
+% \codeexample[\tiny]$
 % \pxpic
 %   [
 %      size    = 2.5pt
@@ -468,43 +435,12 @@ and the derived files           pxpic.pdf
 %     {.O:::::::kkkkkkkk:::::::O}  {..OO:::::kkkkkkkk:::::OO}
 %     {....OO::O.kkkkkk.O::OO}     {......OOO........OOO}
 %   }
-% \end{lstlisting}
-% \end{minipage}
-% \begin{minipage}[c]{.45\linewidth}
-% \leavevmode
-% \pxpic
-%   [
-%      size    = 2.5pt
-%     ,colours = {:=orange,
-%                 '=black!10,
-%                 g=black!75,
-%                 O=orange!80!black}
-%   ]
-%   {
-%     {...........gggg}            {.........gggkkggg}
-%     {........ggkkkkkkkg}         {........gkkkkkkkkg}
-%     {........kkkkkkkkkk}         {.......gkk.kkkk.kkk}
-%     {.......gk.k.kk.k.kk}        {.......gk.k.kk.k.kk}
-%     {.......gkkkkkkkkkkk}        {.......gkkk::::kkkk}
-%     {.......gk::::::::kk}        {.......gk.:kkkk:kkk}
-%     {......gkk..::::'kkkk}       {......gkk....'''kkkk}
-%     {......gkk....''''kkk}       {.....gkk.....''''kkkk}
-%     {.....gk.......''''kkk}      {....gkk........'''kkkk}
-%     {....gkk........'''kkkk}     {....gk..........''kkkk}
-%     {...gkkg.........'''kkkk}    {...gkkkk........'''kkkk}
-%     {..OOOOkkk.......'''kOOOO}   {..O::::kkk......'''O:::O}
-%     {.O::::::kk.....'''::::::O}  {.O::::::kkk...''kk::::::O}
-%     {O:::::::kkk...'kkk:::::::O} {O:::::::kkk...'kkk:::::::O}
-%     {.O:::::::kkkkkkkk:::::::O}  {..OO:::::kkkkkkkk:::::OO}
-%     {....OO::O.kkkkkk.O::OO}     {......OOO........OOO}
-%   }
-% \end{minipage}
+% $
 %
 % Just for Paulo, a duck. Also, showing that the colour definitions in |mode=px|
 % can be arbitrary tokens or multiple letters:\par\nobreak
 % \noindent
-% \begin{minipage}[c]{.5\linewidth}\tiny
-% \begin{lstlisting}
+% \codeexample[\tiny]$
 % \pxpic[colours = {oo=orange,
 %                   \ylw=yellow,
 %                   \blk=black},
@@ -523,29 +459,7 @@ and the derived files           pxpic.pdf
 %     {\skp\skp\ylw\ylw\ylw\ylw\ylw\ylw\ylw\ylw}
 %     {\skp\skp\skp\skp\ylw\ylw\ylw\ylw\ylw}
 %   }
-% \end{lstlisting}
-% \end{minipage}
-% \begin{minipage}[c]{.45\linewidth}
-% \leavevmode
-% \pxpic[colours = {oo=orange,
-%                   \ylw=yellow,
-%                   \blk=black},
-%        skip    = \skp]
-%   {
-%     {\skp\skp\skp\ylw\ylw\ylw\ylw}
-%     {\skp\skp\ylw\ylw\ylw\ylw\ylw\ylw}
-%     {\skp\skp{oo}\ylw\blk\ylw\ylw\ylw}
-%     {{oo}{oo}{oo}\ylw\ylw\ylw\ylw\ylw}
-%     {\skp{oo}{oo}{oo}\ylw\ylw\ylw\skp\skp\skp\skp\skp\ylw}
-%     {\skp\skp\skp\ylw\ylw\ylw\ylw\ylw\ylw\ylw\skp\ylw\ylw}
-%     {\skp\skp\ylw\ylw\ylw\ylw\ylw\ylw\ylw\ylw\ylw\ylw\ylw}
-%     {\skp\ylw\ylw\ylw\ylw\ylw\ylw\ylw\ylw\skp\ylw\ylw}
-%     {\skp\ylw\ylw\skp\ylw\ylw\ylw\ylw\skp\ylw\ylw\ylw}
-%     {\skp\ylw\ylw\ylw\skp\skp\skp\skp\ylw\ylw\ylw}
-%     {\skp\skp\ylw\ylw\ylw\ylw\ylw\ylw\ylw\ylw}
-%     {\skp\skp\skp\skp\ylw\ylw\ylw\ylw\ylw}
-%   }
-% \end{minipage}
+% $
 %
 % Another example might be the definition of \CS{pxpiclogo} in
 % \autoref{sec:implementation:pxpiclogo}.
@@ -601,11 +515,20 @@ and the derived files           pxpic.pdf
 %     value is |px|.
 %   \item[size=\meta{dimen}]
 %     Set both |ht| and |wd|. Initial value is \the\pxpicHT.
-%   \item[skip=\meta{dimen}]
-%     Define the value to be a skip (an empty space of width |wd|) in |mode=px|.
-%     No skip definitions are made by the package.
+%   \item[skip=\meta{tokens}]
+%     Define \meta{tokens} to be a skip (an empty space of width |wd|) in
+%     |mode=px|. No skip definitions are made by the package.
 %   \item[wd=\meta{dimen}]
 %     Set the width of the pixels.
+%   \item[b]
+%     Set the bottom of the \CS{pxpic} on the surrounding baseline (vertical
+%     bottom alignment; this is the default).
+%   \item[c]
+%     Set the centre of the \CS{pxpic} on the surrounding baseline (vertical
+%     centre alignment).
+%   \item[t]
+%     Set the top of the \CS{pxpic} on the surrounding baseline (vertical top
+%     alignment).
 % \end{options}
 %
 % \subsubsection{Colour syntax}\label{sec:colours}
@@ -754,6 +677,7 @@ and the derived files           pxpic.pdf
 %      colours={k=black,g=green,w=white}
 %     ,skip=.
 %     ,size=10pt
+%     ,t
 %   }
 % \pxpic[gap-hack=2pt]
 %   {
@@ -764,7 +688,7 @@ and the derived files           pxpic.pdf
 %     {kgwk}
 %     {kkkw}
 %   }
-% \raise2pt\pxpic
+% \pxpic
 %   {
 %     {kkkkk}
 %     {kgggk}
@@ -776,7 +700,7 @@ and the derived files           pxpic.pdf
 % \end{lstlisting}
 % \end{minipage}
 % \begin{minipage}[c]{.45\linewidth}
-% \pxpicsetup{colours={k=black,g=green,w=white},skip=.,size=10pt}
+% \pxpicsetup{colours={k=black,g=green,w=white},skip=.,size=10pt,t}
 % \leavevmode
 % \pxpic[gap-hack=2pt]
 %   {
@@ -787,7 +711,7 @@ and the derived files           pxpic.pdf
 %     {kgwk}
 %     {kkkw}
 %   }
-% \raise2pt\pxpic
+% \pxpic
 %   {
 %     {kkkkk}
 %     {kgggk}
@@ -796,7 +720,7 @@ and the derived files           pxpic.pdf
 %     {kgwk}
 %     {kkkw}
 %   }
-% \raise1.8pt\pxpic[gap-hack=.2pt]
+% \pxpic[gap-hack=.2pt]
 %   {
 %     {kkkkk}
 %     {kgggk}
@@ -821,7 +745,7 @@ and the derived files           pxpic.pdf
 %
 % Report who we are
 %    \begin{macrocode}
-\ProvidesPackage{pxpic}[2021-01-16 v1.2 draw pixel pictures]
+\ProvidesPackage{pxpic}[2021-12-12 v1.3 draw pixel pictures]
 %    \end{macrocode}
 % and load dependencies
 %    \begin{macrocode}
@@ -833,8 +757,8 @@ and the derived files           pxpic.pdf
 %    \begin{macrocode}
 \@ifdefinable\pxpicHT{\newdimen\pxpicHT}
 \@ifdefinable\pxpicWD{\newdimen\pxpicWD}
-\pxpicHT1pt
-\pxpicWD\pxpicHT
+\pxpicHT=\p@
+\pxpicWD=\pxpicHT
 %    \end{macrocode}
 % \end{variable}
 % \begin{variable}[internal]{\pxpic@kern}
@@ -843,9 +767,22 @@ and the derived files           pxpic.pdf
 %   stored in this register.
 %    \begin{macrocode}
 \@ifdefinable\pxpic@kern{\newdimen\pxpic@kern}
-\pxpic@kern\z@
+\pxpic@kern=\z@
 %    \end{macrocode}
 % \end{variable}
+% \begin{macro}[internal]{\pxpic@inner@box,\pxpic@after@inner@box}
+%   To get different vertical alignments we nest one of |\vbox|, |\vtop|, and a
+%   lowered |\vbox| inside the outer |\hbox|. The macro \cs{pxpic@inner@box}
+%   will store this information, and since lowering can only be done after the
+%   box was set (the alternative would be |\vcenter|, which ends up on a
+%   different height), we need to be able to put the box output with |\lower|
+%   after the box was collected, which is why we need
+%   \cs{pxpic@after@inner@box}. We default to bottom alignment.
+%    \begin{macrocode}
+\@ifdefinable\pxpic@inner@box{\let\pxpic@inner@box\vbox}
+\@ifdefinable\pxpic@after@inner@box{\let\pxpic@after@inner@box\@empty}
+%    \end{macrocode}
+% \end{macro}
 %
 %
 % \subsection{Options}
@@ -859,10 +796,10 @@ and the derived files           pxpic.pdf
 %
 %    \begin{macrocode}
 \protected\ekvdef{pxpic}{size}
-  {\pxpicHT\dimexpr#1\relax\pxpicWD\dimexpr#1\relax}
-\protected\ekvdef{pxpic}{ht}{\pxpicHT\dimexpr#1\relax}
-\protected\ekvdef{pxpic}{wd}{\pxpicWD\dimexpr#1\relax}
-\protected\ekvdef{pxpic}{gap-hack}{\pxpic@kern\dimexpr#1\relax}
+  {\pxpicHT=\dimexpr#1\relax\pxpicWD=\pxpicHT}
+\protected\ekvdef{pxpic}{ht}{\pxpicHT=\dimexpr#1\relax}
+\protected\ekvdef{pxpic}{wd}{\pxpicWD=\dimexpr#1\relax}
+\protected\ekvdef{pxpic}{gap-hack}{\pxpic@kern=\dimexpr#1\relax}
 \protected\ekvdef{pxpic}{skip}{\ekvdefNoVal{pxpic@px}{#1}{\pxskip}}
 %    \end{macrocode}
 % The |colours| option is parsed using \CS{ekvparse} and \CS{pxpic@setcolor}.
@@ -893,6 +830,25 @@ and the derived files           pxpic.pdf
   }
 \ekvletkv{pxpic}{colour-list}{pxpic}{color-list}
 %    \end{macrocode}
+% The alignment options set the internals |\pxpic@inner@box| and
+% |\pxpic@after@inner@box|.
+%    \begin{macrocode}
+\protected\ekvdefNoVal{pxpic}{b}
+  {%
+    \let\pxpic@inner@box\vbox
+    \let\pxpic@after@inner@box\@empty
+  }
+\protected\ekvdefNoVal{pxpic}{c}
+  {%
+    \def\pxpic@inner@box{\setbox0=\vbox}%
+    \def\pxpic@after@inner@box{\lower.5\ht0\box0}%
+  }
+\protected\ekvdefNoVal{pxpic}{t}
+  {%
+    \let\pxpic@inner@box\vtop
+    \let\pxpic@after@inner@box\@empty
+  }
+%    \end{macrocode}
 %
 %
 % \subsection{User macros}\label{sec:implementation:pxpiclogo}
@@ -911,17 +867,18 @@ and the derived files           pxpic.pdf
 \@ifdefinable\pxpic{\protected\def\pxpic{\hbox\bgroup\pxpic@}}
 \newcommand\pxpic@[2][]
   {%
-    \vbox
+    \pxpicsetup{#1}%
+    \pxpic@inner@box
       {%
-        \pxpicsetup{#1}%
         \let\px\pxpic@px
         \let\pxskip\pxpic@skip
         \advance\pxpicHT\pxpic@kern
         \advance\pxpicWD\pxpic@kern
-        \baselineskip\pxpicHT
+        \baselineskip=\pxpicHT
         \kern\pxpic@kern
         \pxpic@parse#2\pxpic@end
       }%
+    \pxpic@after@inner@box
     \egroup
   }
 %    \end{macrocode}
@@ -940,17 +897,17 @@ and the derived files           pxpic.pdf
 %   bit so that it appears correctly aligned on the baseline. Since the logo
 %   should be part of a normal sentence in most usages we put \CS{leavevmode}
 %   before it. Also we make sure that the |mode| and |px| definitions are
-%   correct.
+%   correct and the output is bottom aligned.
 %    \begin{macrocode}
 \newcommand*\pxpiclogo[1][.13ex]
   {%
     \begingroup
-      \pxpicHT\dimexpr#1\relax
-      \pxpicWD\pxpicHT
-      \pxpic@kern\z@
+      \pxpicHT=\dimexpr#1\relax
+      \pxpicWD=\pxpicHT
+      \pxpic@kern=\z@
       \leavevmode
       \lower3.2\pxpicHT\pxpic
-        [mode=px,colours={o=[HTML]{9F393D},g=black!75},skip=.]
+        [b,mode=px,colours={o=[HTML]{9F393D},g=black!75},skip=.]
         {
           {............................................g}
           {...........................................gggg}
@@ -993,7 +950,7 @@ and the derived files           pxpic.pdf
 % \end{macro}
 %
 % \begin{macro}{\pxpicnewcolorlist,\pxpicsetcolorlist,\pxpicaddcolorlist}
-% \begin{macro}[internal]{\pxpicsetcolorlist@,\pxpicaddcolorlist@}
+% \begin{macro}[internal]{\pxpic@setcolorlist,\pxpic@addcolorlist}
 %   The colour list is first parsed with \CS{ekvparse} inside an \CS{edef}.
 %   \CS{ekvparse} will prevent the parsed list from further expanding, leaving
 %   each list element and \CS{pxpic@experr@noval} or
@@ -1014,8 +971,8 @@ and the derived files           pxpic.pdf
       {\pxpic@err@defined@colorlist{#1}\@gobble}%
   }
 \protected\def\pxpicsetcolorlist#1%
-  {\expandafter\pxpicsetcolorlist@\csname pxpic@colorlist@#1\endcsname}
-\protected\long\def\pxpicsetcolorlist@#1#2%
+  {\expandafter\pxpic@setcolorlist\csname pxpic@colorlist@#1\endcsname}
+\protected\long\def\pxpic@setcolorlist#1#2%
   {%
     \edef#1{\ekvparse\pxpic@experr@noval\pxpic@setcolor@colorlist{#2}}%
     \begingroup\edef#1{\endgroup\protected\def\unexpanded{#1}{#1}}%
@@ -1025,9 +982,9 @@ and the derived files           pxpic.pdf
   {%
     \@ifundefined{pxpic@colorlist@#1}
       {\pxpic@err@unknown@colorlist{#1}\@gobble}
-      {\expandafter\pxpicaddcolorlist@\csname pxpic@colorlist@#1\endcsname}%
+      {\expandafter\pxpic@addcolorlist\csname pxpic@colorlist@#1\endcsname}%
   }
-\protected\long\def\pxpicaddcolorlist@#1#2%
+\protected\long\def\pxpic@addcolorlist#1#2%
   {%
     \begingroup
       \edef\pxpic@tmp
@@ -1199,7 +1156,7 @@ and the derived files           pxpic.pdf
 %   frontend macros \CS{px} and \CS{pxskip} will be let inside of \CS{pxpic}.
 %    \begin{macrocode}
 \newcommand\pxpic@px{\vrule height\pxpicHT width\pxpicWD depth\z@}
-\newcommand\pxpic@skip{\hskip\pxpicWD}
+\newcommand\pxpic@skip{\kern\pxpicWD}
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1293,7 +1250,7 @@ and the derived files           pxpic.pdf
       {%
         \expandafter\expandafter\expandafter
         \pxpic@ifend
-          \@firstofone{#1##1}%
+          \@firstofone{#1##1.}%
         \pxpic@end
       }%
   }

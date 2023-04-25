@@ -347,7 +347,7 @@ function sseq_drop_object(x,y,shape,pathusage,content,col)
 		obj.wd,obj.ht = 262144,262144
 		obj.radius = 370727
 	else
-		obj.cmd = "\\pgfsetstrokecolor{%s}\\pgfsetfillcolor{white}"..string.format("\\pgfnode{%s}{center}{\\color{%%s}\\ensuremath{%s}}{}{\\pgfusepath{fill,%s}}",obj.nodetype,obj.code,pathusage)
+		obj.cmd = "\\pgfsetstrokecolor{%s}\\pgfsetfillcolor{white}\\pgfsetshapeinnerxsep{1pt}\\pgfsetshapeinnerysep{1pt}"..string.format("\\pgfnode{%s}{center}{\\color{%%s}\\ensuremath{%s}}{}{\\pgfusepath{fill,%s}}",obj.nodetype,obj.code,pathusage)
 		tex.print (string.format("\\setbox%d=\\hbox{\\pgfinterruptpicture\\ensuremath{%s}\\endpgfinterruptpicture}",sseqboxno,obj.code))
 		tex.print("\\directlua0{sseq_register_size()}")	
 	end		
@@ -679,22 +679,22 @@ function sseq_correct_line_end(obj,fromx,fromy,curving)
 	
 	if obj.nodetype == "circle" then
 		dist = math.sqrt(dirx*dirx + diry*diry)
-		return posx - obj.radius*(dirx)/dist,
-			   posy - obj.radius*(diry)/dist
+		return math.floor(posx - obj.radius*(dirx)/dist),
+			   math.floor(posy - obj.radius*(diry)/dist)
 	else
 		deltax = dirx/diry*obj.ht/2 -- no problem with infinity in LUA
 		deltay = diry/dirx*obj.wd/2
 		if(math.abs(deltax) <= obj.wd/2) then -- boundary point on one of the horizontal lines
 			if fromy > posy then
-				return posx + deltax, posy + obj.ht/2
+				return math.floor(posx + deltax), math.floor(posy + obj.ht/2)
 			else
-				return posx - deltax, posy - obj.ht/2
+				return math.floor(posx - deltax), math.floor(posy - obj.ht/2)
 			end
 		else
 			if fromx > posx then
-				return posx + obj.wd/2, posy + deltay
+				return math.floor(posx + obj.wd/2), math.floor(posy + deltay)
 			else
-				return posx - obj.wd/2, posy - deltay
+				return math.floor(posx - obj.wd/2), math.floor(posy - deltay)
 			end
 		end
 	end
@@ -775,16 +775,20 @@ function sseq_dump_connection(conn)
 	
 	if fromobj then -- we have to be more careful where it ends
 		fromx,fromy = sseq_correct_line_end(fromobj,tox,toy,conn.curving)
+	else
+		fromx,fromy = math.floor(fromx),math.floor(fromy)
 	end
 	if toobj then
 		tox,toy = sseq_correct_line_end(toobj,fromx,fromy,conn.curving and -conn.curving)
+	else
+		tox,toy = math.floor(tox),math.floor(toy)
 	end
 
 	if conn.curving then
-		ctrlx = tox/2+fromx/2-conn.curving*(toy-fromy)
-		ctrly = toy/2+fromy/2+conn.curving*(tox-fromx)
+		ctrlx = math.floor(tox/2+fromx/2-conn.curving*(toy-fromy))
+		ctrly = math.floor(toy/2+fromy/2+conn.curving*(tox-fromx))
 	end
-	
+
 	if conn.arrowfrom or conn.arrowto or conn.curving then	-- got to use slow code
 		tex.print("\\pgfsetdash{"..conn.dashing.."}{0pt}")
 		tex.print("\\pgfsetstrokecolor{"..conn.color.."}")
@@ -815,6 +819,7 @@ function sseq_dump_connection(conn)
 		if (fromx and fromy) then
 			if (tox and toy) then
 				tex.print(string.format("\\pgfsys@moveto{%dsp}{%dsp}",fromx,fromy))
+				
 				tex.print(string.format("\\pgfsys@lineto{%dsp}{%dsp}",tox,toy))
 				tex.print("\\pgfsys@stroke")
 			end
@@ -878,6 +883,7 @@ function sseq_dump_code()
 	end
 	-- objects
 	tex.print("\\color{white}") -- background fill color
+	tex.print("\\pgfsetdash{}{0pt}") -- reset dashing
 	for x,ylist in pairs(sseqobject) do
 		for y,olist in pairs(ylist) do
 			for z,obj in ipairs(olist) do

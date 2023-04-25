@@ -106,13 +106,22 @@ return
   , { code = 0x00308,  char = ' ̈',  class = 'accent',    cs = 'ddot'                              } -- combining diaeresis
   , { code = 0x00309,  char = ' ̉',  class = 'accent',    cs = 'ovhook'                            } -- combining hook above
   , { code = 0x0030A,  char = ' ̊',  class = 'accent',    cs = 'ocirc'                             } -- combining ring above
+  , { code = 0x0030B,  char = ' ̋',  class = 'accent',    cs = 'dacute'                            } -- combining double acute accent
   , { code = 0x0030C,  char = ' ̌',  class = 'accent',    cs = 'check'                             } -- combining caron
   , { code = 0x00310,  char = ' ̐',  class = 'accent',    cs = 'candra'                            } -- combining candrabindu
   , { code = 0x00312,  char = ' ̒',  class = 'accent',    cs = 'oturnedcomma'                      } -- combining turned comma above
   , { code = 0x00315,  char = ' ̕',  class = 'accent',    cs = 'ocommatopright'                    } -- combining comma above right
   , { code = 0x0031A,  char = ' ̚',  class = 'accent',    cs = 'droang'                            } -- combining left angle above
+  , { code = 0x00323,  char = ' ̣',  class = 'botaccent', cs = 'dotbelow'                          } -- combining dot below
+  , { code = 0x00324,  char = ' ̤',  class = 'botaccent', cs = 'ddotbelow'                         } -- combining diaeresis below
+  , { code = 0x00325,  char = ' ̥',  class = 'botaccent', cs = 'ocircbelow'                        } -- combining ring below
+  , { code = 0x00326,  char = ' ̦',  class = 'botaccent', cs = 'commabelow'                        } -- combining comma below
+  , { code = 0x00327,  char = ' ̧',  class = 'botaccent', cs = 'cedilla'                           } -- combining cedilla
+  , { code = 0x00328,  char = ' ̨',  class = 'botaccent', cs = 'ogonek'                            } -- combining ogonek
+  , { code = 0x00329,  char = ' ̩',  class = 'botaccent', cs = 'vlinebelow'                        } -- combining vertical line below
   , { code = 0x00330,  char = ' ̰',  class = 'botaccent', cs = 'wideutilde'                        } -- combining tilde below
   , { code = 0x00331,  char = ' ̱',  class = 'botaccent', cs = 'underbar'                          } -- combining macron below
+  , { code = 0x00336,  char = ' ̶',  class = 'overlay',   cs = 'strike'                            } -- combining long stroke overlay
   , { code = 0x00338,  char = ' ̸',  class = 'overlay',   cs = 'not'                               } -- combining long solidus overlay
   , { code = 0x00391,  char = 'Α',  class = 'var',       cs = 'Alpha', alphabet = 'Greek'         } -- greek capital letter alpha
   , { code = 0x00392,  char = 'Β',  class = 'var',       cs = 'Beta', alphabet = 'Greek'          } -- greek capital letter beta
@@ -236,7 +245,7 @@ return
   , { code = 0x02110,  char = 'ℐ',  class = 'ord',       cs = 'mscrI', alphabet = 'script'        } -- script capital i
   , { code = 0x02111,  char = 'ℑ',  class = 'ord',       cs = 'Im'                                } -- black-letter capital i
   , { code = 0x02112,  char = 'ℒ',  class = 'ord',       cs = 'mscrL', alphabet = 'script'        } -- script capital l
-  , { code = 0x02113,  char = 'ℓ',  class = 'ord',       cs = 'ell', alphabet = 'script'          } -- script small l
+  , { code = 0x02113,  char = 'ℓ',  class = 'ord',       cs = 'ell'                               } -- script small l
   , { code = 0x02115,  char = 'ℕ',  class = 'ord',       cs = 'BbbN', alphabet = 'blackboard'     } -- double-struck capital n
   , { code = 0x02118,  char = '℘',  class = 'ord',       cs = 'wp',                               } -- weierstrass elliptic function
   , { code = 0x02119,  char = 'ℙ',  class = 'ord',       cs = 'BbbP', alphabet = 'blackboard'     } -- double-struck capital p
@@ -402,7 +411,7 @@ return
   , { code = 0x02213,  char = '∓',  class = 'bin',       cs = 'mp'                                } -- minus-or-plus sign
   , { code = 0x02214,  char = '∔',  class = 'bin',       cs = 'dotplus'                           } -- dot plus
   , { code = 0x02215,  char = '∕',  class = 'bin',       cs = 'divslash'                          } -- division slash
-  , { code = 0x02216,  char = '∖',  class = 'bin',       cs = 'smallsetminus'                     } -- set minus
+  , { code = 0x02216,  char = '∖',  class = 'bin',       cs = 'setminus'                          } -- set minus
   , { code = 0x02217,  char = '∗',  class = 'bin',       cs = 'ast'                               } -- asterisk operator
   , { code = 0x02218,  char = '∘',  class = 'bin',       cs = 'vysmwhtcircle'                     } -- ring operator
   , { code = 0x02219,  char = '∙',  class = 'bin',       cs = 'vysmblkcircle'                     } -- bullet operator
@@ -1171,7 +1180,7 @@ return
   , { code = 0x029F2,  char = '⧲',  class = 'ord',       cs = 'errbarcircle'                      } -- error-barred white circle
   , { code = 0x029F3,  char = '⧳',  class = 'ord',       cs = 'errbarblackcircle'                 } -- error-barred black circle
   , { code = 0x029F4,  char = '⧴',  class = 'rel',       cs = 'ruledelayed'                       } -- rule-delayed
-  , { code = 0x029F5,  char = '⧵',  class = 'bin',       cs = 'setminus'                          } -- reverse solidus operator
+  , { code = 0x029F5,  char = '⧵',  class = 'bin',       cs = 'rsolop'                            } -- reverse solidus operator
   , { code = 0x029F6,  char = '⧶',  class = 'bin',       cs = 'dsol'                              } -- solidus with overbar
   , { code = 0x029F7,  char = '⧷',  class = 'bin',       cs = 'rsolbar'                           } -- reverse solidus with horizontal stroke
   , { code = 0x029F8,  char = '⧸',  class = 'op',        cs = 'xsol'                              } -- big solidus

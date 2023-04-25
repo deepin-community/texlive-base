@@ -20,7 +20,7 @@
 %% 
 %% File: l3backend-testphase.dtx
 \ProvidesExplFile
-  {l3backend-testphase-pdftex.def}{2021-08-28}{}
+  {l3backend-testphase-pdftex.def}{2022-11-03}{}
   {LaTeX~PDF~management~testphase~bundle~backend~support: PDF output (pdfTeX)}
 \RequirePackage{l3ref-tmp}
 \cs_generate_variant:Nn \ref_label:nn {en}
@@ -88,12 +88,9 @@
   {
     %we need to know the page the resource should be added too.
     \int_gincr:N\g__pdf_backend_resourceid_int
-    %\zref@labelbylist {l3pdf\int_use:N\g__pdf_backend_resourceid_int} {l3pdf}
-    %\ref_label:en{l3pdf\int_use:N\g__pdf_backend_resourceid_int}{abspage}
-     \__pdf_backend_ref_label:en { l3pdf\int_use:N\g__pdf_backend_resourceid_int }{abspage}
+    \__pdf_backend_ref_label:en { l3pdf\int_use:N\g__pdf_backend_resourceid_int }{abspage}
     \tl_set:Nx \l__pdf_tmpa_tl
       {
-        %\zref@extractdefault
         \__pdf_backend_ref_value:en {l3pdf\int_use:N\g__pdf_backend_resourceid_int}{abspage}
       }
     \pdfdict_if_exist:nF { g__pdf_Core/backend_Page\l__pdf_tmpa_tl}
@@ -127,7 +124,7 @@
   }
 \clist_map_inline:Nn \c__pdf_backend_PageResources_clist
   {
-    \__pdf_backend_object_new:nn {__pdf/Page/Resources/#1} {dict}
+    \pdf_object_new:n {__pdf/Page/Resources/#1}
     \cs_if_exist:NT \tex_directlua:D
       {
         \tex_directlua:D
@@ -149,8 +146,8 @@
         \prop_if_empty:cF
           { \__kernel_pdfdict_name:n { g__pdf_Core/Page/Resources/##1} }
           {
-            \__pdf_backend_object_write:nx
-              { __pdf/Page/Resources/##1 }
+            \pdf_object_write:nnx
+              { __pdf/Page/Resources/##1 } { dict }
               { \pdfdict_use:n { g__pdf_Core/Page/Resources/##1} }
           }
      }
@@ -172,12 +169,9 @@
           { \__pdf_backend_object_ref:n { #2 } }
       }
       {
-        %\zref@labelbylist
         \__pdf_backend_ref_label:en{l3pdf\int_use:N\g__pdf_backend_resourceid_int}{abspage}
         \tl_set:Nx \l__pdf_tmpa_tl
           {
-            %\zref@extractdefault
-            %\ref_value:en{l3pdf\int_use:N\g__pdf_backend_resourceid_int}{abspage}
             \__pdf_backend_ref_value:en{l3pdf\int_use:N\g__pdf_backend_resourceid_int}{abspage}
           }
         \pdfdict_if_exist:nF { g__pdf_Core/backend_Page\l__pdf_tmpa_tl/Resources/Properties }
@@ -205,13 +199,9 @@
           { \__pdf_backend_object_last: }
       }
       {
-        %\zref@labelbylist
-       %\ref_label:en{l3pdf\int_use:N\g__pdf_backend_resourceid_int}{abspage}
         \__pdf_backend_ref_label:en{l3pdf\int_use:N\g__pdf_backend_resourceid_int}{abspage}
         \tl_set:Nx \l__pdf_tmpa_tl
           {
-            %\zref@extractdefault
-         %   \ref_value:en{l3pdf\int_use:N\g__pdf_backend_resourceid_int}{abspage}
             \__pdf_backend_ref_value:en{l3pdf\int_use:N\g__pdf_backend_resourceid_int}{abspage}
           }
         \pdfdict_if_exist:nF { g__pdf_Core/backend_Page\l__pdf_tmpa_tl/Resources/Properties }
@@ -383,6 +373,108 @@
   }
 \prg_new_eq_conditional:NNn \pdfxform_if_exist:n\__pdf_backend_xform_if_exist:n
   { TF , T , F , p }
+\tl_new:N   \l_pdf_current_structure_destination_tl
+\cs_new_protected:Npn \pdf_activate_structure_destination:
+ {
+   \cs_gset_eq:NN \__pdf_backend_destination:nn \__pdf_backend_structure_destination:nn
+   \cs_gset_eq:NN \__pdf_backend_destination:nnnn \__pdf_backend_structure_destination:nnnn
+   \cs_gset_eq:NN \__pdf_backend_link_begin_goto:nnw  \__pdf_backend_link_begin_structure_goto:nnw
+ }
+\cs_set_eq:NN \__pdf_backend_structure_destination:nn       \__pdf_backend_destination:nn
+\cs_set_eq:NN \__pdf_backend_structure_destination:nnnn \__pdf_backend_destination:nnnn
+\cs_set_eq:NN \__pdf_backend_link_begin_structure_goto:nnw  \__pdf_backend_link_begin_goto:nnw
+\bool_lazy_and:nnT
+  { \int_compare_p:nNn {\tex_pdftexversion:D } > {139} }
+  { \int_compare_p:nNn {\tex_pdftexrevision:D } > {23} }
+  {
+    \cs_set_protected:Npn \__pdf_backend_structure_destination:nn #1#2
+      {
+        \tex_pdfdest:D
+           name {#1}
+           \str_case:nnF {#2}
+             {
+               { xyz }   { xyz }
+               { fit }   { fit }
+               { fitb }  { fitb }
+               { fitbh } { fitbh }
+               { fitbv } { fitbv }
+               { fith }  { fith }
+               { fitv }  { fitv }
+               { fitr }  { fitr }
+             }
+             { xyz ~ zoom \fp_eval:n { #2 * 10 } }
+           \scan_stop:
+        \exp_args:Ne \pdf_object_if_exist:nT { \l_pdf_current_structure_destination_tl }
+          {
+            \tex_pdfdest:D
+               struct~
+               \int_use:c
+                 { c__pdf_backend_object_ \exp_args:Ne \tl_to_str:n {\l_pdf_current_structure_destination_tl} _int }~
+               name {#1}
+               \str_case:nnF {#2}
+                 {
+                   { xyz }   { xyz }
+                   { fit }   { fit }
+                   { fitb }  { fitb }
+                   { fitbh } { fitbh }
+                   { fitbv } { fitbv }
+                   { fith }  { fith }
+                   { fitv }  { fitv }
+                   { fitr }  { fitr }
+                 }
+                 { xyz ~ zoom \fp_eval:n { #2 * 10 } }
+               \scan_stop:
+          }
+      }
+    \cs_set_protected:Npn \__pdf_backend_destination:nnnn #1#2#3#4
+      {
+       \tex_pdfdest:D
+        name {#1}
+        fitr ~
+        width  \dim_eval:n {#2} ~
+        height \dim_eval:n {#3} ~
+        depth  \dim_eval:n {#4} \scan_stop:
+       \exp_args:Ne \pdf_object_if_exist:nT { \l_pdf_current_structure_destination_tl }
+         {
+           \tex_pdfdest:D
+             struct~
+             \int_use:c
+               { c__pdf_backend_object_ \exp_args:Ne \tl_to_str:n {\l_pdf_current_structure_destination_tl} _int }~
+             name {#1}
+             fitr ~
+             width  \dim_eval:n {#2} ~
+             height \dim_eval:n {#3} ~
+             depth  \dim_eval:n {#4} \scan_stop:
+         }
+     }
+    \cs_set_protected:Npn \__pdf_backend_link_begin_structure_goto:nnw #1#2
+      {
+        \__pdf_backend_link_begin:nnnw {#1} { goto~struct~name~{#2}~name } {#2}
+      }
+  }
+\cs_new_protected:Npn \__pdf_backend_set_regression_data:
+  {
+    \sys_gset_rand_seed:n{1000}
+    \pdfmanagement_add:nnn{Info}{Creator}{(TeX)}
+   \pdfmanagement_add:nnn{Info}{Producer}{(pdfTeX)}
+   \tex_pdfsuppressptexinfo:D 7 \scan_stop:
+   \pdftrailerid{2350CAD05F8A7AF0AA4058486855344F}
+    \pdfmanagement_add:nnn{Info}{CreationDate}{(D:20010101205959-00'00')}
+    \pdfmanagement_add:nnn{Info}{ModDate}{(D:20010101205959-00'00')}
+    \AddToDocumentProperties[document]{pdfcreationdate}{D:20010101205959-00'00'}
+    \AddToDocumentProperties[document]{pdfmoddate}{D:20010101205959-00'00'}
+    \AddToDocumentProperties[hyperref]{pdfmetadate}{D:20010101205959-00'00'}
+    \AddToDocumentProperties[hyperref]{pdfdate}{D:20010101205959-00'00'}
+    \AddToDocumentProperties[hyperref]{pdfinstanceid}{uuid:0a57c455-157a-4141-8c19-6237d832fc80}
+   }
+\cs_new_protected:Npn \__pdf_backend_metadata_stream:n #1
+  {
+    \group_begin:
+     \tex_pdfcompresslevel:D  0 \scan_stop:
+     \tex_immediate:D \tex_pdfobj:D
+     \__pdf_backend_object_write:nn {stream} {{/Type~/Metadata~/Subtype~/XML}{#1}}
+    \group_end:
+  }
 %% 
 %%
 %% End of file `l3backend-testphase-pdftex.def'.

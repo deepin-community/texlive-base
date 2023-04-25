@@ -1,78 +1,192 @@
-% tkz-euclide.sty (utf8 encoding)
-% Copyright 2020  Alain Matthes
+% tkz-euclide.sty
+% Copyright 2022  Alain Matthes
 % This work may be distributed and/or modified under the
 % conditions of the LaTeX Project Public License, either version 1.3
 % of this license or (at your option) any later version.
 % The latest version of this license is in
-%   http://www.latex-project.org/lppl.txt
-% and version 1.3 or later is part of all distributions of LaTeX
+% http://www.latex-project.org/lppl.txt
+% and version 1.3 or later is part of all distributions of LaTeX 
 % version 2005/12/01 or later.
-%
 % This work has the LPPL maintenance status “maintained”.
-% 
 % The Current Maintainer of this work is Alain Matthes.
-%
-% This work consists of the files:
-% tkz-euclide.sty
-% tkz-obj-eu-angles.tex
-% tkz-obj-eu-arcs.tex
-% tkz-obj-eu-circles.tex
-% tkz-obj-eu-compass.tex
-% tkz-obj-eu-draw-circles.tex
-% tkz-obj-eu-draw-lines.tex
-% tkz-obj-eu-draw-polygons.tex
-% tkz-obj-eu-lines.tex
-% tkz-obj-eu-points-by.tex
-% tkz-obj-eu-points-rnd.tex
-% tkz-obj-eu-points-with.tex
-% tkz-obj-eu-points.tex
-% tkz-obj-eu-polygons.tex
-% tkz-obj-eu-protractor.tex
-% tkz-obj-eu-sectors.tex
-% tkz-obj-eu-show.tex
-% tkz-obj-eu-triangles.tex
-% tkz-tools-angles.tex
-% tkz-tools-intersections.tex
-% tkz-tools-math.tex
-
-%<------------------------------------------------------------–>
-\def\fileversion{3.06c}
-\def\filedate{2020/03/18} 
-\typeout{2020/03/18 3.06c  tkz-euclide.sty} 
+%-------------------------------------------------------------------------------
+\def\fileversion{4.25c}
+\def\filedate{2022/09/23} 
+\typeout{2022/09/23 4.25c  tkz-euclide.sty} 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{tkz-euclide}[2020/03/18 3.06c  for  euclidan geometry ]
-\RequirePackage{tkz-base}
-\makeatletter
-\@ifpackagelater{tkz-base}{2020/03/18}{%
-    % Package is new enough
-}{%
-    \PackageError{tkz-euclide}{Package tkz-base is too old , you need a recent version}%
+\ProvidesPackage{tkz-euclide}[ 2022/09/23 4.25c for pure  Euclidean Geometry ]
+\@ifpackageloaded{tkz-base}{
+\newdimen\tkzRadius
+\newdimen\tkzLength
+\newdimen\tkz@radi
+\newif\iftkz@line@normed
+\newif\ifnormtkzcode@execute% german ? right angle
+%---------------------- semi circle
+\newif\iftkz@swap@sc
+\newif\iftkz@line@normed
+%--------------------- circles
+\newif\iftkzClipOutCircle 
+%--------------------- polygons
+\newif\iftkzClipOutPoly
+%--------------------- triangles
+\newif\iftkz@swap@tr
+\newif\iftkz@permute
+%--------------------- intersections
+\newif\iftkzFlagLC\tkzFlagLCfalse
+\newif\iftkzFlagCC\tkzFlagCCfalse
+\newif\iftkz@near\tkz@nearfalse
+%--------------------- 
+\newif\iftkzLinear\tkzLinearfalse
+\newif\iftkzOrtho\tkzOrthofalse
+}{
+\RequirePackage{tikz} 
+\usetikzlibrary{angles,
+                arrows,
+                arrows.meta,
+                backgrounds,
+                calc,
+                decorations,
+                decorations.markings,
+                decorations.pathreplacing,
+                decorations.shapes,
+                decorations.text,
+                decorations.pathmorphing,
+                intersections,
+                math,
+                plotmarks,
+                positioning,
+                quotes,
+                shapes.misc,
+                through
+                }
+\RequirePackage{xfp}
+\usepackage{xpatch}
+\xpatchcmd\pgfmathreciprocal@@ {\pgfmath@y.1\pgfmath@y\pgfmath@y.1\pgfmath@y\pgfmath@y.1\pgfmath@y\pgfmath@y.1\pgfmath@y}
+  {\pgfmath@y\dimexpr\pgfmath@y/10000\relax}
+  {}{\PatchFailed}
+
+%-------------------------------------------------------------------------------
+\newdimen\tkzRadius
+\newdimen\tkzLength
+\newdimen\tkz@radi
+%-------------------------------------------------------------------------------
+% tkz registres
+\newdimen\tkz@ax
+\newdimen\tkz@ay
+\newdimen\tkz@bx
+\newdimen\tkz@by
+\newdimen\tkz@cx
+\newdimen\tkz@cy
+\newdimen\tkz@dx
+\newdimen\tkz@dy
+%--------------------- points
+\newif\iftkz@polar\tkz@polarfalse
+\newif\iftkz@pt@polar 
+\newif\iftkz@pt@show 
+\newif\iftkz@pt@noname 
+\newif\iftkz@coord@noxdraw
+\newif\iftkz@coord@noydraw
+\newif\iftkz@vec@normed
+%--------------------- lines
+\newif\iftkz@line@normed
+%--------------------- circles
+\newif\iftkzClipOutCircle 
+%--------------------- polygons
+\newif\iftkzClipOutPoly
+%--------------------- triangles
+\newif\iftkz@swap@tr
+\newif\iftkz@permute
+%--------------------- intersections
+\newif\iftkzFlagLC\tkzFlagLCfalse
+\newif\iftkzFlagCC\tkzFlagCCfalse
+\newif\iftkz@near\tkz@nearfalse
+%--------------------- utilities
+\newif\iftkzLinear\tkzLinearfalse
+\newif\iftkzOrtho\tkzOrthofalse
+%--------------------- tkz axis
+\newif\iftkz@X@noticks
+\newif\iftkz@Y@noticks
+\newif\iftkz@X@nograd
+\newif\iftkz@Y@nograd
+\newif\iftkz@X@orig
+\newif\iftkz@Y@orig
+\newif\iftkz@X@unit
+\newif\iftkz@Y@unit
+\newif\iftkz@np 
+\newif\iftkz@swap
+\newif\iftkz@init@NO
+\newif\iftkz@integer
+\newif\iftkz@Rep@orig%--------------------- Rep
+\newif\iftkzLengthIncm%--------------------- Math
+\newif\iftkz@sop@show%--------------------- marks
+\newif\iftkz@equi@show
+\newif\iftkz@gd@sub% sub grid ?%--------------------- about grid
+\newif\iftkz@node\tkz@nodefalse  
+\newif\iftkz@legend@line%--------------------- legend
+\newif\iftkz@TestSubString
+\newif\ifnormtkzcode@execute% german ? right angle
+\newif\iftkz@swap@sc%---------------------- semi circle
+\newif\ifpgf@unknown % math arith
+\newif\ifpgf@isaprime    
+\newcount\tkz@cntmk
+\newif\iftkz@RappReturn % protractor
+\newif\iftkz@RappFull
+%-------------------------------------------------------------------------------
+%  Init
+\def\tkz@xa{0}
+\def\tkz@xb{10}
+\def\tkz@ya{0}
+\def\tkz@yb{10}
+\def\tkz@mathresult{}
+\InputIfFileExists{tkz-euclide.cfg}{%
+\typeout{Local configuration file tkz-euclide.cfg found and used}}{%
+\typeout{tkz-euclide.cfg not found}}
 }
-\makeatother
+%-------------------------------------------------------------------------------
+\def\tkz@tmp@xa{-5}
+\def\tkz@tmp@xb{+5}
+\def\tkz@tmp@ya{-5}
+\def\tkz@tmp@yb{+5}
+%-------------------------------------------------------------------------------
 \DeclareOption*{}
 \ProcessOptions
-%<----------------------------------------------------------–>
+%<---------------------------------------------------------->
 %                          Initialisation
-%<----------------------------------------------------------–>
-\input{tkz-tools-intersections}
-\input{tkz-tools-angles}
-\usetkzobj{%
-   eu-angles,%
-   eu-arcs,%
-   eu-compass,%
-   eu-circles,%
-   eu-draw-circles,%
-   eu-draw-lines,%
-   eu-draw-polygons,%
-   eu-draw-triangles,%
-   eu-lines,%
-   eu-points,%
-   eu-points-by,%
-   eu-points-rnd,%
-   eu-points-with,%
-   eu-polygons,%
-   eu-protractor,%
-   eu-sectors,%
-   eu-show,%
-   eu-triangles}
+%<---------------------------------------------------------->
+\@ifpackageloaded{tkz-base}{}{%
+% from base 
+\input{tkz-tools-eu-base.tex}
+\input{tkz-tools-eu-utilities.tex}
+\input{tkz-tools-eu-BB.tex}
+\input{tkz-obj-eu-grids.tex}
+\input{tkz-lib-eu-marks.tex}
+\input{tkz-tools-eu-text.tex}
+\input{tkz-lib-eu-shape.tex}
+\input{tkz-obj-eu-axesmin.tex}
+\input{tkz-tools-eu-colors.tex}
+\input{tkz-obj-eu-points.tex}
+\input{tkz-obj-eu-draw-points.tex}
+}
+% next from euclide
+\input{tkz-tools-eu-angles}
+\input{tkz-tools-eu-intersections}
+\input{tkz-tools-eu-math.tex}
+\input{tkz-obj-eu-compass.tex}
+\input{tkz-obj-eu-circles.tex}
+\input{tkz-obj-eu-circles-by.tex}
+\input{tkz-obj-eu-draw-angles.tex}
+\input{tkz-obj-eu-draw-circles.tex}
+\input{tkz-obj-eu-draw-lines.tex}
+\input{tkz-obj-eu-draw-polygons.tex}
+\input{tkz-obj-eu-lines.tex}
+\input{tkz-obj-eu-points-by.tex}
+\input{tkz-obj-eu-points-rnd.tex}
+\input{tkz-obj-eu-points-spc.tex}
+\input{tkz-obj-eu-points-with.tex}
+\input{tkz-obj-eu-polygons.tex}
+\input{tkz-obj-eu-protractor.tex}
+\input{tkz-obj-eu-sectors.tex}
+\input{tkz-obj-eu-show.tex}
+\input{tkz-obj-eu-triangles}
+
 \endinput

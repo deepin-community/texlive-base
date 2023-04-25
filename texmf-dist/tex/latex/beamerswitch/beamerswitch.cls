@@ -15,8 +15,8 @@
 %% 
 \NeedsTeXFormat{LaTeX2e}[1999/12/01]
 \ProvidesClass{beamerswitch}
-    [2021/04/12 v1.8 Convenient mode selection in Beamer documents]
-\RequirePackage{xkeyval,xkvltxp,etoolbox,xstring,shellesc,iftex}
+    [2022/08/20 v1.9 Convenient mode selection in Beamer documents]
+\RequirePackage{xkeyval,xkvltxp,etoolbox,xstring,shellesc,iftex,expl3}
 \define@boolkey[DC]{beamerswitch}{beamer}[true]{%
   \ifbool{DC@beamerswitch@beamer}{%
     \setkeys[DC]{beamerswitch}{trans=false}
@@ -60,12 +60,18 @@
   \forcsvlist{\beamerswitch@SetAlso}{#1}%
 }
 \define@cmdkey[DC]{beamerswitch}{beameroptions}[ignorenonframetext]{}
+\define@cmdkey[DC]{beamerswitch}{articleclass}[article]{}
 \define@cmdkey[DC]{beamerswitch}{articleoptions}[]{}
 \define@boolkey[DC]{beamerswitch}{nohyperref}[true]{}
 \define@boolkey[DC]{beamerswitch}{textinst}[true]{}
 \setkeys[DC]{beamerswitch}{beamer=true,alsobeamer=false,alsotrans=false,%
-  alsohandout=false,alsoarticle=false,beameroptions,articleoptions}
+  alsohandout=false,alsoarticle=false,beameroptions,articleclass,%
+  articleoptions}
 \ProcessOptionsX[DC]<beamerswitch>
+\ExplSyntaxOn
+\tl_replace_all:Nnn \cmdDC@beamerswitch@articleoptions { ,~ } { , }
+\tl_replace_all:Nnn \cmdDC@beamerswitch@beameroptions { ,~ } { , }
+\ExplSyntaxOff
 \providecommand*{\BeamerSuffix}{-slides}
 \providecommand*{\TransSuffix}{-trans}
 \providecommand*{\HandoutSuffix}{-handout}
@@ -125,8 +131,9 @@
   }%
 }%
 \ifbool{DC@beamerswitch@article}{%
-  \PassOptionsToClass{\cmdDC@beamerswitch@articleoptions}{article}
-  \LoadClass{article}
+  \PassOptionsToClass{\cmdDC@beamerswitch@articleoptions}{%
+    \cmdDC@beamerswitch@articleclass}
+  \LoadClass{\cmdDC@beamerswitch@articleclass}
   \RequirePackage{beamerarticle}
   \def\beamer@insttitle#1{\textsuperscript{#1}}
   \def\beamer@andtitle{\quad}
@@ -1339,6 +1346,6 @@
   }%
 }
 %% 
-%% Copyright (C) 2016-2021 by Alex Ball <ab318@bath.ac.uk>
+%% Copyright (C) 2016-2022 by Alex Ball <ab318@bath.ac.uk>
 %%
 %% End of file `beamerswitch.cls'.

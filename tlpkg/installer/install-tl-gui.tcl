@@ -1,6 +1,6 @@
 #!/usr/bin/env wish
 
-# Copyright 2018-2021 Siep Kroonenberg
+# Copyright 2018-2022 Siep Kroonenberg
 
 # This file is licensed under the GNU General Public License version 2
 # or any later version.
@@ -557,6 +557,7 @@ proc commit_root {} {
     set ::vars(TEXMFCONFIG) $::vars(TEXMFSYSCONFIG)
   }
   destroy .tltd
+  update_vars
 }
 
 ### main directory dialog ###
@@ -594,7 +595,8 @@ proc texdir_setup {} {
       -in .tltd.fr1 -row $rw -column 4
   # corresponding buttons
   incr rw
-  pgrid [ttk::button .tltd.prefix_b -text [__ "Browse..."] \
+  set prefix_text [__ "Prefix"]
+  pgrid [ttk::button .tltd.prefix_b -text "${prefix_text}... \u00B9" \
           -command {if [dirbrowser2widget .tltd.prefix_l] update_full_path}] \
       -in .tltd.fr1 -row $rw -column 0
   pgrid [ttk::button .tltd.name_b -text [__ "Change"] -command edit_name] \
@@ -603,12 +605,18 @@ proc texdir_setup {} {
       -command toggle_rel] \
       -in .tltd.fr1 -row $rw -column 4
 
+  set note_text [__ "Prefix must exist"]
+  ppack [ttk::label .tltd.notes -text "\u00B9 ${note_text}"] \
+           -in .tltd.bg -fill x -anchor w
+
   # windows: note about localized names
   if {$::tcl_platform(platform) eq "windows"} {
-    ttk::label .tltd.loc -anchor w
-    .tltd.loc configure -text \
-        [__ "Localized directory names will be replaced by their real names"]
-    ppack .tltd.loc -in .tltd.bg -fill x
+    .tltd.prefix_b configure -text "${prefix_text}... \u00B9 \u00B2"
+    set loc_text \
+      [__ "Localized directory names will be replaced by their real names"]
+    .tltd.notes configure -justify left \
+      -text "\u00B9 ${note_text}\n\u00B2 ${loc_text}"
+    ppack .tltd.notes -in .tltd.bg -fill x
   }
 
   # ok/cancel buttons
@@ -1301,6 +1309,15 @@ proc abort_menu {} {
   # i.e. anything but advanced, alltrees or startinst
 }
 
+proc maybe_install {} {
+  if {($::vars(free_size)!=-1) && \
+          ($::vars(total_size) >= ($::vars(free_size)-100))} {
+    tk_messageBox -icon error -message [__ "Not enough room"]
+  } else {
+    set ::menu_ans "startinst"
+  }
+}
+
 proc run_menu {} {
   #if [info exists ::env(dbgui)] {
   #  puts "\ndbgui: run_menu: advanced is now $::advanced"
@@ -1384,8 +1401,8 @@ proc run_menu {} {
   # frame at bottom with install/quit buttons
   pack [ttk::frame .final] \
       -in .bg -side bottom -pady {5pt 2pt} -fill x
-  ppack [ttk::button .install -text [__ "Install"] -command {
-    set ::menu_ans "startinst"}] -in .final -side right
+  ppack [ttk::button .install -text [__ "Install"] -command maybe_install] \
+    -in .final -side right
   ppack [ttk::button .quit -text [__ "Quit"] -command {
     set ::out_log {}
     set ::menu_ans "no_inst"}] -in .final -side right
@@ -1570,7 +1587,7 @@ proc run_menu {} {
         -in .selsf -row $rw -column 2 -sticky e
   }
 
-  # total size
+  # total size and available space
   # curf: current frame
   set curf [expr {$::advanced ? ".selsf" : ".dirf"}]
   incr rw
@@ -1578,6 +1595,13 @@ proc run_menu {} {
   ttk::label .size_req -textvariable ::vars(total_size)
   pgrid .lsize -in $curf -row $rw -column 0 -sticky w
   pgrid .size_req -in $curf -row $rw -column 1 -sticky w
+  if {$::vars(free_size) != -1} {
+    incr rw
+    ttk::label .lavail -text [__ "Disk space available (in MB):"]
+    ttk::label .avail -textvariable ::vars(free_size)
+    pgrid .lavail -in $curf -row $rw -column 0 -sticky w
+    pgrid .avail -in $curf -row $rw -column 1 -sticky w
+  }
 
   ########################################################
   # right side: options

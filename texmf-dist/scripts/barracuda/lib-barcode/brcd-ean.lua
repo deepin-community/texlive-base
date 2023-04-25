@@ -1,10 +1,10 @@
 -- EAN family barcode generator
 --
--- Copyright (C) 2020 Roberto Giacomelli
+-- Copyright (C) 2019-2022 Roberto Giacomelli
 -- see LICENSE.txt file
 
 local EAN = {
-    _VERSION     = "ean v0.0.6",
+    _VERSION     = "ean v0.0.8",
     _NAME        = "ean",
     _DESCRIPTION = "EAN barcode encoder",
 }
@@ -75,6 +75,7 @@ EAN._par_order = {
     "text_enabled",
     "text_ygap_factor",
     "text_xgap_factor",
+    "text_guard_enabled",
 }
 EAN._par_def = {}
 local pardef = EAN._par_def
@@ -148,7 +149,7 @@ pardef.bars_depth_factor = {
     end,
 }
 
--- enable/disable a text label upon the barcode symbol
+-- enable/disable human readble text
 pardef.text_enabled = { -- boolean type
     default    = true,
     isReserved = false,
@@ -186,6 +187,30 @@ pardef.text_xgap_factor = {
         end
     end,
 }
+
+pardef.text_guard_enabled = { -- boolean type
+    default    = false,
+    isReserved = false,
+    fncheck    = function (_self, flag, _) --> boolean, err
+        if type(flag) == "boolean" then
+            return true, nil
+        else
+            return false, "[TypeErr] not a boolean value for text_guard_enabled"
+        end
+    end,
+}
+
+EAN._par_def_8 = {} -- ean8 substitute parameters
+local pardef8 = EAN._par_def_8
+pardef8.quietzone_left_factor = pardef.quietzone_right_factor
+
+EAN._par_def_5 = {} -- ean5 add-on substitute parameters
+local pardef5 = EAN._par_def_5
+pardef5.quietzone_left_factor = pardef.quietzone_right_factor
+
+EAN._par_def_2 = {} -- ean2 add-on substitute parameters
+local pardef2 = EAN._par_def_2
+pardef2.quietzone_left_factor = pardef.quietzone_right_factor
 
 -- variant parameters
 EAN._par_variant_order = {
@@ -337,101 +362,103 @@ par_def_var["issn"].text_issn_ygap_factor = text_ygap_factor
 -- utility for generic configuration of full symbol, add-on included
 -- n1 length of main symbol, 8 or 13
 -- n2 length of add-on symbol, 2 or 5
-local function config_full(ean, Vbar, mod, n1, n2)
+local function config_full(ean, n1, n2)
     local i1 = tostring(n1)
     local fn_1 = assert(ean._config_variant[i1])
-    fn_1(ean, Vbar, mod)
+    fn_1(ean)
     local i2 = tostring(n2)
     local fn_2 = assert(ean._config_variant[i2])
-    fn_2(ean, Vbar, mod)
+    fn_2(ean)
     ean._main_len = n1
     ean._addon_len = n2
     ean._is_last_checksum = true
 end
 
 local config_variant = {
-    ["13"] = function (ean13, Vbar, mod)
+    ["13"] = function (ean13)
         ean13._main_len = 13
         ean13._is_last_checksum = true
-        local start = ean13._start
+        local Vbar = ean13._libgeo.Vbar -- Vbar class
+        local Vbar_archive = ean13._libgeo.Archive -- Archive class
+        local Codeset = Vbar_archive:new()
+        ean13._13_codeset_vbar = Codeset
+        local mod = ean13.mod
         local stop  = ean13._stop
-        ean13._13_start_stop_vbar  = Vbar:from_int(start[1], mod, start[2])
-        ean13._13_ctrl_center_vbar = Vbar:from_int(stop[1], mod, stop[2])
-        ean13._13_codeset_vbar = {}
-        local tvbar = ean13._13_codeset_vbar
+        local start = ean13._start
+        Codeset:insert(Vbar:from_int(start[1], mod, start[2]), "start_stop")
+        Codeset:insert(Vbar:from_int(stop[1], mod, stop[2]), "central")
         for i_cs, codetab in ipairs(ean13._symbol) do
-            tvbar[i_cs] = {}
-            local tv = tvbar[i_cs]
             local isbar = ean13._is_first_bar[i_cs]
             for i = 0, 9 do
-                tv[i] = Vbar:from_int(codetab[i], mod, isbar)
+                Codeset:insert(Vbar:from_int(codetab[i], mod, isbar), i_cs, i)
             end
         end
     end,
-    ["8"] = function (ean8, Vbar, mod)
+    ["8"] = function (ean8)
         ean8._main_len = 8
         ean8._is_last_checksum = true
+        local Vbar = ean8._libgeo.Vbar
+        local Vbar_archive = ean8._libgeo.Archive
         local start = ean8._start
         local stop  = ean8._stop
-        ean8._8_start_stop_vbar = Vbar:from_int(start[1], mod, start[2])
-        ean8._8_ctrl_center_vbar = Vbar:from_int(stop[1], mod, stop[2])
-        ean8._8_codeset_vbar = {}
-        local tvbar = ean8._8_codeset_vbar
+        local mod = ean8.mod
+        local Codeset = Vbar_archive:new()
+        ean8._8_codeset_vbar = Codeset
+        Codeset:insert(Vbar:from_int(start[1], mod, start[2]), "start_stop")
+        Codeset:insert(Vbar:from_int(stop[1], mod, stop[2]), "central")
         for k = 1, 3, 2 do -- only codeset A and C (k == 1, 3)
-            tvbar[k] = {}
             local codetab = ean8._symbol[k]
             local isbar = ean8._is_first_bar[k]
-            local tv = tvbar[k]
             for i = 0, 9 do
-                tv[i] = Vbar:from_int(codetab[i], mod, isbar)
+                Codeset:insert(Vbar:from_int(codetab[i], mod, isbar), k, i)
             end
         end
     end,
-    ["5"] = function (ean5, Vbar, mod) -- add-on EAN5
+    ["5"] = function (ean5) -- add-on EAN5
         ean5._main_len = 5
         ean5._is_last_checksum = false
-        ean5._5_start_vbar = Vbar:from_int(112, mod, true)
-        ean5._5_sep_vbar   = Vbar:from_int(11, mod, false)
-        ean5._5_codeset_vbar = {}
-        local tvbar = ean5._5_codeset_vbar
+        local mod = ean5.mod
+        local Vbar = ean5._libgeo.Vbar
+        local Vbar_archive = ean5._libgeo.Archive
+        local Codeset = Vbar_archive:new()
+        Codeset:insert(Vbar:from_int(112, mod, true), "start")
+        Codeset:insert(Vbar:from_int(11, mod, false), "sep")
+        ean5._5_codeset_vbar = Codeset
         local symbols = ean5._symbol
         for c = 1, 2 do
-            tvbar[c] = {}
-            local tcs = tvbar[c]
-            local sb = symbols[c]
             for i = 0, 9 do
-                tcs[i] = Vbar:from_int(sb[i], mod, false)
+                Codeset:insert(Vbar:from_int(symbols[c][i], mod, false), c, i)
             end
         end
     end,
-    ["2"] = function (ean2, Vbar, mod) -- add-on EAN2
+    ["2"] = function (ean2) -- add-on EAN2
         ean2._main_len = 2
         ean2._is_last_checksum = false
-        ean2._2_start_vbar = Vbar:from_int(112, mod, true)
-        ean2._2_sep_vbar   = Vbar:from_int(11, mod, false)
-        ean2._2_codeset_vbar = {}
-        local tvbar = ean2._2_codeset_vbar
+        local mod = ean2.mod
+        local Vbar = ean2._libgeo.Vbar
+        local Vbar_archive = ean2._libgeo.Archive
+        local Codeset = Vbar_archive:new()
+        ean2._2_codeset_vbar = Codeset
+        Codeset:insert(Vbar:from_int(112, mod, true), "start")
+        Codeset:insert(Vbar:from_int(11, mod, false), "sep")
         local symbols = ean2._symbol
         for c = 1, 2 do
-            tvbar[c] = {}
-            local tcs = tvbar[c]
-            local sb = symbols[c]
             for i = 0, 9 do
-                tcs[i] = Vbar:from_int(sb[i], mod, false)
+                Codeset:insert(Vbar:from_int(symbols[c][i], mod, false), c, i)
             end
         end
     end,
     ["13+5"] = function (ean, Vbar, mod) -- EAN13 with EAN5 add-on
-        config_full(ean, Vbar, mod, 13, 5)
+        config_full(ean, 13, 5)
     end,
     ["13+2"] = function(ean, Vbar, mod) -- EAN13 with EAN2 add-on
-        config_full(ean, Vbar, mod, 13, 2)
+        config_full(ean, 13, 2)
     end,
     ["8+5"]  = function(ean, Vbar, mod) -- EAN8 with EAN5 add-on
-        config_full(ean, Vbar, mod, 8, 5)
+        config_full(ean, 8, 5)
     end,
     ["8+2"]  = function(ean, Vbar, mod) -- EAN8 with EAN2 add-on
-        config_full(ean, Vbar, mod, 8, 2)
+        config_full(ean, 8, 2)
     end,
 }
 -- ISBN
@@ -491,58 +518,58 @@ local function isbn_checksum(isbn)
     return sum % 11
 end
 
+local function isbn_parse_state() --> parse state
+    return {
+        is_space = false,
+        is_dash = false,
+        isbn_len = 0,
+    }
+end
+
 -- group char for readibility '-' or ' '
 -- char won't be inserted in the top isbn code
-local function isbn_check_char(_, c, parse_state) --> elem, err
-    if type(c) ~= "string" or #c ~= 1 then
-        return nil, "[InternalErr] invalid char"
-    end
-    if parse_state.isbncode == nil then parse_state.isbncode = {} end
-    local code = parse_state.isbncode
-    if parse_state.isspace == nil then parse_state.isspace = false end
-    if parse_state.isdash == nil then parse_state.isdash = false end
-    if parse_state.isbn_len == nil then parse_state.isbn_len = 0 end
+local function isbn_process_char(_, c, parse_state) --> elem_code, elem_text, err
     local isbn_len = parse_state.isbn_len
     if c == "-" then
         if isbn_len == 0 then
-            return nil, "[ArgErr] an initial dash is not allowed"
+            return nil, nil, "[ArgErr] an initial dash is not allowed"
         end
-        if parse_state.isdash then
-            return nil, "[ArgErr] two consecutive dash char found"
+        if parse_state.is_dash then
+            return nil, nil, "[ArgErr] found two consecutive dash"
         end
-        parse_state.isdash = true
-        return nil, nil
+        parse_state.is_dash = true
+        return nil, c, nil
     elseif c == " " then
         if isbn_len == 0 then
-            return nil, "[ArgErr] an initial space is not allowed"
+            return nil, nil, "[ArgErr] an initial space is not allowed"
         end
-        parse_state.isspace = true
-        return nil, nil
+        if parse_state.is_space then
+            return nil, nil, nil
+        else
+            parse_state.is_space = true
+            return nil, c, nil
+        end
     elseif c == "X" then -- ISBN-10 checksum for 10
-        code[#code + 1] = c
         isbn_len = isbn_len + 1
         parse_state.isbn_len = isbn_len
         if isbn_len ~= 10 then
-            return nil, "[ArgErr] found a checksum 'X' in a wrong position"
+            return nil, nil, "[ArgErr] found a checksum 'X' in a wrong position"
         end
-        return 10, nil
+        return 10, c, nil
     else -- c is at this point eventually a digit
         local n = string.byte(c) - 48
         if n < 0 or n > 9 then
-            return nil, "[ArgErr] found a not digit or a not grouping char"
+            return nil, nil, "[ArgErr] found a not digit or a not group char"
         end
-        if parse_state.isdash then -- close a group
-            code[#code + 1] = "-"
-            parse_state.isdash = false
-            parse_state.isspace = false
-        elseif parse_state.isspace then
-            code[#code + 1] = " "
-            parse_state.isspace = false
+        if parse_state.is_dash then -- close a group
+            parse_state.is_dash = false
+            parse_state.is_space = false
+        elseif parse_state.is_space then
+            parse_state.is_space = false
         end
-        code[#code + 1] = c
         isbn_len = isbn_len + 1
         parse_state.isbn_len = isbn_len
-        return n, nil
+        return n, c, nil
     end
 end
 
@@ -550,7 +577,8 @@ end
 -- parsed
 local function isbn_finalize(enc, parse_state) --> ok, err
     local var = enc._variant
-    local code_len = enc._code_len
+    local code_data = enc._code_data
+    local code_len = #code_data
     local isbn_len = parse_state.isbn_len
     local l1, l2
     if var == "isbn" then
@@ -559,7 +587,7 @@ local function isbn_finalize(enc, parse_state) --> ok, err
         elseif isbn_len == 13 then
             l1 = 13
         else
-            return false, "[ArgErr] unsuitable ISBN code length"
+            return false, "[ArgErr] wrong ISBN code length of "..isbn_len
         end
         assert(l1 == code_len)
     elseif var == "isbn+5" then
@@ -569,7 +597,7 @@ local function isbn_finalize(enc, parse_state) --> ok, err
         elseif isbn_len == 18 then
             l1, l2 = 13, 5
         else
-            return false, "[ArgErr] unsuitable ISBN+5 code length"
+            return false, "[ArgErr] wrong ISBN+5 code length of "..isbn_len
         end
         assert(l1 + l2 == code_len)
     elseif var == "isbn+2" then
@@ -579,13 +607,12 @@ local function isbn_finalize(enc, parse_state) --> ok, err
         elseif isbn_len == 15 then
             l1, l2 = 13, 2
         else
-            return false, "[ArgErr] unsuitable ISBN+2 code length"
+            return false, "[ArgErr] wrong ISBN+2 code length of "..isbn_len
         end
         assert(l1 + l2 == code_len)
     else
         error("[InternalErr] unexpected ISBN variant code")
     end
-    local code_data = enc._code_data
     local isbn_auto = false
     if l1 == 10 then -- isbn 10 to 13 conversion
         local ck = isbn_checksum(code_data)
@@ -606,7 +633,7 @@ local function isbn_finalize(enc, parse_state) --> ok, err
             return false, "[ArgErr] unmatched ISBN 13 checksum"
         end
     end
-    local isbncode = parse_state.isbncode
+    local isbncode = enc._code_text
     if l2 then -- nils the add-on digits
         local i = #isbncode
         while l2 > 0 do
@@ -631,7 +658,6 @@ local function isbn_finalize(enc, parse_state) --> ok, err
         return false, "[ArgErr] too many groups found in the ISBN code"
     end
     if g > 0 then isbn_auto = true end
-    enc._isbncode = isbncode
     enc._isbntxt_on = isbn_auto
     return true, nil
 end
@@ -660,84 +686,86 @@ local function to_n(c) --> n, err
     return n, false
 end
 
+local function issn_parse_state()
+    return {
+        is_dash = false,
+        is_group_open = false,
+        is_group_close = false,
+        ed_var_len = 0,
+        ed_var_arr = {},
+        code_len = 0,
+        addon_len = 0,
+    }
+end
+
 -- ISSN dddd-dddx[dd] or 13-long array
 -- spaces is always ignored
-local function issn_check_char(enc, c, parse_state) --> elem, err
-    if (type(c) ~= "string") or (#c ~= 1) then
-        return nil, "[InternalErr] invalid char"
-    end
-    if parse_state.is_dash == nil then parse_state.is_dash = false end
-    if parse_state.is_group_open == nil then parse_state.is_group_open = false end
-    if parse_state.is_group_close == nil then parse_state.is_group_close = false end
-    if parse_state.ed_var_len == nil then parse_state.ed_var_len = 0 end
-    if parse_state.ed_var_arr == nil then parse_state.ed_var_arr = {} end
-    if parse_state.code_len == nil then parse_state.code_len = 0 end
-    if parse_state.addon_len == nil then parse_state.addon_len = 0 end
+local function issn_process_char(enc, c, parse_state) --> e_data, e_txt, err
     local addon_len = enc._addon_len
-    -- edition variant part
+    -- `edition variant` input code part
     if c == " " then
-        return nil, nil -- ignore all spaces
+        return nil, nil, nil -- ignore all spaces
     end
     if parse_state.is_group_close then
         if addon_len then
             if parse_state.addon_len == enc._addon_len then
-                return nil, "[ArgErr] too many chars in the ISSN input code"
+                return nil, nil, "[ArgErr] too many chars in the ISSN input code"
             end
             local n, e = to_n(c)
             if e then
-                return nil, "[ArgErr] non digit char after a edition variant group"
+                return nil, nil, "[ArgErr] non digit char after an edition variant group"
             end
             parse_state.addon_len = parse_state.addon_len + 1
-            return n, nil
+            return n, n, nil
         else
-            return nil, "[ArgErr] too many chars in the ISSN input code"
+            return nil, nil, "[ArgErr] too many chars in the ISSN input code"
         end
     end
     -- code part
     if c == "-" then
         if parse_state.is_dash then
-            return nil, "[ArgErr] two or more dash char in the input code"
+            return nil, nil, "[ArgErr] two or more dash chars in the input code"
         end
         if parse_state.code_len ~= 4 then
-            return nil, "[ArgErr] incorrect position for a dash sign"
+            return nil, nil, "[ArgErr] incorrect position for a dash sign"
         end
         parse_state.is_dash = true
-        return nil, nil
+        return nil, c, nil
     elseif c == "[" then -- two digits edition variant group opening
         if parse_state.code_len ~= 8 then
-            return nil, "[ArgErr] not a 8 digits long code for the ISSN input"
+            return nil, nil, "[ArgErr] not a 8-digits long code for the ISSN input"
         end
         parse_state.is_group_open = true
-        return nil, nil
+        return nil, nil, nil
     elseif c == "]" then -- two digits edition variant closing
         if not parse_state.is_group_open then
-            return nil, "[ArgErr] found a ']' without a '['"
+            return nil, nil, "[ArgErr] found a ']' without an opened '['"
         end
         if parse_state.ed_var_len ~= 2 then
-            return nil, "[ArgErr] edition variant group must be two digits long"
+            return nil, nil, "[ArgErr] edition variant group must be two digits long"
         end
         parse_state.is_group_open = false
         parse_state.is_group_close = true
-        return nil, nil
+        return nil, nil, nil
     elseif c == "X" then -- 8th ISSN checksum digit
         if parse_state.code_len ~= 7 then
-            return nil, "[ArgErr] incorrect position for checksum digit 'X'"
+            return nil, nil, "[ArgErr] incorrect position for checksum digit 'X'"
         end
         parse_state.code_len = 8
-        return 10, nil
-    else -- at this point 'c' can be only a digit
+        return 10, c, nil
+    else -- at this point 'c' may be only a digit
         local n, e = to_n(c)
         if e then
-            return nil, "[ArgErr] found a non digit in code part"
+            return nil, nil, "[ArgErr] found a non digit in code part"
         end
         if parse_state.is_group_open then
             if parse_state.ed_var_len == 2 then
-                return nil, "[ArgErr] group digits are more than two"
+                return nil, nil, "[ArgErr] group digits are more than two"
             end
             parse_state.ed_var_len = parse_state.ed_var_len + 1
             local t = parse_state.ed_var_arr
             t[#t + 1] = n
-            return nil, nil
+            return nil, c, nil
         end
         if parse_state.is_dash then
             if addon_len then
@@ -745,29 +773,29 @@ local function issn_check_char(enc, c, parse_state) --> elem, err
                     parse_state.code_len = parse_state.code_len + 1
                 else
                     if parse_state.addon_len == addon_len then
-                        return nil, "[ArgErr] too many digits for a 8 + "..addon_len.." ISSN input code"
+                        return nil, nil, "[ArgErr] too many digits for a 8 + "..addon_len.." ISSN input code"
                     end
                     parse_state.addon_len = parse_state.addon_len + 1
                 end
             else
                 if parse_state.code_len == 8 then
-                    return nil, "[ArgErr] too many digits found for a 8 digits long ISSN input code"
+                    return nil, nil, "[ArgErr] too many digits found for a 8 digits long ISSN input code"
                 end
                 parse_state.code_len = parse_state.code_len + 1
             end
         else
             if addon_len then
                 if parse_state.code_len == (13 + addon_len) then
-                    return nil, "[ArgErr] too many digits in ISSN input code"
+                    return nil, nil, "[ArgErr] too many digits in ISSN input code"
                 end
             else
                 if parse_state.code_len == 13 then
-                    return nil, "[ArgErr] too many digits in a 13 digits long ISSN input code"
+                    return nil, nil, "[ArgErr] too many digits in a 13 digits long ISSN input code"
                 end
             end
             parse_state.code_len = parse_state.code_len + 1
         end
-        return n, nil
+        return n, n, nil
     end
 end
 
@@ -822,7 +850,7 @@ local function issn_finalize(enc, parse_state) --> ok, err
         return false, "[ArgErr] unclosed edition variant group in ISSN input code"
     end
     local data = enc._code_data
-    local code_len = enc._code_len
+    local code_len = #data
     local addon_len = enc._addon_len
     local main_len = code_len - (addon_len or 0)
     if main_len == 8 then
@@ -862,12 +890,12 @@ local function basic_finalize(enc) --> ok, err
     local l1 = enc._main_len
     local l2 = enc._addon_len
     local ok_len = l1 + (l2 or 0)
-    local symb_len = enc._code_len
+    local data = enc._code_data
+    local symb_len = #data
     if symb_len ~= ok_len then
         return false, "[ArgErr] not a "..ok_len.."-digit long array"
     end
     if enc._is_last_checksum then -- is the last digit ok?
-        local data = enc._code_data
         local ck = checksum_8_13(data, l1 - 1)
         if ck ~= data[l1] then
             return false, "[Err] wrong checksum digit"
@@ -881,7 +909,7 @@ end
 function EAN:_config() --> ok, err
     local variant = self._variant
     if not variant then
-        return false, "[Err] variant is mandatory for EAN family"
+        return false, "[Err] variant is mandatory for the EAN family"
     end
     local plus = variant:find("+")
     local v1
@@ -894,13 +922,13 @@ function EAN:_config() --> ok, err
         self._sub_variant_1 = v1
     end
     local fnconfig = self._config_variant[variant]
-    local VbarClass = self._libgeo.Vbar -- Vbar class
-    local mod = self.mod
-    fnconfig(self, VbarClass, mod)
+    fnconfig(self)
     if v1 == "isbn" then
-        self._check_char = isbn_check_char
+        self._process_char = isbn_process_char
+        self._init_parse_state = isbn_parse_state
     elseif v1 == "issn" then
-        self._check_char = issn_check_char
+        self._process_char = issn_process_char
+        self._init_parse_state = issn_parse_state
     end
     return true, nil
 end
@@ -987,51 +1015,39 @@ local fn_append_ga_variant = EAN._append_ga_variant
 
 -- draw EAN13 symbol
 fn_append_ga_variant["13"] = function (ean, canvas, tx, ty, ax, ay)
-    local code       = ean._code_data
-    local mod        = ean.mod
-    local bars_depth = mod * ean.bars_depth_factor
-    local w, h       = 95*mod, ean.height + bars_depth
-    local x0         = (tx or 0) - ax * w
-    local y0         = (ty or 0) - ay * h
-    local x1         = x0 + w
-    local y1         = y0 + h
-    local xpos       = x0 -- current insertion x-coord
-    local ys         = y0 + bars_depth
-    local s_width    = 7*mod
-    local code_seq   = ean._codeset_seq[code[1]]
-    -- draw the start symbol
-    local err
-    err = canvas:start_bbox_group(); assert(not err, err)
-    local be = ean._13_start_stop_vbar
-    err = canvas:encode_Vbar(be, xpos, y0, y1); assert(not err, err)
-    xpos = xpos + 3*mod
-    -- draw the first 6 numbers
+    local Codeset = ean._13_codeset_vbar
+    local mod = ean.mod
+    local queue_0 = assert(Codeset:get("start_stop")) +
+        42*mod +
+        assert(Codeset:get("central")) +
+        42*mod +
+        assert(Codeset:get("start_stop"))
+    local code = ean._code_data
+    local code_seq = ean._codeset_seq[code[1]]
+    local queue_1 = ean._libgeo.Vbar_queue:new()
     for i = 2, 7 do
-        local codeset = code_seq[i-1]
-        local n = code[i]
-        local vbar = ean._13_codeset_vbar[codeset][n]
-        err = canvas:encode_Vbar(vbar, xpos, ys, y1); assert(not err, err)
-        xpos = xpos + s_width
+        queue_1 = queue_1 + assert(Codeset:get(code_seq[i-1], code[i]))
     end
-    -- draw the control symbol
-    local ctrl = ean._13_ctrl_center_vbar
-    err = canvas:encode_Vbar(ctrl, xpos, y0, y1); assert(not err, err)
-    xpos = xpos + 5*mod
-    -- draw the last 6 numbers
+    queue_1 = queue_1 + 5*mod
     for i = 8, 13 do
-        local codeset = code_seq[i-1]
-        local n = code[i]
-        local vbar = ean._13_codeset_vbar[codeset][n]
-        err = canvas:encode_Vbar(vbar, xpos, ys, y1); assert(not err, err)
-        xpos = xpos + s_width
+        queue_1 = queue_1 + assert(Codeset:get(code_seq[i-1], code[i]))
     end
-    -- draw the stop char
-    err = canvas:encode_Vbar(be, xpos, y0, y1); assert(not err, err)
+    local bars_depth = mod * ean.bars_depth_factor
+    local w, h = 95*mod, ean.height + bars_depth
+    local x0   = tx - ax * w
+    local y0   = ty - ay * h
+    local x1   = x0 + w
+    local y1   = y0 + h
+    local ys   = y0 + bars_depth
+    -- draw the symbol
+    assert(canvas:encode_disable_bbox())
+    assert(canvas:encode_vbar_queue(queue_0, x0, y0, y1))
+    assert(canvas:encode_vbar_queue(queue_1, x0 + 3*mod, ys, y1))
     -- bounding box set up
     local qzl = ean.quietzone_left_factor * mod
     local qzr = ean.quietzone_right_factor * mod
-    err = canvas:stop_bbox_group(x0 - qzl, y0, x1 + qzr, y1)
-    assert(not err, err)
+    assert(canvas:encode_set_bbox(x0 - qzl, y0, x1 + qzr, y1))
+    assert(canvas:encode_enable_bbox())
     if ean.text_enabled then -- human readable text
         local Text  = ean._libgeo.Text
         local txt_1 = Text:from_digit_array(code, 1,  1)
@@ -1039,16 +1055,30 @@ fn_append_ga_variant["13"] = function (ean, canvas, tx, ty, ax, ay)
         local txt_3 = Text:from_digit_array(code, 8, 13)
         local y_bl = ys - ean.text_ygap_factor * mod
         local mx = ean.text_xgap_factor
-        err = canvas:encode_Text(txt_1, x0 - qzl, y_bl, 0, 1)
-        assert(not err, err)
+        assert(canvas:encode_Text(txt_1, x0 - qzl, y_bl, 0, 1))
         local x2_1 = x0 + (3+mx)*mod
         local x2_2 = x0 + (46-mx)*mod
-        err = canvas:encode_Text_xwidth(txt_2, x2_1, x2_2, y_bl, 1)
-        assert(not err, err)
+        assert(canvas:encode_Text_xwidth(txt_2, x2_1, x2_2, y_bl, 1))
         local x3_1 = x0 + (49+mx)*mod
         local x3_2 = x0 + (92-mx)*mod
-        err = canvas:encode_Text_xwidth(txt_3, x3_1, x3_2, y_bl, 1)
-        assert(not err, err)
+        assert(canvas:encode_Text_xwidth(txt_3, x3_1, x3_2, y_bl, 1))
+        if ean.text_guard_enabled and (not ean._addon_len) then
+            local Polyline = ean._libgeo.Polyline
+            local mm = 186467.98
+            local alpha = 36 * math.pi/180
+            local pw = 0.30*mm
+            local dx = pw/(2*math.sin(alpha))
+            local dy = (pw/2) * math.cos(alpha)
+            local px = x1 + qzr - dx
+            local pb = 1.55*mm
+            local ph = pb * math.tan(alpha)
+            local p = Polyline:new()
+            p:add_point(px - pb, y_bl - 2*ph - dy)
+            p:add_point(px, y_bl - ph - dy)
+            p:add_point(px - pb, y_bl - dy)
+            assert(canvas:encode_linewidth(pw))
+            assert(canvas:encode_polyline(p))
+        end
         local istxt = false
         if ean.text_isbn_enabled then
             if ean.text_isbn_enabled == "auto" then
@@ -1060,7 +1090,7 @@ fn_append_ga_variant["13"] = function (ean, canvas, tx, ty, ax, ay)
             end
         end
         if istxt then
-            local isbn = assert(ean._isbncode, "[InternalErr] ISBN text not found")
+            local isbn = assert(ean._code_text, "[InternalErr] ISBN text not found")
             local descr = {"I", "S", "B", "N", " ",}
             for _, d in ipairs(isbn) do
                 descr[#descr + 1] = d
@@ -1068,13 +1098,12 @@ fn_append_ga_variant["13"] = function (ean, canvas, tx, ty, ax, ay)
             local isbn_txt = Text:from_chars(descr)
             local x_isbn = x0 + 47.5 * mod
             local y_isbn = y1 + ean.text_isbn_ygap_factor * mod
-            err = canvas:encode_Text(isbn_txt, x_isbn, y_isbn, 0.5, 0)
-            assert(not err, err)
+            assert(canvas:encode_Text(isbn_txt, x_isbn, y_isbn, 0.5, 0))
         end
         -- issn text
         if ean.text_issn_enabled then
             local hri = {"I", "S", "S", "N", " "}
-            local txt = assert(ean._code_text, "[IternalErr] _code_text not found")
+            local txt = assert(ean._code_text, "[InternalErr] _code_text not found")
             for i = 1, 4 do
                 hri[i + 5] = txt[i]
             end
@@ -1085,59 +1114,46 @@ fn_append_ga_variant["13"] = function (ean, canvas, tx, ty, ax, ay)
             local issn_txt = Text:from_chars(hri)
             local x_issn = x0 + 47.5 * mod
             local y_issn = y1 + ean.text_issn_ygap_factor * mod
-            err = canvas:encode_Text(issn_txt, x_issn, y_issn, 0.5, 0)
-            assert(not err, err)
+            assert(canvas:encode_Text(issn_txt, x_issn, y_issn, 0.5, 0))
         end
     end
+    return {x0, y0, x1, y1, qzl, nil, qzr, nil,}
 end
 
 -- draw EAN8 symbol
 fn_append_ga_variant["8"] = function (ean, canvas, tx, ty, ax, ay)
-    local code       = ean._code_data
-    local mod        = ean.mod
-    local bars_depth = mod * ean.bars_depth_factor
-    local w, h       = 67*mod, ean.height + bars_depth
-    local x0         = (tx or 0) - ax * w
-    local y0         = (ty or 0) - ay * h
-    local x1         = x0 + w
-    local y1         = y0 + h
-    local xpos       = x0 -- current insertion x-coord
-    local ys         = y0 + bars_depth
-    local s_width    = 7*mod
-    -- draw the start symbol
-    local err
-    err = canvas:start_bbox_group(); assert(not err, err)
-    local be = ean._8_start_stop_vbar
-    err = canvas:encode_Vbar(be, xpos, y0, y1); assert(not err, err)
-    xpos = xpos + 3*mod
-    -- draw the first 4 numbers
-    local t_vbar = ean._8_codeset_vbar
+    local Codeset = ean._8_codeset_vbar
+    local mod = ean.mod
+    local q0 = assert(Codeset:get("start_stop")) + 28*mod +
+        assert(Codeset:get("central")) + 28*mod +
+        assert(Codeset:get("start_stop"))
+    local code = ean._code_data
     local cs14 = ean._codeset14_8
+    local q1 = ean._libgeo.Vbar_queue:new()
     for i = 1, 4 do
-        local n = code[i]
-        local vbar = t_vbar[cs14][n]
-        err = canvas:encode_Vbar(vbar, xpos, ys, y1); assert(not err, err)
-        xpos = xpos + s_width
+        q1 = q1 + assert(Codeset:get(cs14, code[i]))
     end
-    -- draw the control symbol
-    local ctrl = ean._8_ctrl_center_vbar
-    err = canvas:encode_Vbar(ctrl, xpos, y0, y1); assert(not err, err)
-    xpos = xpos + 5*mod
-    -- draw the product code
+    q1 = q1 + 5*mod
     local cs58 = ean._codeset58_8
     for i = 5, 8 do
-        local n    = code[i]
-        local vbar = t_vbar[cs58][n]
-        err = canvas:encode_Vbar(vbar, xpos, ys, y1); assert(not err, err)
-        xpos = xpos + s_width
+        q1 = q1 + assert(Codeset:get(cs58, code[i]))
     end
-    -- draw the stop char
-    err = canvas:encode_Vbar(be, xpos, y0, y1); assert(not err, err)
+    local bars_depth = mod * ean.bars_depth_factor
+    local w, h = 67*mod, ean.height + bars_depth
+    local x0   = tx - ax * w
+    local y0   = ty - ay * h
+    local x1   = x0 + w
+    local y1   = y0 + h
+    local ys   = y0 + bars_depth
+    -- draw the symbol
+    assert(canvas:encode_disable_bbox())
+    assert(canvas:encode_vbar_queue(q0, x0, y0, y1))
+    assert(canvas:encode_vbar_queue(q1, x0 + 3*mod, ys, y1))
     -- bounding box set up
     local qzl = ean.quietzone_left_factor * mod
     local qzr = ean.quietzone_right_factor * mod
-    err = canvas:stop_bbox_group(x0 - qzl, y0, x1 + qzr, y1)
-    assert(not err, err)
+    assert(canvas:encode_set_bbox(x0 - qzl, y0, x1 + qzr, y1))
+    assert(canvas:encode_enable_bbox())
     if ean.text_enabled then -- human readable text
         local Text  = ean._libgeo.Text
         local t_1 = Text:from_digit_array(code, 1, 4)
@@ -1146,18 +1162,40 @@ fn_append_ga_variant["8"] = function (ean, canvas, tx, ty, ax, ay)
         local mx    = ean.text_xgap_factor
         local x1_1 = x0 + ( 3 + mx)*mod
         local x1_2 = x0 + (32 - mx)*mod
-        err = canvas:encode_Text_xwidth(t_1, x1_1, x1_2, y_bl, 1)
-        assert(not err, err)
+        assert(canvas:encode_Text_xwidth(t_1, x1_1, x1_2, y_bl, 1))
         local x2_1 = x0 + (35+mx)*mod
         local x2_2 = x0 + (64-mx)*mod
-        err = canvas:encode_Text_xwidth(t_2, x2_1, x2_2, y_bl, 1)
-        assert(not err, err)
+        assert(canvas:encode_Text_xwidth(t_2, x2_1, x2_2, y_bl, 1))
+        if ean.text_guard_enabled and (not ean._addon_len) then
+            local Polyline = ean._libgeo.Polyline
+            local mm = 186467.98
+            local alpha = 36 * math.pi/180
+            local pw = 0.30*mm
+            local pb = 1.55*mm
+            local ph = pb * math.tan(alpha)
+            local dx = pw/(2*math.sin(alpha))
+            local dy = (pw/2) * math.cos(alpha)
+            local px1, px2 = x0 - qzl + dx, x1 + qzr - dx
+            local p1 = Polyline:new()
+            p1:add_point(px1 + pb, y_bl - 2*ph - dy)
+            p1:add_point(px1, y_bl - ph - dy)
+            p1:add_point(px1 + pb, y_bl - dy)
+            local p2 = Polyline:new()
+            p2:add_point(px2 - pb, y_bl - 2*ph - dy)
+            p2:add_point(px2, y_bl - ph - dy)
+            p2:add_point(px2 - pb, y_bl - dy)
+            assert(canvas:encode_linewidth(pw))
+            assert(canvas:encode_polyline(p1))
+            assert(canvas:encode_polyline(p2))
+        end
     end
+    return {x0, y0, x1, y1, qzl, nil, qzr, nil,}
 end
 
 -- draw EAN5 add-on symbol
 fn_append_ga_variant["5"] = function (ean, canvas, tx, ty, ax, ay, h)
-    local code = ean._code_data
+    local Codeset = ean._5_codeset_vbar
+    local queue = assert(Codeset:get("start"))
     local l1 = ean._main_len
     local i1; if l1 == 5 then
         i1 = 1
@@ -1165,81 +1203,70 @@ fn_append_ga_variant["5"] = function (ean, canvas, tx, ty, ax, ay, h)
         i1 = l1 + 1
     end
     local i2 = i1 + 4
-    local mod    = ean.mod
-    local w      = 47*mod
-    h = h or ean.height
-    local x0     = (tx or 0) - ax * w
-    local y0     = (ty or 0) - ay * h
-    local x1     = x0 + w
-    local y1     = y0 + h
-    local xpos   = x0 -- current insertion x-coord
-    local sym_w  = 7*mod
-    local sep_w  = 2*mod
-    -- draw the start symbol
-    local err
-    err = canvas:start_bbox_group(); assert(not err, err)
-    local start = ean._5_start_vbar
-    err = canvas:encode_Vbar(start, xpos, y0, y1); assert(not err, err)
-    xpos = xpos + 4*mod
-    local ck = checksum_5_2(code, i1, 5)
-    local codeset = ean._codeset_5[ck]
-    local sep    = ean._5_sep_vbar
-    local t_vbar = ean._5_codeset_vbar
+    local mod = ean.mod
     -- draw the five digits
+    local code = ean._code_data
+    local ck = checksum_5_2(code, i1, 5)
+    local cset = ean._codeset_5[ck]
     local k = 0
     for i = i1, i2 do
         k = k + 1
-        local cs = codeset[k] -- 1 or 2
-        local d = code[i]
-        local vbar = t_vbar[cs][d]
-        err = canvas:encode_Vbar(vbar, xpos, y0, y1); assert(not err, err)
-        xpos = xpos + sym_w
+        queue = queue + assert(Codeset:get(cset[k], code[i]))
         if k < 5 then
-            err = canvas:encode_Vbar(sep, xpos, y0, y1); assert(not err, err)
-            xpos = xpos + sep_w
+            queue = queue + assert(Codeset:get("sep"))
         end
     end
+    local w = 47*mod
+    h = h or ean.height
+    local x0 = tx - ax * w
+    local y0 = ty - ay * h
+    local x1 = x0 + w
+    local y1 = y0 + h
+    -- draw the symbol
+    assert(canvas:encode_disable_bbox())
+    assert(canvas:encode_vbar_queue(queue, x0, y0, y1))
     -- bounding box set up
     local qzl = ean.quietzone_left_factor * mod
     local qzr = ean.quietzone_right_factor * mod
-    err = canvas:stop_bbox_group(x0 - qzl, y0, x1 + qzr, y1)
-    assert(not err, err)
+    assert(canvas:encode_set_bbox(x0 - qzl, y0, x1 + qzr, y1))
+    assert(canvas:encode_enable_bbox())
     if ean.text_enabled then -- human readable text
         local Text = ean._libgeo.Text
         local txt  = Text:from_digit_array(code, i1, i2)
         local y_bl = y1 + ean.text_ygap_factor * mod
         local x1_1 = x0 + 3*mod
         local x1_2 = x1 - 3*mod
-        err = canvas:encode_Text_xwidth(txt, x1_1, x1_2, y_bl, 0)
-        assert(not err, err)
+        assert(canvas:encode_Text_xwidth(txt, x1_1, x1_2, y_bl, 0))
+        if ean.text_guard_enabled then
+            local Polyline = ean._libgeo.Polyline
+            local mm = 186467.98
+            local alpha = 36 * math.pi/180
+            local pw = 0.30*mm
+            local dx = pw/(2*math.sin(alpha))
+            local dy = (pw/2) * math.cos(alpha)
+            local px = x1 + qzr - dx
+            local pb = 1.55*mm
+            local ph = pb * math.tan(alpha)
+            local p = Polyline:new()
+            p:add_point(px - pb, y_bl + dy)
+            p:add_point(px, y_bl + ph + dy)
+            p:add_point(px - pb, y_bl + 2*ph + dy)
+            assert(canvas:encode_linewidth(pw))
+            assert(canvas:encode_polyline(p))
+        end
     end
+    return {x0, y0, x1, y1, qzl, nil, qzr, nil,}
 end
 
 -- draw EAN2 symbol
 fn_append_ga_variant["2"] = function (ean, canvas, tx, ty, ax, ay, h)
-    local code = ean._code_data
     local l1 = ean._main_len
     local i1; if l1 == 2 then
         i1 = 1
     else
         i1 = l1 + 1
     end
-    local mod = ean.mod
-    local w = 20*mod
-    h = h or ean.height
-    local x0 = (tx or 0.0) - ax * w
-    local y0 = (ty or 0.0) - ay * h
-    local x1 = x0 + w
-    local y1 = y0 + h
-    local xpos = x0 -- current insertion x-coord
-    local sym_w = 7*mod
-    local sep_w = 2*mod
-    -- draw the start symbol
-    local err
-    err = canvas:start_bbox_group(); assert(not err, err)
-    local start = ean._2_start_vbar
-    err = canvas:encode_Vbar(start, xpos, y0, y1); assert(not err, err)
-    xpos = xpos + 4*mod
+    local code = ean._code_data
     local r = checksum_5_2(code, i1, 2)
     local s1, s2
     if r == 0 then     -- LL scheme
@@ -1251,31 +1278,52 @@ fn_append_ga_variant["2"] = function (ean, canvas, tx, ty, ax, ay, h)
     else -- r == 3     -- GG scheme
         s1, s2 = 2, 2
     end
-    local t_vbar = ean._2_codeset_vbar
-    local d1 = code[i1] -- render the first digit
-    local vb1 = t_vbar[s1][d1]
-    err = canvas:encode_Vbar(vb1, xpos, y0, y1); assert(not err, err)
-    xpos = xpos + sym_w
-    local sep  = ean._2_sep_vbar
-    err = canvas:encode_Vbar(sep, xpos, y0, y1); assert(not err, err)
-    xpos = xpos + sep_w
-    local d2 = code[i1 + 1] -- render the second digit
-    local vb2 = t_vbar[s2][d2]
-    err = canvas:encode_Vbar(vb2, xpos, y0, y1); assert(not err, err)
+    local Codeset = ean._2_codeset_vbar
+    local queue = assert(Codeset:get("start")) +
+        assert(Codeset:get(s1, code[i1])) + -- first digit
+        assert(Codeset:get("sep")) +
+        assert(Codeset:get(s2, code[i1 + 1])) -- second digit
+    -- draw the symbol
+    local mod = ean.mod
+    local w = 20*mod
+    h = h or ean.height
+    local x0 = tx - ax * w
+    local y0 = ty - ay * h
+    local x1 = x0 + w
+    local y1 = y0 + h
+    assert(canvas:encode_disable_bbox())
+    assert(canvas:encode_vbar_queue(queue, x0, y0, y1))
     -- bounding box set up
     local qzl = ean.quietzone_left_factor * mod
     local qzr = ean.quietzone_right_factor * mod
-    err = canvas:stop_bbox_group(x0 - qzl, y0, x1 + qzr, y1)
-    assert(not err, err)
+    assert(canvas:encode_set_bbox(x0 - qzl, y0, x1 + qzr, y1))
+    assert(canvas:encode_enable_bbox())
     if ean.text_enabled then -- human readable text
         local Text  = ean._libgeo.Text
         local txt = Text:from_digit_array(code, i1, i1 + 1)
         local y_bl = y1 + ean.text_ygap_factor * mod
         local x1_1 = x0 + 3*mod
         local x1_2 = x1 - 3*mod
-        err = canvas:encode_Text_xwidth(txt, x1_1, x1_2, y_bl, 0)
-        assert(not err, err)
+        assert(canvas:encode_Text_xwidth(txt, x1_1, x1_2, y_bl, 0))
+        if ean.text_guard_enabled then
+            local Polyline = ean._libgeo.Polyline
+            local mm = 186467.98
+            local alpha = 36 * math.pi/180
+            local pw = 0.30*mm
+            local dx = pw/(2*math.sin(alpha))
+            local dy = (pw/2) * math.cos(alpha)
+            local px = x1 + qzr - dx
+            local pb = 1.55*mm
+            local ph = pb * math.tan(alpha)
+            local p = Polyline:new()
+            p:add_point(px - pb, y_bl + dy)
+            p:add_point(px, y_bl + ph + dy)
+            p:add_point(px - pb, y_bl + 2*ph + dy)
+            assert(canvas:encode_linewidth(pw))
+            assert(canvas:encode_polyline(p))
+        end
     end
+    return {x0, y0, x1, y1, qzl, nil, qzr, nil,}
 end
 
 fn_append_ga_variant["13+5"] = function (ean, canvas, tx, ty, ax, ay)
@@ -1283,14 +1331,15 @@ fn_append_ga_variant["13+5"] = function (ean, canvas, tx, ty, ax, ay)
     local bars_depth = mod * ean.bars_depth_factor
     local h = ean.height + bars_depth
     local w = (142 + ean.addon_xgap_factor) * mod
-    local x0 = (tx or 0) - ax * w
-    local y0 = (ty or 0) - ay * h
+    local x0 = tx - ax * w
+    local y0 = ty - ay * h
     local x1 = x0 + w
     local fn_ga = ean._append_ga_variant
     local fn_1 = fn_ga["13"]
     local fn_2 = fn_ga["5"]
-    fn_1(ean, canvas, x0, y0, 0, 0)
-    fn_2(ean, canvas, x1, y0, 1, 0, 0.85 * h)
+    local b1 = fn_1(ean, canvas, x0, y0, 0, 0)
+    local b2 = fn_2(ean, canvas, x1, y0, 1, 0, 0.85 * h)
+    return {b1[1], b1[2], b2[3], b1[4], b1[5], nil, b2[7], nil,}
 end
 
 fn_append_ga_variant["13+2"] = function (ean, canvas, tx, ty, ax, ay)
@@ -1298,14 +1347,15 @@ fn_append_ga_variant["13+2"] = function (ean, canvas, tx, ty, ax, ay)
     local bars_depth = mod * ean.bars_depth_factor
     local h = ean.height + bars_depth
     local w = (115 + ean.addon_xgap_factor) * mod
-    local x0 = (tx or 0) - ax * w
-    local y0 = (ty or 0) - ay * h
+    local x0 = tx - ax * w
+    local y0 = ty - ay * h
     local x1 = x0 + w
     local fn_ga = ean._append_ga_variant
     local fn_1 = fn_ga["13"]
     local fn_2 = fn_ga["2"]
-    fn_1(ean, canvas, x0, y0, 0, 0)
-    fn_2(ean, canvas, x1, y0, 1, 0, 0.85 * h)
+    local b1 = fn_1(ean, canvas, x0, y0, 0, 0)
+    local b2 = fn_2(ean, canvas, x1, y0, 1, 0, 0.85 * h)
+    return {b1[1], b1[2], b2[3], b1[4], b1[5], nil, b2[7], nil,}
 end
 
 fn_append_ga_variant["8+5"] = function (ean, canvas, tx, ty, ax, ay)
@@ -1313,14 +1363,15 @@ fn_append_ga_variant["8+5"] = function (ean, canvas, tx, ty, ax, ay)
     local bars_depth = mod * ean.bars_depth_factor
     local h = ean.height + bars_depth
     local w = (114 + ean.addon_xgap_factor) * mod
-    local x0 = (tx or 0) - ax * w
-    local y0 = (ty or 0) - ay * h
+    local x0 = tx - ax * w
+    local y0 = ty - ay * h
     local x1 = x0 + w
     local fn_ga = ean._append_ga_variant
     local fn_1 = fn_ga["8"]
     local fn_2 = fn_ga["5"]
-    fn_1(ean, canvas, x0, y0, 0, 0)
-    fn_2(ean, canvas, x1, y0, 1, 0, 0.85 * h)
+    local b1 = fn_1(ean, canvas, x0, y0, 0, 0)
+    local b2 = fn_2(ean, canvas, x1, y0, 1, 0, 0.85 * h)
+    return {b1[1], b1[2], b2[3], b1[4], b1[5], nil, b2[7], nil,}
 end
 
 fn_append_ga_variant["8+2"] = function (ean, canvas, tx, ty, ax, ay)
@@ -1328,14 +1379,15 @@ fn_append_ga_variant["8+2"] = function (ean, canvas, tx, ty, ax, ay)
     local bars_depth = mod * ean.bars_depth_factor
     local h = ean.height + bars_depth
     local w = (87 + ean.addon_xgap_factor) * mod
-    local x0 = (tx or 0) - ax * w
-    local y0 = (ty or 0) - ay * h
+    local x0 = tx - ax * w
+    local y0 = ty - ay * h
     local x1 = x0 + w
     local fn_ga = ean._append_ga_variant
     local fn_1 = fn_ga["8"]
     local fn_2 = fn_ga["2"]
-    fn_1(ean, canvas, x0, y0, 0, 0)
-    fn_2(ean, canvas, x1, y0, 1, 0, 0.85 * h)
+    local b1 = fn_1(ean, canvas, x0, y0, 0, 0)
+    local b2 = fn_2(ean, canvas, x1, y0, 1, 0, 0.85 * h)
+    return {b1[1], b1[2], b2[3], b1[4], b1[5], nil, b2[7], nil,}
 end
 
 -- ISBN
@@ -1350,12 +1402,11 @@ fn_append_ga_variant["issn+2"] = fn_append_ga_variant["13+2"]
 -- Drawing into the provided channel geometrical data
 -- tx, ty is the optional translation vector
 -- the function return the canvas reference to allow call chaining
-function EAN:append_ga(canvas, tx, ty) --> canvas
+function EAN:_append_ga(canvas, tx, ty) --> bbox
     local var = self._variant
     local fn_append_ga = assert(self._append_ga_variant[var])
     local ax, ay = self.ax, self.ay
-    fn_append_ga(self, canvas, tx, ty, ax, ay)
-    return canvas
+    return fn_append_ga(self, canvas, tx, ty, ax, ay)
 end
 
 return EAN

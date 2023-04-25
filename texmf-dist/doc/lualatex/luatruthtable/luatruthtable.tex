@@ -1,0 +1,358 @@
+\documentclass{article}
+\usepackage{listings,color,parskip,booktabs,longtable,array,
+hyperref,multirow,multicol,luatruthtable, enumitem}
+\usepackage[top=1.1in, bottom=1.1in, left=1in, right=1in]{geometry}
+\hypersetup{colorlinks,urlcolor=blue}
+\lstset{frame=none,
+	language=[LaTeX]{TeX},
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=1
+}
+\usepackage[backend=bibtex]{biblatex}
+\addbibresource{luatruthtable}
+\begin{document}
+\title{luatruthtable Package}
+\author{Chetan Shirore and Dr. Ajit Kumar}
+\maketitle
+\section{luatruthtable Package}
+The \emph{luatruthtable} package is developed to generate Truth Tables of boolean values in LaTeX. It provides an easy way for generating truth tables in LaTeX . There is no need of special environment in the package for generation of Truth Tables. It is written in lua and tex file is to be compiled with LuaLatex engine.  The time required for operations is no issue while compiling with LuaLaTeX.  There is no need to install lua on users system as tex distributions (TeXLive or MikTeX) come bundled with LuaLaTeX. It is useful for generation of Truth Tables in tex file itself. The package supports nesting of commands for multiple operations. It can be modified or extended by writing custom lua programs. 
+
+The progamming capabilities of Lua are effectively used in the development of pacakage. The other approaches of generating Truth Table in LaTeX get weired \cite{online.latextruthtable} and probably without using Lua it can't be done in an easier way in LaTeX.  The \emph{xkeyval} package is used in its development apart from the \emph{luacode*} package. 
+
+\section{License} The \emph{luatruthtable} package is released under the LaTeX Project Public License v1.3c or later. The complete license text is available at \url{http://www.latex-project.org/lppl.txt}.
+It is developed in lua.  Lua is certified open source software available. Its license is simple and liberal which is compatible with GPL.
+\section{Installation and Inclusion}
+The installation of  \emph{luatruthtable} package is similar to plain latex package where \texttt{.sty} file is in \LaTeX directory of texmf tree. The package can be used by including the command \texttt{\textbackslash usepackage\{luatruthtable\}} in the preamble of latex document.  The tex file is to be compiled using the LuaLaTeX engine.
+\section{Core Ideas used in the development of the package} The function \verb|toBinary(x,y)| is used to produce sequence of \emph{True} and \emph{False} values  of boolean variables. This function converts the decimal number \verb|x| to a binary number by adding \verb|y| number of leading zeroes. The result of this is stored in a table in Lua.  Here \verb|y| corresponds to number of boolean variables. As  \(2^y\) permutations of boolean variables are to be produced, the function \verb|toBinary(x,y)| runs inside a loop where  \verb|x|  takes values from \(1\) to \(y\). The splitting of variables and expressions is done using string methods available in Lua. The nested \emph{metamethods} in Lua are used to define several logical operators. The \emph{load} function in Lua is used to evaluate logical expressions. 
+\section{Command luaTruthTable in luatruthtable package}
+The \verb|\luaTruthTable| command is the main command in the \emph{luatruthtable} package which generates truth tables. It has the following syntax.
+\begin{lstlisting}
+\luaTruthTable[trtext,fltext]{list of boolean / logical variables}{list of  expressions}
+\end{lstlisting}
+The command has two mandatory arguments. \\
+i) \verb|list of boolean / logical variables| : The list of boolean or logical variables should be separated by comma.  \\
+ii) \verb|list of expressions| : The list of logical expressions that are to be evaluated should be separated by comma. \\
+The command has two optional arguments. \\
+i) \verb|trtext| : The \verb|trtext| is the display value for the boolean value \emph{True}. It has the default value \verb|$T$| in the package. It can be any string or number.  Assigning value \(0\) should be avoided to  \verb|trtext| variable.   \\
+ii) \verb|fltext| : The \verb|fltext| is the display value for the boolean value \emph{False}. It has the default value \verb|$F$| in the package. It can be any string or number.  Assigning value \(1\) should be avoided to  \verb|fltext| variable.  
+
+The \verb|\luaTruthTable| command should be used within in the environment \verb|\begin{tabular} ... \end{tabular}| or any other environment in LaTeX for Tables. The sequence of column heads should be same as sequence of \verb|list of boolean / logical variables| and \verb|list of expressions|. Without these correct inputs, the command \verb|\luaTruthTable| can't produce the expected output. 
+
+\section{Operations in luatruthtable package}
+\begin{enumerate}[label=\alph*)]
+\item \emph{not}: The value of \emph{ not p} is False when \(p\) is True and it is True when \(p\) is False. 
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+\(p\) &  not \(p\) \\
+\hline
+\luaTruthTable{p}{lognot*p} \\
+\hline
+\end{tabular}
+\end{center}
+
+The command \verb|lognot*| is used in the package to generate truth table for  \emph{not} operation.
+\item \emph{and}: The value of \emph{p AND q} is True if and only if both \(p\) and \(q\) are True.
+\begin{center}
+\begin{tabular}{|cc|c|}
+\hline
+\(p\) & \(q\) & \(p\) and \(q\) \\
+\hline
+\luaTruthTable{p,q}{p*logand*q} \\
+\hline
+\end{tabular}
+\end{center}
+The command \verb|*logand*| is used in the package to generate truth table for  \emph{and} operation .
+\item \emph{or}: The value of \emph{p or q} is False if and only if both \(p\) and \(q\) are False.
+\begin{center}
+\begin{tabular}{|cc|c|}
+\hline
+\(p\) & \(q\) & \(p\) or \(q\) \\
+\hline
+\luaTruthTable{p,q}{p*logor*q} \\
+\hline
+\end{tabular}
+\end{center}
+The command \verb|*logor*| is used in the package to generate truth table for  \emph{or} operation.
+\item \emph{implies}: The value of \emph{p implies q} is False if and only if  \(p\) is True and \(q\) is False.
+\begin{center}
+\begin{tabular}{|cc|c|}
+\hline
+\(p\) & \(q\) & \(p\) implies \(q\) \\
+\hline
+\luaTruthTable{p,q}{p*imp*q} \\
+\hline
+\end{tabular}
+\end{center}
+
+The command \verb|*imp*| is used in the package to generate truth table for  \emph{implies} operation.
+\item \emph{if and only if} : The value of \emph{p if and only if q} is True if and only if  both \(p\) and \(q\) have same truth values. 
+\begin{center}
+\begin{tabular}{|cc|c|}
+\hline
+\(p\) & \(q\) & \(p\) iff \(q\) \\
+\hline
+\luaTruthTable{p,q}{p*iff*q} \\
+\hline
+\end{tabular}
+\end{center}
+
+The command \verb|*iff*| is used in the package to generate truth table for  \emph{if and only if} operation.
+\item \emph{NAND} : The value of \emph{p NAND q} is \(0\) if and only if both \(p\)  and \(q\) have value \(1\).
+\begin{center}
+\begin{tabular}{|cc|c|}
+\hline
+\(p\) & \(q\) & \(p\) NAND \(q\) \\
+\hline
+\luaTruthTable[trtext=$1$,fltext=$0$]{p,q}{p*lognand*q} \\
+\hline
+\end{tabular}
+\end{center}
+
+The command \verb|*lognand*| is used in the package to generate truth table for  \emph{NAND} operation.
+\item \emph{XOR} : The value of \emph{p XOR q} is \(0\) if and only if  \(p\)  and \(q\) have same values.
+\begin{center}
+\begin{tabular}{|cc|c|}
+\hline
+\(p\) & \(q\) & \(p\) XOR \(q\) \\
+\hline
+\luaTruthTable[trtext=$1$,fltext=$0$]{p,q}{p*logxor*q} \\
+\hline
+\end{tabular}
+\end{center}
+
+
+The command \verb|*logxor*| is used in the package to generate truth table for  \emph{XOR} operation.
+\item \emph{NOR}: The value of \emph{p NOR q} is \(1\) if and only if both \(p\)  and \(q\) have value \(0\).
+\begin{center}
+\begin{tabular}{|cc|c|}
+\hline
+\(p\) & \(q\) & \(p\) NOR \(q\) \\
+\hline
+\luaTruthTable[trtext=$1$,fltext=$0$]{p,q}{p*lognor*q} \\
+\hline
+\end{tabular}
+\end{center}
+
+The command \verb|*lognor*| is used in the package to generate truth table for  \emph{NOR} operation.
+\item \emph{XNOR}: The value of \emph{p XNOR q} is \(1\) if and only if both \(p\)  and \(q\) have same values.
+\begin{center}
+\begin{tabular}{|cc|c|}
+\hline
+\(p\) & \(q\) & \(p\) XNOR \(q\) \\
+\hline
+\luaTruthTable[trtext=$1$,fltext=$0$]{p,q}{p*logxnor*q} \\
+\hline
+\end{tabular}
+\end{center}
+
+The command \verb|*logxnor*| is used in the package to generate truth table for  \emph{XNOR} operation.
+\end{enumerate}
+The following table summarises logical operators in the package.
+\begin{center}
+\begin{longtable}{llm{8cm}}
+\toprule
+\multicolumn{1}{c}{\textcolor{blue}{Operator}} & \multicolumn{1}{l}{\textcolor{blue}{Syntax}} & \multicolumn{1}{c}{\textcolor{blue}{Description}}  \\
+\toprule
+\begin{lstlisting}
+lognot*
+\end{lstlisting} &
+\begin{lstlisting}
+lognot*p
+\end{lstlisting} & Negates the boolean variable \(p\)\\
+\midrule
+\begin{lstlisting}
+*logand*
+\end{lstlisting} &
+\begin{lstlisting}
+p*logand*q
+\end{lstlisting} & Gives the truth of the expression \emph{p and q} for boolean variables \(p\) and \(q\).\\
+\midrule
+\begin{lstlisting}
+*logor*
+\end{lstlisting} &
+\begin{lstlisting}
+p*logor*q
+\end{lstlisting} & Gives the truth of the expression \emph{p or q} for boolean variables \(p\) and \(q\).\\
+\midrule
+\begin{lstlisting}
+*imp*
+\end{lstlisting} &
+\begin{lstlisting}
+p*imp*q
+\end{lstlisting} & Gives the truth of the expression \emph{if p then q} for boolean variables \(p\) and \(q\).\\
+\midrule
+\begin{lstlisting}
+*iff*
+\end{lstlisting} &
+\begin{lstlisting}
+p*iff*q
+\end{lstlisting} & Gives the truth of the expression \emph{p if and only if q} for boolean variables \(p\) and \(q\).\\
+\midrule
+\begin{lstlisting}
+*lognand*
+\end{lstlisting} &
+\begin{lstlisting}
+p*lognand*q
+\end{lstlisting} & Gives the truth of the expression \emph{ p NAND q} for boolean variables \(p\) and \(q\).\\
+\midrule
+\begin{lstlisting}
+*logxor*
+\end{lstlisting} &
+\begin{lstlisting}
+p*logxor*q
+\end{lstlisting} & Gives the truth of the expression \emph{ p XOR q} for boolean variables \(p\) and \(q\).\\
+\midrule
+\begin{lstlisting}
+*lognor*
+\end{lstlisting} &
+\begin{lstlisting}
+p*lognor*q
+\end{lstlisting} & Gives the truth of the expression \emph{ p NOR q} for boolean variables \(p\) and \(q\).\\
+\midrule
+\begin{lstlisting}
+*logxnor*
+\end{lstlisting} &
+\begin{lstlisting}
+p*logxnor*q
+\end{lstlisting} & Gives the truth of the expression \emph{ p XNOR q} for boolean variables \(p\) and \(q\).\\
+
+\bottomrule
+\end{longtable}
+\end{center}
+
+\section{Examples and Usage} The \emph{luatruthtable} package can accept finite number of variables. It supports finite number of variables that one would practically need. Few examples of usage are given here. 
+\begin{lstlisting}
+\begin{tabular}{|cc|c|c|c|c|c|c|c|c|c|}
+\hline
+\(p\) & \(q\) & \(\neg p\) & \(p \land q\) & \(p\lor q\) & \(p \rightarrow q\)
+ & \(p \leftrightarrow q\) &  \( p\) nand \(q\) & \(p\)   xor \(q\) & \( p\) nor \(q\) & \(p\) xnor \(q\) \\
+\hline
+\luaTruthTable{p,q}{lognot*p,p*logand*q,  p*logor*q, p*imp*q, p*iff*q, 
+p*lognand*q, p*logxor*q, p*lognor*q, p*logxnor*q } \\
+\hline
+\end{tabular}
+\end{lstlisting}
+With the packages \emph{luatruthtable},the above code outputs to 
+\ \\ \ \\
+\begin{tabular}{|cc|c|c|c|c|c|c|c|c|c|}
+\hline
+\(p\) & \(q\) & \(\neg p\) & \(p \land q\) & \(p\lor q\) & \(p \rightarrow q\)
+ & \(p \leftrightarrow q\) &  \( p\) nand \(q\) & \(p\)   xor \(q\) & \( p\) nor \(q\) & \(p\) xnor \(q\) \\
+\hline
+\luaTruthTable{p,q}{lognot*p,p*logand*q,  p*logor*q, p*imp*q, p*iff*q, 
+p*lognand*q, p*logxor*q, p*lognor*q, p*logxnor*q } \\
+\hline
+\end{tabular}
+\ \\ \\
+The following is the code generated by the command \verb|\luaTruthTable| in above code. 
+ \begin{lstlisting}
+$F$ & $T$ & $T$ & $F$ & $T$ & $T$ & $F$ & $T$ & $T$ & $F$ & $F$\\
+$T$ & $F$ & $F$ & $F$ & $T$ & $F$ & $F$ & $T$ & $T$ & $F$ & $F$\\
+$T$ & $T$ & $F$ & $T$ & $T$ & $T$ & $T$ & $F$ & $F$ & $F$ & $T$\\
+$F$ & $F$ & $T$ & $F$ & $F$ & $T$ & $T$ & $T$ & $F$ & $T$ & $T$
+ \end{lstlisting}
+  The following example illustrates the use use of \emph{trtext} and \emph{fltext}. Here \(0\) is assigned to \emph{trtext} and \(1\) is assigned to \emph{fltext}.
+ \begin{lstlisting}
+ \begin{tabular}{|cc|c|c|c|c|c|c|c|c|c|}
+\hline
+\(p\) & \(q\) & \(\neg p\) & \(p \land q\) & \(p\lor q\) & \(p \rightarrow q\)
+ & \(p \leftrightarrow q\) &  \( p\) nand \(q\) & \(p\)   xor \(q\) & \( p\) nor \(q\) & \(p\) xnor \(q\) \\
+\hline
+\luaTruthTable[trtext=$1$,fltext=$0$]{p,q}{lognot*p,p*logand*q,  p*logor*q, p*imp*q, p*iff*q, 
+p*lognand*q, p*logxor*q, p*lognor*q, p*logxnor*q } \\
+\hline
+\end{tabular}
+ \end{lstlisting} 
+ 
+ With the packages \emph{luatruthtable},the above code outputs to 
+\ \\ \ \\
+  \begin{tabular}{|cc|c|c|c|c|c|c|c|c|c|}
+\hline
+\(p\) & \(q\) & \(\neg p\) & \(p \land q\) & \(p\lor q\) & \(p \rightarrow q\)
+ & \(p \leftrightarrow q\) &  \( p\) nand \(q\) & \(p\)   xor \(q\) & \( p\) nor \(q\) & \(p\) xnor \(q\) \\
+\hline
+\luaTruthTable[trtext=$1$,fltext=$0$]{p,q}{lognot*p,p*logand*q,  p*logor*q, p*imp*q, p*iff*q, 
+p*lognand*q, p*logxor*q, p*lognor*q, p*logxnor*q } \\
+\hline
+\end{tabular}
+\ \\ \\
+The following is the code generated by the command \verb|\luaTruthTable| in above code. 
+\begin{lstlisting}
+$0$ & $1$ & $1$ & $0$ & $1$ & $1$ & $0$ & $1$ & $1$ & $0$ & $0$\\
+$1$ & $0$ & $0$ & $0$ & $1$ & $0$ & $0$ & $1$ & $1$ & $0$ & $0$\\
+$1$ & $1$ & $0$ & $1$ & $1$ & $1$ & $1$ & $0$ & $0$ & $0$ & $1$\\
+$0$ & $0$ & $1$ & $0$ & $0$ & $1$ & $1$ & $1$ & $0$ & $1$ & $1$
+\end{lstlisting}
+The following example involves three variables. 
+\begin{lstlisting}
+\begin{tabular}{|ccc|c|}
+\hline
+\(p\) & \(q\) & \(r\) &  \((p \land q)\) \rightarrow \(\neg r\) \\
+\hline
+\luaTruthTable{p,q,r}{(p*logand*q) *imp* (lognot*r)} \\
+\hline
+\end{tabular}
+\end{lstlisting}
+ With the packages \emph{luatruthtable},the above code outputs to 
+\ \\ \ \\
+\begin{tabular}{|ccc|c|}
+\hline
+\(p\) & \(q\) & \(r\) &  \((p \land q)\) \rightarrow \(\neg r\) \\
+\hline
+\luaTruthTable{p,q,r}{(p*logand*q) *imp* (lognot*r)} \\
+\hline
+\end{tabular}
+\ \\ \\
+Here \emph{lognot*r} should be enclosed in parenthesis in order to produce correct results in generated truth table.
+\ \\
+The following is the code generated by the command \verb|\luaTruthTable| in above code. 
+\begin{lstlisting}
+$F$ & $F$ & $T$ & $T$\\
+$F$ & $T$ & $F$ & $T$\\
+$F$ & $T$ & $T$ & $T$\\
+$T$ & $F$ & $F$ & $T$\\
+$T$ & $F$ & $T$ & $T$\\
+$T$ & $T$ & $F$ & $T$\\
+$T$ & $T$ & $T$ & $F$\\
+$F$ & $F$ & $F$ & $T$
+\end{lstlisting}
+With the use of optional arguments \verb|[trtext=True, fltext=False]| in the previous example, one gets the following output.
+\ \\ \  \\ \ \\
+\begin{tabular}{|ccc|c|}
+\hline
+\(p\) & \(q\) & \(r\) &  \((p \land q)\) \rightarrow \(\neg r\) \\
+\hline
+\luaTruthTable[trtext=True, fltext=False]{p,q,r}{(p*logand*q) *imp* (lognot*r)} \\
+\hline
+\end{tabular}
+\ \\ \\ 
+
+It is possible to input \emph{trtext} and \emph{trfalse} in mathematics environment. So with the use of optional arguments \verb|[trtext=$True$, fltext=$False$]| in the previous example, one gets the following output.
+\ \\ \  \\ \ \\
+\begin{tabular}{|ccc|c|}
+\hline
+\(p\) & \(q\) & \(r\) &  \((p \land q)\) \rightarrow \(\neg r\) \\
+\hline
+\luaTruthTable[trtext=$True$, fltext=$False$]{p,q,r}{(p*logand*q) *imp* (lognot*r)} \\
+\hline
+\end{tabular} 
+\ \\ \  \\ \ \\
+Since \emph{luacode*} package is used, the backslash is to be escaped while assigning values to \emph{trtext} and \emph{trfalse}.  For example \verb|[trtext=\\(True\\), fltext=\\(False\\)]|
+
+
+\section{Known Issues,Limitations and Scope of the package} The associativity and precedence of operator is not yet supported. The package can give appropriate results only when parentheses are used for each of the operation. It gives eraneous result when  parentheses are not used. This point is of utmost importance in using the package. These issues are there is no native way of defining custom operations in Lua \cite{online.luacustomoperator}. However some metamethods can be nested in a way to glimpse the operators. All operators defined in this package are instances of such nestings. The question may be raised that is there better way of accomplishing this in Lua. The answer to the point is that there are alternative ways of doing this. They may be better in some or other sense. For example, instead of defining \emph{*logand*} operator and using it in the fashion \emph{p*logand*q}, one could define function \emph{logand} that takes two arguments and use it in a way \emph{logand(p,q)}. But when it comes to embedding it in LaTeX, again one has to use more and more nested parentheses as number of statements and operations increase. This is the exact reason why such approach is not used in the development of package. Instead of using \emph{implies(logand(p,logor(q,r)),s)} it sounds more natural to use \emph{(p *logand* (q*logor*r) )*implies* s}. 
+
+Apart from these issues, there is no error handling mechanism used in the package. It relies on the error handling of Lua and TeX itself. The package currently supports 9 operations viz. \emph{not,and,nand,or, xor, implies, iff, nor, xnor}. The error handling and extending number of operations may be considered in future versions of the package. 
+
+\printbibliography
+\end{document}

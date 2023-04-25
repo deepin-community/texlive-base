@@ -10,7 +10,7 @@
 %% The source is maintained by Johannes Braams and bug
 %% reports for it can be sent to texniek at braams.xs4all.nl
 %% 
-%% Copyright (C) 1990-2020 Nederlandstalige TeX Gebruikersgroep.
+%% Copyright (C) 1990-2023 Nederlandstalige TeX Gebruikersgroep.
 %% All rights reserved.
 %% 
 %% This file was generated from file(s) of the NTG document classes distribution.
@@ -40,7 +40,7 @@
 %% extension .ins) which are part of the distribution.
 \NeedsTeXFormat{LaTeX2e}[1995/12/01]
 \ProvidesClass{brief}
-              [2020/02/18 v2.0s
+              [2023/01/10 v2.0s
                NTG LaTeX document class]
 \newcommand*\@ptsize{}
 \newif\if@typhulp

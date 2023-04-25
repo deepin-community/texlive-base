@@ -1,8 +1,11 @@
 # TikZ-trackschematic
 
+[![License: ISC](https://img.shields.io/badge/license-ISC-green.svg)](https://opensource.org/licenses/ISC) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5539844.svg)](https://doi.org/10.5281/zenodo.5539844) [![continuous integration test](https://github.com/railtoolkit/tikz-trackschematic/actions/workflows/testing.yml/badge.svg)](https://github.com/railtoolkit/tikz-trackschematic/actions/workflows/testing.yml)
+
 ------------
 
 # Installation
+
 
 The tikz library is contained in the files:
 * tikz-trackschematic.sty
@@ -11,94 +14,56 @@ The tikz library is contained in the files:
 * tikzlibrarytrackschematic.trafficcontrol.code.tex,
 * tikzlibrarytrackschematic.vehicles.code.tex,
 * tikzlibrarytrackschematic.constructions.code.tex,
+* tikzlibrarytrackschematic.symbology.code.tex,
 * tikzlibrarytrackschematic.electrics.code.tex, and
 * tikzlibrarytrackschematic.measures.code.tex.
 
 These files should be copied wherever TeX can find it, for example in your $TEXMF folder.
+
+Alternatively, the tikz library is provided by CTAN as "[tikz-trackschematic](https://ctan.org/pkg/tikz-trackschematic)" and is thus part of the TeX Live distribution or can be installed via MiKTeX.
+
 The library can then be loaded through the command
 ```TeX
 \usepackage{tikz-trackschematic}
 ```
-in any TeX file.
+in any LaTeX file.
+
+The library can also be used in [Overleaf](https://www.overleaf.com/read/crrxfcdzbhbd).
 
 ------------
 
 # Minimal working example
 
 ```TeX
-\documentclass{standalone}
-\usepackage{tikz-trackschematic}
-\begin{document}
+\documentclass{standalone} % LaTeX
+\usepackage{tikz-trackschematic} % loading the library
 
+\begin{document}
   \begin{tikzpicture}
 
+    % TikZ command: specify coordinates
     \coordinate (A)   at (0,0);
     \coordinate (B)   at (6,0);
     \coordinate (T)   at (5,0);
 
+    % draw a track
     \maintrack (A) -- (B);
-    \train[forward] at (T) label (train);
+
+    % place a train on the track
+    \train[forward] at (T) label ();
 
   \end{tikzpicture}
-
 \end{document}
 ```
 results in:
 
-![train on a track](https://glossary.ivev.bau.tu-bs.de/tiki-download_file.php?fileId=28&display&scale=.4 "train on a track")
+![train on a track](https://raw.githubusercontent.com/railtoolkit/tikz-trackschematic/master/doc/examples/minimal_working_example.png "train on a track")
 
 ------------
 
 # Symbology and meaning
 
-A transnational symbol library with common traits of railway operation. 
-A [glossary](https://glossary.ivev.bau.tu-bs.de/tiki-index.php?page=_Symbology) for further information regarding meaning of the symbols.
-
-------------
-
-# History
-
-## Version 0.6
-
-  * created an encapsulating package for future flexibility
-  * added symbols for direction control, track marking, pylons and electric wiring
-  * change symbol for friction bufferstop;
-  * changed load command to \usepackage{tikz-trackschematic}
-
-## Version 0.5.1
-  
-  * modified symbol "end of movement authority"
-  * added symbols "braking point" and "danger point"
-
-## Version 0.5
-  
-  * new improved syntax for topology
-  * documentation
-
-## Version 0.4
-
-  * added document for symbology
-  * renamed overview to snippets
-  * reworked library for common tikz library layout
-
-## Version 0.3
-
-  * moved snippet folder to root folder
-  * added shunting movements
-  * added points to turnouts
-  * added moving trains
-  * defined and used color foreground and background
-
-
-## Version 0.2
-
-  * added transmitters
-  * reorganized src library
-  * minor improvements
-
-## Version 0.1
-
-  Basic concept of a library with railway topology symbols and some examples.
+Please consult the [symbology table](https://github.com/railtoolkit/tikz-trackschematic/blob/master/doc/symbology-table.pdf) for further information regarding meaning of the symbols.
 
 ------------
 
@@ -106,8 +71,8 @@ A [glossary](https://glossary.ivev.bau.tu-bs.de/tiki-index.php?page=_Symbology) 
 
   * rethink syntax
   * provide option for internationalziation (i18n)
-  * replace "\gettikzxy" with "\path let" syntax
   * rewrite library with better coding skills
+  * include support for glossaries package
 
 ------------
 
@@ -119,9 +84,9 @@ A [glossary](https://glossary.ivev.bau.tu-bs.de/tiki-index.php?page=_Symbology) 
 
 # License
   
-  [![Open Source Initiative Approved License logo](https://opensource.org/files/OSIApproved_100X125.png)](https://opensource.org)
+  [![Open Source Initiative Approved License logo](https://opensource.org/files/OSIApproved_100X125.png "Open Source Initiative Approved License logo")](https://opensource.org)
 
-  Copyright (c) 2018 - 2021, Martin Scheidt \<m.scheidt@tu-bs.de\> (ISC License)
+  Copyright (c) 2018 - 2022, Martin Scheidt \<m.scheidt@tu-bs.de\> (ISC License)
 
   Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
 

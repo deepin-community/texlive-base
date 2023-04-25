@@ -1,6 +1,6 @@
 % ======================================================================
 % scrstrip.inc
-% Copyright (c) Markus Kohm, 2002-2019
+% Copyright (c) Markus Kohm, 2002-2022
 %
 % This file is part of the LaTeX2e KOMA-Script bundle.
 %
@@ -19,44 +19,19 @@
 % file since it contains the legal notices that are placed in the files
 % it generates.
 %
-% This work consists of all files listed in manifest.txt.
-% ----------------------------------------------------------------------
-% scrstrip.inc
-% Copyright (c) Markus Kohm, 2002-2019
-%
-% Diese Datei ist Teil des LaTeX2e-KOMA-Script-Pakets.
-%
-% Dieses Werk darf nach den Bedingungen der LaTeX Project Public Lizenz,
-% Version 1.3c, verteilt und/oder veraendert werden.
-% Die neuste Version dieser Lizenz ist
-%   http://www.latex-project.org/lppl.txt
-% und Version 1.3c ist Teil aller Verteilungen von LaTeX
-% Version 2005/12/01 oder spaeter und dieses Werks.
-%
-% Dieses Werk hat den LPPL-Verwaltungs-Status "author-maintained"
-% (allein durch den Autor verwaltet).
-%
-% Der Aktuelle Verwalter und Autor dieses Werkes ist Markus Kohm.
-%
-% Als Besonderheit: Es NICHT GESTATTET den Inhalt dieser Datei zu 
-% aendern, da sie rechtliche Hinweise enthaelt, die in die erzeugten
-% Dateien eingefuegt werden.
-% 
-% Dieses Werk besteht aus den in manifest.txt aufgefuehrten Dateien.
+% This work consists of all files listed in MANIFEST.md.
 % ======================================================================
-%
 % This file will be included at startup of every KOMA-Script 
 % docstrip batch file.
-%
+% ======================================================================
+% $Id: scrstrip.inc 3965 2022-10-12 08:28:57Z kohm $
 
 % ---------- start of docstrip -----------------------------------------
 
 \KOMAdefVariable{AUTHOR}{Markus Kohm}
 \KOMAdefVariable{EMAIL}{[komascript at gmx info]}
 \KOMAdefVariable{COPYRIGHTFROM}{1994}
-\KOMAdefVariable{COPYRIGHTTILL}{2019}
-
-\let\ifbeta=\iffalse % with = will be replaced by release process
+\KOMAdefVariable{COPYRIGHTTILL}{2022}
 
 \ifToplevel{%
   \Msg{+======================================================================}
@@ -70,8 +45,6 @@
 % ---------- some docstrip switchs -------------------------------------
   \keepsilent
   \askforoverwritefalse
-% ---------- validity --------------------------------------------------
-  \KOMAvalidityTest{manifest.txt}
 }
 
 % ---------- defining preambles ----------------------------------------
@@ -93,7 +66,7 @@ KOMA-Script bundle without all such generated files.  See also
 `lppl.txt' or `lppl-de.txt' for additional information.
 
 The list of files belonging to KOMA-Script distribution is given in
-the file `manifest.txt'.  See also `lppl.txt' or `lppl-de.txt' for 
+the file `MANIFEST.md'.  See also `lppl.txt' or `lppl-de.txt' for 
 additional information.
 
 If this file is a beta version, you may not be allowed to distribute 

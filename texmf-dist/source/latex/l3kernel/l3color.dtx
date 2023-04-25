@@ -2,7 +2,7 @@
 %
 %% File: l3color.dtx
 %
-% Copyright (C) 2017-2021 The LaTeX Project
+% Copyright (C) 2017-2023 The LaTeX Project
 %
 % It may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -43,7 +43,7 @@
 %    }^^A
 % }
 %
-% \date{Released 2021-08-27}
+% \date{Released 2023-01-16}
 %
 % \maketitle
 %
@@ -95,6 +95,7 @@
 %   \item \texttt{cmyk} Cyan-magenta-yellow-black color, with four axes, one for
 %     each of the components
 % \end{itemize}
+%
 % There are also interface models: these are convenient for users but have
 % to be manipulated before storing/passing to the backend. Interface models
 % are primarily integer-based: see below for more detail. The supported
@@ -117,6 +118,20 @@
 %     $380$ to $780$ (nanometres)
 % \end{itemize}
 % All interface models are internally stored as |rgb|.
+%
+% Finally, there are a small number of models which are parsed to allow
+% data transfer from \pkg{xcolor} but which should not be used by end-users.
+% These are
+% \begin{itemize}
+%   \item \texttt{cmy} Cyan-magenta-yellow color with three axes, one for
+%     each of the components; converted to |cmyk|
+%   \item \texttt{tHsb} \enquote{Tuned} hue-saturation-brightness color with three
+%     axes, integer in the range $[0,360]$ for hue, real values in the range
+%     $[0,1]$ for saturation and brightness; converted to |rgb| using the
+%     standard tuning map defined by \pkg{xcolor}
+%   \item \texttt{\&spot} Spot color tint with one value; treated as a gray
+%     tint as spot color data is not available for extraction
+% \end{itemize}
 %
 % To allow parsing of data from \pkg{xcolor}, any leading model up the first
 % \texttt{:} will be discarded; the approach of selecting an internal form
@@ -235,6 +250,15 @@
 %   it to be saved to a name.
 % \end{function}
 %
+% \begin{function}[EXP, pTF, added = 2022-08-12]{\color_if_exist:n}
+%   \begin{syntax}
+%     \cs{color_if_exist:n} \Arg{name}
+%     \cs{color_if_exist:n} \Arg{name} \Arg{true code} \Arg{false code}
+%   \end{syntax}
+%   Tests whether \meta{name} is currently defined to provide a color
+%   specification.
+% \end{function}
+%
 % \begin{function}[added = 2021-05-11]{\color_show:n, \color_log:n}
 %   \begin{syntax}
 %     \cs{color_show:n} \Arg{name}
@@ -248,6 +272,9 @@
 %
 % General selection of color is safe when split across pages: a stack is
 % used to ensure that the correct color is re-selected on the new page.
+%
+% These commands set the current color (|.|): other more specialised functions
+% such as fill and stroke selectors do \emph{not} adjust this value.
 %
 % \begin{function}{\color_select:n}
 %   \begin{syntax}
@@ -281,9 +308,6 @@
 % support this, and so color will need to be contained within a scope, such
 % as \cs{draw_begin:}/\cs{draw_end:}.
 %
-% Note that the \emph{current color} is the fill color, as this is used for
-% running text.
-%
 % \begin{function}{\color_fill:n, \color_stroke:n}
 %   \begin{syntax}
 %     \cs{color_fill:n} \Arg{color expression}
@@ -302,6 +326,31 @@
 %
 % \begin{variable}[module = color]{color.sc}
 %   When using \texttt{dvips}, this PostScript variables hold the stroke color.
+% \end{variable}
+%
+% \subsection{Coloring math mode material}
+%
+% Coloring math mode material using \cs{color_select:nn(n)} has some restrictions
+% and often leads to spacing issues and/or poor input syntax. Avoiding generating
+% \tn{mathord} atoms whilst coloring only those parts of the input which are
+% required needs careful handling. The functionality here covers this important
+% use case.
+%
+% \begin{function}[added = 2022-01-26]{\color_math:nn, \color_math:nnn}
+%   \begin{syntax}
+%     \cs{color_math:nn} \Arg{color expression}\Arg{content}
+%     \cs{color_math:nnn} \Arg{model(s)} \Arg{value(s)} \Arg{content}
+%   \end{syntax}
+%   Works as for \cs{color_select:n(n)} but applies color only to the math mode
+%   \meta{content}. The function does not generate a group and the \meta{content}
+%   therefore retains its math atom states. Sub/superscripts are also properly
+%   handled.
+% \end{function}
+%
+% \begin{variable}[added = 2022-01-26]{\l_color_math_active_tl}
+%   This list controls which tokens are considered as math active and
+%   should therefore be replaced by their definition during searching for
+%   sub/superscripts.
 % \end{variable}
 %
 % \section{Multiple color models}
@@ -393,6 +442,7 @@
 %   The latter should be one of
 %   \begin{itemize}
 %     \item \texttt{DeviceN}
+%     \item \texttt{ICCBased}
 %     \item \texttt{Separation}
 %   \end{itemize}
 %   (The \meta{family} may be given in mixed case as-in the PDF reference:
@@ -435,6 +485,28 @@
 %   space. Each should be either the \meta{name} of a \texttt{Separation} model,
 %   a process color name (\texttt{cyan}, etc.) or the special name \texttt{none}.
 % \end{itemize}
+%
+% For a \texttt{ICCBased} space, there is one \emph{compulsory} key.
+% \begin{itemize}
+%   \item \texttt{file} The name of the file containing the profile.
+% \end{itemize}
+%
+% \subsection{Color profiles}
+%
+% Color profiles are used to ensure color accuracy by linking to collaboration.
+% Applying a profile can be used to standardise color which is otherwise
+% device-dependence.
+%
+% \begin{function}[added = 2021-02-23]{\color_profile_apply:nn}
+%   \begin{syntax}
+%     \cs{color_profile_apply:nn} \Arg{profile} \Arg{model}
+%   \end{syntax}
+%   This function applies a \meta{profile} to one of the device \meta{models}.
+%   The profile will then apply to all color of the selected \meta{model}. The
+%   \meta{profile} should specify an ICC profile file. The \meta{model} has to
+%   be one the standard device models: \texttt{cmyk}, \texttt{gray} or
+%   \texttt{rgb}.
+% \end{function}
 %
 % \end{documentation}
 %
@@ -497,10 +569,7 @@
 %   current color \enquote{now}.
 %    \begin{macrocode}
 \cs_new_protected:Npn \color_ensure_current:
-  {
-    \@@_backend_pickup:N \l_@@_current_tl
-    \@@_select:N \l_@@_current_tl
-  }
+  { \@@_select:N \l_@@_current_tl }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -511,13 +580,18 @@
 %    \end{macrocode}
 % \end{variable}
 %
-% \begin{macro}{\@@_select:N}
+% \begin{macro}{\@@_select:N, \@@_select_math:N}
 % \begin{macro}{\@@_select:nn}
 %    Take an internal color specification and pass it to the driver. This code
 %    is needed to ensure the current color but will also be used by the
-%    higher-level experimental material.
+%    higher-level material.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_select:N #1
+  {
+    \exp_after:wN \@@_select:nn #1
+    \group_insert_after:N \@@_backend_reset:
+  }
+\cs_new_protected:Npn \@@_select_math:N #1
   { \exp_after:wN \@@_select:nn #1 }
 \cs_new_protected:Npn \@@_select:nn #1#2
   { \use:c { @@_backend_select_ #1 :n } {#2} }
@@ -572,14 +646,19 @@
 %
 % \subsection{Utility functions}
 %
-% \begin{macro}[int, TF, EXP]{\@@_if_defined:n}
+% \begin{macro}[pTF, EXP]{\color_if_exist:n}
 %   A simple wrapper to avoid needing to have the lookup repeated in too many
-%   places.
+%   places.To guard against a color created in a group, we need to test for
+%   entries in the |prop|.
 %    \begin{macrocode}
-\prg_new_conditional:Npnn \@@_if_defined:n #1 { T, F, TF }
+\prg_new_conditional:Npnn \color_if_exist:n #1 { p , T, F, TF }
   {
     \prop_if_exist:cTF { l_@@_named_ #1 _prop }
-      \prg_return_true:
+      {
+        \prop_if_empty:cTF { l_@@_named_ #1 _prop }
+          \prg_return_false:
+          \prg_return_true:
+      }
       \prg_return_false:
   }
 %    \end{macrocode}
@@ -609,72 +688,118 @@
 %
 % \begin{macro}{\@@_convert:nnN, \@@_convert:VVN}
 % \begin{macro}{\@@_convert:nnnN, \@@_convert:nVnN, \@@_convert:nnVN}
-% \begin{macro}[aux, EXP]
+% \begin{macro}[EXP]
 %   {
+%     \@@_convert_gray_gray:w
 %     \@@_convert_gray_rgb:w
 %     \@@_convert_gray_cmyk:w
 %     \@@_convert_cmyk_gray:w
 %     \@@_convert_cmyk_rgb:w
+%     \@@_convert_cmyk_cmyk:w
 %     \@@_convert_rgb_gray:w
+%     \@@_convert_rgb_rgb:w
 %     \@@_convert_rgb_cmyk:w
 %   }
-%  \begin{macro}[aux, EXP]{\@@_convert_rgb_cmyk:nnnn}
-%    Model conversion is carried out using standard formulae, as described in
-%    the manual for \pkg{xcolor} (see also the \emph{PostScript Language
-%    Reference Manual}).
+%  \begin{macro}[EXP]{\@@_convert_rgb_cmyk:nnn}
+%  \begin{macro}[EXP]{\@@_convert_rgb_cmyk:nnnn}
+%    Model conversion is carried out using standard formulae for base models,
+%    as described in the manual for \pkg{xcolor} (see also the \emph{PostScript
+%    Language Reference Manual}). For other models direct conversion might not
+%    be defined, so we go through the fallback models if necessary.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_convert:nnN #1#2#3
   { \@@_convert:nnVN {#1} {#2} #3 #3 }
 \cs_generate_variant:Nn \@@_convert:nnN { VV }
+\cs_generate_variant:Nn \exp_last_unbraced:Nf { c }
 \cs_new_protected:Npn \@@_convert:nnnN #1#2#3#4
   {
     \tl_set:Nx #4
       {
-        \cs_if_exist:cTF { @@_convert_ #1 _ #2 :w }
-          { \use:c { @@_convert_ #1 _ #2 :w } #3 ~ 0 ~ 0 ~ 0 \s_@@_stop }
-          { \use:c { c_@@_fallback_ #2 _tl } }
+        \cs_if_exist_use:cTF { @@_convert_ #1 _ #2 :w }
+          { #3 \s_@@_stop }
+          {
+            \cs_if_exist:cTF { @@_convert_ \use:c { c_@@_fallback_ #1 _tl } _ #2 :w }
+              {
+                \exp_last_unbraced:cf
+                  { @@_convert_ \use:c { c_@@_fallback_ #1 _tl } _ #2 :w }
+                  { \use:c { @@_convert_ #1 _ \use:c { c_@@_fallback_ #1 _tl } :w } #3 \s_@@_stop }
+                  \s_@@_stop
+              }
+              {
+                \exp_last_unbraced:cf
+                  { @@_convert_ \use:c { c_@@_fallback_ #2 _tl } _ #2 :w }
+                  {
+                    \cs_if_exist_use:cTF { @@_convert_ #1 _ \use:c { c_@@_fallback_ #2 _tl } :w }
+                      { #3 \s_@@_stop }
+                      {
+                        \exp_last_unbraced:cf
+                          { @@_convert_ \use:c { c_@@_fallback_ #1 _tl } _ \use:c { c_@@_fallback_ #2 _tl } :w }
+                          { \use:c { @@_convert_ #1 _ \use:c { c_@@_fallback_ #1 _tl } :w } #3 \s_@@_stop }
+                          \s_@@_stop
+                      }
+                  }
+                  \s_@@_stop
+              }
+          }
       }
   }
 \cs_generate_variant:Nn \@@_convert:nnnN { nV , nnV }
-\cs_new:Npn \@@_convert_gray_rgb:w #1 ~ #2 \s_@@_stop
+\cs_new:Npn \@@_convert_gray_gray:w #1 \s_@@_stop
+  { #1 }
+\cs_new:Npn \@@_convert_gray_rgb:w #1 \s_@@_stop
   { #1 ~ #1 ~ #1 }
-\cs_new:Npn \@@_convert_gray_cmyk:w #1 ~ #2 \s_@@_stop
+\cs_new:Npn \@@_convert_gray_cmyk:w #1 \s_@@_stop
   { 0 ~ 0 ~ 0 ~ \fp_eval:n { 1 - #1 } }
 %    \end{macrocode}
 %   These rather odd values are based on \textsc{ntsc} television: the set are
 %   used for the |cmyk| conversion.
 %    \begin{macrocode}
-\cs_new:Npn \@@_convert_rgb_gray:w #1 ~ #2 ~ #3 ~ #4 \s_@@_stop
+\cs_new:Npn \@@_convert_rgb_gray:w #1 ~ #2 ~ #3 \s_@@_stop
   { \fp_eval:n { 0.3 * #1 + 0.59 * #2 + 0.11 * #3 } }
+\cs_new:Npn \@@_convert_rgb_rgb:w #1 \s_@@_stop
+  { #1 }
 %    \end{macrocode}
 %   The conversion from |rgb| to |cmyk| is the most complex: a two-step
 %   procedure which requires \emph{black generation} and \emph{undercolor
 %   removal} functions. The PostScript reference describes them as
 %   device-dependent, but following \pkg{xcolor} we assume they are linear.
 %   Moreover, as the likelihood of anyone using a non-unitary matrix here is
-%   tiny, we simplify and treat those two concepts as no-ops.
+%   tiny, we simplify and treat those two concepts as no-ops. To allow code
+%   sharing with parsing of |cmy| values, we have an intermediate function
+%   here (\cs{@@_convert_rgb_cmyk:nnn}) which actually takes |cmy| values
+%   as input.
 %    \begin{macrocode}
-\cs_new:Npn \@@_convert_rgb_cmyk:w #1 ~ #2 ~ #3 ~ #4 \s_@@_stop
+\cs_new:Npn \@@_convert_rgb_cmyk:w #1 ~ #2 ~ #3 \s_@@_stop
   {
-    \exp_args:Nf \@@_convert_rgb_cmyk:nnnn
-      { \fp_eval:n { min ( 1 - #1 , 1 - #2 , 1 - #3 ) } } {#1} {#2} {#3}
+    \exp_args:Neee \@@_convert_rgb_cmyk:nnn
+       { \fp_eval:n { 1 - #1 } }
+       { \fp_eval:n { 1 - #2 } }
+       { \fp_eval:n { 1 - #3 } }
+  }
+\cs_new:Npn \@@_convert_rgb_cmyk:nnn #1#2#3
+  {
+    \exp_args:Ne \@@_convert_rgb_cmyk:nnnn
+      { \fp_eval:n { min( #1, #2 , #3 ) } } {#1} {#2} {#3}
   }
 \cs_new:Npn \@@_convert_rgb_cmyk:nnnn #1#2#3#4
   {
-    \fp_eval:n { min ( 1 , max ( 0 , 1 - #2 - #1 ) ) } \c_space_tl
-    \fp_eval:n { min ( 1 , max ( 0 , 1 - #3 - #1 ) ) } \c_space_tl
-    \fp_eval:n { min ( 1 , max ( 0 , 1 - #4 - #1 ) ) } \c_space_tl
+    \fp_eval:n { min ( 1 , max ( 0 , #2 - #1 ) ) } \c_space_tl
+    \fp_eval:n { min ( 1 , max ( 0 , #3 - #1 ) ) } \c_space_tl
+    \fp_eval:n { min ( 1 , max ( 0 , #4 - #1 ) ) } \c_space_tl
     #1
   }
-\cs_new:Npn \@@_convert_cmyk_gray:w #1 ~ #2 ~ #3 ~ #4 ~ #5 \s_@@_stop
+\cs_new:Npn \@@_convert_cmyk_gray:w #1 ~ #2 ~ #3 ~ #4 \s_@@_stop
   { \fp_eval:n { 1 - min ( 1 , 0.3 * #1 + 0.59 * #2 + 0.11 * #3 + #4 ) } }
-\cs_new:Npn \@@_convert_cmyk_rgb:w #1 ~ #2 ~ #3 ~ #4 ~ #5 \s_@@_stop
+\cs_new:Npn \@@_convert_cmyk_rgb:w #1 ~ #2 ~ #3 ~ #4 \s_@@_stop
   {
     \fp_eval:n { 1 - min ( 1 , #1 + #4 ) } \c_space_tl
     \fp_eval:n { 1 - min ( 1 , #2 + #4 ) } \c_space_tl
     \fp_eval:n { 1 - min ( 1 , #3 + #4 ) }
   }
+\cs_new:Npn \@@_convert_cmyk_cmyk:w #1 \s_@@_stop
+  { #1 }
 %    \end{macrocode}
+% \end{macro}
 % \end{macro}
 % \end{macro}
 % \end{macro}
@@ -705,9 +830,9 @@
 % \begin{macro}{\@@_parse_gray:n, \@@_parse_std:n}
 % \begin{macro}{\@@_parse_break:w}
 % \begin{macro}{\@@_parse_end:}
-% \begin{macro}[aux, EXP]{\@@_parse_mix:Nnnn, \@@_parse_mix:NVVn}
-% \begin{macro}[aux, EXP]{\@@_parse_mix:nNnn}
-% \begin{macro}[aux, EXP]
+% \begin{macro}[EXP]{\@@_parse_mix:Nnnn, \@@_parse_mix:NVVn}
+% \begin{macro}[EXP]{\@@_parse_mix:nNnn}
+% \begin{macro}[EXP]
 %   {
 %     \@@_parse_mix_gray:nw ,
 %     \@@_parse_mix_rgb:nw  ,
@@ -719,7 +844,6 @@
 %    \begin{macrocode}
 \cs_new_protected:Npx \@@_parse:nN #1#2
   {
-    \exp_not:N \@@_backend_pickup:N \exp_not:N \l_@@_current_tl
     \tl_set:Nx \exp_not:c { l_@@_named_ . _tl }
       { \exp_not:N \@@_model:N \exp_not:N \l_@@_current_tl }
     \prop_put:NVx \exp_not:c { l_@@_named_ . _prop }
@@ -735,7 +859,7 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_parse_aux:nN #1#2
   {
-    \tl_if_exist:cTF { l_@@_named_ #1 _prop }
+    \color_if_exist:nTF {#1}
       { \@@_parse_set_eq:Nn #2 {#1} }
       { \@@_parse:Nw #2#1 ! \s_@@_stop }
     \@@_check_model:N #2
@@ -773,7 +897,7 @@
   }
 \cs_new_protected:Npn \@@_parse:Nw #1#2 ! #3 \s_@@_stop
   {
-    \@@_if_defined:nTF {#2}
+    \color_if_exist:nTF {#2}
       {
         \tl_if_blank:nTF {#3}
           { \@@_parse_set_eq:Nn #1 {#2} }
@@ -846,7 +970,7 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_parse_loop:nn #1#2
   {
-    \@@_if_defined:nTF {#2}
+    \color_if_exist:nTF {#2}
       {
         \@@_extract:nNN {#2} \l_@@_next_model_tl \l_@@_next_value_tl
         \tl_if_eq:NNF \l_@@_model_tl \l_@@_next_model_tl
@@ -1163,6 +1287,70 @@
 % \end{macro}
 % \end{macro}
 %
+% \begin{macro}{\@@_parse_model_cmy:w}
+%   Simply pass data to the conversion functions.
+%    \begin{macrocode}
+\cs_new:Npn \@@_parse_model_cmy:w #1 , #2 , #3 , #4 \s_@@_stop
+  {
+    { cmyk }
+    { \@@_convert_rgb_cmyk:nnn {#1} {#2} {#3} }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_parse_model_tHsb:w}
+% \begin{macro}{\@@_parse_model_tHsb:n}
+% \begin{macro}{\@@_parse_model_tHsb:nw}
+%   There are three stages to the process here: bring the |tH| argument into
+%   the normal range, divide through to get to |hsb| and finally convert that
+%   to |rgb|. The final stage can be delegated to the parsing function for
+%   |hsb|, and the conversion from |Hsb| to |hsb| is trivial, so the main focus
+%   here is the first stage. We use a simple expandable loop to do the work,
+%   and we implement the equation given in the \pkg{xcolor} manual
+%   (number~85 there) as a simple expression.
+%    \begin{macrocode}
+\cs_new:Npn \@@_parse_model_tHsb:w #1 , #2 , #3 , #4 \s_@@_stop
+  {
+    \exp_args:Ne \@@_parse_model_hsb:nnn
+      { \@@_parse_model_tHsb:n {#1} } {#2} {#3}
+  }
+\cs_new:Npn \@@_parse_model_tHsb:n #1
+  {
+    \@@_parse_model_tHsb:nw {#1}
+        0 ,   0 ; 
+       60 ,  30 ;
+      120 ,  60 ;
+      180 , 120 ;
+      210 , 180 ;
+      240 , 240 ;
+      360 , 360 ;
+      \q_recursion_tail , ;
+      \q_recursion_stop
+  }
+\cs_new:Npn \@@_parse_model_tHsb:nw #1 #2 , #3 ; #4 , #5 ;
+  {
+    \quark_if_recursion_tail_stop_do:nn {#4} { 0 }
+    \fp_compare:nNnTF {#1} > {#4}
+      { \@@_parse_model_tHsb:nw {#1} #4 , #5 ; }
+      {
+        \use_i_delimit_by_q_recursion_stop:nw
+          { \fp_eval:n { ((#1 - #2) / (#4 - #2) * (#5 - #3) + #3) / 360 } }
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}{\@@_parse_model_&spot:w}
+%   We cannot extract data here from that passed by \pkg{xcolor}, so
+%   we fall back on a black tint. 
+%    \begin{macrocode}
+\cs_new:cpn { @@_parse_model_&spot:w } #1 , #2 \s_@@_stop
+  { { gray } { #1 } }
+%    \end{macrocode}
+% \end{macro}
+%
 % \subsection{Selecting colors (and color models)}
 %
 % \begin{variable}{\l_color_fixed_model_tl}
@@ -1199,13 +1387,13 @@
 % \end{macro}
 % \end{macro}
 %
-% \begin{macro}{\@@_select:}
+% \begin{macro}{\@@_finalise_current:}
 %   A backend-neutral location for \enquote{last minute} manipulations before
 %   handing off to the backend code.  We set the special |.| syntax here: this
 %   will therefore always be available. The finalisation is separate from the
 %   main function so it can also be applied to \emph{e.g.}~page color.
 %    \begin{macrocode}
-\cs_new_protected:Npx \@@_select:
+\cs_new_protected:Npx \@@_finalise_current:
   {
     \tl_set:Nx \exp_not:c { l_@@_named_ . _tl }
       { \exp_not:N \@@_model:N \exp_not:N \l_@@_current_tl }
@@ -1213,7 +1401,6 @@
     \prop_put:NVx \exp_not:c { l_@@_named_ . _prop }
       \exp_not:c { l_@@_named_ . _tl }
       { \exp_not:N \@@_values:N \exp_not:N \l_@@_current_tl }
-    \@@_select:N \exp_not:N \l_@@_current_tl
   }
 %    \end{macrocode}
 % \end{macro}
@@ -1231,13 +1418,15 @@
 \cs_new_protected:Npn \color_select:n #1
   {
     \@@_parse:nN {#1} \l_@@_current_tl
-    \@@_select:
+    \@@_finalise_current:
+    \@@_select:N \l_@@_current_tl
   }
 \cs_new_protected:Npn \color_select:nn #1#2
   {
     \@@_select_main:Nw \l_@@_current_tl
       #1 / / \s_@@_mark #2 / / \s_@@_stop
-    \@@_select:
+    \@@_finalise_current:
+    \@@_select:N \l_@@_current_tl
   }
 %    \end{macrocode}
 %   If the first color model is the fixed one, or if there is no fixed
@@ -1291,6 +1480,202 @@
 % \end{macro}
 % \end{macro}
 %
+% \subsection{Math color}
+%
+% The approach here is the same as for the \LaTeXe{} \cs{mathcolor} command,
+% but as we are working at the \pkg{expl3} level we can make some minor
+% changes.
+%
+% \begin{macro}{\l_color_math_active_tl}
+%   Tokens representing active sub/superscripts.
+%    \begin{macrocode}
+\tl_new:N \l_color_math_active_tl
+\tl_set:Nn \l_color_math_active_tl { ' }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\g_@@_math_seq}
+%   Not all engines have multiple color stacks, and at the same time we are
+%   not expecting breaking within a colored math fragment. So we track the
+%   color stack ourselves.
+%    \begin{macrocode}
+\seq_new:N \g_@@_math_seq
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\color_math:nn}
+% \begin{macro}{\color_math:nnn}
+% \begin{macro}{\@@_math:nn}
+%   The basic set up here is relatively simple: store the current color,
+%   parse the new color as-normal, then switch color before inserting the
+%   tokens we are asked to change. The tricky part is right at the end,
+%   handling the reset.
+%    \begin{macrocode}
+\cs_new_protected:Npn \color_math:nn #1#2
+  {
+    \@@_math:nn {#2}
+      { \@@_parse:nN {#1} \l_@@_current_tl }
+  }
+\cs_new_protected:Npn \color_math:nnn #1#2#3
+  {
+    \@@_math:nn {#3}
+      {
+        \@@_select_main:Nw \l_@@_current_tl
+          #1 / / \s_@@_mark #2 / / \s_@@_stop
+      }
+  }
+\cs_new_protected:Npn \@@_math:nn #1#2
+  {
+    \seq_gpush:NV \g_@@_math_seq \l_@@_current_tl
+    #2
+    \@@_select_math:N \l_@@_current_tl
+    #1
+    \@@_math_scan:w
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}
+%   {
+%     \@@_math_scan:w      ,
+%     \@@_math_scan_auxi:  ,
+%     \@@_math_scan_auxii: ,
+%     \@@_math_scan_end:
+%   }
+%   The complication when changing the color back is due to the fact
+%   that the \cs{color_math:nn(n)} may be followed by \verb=^= or \verb=_=
+%   or the hidden superscript (for example \texttt{'}) and its argument may
+%   end in a \tn{mathop} in which case the sub- and superscripts may be
+%   attached as \cs{limits} instead of after the material. All cases
+%   need separate treatment. To avoid repeatedly collecting the same
+%   token, we first check for an alignment tab: assuming we don't have
+%   one of those, we can \enquote{recycle} \cs{l_peek_token} safely.
+%   As we have an explicit \cs{c_alignment_token}, there needs to be
+%   an align-safe group present.
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_math_scan:w
+  {
+    \peek_remove_filler:n
+      {
+        \group_align_safe_begin:
+        \peek_catcode:NTF \c_alignment_token
+          {
+            \group_align_safe_end:
+            \@@_math_scan_end:
+          }
+          {
+            \group_align_safe_end:
+            \@@_math_scan_auxi:
+          }
+      }
+  }
+%    \end{macrocode}
+%   Dealing with literal |_| and |^| is easy, and as we have exactly two cases,
+%   we can hard-code this. We use a hard-coded list for limits: these are all
+%   primitives. The \cs{use_none:n} here also removes the test token so it is
+%   left just in the right place.
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_math_scan_auxi:
+  {
+    \token_case_catcode:NnTF \l_peek_token
+      {
+        \c_math_subscript_token   { }
+        \c_math_superscript_token { }
+      }
+      { \@@_math_scripts:Nw }
+      {
+        \token_case_meaning:NnTF \l_peek_token
+          {
+            \tex_limits:D        { \tex_limits:D }
+            \tex_nolimits:D      { \tex_nolimits:D }
+            \tex_displaylimits:D { \tex_displaylimits:D }
+          }
+          { \@@_math_scan:w \use_none:n }
+          { \@@_math_scan_auxii: }
+      }
+  }
+%    \end{macrocode}
+%   The one final case to handle is math-active tokens, most obviously
+%   \texttt{'}, as these won't be covered earlier.
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_math_scan_auxii:
+  {
+    \tl_map_inline:Nn \l_color_math_active_tl
+      {
+        \token_if_eq_meaning:NNT \l_peek_token ##1
+          {
+            \tl_map_break:n
+              {
+                \use_i:nn
+                  { \@@_math_scan_auxiii:N ##1 }
+              }
+          }
+        \@@_math_scan_end:
+      }
+  }
+\cs_new_protected:Npn \@@_math_scan_auxiii:N #1
+  {
+    \exp_after:wN \exp_after:wN \exp_after:wN \@@_math_scan:w
+      \char_generate:nn { `#1 } { 13 }
+  }
+\cs_new_protected:Npn \@@_math_scan_end:
+  {
+    \@@_backend_reset:
+    \seq_gpop:NN \g_@@_math_seq \l_@@_current_tl
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_math_scripts:Nw}
+% \begin{macro}{\@@_math_script_aux:N}
+%   The tricky part of handling sub and superscripts is that we have
+%   to reset color to the one that is on the stack but reset it back
+%   to what it was before to allow for cases like
+% \begin{verbatim}
+%   \[  \color_math:n { red } { a + \sum } _ { i = 1 } ^ { n }  \]
+% \end{verbatim}
+%   Here, \TeX{} constructs a \cs{vbox} stacking subscript, summation
+%   sign, and superscript. So technically the superscript comes first
+%   and the \cs{sum} that should get colored red is the middle.
+%
+%  The approach here is to set up a brace group immediately after the 
+%  script token, then to set the color appropriately in that argument.
+%  We need an extra group to keep the color contained, and as we
+%  need to allow for an explicit closing brace in the source, the
+%  inner group also is a brace one rather than \cs{group_begin:}-based.
+%  At the end of the outer group we need to insert \cs{@@_math_scan:w}
+%  to continue the search for a second script token.
+%
+%  Notice that here we \emph{don't} need to use the math-specific
+%  color selector as we can allow the
+%  |\group_insert_after:N \@@_backend_reset:| to operate normally.
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_math_scripts:Nw #1
+  {
+    #1
+    \c_group_begin_token
+      \c_group_begin_token
+        \seq_get:NN \g_@@_math_seq \l_@@_current_tl
+        \@@_select:N \l_@@_current_tl
+        \group_insert_after:N \c_group_end_token
+        \group_insert_after:N \@@_math_scan:w
+    \peek_remove_filler:n
+      {
+        \peek_catcode_remove:NF \c_group_begin_token
+          { \@@_math_script_aux:N }
+      }
+  }
+%    \end{macrocode}
+%   Deal with the case where we do not have an explicit brace pair in the
+%   source.
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_math_script_aux:N #1 { #1 \c_group_end_token }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
 % \subsection{Fill and stroke color}
 %
 % \begin{macro}{\color_fill:n, \color_stroke:n}
@@ -1320,7 +1705,10 @@
     \exp_after:wN \@@_draw:nnn \l_@@_current_tl { stroke }
   }
 \cs_new_protected:Npn \@@_draw:nnn #1#2#3
-  { \use:c { @@_backend_ #3 _ #1 :n } {#2} }
+  {
+    \use:c { @@_backend_ #3 _ #1 :n } {#2}
+    \exp_args:Nc \group_insert_after:N { @@_backend_ #3 _ reset: }
+  }
 %    \end{macrocode}
 % \end{macro}
 % \end{macro}
@@ -1446,7 +1834,7 @@
   }
 \cs_new_protected:Npn \color_set_eq:nn #1#2
   {
-    \@@_if_defined:nTF {#2}
+    \color_if_exist:nTF {#2}
       {
         \tl_clear_new:c { l_@@_named_ #1 _tl }
         \prop_clear_new:c { l_@@_named_ #1 _prop }
@@ -1641,7 +2029,10 @@
   {
     \fp_compare:nNnTF {#1} = { 0 }
       { 00 }
-      { \int_to_Hex:n { \fp_to_int:n { #1 * 255 } } }
+      {
+        \fp_compare:nNnT { #1 * 255 } < { 16 } { 0 }
+        \int_to_Hex:n { \fp_to_int:n { #1 * 255 } }
+      }
   }
 \cs_new_protected:cpn { @@_export_space-sep-rgb:Nw } #1#2 \s_@@_stop
   { \tl_set:Nn #1 {#2} }
@@ -1666,12 +2057,12 @@
 %
 % \begin{variable}
 %   {\c_@@_fallback_cmyk_tl, \c_@@_fallback_gray_tl, \c_@@_fallback_rgb_tl}
-%   Conversion from Separation or DeviceN spaces may not be possible; have
-%   a fallback to black.
+%   For every colorspace, we define one of the base colorspaces as a fallback.
+%   The base colorspaces themselves are their own fallback.
 %    \begin{macrocode}
-\tl_const:Nn \c_@@_fallback_cmyk_tl { 0 ~ 0 ~ 0 ~ 1 }
-\tl_const:Nn \c_@@_fallback_gray_tl { 1 }
-\tl_const:Nn \c_@@_fallback_rgb_tl { 1 ~ 1 ~ 1 }
+\tl_const:Nn \c_@@_fallback_cmyk_tl { cmyk }
+\tl_const:Nn \c_@@_fallback_gray_tl { gray }
+\tl_const:Nn \c_@@_fallback_rgb_tl { rgb }
 %    \end{macrocode}
 % \end{variable}
 %
@@ -1755,7 +2146,7 @@
   {
     \exp_args:Nee \@@_model_new:nnn
       { \tl_to_str:n {#1} }
-      { \str_foldcase:n {#2} } {#3}
+      { \str_casefold:n {#2} } {#3}
   }
 \cs_new_protected:Npn \@@_model_new:nnn #1#2#3
   {
@@ -1777,32 +2168,31 @@
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{\@@_model_init:nn}
+% \begin{macro}{\@@_model_init:nnn, \@@_model_init:nnx}
 %   A shared auxiliary to do the basics of setting up a new model: reserve a
-%   number, create a fallback and white-equivalent, set up links to the backend.
+%   number, create a white-equivalent, set up links to the backend.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_model_init:nnn #1#2#3
   {
     \int_gincr:N \g_@@_model_int
-    \tl_const:cx { c_@@_fallback_ #1 _tl }
-      { 1 \prg_replicate:nn { #2 - 1 } { ~ 1 } }
     \clist_map_inline:nn { fill , stroke , select }
       {
         \cs_new_protected:cpx { @@_backend_ ##1 _ #1 :n } ####1
           {
-            \exp_not:c { @@_backend_ ##1 _ #3 :nn }
+            \exp_not:c { @@_backend_ ##1 _ #2 :nn }
               { color \int_use:N \g_@@_model_int } {####1}
           }
       }
     \cs_new_protected:cpx { @@_model_ #1 _white: }
       {
         \prop_put:Nnn \exp_not:N \l_@@_named_white_prop {#1}
-          { 0 \prg_replicate:nn { #2 - 1 } { ~ 0 } }
+          { \exp_not:n {#3} }
         \exp_not:N \int_compare:nNnF { \tex_currentgrouplevel:D } = 0
           { \group_insert_after:N \exp_not:c { @@_model_ #1 _ white: } }
       }
     \use:c { @@_model_ #1 _white: }
   }
+\cs_generate_variant:Nn \@@_model_init:nnn { nnx }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1885,7 +2275,7 @@
 \cs_new_protected:Npn \@@_model_separation:w
   #1 , #2 , #3 , #4 , #5 \s_@@_stop #6#7#8
   {
-    \@@_model_init:nnn {#6} { 1 } { separation }
+    \@@_model_init:nnn {#6} { separation } { 0 }
     \cs_new_eq:cN { @@_parse_mix_ #6 :nw } \@@_parse_mix_gray:nw
     \cs_new:cpn { @@_parse_model_ #6 :w } ##1 , ##2 \s_@@_stop
       { {#6} { \@@_parse_number:n {##1} } }
@@ -1897,50 +2287,39 @@
   }
 \cs_new_protected:Npn \@@_model_separation_cmyk:nnnnnn #1#2#3#4#5#6
   {
-    \cs_new:cpn { @@_convert_ #1 _cmyk:w } ##1 ~ ##2 \s_@@_stop
+    \tl_const:cn { c_@@_fallback_ #1 _tl } { cmyk }
+    \cs_new:cpn { @@_convert_ #1 _cmyk:w } ##1 \s_@@_stop
       {
          \fp_eval:n {##1 * #3} ~
          \fp_eval:n {##1 * #4} ~
          \fp_eval:n {##1 * #5} ~
          \fp_eval:n {##1 * #6}
       }
-    \@@_model_convert:nnn {#1} { cmyk } { rgb }
-    \@@_model_convert:nnn {#1} { cmyk } { gray }
+    \cs_new:cpn { @@_convert_cmyk_ #1 :w } ##1 \s_@@_stop { 1 }
     \prop_gput:Nnn \g_@@_alternative_values_prop {#1} { #3 , #4 , #5 , #6 }
     \@@_backend_separation_init:nnnnn {#2} { /DeviceCMYK } { }
       { 0 ~ 0 ~ 0 ~ 0 } { #3 ~ #4 ~ #5 ~ #6 }
   }
 \cs_new_protected:Npn \@@_model_separation_rgb:nnnnnn #1#2#3#4#5#6
   {
-    \cs_new:cpn { @@_convert_ #1 _rgb:w } ##1 ~ ##2 \s_@@_stop
+    \tl_const:cn { c_@@_fallback_ #1 _tl } { rgb }
+    \cs_new:cpn { @@_convert_ #1 _rgb:w } ##1 \s_@@_stop
       {
          \fp_eval:n {##1 * #3} ~
          \fp_eval:n {##1 * #4} ~
          \fp_eval:n {##1 * #5}
       }
-    \@@_model_convert:nnn {#1} { rgb } { cmyk }
-    \@@_model_convert:nnn {#1} { rgb } { gray }
+    \cs_new:cpn { @@_convert_rgb_ #1 :w } ##1 \s_@@_stop { 1 }
     \prop_gput:Nnn \g_@@_alternative_values_prop {#1} { #3 , #4 , #5 }
     \@@_backend_separation_init:nnnnn {#2} { /DeviceRGB } { }
       { 0 ~ 0 ~ 0 } { #3 ~ #4 ~ #5 }
   }
 \cs_new_protected:Npn \@@_model_separation_gray:nnnnnn #1#2#3#4#5#6
   {
-    \cs_new:cpn { @@_convert_ #1 _cmyk:w } ##1 ~ ##2 \s_@@_stop
-      {
-        \fp_eval:n {##1 * #3} ~
-        \fp_eval:n {##1 * #3} ~
-        \fp_eval:n {##1 * #3} ~
-        \fp_eval:n {##1 * #3}
-      }
-    \cs_new:cpn { @@_convert_ #1 _gray:w } ##1 ~ ##2 \s_@@_stop
+    \tl_const:cn { c_@@_fallback_ #1 _tl } { gray }
+    \cs_new:cpn { @@_convert_ #1 _gray:w } ##1 \s_@@_stop
       { \fp_eval:n {##1 * #3} }
-    \cs_new:cpn { @@_convert_ #1 _rgb:w } ##1 ~ ##2 \s_@@_stop
-      {
-        \fp_eval:n {##1 * #3} ~
-        \fp_eval:n {##1 * #3} ~
-        \fp_eval:n {##1 * #3}
-      }
+    \cs_new:cpn { @@_convert_gray_ #1 :w } ##1 \s_@@_stop { 1 }
     \prop_gput:Nnn \g_@@_alternative_values_prop {#1} {#3}
     \@@_backend_separation_init:nnnnn {#2} { /DeviceGray } { } { 0 } {#3}
   }
@@ -1949,11 +2328,11 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_model_convert:nnn #1#2#3
   {
-    \cs_new:cpx { @@_convert_ #1 _ #3 :w } ##1 ~ ##2 \s_@@_stop
+    \cs_new:cpx { @@_convert_ #1 _ #3 :w } ##1 \s_@@_stop
       {
         \exp_not:N \exp_args:NNe \exp_not:N \use:nn
         \exp_not:c { @@_convert_  #2 _ #3 :w }
-          { \exp_not:c { @@_convert_ #1 _ #2 :w } ##1 ~ ##2 \s_@@_stop }
+          { \exp_not:c { @@_convert_ #1 _ #2 :w } ##1 \s_@@_stop }
           \c_space_tl \exp_not:N \s_@@_stop
       }
   }
@@ -1977,19 +2356,18 @@
 %   If a CIELAB space is being set up, we need the illuminant, then create
 %   the appropriate set up. At present, this doesn't include \texttt{BlackPoint}
 %   or \texttt{Range} data, but that may be added later. As CIELAB colors
-%   cannot be converted to anything else, we fallback to producing black: the
-%   user should set up a second model for colors set up this way.
+%   cannot be converted to anything else, we fallback to producing black in the
+%   gray colorspace: the user should set up a second model for colors set up this way.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_model_separation_CIELAB:nnnnnnn #1#2#3#4#5#6#7
   {
     \tl_if_exist:cTF { c_@@_model_whitepoint_CIELAB_ #1 _tl }
       {
         \@@_backend_separation_init_CIELAB:nnn {#1} {#3} { #4 ~ #5 ~ #6 }
-        \cs_new:cpn { @@_convert_ #2 _cmyk:w } ##1 ~ ##2 \s_@@_stop
-          { 0 ~ 0 ~ 0 ~ 1 }
-        \cs_new:cpn { @@_convert_ #2 _rgb:w } ##1 ~ ##2 \s_@@_stop
-          { 1 ~ 1 ~ 1 }
-        \cs_new:cpn { @@_convert_ #2 _gray:w } ##1 ~ ##2 \s_@@_stop
+        \tl_const:cn { c_@@_fallback_ #2 _tl } { gray }
+        \cs_new:cpn { @@_convert_ #2 _gray:w } ##1 \s_@@_stop
+          { 0 }
+        \cs_new:cpn { @@_convert_gray_ #2 :w } ##1 \s_@@_stop
           { 1 }
       }
       {
@@ -2126,12 +2504,18 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_model_devicen:nnnn #1#2#3#4
   {
-    \@@_model_init:nnn {#4} {#1} { devicen }
+    \@@_model_init:nnx {#4} { devicen }
+      {
+        0 \prg_replicate:nn { #1 - 1 } { ~ 0 }
+      }
     \cs_if_exist_use:cF { @@_model_devicen_parse_ #1 :nn }
       { \@@_model_devicen_parse_generic:nn }
         {#4} {#1}
     \@@_model_devicen_init:nnn {#1} {#2} {#3}
-    \@@_model_devicen_convert:nnn {#4} {#2} {#3}
+    \@@_model_devicen_convert:nnnx {#4} {#2} {#3}
+      {
+        1 \prg_replicate:nn { #1 - 1 } { ~ 1 }
+      }
   }
 %    \end{macrocode}
 %   For short lists of DeviceN colors, we can use hand-tuned parsing. This
@@ -2278,14 +2662,15 @@
         \prop_get:NnN \g_@@_alternative_values_prop {##1}
           \l_@@_value_tl
         \exp_after:wN \@@_model_devicen_transform:w
-          \l_@@_value_tl , 0 , 0 , 0 \s_@@_stop {#1} {#2}
+          \l_@@_value_tl , 0 , 0 , 0 , \s_@@_stop {#1} {#2}
       }
     \tl_put_right:Nx \l_@@_internal_tl
       {
         \prg_replicate:nn {#1}
           { neg ~ 1.0 ~ add ~ #1 ~ -1 ~ roll ~ }
-        \int_eval:n { #2 + 4 } ~ 4 ~ roll
-        \prg_replicate:nn {#2} { ~ pop }
+        \int_eval:n { #2 + #1 } ~ #1 ~ roll
+        \prg_replicate:nn {#2} { ~ pop } ~
+        #1 ~ 1 ~ roll
       }
     \use:x
       {
@@ -2315,7 +2700,7 @@
   { \@@_model_devicen_transform:nnn {#5} { 1 } {#1} }
 \cs_new_protected:cpn { @@_model_devicen_transform_3:nnnnn } #1#2#3#4#5
   {
-    \clist_map_inline { #1 , #2 , #3 }
+    \clist_map_inline:nn { #1 , #2 , #3 }
       { \@@_model_devicen_transform:nnn {#5} { 3 } {##1} }
   }
 \cs_new_protected:cpn { @@_model_devicen_transform_4:nnnnn } #1#2#3#4#5
@@ -2330,7 +2715,7 @@
         \fp_compare:nNnF {#3} = \c_zero_fp
           {
             \int_eval:n { #1 - \l_@@_internal_int + #2 } ~ index ~
-              #3 ~ neg ~ mul ~ 1.0 ~ add ~ mul ~
+              -#3 ~ mul ~ 1.0 ~ add ~ mul ~
           }
         #2 ~ -1 ~ roll ~
       }
@@ -2345,36 +2730,36 @@
 %   to other parameter-based spaces. Essentially the approach is exactly the same
 %   as the PostScript, just expressed in \TeX{} terms.
 %    \begin{macrocode}
-\cs_new_protected:Npn \@@_model_devicen_convert:nnn #1#2#3
+\cs_new_protected:Npn \@@_model_devicen_convert:nnnn #1#2#3
   {
-    \use:c { @@_model_devicen_convert_ #2 :nn } {#1} {#3}
+    \use:c { @@_model_devicen_convert_ #2 :nnn } {#1} {#3}
   }
-\cs_new_protected:Npn \@@_model_devicen_convert_cmyk:nn #1#2
+\cs_generate_variant:Nn \@@_model_devicen_convert:nnnn { nnnx }
+\cs_new_protected:Npn \@@_model_devicen_convert_cmyk:nnn #1#2
   {
-    \@@_model_convert:nnn {#1} { cmyk } { gray }
-    \@@_model_convert:nnn {#1} { cmyk } { rgb }
-    \@@_model_devicen_convert:nnnn {#1} { cmyk } { 4 } {#2}
+    \tl_const:cn { c_@@_fallback_ #1 _tl } { cmyk }
+    \@@_model_devicen_convert:nnnnn {#1} { cmyk } { 4 } {#2}
   }
-\cs_new_protected:Npn \@@_model_devicen_convert_gray:nn #1#2
+\cs_new_protected:Npn \@@_model_devicen_convert_gray:nnn #1#2
   {
-    \@@_model_convert:nnn {#1} { gray } { cmyk }
-    \@@_model_convert:nnn {#1} { gray } { rgb }
-    \@@_model_devicen_convert:nnnn {#1} { gray } { 1 } {#2}
+    \tl_const:cn { c_@@_fallback_ #1 _tl } { gray }
+    \@@_model_devicen_convert:nnnnn {#1} { gray } { 1 } {#2}
   }
-\cs_new_protected:Npn \@@_model_devicen_convert_rgb:nn #1#2
+\cs_new_protected:Npn \@@_model_devicen_convert_rgb:nnn #1#2
   {
-    \@@_model_convert:nnn {#1} { rgb } { cmyk }
-    \@@_model_convert:nnn {#1} { rgb } { gray }
-    \@@_model_devicen_convert:nnnn {#1} { rgb } { 3 } {#2}
+    \tl_const:cn { c_@@_fallback_ #1 _tl } { rgb }
+    \@@_model_devicen_convert:nnnnn {#1} { rgb } { 3 } {#2}
   }
-\cs_new_protected:Npn \@@_model_devicen_convert:nnnn #1#2#3#4
+\cs_new_protected:Npn \@@_model_devicen_convert:nnnnn #1#2#3#4#5
   {
+    \cs_new:cpn { @@_convert_ #2 _ #1 :w } ##1 \s_@@_stop {#5}
     \cs_new:cpx { @@_convert_ #1 _ #2 :w } ##1 \s_@@_stop
       {
         \exp_not:c { @@_convert_devicen_ #2 : \prg_replicate:nn {#3} { n } w }
           \prg_replicate:nn {#3} { { 1 } }
-          ##1 \exp_not:N \s_@@_mark
+          ##1 ~ \exp_not:N \s_@@_mark
           \clist_map_function:nN {#4} \@@_model_devicen_convert:n
+          {}
           \exp_not:N \s_@@_stop
       }
   }
@@ -2456,7 +2841,7 @@
 \cs_new:Npn \@@_convert_devicen_rgb:nnnw
   #1#2#3#4 ~ #5 \s_@@_mark #6#7 \s_@@_stop
   {
-    \@@_convert_devicen_cmyk:nnnnnn {#4} {#1} {#2} {#3} #6
+    \@@_convert_devicen_rgb:nnnnnnn {#4} {#1} {#2} {#3} #6
       #5 \s_@@_mark #7 \s_@@_stop
   }
 \cs_new:Npn \@@_convert_devicen_rgb:nnnnnnn #1#2#3#4#5#6#7
@@ -2512,6 +2897,121 @@
 % \end{macro}
 % \end{macro}
 %
+% \begin{variable}{\c_@@_icc_colorspace_signatures_prop}
+%   The signatures in the ICC file header indicating the underlying
+%   colorspace.  We map it to three values: The number of components,
+%   the values corresponding to white, and the range.
+%    \begin{macrocode}
+\prop_const_from_keyval:Nn \c_@@_icc_colorspace_signatures_prop
+  {
+% Gray
+    47524159 = {1} {1} {0} {},
+% RGB
+    52474220 = {3} {0~0~0} {1~1~1} {},
+% CMYK
+    434D594B = {4} {0~0~0~1} {0~0~0~0} {},
+% Lab
+    4C616220 = {3} {0~0~0} {100~0~0} {0~100~-128~127~-128~127}
+  }
+%    \end{macrocode}
+% \end{variable}
+% \begin{macro}{\@@_model_iccbased:n}
+% \begin{macro}{\@@_model_iccbased:nn}
+% \begin{macro}{\@@_model_iccbased:nnn, \@@_model_iccbased_aux:nnn}
+%   For an ICC profile, we need a file name and a number of components. The
+%   file name is processed here so the backend can treat it as a string.
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_model_iccbased:n #1
+  {
+    \prop_get:NnNTF \l_@@_internal_prop { file }
+      \l_@@_internal_tl
+      {
+        \exp_args:NV \@@_model_iccbased:nn
+          \l_@@_internal_tl {#1}
+      }
+      {
+        \msg_error:nnn { color }
+          { ICCBased-requires-file } {#1}
+      }
+  }
+\cs_new_protected:Npn \@@_model_iccbased:nn #1#2
+  {
+    \exp_args:NNx \prop_get:NnNTF \c_@@_icc_colorspace_signatures_prop
+      { \file_hex_dump:nnn { #1 } { 17 } { 20 } } \l_@@_internal_tl
+      {
+        \exp_last_unbraced:NV \@@_model_iccbased_aux:nnnnnn
+          \l_@@_internal_tl { #2 } { #1 }
+      }
+      {
+        \msg_error:nnn { color }
+        { ICCBased-unsupported-colorspace } {#2}
+      }
+  }
+%    \end{macrocode}
+%   Here, we can use the same internals as for DeviceN approach as we know the
+%   number of components. No conversion is possible, so there is no need
+%   to worry about that at all.
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_model_iccbased_aux:nnnnnn #1#2#3#4#5#6
+  {
+    \@@_model_init:nnn {#5} { iccbased } {#3}
+    \tl_const:cn { c_@@_fallback_ #5 _tl } { gray }
+    \cs_new:cpn { @@_convert_ #5 _gray:w } ##1 \s_@@_stop { 0 }
+    \cs_new:cpn { @@_convert_gray_ #5 :w } ##1 \s_@@_stop { #2 }
+    \use:c { @@_model_devicen_parse_ #1 :nn } {#5} {#1}
+    \exp_args:Nx \@@_backend_iccbased_init:nnn
+      { \file_full_name:n {#6} } {#1} {#4}
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
+% \subsection{Applying profiles}
+%
+% \begin{macro}{\color_profile_apply:nn, \@@_profile_apply:nn}
+% \begin{macro}
+%   {
+%     \@@_profile_apply_gray:n ,
+%     \@@_profile_apply_rgb:n  ,
+%     \@@_profile_apply_cmyk:n
+%   }
+%   With a limited range of outcomes, this is largely about getting data to the
+%   backend.
+%    \begin{macrocode}
+\cs_new_protected:Npn \color_profile_apply:nn #1#2
+  {
+    \exp_args:Ne \@@_profile_apply:nn
+      { \file_full_name:n {#1} } {#2}
+  }
+\cs_new_protected:Npn \@@_profile_apply:nn #1#2
+  {
+    \cs_if_exist_use:cF { @@_profile_apply_ \tl_to_str:n {#2} :n }
+      {
+        \msg_error:nnn { color } { ICC-Device-unknown } {#2}
+        \use_none:n
+      }
+        {#1}
+  }
+\cs_new_protected:Npn \@@_profile_apply_gray:n #1
+  {
+    \int_gincr:N \g_@@_model_int
+    \@@_backend_iccbased_device:nnn {#1} { Gray } { 1 }
+  }
+\cs_new_protected:Npn \@@_profile_apply_rgb:n #1
+  {
+    \int_gincr:N \g_@@_model_int
+    \@@_backend_iccbased_device:nnn {#1} { RGB } { 3 }
+  }
+\cs_new_protected:Npn \@@_profile_apply_cmyk:n #1
+  {
+    \int_gincr:N \g_@@_model_int
+    \@@_backend_iccbased_device:nnn {#1} { CMYK } { 4 }
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
 % \subsection{Diagnostics}
 %
 % \begin{macro}{\color_show:n, \color_log:n, \@@_show:Nn}
@@ -2528,7 +3028,7 @@
     #1 { color } { show }
       {#2}
       {
-        \@@_if_defined:nT {#2}
+        \color_if_exist:nT {#2}
           {
             \exp_args:Nv \@@_show:n { l_@@_named_ #2 _tl }
             \prop_map_function:cN
@@ -2588,6 +3088,29 @@
     \\ \\
     key~was~given~with~the~correct~information.
   }
+\msg_new:nnnn { color } { ICC-Device-unknown }
+  { Unknown~device~color~space~'#1'. }
+  {
+    LaTeX~has~been~asked~to~apply~an~ICC~profile~but~the~device~color~space~
+    '#1'~is~unknown.
+  }
+\msg_new:nnnn { color } { ICCBased-unsupported-colorspace }
+  { ICCBased~color~space~'#1'~uses~an~unsupported~data~color~space. }
+  {
+    LaTeX~has~been~asked~to~create~a~ICCBased~colorspace,~but~the~
+    used~data~colorspace~is~not~supported.~ICC~profiles~used~for~
+    defining~a~ICCBased~colorspace~should~use~a~Lab,~RGB,~or~
+    CMYK~data~colorspace.~LaTeX~will~ignore~this~request.
+  }
+\msg_new:nnnn { color } { ICCBased-requires-file }
+  { ICCBased~color~space~'#1'~require~an~file. }
+  {
+    LaTeX~has~been~asked~to~create~an~ICCBased~color~space,~but~no~\\ \\
+    \iow_indent:n { file~=~<name> }
+    \\ \\
+    key~was~given~with~the~correct~information.~LaTeX~will~ignore~this~
+    request.
+  }
 \msg_new:nnnn { color } { model-already-defined }
   { Color~model~'#1'~already~defined. }
   {
@@ -2620,6 +3143,12 @@
     \iow_indent:n { name~=~<formal~name> }
     \\ \\
     key~was~given~with~the~correct~information.
+  }
+\msg_new:nnn { color } { unhandled-model }
+  {
+    Unhandled~color~model~in~LaTeX2e~value~"#1":
+    \\ \\
+    falling~back~on~grayscale.
   }
 \msg_new:nnnn { color } { unknown-color }
   { Unknown~color~'#1'. }
@@ -2660,7 +3189,7 @@
     LaTeX~has~been~asked~to~create~a~new~color~model~called~'#1',~
     but~this~type~of~model~was~never~set~up.
   }
-\prop_gput:Nnn \g_msg_module_name_prop { color } { LaTeX3 }
+\prop_gput:Nnn \g_msg_module_name_prop { color } { LaTeX }
 \prop_gput:Nnn \g_msg_module_type_prop { color } { }
 %    \end{macrocode}
 %

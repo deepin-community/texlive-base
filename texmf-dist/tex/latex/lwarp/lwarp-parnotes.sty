@@ -6,7 +6,7 @@
 %%
 %% lwarp.dtx  (with options: `parnotes')
 %% This is a generated file.
-%% Copyright 2016-2020 Brian Dunn
+%% Copyright 2016-2022 Brian Dunn
 %% 
 %% This work may be distributed and/or modified under the
 %% conditions of the LaTeX Project Public License, either version 1.3
@@ -15,7 +15,7 @@
 %%   http://www.latex-project.org/lppl.txt
 %% and version 1.3 or later is part of all distributions of LaTeX
 %% version 2005/12/01 or later.
-\LWR@ProvidesPackagePass{parnotes}[2016/08/15]
+\LWR@ProvidesPackagePass{parnotes}[2019/07/23]
 \long\def\PN@parnote@real#1#2{%
     \parnotemark{#1}%
     % Unless this is the first parnote in \PN@text, add a separator first
@@ -35,29 +35,59 @@
 }
 
 \def\PN@parnotes@real{%
+\ifPN@inparnotes
+\else
+    \LWR@stoppars%
+    \addtocounter{LWR@spandepth}{1}%
     % We call \par later, so this avoids recursion with \PN@parnotes@auto
     \PN@inparnotestrue
-    \unless\ifvmode\par\fi
     % Avoid page breaks between a paragraph and its parnotes
-    \nopagebreak\addvspace{\parnotevskip}%
-    \LWR@forcenewpage%                      lwarp
     \begin{BlockClass}(note){footnotes}%    lwarp
-    {\parnotefmt{\PN@text}\par}%
+    \leavevmode\LWR@orignewline%
+    {%
+        \parnotefmt{\PN@text}%
+    }%
+    \leavevmode\LWR@orignewline%
     \end{BlockClass}%                       lwarp
+    \leavevmode\LWR@orignewline%
     \global\def\PN@text{}%
-    \addvspace{\parnotevskip}%
     %
     % These can be enabled or disabled by package options
     %
     \PN@disable@indent
     \PN@reset@optional
     \PN@inparnotesfalse
+    \addtocounter{LWR@spandepth}{-1}%
+\fi
 }
 
-\AtBeginDocument{
-    \crefname{parnotemark}{paragraph note}{paragraph notes}
-    \Crefname{parnotemark}{Paragraph note}{Paragraph notes}
+\newbool{LWR@parnotes@doingauto}
+\boolfalse{LWR@parnotes@doingauto}
+
+\def\PN@parnotes@auto{%
+    \ifbool{LWR@parnotes@doingauto}{
+        \ifx\@currenvir\@PN@autopn
+            \unless\ifPN@inparnotes
+                \unless\ifx\PN@text\@empty
+                    \expandafter\PN@parnotes@real
+                \fi
+            \fi
+        \fi
+    }{}%
 }
+\renewenvironment{autopn}%
+    {\booltrue{LWR@parnotes@doingauto}}
+    {\PN@parnotes@auto}%
+\AtBeginDocument{
+    \ifdef{\crefname}{
+        \crefname{parnotemark}{paragraph note}{paragraph notes}
+        \Crefname{parnotemark}{Paragraph note}{Paragraph notes}
+    }{}
+}
+\apptocmd{\LWR@nullifyfootnotes}{%
+    \renewcommand{\parnote}[2][]{}%
+    \renewcommand\parnotemark[1]{}%
+}{}{}
 \begin{warpMathJax}
 \providecommand{\parnotename}{parnote}
 \appto\LWR@syncnotenumbers{%
@@ -70,6 +100,7 @@
 \CustomizeMathJax{\newcommand{\parnote}[2][\LWRparnote]{{}^{\mathrm{#1}}}}
 \CustomizeMathJax{\newcommand{\parnotemark}[1][\LWRparnote]{{}^{\mathrm{#1}}}}
 \end{warpMathJax}
+
 \endinput
 %%
 %% End of file `lwarp-parnotes.sty'.

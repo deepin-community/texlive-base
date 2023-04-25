@@ -1,20 +1,137 @@
-
+-- this file is part of barracuda project
+-- Copyright (C) 2019-2022 Roberto Giacomelli
+-- see https://github.com/robitex/barracuda
+--
 -- libgeo simple Geometric Library
--- Copyright (C) 2018 Roberto Giacomelli
 
--- All dimension must be in scaled point (sp)
-
+-- All dimension must be in scaled point (sp) a TeX unit equal to 1/65536pt
 local libgeo = {
-    _VERSION     = "libgeo v0.0.3",
+    _VERSION     = "libgeo v0.0.6",
     _NAME        = "libgeo",
     _DESCRIPTION = "simple geometric library",
 }
 
--- VBar class
+-- a simple tree structured Archive class
+libgeo.Archive = {_classname = "Archive"}
+local Archive = libgeo.Archive
+Archive.__index = Archive
+
+function Archive:new() --> object
+    local o = {
+        _archive = {}
+    }
+    setmetatable(o, self)
+    return o
+end
+
+function Archive:insert(o, ...) --> ok, err
+    if type(o) ~= "table" then
+        return false, "[Err] "
+    end
+    local a = self._archive
+    local keys = {...}
+    for i = 1, (#keys - 1) do -- dive into the tree
+        local k = keys[i]
+        local leaf = a[k]
+        if not leaf then
+            a[k] = {}
+            leaf = a[k]
+        end
+        a = leaf
+    end
+    local k = keys[#keys]
+    if a[k] ~= nil then
+        return false, "[Err] an object "
+    end
+    a[k] = o
+    return true, nil
+end
+
+function Archive:contains_key(...) --> boolean
+    local a = self._archive
+    for _, k in ipairs{...} do
+        local leaf = a[k]
+        if leaf == nil then
+            return false
+        end
+        a = leaf
+    end
+    return true
+end
+
+function Archive:get(...) --> object, err
+    local a = self._archive
+    for _, k in ipairs{...} do
+        local leaf = a[k]
+        if leaf == nil then
+            return nil, "[Err] key '"..k.."' not found"
+        end
+        a = leaf
+    end
+    return a, nil
+end
+
+-- Queue Class
+local VbarQueue = {_classname = "VbarQueue"}
+libgeo.Vbar_queue = VbarQueue
+VbarQueue.__index = VbarQueue
+
+function VbarQueue:new()
+   local o = { 0 }
+   setmetatable(o, self)
+   return o
+end
+
+VbarQueue.__add = function (lhs, rhs)
+    if type(lhs) == "number" then -- dist + queue
+        local i = 1
+        while rhs[i] do
+            rhs[i] = rhs[i] + lhs
+            i = i + 2
+        end
+        return rhs
+    else -- queue + object
+        if type(rhs) == "number" then
+           lhs[#lhs] = lhs[#lhs] + rhs
+           return lhs
+        elseif type(rhs) == "table" then
+            if rhs._classname == "VbarQueue" then -- queue + queue
+                local q = {}
+                for _, v in ipairs(lhs) do
+                    q[#q + 1] = v
+                end
+                local w = lhs[#lhs]
+                for i = 1, #rhs/2 do
+                    q[#q + 1] = rhs[i] + w
+                    q[#q + 1] = rhs[i + 1]
+                end
+                return q
+            elseif rhs._classname == "Vbar" then -- queue + vbar
+                local w = lhs[#lhs]
+                lhs[#lhs + 1] = rhs
+                lhs[#lhs + 1] = w + rhs._x_lim
+                return lhs
+            else
+                error("[Err] unsupported object type for queue operation")
+            end
+        else
+            error("[Err] unsupported type for queue operation")
+        end
+    end
+end
+
+function VbarQueue:width()
+    return self[#self] - self[1]
+end
+
+-- Vbar class
 -- a pure geometric entity of several infinite vertical lines
-libgeo.Vbar = {}
+libgeo.Vbar = {_classname = "Vbar"}
 local Vbar = libgeo.Vbar
 Vbar.__index = Vbar
+Vbar.__add = function (lhs, rhs)
+    return VbarQueue:new() + lhs + rhs
+end
 
 -- Vbar costructors
 
@@ -23,6 +140,7 @@ function Vbar:from_array(yl_arr) --> <vbar object>
     assert(type(yl_arr) == "table", "'yline_array' is a mandatory arg")
     -- stream scanning
     local i = 1
+    local nbars = 0
     local xlim = 0.0
     while yl_arr[i] do
         local x = yl_arr[i]; i = i + 1
@@ -30,12 +148,14 @@ function Vbar:from_array(yl_arr) --> <vbar object>
         assert(type(x) == "number", "[InternalErr] not a number")
         assert(type(w) == "number", "[InternalErr] not a number")
         xlim = x + w/2
+        nbars = nbars + 1
     end
     assert(i % 2 == 0, "[InternalErr] the index is not even")
-    assert(i > 0, "[InternalErr] empty array")
+    assert(nbars > 0, "[InternalErr] empty array")
     local o = {
         _yline = yl_arr, -- [<xcenter>, <width>, ...] flat array
         _x_lim = xlim,   -- right external bounding box coordinates
+        _nbars = nbars,  -- number of bars
     }
     setmetatable(o, self)
     return o
@@ -57,6 +177,7 @@ function Vbar:from_int(ngen, mod, is_bar) --> <vbar object>
         digits[#digits + 1] = d
         ngen = (ngen - d)/10
     end
+    local nbars = 0
     local x0 = 0.0 -- axis reference
     local yl = {}
     for k = #digits, 1, -1 do
@@ -65,13 +186,16 @@ function Vbar:from_int(ngen, mod, is_bar) --> <vbar object>
         if is_bar then    -- bar
             yl[#yl + 1] = x0 + w/2
             yl[#yl + 1] = w
+            nbars = nbars + 1
         end
         x0 = x0 + w
         is_bar = not is_bar
     end
+    assert(nbars > 0, "[InternalErr] no bars")
     local o = {
         _yline = yl, -- [<xcenter>, <width>, ...] flat array
         _x_lim = x0, -- right external coordinate
+        _nbars = nbars,  -- number of bars
     }
     setmetatable(o, self)
     return o
@@ -86,7 +210,8 @@ function Vbar:from_int_revstep(ngen, mod, is_bar) --> <vbar object>
     if is_bar == nil then is_bar = true else
         assert(type(is_bar) == "boolean", "Invalid argument for is_bar")
     end
-    -- 
+    --
+    local nbars = 0
     local x0 = 0.0 -- axis reference
     local i = 0
     local yl = {}
@@ -96,15 +221,18 @@ function Vbar:from_int_revstep(ngen, mod, is_bar) --> <vbar object>
         if is_bar then -- bar
             i = i + 1; yl[i] = x0 + w/2
             i = i + 1; yl[i] = w
+            nbars = nbars + 1
         end
         x0 = x0 + w
         is_bar = not is_bar
         ngen = (ngen - d)/10
     end
     assert(not is_bar, "[InternalErr] the last element in not a bar")
+    assert(nbars > 0, "[InternalErr] no bars")
     local o = {
         _yline = yl,   -- [<xcenter>, <width>, ...] flat array
         _x_lim = x0, -- right external coordinate
+        _nbars = nbars,  -- number of bars
     }
     setmetatable(o, self)
     return o
@@ -126,8 +254,9 @@ function Vbar:from_int_revpair(ngen, mod, MOD, is_bar) --> <vbar object>
     else
         assert(type(is_bar) == "boolean", "Invalid argument for 'is_bar'")
     end
+    local nbars = 0
     local yl = {}
-	local x0 = 0.0
+    local x0 = 0.0
     local k = 0
     while ngen > 0 do
         local d = ngen % 10 -- digit
@@ -140,14 +269,16 @@ function Vbar:from_int_revpair(ngen, mod, MOD, is_bar) --> <vbar object>
         if is_bar then -- bars
             k = k + 1; yl[k] = x0 + w/2 -- xcenter
             k = k + 1; yl[k] = w        -- width
+            nbars = nbars + 1
         end
         is_bar = not is_bar
         x0 = x0 + w
     end
-    assert(not is_bar, "[InternalErr] the last element is not a bar")
+    assert(nbars > 0, "[InternalErr] no bars")
     local o = {
         _yline = yl, -- [<xcenter>, <width>, ...] flat array
         _x_lim = x0, -- external x coordinate
+        _nbars = nbars, -- number of bars
     }
     setmetatable(o, self)
     return o
@@ -162,6 +293,7 @@ function Vbar:from_two_tab(tbar, tspace, mod, MOD) --> <vbar object>
     assert(type(mod) == "number", "Invalid argument for narrow module width")
     assert(type(MOD) == "number", "Invalid argument for wide module width")
     assert(mod < MOD, "Not ordered narrow/Wide values")
+    local nbars = 0
     local x0 = 0.0 -- x-coordinate
     local yl = {}
     for i = 1, #tbar do
@@ -176,6 +308,7 @@ function Vbar:from_two_tab(tbar, tspace, mod, MOD) --> <vbar object>
             yl[#yl + 1] = MOD -- bar width
             x0 = x0 + MOD
         end
+        nbars = nbars + 1
         local is_narrow_space = tspace[i]
         assert(type(is_narrow_space) == "boolean", "[InternalErr] found a not boolean value")
         if is_narrow_space then
@@ -184,17 +317,76 @@ function Vbar:from_two_tab(tbar, tspace, mod, MOD) --> <vbar object>
             x0 = x0 + MOD
         end
     end
+    assert(nbars > 0, "[InternalErr] no bars")
     local o = {
         _yline = yl, -- [<xcenter>, <width>, ...] flat array
         _x_lim = x0, -- external x coordinate
+        _nbars = nbars, -- number of bars
     }
     setmetatable(o, self)
     return o
 end
 
+function Vbar:get_bars() --> nbars, <coordinates flat array>
+    return self._nbars, self._yline
+end
+
+-- Polyline class
+local Polyline = {_classname = "Polyline"}
+Polyline.__index = Polyline
+libgeo.Polyline = Polyline
+
+-- optional argument a first point (x, y)
+function Polyline:new(x, y) --> <Polyline>
+    local o = {
+        _point = {},
+        _n = 0,
+    }
+    setmetatable(o, self)
+    if x ~= nil then
+        assert(type(x) == "number", "[Polyline:new()] Invalid type for x-coordinate")
+        assert(type(y) == "number", "[Polyline:new()] Invalid type for y-coordinate")
+        self:add_point(x, y)
+    end
+    return o
+end
+
+-- get a clone of points' coordinates
+function Polyline:get_points()
+    local res = {}
+    local p = self._point
+    for i, c in ipairs(p) do
+        res[i] = c
+    end
+    return self._n, res
+end
+
+-- append a new point with absolute coordinates
+function Polyline:add_point(x, y)
+    assert(type(x) == "number", "[Polyline:add_point()] Invalid type for x-coordinate")
+    assert(type(y) == "number", "[Polyline:add_point()] Invalid type for y-coordinate")
+    local point = self._point
+    point[#point + 1] = x
+    point[#point + 1] = y
+    self._n = self._n + 1
+end
+
+-- append a new point with relative coordinates respect to the last one
+function Polyline:add_relpoint(x, y)
+    assert(type(x) == "number", "Invalid type for x-coordinate")
+    assert(type(y) == "number", "Invalid type for y-coordinate")
+    local point = self._point
+    local n = self._n
+    assert(n > 0, "Attempt to add a relative point to an empty polyline")
+    local i = 2 * n
+    point[#point + 1] = point[i - 1] + x
+    point[#point + 1] = point[i] + y
+    self._n = n + 1
+end
+
 -- Text class
 
-libgeo.Text = {}
+libgeo.Text = {_classname="Text"}
 local Text = libgeo.Text
 Text.__index = Text
 

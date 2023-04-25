@@ -2,7 +2,7 @@ divert(-1)
  
    libgen.m4                    Base macros for dpic and gpic diagrams
 
-* Circuit_macros Version 9.6, copyright (c) 2021 J. D. Aplevich under      *
+* Circuit_macros Version 10.1, copyright (c) 2022 J. D. Aplevich under     *
 * the LaTeX Project Public Licence in file Licence.txt. The files of       *
 * this distribution may be redistributed or modified provided that this    *
 * copyright notice is included and provided that modifications are clearly *
@@ -44,9 +44,8 @@ dnl define(`HOMELIB_',`D:\Dwight\lib')
                                `NeedDpicTools( path )
                                 If path is empty then HOMELIB_ is used
                                 e.g. NeedDpicTools or NeedDpicTools(/home/lib/)'
-define(`NeedDpicTools',`if "dpictools" != "1" then {
-  ifelse(`$1',,`copy "HOMELIB_`'dpictools.pic"',`copy "`$1'dpictools.pic"')
-  define(`dfitpoints__') define(`dfitcurve__')}') 
+define(`NeedDpicTools',`if dpicopt > 0 then { copy dnl
+ifelse(`$1',,`"HOMELIB_`'dpictools.pic"',`"`$1'dpictools.pic"') }')
 
                                 Processor shortcuts
 define(`ifdpic',`ifelse(m4picprocessor,dpic,`$1',`$2')')
@@ -182,10 +181,12 @@ define(`SIdefaults',
 ')
 
                                `Conditionally add mpost code for latex command'
-define(`latexcommand',`command "ifmpost(verbatimtex) `$1' ifmpost(etex)"')
+define(`latexcommand',
+ `iflatex(command `"ifmpost(verbatimtex) patsubst(`$1',^"\|"$) ifmpost(etex)"',
+   `$2')')
 
 define(`m4announceprocessor',`dnl Do not change the format of the next line:
-`#' `$1' Version 9.6: ifelse(m4picprocessor,gpic,`Gpic',
+`#' `$1' Version 10.1: ifelse(m4picprocessor,gpic,`Gpic',
   m4postprocessor,pstricks,`PSTricks',
   m4postprocessor,pgf,`TikZ PGF',
   m4postprocessor,mfpic,`Mfpic',
@@ -198,22 +199,22 @@ define(`m4announceprocessor',`dnl Do not change the format of the next line:
 `#' WARNING: Default m4 configuration file gpic.m4 assumed')')
 
                                 Set environment direction
-define(`right_',`define(`m4dir',right)define(`m4rp_ang',0)dnl
-define(`m4a_',1)define(`m4b_',0)define(`m4c_',0)define(`m4d_',1) m4dir')
+define(`right_',`define(`m4_dir_',right)define(`m4rp_ang',0)dnl
+define(`m4a_',1)define(`m4b_',0)define(`m4c_',0)define(`m4d_',1) m4_dir_')
 
-define(`left_',`define(`m4dir',left)define(`m4rp_ang',pi_)dnl
-define(`m4a_',(-1))define(`m4b_',0)define(`m4c_',0)define(`m4d_',(-1)) m4dir')
+define(`left_',`define(`m4_dir_',left)define(`m4rp_ang',pi_)dnl
+define(`m4a_',(-1))define(`m4b_',0)define(`m4c_',0)define(`m4d_',(-1)) m4_dir_')
 
-define(`up_',`define(`m4dir',up)define(`m4rp_ang',(pi_/2))dnl
-define(`m4a_',0)define(`m4b_',1)define(`m4c_',(-1))define(`m4d_',0) m4dir')
+define(`up_',`define(`m4_dir_',up)define(`m4rp_ang',(pi_/2))dnl
+define(`m4a_',0)define(`m4b_',1)define(`m4c_',(-1))define(`m4d_',0) m4_dir_')
 
-define(`down_',`define(`m4dir',down)define(`m4rp_ang',(-pi_/2))dnl
-define(`m4a_',0)define(`m4b_',(-1))define(`m4c_',1)define(`m4d_',0) m4dir')
+define(`down_',`define(`m4_dir_',down)define(`m4rp_ang',(-pi_/2))dnl
+define(`m4a_',0)define(`m4b_',(-1))define(`m4c_',1)define(`m4d_',0) m4_dir_')
 
                                `savem4dir([`stackname'])
                                 Save the current m4 direction parameters'
 define(`savem4dir',`define(`m4ss_',`ifelse(`$1',,savm4dir`'_,`$1')')
-pushdef(m4ss_`'_,m4dir)dnl
+pushdef(m4ss_`'_,m4_dir_)dnl
 pushdef(m4ss_`'_,m4a_)dnl
 pushdef(m4ss_`'_,m4b_)dnl
 pushdef(m4ss_`'_,m4c_)dnl
@@ -225,12 +226,12 @@ define(`m4d_',m4xpand(m4ss_`'_))popdef(m4ss_`'_)dnl
 define(`m4c_',m4xpand(m4ss_`'_))popdef(m4ss_`'_)dnl
 define(`m4b_',m4xpand(m4ss_`'_))popdef(m4ss_`'_)dnl
 define(`m4a_',m4xpand(m4ss_`'_))popdef(m4ss_`'_)dnl
-define(`m4dir',m4xpand(m4ss_`'_))popdef(m4ss_`'_)')
+define(`m4_dir_',m4xpand(m4ss_`'_))popdef(m4ss_`'_)')
 
                                 Manhattan direction cosines
 define(`manhattan',`dnl
-define(`m4a_',`ifelse(m4dir,left,-1,m4dir,up,0,m4dir,down,0,1)')dnl
-define(`m4b_',`ifelse(m4dir,left,0,m4dir,up,1,m4dir,down,-1,0)')dnl
+define(`m4a_',`ifelse(m4_dir_,left,-1,m4_dir_,up,0,m4_dir_,down,0,1)')dnl
+define(`m4b_',`ifelse(m4_dir_,left,0,m4_dir_,up,1,m4_dir_,down,-1,0)')dnl
 define(`m4c_',`neg_(m4b_)')dnl
 define(`m4d_',`m4a_')')
                                 Default current coordinates
@@ -262,7 +263,7 @@ define(`m4c_',(-sin(rp_ang)))define(`m4d_',cos(rp_ang))')')
 define(`setdir_',
  `pushdef(`m4sdir',`ifelse(`$1',,
    `ifelse(`$2',,`ifdef(`m4rp_ang',m4rp_ang*rtod_,R)',`$2')',`$1')')dnl
-  m4sd_ang = rp_ang; pushdef(`m4tdir',m4dir)dnl
+  m4sd_ang = rp_ang; pushdef(`m4tdir',m4_dir_)dnl
 ifinstr(
  m4sdir,R,`rp_ang = 0; right_',
  m4sdir,L,`rp_ang = pi_; left_',
@@ -311,8 +312,14 @@ define(`Rect_',`vscal_(`$1',cosd(`$2'),sind(`$2'))')
                                `Rectangular to polar coords, returning a pair
                                 polar_(x,y)'
 define(`polar_',`vlength(`$1',`$2'),atan2(`$2',`$1')')
-                                `Polar_(x,y)' returns degrees
+                               `Polar_(x,y)' returns degrees
 define(`Polar_',`vlength(`$1',`$2'),rtod_*atan2(`$2',`$1')')
+                               `quadrant_(degrees) returns 1, 2, 3, or 4'
+define(`quadrant_',`(int(pmod(`$1',360)/90)+1)')
+                               `drawdir_(degrees,sector angle)
+                                Nearest multiple of {sector angle, default 90)'
+define(`drawdir_',`define(`m4sectang',`ifelse(`$2',,90,(`$2'))')dnl
+  (int(pmod(`$1'+m4sectang/2,360)/m4sectang)*m4sectang)')
 
                                `arcr( position, radius,
                                       start radians, end radians,
@@ -369,8 +376,8 @@ define(`arca',`[Chord: line invis `$1'
                                `Integer "for" loop with index variable m4x:
                                 for_(initial,final,incr,`actions')
                                 eg for_(0,10,2,`print m4x') '
-define(`for_',`ifelse(eval(`$1'!=(`$2'+(`$3'))),1,`pushdef(`m4x',`$1') $4
-  popdef(`m4x')for_(eval(`$1'+(`$3')),`$2',`$3',`$4')')')
+define(`for_',`ifelse(eval(`$1'!=(`$2'+(`$3'))),1,`pushdef(`m4x',`$1')$4
+popdef(`m4x')for_(eval(`$1'+(`$3')),`$2',`$3',`$4')')')
 
                                `Integer m4 while loop: while_(`test',`actions')
                                 eg define(`i',5)
@@ -383,7 +390,7 @@ define(`while_',`ifelse(eval($1),1,`$2`'while_(`$1',`$2')')')
                                 macro m4Lx to 1, 2, ...; e.g.
                                 Loopover_(`x',`print "m4Lx. x"',Tom,Dick,Mary)'
 define(`Loopover_',`ifelse(`$3',,,
-`pushdef(`$1',`$3')pushdef(`m4Lx',ifdef(`m4Lx',`incr(m4Lx)',1)) $2
+`pushdef(`$1',`$3')pushdef(`m4Lx',ifdef(`m4Lx',`incr(m4Lx)',1))$2
 Loopover_(`$1',`$2',shift(shift(shift($@))))popdef(`m4Lx')popdef(`$1')')')
 
                                `This is identical to Loopover_ and may be
@@ -420,7 +427,9 @@ define(`m4msg',`syscmd(echo "$@" >/dev/stderr)')
 define(`m4stackmsg',`stackexec_(`$1',`m4Btmp',
 `syscmd(echo $1 >/dev/console)')dnl
 stackexec_(`m4Btmp',`$1')')
-
+                               `Macro error message to the terminal'
+define(`M4ErrorMsg',`m4msg(*** Macro ERROR:
+ $@)')
                                `Copy m4 stack
                                  stackcopy_(`Source',`Dest',[`count'])'
 define(`stackcopy_',`undefine(`$2')ifelse(`$3',,,`define(`$3',0)')dnl
@@ -569,6 +578,7 @@ define(`centerline_',`rpoint_(`$1')
                                `m4xtract(str1,str2)
                                 Return value 1 if str2 present in str1 else 0,
                                 delete str2 from str1'
+                               `Danger: if str1==str2 then str2 becomes null'
 define(`m4xtract',`define(`m4I',index($1,`$2'))dnl
 define(`$1',substr($1,0,m4I)`'substr($1,ifelse(m4I,-1,0,eval(m4I+len($2)))))dnl
 ifelse(m4I,-1,0,1)')
@@ -580,36 +590,36 @@ ifelse(m4I,-1,0,1)')
                                 direction of right, say.
 
                                 String attributes, default right
-define(`above_',`ifelse(m4dir,right,above,m4dir,left,below,m4dir,up,rjust,ljust)')
-define(`below_',`ifelse(m4dir,right,below,m4dir,left,above,m4dir,up,ljust,rjust)')
-define(`ljust_',`ifelse(m4dir,right,ljust,m4dir,left,rjust,m4dir,up,above,below)')
-define(`rjust_',`ifelse(m4dir,right,rjust,m4dir,left,ljust,m4dir,up,below,above)')
+define(`above_',`ifelse(m4_dir_,right,above,m4_dir_,left,below,m4_dir_,up,rjust,ljust)')
+define(`below_',`ifelse(m4_dir_,right,below,m4_dir_,left,above,m4_dir_,up,ljust,rjust)')
+define(`ljust_',`ifelse(m4_dir_,right,ljust,m4_dir_,left,rjust,m4_dir_,up,above,below)')
+define(`rjust_',`ifelse(m4_dir_,right,rjust,m4_dir_,left,ljust,m4_dir_,up,below,above)')
                                 Dimensions: wid, ht
-define(`wid_',`ifelse(m4dir,right,wid,m4dir,left,wid,m4dir,up,ht,ht)')
-define(`ht_',`ifelse(m4dir,right,ht,m4dir,left,ht,m4dir,up,wid,wid)')
+define(`wid_',`ifelse(m4_dir_,right,wid,m4_dir_,left,wid,m4_dir_,up,ht,ht)')
+define(`ht_',`ifelse(m4_dir_,right,ht,m4_dir_,left,ht,m4_dir_,up,wid,wid)')
                                 Compass corners
-define(`n_',`ifelse(m4dir,right,n,m4dir,left,s,m4dir,up,w,e)')
-define(`s_',`ifelse(m4dir,right,s,m4dir,left,t,m4dir,up,r,l)')
-define(`w_',`ifelse(m4dir,right,w,m4dir,left,e,m4dir,up,s,n)')
-define(`e_',`ifelse(m4dir,right,e,m4dir,left,w,m4dir,up,n,s)')
-define(`ne_',`ifelse(m4dir,right,ne,m4dir,left,sw,m4dir,up,nw,se)')
-define(`nw_',`ifelse(m4dir,right,nw,m4dir,left,se,m4dir,up,sw,ne)')
-define(`sw_',`ifelse(m4dir,right,sw,m4dir,left,ne,m4dir,up,se,nw)')
-define(`se_',`ifelse(m4dir,right,se,m4dir,left,nw,m4dir,up,ne,sw)')
-define(`loc_',`ifelse(m4dir,right,($1,$2),m4dir,left,($1,$2),($2,$1))')
+define(`n_',`ifelse(m4_dir_,right,n,m4_dir_,left,s,m4_dir_,up,w,e)')
+define(`s_',`ifelse(m4_dir_,right,s,m4_dir_,left,t,m4_dir_,up,r,l)')
+define(`w_',`ifelse(m4_dir_,right,w,m4_dir_,left,e,m4_dir_,up,s,n)')
+define(`e_',`ifelse(m4_dir_,right,e,m4_dir_,left,w,m4_dir_,up,n,s)')
+define(`ne_',`ifelse(m4_dir_,right,ne,m4_dir_,left,sw,m4_dir_,up,nw,se)')
+define(`nw_',`ifelse(m4_dir_,right,nw,m4_dir_,left,se,m4_dir_,up,sw,ne)')
+define(`sw_',`ifelse(m4_dir_,right,sw,m4_dir_,left,ne,m4_dir_,up,se,nw)')
+define(`se_',`ifelse(m4_dir_,right,se,m4_dir_,left,nw,m4_dir_,up,ne,sw)')
+define(`loc_',`ifelse(m4_dir_,right,($1,$2),m4_dir_,left,($1,$2),($2,$1))')
                                 Directions
-define(`rt_',`ifelse(m4dir,right,right,m4dir,left,left,m4dir,up,up,down)')
-define(`dn_',`ifelse(m4dir,right,down,m4dir,left,up,m4dir,up,right,left)')
-define(`lt_',`ifelse(m4dir,right,left,m4dir,left,right,m4dir,up,down,up)')
-define(`up__',`ifelse(m4dir,right,up,m4dir,left,down,m4dir,up,left,right)')
+define(`rt_',`ifelse(m4_dir_,right,right,m4_dir_,left,left,m4_dir_,up,up,down)')
+define(`dn_',`ifelse(m4_dir_,right,down,m4_dir_,left,up,m4_dir_,up,right,left)')
+define(`lt_',`ifelse(m4_dir_,right,left,m4_dir_,left,right,m4_dir_,up,down,up)')
+define(`up__',`ifelse(m4_dir_,right,up,m4_dir_,left,down,m4_dir_,up,left,right)')
 
                                 Binary operations giving simplified readable
                                 expressions for obvious cases.
 define(`prod_',`ifelse($1,0,0,$1,-0,0,$2,0,0,$2,-0,0,$1,1,`$2',$2,1,`$1',
-  $1,-1,`-($2)',$2,-1,`-($1)',`($1)*($2)')')
+  $1,-1,`(-($2))',$2,-1,`(-($1))',`(($1)*($2))')')
 define(`sum_',`ifelse($1,0,`$2',$1,-0,`$2',$2,0,`$1',$2,-0,`$1',
   index($2,-),0,`$1$2',`($1+$2)')')
-define(`diff_',`ifelse($2,0,`$1',$2,-0,`$1',$1,0,`-($2)',$1,-0,`-($2)',
+define(`diff_',`ifelse($2,0,`$1',$2,-0,`$1',$1,0,`(-($2))',$1,-0,`(-($2))',
   `($1-($2))')')
                                 Like prod_ but parentheses are *not* added
                                 to the first argument, which is assumed to be
@@ -755,10 +765,10 @@ define(`m4inx',`define(`m4x',ifdef(`m4x',`incr(m4x)',1))m4x')
 
                                 `Drawing conveniences:'
 
-                                `PtoL( position, U|D|L|R|deg, lgth )
+                                `PtoL( Pos, U|D|L|R|deg, lgth )
                                  Generate a linespec from polar
-                                 info. Evaluates to `from position to
-                                 position+(Rect_(lgth,angle))' with lgth
+                                 info. Evaluates to `from Pos to
+                                 Pos+(Rect_(lgth,angle))' with lgth
                                  default dimen_ and angle from arg2'
 define(`PtoL',`pushdef(`M4pos',ifelse(`$1',,Here,`$1'))dnl
   ifinstr(ifelse(`$2',,R,`$2'),R,`pushdef(`m4c',1)pushdef(`m4s',0)',
@@ -806,13 +816,16 @@ define(`m4dupstr',`define(`$3',)for_(1,ifelse(`$2',,1,`$2'),1,
 define(`m4Delch',
 `ifelse(substr(`$1',0,1),ifelse(`$2',,_,`$2'),`substr(`$1',1)',`$1')')
 
-                                `setkey_(string,key,default,[N])
+                                `pushkey_(string,key,default,[N])
+                                 setkey_(string,key,default,[N])
                                  string contains semicolon-separated
                                  terms of the form key=val
-                                 If string contains key=val; then
-                                 pushdef(`m4key',(val)) otherwise use default.
-                                 Nonblank arg4 omits the parentheses.'
-define(`setkey_',
+                                 If string contains abc=expr; then
+                                 pushdef(`m4abc',(expr)) otherwise
+                                 pushdef(`m4abc',(default)).
+                                 Nonblank arg4 omits the parentheses. The
+                                 expr and val may not contain ;'
+define(`pushkey_',
  `pushdef(`m4xt',index(`$1',`$2'=))ifelse(m4xt,-1,
    `pushdef(key_prefix`'$2,`ifelse(`$3',,,ifelse(`$4',,(`$3'),`$3'))')',
    `define(`m4sktmp',substr(`$1',eval(m4xt+len(`$2')+1)))dnl m4sktmp used later
@@ -820,20 +833,54 @@ define(`setkey_',
      `pushdef(key_prefix`'$2,ifelse(`$4',,(m4sktmp),m4sktmp))',
      `pushdef(key_prefix`'$2,ifelse(`$4',,(substr(m4sktmp,0,index(m4sktmp,;))),
                                   substr(m4sktmp,0,index(m4sktmp,;))))')')dnl
-  popdef(`m4xt')')
+popdef(`m4xt')')
+
+                                `setkey_(string,key,default,[N])
+                                 string contains semicolon-separated
+                                 terms of the form key=val
+                                 If string contains abc=expr; then
+                                 define(`m4abc',(expr)) otherwise
+                                 define(`m4abc',(default)).
+                                 Nonblank arg4 omits the parentheses. The
+                                 expr and val may not contain ;'
+define(`setkey_',
+ `define(`m4xt',index(`$1',`$2'=))ifelse(m4xt,-1,
+   `define(key_prefix`'$2,`ifelse(`$3',,,ifelse(`$4',,(`$3'),`$3'))')',
+   `define(`m4sktmp',substr(`$1',eval(m4xt+len(`$2')+1)))dnl m4sktmp used later
+    ifelse(index(m4sktmp,;),-1,
+     `define(key_prefix`'$2,ifelse(`$4',,(m4sktmp),m4sktmp))',
+     `define(key_prefix`'$2,ifelse(`$4',,(substr(m4sktmp,0,index(m4sktmp,;))),
+                                  substr(m4sktmp,0,index(m4sktmp,;))))')')dnl
+popdef(`m4xt')')
 
 define(`key_prefix',`m4')       # Could be locally redefined
 
-                                `setkeys_(string,keysequence)
-                                 Invoke setkey_ on each of a sequence of terms.
-                                 keysequence is a ; -separated sequence
-                                 of terms of the form
-                                   identifier:default value:N
-                                 containing 3 fields separated by : '
-define(`setkeys_',`Loopover_(`M4Z',`setkey_(`$1',patsubst(M4Z,:,`,')) dnl',
-                             patsubst(`$2',;,`,'))')
+                            `pushkeys_(string,keysequence,keysep,itemsep)
+                             Invoke pushkey_ on a sequence of terms.
+                             Arg 2 is a sequence of terms separated by
+                             arg3 (default ;) of the form
+                               identifier:default value:N
+                             containing up to 3 fields separated by arg 4
+                             (default :). The separators may not appear
+                             elsewhere in the terms.'
+define(`pushkeys_',`Loopover_(`M4Z',
+ `pushkey_(`$1',patsubst(M4Z,ifelse(`$4',,:,`$4'),`,'))dnl',
+  patsubst(`$2',ifelse(`$3',,;,`$3'),`,'))')
 
-                                `String with exact typeset dimensions:
+                            `setkeys_(string,keysequence,keysep,itemsep)
+                             Invoke setkey_ on a sequence of terms.
+                             Arg 2 is a sequence of terms separated by
+                             arg3 (default ;) of the form
+                               identifier:default value:N
+                             containing up to 3 fields separated by arg 4
+                             (default :). The separators may not appear
+                             elsewhere in the terms.'
+define(`setkeys_',`Loopover_(`M4Z',
+ `setkey_(`$1',patsubst(M4Z,ifelse(`$4',,:,`$4'),`,'))dnl',
+  patsubst(`$2',ifelse(`$3',,;,`$3'),`,'))')
+
+                                `s_box(text or other latex)
+                                 String with exact typeset dimensions:
                                  Requires s_init(name), sinclude(filename.dim),
                                  boxdims.sty, and processing twice.  If there
                                  are two or more args they are given to
@@ -848,29 +895,35 @@ ifelse(index(`$1',"),0,`substr(`$1',1,eval(len(`$1')-2))',`$1')}dnl
 "ifelse(`$2',,,`,shift($@))') \
  wid s_wd(,`textwid') ht s_ht(,`textht')+s_dp')')
 
-define(`text_ang',90)
-                                `r_text(text,degrees)
+                                `r_text(degrees,text,at position)
                                  (requires PSTricks, pgf, or svg)'
 define(`r_text',`define(`m4txt',
-`ifelse(index(`$1',"),0,`substr(`$1',1,eval(len(`$1')-2))',`$1')')dnl
+`ifelse(index(`$2',"),0,`substr(`$2',1,eval(len(`$2')-2))',`$2')')dnl
 ifelse(ifpstricks(T)`'ifpgf(T)`'ifsvg(T),T,
-`define(`m4rtang',`ifelse(`$2',,90,`$2')')dnl
-ifsvg(`svg_rot(m4rtang,"m4txt")')dnl
-ifpstricks(`"\rput[c]{m4rtang}(0,0){m4txt}"')dnl
-ifpgf(`"\pgftext[rotate=m4rtang]{m4txt}"')',"m4txt")')
+`define(`m4rtang',`ifelse(`$1',,90,`$1')')dnl
+ifsvg(`svg_rot(m4rtang,"m4txt",`$3')')dnl
+ifpstricks(`"\rput[c]{m4rtang}(0,0){m4txt}" `$3'')dnl
+ifpgf(`"\pgftext[rotate=m4rtang]{m4txt}" `$3'')',
+"m4txt")')
 
-                                `Like s_box but text is rotated text_ang degrees
+define(`text_ang',90)
+                                `rs_box([angle=degrees;] text or other latex)
+                                 Like s_box but text is rotated text_ang degrees
+                                 (default 90) unless the angle= key is given.
+                                 The key must be a decimal number.
                                  (requires PSTricks or pgf)'
 define(`rs_box',
 `define(`m4_k',ifdef(`m4_k',incr(m4_k),1))dnl
 ifelse(`$2',,,`sprintf(')"ifdef(`s_name',,`{\bf !!}')dnl
 \defboxdim{s_name`'_`'m4_k}{dnl
-ifelse(index(`$1',"),0,`substr(`$1',1,eval(len(`$1')-2))',`$1')}dnl
-ifpstricks(`\rput[c]{text_ang}(0,0)')ifpgf(`\pgftext[rotate=text_ang]'){dnl
-ifelse(index(`$1',"),0,`substr(`$1',1,eval(len(`$1')-2))',`$1')}"dnl
+pushkey_(`$1',angle,text_ang,N)define(`rs_arg',patsubst(`$1',.*;))dnl
+ifelse(index(rs_arg,"),0,`substr(rs_arg,1,eval(len(rs_arg)-2))',rs_arg)}dnl
+ifpstricks(`\rput[c]{m4angle}(0,0)')ifpgf(`\pgftext[rotate=m4angle]'){dnl
+ifelse(index(rs_arg,"),0,`substr(rs_arg,1,eval(len(rs_arg)-2))',rs_arg)}"dnl
 ifelse(`$2',,,`,shift($@),shift($@))') \
- wid s_wd(,textwid)*cosd(text_ang) + (s_ht(,textht)+s_dp)*sind(text_ang) \
- ht (s_ht(,textht)+s_dp)*cosd(text_ang)+s_wd(,textwid)*sind(text_ang)')
+ wid s_wd(,textwid)*cosd(m4angle) + (s_ht(,textht)+s_dp)*sind(m4angle) ht \
+ (s_ht(,textht)+s_dp)*cosd(m4angle) \
+  +s_wd(,textwid)*sind(m4angle)popdef(`m4angle')')
 
                                 `Initialize string index: s_init(name)'
 define(`s_init',`define(`s_name',`$1')')
@@ -892,36 +945,80 @@ define(`f_box',`box ifelse(`$2',,
  `invis fill_(1) s_box($1)',
  `$1 s_box(shift($@))')')
 
-                                `dot(at location,radius,fill)'
+                                `dot(at location,radius|keys,fill)
+                                   keys: rad=expr;
+                                         circle=attributes; '
 define(`dotrad_',(0.02*scale))
-define(`dot',`[define(`m4ft',`ifelse(`$3',,0,(`$3'))')dnl
-  ifgpic(`circle rad ifelse(`$2',,`dotrad_',`$2') fill_(m4ft)',
-  `ifdef(`r_',`rgbfill(r_+(1-r_)*m4ft, g_+(1-g_)*m4ft, b_+(1-b_)*m4ft,
-    circle rad ifelse(`$2',,`dotrad_',`$2'))',
-   `circle rad ifelse(`$2',,`dotrad_',`$2') fill_(m4ft)')') dnl
-  `$4'] with .c ifelse(`$1',,`at Here',`$1')
-  move to last [].c')
-                                `cross(at location,size); assumes that a
-                                 cross always has manhattan directions'
-define(`crosswd_',`ifelse(`$2',,`(0.05*scale)',`($2)')')
-define(`cross',`[{line from Here+(0,neg_(crosswd_)) to Here+(0,crosswd_)}
-                  line from Here+(neg_(crosswd_),0) to Here+(crosswd_,0)
-  `$3'] with .c ifelse(`$1',,`at Here',`$1'); move to last [].c')
+define(`dot',`[ define(`m4ft',`ifelse(`$3',,0,(`$3'))')dnl
+  pushkeys_(`$2',rad:m4nul:N;circle:fill_(m4ft):N)dnl
+  ifelse(m4rad,m4nul,`popdef(`m4rad')pushdef(`m4rad',
+   `ifinstr(`$2',=,`dotrad_',`ifelse(`$2',,`dotrad_',(`$2'))')')')dnl
+  ifdef(`r_',`rgbfill(r_+(1-r_)*m4ft, g_+(1-g_)*m4ft, b_+(1-b_)*m4ft,
+    circle rad m4rad )',
+   `circle rad m4rad m4circle') dnl
+  `$4' popdef(`m4rad',`m4circle')] ifelse(`$1',,`at Here',`$1')
+  move to last []')
+                                `cross(at location,size|keys); assumes that a
+                                   cross always has manhattan directions
+                                 keys: size=expr;
+                                       line=attributes; (line attributes) '
+define(`cross',`[
+  pushkeys_(`$2',size:m4nul:N;line::N)dnl
+  ifelse(m4size,m4nul,`popdef(`m4size')pushdef(`m4size',
+   `ifinstr(`$2',=,(0.05*scale),ifelse(`$2',,(0.05*scale),(`$2')))')')dnl
+  line from (0,-m4size/2) to (0,m4size/2) m4line
+  line from (-m4size/2,0) to (m4size/2,0) m4line
+  `$3' popdef(`m4size',`m4line') ] ifelse(`$1',,`at Here',`$1')
+  move to last []')
 
                                 `boxcoord(name,xfraction,yfraction)
                                  internal position in a named planar object'
 define(`boxcoord',
   `(`$2' between `$1'.w and `$1'.e,`$3' between `$1'.s and `$1'.n)')
 
-                                `shadebox(box boxspec,shadewid)' Shaded box
-define(`shadebox',` $1
-  m4t1 = linethick
-  define(`m4h',`ifelse(`$2',,m4t1*5/4,`($2)')')dnl
-  define(`m4v',`(m4h+m4t1)/2 bp__')dnl
+
+                                `shadebox(box boxspec,shadewid (pt))' Shaded box
+define(`shadebox',`ifelse(`$1',,box,`$1')
+  define(`m4h',`ifelse(`$2',,linethick*5/4,`($2)')')dnl
+  define(`m4v',`(m4h+linethick)/2 bp__')dnl
   {line thickness m4h outlined "gray" from last box.sw+(m4v,neg_(m4v)) \
     to last box.se+(m4v,neg_(m4v)) then to last box.ne+(m4v,neg_(m4v))}
   {move to last box.se+(m4v,neg_(m4v))+(m4h/2 bp__,neg_(m4h)/2 bp__)}
   ')
+                                `Shadowed object:'
+                                `shadowed(box|circle|ellipse|line,posspec,keys) 
+                                   posspec: at position or e.g., with .n at ...
+                                   keys: attrib=object attributes;
+                                         rad=expr; [for box only]
+                                         shadowthick=expr;
+                                         shadowcolor=string;
+                                         shadowangle=expr;
+                                 e.g., shadowed(ellipse,,shadowthick=lthick*4;\
+                                   attrib=shaded "yellow" dashed "Ellipse")
+                                  or
+                                  shadowed(box shaded "yellow" rad 0.1 "Text",
+                                    shadowthick=3bp__;shadowcolor="lightgray")'
+define(`shadowed',`define(`m4object',`ifelse(`$1',,box,`$1')')dnl
+  pushkeys_(`$3',attrib::N; rad:;
+    shadowthick:lthick*5/4; shadowcolor:"gray":N; shadowangle:-45 )dnl
+  ifelse(m4object,box,`box m4attrib ifelse(m4rad,,,`rad m4rad invis') `$2'
+    if last box.thick < 0 then { m4shv = (m4shadowthick+lthick)/2 } \
+    else { m4shv=(m4shadowthick+last box.thick bp__)/2 }
+    ifelse(m4rad,,`{ line thick m4shadowthick/(1bp__) outlined m4shadowcolor \
+      from last box.sw+(m4shv,-m4shv) to last box.se+(m4shv,-m4shv) \
+      then to last box.ne+(m4shv,-m4shv) } ',
+     `M4C: last box.c
+      { box m4attrib thick m4shadowthick/(1bp__) outlined m4shadowcolor \
+          rad m4rad solid at M4C+(Rect_(m4shv,m4shadowangle)) }
+      box fill_(1) rad m4rad m4attrib at M4C ') ',
+ `m4object m4attrib invis `$2'
+  M4C: last m4object.c
+  if last m4object.thick < 0 then { m4shv = (m4shadowthick+lthick)/2 } \
+  else { m4shv=(m4shadowthick+last m4object.thick bp__)/2 }
+  { m4object m4attrib thick m4shadowthick/(1bp__) outlined m4shadowcolor \
+      solid at M4C+(Rect_(m4shv,m4shadowangle)) }
+  m4object ifelse(m4object,line,,fill_(1)) m4attrib at M4C ')dnl
+  popdef(`m4attrib',`m4rad',`m4shadowthick',`m4shadowcolor',`m4shadowangle') ')
 
                                `hatchbox(boxspec,hashsep,hatchspec,ang)'
                                `manhattan box with hatching at ang degrees'
@@ -933,7 +1030,7 @@ define(`hatchbox',`[ a = pmod((ifelse(`$4',,45,`$4')+90),180)-90
   ca = cosd(a); sa = sind(a)
   if abs(a) < 0.1 then { for y = ds to B.ht by ds do {
     line from B.nw-(0,y) to B.ne-(0,y) } } \
-  else { if abs(a-90) < 0.1 then { for x = ds to B.wid by ds do {
+  else { if abs(abs(a)-90) < 0.1 then { for x = ds to B.wid by ds do {
     line from B.nw+(x,0) to B.sw+(x,0) } } \
   else { d = min(B.wid,B.ht)/5
     if a>=0 then { T: B.nw
@@ -963,9 +1060,9 @@ define(`hatchbox',`[ a = pmod((ifelse(`$4',,45,`$4')+90),180)-90
   box wid B.wid ht B.ht at B `$1'
   `$5' ]' )
 
-                                `lbox(wid,ht,type)
+                                `lbox(wid,ht,attributes)
                                  box oriented in current direction;
-                                 arg3= eg dotted'
+                                 arg3= eg dashed shaded "red"'
 define(`lbox',`pushdef(`m4bwd',ifelse(`$1',,boxwid,(`$1')))dnl
   pushdef(`m4bht',ifelse(`$2',,boxht,(`$2')))dnl
   line from rvec_(m4bwd,0) \
@@ -995,9 +1092,9 @@ define(`rotbox',`[
   S: vec_(0,-m4bh2)
   E: vec_( m4bw2,0)
   W: vec_(-m4bw2,0)
-  ifinstr(`$4',`r=',
-   `setkey_(`$4',r,0)dnl
-    brad = Min(m4r,m4bh2,m4bw2)
+  ifinstr(`$4',r=,
+   `pushkey_(`$4',r,0)dnl
+    brad = Min(m4r,m4bh2,m4bw2) popdef(`m4r')
     sectors = 9
     C[0]: (m4bw2-brad,m4bh2-brad)
     C[1]: (-m4bw2+brad,m4bh2-brad)
@@ -1009,21 +1106,20 @@ define(`rotbox',`[
         fitpoints(P,sectors,0,Pf,j*(sectors+1)) }
     spline ctension_ `$3' from Pf[0] to Pf[1]
     for i=2 to 4*(sectors+1)-1 do { continue to Pf[i] }
-    continue to Pf[0]
-',
- `$4',`t=',
-   `setkey_(`$4',t,0)dnl
+    continue to Pf[0] ',
+ `$4',t=,
+   `pushkey_(`$4',t,0)dnl
     spline ifdpic(m4t) from E to vec_(m4bw2,m4bh2) \
       then to vec_(-m4bw2,m4bh2) \
       then to ifgpic(W `$3'; spline to) vec_(-m4bw2,-m4bh2) \
       then to vec_( m4bw2,-m4bh2) \
-      then to E `$3' ',
- `NE: vec_( m4bw2,m4bh2)
+      then to E `$3' popdef(`m4t') ',
+ `NE: vec_( m4bw2, m4bh2)
   SE: vec_( m4bw2,-m4bh2)
-  NW: vec_(-m4bw2,m4bh2)
+  NW: vec_(-m4bw2, m4bh2)
   SW: vec_(-m4bw2,-m4bh2)
-  Line: line from E to NE then to NW then to SW then to SE then to E `$3' ') dnl
-  popdef(`m4bw2')popdef(`m4bh2') `$5' ]')
+  Line: line from E to NE then to NW then to SW then to SE then to E `$3' ')
+  popdef(`m4bw2',`m4bh2') `$5' ]')
 
                                 `rotellipse(wid,ht,type)
                                  ellipse oriented in current direction and
@@ -1063,8 +1159,8 @@ define(`ellipsearc',`[ C: (0,0)
   `if ea_earc < sa_earc then { ea_earc += twopi_ }',
   `if ea_earc > sa_earc then { ea_earc -= twopi_ }')
  n = max(4,floor(abs((ea_earc-sa_earc)/(10*dtor_)))+1)
- for i=0 to n do { aa = sa_earc+i/n*(ea_earc-sa_earc)
-   P[i]: (vrot_(a_earc*cos(aa),b_earc*sin(aa),m4ca,m4sa)) }
+ for i=0 to n do { aa_earc = sa_earc+i/n*(ea_earc-sa_earc)
+   P[i]: (vrot_(a_earc*cos(aa_earc),b_earc*sin(aa_earc),m4ca,m4sa)) }
  Start: P[0]
  End: P[n]
  fitcurve(P,n,`$7') ]')
@@ -1220,7 +1316,7 @@ define ShadedPline {
     with .Origin at Origin
   Midpt: 0.5 between V[1] and V[nverts]
   line `$2' \
-    from Midpt to for_(1,m4vx,1,`V[m4x] then to\') Midpt
+    from Midpt to for_(1,m4vx,1,`V[m4x] then to \') Midpt
   Start: V[p0]; End: V[pm] 
  ]')
 define(`m4shadedpverts',`
@@ -1308,16 +1404,44 @@ m4postprocessor,svg,
  `ifdef(`r_',`rgbfill(r_,g_,b_,`$2')',
              `shade(ifelse(`$1',,0,`$1'),`$2')')')')
 ')
+                                `sarrow(linespec,keys)
+                                 Single-segment single-headed special arrow
+                                 keys= type=O[pen] (default)
+                                            D[iamond]
+                                            C[rowfoot]
+                                            P[lain]
+                                       wdth=expr (default arrowwid)
+                                       lgth=expr (default arrowht)
+                                       shaft= attributes (dashed etc)
+                                       head= attributes (shaded etc)'
+define(`sarrow',`arrow invis `$1' ; M4_E: Here
+  pushkeys_(`$2',type:O:N;head::N;shaft::N;wdth:arrowwid;lgth:arrowht)
+  line from last arrow.start to last arrow.end chop 0 chop m4lgth m4shaft
+  M4_X: Here; M4_P: Vperp(M4_E,M4_X,m4wdth/2)
+  ifinstr(m4type,O,
+   `line from M4_E to M4_X+(M4_P.x,M4_P.y) then to M4_X-(M4_P.x,M4_P.y) \
+      then to M4_E ifelse(m4head,,fill_(1),m4head)',
+  m4type,D,
+   `line from M4_X      to (0.5 between M4_E and M4_X)+(M4_P.x,M4_P.y) \
+      then to M4_E then to (0.5 between M4_E and M4_X)-(M4_P.x,M4_P.y) \
+      then to M4_X ifelse(m4head,,fill_(1),m4head)',
+  m4type,P,
+   `line to M4_E m4head
+    line from M4_X+(M4_P.x,M4_P.y) to M4_E then to M4_X-(M4_P.x,M4_P.y) m4head',
+  m4type,C,
+   `line to M4_E m4head
+    ifdpic(`spline 0.4 from M4_E+M4_P to M4_X+M4_P then to M4_X-M4_P \
+        then to M4_E-M4_P',
+     `spline from M4_E+(M4_P.x,M4_P.y) to M4_X+(M4_P.x,M4_P.y) \
+       then to M4_X-(M4_P.x,M4_P.y) then to M4_E-(M4_P.x,M4_P.y)') m4head')
+  popdef(`m4type',`m4head',`m4shaft',`m4wdth',`m4lgth')dnl
+  move to M4_E')
 
                                 `open_arrow(linespec, ht, wid, head attribs)
-                                 arrow with outlined head'
-define(`open_arrow',`arrow invis `$1'
-  m4oatx = Here.x - last arrow.start.x; m4oaty = Here.y - last arrow.start.y
-  m4oatr = (ifelse(`$3',,arrowwid,`$3'))/vlength(m4oatx,m4oaty)/2
-  line from last arrow.start to Here chop 0 chop ifelse(`$2',,arrowht,`$2')
-  line from last arrow.end to Here+(-m4oaty*m4oatr,m4oatx*m4oatr) \
-    then to Here-(-m4oaty*m4oatr,m4oatx*m4oatr) \
-    then to last arrow.end `$4'')
+                                 arrow with outlined head, like sarrow(,type=O)'
+define(`open_arrow',`sarrow(`$1',
+  type=O;ifelse(`$2',,,lgth=`$2';)ifelse(`$3',,,wdth=`$3';)head=`$4')')
+
 
                                 `elchop(E,A) chop for ellipses
                                  evaluates to "chop r" where r is the distance
@@ -1404,7 +1528,7 @@ define(`Cintersect',
   define(`m4cls',`(m4cdx^2+m4cdy^2)')dnl
   define(`m4cq',`((m4cls+m4Cr1^2-m4Cr2^2)/2)')dnl
   (m4cq/m4cls between `$1' and `$3') ifinstr(`$5',R,-,+)\
-   (vscal_(sqrt(max(0,m4cls*m4Cr1^2-m4cq^2))/m4cls,-m4cdy,m4cdx))')
+   (vscal_(sqrt(abs(m4cls*m4Cr1^2-m4cq^2))/m4cls,-m4cdy,m4cdx))')
 define(`cintersect',`Cintersect($@)')
 
                                 `LCintersect(Name of line,Centre,rad,[R])
@@ -1475,8 +1599,8 @@ define(`langle',
                                  arg6: label (or other object) at mid-arc
                                    e.g., ArcAngle(A,B,C,,,"$ABC$" ljust ) '
 define(`ArcAngle',`arcr(`$2',ifelse(`$4',,arcrad,`$4'),
- langle(`$2',`$1'),langle(`$2',`$3'),`$5')
- ifelse(`$6',,,`move to `$2'+ (rect_(ifelse(`$4',,arcrad,`$4')+textoffset,
+ langle(`$2',`$1'),langle(`$2',`$3'),`$5') dnl
+ ifelse(`$6',,,`; move to `$2'+ (rect_(ifelse(`$4',,arcrad,`$4')+textoffset,
       (langle(`$2',`$1')+langle(`$2',`$3'))/2)); `$6'') ')
 
                                 `RightAngle(Pos1,Pos2,Pos3,linelen,attributes)
@@ -1492,9 +1616,15 @@ define(`m4AngleLen',`ifelse(`$4',,linewid/5,`$4')')
  move to RightA_N - M4CN0*m4AngleLen
  line to Here + M4AB0*m4AngleLen then to RightA_N + M4AB0*m4AngleLen `$5'
 ')
-                                `PerpTo(Pos,Line,Point)
-                                 The point on Line of the perpendicular to Pos'
+                                `PerpTo(Pos1,Pos2,Pos3)
+                                 The point between Pos2 and Pos3 of intersection
+                                 of the perpendicular to Pos1'
 define(`PerpTo',
+`intersect_(`$1',(`$1'-(Vperp(`$2',`$3'))),`$2',`$3') ')
+
+                                `perpto(Pos,Line,Point)
+                                 The point on Line of the perpendicular to Pos'
+define(`perpto',
 `PerpTo_T: move from `$1' to `$1'-(vperp(`$2'))
  ifelse(`$3',,PerpTo_P,`$3'): Intersect_(PerpTo_T,`$2') ')
 
@@ -1506,6 +1636,12 @@ define(`along_',`between `$1'.start and `$1'.end')
                                  arg3=R: from end to start'
 define(`Along_',`(ifelse(`$2',,1,`(`$2')/lin_leng(`$1')') between \
   `$1'.ifelse(`$3',R,end,start) and `$1'.ifelse(`$3',R,start,end))')
+
+                                `Between_(Pos1,Pos2,distance,[R])
+                                 position distance from Pos1 toward Pos2
+                                 arg4=R: from Pos2 to Pos1'
+define(`Between_',`ifelse(`$4',R,`1-')(`$3')/distance(`$1',`$2') between \
+  `$1' and `$2'')
 
                                 `showbox_(planar object,boxspec,P)
                                  Convenience to draw the bounding box of an obj
@@ -1579,35 +1715,14 @@ define(`m4scale_',`define(`m4SC',`ifelse(`$2',,I,`substr(`$2',0,1)')')dnl
       sprintf("%g",i) ht 8 bp__ at last line.start below }')
     linethick_(m4ltht)
     ')
-
+                               `These two macros use dpictools.pic versions'
                                `fitpoints(V,n,m,P,mP)'
                                 Compute the controls in P[mP], P[mP+1]... for
                                 the spline passing throught points V[m]...V[n]
                                 Defines dpic macro dfitpoints() with the
                                 same arguments'
-ifdpic(`
-define(`fitpoints',`defdfitpoints
+define(`fitpoints',`NeedDpicTools
   dfitpoints($@)')
-define(`defdfitpoints',`ifdef(`dfitpoints__',,`define(`dfitpoints__')dnl
-patsubst(`## pic fit curve macros
-define dfitpoints {
-  if "|3"=="" then { m_dfit=0 } else { m_dfit=|3 }
-  if "|5"=="" then { mP_dfit=0 } else { mP_dfit=|5 }
-  n_dfit = |2; np_dfit = n_dfit-m_dfit
-  |4[mP_dfit]: |1[m_dfit]
-  for i_dfit=m_dfit+1 to n_dfit-1 do {
-    |4[mP_dfit+i_dfit-m_dfit]: |1[i_dfit]*(4/3) }
-  |4[mP_dfit+np_dfit]: |1[n_dfit]
-  |4[mP_dfit+1]: |4[mP_dfit+1]-|4[mP_dfit+0]/6    # forward substitution
-  d_dfit[1] = 1
-  for i_dfit = 2 to np_dfit-1 do { |4[mP_dfit+i_dfit]: \
-    |4[mP_dfit+i_dfit]-|4[mP_dfit+i_dfit-1]/d_dfit[i_dfit-1]/6
-    d_dfit[i_dfit] = 1-1/d_dfit[i_dfit-1]/36 }
-  for i_dfit= np_dfit-1 to 1 by -1 do {    # backward substitution
-    |4[mP_dfit+i_dfit]: \
-    (|4[mP_dfit+i_dfit]-|4[mP_dfit+i_dfit+1]/6)/d_dfit[i_dfit] }
-  }',|,$) ') ') ')
-
                                `fitcurve(V,n,linetype,m (default 0))
                                 Draw a spline through V[m],...V[n]
                                 linetype=eg dotted.  Works only with dpic.
@@ -1618,31 +1733,8 @@ define dfitpoints {
                                 P[n] = V[n]
                                 Defines dpic macro dfitcurve() with the
                                 same arguments'
-ifdpic(`
-define(`fitcurve',`ifdef(`dfitcurve__',,`define(`dfitcurve__')dnl
-defdfitpoints
-patsubst(`define case_dfit { exec sprintf("|%g",floor(|1+0.5)+1); }
-define dfitcurve { if "|4"=="" then { m_dfit=0 } else { m_dfit=|4 }
-  n_dfit = |2; np_dfit = n_dfit-m_dfit
-  M4P_[0]: |1[m_dfit]
-  case_dfit( min(max(np_dfit,-1),3)+1,
-    spline 0.551784 |3 from M4P_[0] to M4P_[0],
-    spline 0.551784 |3 from M4P_[0] to |1[n_dfit],
-    M4P_[3]: |1[n_dfit]; Q_dfit: (M4P_[3]-M4P_[0])/4 
-    M4P_[1]: |1[m_dfit+1]-Q_dfit; M4P_[2]: |1[m_dfit+1]+Q_dfit
-    spline 0.551784 |3 from M4P_[0] to M4P_[1] then to M4P_[2] then to M4P_[3],
-    fitpoints(|1,|2,|4,M4P_,0)
-                                  # draw using computed control points
-    spline 0.551784 |3 from M4P_[0] to 11/32 between M4P_[0] and M4P_[1] \
-       then to 5/32 between M4P_[1] and M4P_[2]
-    for i_dfit=2 to np_dfit-2 do { continue to M4P_[i_dfit] }
-    continue to 27/32 between M4P_[np_dfit-2] and M4P_[np_dfit-1] \
-      then to 21/32 between M4P_[np_dfit-1] and M4P_[np_dfit] \
-      then to M4P_[np_dfit]) }
-` ## end fit curve defs'',|,$) ')
-  dfitcurve($@) ')
-')
-
+define(`fitcurve',`NeedDpicTools
+  dfitcurve($@)')
                                 `Sinusoids and lollipop signals
                                  Cosine( amplitude, freq, time, phase )'
 define(`Cosine',`(`$1')*cos((`$2')*(`$3')ifelse((`$4'),(),,`+(`$4')'))')
@@ -1701,6 +1793,8 @@ define(`graystring',`rgbstring(`$1',`$1',`$1')')
                                  `outlined string' or `shaded string'
                                  (mpost,PSTricks,pdf,tikz-pgf,postscript,svg
                                   only)'
+                                `The 1: after rgb is a divisor for the values
+                                 (xcolor manual p 16)'
 ifelse(
 m4postprocessor,pstricks,`define(`rgbstring',`ifelse(`$2',,`"$1"',
  `sprintf("{rgb,1:red,%7.5f;green,%7.5f;blue,%7.5f}",`$1',`$2',`$3')')')',
@@ -1720,7 +1814,6 @@ m4postprocessor,postscript,`define(`rgbstring',
                                    [name],[D][F])
                                  define colour for lines and text.
                                  arg5 (svg only): D=draw, F=fill
-                                 SVG values are 0 to 255
                                  see also \usepackage{latexcolors} and
                                  latexcolor.com'
 define(`setrgb',`pushdef(`r_',`$1')pushdef(`g_',`$2')pushdef(`b_',`$3')dnl
@@ -1732,9 +1825,9 @@ ifelse(m4postprocessor,pstricks,
 m4postprocessor,svg,`
  command "<g " \
  ifinstr(`$5',F,,
-  `+ sprintf("stroke=\"rgb(%g,%g,%g)\" ",round_(r_),round_(g_),round_(b_))') \
+  `+ sprintf("stroke=\"rgb(%g,%g,%g)\" ",color255(r_,g_,b_))') \
  ifinstr(`$5',D,,
-  `+   sprintf("fill=\"rgb(%g,%g,%g)\"", round_(r_),round_(g_),round_(b_))') \
+  `+   sprintf("fill=\"rgb(%g,%g,%g)\"", color255(r_,g_,b_))') \
  + ">"',
 m4postprocessor,pgf,`
   command sprintf("\definecolor{m4cl_}{rgb}{%7.5f,%7.5f,%7.5f}%%",r_,g_,b_)
@@ -1784,7 +1877,7 @@ ifelse(m4postprocessor,pstricks,
   shift(shift(shift($@)))
   command "}%"',
 m4postprocessor,svg,
-  `setrgb(`$1',`$2',`$3',,ifsvg(F))
+  `setrgb(`$1',`$2',`$3',,F)
    shift(shift(shift($@)))
    resetrgb',
 m4postprocessor,pgf,
@@ -1814,10 +1907,9 @@ ifsvg(
 `define(`m4c_l',)')
 
                                 Adjust fill value if gpic is used
-define(`fill_',`dnl
- fill ifgpic(`1-(')ifelse(`$1',,fillval,`$1') ifgpic(`)')')
+define(`fill_',`fill ifgpic(`1-(')ifelse(`$1',,fillval,`$1') ifgpic(`)')')
 
-define(`m4dir',right)
+define(`m4_dir_',right)
 define(`m4_k',0)
 
                                 Define m4x_ etc for horiz and vert lines

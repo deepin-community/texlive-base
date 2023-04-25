@@ -13,7 +13,7 @@
 %% ----------------------------------------------------------------
 %% 
 \ProvidesFile{tikzlibrarybraids.code.tex}[%
-  2019/03/20 v2.0 Tikz/PGF library for drawing braid diagrams%
+  2022/10/26 v2.2 Tikz/PGF library for drawing braid diagrams%
 ]
 \RequirePackage{expl3}
 \ExplSyntaxOn
@@ -36,11 +36,19 @@
 \fp_new:N \l__braid_anchor_x_fp
 \fp_new:N \l__braid_anchor_y_fp
 \int_new:N \l__braid_tmpa_int
+\int_new:N \l__braid_tmpb_int
 \int_new:N \l__braid_length_int
 \int_new:N \l__braid_strands_int
 \int_new:N \l__braid_crossing_int
+\int_new:N \l__braid_crossing_start_int
+\int_new:N \l__braid_crossing_end_int
+\int_new:N \l__braid_crossing_width_int
+\int_new:N \l__braid_crossing_long_int
+\int_new:N \l__braid_crossing_start_factor_int
+\int_new:N \l__braid_crossing_end_factor_int
 \int_new:N \l__braid_anchor_level_int
 \int_new:N \l__braid_floor_int
+\seq_new:N \l__braid_tmpa_seq
 \seq_new:N \l__braid_word_seq
 \seq_new:N \l__braid_crossing_seq
 \seq_new:N \l__braid_anchor_seq
@@ -64,19 +72,16 @@
 \prop_new:N \l__braid_crossing_permutation_prop
 \prop_new:N \l__braid_inverse_prop
 \prop_new:N \l__braid_anchor_prop
+\cs_generate_variant:Nn \seq_set_split:Nnn {NVn}
 \tikzset{
    braid/.pic={
-     code={
-       \__braid_parse_word:n {#1}
-       \__braid_count:
-       \__braid_render:
-     }
+     \__braid_parse_word:n {#1}
+     \__braid_count:
+     \__braid_render:
    },
    floor/.pic={
-     code={
-       \path[pic~ actions, draw=none] (0,0) rectangle (1,1);
-       \path[pic~ actions, fill=none] (0,0) -- (1,0) (0,1) -- (1,1);
-     }
+     \path[pic~ actions, draw=none] (0,0) rectangle (1,1);
+     \path[pic~ actions, fill=none] (0,0) -- (1,0) (0,1) -- (1,1);
    },
    /tikz/braid/.search~ also={/tikz},
    braid/.cd,
@@ -174,15 +179,35 @@
 }
 \cs_new_nopar:Npn \__braid_parse_index:n #1
 {
-  \seq_set_from_clist:Nn \l__braid_crossing_seq {#1}
+  \seq_clear:N \l__braid_crossing_seq
+  \clist_map_inline:nn {#1}
+  {
+    \tl_if_in:nnTF {##1} {-}
+    {
+      \seq_set_split:Nnn \l__braid_tmpa_seq {-} {##1}
+      \int_compare:nTF {\seq_item:Nn \l__braid_tmpa_seq {1} < \seq_item:Nn \l__braid_tmpa_seq {2} }
+      {
+        \int_set:Nn \l__braid_tmpa_int {1}
+      }
+      {
+        \int_set:Nn \l__braid_tmpa_int {-1}
+      }
+      \int_step_inline:nnnn {\seq_item:Nn \l__braid_tmpa_seq {1}} {\l__braid_tmpa_int} {\seq_item:Nn \l__braid_tmpa_seq {2}}
+      {
+        \seq_put_right:Nn \l__braid_crossing_seq {####1}
+      }
+    }
+    {
+      \seq_put_right:Nn \l__braid_crossing_seq {##1}
+    }
+  }
   \int_compare:nT {\seq_count:N \l__braid_crossing_seq == 1}
   {
     \seq_put_right:Nx \l__braid_crossing_seq {\int_eval:n {#1 + 1} }
   }
-  \bool_if:NT \l__braid_swap_crossing_bool
+  \bool_if:NF \l__braid_swap_crossing_bool
   {
-    \seq_pop_left:NN \l__braid_crossing_seq \l__braid_tmpa_tl
-    \seq_put_right:NV \l__braid_crossing_seq \l__braid_tmpa_tl
+    \seq_reverse:N \l__braid_crossing_seq
   }
 }
 \cs_new_nopar:Npn \__braid_parse_exponent:n #1
@@ -219,15 +244,11 @@
     }
     \seq_if_empty:NF \l__braid_crossing_seq
     {
-      \int_set:Nn \l__braid_strands_int
+      \seq_map_inline:Nn \l__braid_crossing_seq
       {
-        \int_max:nn
+        \int_set:Nn \l__braid_strands_int
         {
-          \int_max:nn {\l__braid_strands_int}
-          { \seq_item:Nn \l__braid_crossing_seq {1}}
-        }
-        {
-          \seq_item:Nn \l__braid_crossing_seq {2}
+          \int_max:nn {\l__braid_strands_int} {####1}
         }
       }
     }
@@ -239,31 +260,38 @@
     \prop_put:Nnn \l__braid_crossing_permutation_prop {##1} {##1}
   }
   \tl_set:Nx \l__braid_tmpa_tl {\__braid_value:n {anchor}}
-  \seq_set_split:NnV \l__braid_anchor_seq {-} \l__braid_tmpa_tl
+  \tl_if_in:NnTF \l__braid_tmpa_tl {-}
+  {
+    \seq_set_split:NnV \l__braid_anchor_seq {-} \l__braid_tmpa_tl
 
-  \tl_set:Nx \l__braid_tmpa_tl {\seq_item:Nn \l__braid_anchor_seq {1}}
-  \tl_if_eq:VnTF \l__braid_tmpa_tl {rev}
-  {
-    \tl_set:Nx \l__braid_anchor_strand_tl {\seq_item:Nn \l__braid_anchor_seq {2}}
-    \tl_set:Nx \l__braid_anchor_level_tl {\seq_item:Nn \l__braid_anchor_seq {3}}
-  }
-  {
-    \tl_set:Nx \l__braid_anchor_strand_tl {\seq_item:Nn \l__braid_anchor_seq {1}}
-    \tl_set:Nx \l__braid_anchor_level_tl {\seq_item:Nn \l__braid_anchor_seq {2}}
-  }
-  \tl_if_eq:VnTF \l__braid_anchor_level_tl {s}
-  {
-    \int_set:Nn \l__braid_anchor_level_int {-1}
-  }
-  {
-    \tl_if_eq:VnTF \l__braid_anchor_level_tl {e}
+    \tl_set:Nx \l__braid_tmpa_tl {\seq_item:Nn \l__braid_anchor_seq {1}}
+    \tl_if_eq:VnTF \l__braid_tmpa_tl {rev}
+    {
+      \tl_set:Nx \l__braid_anchor_strand_tl {\seq_item:Nn \l__braid_anchor_seq {2}}
+      \tl_set:Nx \l__braid_anchor_level_tl {\seq_item:Nn \l__braid_anchor_seq {3}}
+    }
+    {
+      \tl_set:Nx \l__braid_anchor_strand_tl {\seq_item:Nn \l__braid_anchor_seq {1}}
+      \tl_set:Nx \l__braid_anchor_level_tl {\seq_item:Nn \l__braid_anchor_seq {2}}
+    }
+    \tl_if_eq:VnTF \l__braid_anchor_level_tl {s}
     {
       \int_set:Nn \l__braid_anchor_level_int {-1}
     }
     {
-      \int_set:Nn \l__braid_anchor_level_int
-      {\tl_use:N \l__braid_anchor_level_tl}
+      \tl_if_eq:VnTF \l__braid_anchor_level_tl {e}
+      {
+        \int_set:Nn \l__braid_anchor_level_int {-1}
+      }
+      {
+        \int_set:Nn \l__braid_anchor_level_int
+        {\tl_use:N \l__braid_anchor_level_tl}
+      }
     }
+  }
+  {
+    \int_set:Nn \l__braid_anchor_level_int {-1}
+    \tl_set:Nn \l__braid_anchor_strand_tl {-1}
   }
 
   \int_zero:N \l__braid_crossing_int
@@ -276,23 +304,29 @@
     ##1
     \seq_if_empty:NF \l__braid_crossing_seq
     {
-      \prop_get:NxN \l__braid_permutation_prop
+      \int_step_inline:nnn {2} {\seq_count:N \l__braid_crossing_seq}
       {
-        \seq_item:Nn \l__braid_crossing_seq {1}
-      } \l__braid_tmpa_tl
-      \prop_get:NxN \l__braid_permutation_prop
-      {
-        \seq_item:Nn \l__braid_crossing_seq {2}
-      } \l__braid_tmpb_tl
+        \int_set:Nn \l__braid_tmpa_int {####1}
+        \int_set:Nn \l__braid_tmpb_int {####1 - 1}
 
-      \prop_put:NxV \l__braid_permutation_prop
-      {
-        \seq_item:Nn \l__braid_crossing_seq {2}
-      } \l__braid_tmpa_tl
-      \prop_put:NxV \l__braid_permutation_prop
-      {
-        \seq_item:Nn \l__braid_crossing_seq {1}
-      } \l__braid_tmpb_tl
+        \prop_get:NxN \l__braid_permutation_prop
+        {
+          \seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpa_int}
+        } \l__braid_tmpa_tl
+        \prop_get:NxN \l__braid_permutation_prop
+        {
+          \seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpb_int}
+        } \l__braid_tmpb_tl
+
+        \prop_put:NxV \l__braid_permutation_prop
+        {
+          \seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpb_int}
+        } \l__braid_tmpa_tl
+        \prop_put:NxV \l__braid_permutation_prop
+        {
+          \seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpa_int}
+        } \l__braid_tmpb_tl
+      }
     }
     \int_compare:nT {\l__braid_crossing_int = \l__braid_anchor_level_int}
     {
@@ -314,22 +348,25 @@
     \prop_get:NnN \l__braid_permutation_prop {##1} \l__braid_tmpa_tl
     \prop_put:NVn \l__braid_inverse_prop \l__braid_tmpa_tl {##1}
   }
-  \tl_set:Nx \l__braid_tmpa_tl {\seq_item:Nn \l__braid_anchor_seq {1}}
-  \tl_if_eq:VnT \l__braid_tmpa_tl {rev}
+  \tl_if_eq:VnF \l__braid_anchor_strand_tl {-1}
   {
-    \prop_get:NVN \l__braid_permutation_prop
-    \l__braid_anchor_strand_tl \l__braid_anchor_strand_tl
-  }
-  \tl_if_eq:VnF \l__braid_anchor_level_tl {s}
-  {
-    \tl_if_eq:VnTF \l__braid_anchor_level_tl {e}
+    \tl_set:Nx \l__braid_tmpa_tl {\seq_item:Nn \l__braid_anchor_seq {1}}
+    \tl_if_eq:VnT \l__braid_tmpa_tl {rev}
     {
-      \prop_get:NVN \l__braid_inverse_prop
+      \prop_get:NVN \l__braid_permutation_prop
       \l__braid_anchor_strand_tl \l__braid_anchor_strand_tl
     }
+    \tl_if_eq:VnF \l__braid_anchor_level_tl {s}
     {
-      \prop_get:NVN \l__braid_anchor_prop
-      \l__braid_anchor_strand_tl \l__braid_anchor_strand_tl
+      \tl_if_eq:VnTF \l__braid_anchor_level_tl {e}
+      {
+        \prop_get:NVN \l__braid_inverse_prop
+        \l__braid_anchor_strand_tl \l__braid_anchor_strand_tl
+      }
+      {
+        \prop_get:NVN \l__braid_anchor_prop
+        \l__braid_anchor_strand_tl \l__braid_anchor_strand_tl
+      }
     }
   }
 }
@@ -349,26 +386,79 @@
 
 \cs_new_nopar:Npn \__braid_render:
 {
-  \fp_set:Nn \l__braid_anchor_x_fp { - 1 * (\tl_use:N \l__braid_anchor_strand_tl - 1) * \__braid_dim_value:n {width} }
-
-  \tl_if_eq:VnTF \l__braid_anchor_level_tl {s}
+  \tl_if_eq:VnTF \l__braid_anchor_strand_tl {-1}
   {
-    \fp_set:Nn \l__braid_anchor_y_fp {0}
+    \tl_set:cn {pgf@sh@ns@temporary braid node}{rectangle}
+    \tl_set:cx {pgf@sh@np@temporary braid node}{%
+      \exp_not:N\def
+      \exp_not:N\southwest
+      {
+        \exp_not:N\pgfqpoint
+        {0pt}
+        {0pt}
+      }
+      \exp_not:N\def
+      \exp_not:N\northeast
+      {
+        \exp_not:N\pgfqpoint
+        {
+          \fp_to_dim:n
+          {
+            (\l__braid_strands_int - 1)
+            *
+            abs(\__braid_dim_value:n {width})
+          }
+        }
+        {
+          \fp_to_dim:n
+          {
+            \l__braid_length_int * abs(\__braid_dim_value:n {height})
+            + 2 * \__braid_dim_value:n {border~ height}
+          }
+        }
+      }
+    }%
+    \pgfgettransform\l__braid_tmpa_tl
+    \tl_set:cV {pgf@sh@nt@temporary braid node} \l__braid_tmpa_tl
+    \tl_set:cV {pgf@sh@pi@temporary braid node} \pgfpictureid
+    \pgfpointanchor{temporary braid node} {\__braid_value:n {anchor}}
+    \fp_set:Nn \l__braid_anchor_x_fp {
+      - \dim_use:c {pgf@x}
+      - (1 - sign(\__braid_dim_value:n {width})) / 2
+      * (\l__braid_strands_int - 1)
+      * \__braid_dim_value:n {width}
+    }
+    \fp_set:Nn \l__braid_anchor_y_fp {
+      - \dim_use:c {pgf@y}
+      - (1 - sign(\__braid_dim_value:n {height})) / 2
+      * (
+      \l__braid_length_int * abs(\__braid_dim_value:n {height})
+      + 2 * \__braid_dim_value:n {border~ height}
+      ) * sign(\__braid_dim_value:n {height})
+    }
   }
   {
-    \tl_if_eq:VnTF \l__braid_anchor_level_tl {e}
+    \fp_set:Nn \l__braid_anchor_x_fp { - 1 * (\tl_use:N \l__braid_anchor_strand_tl - 1) * \__braid_dim_value:n {width} }
+
+    \tl_if_eq:VnTF \l__braid_anchor_level_tl {s}
     {
-      \fp_set:Nn \l__braid_anchor_y_fp {
-        -1 * \l__braid_length_int * \__braid_dim_value:n {height}
-        - sign(\__braid_dim_value:n {height})
-        * 2 * \__braid_dim_value:n {border~ height}
-      }
+      \fp_set:Nn \l__braid_anchor_y_fp {0}
     }
     {
-      \fp_set:Nn \l__braid_anchor_y_fp {
-        -1 * \l__braid_anchor_level_tl * \__braid_dim_value:n {height}
-        - sign(\__braid_dim_value:n {height})
-        * \__braid_dim_value:n {border~ height}
+      \tl_if_eq:VnTF \l__braid_anchor_level_tl {e}
+      {
+        \fp_set:Nn \l__braid_anchor_y_fp {
+          -1 * \l__braid_length_int * \__braid_dim_value:n {height}
+          - sign(\__braid_dim_value:n {height})
+          * 2 * \__braid_dim_value:n {border~ height}
+        }
+      }
+      {
+        \fp_set:Nn \l__braid_anchor_y_fp {
+          -1 * \l__braid_anchor_level_tl * \__braid_dim_value:n {height}
+          - sign(\__braid_dim_value:n {height})
+          * \__braid_dim_value:n {border~ height}
+        }
       }
     }
   }
@@ -482,257 +572,366 @@
     }
     \seq_if_empty:NF \l__braid_crossing_seq
     {
-      \prop_get:NxN \l__braid_crossing_permutation_prop
-      {\seq_item:Nn \l__braid_crossing_seq {1}} \l__braid_tmpa_tl
-      \prop_get:NxN \l__braid_crossing_permutation_prop
-      {\seq_item:Nn \l__braid_crossing_seq {2}} \l__braid_tmpb_tl
-
-      \prop_put:NxV \l__braid_crossing_permutation_prop
-      {\seq_item:Nn \l__braid_crossing_seq {2}} \l__braid_tmpa_tl
-      \prop_put:NxV \l__braid_crossing_permutation_prop
-      {\seq_item:Nn \l__braid_crossing_seq {1}} \l__braid_tmpb_tl
-      \prop_get:NxN \l__braid_strands_prop
-      {\seq_item:Nn \l__braid_crossing_seq {1}} \l__braid_tmpa_tl
-      \prop_get:NxN \l__braid_strands_prop
-      {\seq_item:Nn \l__braid_crossing_seq {2}} \l__braid_tmpb_tl
-      \tl_put_right:Nx \l__braid_tmpa_tl
+      \int_set:Nn \l__braid_crossing_long_int
       {
-        \exp_not:N \__braid_lineto:nn
-
-        {\fp_eval:n
-          {
-            (\seq_item:Nn \l__braid_crossing_seq {1} - 1)
-            * \__braid_dim_value:n {width}
-          }
+        %        \seq_item:Nn \l__braid_crossing_seq {\seq_count:N \l__braid_crossing_seq}
+        \seq_item:Nn \l__braid_crossing_seq {1}
+      }
+      \int_set:Nn \l__braid_crossing_start_int
+      {
+        \int_min:nn
+        {
+          \seq_item:Nn \l__braid_crossing_seq {1}
         }
-        {\fp_eval:n { \l__braid_height_fp + \l__braid_nudge_fp } }
-
-        \exp_not:N \__braid_curveto:nnnnnn
-
-        {0}
-        {\fp_eval:n { \l__braid_control_fp}}
-
-        {0}
-        {\fp_eval:n {- \l__braid_control_fp}}
-
-        {\fp_eval:n
-          {
-            (\seq_item:Nn \l__braid_crossing_seq {2} - 1)
-            * \__braid_dim_value:n {width}
-          }
-        }
-        {\fp_eval:n
-          {
-            \l__braid_height_fp
-            + \__braid_dim_value:n {height}
-            - \l__braid_nudge_fp
-          }
+        {
+          \seq_item:Nn \l__braid_crossing_seq {\seq_count:N \l__braid_crossing_seq}
         }
       }
-      \tl_put_right:Nx \l__braid_tmpb_tl
-      {
-        \exp_not:N \__braid_lineto:nn
-
-        {\fp_eval:n
-          {
-            (\seq_item:Nn \l__braid_crossing_seq {2} - 1)
-            * \__braid_dim_value:n {width}
-          }
-        }
-        {\fp_eval:n { \l__braid_height_fp + \l__braid_nudge_fp } }
-
-        \exp_not:N \__braid_curveto:nnnnnn
-
-        {0}
-        {
-          \fp_eval:n {
-            \l__braid_control_fp  * (.5 - \__braid_value:n {gap} )
-          }
-        }
-
-        {
-          \fp_eval:n {
-            - (.5 - \__braid_value:n {gap} ) / 3 *
-            \__braid_bezier_tangent:nnnnn
-            {.5 - \__braid_value:n {gap} }
-            {0}
-            {0}
-            {
-              (\seq_item:Nn \l__braid_crossing_seq {1}
-              - \seq_item:Nn \l__braid_crossing_seq {2})
-              * \__braid_dim_value:n {width}
-            }
-            {
-              (\seq_item:Nn \l__braid_crossing_seq {1}
-              - \seq_item:Nn \l__braid_crossing_seq {2})
-              * \__braid_dim_value:n {width}
-            }
-          }
-        }
-        {
-          \fp_eval:n {
-            -(.5 - \__braid_value:n {gap} ) / 3 *
-            \__braid_bezier_tangent:nnnnn
-            {.5 - \__braid_value:n {gap} }
-            {0}
-            {\l__braid_control_fp}
-            {
-              \__braid_dim_value:n {height}
-              - 2* \l__braid_nudge_fp
-              - \l__braid_control_fp
-            }
-            {\__braid_dim_value:n {height} - 2* \l__braid_nudge_fp}
-          }
-        }
-
-        {
-          \fp_eval:n {
-            (\seq_item:Nn \l__braid_crossing_seq {2} - 1)
-            * \__braid_dim_value:n {width} +
-            \__braid_bezier_point:nnnnn
-            {.5 - \__braid_value:n {gap} }
-            {0}
-            {0}
-            {
-              (\seq_item:Nn \l__braid_crossing_seq {1}
-              - \seq_item:Nn \l__braid_crossing_seq {2})
-              * \__braid_dim_value:n {width}
-            }
-            {
-              (\seq_item:Nn \l__braid_crossing_seq {1}
-              - \seq_item:Nn \l__braid_crossing_seq {2})
-              * \__braid_dim_value:n {width}
-            }
-          }
-        }
-        {
-          \fp_eval:n {
-          \l__braid_height_fp + \l__braid_nudge_fp +
-            \__braid_bezier_point:nnnnn
-            {.5 - \__braid_value:n {gap} }
-            {0}
-            {\l__braid_control_fp}
-            {
-              \__braid_dim_value:n {height}
-              - 2* \l__braid_nudge_fp
-              - \l__braid_control_fp
-            }
-            {\__braid_dim_value:n {height} - 2* \l__braid_nudge_fp}
-          }
-        }
-
-        \exp_not:N \__braid_moveto:nn
-        {
-          \fp_eval:n {
-            (\seq_item:Nn \l__braid_crossing_seq {2} - 1)
-            * \__braid_dim_value:n {width} +
-            \__braid_bezier_point:nnnnn
-            {.5 + \__braid_value:n {gap} }
-            {0}
-            {0}
-            {
-              (\seq_item:Nn \l__braid_crossing_seq {1}
-              - \seq_item:Nn \l__braid_crossing_seq {2})
-              * \__braid_dim_value:n {width}
-            }
-            {
-              (\seq_item:Nn \l__braid_crossing_seq {1}
-              - \seq_item:Nn \l__braid_crossing_seq {2})
-              * \__braid_dim_value:n {width}
-            }
-          }
-        }
-        {
-          \fp_eval:n {
-          \l__braid_height_fp + \l__braid_nudge_fp +
-            \__braid_bezier_point:nnnnn
-            {.5 + \__braid_value:n {gap} }
-            {0}
-            {\l__braid_control_fp}
-            {
-              \__braid_dim_value:n {height} - 2* \l__braid_nudge_fp
-              - \l__braid_control_fp
-            }
-            {\__braid_dim_value:n {height} - 2* \l__braid_nudge_fp}
-          }
-        }
-
-        \exp_not:N \__braid_curveto:nnnnnn
-
-        {
-          \fp_eval:n {
-            (.5 - \__braid_value:n {gap} ) / 3 *
-            \__braid_bezier_tangent:nnnnn
-            {.5 + \__braid_value:n {gap} }
-            {0}
-            {0}
-            {
-              (\seq_item:Nn \l__braid_crossing_seq {1}
-              - \seq_item:Nn \l__braid_crossing_seq {2})
-              * \__braid_dim_value:n {width}
-            }
-            {
-              (\seq_item:Nn \l__braid_crossing_seq {1}
-              - \seq_item:Nn \l__braid_crossing_seq {2})
-              * \__braid_dim_value:n {width}
-            }
-          }
-        }
-        {
-          \fp_eval:n {
-            (.5 - \__braid_value:n {gap} ) / 3 *
-            \__braid_bezier_tangent:nnnnn
-            {.5 + \__braid_value:n {gap} }
-            {0}
-            {\l__braid_control_fp}
-            {
-              \__braid_dim_value:n {height} - 2* \l__braid_nudge_fp
-              - \l__braid_control_fp
-            }
-            {\__braid_dim_value:n {height} - 2* \l__braid_nudge_fp}
-          }
-        }
-
-        {0}
-        { \fp_eval:n {
-            -\l__braid_control_fp  * (.5 - \__braid_value:n {gap} )
-          }
-        }
-
-        {\fp_eval:n
-          {
-            (\seq_item:Nn \l__braid_crossing_seq {1} - 1)
-            * \__braid_dim_value:n {width}
-          }
-        }
-        {\fp_eval:n
-          {
-            \l__braid_height_fp + \__braid_dim_value:n {height}
-            - \l__braid_nudge_fp
-          }
-        }
-
-      }
-      \prop_put:NxV \l__braid_strands_prop
-      {\seq_item:Nn \l__braid_crossing_seq {2}} \l__braid_tmpa_tl
-      \prop_put:NxV \l__braid_strands_prop
-      {\seq_item:Nn \l__braid_crossing_seq {1}} \l__braid_tmpb_tl
-      \int_compare:nT
+      \int_set:Nn \l__braid_crossing_end_int
       {
         \int_max:nn
         {
           \seq_item:Nn \l__braid_crossing_seq {1}
         }
         {
-          \seq_item:Nn \l__braid_crossing_seq {2}
+          \seq_item:Nn \l__braid_crossing_seq {\seq_count:N \l__braid_crossing_seq}
+        }
+
+      }
+      \int_set:Nn \l__braid_crossing_width_int
+      {
+        \l__braid_crossing_end_int
+        -
+        \l__braid_crossing_start_int
+      }
+      \int_step_inline:nnn {2} {\seq_count:N \l__braid_crossing_seq}
+      {
+        \int_set:Nn \l__braid_tmpa_int {####1}
+        \int_set:Nn \l__braid_tmpb_int {####1 - 1}
+      \prop_get:NxN \l__braid_crossing_permutation_prop
+      {\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpa_int}} \l__braid_tmpa_tl
+      \prop_get:NxN \l__braid_crossing_permutation_prop
+      {\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpb_int}} \l__braid_tmpb_tl
+
+      \prop_put:NxV \l__braid_crossing_permutation_prop
+      {\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpb_int}} \l__braid_tmpa_tl
+      \prop_put:NxV \l__braid_crossing_permutation_prop
+      {\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpa_int}} \l__braid_tmpb_tl
+      \prop_get:NxN \l__braid_strands_prop
+      {\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpa_int}} \l__braid_tmpa_tl
+      \prop_get:NxN \l__braid_strands_prop
+      {\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpb_int}} \l__braid_tmpb_tl
+        \int_set:Nn \l__braid_crossing_start_factor_int {0}
+        \int_set:Nn \l__braid_crossing_end_factor_int {0}
+
+        \int_compare:nT {
+          ####1 = \seq_count:N \l__braid_crossing_seq
+        }
+        {
+          \int_set:Nn \l__braid_crossing_end_factor_int {1}
+        }
+        \int_compare:nT {
+          ####1 = 2
+        }
+        {
+          \int_set:Nn \l__braid_crossing_start_factor_int {1}
+        }
+
+      \tl_put_right:Nx \l__braid_tmpa_tl
+      {
+        \exp_not:N \__braid_lineto:nn
+
+        {\fp_eval:n
+          {
+            (\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpa_int} - 1)
+            * \__braid_dim_value:n {width}
+          }
+        }
+        {\fp_eval:n { \l__braid_height_fp + \l__braid_nudge_fp * \l__braid_crossing_start_factor_int
+            + \__braid_dim_value:n {height} * (####1 - 2)/(\seq_count:N \l__braid_crossing_seq - 1)
+ } }
+
+        \exp_not:N \__braid_curveto:nnnnnn
+
+        {0}
+        {\fp_eval:n { \l__braid_control_fp
+            * 1/(\seq_count:N \l__braid_crossing_seq - 1)}}
+
+        {0}
+        {\fp_eval:n {- \l__braid_control_fp
+            * 1/(\seq_count:N \l__braid_crossing_seq - 1)}}
+
+        {\fp_eval:n
+          {
+            (\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpb_int} - 1)
+            * \__braid_dim_value:n {width}
+          }
+        }
+        {\fp_eval:n
+          {
+            \l__braid_height_fp
+            + \__braid_dim_value:n {height} * (####1 - 1)/(\seq_count:N \l__braid_crossing_seq - 1)
+            - \l__braid_nudge_fp * \l__braid_crossing_end_factor_int
+          }
+        }
+      }
+        \int_set:Nn \l__braid_crossing_start_factor_int {0}
+        \int_set:Nn \l__braid_crossing_end_factor_int {0}
+
+        \int_compare:nT {
+          ####1 = \seq_count:N \l__braid_crossing_seq
+        }
+        {
+          \int_set:Nn \l__braid_crossing_end_factor_int {1}
+        }
+        \int_compare:nT {
+          ####1 = 2
+        }
+        {
+          \int_set:Nn \l__braid_crossing_start_factor_int {1}
+        }
+
+      \tl_put_right:Nx \l__braid_tmpb_tl
+      {
+        \exp_not:N \__braid_lineto:nn
+
+        {\fp_eval:n
+          {
+            (\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpb_int} - 1)
+            * \__braid_dim_value:n {width}
+          }
+        }
+        {\fp_eval:n { \l__braid_height_fp + \l__braid_nudge_fp * \l__braid_crossing_start_factor_int
+            + \__braid_dim_value:n {height} * (####1 - 2)/(\seq_count:N \l__braid_crossing_seq - 1)
+
+        } }
+
+        \exp_not:N \__braid_curveto:nnnnnn
+
+        {0}
+        {
+          \fp_eval:n {
+            \l__braid_control_fp  * (.5 - \__braid_value:n {gap} * (\seq_count:N \l__braid_crossing_seq - 1) ) * 1/(\seq_count:N \l__braid_crossing_seq - 1)
+          }
+        }
+
+        {
+          \fp_eval:n {
+            - (.5 - \__braid_value:n {gap} * (\seq_count:N \l__braid_crossing_seq - 1) ) / 3 *
+            \__braid_bezier_tangent:nnnnn
+            {.5 - \__braid_value:n {gap} * (\seq_count:N \l__braid_crossing_seq - 1) }
+            {0}
+            {0}
+            {
+              (\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpa_int}
+              - \seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpb_int})
+              * \__braid_dim_value:n {width}
+            }
+            {
+              (\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpa_int}
+              - \seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpb_int})
+              * \__braid_dim_value:n {width}
+            }
+          }
+        }
+        {
+          \fp_eval:n {
+            -(.5 - \__braid_value:n {gap} * (\seq_count:N \l__braid_crossing_seq - 1) ) / 3 *
+            \__braid_bezier_tangent:nnnnn
+            {.5 - \__braid_value:n {gap} * (\seq_count:N \l__braid_crossing_seq - 1) }
+            {0}
+            {
+              \l__braid_control_fp * 1/(\seq_count:N \l__braid_crossing_seq - 1)
+            }
+            {
+              \__braid_dim_value:n {height} * 1/(\seq_count:N \l__braid_crossing_seq - 1)
+              - \l__braid_nudge_fp * \l__braid_crossing_start_factor_int
+              - \l__braid_nudge_fp * \l__braid_crossing_end_factor_int
+              - \l__braid_control_fp * 1/(\seq_count:N \l__braid_crossing_seq - 1)
+            }
+            {
+              \__braid_dim_value:n {height} *  1/(\seq_count:N \l__braid_crossing_seq - 1)
+              - \l__braid_nudge_fp * \l__braid_crossing_start_factor_int
+              - \l__braid_nudge_fp * \l__braid_crossing_end_factor_int
+            }
+          }
+        }
+
+        {
+          \fp_eval:n {
+            (\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpb_int} - 1)
+            * \__braid_dim_value:n {width} +
+            \__braid_bezier_point:nnnnn
+            {.5 - \__braid_value:n {gap} * (\seq_count:N \l__braid_crossing_seq - 1) }
+            {0}
+            {0}
+            {
+              (\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpa_int}
+              - \seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpb_int})
+              * \__braid_dim_value:n {width}
+            }
+            {
+              (\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpa_int}
+              - \seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpb_int})
+              * \__braid_dim_value:n {width}
+            }
+          }
+        }
+        {
+          \fp_eval:n {
+            \l__braid_height_fp
+            + \l__braid_nudge_fp * \l__braid_crossing_start_factor_int
+            + \__braid_dim_value:n {height} * (####1 - 2)/(\seq_count:N \l__braid_crossing_seq - 1)
+            +
+            \__braid_bezier_point:nnnnn
+            {.5 - \__braid_value:n {gap} * (\seq_count:N \l__braid_crossing_seq - 1) }
+            {0}
+            {
+              \l__braid_control_fp * 1/(\seq_count:N \l__braid_crossing_seq - 1)
+            }
+            {
+              \__braid_dim_value:n {height} *  1/(\seq_count:N \l__braid_crossing_seq - 1)
+              - \l__braid_nudge_fp * \l__braid_crossing_start_factor_int
+              - \l__braid_nudge_fp * \l__braid_crossing_end_factor_int
+              - \l__braid_control_fp * 1/(\seq_count:N \l__braid_crossing_seq - 1)
+            }
+            {\__braid_dim_value:n {height} *  1/(\seq_count:N \l__braid_crossing_seq - 1)
+              - \l__braid_nudge_fp * \l__braid_crossing_start_factor_int
+              - \l__braid_nudge_fp * \l__braid_crossing_end_factor_int
+            }
+          }
+        }
+
+        \exp_not:N \__braid_moveto:nn
+        {
+          \fp_eval:n {
+            (\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpb_int} - 1)
+            * \__braid_dim_value:n {width} +
+            \__braid_bezier_point:nnnnn
+            {.5 + \__braid_value:n {gap} * (\seq_count:N \l__braid_crossing_seq - 1) }
+            {0}
+            {0}
+            {
+              (\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpa_int}
+              - \seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpb_int})
+              * \__braid_dim_value:n {width}
+            }
+            {
+              (\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpa_int}
+              - \seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpb_int})
+              * \__braid_dim_value:n {width}
+            }
+          }
+        }
+        {
+          \fp_eval:n {
+            \l__braid_height_fp
+            + \l__braid_nudge_fp * \l__braid_crossing_start_factor_int
+            + \__braid_dim_value:n {height} * (####1 - 2)/(\seq_count:N \l__braid_crossing_seq - 1)
+            +
+            \__braid_bezier_point:nnnnn
+            {.5 + \__braid_value:n {gap} * (\seq_count:N \l__braid_crossing_seq - 1) }
+            {0}
+            {
+              \l__braid_control_fp * 1/(\seq_count:N \l__braid_crossing_seq - 1)
+            }
+            {
+              \__braid_dim_value:n {height} *  1/(\seq_count:N \l__braid_crossing_seq - 1)
+              - \l__braid_nudge_fp * \l__braid_crossing_start_factor_int
+              - \l__braid_nudge_fp * \l__braid_crossing_end_factor_int
+              - \l__braid_control_fp * 1/(\seq_count:N \l__braid_crossing_seq - 1)
+            }
+            {\__braid_dim_value:n {height} *  1/(\seq_count:N \l__braid_crossing_seq - 1)
+              - \l__braid_nudge_fp * \l__braid_crossing_start_factor_int
+              - \l__braid_nudge_fp * \l__braid_crossing_end_factor_int
+            }
+          }
+        }
+
+        \exp_not:N \__braid_curveto:nnnnnn
+
+        {
+          \fp_eval:n {
+            (.5 - \__braid_value:n {gap} * (\seq_count:N \l__braid_crossing_seq - 1) ) / 3 *
+            \__braid_bezier_tangent:nnnnn
+            {.5 + \__braid_value:n {gap} * (\seq_count:N \l__braid_crossing_seq - 1) }
+            {0}
+            {0}
+            {
+              (\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpa_int}
+              - \seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpb_int})
+              * \__braid_dim_value:n {width}
+            }
+            {
+              (\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpa_int}
+              - \seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpb_int})
+              * \__braid_dim_value:n {width}
+            }
+          }
+        }
+        {
+          \fp_eval:n {
+            (.5 - \__braid_value:n {gap} * (\seq_count:N \l__braid_crossing_seq - 1) ) / 3 *
+            \__braid_bezier_tangent:nnnnn
+            {.5 + \__braid_value:n {gap} * (\seq_count:N \l__braid_crossing_seq - 1) }
+            {0}
+            {
+              \l__braid_control_fp * 1/(\seq_count:N \l__braid_crossing_seq - 1)
+            }
+            {
+              \__braid_dim_value:n {height} *  1/(\seq_count:N \l__braid_crossing_seq - 1)
+              - \l__braid_nudge_fp * \l__braid_crossing_start_factor_int
+              - \l__braid_nudge_fp * \l__braid_crossing_end_factor_int
+              - \l__braid_control_fp * 1/(\seq_count:N \l__braid_crossing_seq - 1)
+            }
+            {\__braid_dim_value:n {height} *  1/(\seq_count:N \l__braid_crossing_seq - 1)
+              - \l__braid_nudge_fp * \l__braid_crossing_start_factor_int
+              - \l__braid_nudge_fp * \l__braid_crossing_end_factor_int
+            }
+          }
+        }
+
+        {0}
+        {\fp_eval:n {
+            - \l__braid_control_fp  * (.5 - \__braid_value:n {gap} * (\seq_count:N \l__braid_crossing_seq - 1) )
+            * 1/(\seq_count:N \l__braid_crossing_seq - 1)}
+        }
+
+        {\fp_eval:n
+          {
+            (\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpa_int} - 1)
+            * \__braid_dim_value:n {width}
+          }
+        }
+        {\fp_eval:n
+          {
+            \l__braid_height_fp
+            + \__braid_dim_value:n {height} * (####1 - 1)/(\seq_count:N \l__braid_crossing_seq - 1)
+            - \l__braid_nudge_fp * \l__braid_crossing_end_factor_int
+          }
+        }
+
+      }
+      \prop_put:NxV \l__braid_strands_prop
+      {\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpb_int}} \l__braid_tmpa_tl
+      \prop_put:NxV \l__braid_strands_prop
+      {\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpa_int}} \l__braid_tmpb_tl
+      \int_compare:nT
+      {
+        \int_max:nn
+        {
+          \seq_item:Nn \l__braid_crossing_seq {####1 - 1}
+        }
+        {
+          \seq_item:Nn \l__braid_crossing_seq {####1}
         }
         -
         \int_min:nn
         {
-          \seq_item:Nn \l__braid_crossing_seq {1}
+          \seq_item:Nn \l__braid_crossing_seq {####1 - 1}
         }
         {
-          \seq_item:Nn \l__braid_crossing_seq {2}
+          \seq_item:Nn \l__braid_crossing_seq {####1}
         }
         > 1
       }
@@ -741,48 +940,72 @@
         {
           \int_min:nn
           {
-            \seq_item:Nn \l__braid_crossing_seq {1}
+            \seq_item:Nn \l__braid_crossing_seq {####1 - 1}
           }
           {
-            \seq_item:Nn \l__braid_crossing_seq {2}
+            \seq_item:Nn \l__braid_crossing_seq {####1}
           }
           + 1}
         {1}
         {
           \int_max:nn
           {
-            \seq_item:Nn \l__braid_crossing_seq {1}
+            \seq_item:Nn \l__braid_crossing_seq {####1 - 1}
           }
           {
-            \seq_item:Nn \l__braid_crossing_seq {2}
+            \seq_item:Nn \l__braid_crossing_seq {####1}
           }
           - 1
         }
         {
 
-          \prop_get:NnN \l__braid_strands_prop {####1} \l__braid_tmpa_tl
+          \prop_get:NnN \l__braid_strands_prop {########1} \l__braid_tmpa_tl
           \tl_put_right:Nx \l__braid_tmpa_tl
             {
               \exp_not:N \__braid_lineto:nn
-              {\fp_eval:n {(####1 - 1) * \__braid_dim_value:n {width} }}
+              {\fp_eval:n {(########1 - 1) * \__braid_dim_value:n {width} }}
               {\fp_eval:n
                 {
                   \l__braid_height_fp + \l__braid_nudge_fp
-                  + .5 * \l__braid_control_fp
+                  + .5 * \l__braid_control_fp / (\seq_count:N \l__braid_crossing_seq - 1)
+                  + \__braid_dim_value:n {height} * (####1 - 2)/(\seq_count:N \l__braid_crossing_seq - 1)
                 }
               }
               \exp_not:N \__braid_moveto:nn
-              {\fp_eval:n {(####1 - 1) * \__braid_dim_value:n {width} }}
+              {\fp_eval:n {(########1 - 1) * \__braid_dim_value:n {width} }}
               {\fp_eval:n
                 {
-                  \l__braid_height_fp + \__braid_dim_value:n {height}
-                  - \l__braid_nudge_fp - .5 * \l__braid_control_fp
+                  \l__braid_height_fp
+                  - \l__braid_nudge_fp - .5 * \l__braid_control_fp / (\seq_count:N \l__braid_crossing_seq - 1)
+                  + \__braid_dim_value:n {height} * (####1 - 1)/(\seq_count:N \l__braid_crossing_seq - 1)
                 }
               }
             }
 
-            \prop_put:NnV \l__braid_strands_prop {####1} \l__braid_tmpa_tl
+            \prop_put:NnV \l__braid_strands_prop {########1} \l__braid_tmpa_tl
           }
+      }
+      \int_compare:nTF
+      {
+        \seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpa_int}
+        =
+        \l__braid_crossing_long_int
+      }
+      {
+        \int_set:Nn \l__braid_crossing_long_int {\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpb_int}}
+      }
+      {
+      \int_compare:nT
+      {
+        \seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpb_int}
+        =
+        \l__braid_crossing_long_int
+      }
+      {
+        \int_set:Nn \l__braid_crossing_long_int {\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpa_int}}
+      }
+
+      }
       }
     }
     \bool_if:NT \l__braid_step_level_bool
@@ -832,6 +1055,65 @@
   {
     \prop_get:NnN \l__braid_strands_prop {##1} \l__braid_tmpa_tl
     \tl_use:N \l__braid_tmpa_tl
+  }
+  \tl_if_empty:cF {tikz@fig@name}
+  {
+    \tl_gset:cn {pgf@sh@ns@ \tl_use:c{tikz@fig@name} }{rectangle}
+    \tl_gset:cx {pgf@sh@np@ \tl_use:c{tikz@fig@name} }{%
+      \exp_not:N\def
+      \exp_not:N\southwest
+      {
+        \exp_not:N\pgfqpoint
+        {
+          \fp_to_dim:n
+          {
+            min(0,
+            (\l__braid_strands_int - 1)
+            *
+            (\__braid_dim_value:n {width})
+            )
+          }
+        }
+        {
+          \fp_to_dim:n
+          {
+            min(0,
+            \l__braid_length_int * (\__braid_dim_value:n {height})
+            + 2 * sign(\__braid_dim_value:n {height}) *
+            \__braid_dim_value:n {border~ height}
+            )
+          }
+        }
+      }
+      \exp_not:N\def
+      \exp_not:N\northeast
+      {
+        \exp_not:N\pgfqpoint
+        {
+          \fp_to_dim:n
+          {
+            max(0,
+            (\l__braid_strands_int - 1)
+            *
+            (\__braid_dim_value:n {width})
+            )
+          }
+        }
+        {
+          \fp_to_dim:n
+          {
+            max(0,
+            \l__braid_length_int * (\__braid_dim_value:n {height})
+            + 2 * sign(\__braid_dim_value:n {height}) *
+            \__braid_dim_value:n {border~ height}
+            )
+          }
+        }
+      }
+    }%
+    \pgfgettransform\l__braid_tmpa_tl
+    \tl_gset:cV {pgf@sh@nt@ \tl_use:c{tikz@fig@name} } \l__braid_tmpa_tl
+    \tl_gset:cV {pgf@sh@pi@ \tl_use:c{tikz@fig@name} } \pgfpictureid
   }
   \end{scope}
 }
@@ -891,7 +1173,7 @@
 \ExplSyntaxOff
 
 %% 
-%% Copyright (C) 2011-2019 by Andrew Stacey <loopspace@mathforge.org>
+%% Copyright (C) 2011-2022 by Andrew Stacey <loopspace@mathforge.org>
 %% 
 %% This work may be distributed and/or modified under the
 %% conditions of the LaTeX Project Public License (LPPL), either

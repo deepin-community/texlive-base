@@ -2,8 +2,10 @@
 %%                        mptrees.mp                          %%
 %%               Probability trees with MetaPost              %%
 %%                    o.peault@posteo.net                     %%
-%%                 Version 17.06 (June 2017)                  %%
+%%                Version 21.11 (November 2021)               %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+string mptreesversion;
+mptreesversion:="21.11";
 %
 % This work may be distributed and/or modified under the conditions of
 % the LaTeX Project Public License, either version 1.3 of this license
@@ -11,6 +13,8 @@
 % license is in http://www.latex-project.org/lppl.txt
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+message "mptrees version " & mptreesversion;
+
 if not known mplib: input latexmp fi;
 
 boolean arbres_latexmp;
@@ -34,6 +38,9 @@ proboffset:=labeloffset;
 
 numeric endedgeshift;
 endedgeshift:=0;
+
+numeric brokenlineratio;
+brokenlineratio:=0.2;
 
 pair Orig_arbre[][];  % sommet de l'arbre i,j
 Orig_arbre[1][1]:=origin;
@@ -66,7 +73,12 @@ endlabelspace:=1cm;
 
 
 % Étiquette au début de l'arbre
+
+picture mptreestartlabel;
+mptreestartlabel:=nullpicture;
+
 vardef startlabel(expr s)=
+  mptreestartlabel:=labelarbres(s);
   if dirtree<>0: dirlabel:=dirtree fi;
    if dirlabel>0:
      theevlabel(labelarbres(s) scaled scaleev,origin,-180+dirlabel)
@@ -88,12 +100,12 @@ vardef endlabel[][](expr s)=
   boolean tmpabscoord;
   i:=colonne.#@;
   j:=@;
-  if string s: tmps:= "\strut " & s else: tmps:=s fi;
+  if string s: tmps:= "\strut \phantom{.}" & s else: picture tmps;tmps:=s fi;
   tmpbranchtype:=branchtype;
   branchtype:=endlabeltype;
   tmpabscoord:=abscoord;
   abscoord:=false;
-  tree[i][j]((endlabelspace,0) rotated (dirlabel-dirtree))(tmps,"")
+  tree[i][j]((endlabelspace,0) rotated (dirlabel-dirtree))(tmps," ")
   hide(branchtype:=tmpbranchtype;abscoord:=tmpabscoord;)
 enddef;
 
@@ -126,7 +138,6 @@ vardef theevlabel(expr s,z,inc)=
   else:    p = textext(s)
   fi;
   d=0.5*longdir(p,inc);
-%  p shifted (z - 0.5(lrcorner p - llcorner p) - 0.5(ulcorner p - llcorner p) + (d+labeloffset)*dir(inc))
   p shifted (z - center p + (d+labeloffset)*dir(inc))
 enddef;
 
@@ -136,15 +147,16 @@ def evlabel = draw theevlabel enddef;
 
 vardef thelabelbranchehaut(expr Ori,Fin,Fig)=
    interim labeloffset:=proboffset;
-   save M,pp;
-   pair M; path pp;
+   save M,pp,tt;
+   pair M; path pp;numeric tt;
    pp=dessinbranche(Ori,Fin);
-   M= point (arctime posprob*(arclength  pp) of pp) of pp;
+   tt = arctime posprob*(arclength  pp) of pp;
+   M= point tt of pp;
    M:=M + 0.5(llcorner Fig - lrcorner Fig);
-   if xpart Ori <= xpart Fin:
-      M:=M+proboffset*unitvector(dir (dirlabel+90))
+   if (angle(direction tt of pp) <= 90) and (angle(direction tt of pp) > -90):
+      M:=M+proboffset*unitvector((direction tt of pp) rotated 90)
    else:
-      M:=M-proboffset*unitvector(dir (dirlabel+90))
+      M:=M-proboffset*unitvector((direction tt of pp) rotated 90)
    fi;
    Fig shifted M
 enddef;
@@ -152,19 +164,27 @@ enddef;
 
 vardef thelabelbranchehautrot(expr Ori,Fin,Fig)=
    interim labeloffset:=proboffset;
+   save M,pp,tt;
+   pair M; path pp;numeric tt;
+   pp=dessinbranche(Ori,Fin);
+   tt = arctime posprob*(arclength  pp) of pp;
+   M= point tt of pp;
    if  xpart Ori <= xpart Fin:
-      Fig shifted (0.5*(ulcorner Fig - lrcorner Fig) + llcorner Fig+(0,proboffset)) rotated (angle(Fin-Ori)) shifted posprob[Ori,Fin]
+      Fig shifted ( - 0.5*lrcorner Fig- 0.5* llcorner Fig+(0,proboffset)) rotated angle(direction tt of pp) shifted M
    else:
-      Fig shifted (0.5*(ulcorner Fig - lrcorner Fig) + llcorner Fig+(0,proboffset)) rotated (angle(Ori-Fin)) shifted posprob[Ori,Fin]
+      Fig shifted ( - 0.5*lrcorner Fig- 0.5* llcorner Fig+(0,proboffset)) rotated (-180+angle(direction tt of pp)) shifted M
    fi
 enddef;
 
 
 
 vardef thelabelbranchesuper(expr Ori,Fin,Fig)=
-   save figtmp;
+   save figtmp,M,pp;
+   pair M; path pp;
    picture figtmp;
-   figtmp:=Fig shifted (posprob[Ori,Fin]-0.5*(lrcorner Fig + ulcorner Fig));
+   pp=dessinbranche(Ori,Fin);
+   M= point (arctime posprob*(arclength  pp) of pp) of pp;
+   figtmp:=Fig shifted (M-0.5*(lrcorner Fig + ulcorner Fig));
    image(fill bbox figtmp withcolor background;
          draw figtmp)
 enddef;
@@ -173,7 +193,12 @@ enddef;
 vardef thelabelbranchesuperrot(expr Ori,Fin,Fig)=
    save figtmp;
    picture figtmp;
-   figtmp:=Fig shifted (-0.5*(lrcorner Fig + ulcorner Fig)) rotated (angle(Fin-Ori)) shifted posprob[Ori,Fin];
+   save M,pp,tt;
+   pair M; path pp;numeric tt;
+   pp=dessinbranche(Ori,Fin);
+   tt = arctime posprob*(arclength  pp) of pp;
+   M= point tt of pp;
+   figtmp:=Fig shifted (-0.5*(lrcorner Fig + ulcorner Fig)) rotated angle(direction tt of pp) shifted M;
    image(fill bbox figtmp withcolor background;
          draw figtmp)
 enddef;
@@ -192,10 +217,22 @@ vardef thelabelbranche(expr Ori,Fin,Fig)=
   fi
 enddef;
 
+vardef brokenline(expr Ori,Fin)=
+   save B,M;
+   pair B,M;
+   B=(xpart (Fin rotated -dirlabel), ypart (Ori rotated -dirlabel));
+   M = (brokenlineratio*abs(B-(Ori rotated -dirlabel)),0) rotated dirlabel;
+   Ori -- (Ori + M) -- (Fin - M) -- Fin
+enddef;
+
 %%%%%%%% Dessin de la branche
 vardef dessinbranche(expr Ori,Fin)=
   if branchtype="segment":
     Ori--Fin
+  elseif branchtype="curve":
+    Ori{dir dirlabel}..{dir dirlabel}Fin
+  elseif branchtype="broken":
+    brokenline(Ori,Fin)
   else:
     Ori--Fin
   fi
@@ -222,7 +259,8 @@ vardef branche_abs(expr Ori,Fin,Eve,Pro)=
          else:
             draw
          fi
-         dessinbranche(Ori,Fin + (0,tmpshft)) rotatedaround(Ori,dirtree)
+%         dessinbranche(Ori,Fin + (0,tmpshft)) rotatedaround(Ori,dirtree)
+         dessinbranche(Ori,(Fin + (0,tmpshft)) rotatedaround(Ori,dirtree))
       fi;
       draw figlab;
       evlabel(Eve,Fin rotatedaround(Ori,dirtree),dirlabel)
@@ -242,7 +280,7 @@ vardef _arbre_(expr Ori)(text t)(text r)= % (pt)(pt1,pt2...)(ev,proba,ev,proba..
   numeric counttmp,countlab;
   pair Fintmp[];
   if dirtree<>0: dirlabel:=dirtree fi;
-  if colonne_cour=1: for i=1 upto 6: countligne[i]:=0; endfor fi
+  if colonne_cour=1: for i=1 upto 128: countligne[i]:=0; endfor fi
   figtmp=image(%
       counttmp:=0;
       for i=t:
@@ -467,3 +505,83 @@ vardef arbre[][](text t)(text r)=
 enddef;
 
 def tree = arbre enddef;
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%% Binomial
+
+string bernoullisuccessevent, bernoullifailureevent, bernoullisuccessprob, bernoullifailureprob;
+bernoullisuccessevent := "$S$";
+bernoullifailureevent := "$\overline{S}$";
+bernoullisuccessprob := "$p$";
+bernoullifailureprob := "$q$";
+numeric bernoulliscalebranch;
+bernoulliscalebranch := 0.8;
+
+vardef bernoulliprocess(expr n)(expr l,h)=
+  save tmp,ll,shiftev;
+  numeric ll;
+  shiftev:=max(longdir(labelarbres(bernoullisuccessevent),dirtree),longdir(labelarbres(bernoullifailureevent),dirtree))+2*labeloffset;
+  ll := l;
+  picture tmp;
+  tmp := image(%
+  for i := 1 upto n:
+    for j := 1 upto (2**(i-1)):
+      draw tree[i][j](ll,h*(2**(n-i)))(bernoullisuccessevent, bernoullisuccessprob, bernoullifailureevent, bernoullifailureprob);
+    endfor
+    ll := ll * bernoulliscalebranch;
+  endfor
+  );
+  tmp
+enddef;
+
+
+vardef bernoulliprocessL(expr n)(expr L,H)=
+  save l,h,lpic,hpic;
+  numeric l,h,lpic,hpic;
+  hpic:=0.5*longdir(labelarbres(bernoullisuccessevent),90+dirtree) + 0.5*longdir(labelarbres(bernoullifailureevent),90+dirtree);
+  h := (H-hpic)/((2**n)-1);
+  lpic:=longdir(mptreestartlabel,dirtree) + n*max(longdir(labelarbres(bernoullisuccessevent),dirtree) , longdir(labelarbres(bernoullifailureevent),dirtree)) + (2*n-1)*labeloffset;
+  if bernoulliscalebranch<>1:
+    l:= (L-lpic)*(1-bernoulliscalebranch)/(1-bernoulliscalebranch**n)
+  else:
+    l:= (L-lpic)/n
+  fi;
+  bernoulliprocess(n)(l,h)
+enddef;
+
+
+vardef binomialtree(expr n)(expr l,h)=
+  save tmp,ll,posprob,shiftev,bernoulliscalebranch;
+  numeric ll;
+  posprob:=0.5;bernoulliscalebranch:=1;
+  shiftev:=longdir(labelarbres("3"),dirtree)+2*labeloffset;
+  ll := l;
+  picture tmp;
+  tmp := image(%
+  draw tree[1][1](ll,h)("$1$", bernoullisuccessprob,  "$0$", bernoullifailureprob);
+  if n>1:
+    for i := 2 upto n:
+      for j := 1 upto (i-1):
+        draw tree[i][2*j-1](ll,h)(decimal(i-j+1), bernoullisuccessprob,  " ", bernoullifailureprob);
+      endfor
+      draw tree[i][2*i-2](ll,h)("$1$", bernoullisuccessprob,  "$0$", bernoullifailureprob);
+    endfor
+    ll := ll * bernoulliscalebranch;
+  fi
+  );
+  tmp
+enddef;
+
+vardef binomialtreeL(expr n)(expr L,H)=
+  save l,h,lpic,hpic;
+  numeric l,h,lpic,hpic;
+  hpic:=longdir(labelarbres("0"),90+dirtree);
+  h := (H-hpic)/n;
+  lpic:=longdir(mptreestartlabel,dirtree) + n*max(longdir(labelarbres("0"),dirtree) , longdir(labelarbres("0"),dirtree)) + (2*n-1)*labeloffset;
+  l:= (L-lpic)/n;
+  binomialtree(n)(l,h)
+enddef;
+
+
+

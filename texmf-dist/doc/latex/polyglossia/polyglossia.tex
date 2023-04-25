@@ -1,7 +1,7 @@
 % !TeX spellcheck = en_US
 % !TeX TS-program = xelatex
-\documentclass[11pt]{ltxdoc}
-\usepackage{color}
+\documentclass[11pt,nohyperref]{ltxdoc}
+\usepackage{xcolor}
 \usepackage{xspace,fancyvrb,longtable,booktabs}
 \usepackage[neverdecrease]{paralist}
 \usepackage[format=hang,labelfont=bf,labelsep=period]{caption}
@@ -21,14 +21,25 @@
     pdfauthor={F Charette, A Reutenauer, B Roucariès, J Spitzmüller},
     pdfkeywords={xetex, xelatex, luatex, lualatex, multilingual, babel, hyphenation}
     ]{hyperref}
+\usepackage{array}
 \usepackage{metalogo}
 \let\XeTeX\undefined
 \let\XeLaTeX\undefined
 \usepackage[babelshorthands]{polyglossia}
 \usepackage{farsical}
+%
+% Languages we need in the documentation. See below for fonts
 \setmainlanguage[variant=british,ordinalmonthday=false]{english}
-\setotherlanguages{arabic,armenian,hebrew,syriac,greek,russian,serbian,catalan,georgian}
-\usepackage[protrusion]{microtype}
+\setotherlanguages{arabic,armenian,hebrew,syriac,greek,russian,serbian,catalan,georgian,chinese}
+\usepackage[protrusion,nopatch=footnote]{microtype}
+\renewcommand\MacroFont{\footnotesize\color{xpgblue}\ttfamily}
+% Customizable version of \DescribeMacro (e.g. if macro is too long)
+\newcommand*\DescribeMacroCust[2]{%
+  \let\origMacroFont\MacroFont%
+  \renewcommand\MacroFont{\footnotesize\color{xpgblue}\ttfamily#1}%
+  \DescribeMacro{#2}%
+  \let\MacroFont\origMacroFont%
+}
 \newcommand*\Cmd[1]{\cmd{#1}\DescribeMacro{#1}\xspace}
 \newcommand*\pkg[1]{\textsf{\color{xpgblue}#1}}
 \newcommand*\file[1]{\texttt{\color{xpgblue}#1}}
@@ -46,7 +57,9 @@
 \def\Ie{\textit{I.e.,}\xspace}
 \def\etc{\@ifnextchar.{\textit{etc}}{\textit{etc.}\@\xspace}}
 
+%
 %% Commands for documenting options
+%
 \newcommand*\xpgoption[1]{\textcolor{xpgblue}{\ttfamily\bfseries #1}}
 \newcommand*\xpgvalue[1]{\texttt{#1}}
 \newcommand*\xpgpresetvalue[1]{\texttt{\textit{#1}}}
@@ -101,15 +114,34 @@
 	\vskip 0pt plus #1\pagebreak[3]\vskip 0pt plus -#1\relax}
 \pretocmd{\subsection}{\condbreak{2\baselineskip}}{}{}
 
+%
+% Fonts
+% We try to use fonts that are shipped with TeXLive
+% (see #478)
+%
 %% fontspec declarations:
-\setmainfont{Linux Libertine O}[Numbers=OldStyle]
-\setsansfont{Linux Biolinum O}
-\setmonofont[Scale=MatchLowercase]{DejaVu Sans Mono}
-\newfontfamily\arabicfont[Script=Arabic]{Amiri}
-\newfontfamily\armenianfont[Script=Armenian]{DejaVu Sans}
+% Main font: Package libertine (Linux Libertine and Biolinum Mono)
+\usepackage[osf]{libertine}
+% Monospace: Package dejavu-otf
+\setmonofont[Scale=MatchLowercase]{DejaVuSansMono}
+% Libertine includes Hebrew, but we load it separately since
+% osf is not supported with this script and we want to avoid the
+% respective warnings
+\newfontfamily\hebrewfont[Script=Hebrew]{Linux Libertine O}
+% Package dejavu-otf
+\newfontfamily\armenianfont[Script=Armenian,Scale=MatchLowercase]{DejaVuSans}
+\newfontfamily\georgianfont[Scale=MatchLowercase]{DejaVuSerif}
+% Package amiri
+\newfontfamily\arabicfont[Script=Arabic]{Amiri-Regular}
+% No Syriac otf/ttf font seems available on CTAN
+% This one, from the Syriac Institute, is included on Linux
+% in the x11-fonts set and can be downloaded from
+% https://bethmardutho.org/meltho/ (Meltho Fonts Package)
 \newfontfamily\syriacfont[Script=Syriac]{Serto Jerusalem}
-\newfontfamily\hebrewfont[Script=Hebrew]{Ezra SIL}
-\newfontfamily\georgianfont{DejaVu Serif}
+% Our decorative title: package gfscomplutum
+\newfontfamily\xpgtitlefont[Scale=1.4, LetterSpace=30]{GFSPolyglot.otf}
+% Package noto, notoCJKsc
+\newfontfamily\chinesefont{Noto Serif CJK SC}[Script=CJK]
 
 \linespread{1.05}
 \frenchspacing
@@ -124,12 +156,12 @@
 \hyphenation{Kha-li-ghi Reu-ten-auer new-zea-land}
 \GetFileInfo{polyglossia.sty}
 
-\title{\textcolor{lightblue}{\Huge\fontspec[LetterSpace=40]{GFS Ambrosia} Πολυγλωσσια}
+\title{{\textgreek{\xpgtitlefont\color{lightblue}\MakeUppercase{Πολυγλωσσία}}}
 \\[16pt]
 \color{xpgblue}Polyglossia: Modern multilingual typesetting with \XeLaTeX\ and \LuaLaTeX}
 \author{\TA{François Charette} \and \TA{Arthur Reutenauer}\thanks{Current maintainer}
 	    \and \TA{Bastien Roucariès} \and \TA{Jürgen Spitzmüller}}
-\date{\filedate \qquad \fileversion\\
+\date{\filedate \qquad \fileversion\thanks{Please report bugs to \url{http://github.com/reutenauer/polyglossia/issues}}\\
 \footnotesize (\textsc{pdf} file generated on \today)}
 
 \maketitle
@@ -222,29 +254,29 @@ that are explained in section \ref{specific} below.
 
 \begin{table}[ht]\centering
 \caption{\label{tab:lang}Languages currently supported in \pkg{polyglossia}}
-% Produced with tools/insert-language-list.rb -- JS, 2019-11-01
-% Edited by hand -- JS, 2019-11-01
+% Produced with tools/insert-language-list.rb -- JS, 2022-11-23
+% Edited by hand -- JS, 2022-11-23
 \begin{tabular}{lllll}
-\toprule
-\TX{afrikaans}  & danish         & \TX{hungarian} & \TX{marathi}    & \TX{slovenian} \\
-albanian        & divehi         & icelandic      & \TX{mongolian}  & \TX{sorbian}   \\
-amharic         & \TX{dutch}     & interlingua    & nko             & \TX{spanish}   \\
-\TX{arabic}     & \TX{english}   & \TX{italian}   & \TX{norwegian}  & swedish        \\
-\TX{armenian}   & \TX{esperanto} & japanese       & occitan         & \TX{syriac}    \\
-asturian        & estonian       & kannada        & \TX{persian}    & tamil          \\
-basque          & \TX{finnish}   & khmer          & piedmontese     & telugu         \\
-\TX{belarusian} & \TX{french}    & \TX{korean}    & polish          & \TX{thai}      \\
-\TX{bengali}    & friulian       & \TX{kurdish}   & \TX{portuguese} & \TX{tibetan}   \\
-bosnian         & \TX{gaelic}    & \TX{lao}       & romanian        & turkish        \\
-breton          & galician       & \TX{latin}     & romansh         & turkmen        \\
-bulgarian       & \TX{georgian}  & latvian        & \TX{russian}    & \TX{ukrainian} \\
-\TX{catalan}    & \TX{german}    & lithuanian     & \TX{sami}       & urdu           \\
-coptic          & \TX{greek}     & macedonian     & \TX{sanskrit}   & \TX{uyghur}    \\
-\TX{croatian}   & \TX{hebrew}    & \TX{malay}     & \TX{serbian}    & vietnamese     \\
-\TX{czech}      & \TX{hindi}     & malayalam      & \TX{slovak}     & \TX{welsh}     \\
-\bottomrule
+	\toprule
+	\TX{afrikaans}	& danish		& icelandic		& nko			& \TX{spanish}	\\
+	albanian		& divehi		& interlingua	& \TX{norwegian}& swedish		\\
+	amharic			& \TX{dutch}	& \TX{italian}	& occitan		& \TX{syriac}	\\
+	\TX{arabic}		& \TX{english}	& japanese		& \TX{persian}	& tamil			\\
+	\TX{armenian}	& \TX{esperanto}& kannada		& piedmontese	& telugu		\\
+	asturian		& estonian		& khmer			& \TX{polish}	& \TX{thai}		\\
+	basque			& \TX{finnish}	& \TX{korean}	&\TX{portuguese}& \TX{tibetan}	\\
+	\TX{belarusian}	& \TX{french}	& \TX{kurdish}	& \TX{punjabi}	& turkish		\\
+	\TX{bengali}	& friulian		& \TX{lao}		& romanian		& turkmen		\\
+	bosnian			& \TX{gaelic}	& \TX{latin}	& romansh		& \TX{ukrainian}\\
+	breton			& galician		& latvian		& \TX{russian}	& urdu			\\
+	bulgarian		& \TX{georgian}	& lithuanian	& \TX{sami}		& \TX{uyghur}	\\
+	\TX{catalan}	& \TX{german}	& macedonian	& \TX{sanskrit}	& vietnamese	\\
+	\TX{chinese}	& \TX{greek}	& \TX{malay}	& \TX{serbian}	& \TX{welsh}	\\
+	coptic			& \TX{hebrew}	& malayalam		& \TX{slovak}	& 				\\
+	\TX{croatian}	& \TX{hindi}	& \TX{marathi}	& \TX{slovenian}& 				\\
+	\TX{czech}		& \TX{hungarian}& \TX{mongolian}& \TX{sorbian}	& 				\\
+	\bottomrule
 \end{tabular}
-
 \end{table}
 
 \paragraph{Version Notes} The support for Amharic\new{1.0.1} should be considered an experimental attempt to
@@ -302,11 +334,9 @@ brazil             & portuguese & variant=brazilian                   \\
 british            & english    & variant=british                     \\
 canadian           & english    & variant=canadian                    \\
 canadien           & french     & variant=canadian                    \\
-classiclatin\footnote{In \pkg{babel} currently only selectable via dot modifier (\emph{latin.classic}).}
-                   & latin      & variant=classic                     \\
+classiclatin       & latin      & variant=classic                     \\
 farsi              & persian    &                                     \\
-ecclesiasticlatin\footnote{In \pkg{babel} currently only selectable via dot modifier (\emph{latin.ecclesiastic}).}
-                   & latin      & variant=ecclesiastic                \\
+ecclesiasticlatin  & latin      & variant=ecclesiastic                \\
 friulan            & friulian   &                                     \\
 german\footnote{Due to the name conflict only available in \pkg{polyglossia} as \emph{germanb} (which is a \pkg{babel} synonym).}
                    & german     & spelling=old                        \\
@@ -314,8 +344,7 @@ irish              & gaelic     & variant=irish [\emph{default}]      \\
 kurmanji           & kurdish    & variant=kurmanji                    \\
 lowersorbian       & sorbian    & variant=lower                       \\
 magyar             & hungarian  &                                     \\
-medievallatin\footnote{In \pkg{babel} currently only selectable via dot modifier (\emph{latin.medieval}).}
-                   & latin      & variant=medieval                    \\
+medievallatin      & latin      & variant=medieval                    \\
 naustrian          & german     & variant=austrian                    \\
 newzealand         & english    & variant=newzealand                  \\
 ngerman            & german     & variant=german [\emph{default}]     \\
@@ -334,7 +363,7 @@ uppersorbian       & sorbian    & variant=upper [\emph{default}]      \\
 \bottomrule
 \end{tabular}
 \end{minipage}
-	
+
 \end{table}
 
 For convenience reasons, \pkg{polyglossia} also supports the use of babel names\new{1.46} (for the few justified
@@ -358,171 +387,175 @@ language switching commands\slash environments documented in section~\ref{sec:ba
 Table~\ref{tab:BCP47-polyglossia} lists the currently supported tags.
 
 \bgroup\small\addfontfeatures{Numbers={Monospaced,Lining}}
-\begin{longtable}[c]{lll}
-	\caption{\label{tab:BCP47-polyglossia}BCP47-polyglossia language name matching}\\
+\begin{longtable}[c]{ll>{\raggedright}p{6cm}}
+	\caption{\label{tab:BCP47-polyglossia}BCP47-polyglossia language name matching}\tabularnewline
 	\toprule
-	\textbf{BCP-47 tag} & \textbf{Polyglossia name} & \textbf{Polyglossia options}\\
+	\textbf{BCP-47 tag} & \textbf{Polyglossia name} & \textbf{Polyglossia options}\tabularnewline
 	\midrule
 	\endfirsthead
-	\caption[]{BCP47-polyglossia language name matching (\emph{continued})}\\
+	\caption[]{BCP47-polyglossia language name matching (\emph{continued})}\tabularnewline
 	\toprule
-	\textbf{BCP-47 tag} & \textbf{Polyglossia name} & \textbf{Polyglossia options}\\
+	\textbf{BCP-47 tag} & \textbf{Polyglossia name} & \textbf{Polyglossia options}\tabularnewline
 	\midrule
 	\endhead
-	aeb              & arabic      & locale=tunisia                                     \\
-	af               & afrikaans   &                                                    \\
-	afb              & arabic      & locale=default                                     \\
-	am               & amharic     &                                                    \\
-	apd              & arabic      & locale=default                                     \\
-	ar               & arabic      &                                                    \\
-	ar-IQ            & arabic      & locale=mashriq                                     \\
-	ar-JO            & arabic      & locale=mashriq                                     \\
-	ar-LB            & arabic      & locale=mashriq                                     \\
-	ar-MR            & arabic      & locale=mauritania                                  \\
-	ar-PS            & arabic      & locale=mashriq                                     \\
-	ar-SY            & arabic      & locale=mashriq                                     \\
-	ar-YE            & arabic      & locale=default                                     \\
-	arq              & arabic      & locale=algeria                                     \\
-	ary              & arabic      & locale=morocco                                     \\
-	arz              & arabic      & locale=default                                     \\
-	ast              & asturian    &                                                    \\
-	ayl              & arabic      & locale=libya                                       \\
-	be               & belarusian  &                                                    \\
-	be-tarask        & belarusian  & spelling=classic                                   \\
-	bg               & bulgarian   &                                                    \\
-	bn               & bengali     &                                                    \\
-	bo               & tibetan     &                                                    \\
-	br               & breton      &                                                    \\
-	bs               & bosnian     &                                                    \\
-	ca               & catalan     &                                                    \\
-	ckb              & kurdish     & variant=sorani [\emph{default}]                    \\
-	ckb-Arab         & kurdish     & variant=sorani, script=Arabic [\emph{default}]     \\
-	ckb-Latn         & kurdish     & variant=sorani, script=Latin                       \\
-	cop              & coptic      &                                                    \\
-	cy               & welsh       &                                                    \\
-	cz               & czech       &                                                    \\
-	da               & danish      &                                                    \\
-	de               & german      &                                                    \\
-	de-AT            & german      & variant=austrian, spelling=new                     \\
-	de-AT-1901       & german      & variant=austrian, spelling=old                     \\
-	de-AT-1996       & german      & variant=austrian, spelling=new                     \\
-	de-CH            & german      & variant=swiss, spelling=new                        \\
-	de-CH-1901       & german      & variant=swiss, spelling=old                        \\
-	de-CH-1996       & german      & variant=swiss, spelling=new                        \\
-	de-DE            & german      & variant=german, spelling=new                       \\
-	de-DE-1901       & german      & variant=german, spelling=old                       \\
-	de-DE-1996       & german      & variant=german, spelling=new  [\emph{default}]     \\
-	de-Latf          & german      & script=blackletter                                 \\
-	de-Latf-AT       & german      & variant=austrian, spelling=new, script=blackletter \\
-	de-Latf-AT-1901  & german      & variant=austrian, spelling=old, script=blackletter \\
-	de-Latf-AT-1996  & german      & variant=austrian, spelling=new, script=blackletter \\
-	de-Latf-CH       & german      & variant=swiss, spelling=new, script=blackletter    \\
-	de-Latf-CH-1901  & german      & variant=swiss, spelling=old, script=blackletter    \\
-	de-Latf-CH-1996  & german      & variant=swiss, spelling=new, script=blackletter    \\
-	de-Latf-DE       & german      & variant=german, spelling=new, script=blackletter   \\
-	de-Latf-DE-1901  & german      & variant=german, spelling=old, script=blackletter   \\
-	de-Latf-DE-1996  & german      & variant=german, spelling=new, script=blackletter   \\
-	dsb              & sorbian     & variant=lower                                      \\
-	dv               & divehi      &                                                    \\
-	el               & greek       &                                                    \\
-	el-monoton       & greek       & variant=monotonic  [\emph{default}]                \\
-	el-polyton       & greek       & varant=polytonic                                   \\
-	en               & english     &                                                    \\
-	en-AU            & english     & variant=australian                                 \\
-	en-CA            & english     & variant=canadian                                   \\
-	en-GB            & english     & variant=british                                    \\
-	en-NZ            & english     & variant=newzealand                                 \\
-	en-US            & english     & variant=us [\emph{default}]                        \\
-	eo               & esperanto   &                                                    \\
-	es               & spanish     &                                                    \\
-	es-ES            & spanish     & variant=spanish [\emph{default}]                   \\
-	es-MX            & spanish     & variant=mexican                                    \\
-	et               & estonian    &                                                    \\
-	eu               & basque      &                                                    \\
-	fa               & persian     &                                                    \\
-	fi               & finnish     &                                                    \\
-	fr               & french      &                                                    \\
-	fr-CA            & french      & variant=canadian                                   \\
-	fr-CH            & french      & variant=swiss                                      \\
-	fr-FR            & french      & variant=french [\emph{default}]                    \\
-	fur              & friulian    &                                                    \\
-	ga               & gaelic      & variant=irish [\emph{default}]                     \\
-	gd               & gaelic      & variant=scottish                                   \\
-	gl               & galician    &                                                    \\
-	grc              & greek       & variant=ancient                                    \\
-	he               & hebrew      &                                                    \\
-	hi               & hindi       &                                                    \\
-	hr               & croatian    &                                                    \\
-	hsb              & sorbian     & variant=upper [\emph{default}]                     \\
-	hu               & hungarian   &                                                    \\
-	hy               & armenian    &                                                    \\
-	ia               & interlingua &                                                    \\
-	id               & malay       & variant=indonesian                                 \\
-	is               & icelandic   &                                                    \\
-	it               & italian     &                                                    \\
-	ja               & japanese    &                                                    \\
-	ka               & georgian    &                                                    \\
-	km               & khmer       &                                                    \\
-	kmr              & kurdish     & variant=kurmanji                                   \\
-	kmr-Arab         & kurdish     & variant=kurmanji, script=Arabic                    \\
-	kmr-Latn         & kurdish     & variant=kurmanji, script=Latin                     \\
-	kn               & kannada     &                                                    \\
-	ko               & korean      &                                                    \\
-	ku               & kurdish     &                                                    \\
-	ku-Arab          & kurdish     & script=Arabic                                      \\
-	ku-Latn          & kurdish     & script=Latin                                       \\
-	la               & latin       &                                                    \\
-	la-x-classic     & latin       & variant=classic                                    \\
-	la-x-ecclesia    & latin       & variant=ecclesiastic                               \\
-	la-x-medieval    & latin       & variant=medieval                                   \\
-	lo               & lao         &                                                    \\
-	lt               & lithuanian  &                                                    \\
-	lv               & latvian     &                                                    \\
-	mk               & macedonian  &                                                    \\
-	ml               & malayalam   &                                                    \\
-	mn               & mongolian   &                                                    \\
-	mr               & marathi     &                                                    \\
-	nb               & norwegian   & variant=bokmal                                     \\
-	nko              & nko         &                                                    \\
-	nl               & dutch       &                                                    \\
-	nn               & norwegian   & variant=nynorsk [\emph{default}]                   \\
-	oc               & occitan     &                                                    \\
-	pl               & polish      &                                                    \\
-	pms              & piedmontese &                                                    \\
-	pt               & portuguese  &                                                    \\
-	pt-BR            & portuguese  & variant=brazilian                                  \\
-	pt-PT            & portuguese  & variant=portuguese [\emph{default}]                \\
-	rm               & romansh     &                                                    \\
-	ro               & romanian    &                                                    \\
-	ru               & russian     &                                                    \\
-	ru-luna1918      & russian     & spelling=modern [\emph{default}]                   \\
-	ru-petr1708      & russian     & spelling=old                                       \\
-	sa               & sanskrit    &                                                    \\
-	sa-Beng          & sanskrit    & script=Bengali                                     \\
-	sa-Deva          & sanskrit    & script=Devanagari [\emph{default}]                 \\
-	sa-Gujr          & sanskrit    & script=Gujarati                                    \\
-	sa-Knda          & sanskrit    & script=Kannada                                     \\
-	sa-Mlym          & sanskrit    & script=Malayalam                                   \\
-	sa-Telu          & sanskrit    & script=Telugu                                      \\
-	se               & sami        &                                                    \\
-	sk               & slovak      &                                                    \\
-	sl               & slovenian   &                                                    \\
-	sq               & albanian    &                                                    \\
-	sr               & serbian     &                                                    \\
-	sr-Cyrl          & serbian     & script=Cyrillic                                    \\
-	sr-Latn          & serbian     & script=Latin [\emph{default}]                      \\
-	sv               & swedish     &                                                    \\
-	syr              & syriac      &                                                    \\
-	ta               & tamil       &                                                    \\
-	te               & telugu      &                                                    \\
-	th               & thai        &                                                    \\
-	tk               & turkmen     &                                                    \\
-	tr               & turkish     &                                                    \\
-	ug               & uyghur      &                                                    \\
-	uk               & ukrainian   &                                                    \\
-	ur               & urdu        &                                                    \\
-	vi               & vietnamese  &                                                    \\
-	zsm              & malay       & variant=malaysian [\emph{default}]                 \\
+	aeb              & arabic      & locale=tunisia                                     \tabularnewline
+	af               & afrikaans   &                                                    \tabularnewline
+	afb              & arabic      & locale=default                                     \tabularnewline
+	am               & amharic     &                                                    \tabularnewline
+	apd              & arabic      & locale=default                                     \tabularnewline
+	ar               & arabic      &                                                    \tabularnewline
+	ar-IQ            & arabic      & locale=mashriq                                     \tabularnewline
+	ar-JO            & arabic      & locale=mashriq                                     \tabularnewline
+	ar-LB            & arabic      & locale=mashriq                                     \tabularnewline
+	ar-MR            & arabic      & locale=mauritania                                  \tabularnewline
+	ar-PS            & arabic      & locale=mashriq                                     \tabularnewline
+	ar-SY            & arabic      & locale=mashriq                                     \tabularnewline
+	ar-YE            & arabic      & locale=default                                     \tabularnewline
+	arq              & arabic      & locale=algeria                                     \tabularnewline
+	ary              & arabic      & locale=morocco                                     \tabularnewline
+	arz              & arabic      & locale=default                                     \tabularnewline
+	ast              & asturian    &                                                    \tabularnewline
+	ayl              & arabic      & locale=libya                                       \tabularnewline
+	be               & belarusian  &                                                    \tabularnewline
+	be-tarask        & belarusian  & spelling=classic                                   \tabularnewline
+	bg               & bulgarian   &                                                    \tabularnewline
+	bn               & bengali     &                                                    \tabularnewline
+	bo               & tibetan     &                                                    \tabularnewline
+	br               & breton      &                                                    \tabularnewline
+	bs               & bosnian     &                                                    \tabularnewline
+	ca               & catalan     &                                                    \tabularnewline
+	ckb              & kurdish     & variant=sorani [\emph{default}]                    \tabularnewline
+	ckb-Arab         & kurdish     & variant=sorani, script=Arabic [\emph{default}]     \tabularnewline
+	ckb-Latn         & kurdish     & variant=sorani, script=Latin                       \tabularnewline
+	cop              & coptic      &                                                    \tabularnewline
+	cy               & welsh       &                                                    \tabularnewline
+	cz               & czech       &                                                    \tabularnewline
+	da               & danish      &                                                    \tabularnewline
+	de               & german      &                                                    \tabularnewline
+	de-AT            & german      & variant=austrian, spelling=new                     \tabularnewline
+	de-AT-1901       & german      & variant=austrian, spelling=old                     \tabularnewline
+	de-AT-1996       & german      & variant=austrian, spelling=new                     \tabularnewline
+	de-CH            & german      & variant=swiss, spelling=new                        \tabularnewline
+	de-CH-1901       & german      & variant=swiss, spelling=old                        \tabularnewline
+	de-CH-1996       & german      & variant=swiss, spelling=new                        \tabularnewline
+	de-DE            & german      & variant=german, spelling=new                       \tabularnewline
+	de-DE-1901       & german      & variant=german, spelling=old                       \tabularnewline
+	de-DE-1996       & german      & variant=german, spelling=new  [\emph{default}]     \tabularnewline
+	de-Latf          & german      & script=blackletter                                 \tabularnewline
+	de-Latf-AT       & german      & variant=austrian, spelling=new, script=blackletter \tabularnewline
+	de-Latf-AT-1901  & german      & variant=austrian, spelling=old, script=blackletter \tabularnewline
+	de-Latf-AT-1996  & german      & variant=austrian, spelling=new, script=blackletter \tabularnewline
+	de-Latf-CH       & german      & variant=swiss, spelling=new, script=blackletter    \tabularnewline
+	de-Latf-CH-1901  & german      & variant=swiss, spelling=old, script=blackletter    \tabularnewline
+	de-Latf-CH-1996  & german      & variant=swiss, spelling=new, script=blackletter    \tabularnewline
+	de-Latf-DE       & german      & variant=german, spelling=new, script=blackletter   \tabularnewline
+	de-Latf-DE-1901  & german      & variant=german, spelling=old, script=blackletter   \tabularnewline
+	de-Latf-DE-1996  & german      & variant=german, spelling=new, script=blackletter   \tabularnewline
+	dsb              & sorbian     & variant=lower                                      \tabularnewline
+	dv               & divehi      &                                                    \tabularnewline
+	el               & greek       &                                                    \tabularnewline
+	el-monoton       & greek       & variant=monotonic  [\emph{default}]                \tabularnewline
+	el-polyton       & greek       & varant=polytonic                                   \tabularnewline
+	en               & english     &                                                    \tabularnewline
+	en-AU            & english     & variant=australian                                 \tabularnewline
+	en-CA            & english     & variant=canadian                                   \tabularnewline
+	en-GB            & english     & variant=british                                    \tabularnewline
+	en-NZ            & english     & variant=newzealand                                 \tabularnewline
+	en-US            & english     & variant=us [\emph{default}]                        \tabularnewline
+	eo               & esperanto   &                                                    \tabularnewline
+	es               & spanish     &                                                    \tabularnewline
+	es-ES            & spanish     & variant=spanish [\emph{default}]                   \tabularnewline
+	es-MX            & spanish     & variant=mexican                                    \tabularnewline
+	et               & estonian    &                                                    \tabularnewline
+	eu               & basque      &                                                    \tabularnewline
+	fa               & persian     &                                                    \tabularnewline
+	fi               & finnish     &                                                    \tabularnewline
+	fr               & french      &                                                    \tabularnewline
+	fr-CA            & french      & variant=canadian                                   \tabularnewline
+	fr-CH            & french      & variant=swiss                                      \tabularnewline
+	fr-FR            & french      & variant=french [\emph{default}]                    \tabularnewline
+	fur              & friulian    &                                                    \tabularnewline
+	ga               & gaelic      & variant=irish [\emph{default}]                     \tabularnewline
+	gd               & gaelic      & variant=scottish                                   \tabularnewline
+	gl               & galician    &                                                    \tabularnewline
+	grc              & greek       & variant=ancient                                    \tabularnewline
+	he               & hebrew      &                                                    \tabularnewline
+	hi               & hindi       &                                                    \tabularnewline
+	hr               & croatian    &                                                    \tabularnewline
+	hsb              & sorbian     & variant=upper [\emph{default}]                     \tabularnewline
+	hu               & hungarian   &                                                    \tabularnewline
+	hy               & armenian    &                                                    \tabularnewline
+	ia               & interlingua &                                                    \tabularnewline
+	id               & malay       & variant=indonesian                                 \tabularnewline
+	is               & icelandic   &                                                    \tabularnewline
+	it               & italian     &                                                    \tabularnewline
+	ja               & japanese    &                                                    \tabularnewline
+	ka               & georgian    &                                                    \tabularnewline
+	km               & khmer       &                                                    \tabularnewline
+	kmr              & kurdish     & variant=kurmanji                                   \tabularnewline
+	kmr-Arab         & kurdish     & variant=kurmanji, script=Arabic                    \tabularnewline
+	kmr-Latn         & kurdish     & variant=kurmanji, script=Latin                     \tabularnewline
+	kn               & kannada     &                                                    \tabularnewline
+	ko               & korean      &                                                    \tabularnewline
+	ku               & kurdish     &                                                    \tabularnewline
+	ku-Arab          & kurdish     & script=Arabic                                      \tabularnewline
+	ku-Latn          & kurdish     & script=Latin                                       \tabularnewline
+	la               & latin       &                                                    \tabularnewline
+	la-x-classic     & latin       & variant=classic                                    \tabularnewline
+	la-x-ecclesia    & latin       & variant=ecclesiastic                               \tabularnewline
+	la-x-medieval    & latin       & variant=medieval                                   \tabularnewline
+	lo               & lao         &                                                    \tabularnewline
+	lt               & lithuanian  &                                                    \tabularnewline
+	lv               & latvian     &                                                    \tabularnewline
+	mk               & macedonian  &                                                    \tabularnewline
+	ml               & malayalam   &                                                    \tabularnewline
+	mn               & mongolian   &                                                    \tabularnewline
+	mr               & marathi     &                                                    \tabularnewline
+	nb               & norwegian   & variant=bokmal                                     \tabularnewline
+	nko              & nko         &                                                    \tabularnewline
+	nl               & dutch       &                                                    \tabularnewline
+	nn               & norwegian   & variant=nynorsk [\emph{default}]                   \tabularnewline
+	oc               & occitan     &                                                    \tabularnewline
+	pa               & punjabi     & numerals=gurmukhi                                  \tabularnewline
+	pl               & polish      &                                                    \tabularnewline
+	pms              & piedmontese &                                                    \tabularnewline
+	pt               & portuguese  &                                                    \tabularnewline
+	pt-BR            & portuguese  & variant=brazilian                                  \tabularnewline
+	pt-PT            & portuguese  & variant=portuguese [\emph{default}]                \tabularnewline
+	rm               & romansh     &                                                    \tabularnewline
+	ro               & romanian    &                                                    \tabularnewline
+	ru               & russian     &                                                    \tabularnewline
+	ru-luna1918      & russian     & spelling=modern [\emph{default}]                   \tabularnewline
+	ru-petr1708      & russian     & spelling=old                                       \tabularnewline
+	sa               & sanskrit    &                                                    \tabularnewline
+	sa-Beng          & sanskrit    & script=Bengali                                     \tabularnewline
+	sa-Deva          & sanskrit    & script=Devanagari [\emph{default}]                 \tabularnewline
+	sa-Gujr          & sanskrit    & script=Gujarati                                    \tabularnewline
+	sa-Knda          & sanskrit    & script=Kannada                                     \tabularnewline
+	sa-Mlym          & sanskrit    & script=Malayalam                                   \tabularnewline
+	sa-Telu          & sanskrit    & script=Telugu                                      \tabularnewline
+	se               & sami        &                                                    \tabularnewline
+	sk               & slovak      &                                                    \tabularnewline
+	sl               & slovenian   &                                                    \tabularnewline
+	sq               & albanian    &                                                    \tabularnewline
+	sr               & serbian     &                                                    \tabularnewline
+	sr-Cyrl          & serbian     & script=Cyrillic                                    \tabularnewline
+	sr-Latn          & serbian     & script=Latin [\emph{default}]                      \tabularnewline
+	sv               & swedish     &                                                    \tabularnewline
+	syr              & syriac      &                                                    \tabularnewline
+	ta               & tamil       &                                                    \tabularnewline
+	te               & telugu      &                                                    \tabularnewline
+	th               & thai        &                                                    \tabularnewline
+	tk               & turkmen     &                                                    \tabularnewline
+	tr               & turkish     &                                                    \tabularnewline
+	ug               & uyghur      &                                                    \tabularnewline
+	uk               & ukrainian   &                                                    \tabularnewline
+	ur               & urdu        &                                                    \tabularnewline
+	vi               & vietnamese  &                                                    \tabularnewline
+	zh               & chinese     &                                                    \tabularnewline
+	zh-CN            & chinese     & variant=simplified [\emph{default}]                \tabularnewline
+	zh-TW            & chinese     & variant=traditional                                \tabularnewline
+	zsm              & malay       & variant=malaysian [\emph{default}]                 \tabularnewline
 	\bottomrule
 \end{longtable}
 \egroup
@@ -533,8 +566,8 @@ Table~\ref{tab:BCP47-polyglossia} lists the currently supported tags.
 
 \begin{itemize}
 	\item \xpgboolkeyfalse[1.1.1]{babelshorthands}
-		Globally activates \pkg{babel} shorthands whenever available. Currently
-		shorthands are implemented for Afrikaans, Belarusian, Catalan, Croatian,
+		Globally activates \pkg{babel} shorthands whenever available. Such shorthands are
+		implemented currently for Afrikaans, Belarusian, Catalan, Croatian,
 		Czech, Dutch, Finnish, Georgian, German, Italian, Latin, Mongolian,
 		Russian, Slovak, and Ukrainian. Please refer to the respective language descriptions
 		(sec.~\ref{specific}) for details.
@@ -652,7 +685,7 @@ ought to be mentioned here.
     this selects the global font setup and the numbering definitions for the default language.
 
 \item \DescribeMacro{\resetdefaultlanguage}\cmd{\resetdefaultlanguage\oarg{options}\marg{lang}} (experimental):
-	completely switches the default language
+	Switches the default language
 	to another one in the middle of a document: \textit{this may have adverse effects}!
 
 \item \Cmd\normalfontlatin: in an environment where \cmd\normalfont\ has been redefined
@@ -668,8 +701,8 @@ ought to be mentioned here.
 
 \subsection{Setting up alias commands}
 
-By means of the macro
-\displaycmd{\setlanguagealias\oarg{options}\marg{language}\marg{alias}}{\setlanguagealias}\new{1.46}
+By means of the macro\new{1.46}
+\displaycmd{\setlanguagealias\oarg{options}\marg{language}\marg{alias}}{\setlanguagealias}
 you can define alias commands for specific language (variants). \Eg
 
 \begin{quote}
@@ -731,7 +764,7 @@ which override the hyphenation patterns for specified words. The command takes a
 list of words where hyphenation points are marked by a dash (if no dash is used, the respective word is not
 hyphenated at all):
 \begin{quote}
-\begin{minipage}{\textwidth}
+\begin{minipage}{.7\textwidth}
 \begin{verbatim}
 \hyphenation{%
   po-ly-glos-sia
@@ -762,7 +795,7 @@ To change this value, \pkg{polyglossia} provides the command\new{1.50}
 where \meta{lang} is to be replaced with the respective language name or alias, \meta{options}
 can be used to delimit the modification to a particular variety (\eg via \texttt{variant} or \texttt{spelling}),
 \meta{l} with the left threshold value (\eg \texttt{3}), and \meta{r} with the right
-threshold value (\eg \verb|\setlanghyphenmins[spelling=old]{german}{4}{4}|).
+one (\eg \verb|\setlanghyphenmins[spelling=old]{german}{4}{4}|).
 This setting can be changed repeatedly in the preamble and the document body.
 It applies to all subsequent text in the respective language (variety), but only after the
 next language switch.
@@ -813,13 +846,12 @@ and that passing \xpgvalue{babelshorthands} (without value) is equivalent to pas
 \paragraph*{Options:}
 	\begin{itemize}
 	\item \xpgchoicekey{calendar}{\xpgpresetvalue{gregorian} or \xpgvalue{islamic} (= \xpgvalue{hijri})}
-	\item \xpgchoicekey{locale}{\xpgpresetvalue{default}\footnote{ %
-			For Egypt, Sudan, Yemen and the Gulf states.},
-		\xpgvalue{mashriq}\footnote{ %
-			For Iraq, Syria, Jordan, Lebanon and Palestine.},
-		\xpgvalue{libya}, \xpgvalue{algeria}, \xpgvalue{tunisia}, \xpgvalue{morocco}, \xpgvalue{mauritania}}
+	\item \xpgchoicekey{locale}{\xpgpresetvalue{default}, \xpgvalue{mashriq}, \xpgvalue{libya},
+		\xpgvalue{algeria}, \xpgvalue{tunisia}, \xpgvalue{morocco}, \xpgvalue{mauritania}}
 		This setting influences the spelling of the month names for the Gregorian calendar,
-		as well as the form of the numerals (unless overriden by the following option).
+		as well as the form of the numerals (unless overridden by the following option). Recommended settings are
+		\xpgvalue{default} for Egypt, Sudan, Yemen and the Gulf states, and \xpgvalue{mashriq} for Iraq, Syria,
+		Jordan, Lebanon and Palestine.
 	\item \xpgchoicekey{numerals}{\xpgpresetvalue{mashriq} or \xpgvalue{maghrib}}
 		The latter is the default when \xpgvalue{locale=algeria}, \xpgvalue{tunisia}, or \xpgvalue{morocco}.
 	\item \xpgboolkeyfalse[1.50]{abjadalph}
@@ -831,7 +863,7 @@ and that passing \xpgvalue{babelshorthands} (without value) is equivalent to pas
 \paragraph*{Commands:}
 	\begin{itemize}
 	\item \Cmd\abjad outputs Arabic \textit{abjad} numbers according to the Mashriq varieties.
-	      Example: ¦\abjad{1863}¦ yields \textarabic{\abjad{1863}}.	
+	      Example: ¦\abjad{1863}¦ yields \textarabic{\abjad{1863}}.
 	\item \Cmd\abjadmaghribi outputs Arabic \textit{abjad} numbers according to the Maghrib varieties.
 	       Example: ¦\abjadmaghribi{1863}¦ yields \textarabic{\abjadmaghribi{1863}}.
 	\item \Cmd\abjadalph\new{1.50} steps through the Arabic alphabet, thus it can only be used up to 28.
@@ -911,7 +943,7 @@ and that passing \xpgvalue{babelshorthands} (without value) is equivalent to pas
 \subsection[bengali]{bengali\new{1.2.0}}\label{bengali}
 \paragraph*{Options:}
 	\begin{itemize}
-	  \item \xpgchoicekey{numerals}{\xpgvalue{Western}, \xpgvalue{Bengali}, or \xpgpresetvalue{Devanagari}}
+	  \item \xpgchoicekey{numerals}{\xpgvalue{western}, \xpgvalue{bengali}, or \xpgpresetvalue{devanagari}}
 		\item \xpgboolkeyfalse{changecounternumbering}
 		Use specified numerals for headings and page numbers.
 	\end{itemize}
@@ -928,6 +960,18 @@ and that passing \xpgvalue{babelshorthands} (without value) is equivalent to pas
   \item \Cmd{\l.l} and \Cmd{\L.L}\new{1.1.1} can be used to type a geminated l, as in \textit{co\l.laborar},
         similar to \pkg{babel} (the glyph U+00B7 MIDDLE DOT is used as a geminating sign).
 \end{itemize}
+
+\subsection[chinese]{chinese\new{1.59}}\label{chinese}
+\paragraph*{Options:}
+	\begin{itemize}
+	\item \xpgchoicekey{variant}{\xpgpresetvalue{simplified} (= \xpgvalue{cn}), or \xpgvalue{traditional} (= \xpgvalue{tw})}
+	\item \xpgchoicekey{numerals}{\xpgpresetvalue{arabic} or \xpgvalue{chinese}}
+		Uses either Arabic numerals or Chinese ideographic numbering.
+	\end{itemize}
+\paragraph*{Commands:}
+	\begin{itemize}
+	\item \Cmd\chinesenumeral (see section \ref{abjad}).
+	\end{itemize}
 
 \subsection{croatian}\label{croatian}
 \paragraph*{Options:}
@@ -947,17 +991,17 @@ and that passing \xpgvalue{babelshorthands} (without value) is equivalent to pas
 		\item[¦"/¦] a slash that allows for a subsequent line break. As opposed to \cmd\slash, hyphenation
 		            at the breakpoints preset in the hyphenation patterns is still allowed.
 	\end{shorthands}
-	Furthermore, the following shorthands generate easy access to Croatian digraphs (ligatures):
+	Furthermore, the following shorthands generate easy access to Croatian digraphs:
 	\begin{shorthands}
-		\item[¦"dz¦] Generates the ligature \charifavailable{01C6}{dž}\ if the font provides it. If not, the
-		             two characters are output separately. Also available for ¦"Dz¦ (\charifavailable{01C5}{Dž})
-		             and ¦"DZ¦ (\charifavailable{01C4}{DŽ}).
-		\item[¦"lj¦] Generates the ligature \charifavailable{01C9}{lj}\ if the font provides it. If not, the
-		             two characters are output separately. Also available for ¦"Lj¦ (\charifavailable{01C8}{Lj})
-		             and ¦"LJ¦ (\charifavailable{01C7}{LJ}).
-		\item[¦"nj¦] Generates the ligature \charifavailable{01CC}{nj}\ if the font provides it. If not, the
-		             two characters are output separately. Also available for ¦"Nj¦ (\charifavailable{01CB}{Nj})
-		             and ¦"NJ¦ (\charifavailable{01CA}{NJ}).
+		\item[¦"dz¦] Generates the digraph \charifavailable{01C6}{dž}\ if the font provides it. If not,
+		             the two consecutive glyphs are output mimicking the digraph. Also available for
+		             ¦"Dz¦ (\charifavailable{01C5}{Dž}) and ¦"DZ¦ (\charifavailable{01C4}{DŽ}).
+		\item[¦"lj¦] Generates the digraph \charifavailable{01C9}{lj}\ if the font provides it. If not,
+		             the two consecutive glyphs are output mimicking the digraph. Also available for
+		             ¦"Lj¦ (\charifavailable{01C8}{Lj}) and ¦"LJ¦ (\charifavailable{01C7}{LJ}).
+		\item[¦"nj¦] Generates the digraph \charifavailable{01CC}{nj}\ if the font provides it. If not,
+		             the two consecutive glyphs are output mimicking the digraph. Also available for
+		             ¦"Nj¦ (\charifavailable{01CB}{Nj}) and ¦"NJ¦ (\charifavailable{01CA}{NJ}).
 	\end{shorthands}
 	
 	Finally, there are also four shorthands for quotation marks:
@@ -967,19 +1011,21 @@ and that passing \xpgvalue{babelshorthands} (without value) is equivalent to pas
 		\item[¦">¦] for Croatian left guillemets (»).
 		\item[¦"<¦] for Croatian right guillemets («).
 	\end{shorthands}
-	\item \xpgboolkeyfalse[1.47]{disableligatures}
-		If this is \xpgvalue{true}, all Croatian ligatures (for digraphs such as
-		\charifavailable{01C6}{dž}) will be replaced by single characters. This can
-		be useful if the ligatures on your font are broken (if the font does not
-		have them, they are automatically replaced).
+	\item \xpgboolkeyfalse[1.47]{disabledigraphs}[Up to version 1.53, the option was
+		called \xpgvalue{disableligatures}. The old option is kept for backwards compatibility,
+		but the use is discouraged.] If this is \xpgvalue{true}, all Croatian digraphs
+		(such as \charifavailable{01C6}{dž}) will be replaced by the two consecutive letters,
+		which is the most common way of typesetting them in Croatian. This can be useful if
+		the Unicode digraphs in your font are broken (if the font does not have them,
+		they are automatically mimicked by the two consecutive glyphs).
 	\item \xpgboolkeytrue[1.53]{localalph}
 		If \xpgvalue{true}, alphanumeric counters will use a locally established version which excludes
 		the characters \meta{q}, \meta{w}, \meta{x} and \meta{y} from alphabetic counting.
 		Obviously this limits the counting range to 22.
     \item \xpgboolkeytrue[1.51]{splithyphens}
-	    According to Croatian typesetting conventions, if a word with a hard hyphen (such as \emph{je-li})
-	    is hyphenated at this hyphen, a second hyphenation character is to be inserted at the beginning
-	    of the line that follows the hyphenation (\emph{je-/-li}).
+	    According to Croatian typesetting conventions, if a word with a hard hyphen (such as
+	    \emph{hrvatsko-engleski}) is hyphenated at this hyphen, a second hyphenation character is to be
+	    inserted at the beginning of the line that follows the hyphenation (\emph{hrvatsko-/-engleski}).
 	    By default, this is done automatically (if you are using \LuaTeX, the \pkg{luavlna} package is
 	    loaded to achieve this).
 	    Set this option to ¦false¦ to disable the feature.
@@ -1067,6 +1113,14 @@ and that passing \xpgvalue{babelshorthands} (without value) is equivalent to pas
         \item[¦"/¦] a slash that allows for a subsequent line break. As opposed to \cmd\slash,
                   hyphenation at the breakpoints preset in the hyphenation patterns is still allowed.
 		\end{shorthands}
+  \item \xpgboolkeyfalse[1.54]{schoolhyphens}
+	    If this is set to true, alternative (experimental) hyphenation patterns are used rather than the
+	    default Finnish patterns. These (so-called `School') patterns allow hyphenation at
+	    all valid points, including hyphenation points that are considered sub-optimal from an
+	    ortho-typographic point of view (e.\,g., hyphenation between two vowels).
+	    The default patterns try to prevent such hyphenation, with the drawback that simple words
+	    are sometimes not being hyphenated at points where this would be valid.
+	    See \url{https://github.com/hyphenation/basic-finnish} for details.
 \end{itemize}
 
 \subsection{french}\label{french}
@@ -1256,6 +1310,11 @@ and that passing \xpgvalue{babelshorthands} (without value) is equivalent to pas
 		If \xpgvalue{true}, the second month of the civil year will be output as
 		\texthebrew{מרחשון} (Marcheshvan) rather than \texthebrew{חשון} (Heshvan),
 		which is the default.
+	 \item \xpgboolkeyfalse[1.57]{fullyear} causes years from the current millennium to be printed with the thousands digit
+	      (he-tav-shin-samekh-gimel). Without this option, thousands are not printed for the current millennium.
+	\item \xpgchoicekey[1.57]{transliteration}{\xpgvalue{academy} or \xpgpresetvalue{alt}} With value \xpgvalue{academy}, transliteration
+	follows	the recommendations of the Hebrew Language Academy. The default (\xpgvalue{alt}) uses the received settings of
+	\pkg{babel} (\pkg{hebcal}) and	\pkg{polyglossia} (\pkg{hebrewcal}).
 	\end{itemize}
 \paragraph*{Commands:}
 	\begin{itemize}
@@ -1266,7 +1325,7 @@ and that passing \xpgvalue{babelshorthands} (without value) is equivalent to pas
 \subsection[hindi]{hindi\new{1.2.0}}\label{hindi}
 \paragraph*{Options:}
 	\begin{itemize}
-		\item \xpgchoicekey{numerals}{\xpgvalue{Western} or \xpgpresetvalue{Devanagari}}
+		\item \xpgchoicekey{numerals}{\xpgvalue{western} or \xpgpresetvalue{devanagari}}
 	\end{itemize}
 
 \subsection{hungarian}\label{hungarian}
@@ -1290,6 +1349,13 @@ and that passing \xpgvalue{babelshorthands} (without value) is equivalent to pas
 	       	\item ¦hheaders¦: Redefine part and chapter headings as well as running headers
 	       	\item ¦none¦: Do not redefine anything
 	       \end{itemize}
+    \item \xpgboolkeytrue[1.58]{forceheadingpunctuation}
+        Section numbers always have a trailing punctuation in Hungarian (as in \emph{1.1.} as opposed to \emph{1.1}).
+        For compatibility reasons, the default option is \xpgvalue{false}, thus \textsf{polyglossia}
+        does not touch heading punctuation, so this will be whatever the class or a package determines.
+        Set this option to \xpgvalue{true}, 
+        and \textsf{polyglossia} appends a period after the section counters, 
+        and adjusts the header punctuation (as in \emph{1. fejezet.} as opposed to \emph{1. fejezet}).
 \end{itemize}
 \paragraph*{Commands:}
 \begin{itemize}
@@ -1412,7 +1478,7 @@ and that passing \xpgvalue{babelshorthands} (without value) is equivalent to pas
 	\item \xpgchoicekey[1.46]{hyphenation}{\xpgvalue{classic}, \xpgvalue{modern}, or \xpgvalue{liturgical}}
 			There are three different sets of hyphenation patterns for Latin. Separate
 			documention for them is available on the
-			Internet.\footnote{\url{https://github.com/gregorio-project/hyphen-la/blob/master/doc/README.md\#hyphenation-styles}}
+			Internet.\footnote{Refer to \url{https://github.com/gregorio-project/hyphen-la/blob/master/doc/README.md\#hyphenation-styles}}
 			Each of the four variants mentioned above has its default set of hyphenation
 			patterns as indicated by table \ref{tab:latin-hyphenation}. Use the
 			¦hyphenation¦ option if the default style does not fit your needs.
@@ -1498,16 +1564,22 @@ and that passing \xpgvalue{babelshorthands} (without value) is equivalent to pas
 				\item[¦=A¦] for Ā (A with macron), also available for Ē, Ī, Ō, Ū, V̄, and Ȳ.
 					Note that a macron above the letter V is only displayed if your font
 					supports the Unicode character ¦0304¦ (\emph{combining macron}).
-				\item[¦=ae¦] for a͞e (ae diphthong with macron), also available for a͞u, e͞u,
-					and o͞e. Note that macrons above diphthongs are only displayed if your font
-					supports the Unicode character ¦035E¦ (\emph{combining double
+				\item[¦=ae¦] for a͞e (ae diphthong with macron, for the ¦classic¦ and
+					the ¦modern¦ variant) or ǣ (ae ligature with macron, for the ¦medieval¦
+					and the ¦ecclesiastic¦ variant), respectively; also available for a͞u,
+					e͞u, and o͞e/œ̄. Note that macrons above diphthongs are only displayed if
+					your font supports the Unicode character ¦035E¦ (\emph{combining double
 					macron}).
-				\item[¦=Ae¦] for A͞e (Ae diphthong with macron), also available for A͞u, E͞u,
-					and O͞e.
-				\item[¦=AE¦] for A͞E (AE diphthong with macron), also available for A͞U, E͞U,
-					and O͞E.
+				\item[¦=Ae¦] for A͞e (Ae diphthong with macron, for the ¦classic¦ and
+					the ¦modern¦ variant) or Ǣ (AE ligature with macron, for the ¦medieval¦
+					and the ¦ecclesiastic¦ variant), respectively; also available for A͞u,
+					E͞u, and O͞e/Œ̄.
+				\item[¦=AE¦] for A͞E (AE diphthong with macron, for the ¦classic¦ and
+					the ¦modern¦ variant) or Ǣ (AE ligature with macron, for the ¦medieval¦
+					and the ¦ecclesiastic¦ variant), respectively; also available for A͞U,
+					E͞U, and O͞E/Œ̄.
 				\item[¦\textasciicircum a¦] for ă (a with breve), also available for ĕ, ĭ,
-					ŏ, ŭ, and y̆.  Note that a breve above the letter y is only displayed if
+					ŏ, ŭ, and y̆. Note that a breve above the letter y is only displayed if
 					your font supports the Unicode character ¦0306¦ (\emph{combining
 					breve}).
 				\item[¦\textasciicircum A¦] Ă (A with breve), also available for Ĕ, Ĭ, Ŏ,
@@ -1526,7 +1598,7 @@ and that passing \xpgvalue{babelshorthands} (without value) is equivalent to pas
 \subsection{marathi}\label{marathi}
 \paragraph*{Options:}
 \begin{itemize}
-	\item \xpgchoicekey{numerals}{\xpgpresetvalue{Devanagari} or \xpgvalue{Western}}
+	\item \xpgchoicekey{numerals}{\xpgpresetvalue{devanagari} or \xpgvalue{western}}
 \end{itemize}
 
 \subsection[mongolian]{mongolian\new{1.45}}\label{mongolian}
@@ -1609,10 +1681,81 @@ Currently, only the Khalkha variety in Cyrillic script is supported.
 	\item \Cmd\aemph (see section \ref{arabic}).
 \end{itemize}
 
+\subsection{polish}\label{polish}
+
+\paragraph*{Options:}
+\begin{itemize}
+	\item \xpgboolkeyfalse[1.55]{babelshorthands}
+	If this is turned on, the following shorthands for Polish are activated:
+	\begin{shorthands}
+		\item[¦"=¦] for an explicit hyphen sign which is repeated at the beginning
+		of the next line when hyphenated, as common in Polish typesetting
+		(also if ¦splithyphens=false¦). Unlike  plain ¦-¦, this also allows
+		for hyphenation at the other points preset in the hyphenation patterns.
+		\item[¦"|¦] disables a ligature at this position.
+		\item[\texttt{"\textasciitilde}] for a hyphen sign without a breakpoint. Useful for
+		cases where the hyphen should stick at the following syllable.
+		\item[¦"-¦] adds a hyphenation point that does still allow for hyphenation at the points preset
+		in the hyphenation patterns (as opposed to \cmd\-).
+		\item[¦""¦] allows for a line break at this position (without hyphenation sign).
+		\item[¦"/¦] a slash that allows for a subsequent line break. As opposed to \cmd\slash, hyphenation at the breakpoints
+		preset in the hyphenation patterns is still allowed.
+		\item[¦"`¦] for Polish left double quotes (looks like ,,).
+		\item[¦"'¦] for Polish right double quotes (looks like '').
+		\item[¦"<¦] for French left double guillemets (looks like << -- used in Polish as second level quotes). 
+		\item[¦">¦] for French right double guillemets (looks like >>).
+	\end{shorthands}
+	\item \xpgboolkeytrue[1.55]{splithyphens}
+	According to Polish typesetting conventions, if a word with a hard hyphen (such as \emph{czerwono-złote})
+	is hyphenated at this hyphen, a second hyphenation character is to be inserted at the beginning
+	of the line that follows the hyphenation (\emph{czerwono-/-złote}).
+	By default, this is done automatically (if you are using \LuaTeX, the \pkg{luavlna} package is
+	loaded to achieve this).
+	Set this option to ¦false¦ to disable the feature.
+	\item \xpgboolkeytrue[1.55]{vlna}
+	According to Polish typesetting conventions, single-letter words (non-syllable prepositions)
+	must not occur at line ends.
+	\pkg{Polyglossia} takes care of this automatically by default (if you are using \LuaTeX, the
+	\pkg{luavlna} package is loaded to achieve this).
+	Set this option to ¦false¦ to disable the feature.
+\end{itemize}
+
 \subsection{portuguese}\label{portuguese}
 \paragraph*{Options:}
 \begin{itemize}
 	\item \xpgchoicekey[1.45]{variant}{\xpgvalue{brazilian} or \xpgpresetvalue{portuguese}}
+	\item \xpgboolkeyfalse[1.54]{babelshorthands}
+		If this is turned on, the following shorthands for fine-tuning hyphenation and micro-typography
+		of Portuguese words are activated.
+		\begin{shorthands}
+			\item[¦"|¦] disables a ligature at this position.
+			\item[¦"=¦] for an explicit hyphen sign which is repeated at the beginning
+			of the next line when hyphenated, as common in Portuguese typesetting
+			(also if ¦splithyphens=false¦). Unlike  plain ¦-¦, this also allows
+			for hyphenation at the other points preset in the hyphenation patterns.
+			\item[\texttt{"\textasciitilde}] for a hyphen sign without a breakpoint. Useful for
+			cases where the hyphen should stick at the following syllable.
+			\item[¦"-¦] adds a hyphenation point that does still allow for hyphenation at the points preset
+			in the hyphenation patterns (as opposed to \cmd\-).
+			\item[¦""¦] allows for a line break at this position (without hyphenation sign).
+			\item[¦"/¦] a slash that allows for a subsequent line break. As opposed to \cmd\slash, hyphenation
+			at the breakpoints preset in the hyphenation patterns is still allowed.
+			\item[¦"<¦] for French left guillemets («).
+			\item[¦">¦] for French right guillemets (»).
+		\end{shorthands}
+    \item \xpgboolkeytrue[1.54]{splithyphens}
+		According to Portuguese typesetting conventions, if a word with a hard hyphen (such as
+		\emph{pára-brisas}) is hyphenated at this hyphen, a second hyphenation character is to be
+		inserted at the beginning of the line that follows the hyphenation (\emph{pára-/-brisas}).
+		By default, this is done automatically (if you are using \LuaTeX, the \pkg{luavlna} package is
+		loaded to achieve this).
+		Set this option to ¦false¦ to disable the feature.
+\end{itemize}
+
+\subsection[punjabi]{punjabi\new{1.59}}\label{punjabi}
+\paragraph*{Options:}
+\begin{itemize}
+	\item \xpgchoicekey{numerals}{\xpgvalue{western} or \xpgpresetvalue{gurmukhi}}
 \end{itemize}
 
 \subsection{russian}\label{russian}
@@ -1699,9 +1842,9 @@ Currently support for Sami is limited to Northern Sami.
 \paragraph*{Options:}
 	\begin{itemize}
 	\item \xpgchoicekey[1.0.2]{script}{\xpgpresetvalue{Devanagari}, \xpgvalue{Gujarati},
-	\xpgvalue{Malayalam}, \xpgvalue{Bengali}, \xpgvalue{Kannada}, \xpgvalue{Telugu}, or \xpgvalue{Latin}}
-		The value is passed to \pkg{fontspec} in cases where the respective
-		\cmd{\⟨script⟩font} is not defined.  This can be useful if you typeset Sanskrit
+	\xpgvalue{Malayalam}, \xpgvalue{Bengali}, \xpgvalue{Kannada}, \xpgvalue{Telugu}, \xpgvalue{Latin}}
+		The value is passed to \pkg{fontspec} should the respective
+		\cmd{\⟨script⟩font} not be defined.  This can be useful if you typeset Sanskrit
 		texts in scripts other than Devanagari.
 	\item \xpgchoicekey[1.45]{numerals}{\xpgpresetvalue{Devanagari} or \xpgvalue{Western}}
 	\end{itemize}
@@ -1710,6 +1853,13 @@ Currently support for Sami is limited to Northern Sami.
 \paragraph*{Options:}
 	\begin{itemize}
 	\item \xpgchoicekey{script}{\xpgpresetvalue{Cyrillic} or \xpgvalue{Latin}}
+	\item \xpgboolkeytrue[1.54]{splithyphens}
+			According to Serbian typesetting conventions, if a word with a hard hyphen (such as
+			\emph{калцијум-карбонат}) is hyphenated at this hyphen, a second hyphenation character is to be
+			inserted at the beginning of the line that follows the hyphenation (\emph{калцијум-/-карбонат}).
+			By default, this is done automatically (if you are using \LuaTeX, the \pkg{luavlna} package is
+			loaded to achieve this).
+			Set this option to ¦false¦ to disable the feature.
 	\item \xpgchoicekey{numerals}{\xpgpresetvalue{arabic}, \xpgvalue{cyrillic-alph} or \xpgvalue{cyrillic-trad}}
           Uses either Arabic numerals or Cyrillic alphanumerical numbering. The two Cyrillic variants differ as follows:
           \begin{itemize}
@@ -1742,7 +1892,8 @@ Currently support for Sami is limited to Northern Sami.
 		\begin{shorthands}
         \item[¦"=¦] for an explicit hyphen sign which is repeated at the beginning
                     of the next line when hyphenated, as common in Slovak typesetting
-		            (only needed with ¦splithyphens=false¦).
+		            (also if ¦splithyphens=false¦). Unlike  plain ¦-¦, this also allows
+		            for hyphenation at the other points preset in the hyphenation patterns.
         \item[¦"|¦] disables a ligature at this position.
         \item[\texttt{"\textasciitilde}] for a hyphen sign without a breakpoint. Useful for
                     cases where the hyphen should stick at the following syllable.
@@ -1982,11 +2133,11 @@ Ukrainian mathematical symbols.
 	           (such as, in the case of English, ¦\def\chaptername{Chapter}¦)
 	\item \Cmd{\date\meta{lang}} stores definitions of date formats (usually redefinitions
 	           of \cmd\today, in some cases also definitions of additional date commands)
-	\item \Cmd{\blockextras\meta{lang}} stores macros that are to be executed when the language
+	\item \Cmd{\blockextras@\meta{lang}} stores macros that are to be executed when the language
               \meta{lang} is activated via \cmd\selectlanguage\ command or the \meta{lang} environment
-	\item \Cmd{\inlineextras\meta{lang}} stores macros that are to be executed when the language
+	\item \Cmd{\inlineextras@\meta{lang}} stores macros that are to be executed when the language
 	          \meta{lang} is activated locally via \cmd\text\meta{lang} command
-	\item \Cmd{\noextras\meta{lang}} stores macros that are to be executed when the language
+	\item \Cmd{\noextras@\meta{lang}} stores macros that are to be executed when the language
 	          \meta{lang} is closed
 \end{itemize}
 %
@@ -2028,7 +2179,7 @@ by \cmd\makeatletter\ and \cmd\makeatother\ due to the ¦@¦ in the macro names.
 Finally, as soon as the language has been switched (either inline or as a block), \pkg{polyglossia}
 executes the (by default empty) hook
 \begin{itemize}
-	\item \Cmd{\polyglossia@language@switched}
+	\item \cmd{\polyglossia@language@switched}\DescribeMacroCust{\scriptsize}{\polyglossia@language@switched}
 \end{itemize}
 to which you can append arbitrary code (via \cmd\gappto) that should be executed if (a particular)
 language is being activated. This is done before any of the above
@@ -2099,6 +2250,7 @@ Currently, the following macros are provided:
 	\item \Cmd\bengalidigits
 	\item \Cmd\devanagaridigits
 	\item \Cmd\farsidigits
+	\item \Cmd\gurmukhidigits
 	\item \Cmd\kannadadigits
 	\item \Cmd\khmerdigits
 	\item \Cmd\laodigits
@@ -2143,6 +2295,11 @@ The following macros are provided:
 	          with ¦numerals=cyrillic-trad¦ ¦\belarusiannumeral{19}¦ results in \textrussian[numerals=cyrillic-trad]{\russiannumeral{19}},\\
 	          with ¦numerals=cyrillic-alph¦ ¦\belarusiannumeral{19}¦ results in \textrussian[numerals=cyrillic-alph]{\russiannumeral{19}}.
 
+	\item \Cmd\chinesenumeral produces Chinese numbering which, depending on the ¦numerals¦ option in the Chinese language selection,
+			  produces is either Arabic digit or Chinese ideographic output.\\
+	          Example: With ¦numerals=arabic¦ ¦\chinesenumeral{753}¦ yields \textchinese[numerals=arabic]{\chinesenumeral{753}},
+	          with ¦numerals=chinese¦ ¦\chinesenumeral{753}¦ results in \textchinese[numerals=chinese]{\chinesenumeral{753}}.
+
 	\item \Cmd\georgiannumeral produces Georgian alphabetic numbering.\\
               Example: ¦\georgiannumeral{1863}¦ yields \textgeorgian{\georgiannumeral{1863}}.
 
@@ -2150,9 +2307,10 @@ The following macros are provided:
 			Example: ¦\greeknumeral{1863}¦ yields \textgreek{\greeknumeral{1863}},
 			¦\Greeknumeral{1863}¦ results in \textgreek{\Greeknumeral{1863}}.
 
-	\item \Cmd\hebrewnumeral, \Cmd\Hebrewnumeral and \Cmd\Hebrewnumeralfinal generate variants of Hebrew alphanumeric numerals.
-			The commands behave exactly as they do in \pkg{babel}: \cmd\hebrewnumeral\ outputs the numbers without any decoration,
-			\cmd\Hebrewnumeral\ adds \textit{gereshayim} before the last letter, \cmd\Hebrewnumeralfinal\ uses in addition the final forms of Hebrew letters.
+	\item \Cmd\hebrewnumeral, \Cmd\Hebrewnumeral and \Cmd\Hebrewnumeralfinal produce variants of Hebrew alphanumeric numerals.
+			The commands behave identical as in \pkg{babel}: \cmd\hebrewnumeral\ outputs the numbers without any decoration at all,
+			\cmd\Hebrewnumeral\ adds \textit{gereshayim} before the last letter, and \cmd\Hebrewnumeralfinal\ uses in addition the final
+			forms of Hebrew letters.
 			Examples:
 			¦\hebrewnumeral{1750}¦ yields \texthebrew{\hebrewnumeral{1750}},
 			¦\Hebrewnumeral{1750}¦ yields \texthebrew{\Hebrewnumeral{1750}},
@@ -2164,6 +2322,9 @@ The following macros are provided:
             Example: With ¦numerals=latin¦ ¦\mongoliannumeral{19}¦ yields \textrussian{\russiannumeral{19}},
             with ¦numerals=cyrillic-trad¦ ¦\mongoliannumeral{19}¦ results in \textrussian[numerals=cyrillic-trad]{\russiannumeral{19}},\\
             with ¦numerals=cyrillic-alph¦ ¦\mongoliannumeral{19}¦ results in \textrussian[numerals=cyrillic-alph]{\russiannumeral{19}}.
+    
+    \item \Cmd\punjabinumeral produces Punjabi numbering, depending on the ¦numerals¦ option in the Punjabi language selection, this
+           is either Gurmukhi or Arabic (Western).
 	
 	\item \Cmd\russiannumeral produces Russian numbering, with uppercased variant (for alphanumerical variant) via \Cmd\Russiannumeral.
 	        Depending on the ¦numerals¦ option in the Russian language selection, this is either Arabic digit or Cyrillic
@@ -2278,7 +2439,7 @@ Example: today is \Jalalitoday.
 
 \section{Auxiliary commands}
 
-The macro \displaycmd{\charifavailable\marg{char code}\marg{substitution}}{\charifavailable}\new{1.47} checks whether
+The macro\new{1.47} \displaycmd{\charifavailable\marg{char code}\marg{substitution}}{\charifavailable} checks whether
 the character with the specified \meta{char code} (\ie unicode utf-16 code without preceding ¦0x¦) exists in
 the current font. If so, the character is printed, if not, the \meta{substitution} is printed.
 
@@ -2325,19 +2486,136 @@ In order to get such information, \pkg{polyglossia} provides the following macro
 \displaycmd{\iflanguageloaded\marg{lang}\marg{true}\marg{false}}{\iflanguageloaded}
 where \texttt{\meta{lang}} is a \pkg{polyglossia} language name, by
 \displaycmd{\ifbabellanguageloaded\marg{lang}\marg{true}\marg{false}}{\ifbabellanguageloaded}
-where \texttt{\meta{lang}} is a \pkg{babel} language name (see table~\ref{tab:bbllang} on p.~\pageref{tab:bbllang}), or by
-\displaycmd{\iflanguageidloaded\marg{type}\marg{id}\marg{true}\marg{false}}{\iflanguageidloaded}\new{1.47}
+where \texttt{\meta{lang}} is a \pkg{babel} language name (see table~\ref{tab:bbllang} on p.~\pageref{tab:bbllang}), or by\new{1.47}
+\displaycmd{\iflanguageidloaded\marg{type}\marg{id}\marg{true}\marg{false}}{\iflanguageidloaded}
 where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta{id} is a language id
 (such as ¦en-US¦; see table~\ref{tab:BCP47-polyglossia} on p.~\pageref{tab:BCP47-polyglossia}).
 \bigskip
 
-\noindent Finally, if you want to know whether a specific language option has been set, you can use
-\displaycmd{\iflanguageoption\marg{lang}\marg{opt. key}\marg{opt. value}\marg{true}\marg{false}}{\iflanguageoption}\new{1.47}
+\noindent Finally, if you want to know whether a specific language option has been set, you can use\new{1.47}
+\displaycmd{\iflanguageoption\marg{lang}\marg{key}\marg{value}\marg{true}\marg{false}}{\iflanguageoption}
 
 \section{Revision history}
 
 \bgroup\footnotesize
-\subsection*{1.53 (12-04-2021)}
+\subsection*{1.59 (2022/11/29)}
+
+\subsubsection*{Bug fixes}
+\begin{itemize}
+	\item Do not error, but warn, after language change due to non-updated aux file (\TXI{565}).
+	\item Fix catcode issue for Latin (\TXI{566}).
+	\item Improve error message with missing fonts (\TXI{571})
+\end{itemize}
+
+\subsubsection*{New features}
+\begin{itemize}
+\item Add support for (simplified and traditional) Chinese (\TXI{65}, provided by \TA{Takuji Tanaka}).
+\item Add support for Punjabi (\TXP{572}), provided by \TA{Arvinder Singh}.
+\end{itemize}
+
+\subsection*{1.58 (2022/10/26)}
+
+\subsubsection*{Bug fixes}
+\begin{itemize}
+    \item The option \xpgoption{forceheadingpunctuation} is introduced
+        for correct running headers in Hungarian documents (\TXI{557}).
+	\item Fix language setting in list of figure and table if captions float to different
+	      language areas (\TXI{542}).
+	\item Make Croatian digraphs robust (\TXI{552}).
+	\item Fix definition of some Finnish shorthands (\TXI{554}).
+	\item Re-fix Hungarian patching of parts with hyperref (\TXI{555}).
+	\item Correct running headers in Hungarian documents (\TXI{557}).
+	\item Fix option expansion issue (\TXI{559}).
+\end{itemize}
+
+\subsection*{1.57 (2022/07/18)}
+
+\subsubsection*{Bug fixes}
+\begin{itemize}
+	\item Fix passing of macros to \cmd\setmainlanguage\ and \cmd\setotherlanguage\ (\TXI{543}).
+	\item Fix ¦otherlanguage*¦ environment with bidi text (\TXP{544}).
+	\item Re-fix patching of French part headings with hyperref (\TXI{546}).
+	\item Fix Latin prosodic shorthand issues (\TXI{547}, \href{https://github.com/latex3/babel/issues/126}{Babel/\#126},
+	      \href{https://github.com/latex3/babel/issues/129}{Babel/\#129}).
+\end{itemize}
+
+\subsubsection*{New features}
+\begin{itemize}
+	\item New option \xpgoption{transliteration} to Hebrew and hebrewcal (\TXI{540}).
+	\item New option \xpgoption{fullyear} to Hebrew.
+\end{itemize}
+
+\subsection*{1.56 (2022/04/20)}
+
+\subsubsection*{Bug fixes}
+\begin{itemize}
+	\item Fix English setup via aliases (\TXI{539}).
+\end{itemize}
+
+
+\subsection*{1.55a (2022/04/10)}
+
+\subsubsection*{Bug fixes}
+\begin{itemize}
+	\item Fix \cmd\foreignlanguage\ command (\TXI{538}).
+\end{itemize}
+
+\subsection*{1.55 (2022/04/09)}
+
+\subsubsection*{New features}
+\begin{itemize}
+	\item New option \xpgoption{splithyphens} and \xpgoption{vlna} for Polish (\TXI{535}).
+	\item Add \xpgoption{babelshorthands} to Polish.
+\end{itemize}
+
+\subsubsection*{Bug fixes}
+\begin{itemize}
+	\item Add missing \texttt{gloss-latex.lde} file to release (\TXI{537}).
+\end{itemize}
+
+\subsection*{1.54 (2022/03/27)}
+
+\subsubsection*{New features}
+\begin{itemize}
+	\item New option \xpgoption{splithyphens} for Serbian (\TXI{496}) and Portuguese (\TXI{534}).
+	\item Add \xpgoption{babelshorthands} to Portuguese.
+	\item Add \xpgoption{schoolhyphens} option to Finnish (\TXI{525}).
+\end{itemize}
+
+\subsubsection*{Interface and defaults changes}
+\begin{itemize}
+	\item Rename \xpgoption{disableligatures} to \xpgoption{disabledigraphs} for Croatian (\TXI{497}, \TXP{500}).
+	\item Fix output with \xpgoption{numerals=cyrillic-alph} (part of \TXI{503}).
+	\item Standardize February and November in Indonesian according to the Great Dictionary of the Indonesian Language
+	      of the Language Center (\emph{Kamus Besar Bahasa Indonesia}) (\TXP{526}).
+\end{itemize}
+
+\subsubsection*{Bug fixes}
+\begin{itemize}
+	\item Fix robustification of font family switches (\TXI{428}).
+	\item Preserve font family switches across languages (\TXI{519}).
+	\item Fix \TeX\ dash ligatures with \xpgoption{splithyphens} (\TXI{502}).
+	\item Prevent \emph{missing hyphenmins value} \LaTeX\ error with unknown languages (\TXI{513}).
+	\item Fix global \xpgoption{babelshorthands}, \xpgoption{localmarks} and \xpgoption{verbose}
+	      options (\TXI{515}).
+	\item Fix Latin shorthands (\TXI{516}).
+	\item Remove spurious space in Bosnian date (\TXP{528}).
+	\item Fix \cmd\languagevariant\ and \cmd\mainlanguagevariant\ macros (\TXI{530}, \TXI{531}).
+	\item Make \cmd\iflanguageloaded\ and friends work in preamble (\TXI{532}).
+	\item Fix deactivation of shorthands (\TXI{320}).
+	\item Fix deactivation of numerals.
+	\item Update deprecated \LaTeX\ hooks (\TXI{523}).
+	\item Fix \xpgoption{luatexrenderer} option which was not considered appropriately (\TXI{533}).
+	\item Turn warning about \texttt{totalhyphenmin} to info, which is more appropriate (\TXI{111}).
+\end{itemize}
+
+\subsubsection*{Documentation improvements}
+\begin{itemize}
+	\item Document in this manual where to report bugs (\TXI{512}).
+\end{itemize}
+
+
+\subsection*{1.53 (2021/04/12)}
 
 \subsubsection*{New features}
 \begin{itemize}
@@ -2357,7 +2635,7 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 	\item Fix part modifications in Hungarian with \pkg{hyperref} (\TXI{493}).
 \end{itemize}
 
-\subsection*{1.52 (16-03-2021)}
+\subsection*{1.52 (2021/03/16)}
 
 \subsubsection*{New features}
 \begin{itemize}
@@ -2374,7 +2652,7 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 \item Fix markup of French ¦\see¦ and ¦\alsoname¦ (\TXI{468}).
 \end{itemize}
 
-\subsection*{1.51 (08-12-2020)}
+\subsection*{1.51 (2020/12/08)}
 
 \subsubsection*{New features}
 \begin{itemize}
@@ -2395,14 +2673,14 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 \end{itemize}
 
 
-\subsection*{1.50a (15-10-2020)}
+\subsection*{1.50a (2020/10/15)}
 
 \subsubsection*{Bug fixes}
 \begin{itemize}
 \item Assure ¦\autodot¦ is defined with ¦\KOMAScript¦ in Russian.
 \end{itemize}
 
-\subsection*{1.50 (09-10-2020)}
+\subsection*{1.50 (2020/10/09)}
 
 \subsubsection*{New features}
 \begin{itemize}
@@ -2457,7 +2735,7 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 
 \subsubsection*{Build fixes}
 \begin{itemize}
-\item Fix a bug in the dtx build script which was the reason for an utterly
+\item Fix an embarrassing bug in the dtx build script which was the reason for an utterly
        incomplete ¦polyglossia.dtx¦ file (\TXI{420}).
 \end{itemize}
 
@@ -2468,7 +2746,7 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 \end{itemize}
 
 
-\subsection*{1.49 (08-04-2020)}
+\subsection*{1.49 (2020/04/08)}
 
 \subsubsection*{New features}
 \begin{itemize}
@@ -2488,7 +2766,7 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 \end{itemize}
 
 
-\subsection*{1.48 (25-03-2020)}
+\subsection*{1.48 (2020/03/25)}
 
 \begin{itemize}
 \item No new features
@@ -2514,7 +2792,7 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 \item Use private macros in keyval choice keys (\TXI{390}).
 \end{itemize}
 
-\subsection*{1.47 (29-01-2020)}
+\subsection*{1.47 (2020/01/29)}
 
 \subsubsection*{New features}
 \begin{itemize}
@@ -2569,15 +2847,16 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
       change of behavior should you have used one of these options without value (\TXI{363}).
       Concerned are the following options:
       \begin{itemize}
-	   \item ¦babelshorthands¦ in language Belarusian, Mongolian, Ukrainian, and Russian
-             (now ¦babelshorthands¦ equals ¦babelshorthand=true¦, no longer ¦babelshorthands=false¦).
-	   \item ¦localalph¦ in language Slovenian (¦localalph¦ now equals ¦localalph=true¦).
-	   \item ¦latesthyphen¦ in language German (¦latesthyphen¦ now equals ¦latesthyphen=true¦).
-	   \item ¦fullyear¦ in package \pkg{hebrewcal} (¦fullyear¦ now equals ¦fullyear=true¦).
+	   \item \xpgoption{babelshorthands} in language Belarusian, Mongolian, Ukrainian, and Russian
+             (now \xpgoption{babelshorthands} equals \xpgoption{babelshorthand=true}, no longer \xpgoption{babelshorthands=false}).
+	   \item \xpgoption{localalph} in language Slovenian (\xpgoption{localalph} now equals \xpgoption{localalph=true}).
+	   \item \xpgoption{fullyear} in package \pkg{hebrewcal} (\xpgoption{fullyear} now equals \xpgoption{fullyear=true}).
       \end{itemize}
+\item The option \xpgoption{latesthyphen} in language German is deprecated. \XeTeX\ and \LuaTeX\ nowadays
+      always use the latest German hyphens.
 \item The command ¦\setlanguagealias*¦ (introduced in v1.46) does no longer define
       dedicated alias environments.
-\item The babelnames for Latin variants have been corrected to ¦classiclatin¦, ¦ecclesiasticlatin¦
+\item The babelnames for Latin variants are now changed to ¦classiclatin¦, ¦ecclesiasticlatin¦
       and ¦medievallatin¦. This is how the hyphenation patterns and \pkg{babel} ¦\extras¦ are named, even
       though the variants can currently be selected in \pkg{babel} only via appended ``dot modifier''.
 \item In accordance with the respective \pkg{l3kernel} change, ¦\str_lower_case:n¦  has been renamed to
@@ -2585,7 +2864,7 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
       2020-01-12 at least.
 \end{itemize}
 
-\subsection*{1.46 (15-11-2019)}
+\subsection*{1.46 (2019/11/15)}
 
 \subsubsection*{New features}
 \begin{itemize}
@@ -2597,7 +2876,7 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 \item Swap section headings in Hungarian (\TXI{344}). New option \xpgoption{swapstrings} provides control
       over this.
 \item Introduce macro ¦\setlanguagealias¦ and ¦\setlanguagealias*¦.
-\item Introduce language switching command ¦\textlang{lang}{...}¦ (equivalent to ¦\text<lang>¦,
+\item Introduce language switching command ¦\textlang{lang}{...}¦ (these are equivalent to ¦\text<lang>¦,
       but also available with ¦\setlanguagealias*¦ which does not define ¦\text<alias>¦).
 \item Add support for Afrikaans.
 \item Add support for Belarusian.
@@ -2639,13 +2918,13 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
       space now instead of a ¦\thinspace¦ (cf. \TXI{345}).
 \end{itemize}
 
-\subsection*{1.45 (27-10-2019)}
+\subsection*{1.45 (2019/10/27)}
 
 \subsubsection*{New features}
 \begin{itemize}
 \item Introduce a framework for external packages to access language variants. This fixes,
       among other things, long-standing problems in the interaction of \pkg{biblatex} and \pkg{polyglossia}.
-\item Add new macros ¦\languagevariant¦, ¦\mainlanguagevariant¦, ¦\babelname¦ and ¦\mainbabelname¦
+\item Add new macros ¦\languagevariant¦ and ¦\mainlanguagevariant¦ as well as ¦\babelname¦ and ¦\mainbabelname¦
       for package authors to access language information.
 \item Add new test ¦\iflanguageloaded{<language>}{<true>}{<false>}¦ where <language>
       can be a \pkg{polyglossia} or \pkg{babel} language name.
@@ -2758,18 +3037,18 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 \item Mention Japanese support in the docs.
 \end{itemize}
 
-\subsection*{1.44 (04-04-2019)}
+\subsection*{1.44 (2019/04/04)}
 \begin{itemize}
 \item Correction to Russian language file, by \TA{Maksim Zholudev} (commit d2f383e).
 \item Added Macedonian language file, by \TA{Stefan Zlatinov} (commit cd379e1).
 \end{itemize}
 
-\subsection*{1.43 (05-03-2019)}
+\subsection*{1.43 (2019/03/05)}
 \begin{itemize}
 \item Correction to Hindi language file, by \TA{Zdenĕk Wagner}.
 \end{itemize}
 
-\subsection*{1.42.5 (13-04-2017)}
+\subsection*{1.42.5 (2017/04/13)}
 \begin{itemize}
 \item Many changes to the French language file, by \TA{Maïeul Rouquette}.
 \end{itemize}
@@ -2797,7 +3076,7 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 	\item Fixed issue \TXI{107} for Marathi (labels and month names)
 \end{itemize}
 		
-\subsection*{1.42.0 (06-08-2015)}
+\subsection*{1.42.0 (2015/08/06)}
 \begin{itemize}
 	\item Add Bengali digits package, and option to reset all numbering functions.
 	\item Add ¦long¦ option for Welsh date.
@@ -2807,22 +3086,22 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 	\item Fixed error with British variant of English and LuaTeX (issue \TXI{86}).
 \end{itemize}
 			
-\subsection*{1.41.0 (16-07-2015)}
+\subsection*{1.41.0 (2015/07/16)}
 \begin{itemize}
 	\item Added support for Khmer, by \TA{Say Ol} (private email)
 \end{itemize}
 			
-\subsection*{1.40.1 (14-07-2015)}
+\subsection*{1.40.1 (2015/07/14)}
 \begin{itemize}
 	\item Bugfix for Korean, by \TA{Dohyun Kim} (pull request \TXI{103})
 \end{itemize}
 			
-\subsection*{1.40.0 (07-07-2015)}
+\subsection*{1.40.0 (2015/07/07)}
 \begin{itemize}
 	\item ¦gloss-korean.ldf¦ contributed by \TA{Dohyun Kim} (pull request \TXI{102})
 \end{itemize}
 			
-\subsection*{1.33.7 (04-07-2015)}
+\subsection*{1.33.7 (2015/07/04)}
 \begin{itemize}
 	\item Release to CTAN, no code change
 	\item Fixed extraneous space in code for Swiss German (pull request \TXI{101})
@@ -2839,14 +3118,14 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 	\item Enhanced Latin support by \TA{Claudio Beccari}
 \end{itemize}
 
-\subsection*{1.33.6 (15-05-2015)}
+\subsection*{1.33.6 (2015/05/15)}
 \begin{itemize}
 	\item Introduce a ¦classical¦ and ¦medieval¦ variant of Latin
 	\item Add ¦\asbuk¦ and ¦\Asbuk¦ for Ukrainian (after their Russian counterpart)
 	\item Fix a number of bugs
 \end{itemize}
 					
-\subsection*{1.33.5 (21-05-2014)}
+\subsection*{1.33.5 (2014/05/21)}
 \begin{itemize}
 	\item Option to disable hyphenation entirely, by \TA{Élie Roux}
 	\item Fix spurious spaces in gloss-russian.ldf, by \TA{Oleg Domanov}
@@ -2855,17 +3134,17 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 	\item Correction to the Lithuanian translations, by \TA{Ignas Anikevičius}
 \end{itemize}
 					
-\subsection*{1.33.4 (27-06-2013)}
+\subsection*{1.33.4 (2013/06/27)}
 \begin{itemize}
 	\item Emergency release for a bug introduced in ¦babelsh.def¦
 \end{itemize}
 					
-\subsection*{1.33.3 (28-05-2013)}
+\subsection*{1.33.3 (2013/05/28)}
 \begin{itemize}
 	\item Changed formatting of some error messages (emergency fixes for TeX Live 2013)
 \end{itemize}
 					
-\subsection*{1.33.2 (26-05-2013)}
+\subsection*{1.33.2 (2013/05/26)}
 \begin{itemize}
 	\item Added ¦\disablehyphenation¦ and ¦\enablehyphenation¦, contributed by
 	      \TA{Élie Roux}.
@@ -2875,25 +3154,25 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 	\item Removed spurious space introduced by ¦\captionswedish¦.
 \end{itemize}
 					
-\subsection*{1.33.1 (23-05-2013)}
+\subsection*{1.33.1 (2013/05/23)}
 \begin{itemize}
 	\item Editorial changes to the documentation
 	\item Hunted and documented bugs
 \end{itemize}
 					
-\subsection*{1.33.0 (20-05-2013)}
+\subsection*{1.33.0 (2013/05/20)}
 \begin{itemize}
 	\item Added support for N’Ko.
 	\item Bugfixes for LuaTeX
 	\item More work in progress on Bidi in LuaTeX.
 \end{itemize}
 					
-\subsection*{1.32.0 (15-05-2013)}
+\subsection*{1.32.0 (2013/05/15)}
 \begin{itemize}
 	\item Transitional version to support right-to-left languages with LuaTeX.
 \end{itemize}
 
-\subsection*{1.31 (10-05-2013) / 1.3 (11-05-2013)}
+\subsection*{1.31 (2013/05/10) / 1.3 (2013/05/11)}
 \begin{itemize}
 	\item Several bugfixes.
 	\item Sync with \pkg{babel} 3.9.
@@ -2903,23 +3182,23 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 	\item Added support for Tibetan, contributed by \TA{Élie Roux} (end of lines are experimental).
 \end{itemize}
 					
-\subsection*{1.30 (06-08-2012)}
+\subsection*{1.30 (2012/08/06)}
 \begin{itemize}
 	\item Added support for LuaTeX.  Many languages don’t work yet.  Please be patient.
 \end{itemize}
 					
-\subsection*{1.2.0e (28-04-2012)}
+\subsection*{1.2.0e (2012/04/28)}
 \begin{itemize}
 	\item Fixed a number of outstanding and not very interesting bugs.
 	\item Added gloss files for Romansh and Friulan, contributed by \TA{Claudio Beccari}.
 \end{itemize}
 					
-\subsection*{1.2.0d (12-01-2012)}
+\subsection*{1.2.0d (2012/01/12)}
 \begin{itemize}
 	\item Removed ¦\makeatletter¦ and ¦\makeother¦ from gloss files entirely.
 \end{itemize}
 					
-\subsection*{1.2.0c (12-10-2011) [First update by Arthur Reutenauer]}
+\subsection*{1.2.0c (2011/10/12) [First update by Arthur Reutenauer]}
 \begin{itemize}
 	\item Update to ¦gloss-italian.ldf¦ by \TA{Claudio Beccari}, incorporating changes
 	      by \TA{Enrico Gregorio}.
@@ -2950,13 +3229,13 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 			\end{itemize}
 \end{itemize}				
 						
-\subsection*{1.2.0b (03-10-2011) [Update by Philipp Stephani]}
+\subsection*{1.2.0b (2011/10/03) [Update by Philipp Stephani]}
 \begin{itemize}
 	\item Load \pkg{xkeyval} package explicitly since newer versions
 	      of \pkg{fontspec} don't load it any more.
 \end{itemize}
 							
-\subsection*{1.2.0a (27-07-2010) [Last update by François Charette]}
+\subsection*{1.2.0a (2010/07/27) [Last update by François Charette]}
 \begin{itemize}
 	\item Initialize ¦\fontfamily¦ acc to value of ¦\familydefault¦
 	      (Fixes a bug when using \pkg{polyglossia} with beamer)
@@ -2968,15 +3247,15 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 \end{itemize}
 								
 								
-\subsection*{1.2.0 (15-07-2010)}
+\subsection*{1.2.0 (2010/07/15)}
 \begin{itemize}
 	\item Adapted for \pkg{fontspec} 2.0 (will not work with earlier versions!)
-	\item New implementation of a ¦\PolyglossiaSetup¦ interface
+	\item Implementation of a ¦\PolyglossiaSetup¦ interface
 	      that simplifies writing ¦gloss-*.ldf¦ files
 	\item Many internal enhancements and refactoring
 	      (including a patch by \TA{Dirk Ulrich})
 	\item Improved automatic font setup when ¦\<lang>font¦ is not defined
-	\item New environment otherlanguage* (env. equivalent of ¦\foreignlanguage¦
+	\item New environment \texttt{otherlanguage*} (equivalent to ¦\foreignlanguage¦
 	      (\TA{Enrico Gregorio})
 	\item Bugfix to prevent bogus expansion of ¦\{rm,sf,tt}family¦ even in aux files (\TA{Enrico Gregorio})
 	\item New gloss files for Armenian, Bengali, Occitan, Bengali, Lao,
@@ -2989,7 +3268,7 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 	      others)
 	\item Corrected captions for Bahasai, Lithuanian, Russian, Croatian
 	\item Add option \xpgoption{indentfirst=true} for Spanish, Croatian and other languages
-	      (NB: \xpgoption{indentfirst} was previously named \xpgoption{frenchindent})
+	      (\xpgoption{indentfirst} was previously named \xpgoption{frenchindent})
 	\item New option \xpgoption{script} for German: Setting \xpgoption{script=fraktur} modifies the
 	      captions for typesetting in Fraktur.
 	\item New command ¦\aemph¦ for Arabic, Farsi, Urdu, etc. to mark emphasis through
@@ -3000,13 +3279,13 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 	      feature was deprecated since v1.1.0).
 \end{itemize}
 							
-\subsection*{1.1.1 (23-03-2010)}
+\subsection*{1.1.1 (2010/03/23)}
 \begin{itemize}
 	\item Bugfix for French: explicit spaces before/after double punctuation
 	      signs (Par exemple : les grands « espaces » du Canada !) are
 	      now replaced by the appropriate non-breaking spaces, as in \pkg{babel}.
 	\item Bugfix for font switching mechanism within Latin script
-	      (pending a complete re-implementation in v1.2):
+	      (pending a complete re-implemen\-tation in v1.2):
 	      the font shape and series are no longer reset when switching language.
 	\item New macros for non-Western decimal digits
 	      (instead of fontmappings)
@@ -3031,18 +3310,18 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 	\item Change ¦hyphenmins¦ for Sanskrit
 \end{itemize}
 							
-\subsection*{1.1.0b (22-11-2009)}
+\subsection*{1.1.0b (2009/11/22)}
 \begin{itemize}
 	\item Modify ¦\hyphenmins¦ for Sanskrit (\TA{Yves Codet})
 	\item Bugfixes for Serbian and Bulgarian (\TA{Enrico Gregorio})
 \end{itemize}
 
-\subsection*{1.1.0a (22-11-2009)}
+\subsection*{1.1.0a (2009/11/22)}
 \begin{itemize}
 	\item Bugfix for interchar tokens
 \end{itemize}
 
-\subsection*{1.1.0 (20-11-2009)}
+\subsection*{1.1.0 (2009/11/20)}
 \begin{itemize}
 	\item Use ¦\newXeTeXintercharclass¦ (thanks to \TA{Enrico Gregorio})
 	\item Fixed implementation of shorthands for German (\pkg{babel} code in file ¦babelsh.def¦)
@@ -3076,7 +3355,7 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 	\item Other minor bugfixes
 \end{itemize}
 							
-\subsection*{1.0.2 (27-01-2009)}
+\subsection*{1.0.2 (2009/01/27)}
 \begin{itemize}
 	\item Captions corrected in Hebrew, Russian and Spanish
 	\item Removed all ¦\text<lang>¦ wrappers within caption definitions
@@ -3085,7 +3364,7 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 	\item New option \xpgoption{Script} for Sanskrit
 \end{itemize}
 							
-\subsection*{1.0.1 (31-07-2008)}
+\subsection*{1.0.1 (2008/07/31)}
 \begin{itemize}
 	\item Improved documentation (added sections on font setup and numeration mappings)
 	\item Improvements and bug fixes for English and German
@@ -3094,7 +3373,7 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 	\item Added ¦gloss-amharic.ldf¦ (ported from ¦ethiop.ldf¦ in the package \pkg{ethiop})
 \end{itemize}
 							
-\subsection*{1.0 (13-07-2008)}
+\subsection*{1.0 (2008/07/13)}
 \begin{itemize}
 	\item Initial release on CTAN.
 \end{itemize}
@@ -3129,12 +3408,12 @@ And of course my gratitude also goes to \TA{Jonathan Kew}, the formidable author
 Many thanks to all the people who have contributed bugfixes and new features to \pkg{polyglossia}
 since we took over.
 In alphabetical order: \TA{Ignas Anikevicius}, \TA{Sina Ahmadi}, \TA{Wouter Bolsterlee}, \TA{Christian Buhtz},
-\TA{Zgarbul Andrey}, \TA{Oleg Domanov}, \TA{Philipp Gesang}, \TA{Kevin Godby}, \TA{Enrico Gregorio},
+\TA{Zgarbul Andrey}, \TA{Oleg Domanov}, user \TA{fakhriaunur}, \TA{Philipp Gesang}, \TA{Kevin Godby}, \TA{Enrico Gregorio},
 \TA{Khaled Hosny}, \TA{Najib Idrissi}, user \TA{julroy67}, \TA{Dohyun Kim}, \TA{Phil Kime}, \TA{Mike Kroutikov},
-\TA{Ivan Kokan}, \TA{Caleb Maclennan}, \TA{José Mancera}, \TA{Miquel Ortega}, \TA{Yevgen Pogribnyi}, \TA{Will Robertson},
-\TA{Maïeul Rouquette}, \TA{Elie Roux}, \TA{Hugo Roy},  \TA{Guy Rutenberg}, \TA{Philipp Stephani}, \TA{Niranjan Tambe},
-\TA{Osman Tursun}, \TA{Keno Wehr}, \TA{Dominik Wujastyk}, \TA{Sertaç Ö. Yıldız}, \TA{Maksim Zholudev}, \TA{Yan Zhou},
-and \TA{Stefan Zlatinov}.
+\TA{Ivan Kokan}, \TA{Caleb Maclennan}, \TA{Gyula Magyarkuti}, \TA{José Mancera}, \TA{Miquel Ortega}, \TA{Yevgen Pogribnyi},
+\TA{Will Robertson}, \TA{Maïeul Rouquette}, \TA{Elie Roux}, \TA{Hugo Roy},  \TA{Guy Rutenberg}, \TA{Marcin Serwin},
+\TA{Arvinder Singh}, \TA{Philipp Stephani}, \TA{Niranjan Tambe}, \TA{Takuji Tanaka}, \TA{Osman Tursun}, \TA{Keno Wehr},
+\TA{Dominik Wujastyk}, \TA{Sertaç Ö. Yıldız}, \TA{Maksim Zholudev}, \TA{Yan Zhou}, and \TA{Stefan Zlatinov}.
 Their respective contributions can be identified from the contributor statistics on
 \href{https://github.com/reutenauer/polyglossia/graphs/contributors}{GitHub}.
 

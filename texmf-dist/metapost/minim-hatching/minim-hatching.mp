@@ -90,8 +90,6 @@ if known skip_predefined_patterns : expandafter endinput fi;
 begingroup save xl, l, s;
 2l = 3s; 2xl = 3l; s = 3.5;
 
-show s, l, xl;
-
 save linecorr; pair linecorr; linecorr = -(.2pt, .2pt);
 
 begingroup

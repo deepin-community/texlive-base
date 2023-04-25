@@ -1,6 +1,6 @@
 %% This is part of the OpTeX project, see http://petr.olsak.net/optex
 
-\_codedecl \table {Basic macros for OpTeX <2021-08-04>} % preloaded in format
+\_codedecl \table {Basic macros for OpTeX <2022-05-03>} % preloaded in format
 
    \_doc -----------------------------
    The result of the \`\table``{<declaration>}{<data>}` macro is inserted into
@@ -22,12 +22,12 @@
    \_cod -----------------------------
 
 \_newifi \_ifpxto
-\_def\_table#1#{\_tablebox\_bgroup \_tableW#1\_empty\_end
+\_def\_table#1#{\_tablebox\_bgroup \_tableW#1\_empty\_fin
    \_bgroup \_catcodetable\_optexcatcodes \_tableA}
-\_def\_tableW#1#2\_end{\_pxtofalse
+\_def\_tableW#1#2\_fin{\_pxtofalse
    \_ifx#1\_empty \_def\_tablew{}\_else
-   \_ifx#1p \_def\_tablew{}\_tableWx#2\_end \_else \_def\_tablew{#1#2}\_fi\_fi}
-\_def\_tableWx xto#1\_end{\_tmpdim=#1\_relax \_pxtotrue}
+   \_ifx#1p \_def\_tablew{}\_tableWx#2\_fin \_else \_def\_tablew{#1#2}\_fi\_fi}
+\_def\_tableWx xto#1\_fin{\_tmpdim=#1\_relax \_pxtotrue}
 \_public \table ;
 
    \_doc -----------------------------
@@ -59,8 +59,11 @@
    \_doc -----------------------------
    The \`\_tableB` saves `<data>` to `\_tmpb`
    and does \^`\replstring`s to prefix each macro \^`\crl` (etc.)
-   by `\_crcr`. See \^`\_tabreplstrings`. It cannot be used in a `\table` in
-   another `\table`, so \^`\_tabreplstrings` is set to `\relax` locally.
+   by `\_crcr`. See \^`\_tabreplstrings`.
+   The whole `\_tableB` macro is hidden in `{...}` in order to
+   there may be `\table` in `\table` and we want to manipulate with
+   `&` and `\cr` as with normal tokens in the `\_tabreplstrings`, not as
+   the item delimiters of an outer `\table`.
 
    The `\tabskip` value is saved for places between columns
    into the \`\_tabskipmid` macro. Then it runs
@@ -89,10 +92,10 @@
    work in special cases here like \code{`\{`} for example.
    \_cod -----------------------------
 
-\_long\_def\_tableB #1{\_egroup \_def\_tmpb{#1}%
-   \_tablereplstrings \_let\_tablereplstrings=\_relax
-   \_edef\_tabskipmid{\_the\_tabskip}\_tabskip=\_tabskipl
-   \_ifpxto
+\_long\_def\_tableB #1{\_egroup
+   {\_def\_tmpb{#1}\_tablereplstrings
+    \_edef\_tabskipmid{\_the\_tabskip}\_tabskip=\_tabskipl
+    \_ifpxto
       \_edef\_tsizes{\_global\_tsizesum=\_the\_tsizesum \_gdef\_noexpand\_tsizelast{\_tsizelast}}%
       \_tsizesum=\_zo \_def\_tsizelast{0}%
       \_tsize=-\_hsize \_setbox0=\_vbox{\_tablepxpreset \_halign \_tableC}%
@@ -102,9 +105,10 @@
       \_else \_tsize=\_zo \_fi
       \_tsizes % retoring values if there is a \table pxto inside a \table pxto.
       \_setbox0=\_null \_halign \_tableC
-   \_else
+    \_else
       \_halign\_tablew \_tableC
-   \_fi \_egroup
+    \_fi
+   }\_egroup % \_tablebox\_bgroup is in the \_table macro
 }
 \_def\_tableC{\_ea{\_the\_tabdata\_tabskip=\_tabskipr\_cr \_scantextokens\_ea{\_tmpb\_crcr}}}
 
@@ -225,9 +229,9 @@
    We don't want vertical line after red A to be in red.
    \_cod -----------------------------
 
-\_def\_tabdeclarec{\_the\_tabiteml{\_hfil##\_unsskip\_hfil}\_the\_tabitemr}
-\_def\_tabdeclarel{\_the\_tabiteml{\_relax##\_unsskip\_hfil}\_the\_tabitemr}
-\_def\_tabdeclarer{\_the\_tabiteml{\_hfil##\_unsskip}\_the\_tabitemr}
+\_def\_tabdeclarec{\_the\_tabiteml \_begingroup\_hfil##\_unsskip\_hfil\_endgroup \_the\_tabitemr}
+\_def\_tabdeclarel{\_the\_tabiteml \_begingroup ##\_unsskip\_hfil\_endgroup \_the\_tabitemr}
+\_def\_tabdeclarer{\_the\_tabiteml \_begingroup\_hfil##\_unsskip\_endgroup \_the\_tabitemr}
 
    \_doc -----------------------------
    The \`\_paramtabdeclarep``{<data>}` is invoked when `p{<data>}`
@@ -333,12 +337,12 @@
 \_def\_tablinefil{\_leaders\_hrule\_hfil}
 
 \_def\_crlp#1{\_crcr \_zerotabrule \_noalign{\_kern-\_drulewidth}%
-   \_omit \_xdef\_crlplist{#1}\_xdef\_crlplist{,\_ea}\_ea\_crlpA\_crlplist,\_end,%
+   \_omit \_xdef\_crlplist{#1}\_xdef\_crlplist{,\_ea}\_ea\_crlpA\_crlplist,\_fin,%
    \_global\_tmpnum=0 \_gdef\_dditem{\_omit\_crlpD}%
    \_gdef\_vvitem{\_kern\_vvkern\_kern\_drulewidth}\_gdef\_vvitemA{\_kern\_drulewidth}%
    \_vvleft\_crlpD\_ddlinedata \_global\_tmpnum=0 \_crcr \_zerotabrule}
-\_def\_crlpA#1,{\_ifx\_end#1\_else \_crlpB#1-\_end,\_ea\_crlpA\_fi}
-\_def\_crlpB#1#2-#3,{\_ifx\_end#3\_xdef\_crlplist{\_crlplist#1#2,}\_else\_crlpC#1#2-#3,\_fi}
+\_def\_crlpA#1,{\_ifx\_fin#1\_else \_crlpB#1-\_fin,\_ea\_crlpA\_fi}
+\_def\_crlpB#1#2-#3,{\_ifx\_fin#3\_xdef\_crlplist{\_crlplist#1#2,}\_else\_crlpC#1#2-#3,\_fi}
 \_def\_crlpC#1-#2-#3,{\_tmpnum=#1\_relax
    \_loop \_xdef\_crlplist{\_crlplist\_the\_tmpnum,}\_ifnum\_tmpnum<#2\_advance\_tmpnum by1 \_repeat}
 \_def\_crlpD{\_incr\_tmpnum \_edef\_tmpa{\_noexpand\_isinlist\_noexpand\_crlplist{,\_the\_tmpnum,}}%
@@ -583,6 +587,9 @@ after the second one.
 
 \_endinput
 
+2022-05-03 \_let\_tablereplstring\_relax removed and {...} encloses whole \_tableB body
+2022-05-02 \_tablereplstrings put in group: bug fix \table in \halign
+2022-02-25 {}->\(begin|end)group in \_tabdeclare(l|r|c), bug when \tabitem(l|r)={$} fixed.
 2021-08-04 \_patamtabdeclarep reimplemented.
 2021-07-16 grouping based on colors via attributes.
 2021-06-03 \scantextokens added to \_partabitem, bug fixed.

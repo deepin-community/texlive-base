@@ -1,0 +1,588 @@
+% !TeX spellcheck = en_US
+% !TeX encoding = UTF-8
+% =============================
+
+\documentclass[a4paper,10pt]{article}
+\input{input_pacotes}
+
+% ========== Dados capa folha rosto ========== Sempre crie uma cópia local
+\newcommand{\textoVersao}{Version}
+\newcommand{\Titulo}{\textbf{Spherical mirrors and lenses in {\TikZ} -- English}}
+\newcommand{\Pais}{\textbf{Brazil} -- \textbf{{\today} -- \textoVersao: \versao}}
+% ==========
+
+\begin{document}
+
+% ========== Capas
+\FHZCapaArticleCabecalho{\AutorA}{\Titulo}{{\Cidade} {\Estado} {\Pais}}
+% ==========
+
+\begin{abstract}
+  \begin{FHZmirroLensTcolorbox}
+    This is the documentation for the \texttt{tikz-mirror-lens} package. This package allows the automatic drawing of the image of objects in spherical mirrors and lenses from the data of the focus, from the position and height of the object, calculating the position and height of the image, and presenting the notable rays.
+  \end{FHZmirroLensTcolorbox}
+\end{abstract}
+
+\begin{FHZmirroLensTcolorbox}
+  {\small \tableofcontents}
+\end{FHZmirroLensTcolorbox}
+
+\section{Quick start, settings and commands}
+
+The variables used are:
+\begin{itemize}
+  \item \texttt{f}: mirror or lens focus;
+  \item \texttt{p}: position of the object along the $x$ axis;
+  \item \texttt{pp}: position of the image along the $x$ axis;
+  \item \texttt{o}: height of the object;
+  \item \texttt{i}: image height;
+  \item \texttt{epsilon}: absolute distance between $p$ and $f$;
+  \item \texttt{yM}: mirror height;
+  \item \texttt{xL}: axis extension $x$ to the left;
+  \item \texttt{xR}: axis extension $x$ to the right;
+  \item \texttt{(xC,yC)}: Coordinates of the location of the presented data;
+  \item \texttt{arrows}: optional argument to change the density of arrows.
+\end{itemize}
+
+The main commands that create the mirror or lens diagrams based on the object's focus $f$, position $p$ and height $o$, in addition to other adjustment parameters, are:
+\begin{itemize}
+  \item Mirrors
+  \begin{itemize}
+    \item \verb|\mirrorSphGauss[arrows]{f}{p}{o}{epsilon}|;
+    \item \verb|\mirrorSphGaussCoord[arrows]{f}{p}{o}{epsilon}|;
+    \item \verb|\mirrorSphGaussFixed[arrows]{f}{p}{o}{epsilon}{yM}{xL}{xR}|;
+    \item \verb|\mirrorSphGaussFixedCoord[arrows]{f}{p}{o}{epsilon}{yM}{xL}{xR}{(x_C,y_C)}|;
+  \end{itemize}
+  \item Lenses
+  \begin{itemize}
+    \item \verb|\lensSphGauss[arrows]{f}{p}{o}{epsilon}|;
+    \item \verb|\lensSphGaussCoord[arrows]{f}{p}{o}{epsilon}|;
+    \item \verb|\lensSphGaussFixed[arrows]{f}{p}{o}{epsilon}{yM}{xL}{xR}|;
+    \item \verb|\lensSphGaussFixedCoord[arrows]{f}{p}{o}{epsilon}{yM}{xL}{xR}{(x_C,y_C)}|;
+  \end{itemize}
+  \item Lenses with object on the left
+  \begin{itemize}
+    \item For each lens in the previous block, change \enquote{\texttt{Gauss}} to \enquote{\texttt{GaussL}}.
+  \end{itemize}
+\end{itemize}
+
+\section{Gaussian spherical mirror model}
+
+\subsection{Modeling}
+
+The equations for the position $p^{\prime}$ and the height $i$ of the image from the focus $f$ of the mirror and the position $p$ and height $o$ of the object are:
+\begin{equation}
+  \begin{split}
+    \dfrac{1}{f} & = \dfrac{1}{p} + \dfrac{1}{p^{\prime}} \Rightarrow p^{\prime} = \dfrac{f p}{p - f}, \quad p \neq f, \\
+    i            & = - \dfrac{p^{\prime}}{p} o.
+  \end{split}
+\end{equation}
+
+Mirror type definitions are made based on the focus' signal:
+\begin{equation}
+  \begin{split}
+    f > 0: & \; \textrm{concave}, \\
+    f < 0: & \; \textrm{convex}.
+  \end{split}
+\end{equation}
+
+\autoref{fig:def_coordenadas_espelho} presents the definition of the mirror coordinate system, in which $p > 0$ is the position of the object along the $x$ axis and $p^{\prime} < 0$ is the image position along the $x$ axis. The vertex $V$ of the mirror is the origin of the coordinate system.
+
+\begin{figure}[!ht]
+  \centering
+  \captionbox{Sign convention for spherical mirrors\label{fig:def_coordenadas_espelho}}[\linewidth]{
+    \begin{tikzpicture}[
+      extended line/.style={shorten >=-#1,shorten <=-#1},
+      extended line/.default=1cm]
+      \mirrorBase{2}{2}{-2}{4.5}
+      \mirrorPts{0}{2}{4}
+      \mirrorLensObjIma{1}{-2}{1}{2}
+      \draw[red] (0,0) node[above left] {(0,0)};
+      \draw[-latex] (0,-1) -- ++(1,0) node[midway, above]{$p > 0$};
+      \draw[thin] (1,-1.2) -- ++(0,1);
+      \draw[-latex] (0,-1) -- ++(-2,0) node[midway, above]{$p^{\prime} < 0$};
+      \draw[thin] (-2,-1.2) -- ++(0,1);
+      \begin{scope}[purple]
+        \draw (4.5,0) node[above] {$x+$};
+        \draw (0,2) node[right] {$y+$};
+        \draw (-2.5,0) node[above] {$x-$};
+        \draw (0,-2) node[right] {$y-$};
+      \end{scope}
+    \end{tikzpicture}
+  }
+\end{figure}
+
+\subsection{Ready-made mirror setups}
+
+\autoref{tab:tab_configuracoes_espelhos} presents all ready-made mirror configurations provided by the package. The notation is:
+\begin{itemize}
+  \item \texttt{arrow}: distance between drawn arrows, in case of omission, the default is 60 (pt).
+  \item \texttt{epsilon}: distance between object and focus at which the image is not calculated or drawn because it is too big and/or too far from the vertex;
+  \item \texttt{yM}: mirror height, either data or calculation;
+  \item \texttt{xL}: negative limit of the $x$ axis;
+  \item \texttt{xR}: positive limit of the $x$ axis;
+  \item \texttt{Co}: the ordered pair $(x_C,y_C)$ of the block of equations that show the focus and coordinates of the object and the image.
+\end{itemize}
+
+\begin{table}[!ht]
+  \centering
+  \captionbox{All mirror settings ready\label{tab:tab_configuracoes_espelhos}}[\linewidth]{
+    \input{input_tab_configuracoes_espelhos}
+  }
+\end{table}
+
+\subsection{Constituent commands}
+
+The command that calculates the position $p^{\prime}$ and the height $i$ of the image is:
+\begin{itemize}
+  \item \verb|\mirrorMath{f}{p}{o}{epsilon}{yM}|.
+\end{itemize}
+
+The following commands draw the main components of the diagram,
+\begin{itemize}
+   \item mirror drawing: \verb|\mirrorBase{f}{yM}{xL}{xR}|;
+   \item notable points drawing: \verb|\mirrorPts{v}{f}{c}}|;
+   \item notable rays drawing: \verb|\mirrorRays[arrows]{p}{pp}{o}{i}|.
+\end{itemize}
+
+The following commands are the same for mirrors and lenses, and are responsible for,
+\begin{itemize}
+   \item object and image drawing item: \verb|\mirrorLensObjIma{p}{pp}{o}{i}|;
+   \item description of numerical coordinate values: \verb|\mirrorLensCoord{p}{pp}{o}{i}{f}{Co}|.
+\end{itemize}
+
+\subsection{Examples of each possible mirror case}
+
+\subsubsection{Concave}
+
+Figures from \ref{fig:conc01} to \ref{fig:conc05} present the 5 possible cases of positioning an object in front of a concave mirror.
+
+% \autoref{fig:conc02} ... \autoref{fig:conc03} ... \autoref{fig:conc04} ... \autoref{fig:conc05} ...
+
+\begin{figure}[!ht]
+  \centering
+  {\scriptsize \verb|\mirrorSphGaussFixedCoord{2}{4.5}{2.5}{0.4}{3}{1.5}{4}{(4,-1)}|}
+  \captionbox{Case 1, object far from the mirror, beyond the center of curvature\label{fig:conc01}}[\linewidth]{
+    \adjustbox{height=4cm}{\mirrorSphGaussFixedCoord{2}{4.5}{2}{0.4}{3}{1.5}{4}{(4.8,1)}
+    }
+  }
+\end{figure}
+
+\begin{figure}[!ht]
+  \centering
+  {\scriptsize \verb|\mirrorSphGaussFixedCoord{2}{4}{2}{0.4}{3}{1.5}{4}{(4.5,1)}|}
+  \captionbox{Case 2, object located on the center of curvature\label{fig:conc02}}[\linewidth]{
+    \adjustbox{height=4cm}{\mirrorSphGaussFixedCoord{2}{4}{2}{0.4}{3}{1.5}{4}{(4.5,1)}}
+  }
+\end{figure}
+
+\begin{figure}[!ht]
+  \centering
+  {\scriptsize \verb|\mirrorSphGaussFixedCoord{2}{3.6}{2}{0.4}{3}{1.5}{4}{(4,1)}|}
+  \captionbox{Case 3, object located between the center of curvature and the focus of the mirror\label{fig:conc03}}[\linewidth]{
+    \adjustbox{height=4cm}{\mirrorSphGaussFixedCoord{2}{3.6}{2}{0.4}{3}{1.5}{4}{(4,1)}}
+  }
+\end{figure}
+
+\begin{figure}[!ht]
+  \centering
+  {\scriptsize \verb|\mirrorSphGaussFixedCoord{2}{2}{2}{0.4}{3}{1.5}{4}{(2.5,1)}|}
+  \captionbox{Case 4, object located on the focus of the mirror (or less than a distance $\varepsilon \to 0$)\label{fig:conc04}}[\linewidth]{
+    \adjustbox{height=4cm}{\mirrorSphGaussFixedCoord{2}{2}{2}{0.4}{3}{1.5}{4}{(2.5,1)}}
+  }
+\end{figure}
+
+\begin{figure}[!ht]
+  \centering
+  {\scriptsize \verb|\mirrorSphGaussFixedCoord{2}{0.45}{1.5}{0.4}{2.5}{1}{4}{(2,-1)}|}
+  \captionbox{Case 5, object located between focus and mirror vertex\label{fig:conc05}}[\linewidth]{
+    \adjustbox{height=4cm}{\mirrorSphGaussFixedCoord{2}{0.45}{1.5}{0.4}{2.5}{1}{4}{(2,-1)}}
+  }
+\end{figure}
+
+\subsubsection{Convex}
+
+\autoref{fig:covx} presents two different positions of the single case of positioning an object in front of a convex mirror.
+
+\begin{figure}[!ht]
+  \centering
+  \begin{minipage}[c]{0.45\linewidth}
+    \centering{\tiny \verb|\mirrorSphGaussFixedCoord{-2}{1.5}{1.5}{0.4}{2}{-3}{2}{(2,-1)}|}
+  \end{minipage} %
+  \begin{minipage}[c]{0.45\linewidth}
+    \centering{\tiny \verb|\mirrorSphGaussFixedCoord{-2}{4}{1.5}{0.4}{2}{-3}{4.2}{(2,-1)}|}
+  \end{minipage}
+  \captionbox{Single case, object located in front of the mirror, at any distance from it\label{fig:covx}}[\linewidth]{
+    \subcaptionbox{Object close to vertex}{
+      \adjustbox{width=0.45\linewidth}{\mirrorSphGaussFixedCoord{-2}{1.5}{1.5}{0.4}{2.5}{-3}{2}{(2,-1)}}
+    }\hfill
+    \subcaptionbox{Object far from vertex}{
+      \adjustbox{width=0.45\linewidth}{\mirrorSphGaussFixedCoord{-2}{4}{1.5}{0.4}{2.5}{-3}{4.2}{(2,-1)}}
+    }
+  }
+\end{figure}
+
+% Exercício: Prova que toda a imagem no espelho convexo está entre o vértice $V$ e o foco $f$. Ou seja, é impossível que $p^{\prime}$ seja menor que $f$ e maior que $V$.
+
+% Exercício: Prova que toda a imagem no espelho convexo é menor que a altura do objeto.
+
+\subsection{Animation}
+
+The basic syntax to insert an animated object is
+\begin{FHZmirroLensTcolorbox}
+\begin{verbatim}
+%\usepackage{animate}
+\begin{animateinline}[poster=first, controls, palindrome, bb=-5 -5 50 50]{10}
+  \multiframe{100}{rx=0.5+0.05}{
+    \mirrorSphGaussFixed[50]{2}{6-\rx}{2}{0.4}{11}{-8.5}{12}
+  }
+\end{animateinline}
+\end{verbatim}
+\end{FHZmirroLensTcolorbox}
+
+For more details, please, check the \href{https://ctan.org/pkg/animate}{animate} package.
+
+\subsubsection{Concave}
+
+\autoref{fig:anim_mirror_conc} presents an animation containing the movement of an object close to a concave mirror.
+
+\begin{figure}[ht]
+  \centering
+  \captionbox{Animation of object approaching a concave mirror\label{fig:anim_mirror_conc}}[\linewidth]{
+    \adjustbox{height=6cm}{
+      \begin{animateinline}[poster=first, controls, palindrome, bb=-5 -5 50 50]{10}
+        \multiframe{100}{rx=0.5+0.05}{
+          \mirrorSphGaussFixed[50]{2}{6-\rx}{2}{0.4}{11}{-8.5}{12}
+        }
+      \end{animateinline}
+    }
+  }
+\end{figure}
+
+\subsubsection{Convex}
+
+\autoref{fig:anim_mirror_covx} presents an animation containing the movement of an object close to a convex mirror.
+
+\begin{figure}[ht]
+  \centering
+  \captionbox{Animation of object approaching a convex mirror\label{fig:anim_mirror_covx}}[\linewidth]{
+    \adjustbox{height=6cm}{
+      \begin{animateinline}[poster=first, controls, palindrome, bb=-5 -5 50 50]{10}
+        \multiframe{100}{rx=0.5+0.05}{
+          \mirrorSphGaussFixed[50]{-2}{6-\rx}{2}{0.4}{2.5}{-4.5}{6}
+        }
+      \end{animateinline}
+    }
+  }
+\end{figure}
+
+\section{Gaussian spherical lens model}
+
+\subsection{Modeling}
+
+\autoref{fig:def_coordenadas_lente} presents the definition of the lens coordinate system in two cases, the one with the object on the positive side in \autoref{subfig:def_coordenadas_lente-a} and with the object on the negative side \autoref{subfig:def_coordenadas_lente-b}.
+
+\begin{figure}[!ht]
+  \centering
+  \captionbox{Sign convention for spherical lenses\label{fig:def_coordenadas_lente}}[\linewidth]{
+    \subcaptionbox[0.4\linewidth]{Object in right reference\label{subfig:def_coordenadas_lente-a}}{
+      \adjustbox{width=0.45\linewidth}{
+          \begin{tikzpicture}[
+            extended line/.style={shorten >=-#1,shorten <=-#1},
+            extended line/.default=1cm]
+            \lensBase{2}{2}{-4.5}{6}
+            \lensPts{0}{2}{4}
+            \mirrorLensObjIma{6}{-3}{1.5}{-0.75}
+            \draw[red] (0,0) node[above left] {(0,0)};
+            \draw[-latex] (0,-1) -- ++(6,0) node[midway, above]{$p > 0$};
+            \draw[thin] (6,-1.2) -- ++(0,1);
+            \draw[-latex] (0,-1.5) -- ++(-3,0) node[midway, above]{$p^{\prime} < 0$};
+            \draw[thin] (-3,-1.5) -- ++(0,0.7);
+            \begin{scope}[purple]
+              \draw (6,0) node[below right] {$x+$};
+              \draw (0,1.5) node[right] {$y+$};
+              \draw (-4,0) node[above left] {$x-$};
+              \draw (0,-1.5) node[right] {$y-$};
+            \end{scope}
+          \end{tikzpicture}
+      }
+    }\hfill
+    \subcaptionbox[0.4\linewidth]{Object in left reference\label{subfig:def_coordenadas_lente-b}}{
+      \adjustbox{width=0.45\linewidth}{
+        \begin{tikzpicture}[
+          extended line/.style={shorten >=-#1,shorten <=-#1},
+          extended line/.default=1cm]
+          \lensBase{2}{2}{-6}{4.5}
+          \lensPts{0}{-2}{-4}
+          \mirrorLensObjIma{-6}{3}{1.5}{-0.75}
+          \draw[red] (0,0) node[above left] {(0,0)};
+          \draw[-latex] (0,-1.4) -- ++(3,0) node[midway, above]{$p^{\prime} > 0$};
+          \draw[thin] (3,-1.6) -- ++(0,0.8);
+          \draw[-latex] (0,-1) -- ++(-6,0) node[midway, above]{$p < 0$};
+          \draw[thin] (-6,-1.2) -- ++(0,1);
+          \begin{scope}[purple]
+            \draw (4.5,0) node[above] {$x+$};
+            \draw (0,1.5) node[right] {$y+$};
+            \draw (-6.5,0) node[above] {$x-$};
+            \draw (0,-1.5) node[left] {$y-$};
+          \end{scope}
+        \end{tikzpicture}
+      }
+    }
+  }
+\end{figure}
+
+Lens type definitions are made based on the focus signal:
+\begin{equation}
+  \begin{split}
+    f > 0: & \quad \textrm{convergent}, \\
+    f < 0: & \quad \textrm{divergent}.
+  \end{split}
+\end{equation}
+
+\subsubsection{Object on the right}
+
+For the object on the right, the easiest way to correct the model from a spherical mirror to a spherical lens is to change the sign of $p^{\prime}$.
+
+The equations for the position $p^{\prime}$ and the height $i$ of the image from the focus $f$ of the mirror, and the position $p$ and height $o$ of the object are:
+\begin{equation}
+  \begin{split}
+    \dfrac{1}{f} & = \dfrac{1}{p} - \dfrac{1}{p^{\prime}} \Rightarrow p^{\prime} = \dfrac{f p}{f - p}, \quad p \neq f, \\
+    i            & = \dfrac{p^{\prime}}{p} o.
+  \end{split}
+\end{equation}
+
+\subsubsection{Object on the left}
+
+For the object on the left, the expression for $p^{\prime}$ and $i$ are given by:
+\begin{equation}
+  \begin{split}
+    \dfrac{1}{p^{\prime}} & = \dfrac{1}{p} + \dfrac{1}{f} \Rightarrow p^{\prime} = \dfrac{f p}{f + p}, \quad p \neq -f, \\
+    i                     & = \dfrac{p^{\prime}}{p} o.
+  \end{split}
+\end{equation}
+
+\subsection{Ready lens settings}
+
+The \autoref{tab:tab_configuracoes_lentes} presents all the ready-made lens configurations provided by the package.
+
+\begin{table}[ht]
+  \centering
+  \captionbox{All lens settings ready\label{tab:tab_configuracoes_lentes}}[\linewidth]{
+    \input{input_tab_configuracoes_lentes}
+  }
+\end{table}
+
+\subsection{Ready lens settings -- left}
+
+The \autoref{tab:tab_configuracoes_lentesL} presents all the ready-made lens settings provided by the package.
+
+\begin{table}[ht]
+  \centering
+  \captionbox{All lens settings ready with object on left\label{tab:tab_configuracoes_lentesL}}[\linewidth]{
+    \input{input_tab_configuracoes_lentesL}
+  }
+\end{table}
+
+\subsection{Constituent commands}
+
+The command that calculates the position $p^{\prime}$ and height $i$ of the image with object on the right is:
+\begin{itemize}
+  \item \verb|\lensMath{f}{p}{o}{epsilon}{yM}|.
+\end{itemize}
+
+In turn, the command that calculates the coordinates of the image with the object on the left is:
+\begin{itemize}
+  \item \verb|\lensMathL{f}{p}{o}{epsilon}{yM}|,
+\end{itemize}
+nonetheless, the change in the nomenclature of the commands that draw the lenses is just the addition of the letter $L$ after the word \enquote{Gauss}.
+
+The following commands draw the main components of the diagram,
+\begin{itemize}
+   \item lens design: \verb|\lensBase{f}{yM}{xL}{xR}|;
+   \item notable points drawing: \verb|\lensPts{v}{f}{a}|;
+   \item notable ray drawing: \verb|\lensRays[arrows]{p}{pp}{o}{i}|.
+\end{itemize}
+
+\subsection{Examples of each possible lens case}
+
+\subsubsection{Convergent}
+
+Figures from \ref{fig:conv01} to \ref{fig:conv05} present the 5 possible cases of positioning an object in front of a converging lens.
+
+% \autoref{fig:conv02} ... \autoref{fig:conv03} ... \autoref{fig:conv04} ... \autoref{fig:conv05} ...
+
+\begin{figure}[!ht]
+  \centering
+  {\scriptsize \verb|\lensSphGaussFixedCoord{2}{5}{1.5}{0.4}{2}{-4}{4}{(2,-1.5)}|}
+  \captionbox{Case 1, object far from mirror, beyond center of curvature\label{fig:conv01}}[\linewidth]{
+    \adjustbox{height=3cm}{\lensSphGaussFixedCoord{2}{5}{1.5}{0.4}{2}{-4}{4}{(2,-1.5)}}
+  }
+\end{figure}
+
+\begin{figure}[!ht]
+  \centering
+  {\scriptsize  \verb|\lensSphGaussFixedCoord{2}{4}{1.5}{0.4}{2}{-4}{4}{(2,-1.5)}|}
+  \captionbox{Case 2, object over anti-main object\label{fig:conv02}}[\linewidth]{
+    \adjustbox{height=3cm}{\lensSphGaussFixedCoord{2}{4}{1.5}{0.4}{2}{-4}{4}{(2,-1.5)}}
+  }
+\end{figure}
+
+\begin{figure}[!ht]
+  \centering
+  {\scriptsize  \verb|\lensSphGaussFixedCoord{2}{3.5}{1.5}{0.4}{2.5}{-4}{4}{(2,-1.5)}|}
+  \captionbox{Case 3, object between anti-main object and focus object\label{fig:conv03}}[\linewidth]{
+    \adjustbox{height=3cm}{\lensSphGaussFixedCoord{2}{3.5}{1.5}{0.4}{2.5}{-4}{4}{(2,-1.5)}}
+  }
+\end{figure}
+
+\begin{figure}[!ht]
+  \centering
+  {\scriptsize  \verb|\lensSphGaussFixedCoord{2}{2}{1.5}{0.4}{2}{-5}{5}{(2,-1)}|}
+  \captionbox{Case 4, object over object focus (or less than a distance $\varepsilon \to 0$)\label{fig:conv04}}[\linewidth]{
+    \adjustbox{height=3cm}{\lensSphGaussFixedCoord{2}{2}{1.5}{0.4}{2}{-5}{5}{(2,-1)}}
+  }
+\end{figure}
+
+\begin{figure}[!ht]
+  \centering
+  {\scriptsize  \verb|\lensSphGaussFixedCoord{2}{1.2}{1}{0.4}{3}{-4}{4}{(1.5,-1.5)}|}
+  \captionbox{Case 5, object between focus object and optical center of lens\label{fig:conv05}}[\linewidth]{
+    \adjustbox{height=3cm}{\lensSphGaussFixedCoord{2}{1.2}{1}{0.4}{3}{-4}{4}{(1.5,-1.5)}}
+  }
+\end{figure}
+
+\subsubsection{Divergent}
+
+\autoref{fig:dive} presents two different positions of the single case of positioning an object in front of a diverging lens.
+
+\begin{figure}[!ht]
+  \centering
+  \begin{minipage}[c]{0.45\linewidth}
+    \centering{\tiny \verb|\lensSphGaussFixed[50]{-2}{2}{2}{0.4}{2.5}{-4}{4}|}
+  \end{minipage} %
+  \begin{minipage}[c]{0.45\linewidth}
+    \centering{\tiny \verb|\lensSphGaussFixed[50]{-2}{4}{2}{0.4}{2.5}{-4}{4}|}
+  \end{minipage}
+  \captionbox{Single case, object located in front of the lens, at any distance from it\label{fig:dive}}[\linewidth]{
+    \subcaptionbox{Between focus and vertex}{
+      \adjustbox{height=3cm}{\lensSphGaussFixed[50]{-2}{2}{1.5}{0.4}{2.5}{-3}{3}}
+    }\quad\quad\quad
+    \subcaptionbox{Beyond the center of curvature}{
+      \adjustbox{height=3cm}{\lensSphGaussFixed[50]{-2}{4}{1.5}{0.4}{2.5}{-3}{3}}
+    }
+  }
+\end{figure}
+
+\subsection{Equivalence between commands for lenses with objects on the right and on the left}
+
+\autoref{fig:equiv_conv} presents the equivalence between the commands that calculate and draw the image using converging lenses depending on the location of the object.
+
+\begin{figure}[!ht]
+  \centering
+  \begin{minipage}[c]{0.45\linewidth}
+    \centering{\tiny \verb|\lensSphGaussFixedCoord{2}{6}{1.5}{0.4}{2}{-4.2}{4.2}{(2,-1.5)}|}
+  \end{minipage} %
+  \begin{minipage}[c]{0.45\linewidth}
+    \centering{\tiny \verb|\lensSphGaussLFixedCoord{2}{-6}{1.5}{0.4}{2}{-4.2}{4.2}{(-4,-1.5)}|}
+  \end{minipage}
+  \captionbox{Equivalence between commands for converging lenses\label{fig:equiv_conv}}[\linewidth]{
+    \subcaptionbox{Command for object on the right}{
+      \adjustbox{height=2.8cm}{\lensSphGaussFixedCoord{2}{6}{1.2}{0.4}{2}{-3}{4.2}{(2,-1.5)}}
+    }\hfill
+    \subcaptionbox{Command for object on the left}{
+      \adjustbox{height=2.8cm}{\lensSphGaussLFixedCoord{2}{-6}{1.2}{0.4}{2}{-4.2}{3}{(-5,-1.5)}}
+    }
+  }
+\end{figure}
+
+\autoref{fig:equiv_dive} presents the equivalence between the commands that calculate and draw the image using diverging lenses depending on the location of the object.
+
+\begin{figure}[!ht]
+  \centering
+  \begin{minipage}[c]{0.45\linewidth}
+    \centering{\tiny \verb|\lensSphGaussFixedCoord{2}{6}{1.5}{0.4}{2}{-4.2}{4.2}{(2,-1.5)}|}
+  \end{minipage}%
+  \begin{minipage}[c]{0.45\linewidth}
+    \centering{\tiny \verb|\lensSphGaussLFixedCoord{2}{-6}{1.5}{0.4}{2}{-4.2}{4.2}{(-4,-1.5)}|}
+  \end{minipage}
+  \captionbox{Equivalence between commands for diverging lenses\label{fig:equiv_dive}}[\linewidth]{
+    \subcaptionbox{Command for object on the right}{
+      \adjustbox{height=2.8cm}{\lensSphGaussFixedCoord{-2}{4}{1.2}{0.4}{2}{-2.5}{2.5}{(1,-1.5)}}
+    }\hfill
+    \subcaptionbox{Command for object on the left}{
+      \adjustbox{height=2.8cm}{\lensSphGaussLFixedCoord{-2}{-4}{1.2}{0.4}{2}{-2.5}{2.5}{(-5,-1.5)}}
+    }
+  }
+\end{figure}
+
+\subsection{Animation}
+
+The basic syntax is the same as that used for mirror by replacing the mirror command with the lens command.
+
+\subsubsection{Convergent}
+
+\autoref{fig:anim_len_conv} presents an animation containing the movement of an object close to a converging lens.
+
+\begin{figure}[!ht]
+  \centering
+  \captionbox{Animation of object approaching a converging lens\label{fig:anim_len_conv}}[\linewidth]{
+    \adjustbox{width=0.6\linewidth}{
+      \begin{animateinline}[poster=first, controls, palindrome, bb=-5 -5 50 50]{10}
+        \multiframe{100}{rx=0.5+0.05}{
+          \lensSphGaussFixed[50]{2}{6-\rx}{2}{0.4}{11}{-12.5}{8.5}
+        }
+      \end{animateinline}
+    }
+  }
+\end{figure}
+
+\subsubsection{Divergent}
+
+\autoref{fig:anim_len_dive} presents an animation containing the movement of an object close to a diverging lens.
+
+\begin{figure}[!ht]
+  \centering
+  \captionbox{Animation of object approaching a diverging lens\label{fig:anim_len_dive}}[\linewidth]{
+    \adjustbox{width=0.6\linewidth}{
+      \begin{animateinline}[poster=first, controls, palindrome, bb=-5 -5 50 50]{10}
+        \multiframe{100}{rx=0.5+0.05}{
+          \lensSphGaussFixed[50]{-2}{6-\rx}{2}{0.4}{2.5}{-4.5}{6}
+        }
+      \end{animateinline}
+    }
+  }
+\end{figure}
+
+\section{Other interesting packages}
+
+Below are interesting \textit{links} to other packages with optics implementations, as well as sources for the equations and modeling used.
+
+\begin{FHZmirroLensTcolorbox}
+  \begin{enumerate}
+    \item \href{https://tex.stackexchange.com/q/33460/140133}{\textbf{TeX StackExchange} -- TikZ library for optics?}
+    \item \href{https://tex.stackexchange.com/q/623201/140133}{\textbf{TeX StackExchange} -- Geometrical optics}
+    \item \href{https://ctan.org/pkg/tikz-optics}{{\textbf{CTAN}} -- tikz-optics}
+    \item \href{https://ctan.org/pkg/pst-mirror}{\textbf{CTAN} -- pst-mirror}
+    \item \href{https://ctan.org/pkg/simpleoptics}{\textbf{CTAN} -- simpleoptics}
+
+    \item \href{https://youtu.be/efPZ5uSDeuI}{\textbf{YouTube} -- The Organic Chemistry Tutor -- Spherical Mirrors \& The Mirror Equation - Geometric Optics}
+    \item \href{http://hyperphysics.phy-astr.gsu.edu/hbase/geoopt/mireq.html}{hyperphysics -- Spherical Mirror Equation}
+
+    \item \href{http://hyperphysics.phy-astr.gsu.edu/hbase/geoopt/lenseq.html}{hyperphysics -- lenseq}
+    \item \href{https://www.plymouth.ac.uk/uploads/production/document/path/3/3754/PlymouthUniversity_MathsandStats_outreach_lenses.pdf}{plymouth -- lenses}
+    \item \href{https://www.khanacademy.org/science/in-in-class10th-physics/in-in-10th-physics-light-reflection-refraction/in-in-lens-formula-magnification/v/lens-formula}{khanacademy -- lens formula}
+  \end{enumerate}
+\end{FHZmirroLensTcolorbox}
+
+\section{History and versions}
+
+\begin{FHZmirroLensTcolorbox}
+  \begin{enumerate}[leftmargin=3.5cm]
+    \item[1.0.0 (2022-12-24):] Package creation.
+    \item[1.0.1 (2022-12-27):] Small corrections on function argument input order in \verb|\mirrorRays| and in \verb|\lensRays|.
+    \item[1.0.2 (2023-01-08):] Revised the English version and removed unnecessary semicolons (suggested by Denis Bitouzé).
+  \end{enumerate}
+\end{FHZmirroLensTcolorbox}
+
+\end{document}

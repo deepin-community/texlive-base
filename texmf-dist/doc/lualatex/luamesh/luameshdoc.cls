@@ -1,4 +1,4 @@
-% copy of the private class for lualatex-doc, lltxdoc.sty. 2017 version. 
+% copy of the private class for lualatex-doc, lltxdoc.sty. 2017 version.
 % see lualatex-doc.tex for copying conditions
 % Manuel Pégourié-Gonnard
 
@@ -8,8 +8,11 @@
 \RequirePackage{luamesh}
 \RequirePackage{fontspec}
 \RequirePackage{metalogo, xspace, ifmtarg, xargs, fancyvrb}
-\RequirePackage[french,english]{babel}
+\RequirePackage[backend=biber,sorting=ynt]{biblatex}
+\RequirePackage[english]{babel}
+
 \RequirePackage[colorlinks=true]{hyperref}
+
 %\RequirePackage{bookmark}
 
 \defaultfontfeatures{Ligatures=TeX, Scale=MatchLowercase}

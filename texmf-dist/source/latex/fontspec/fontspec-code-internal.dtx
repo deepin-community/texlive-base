@@ -47,7 +47,7 @@
     \keys_set_known:nn {fontspec-preparse-cfg} {#1}
 
     \@@_init_ttc:n {#2}
-    \@@_load_external_fontoptions:Nn \l_fontspec_fontname_tl {#2}
+    \@@_load_external_fontoptions:N \l_fontspec_fontname_tl
 
     \@@_extract_all_features:n {#1}
     \tl_set:Nx \l_@@_fontid_tl { \tl_to_str:N \l_fontspec_fontname_tl-:-\tl_to_str:N \l_@@_all_features_clist }
@@ -138,16 +138,16 @@
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{\@@_load_external_fontoptions:Nn}
+% \begin{macro}{\@@_load_external_fontoptions:N}
 % Load a possible \texttt{.fontspec} font configuration file.
 % This file could set font-specific options for the font about to be loaded.
+% The parameter should be a tokenlist containing a sanitised fontname.
 %    \begin{macrocode}
-\cs_new:Nn \@@_load_external_fontoptions:Nn
+\cs_new:Nn \@@_load_external_fontoptions:N
   {
     \bool_if:NT \l_@@_fontcfg_bool
       {
-%<debug>  \typeout{:: @@_load_external_fontoptions:Nn \exp_not:N #1 {#2} }
-        \@@_sanitise_fontname:Nn #1 {#2}
+%<debug>  \typeout{:: @@_load_external_fontoptions:N \exp_not:N #1 }
         \tl_set:Nx \l_@@_ext_filename_tl {#1.fontspec}
         \tl_remove_all:Nn \l_@@_ext_filename_tl {~}
         \prop_if_in:NVF \g_@@_fontopts_prop #1
@@ -500,8 +500,10 @@
     \@@_add_nfssfont:nnnn \bfdefault \shapedefault \l_@@_fontname_bf_tl    \l_@@_fontfeat_bf_clist
     \@@_add_nfssfont:nnnn \mddefault \itdefault    \l_@@_fontname_it_tl    \l_@@_fontfeat_it_clist
     \@@_add_nfssfont:nnnn \mddefault \sldefault    \l_@@_fontname_sl_tl    \l_@@_fontfeat_sl_clist
+    \@@_add_nfssfont:nnnn \mddefault \swdefault    \l_@@_fontname_sw_tl    \l_@@_fontfeat_sw_clist
     \@@_add_nfssfont:nnnn \bfdefault \itdefault    \l_@@_fontname_bfit_tl  \l_@@_fontfeat_bfit_clist
     \@@_add_nfssfont:nnnn \bfdefault \sldefault    \l_@@_fontname_bfsl_tl  \l_@@_fontfeat_bfsl_clist
+    \@@_add_nfssfont:nnnn \bfdefault \swdefault    \l_@@_fontname_bfsw_tl  \l_@@_fontfeat_bfsw_clist
     \prop_map_inline:Nn \l_@@_nfssfont_prop { \@@_set_faces_aux:nnnnn ##2 }
   }
 %    \end{macrocode}
@@ -677,7 +679,8 @@
 \cs_new:Nn \@@_load_fontname:Nn
   {
 %<debug>    \typeout{:: @@_load_fontname:Nn \exp_not:N #1 (#1) {#2} }
-    \@@_load_external_fontoptions:Nn #1 {#2}
+    \@@_sanitise_fontname:Nn #1 {#2}
+    \@@_load_external_fontoptions:N #1
     \prop_get:NVNF \g_@@_fontopts_prop #1 \l_@@_fontopts_clist
       { \clist_clear:N \l_@@_fontopts_clist }
     \keys_set_groups:nnV {fontspec/fontname} {getfontname} \l_@@_fontopts_clist
@@ -724,7 +727,7 @@
     \@@_declare_shapes_normal:nn {#1} {#2}
     \@@_declare_shapes_smcaps:nn {#1} {#2}
     \@@_declare_shape_slanted:nn {#1} {#2}
-    \@@_declare_shapes_bx:nn      {#1} {#2}
+    \@@_declare_shapes_bx:nn     {#1} {#2}
     \@@_declare_shape_loginfo:nn {#1} {#2}
   }
 %    \end{macrocode}
@@ -831,7 +834,7 @@
   {
     \tl_if_exist:cTF { \@@_shape_merge:nn {#1} {\scdefault} }
          { \tl_use:c { \@@_shape_merge:nn {#1} {\scdefault} } }
-         { \scdefault }
+         { \scdefault#1 }
   }
 %    \end{macrocode}
 % \end{macro}
@@ -930,8 +933,10 @@
           {\bfdefault/\shapedefault} {'bold'~}
           {\mddefault/\itdefault} {'italic'~}
           {\mddefault/\sldefault} {'slanted'~}
+          {\mddefault/\swdefault} {'swash'~}
           {\bfdefault/\itdefault} {'bold~ italic'~}
           {\bfdefault/\sldefault} {'bold~ slanted'~}
+          {\bfdefault/\swdefault} {'bold~ swash'~}
         } (#1/#2)~
         with~ NFSS~ spec.:~
         \l_@@_nfss_tl
@@ -1205,7 +1210,7 @@
 % ------------------------------------------------
 % The FONTSPEC package  <wspr.io/fontspec>
 % ------------------------------------------------
-% Copyright  2004-2020  Will Robertson, LPPL "maintainer"
+% Copyright  2004-2022  Will Robertson, LPPL "maintainer"
 % Copyright  2009-2015  Khaled Hosny
 % Copyright  2013       Philipp Gesang
 % Copyright  2013-2016  Joseph Wright

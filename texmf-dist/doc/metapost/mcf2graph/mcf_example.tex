@@ -1,75 +1,95 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Example of MCF typeset by LaTeX   mcf_examples.tex   by A.Yamaji  2021.09.20
+% Example of MCF   Typeset with LuaLaTeX(luamplib)   by A.Yamaji   2023.01.09
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\documentclass[a4paper]{article}
-\usepackage{graphicx}
-\makeatletter%
-%--------------------------------
-\edef\jobname{mcf_exa_soc}%
-\usepackage{mcf_setup}
-%--------------------------------
-%%%%\pdfpkresolution=1200
-%--------------------------------
-%%%%%\edef\f@ext{pk}%
-\edef\f@ext{mps}%
-%--------------------------------
+% ** mcf2graph.mf must be version 4.91
+% ** use mcf_library.mcf
+% ** typeset by LuaLaTeX(luamplib)
+\documentclass{article}
+\usepackage{luamplib}
+\usepackage[T1]{fontenc}
+\mplibcodeinherit{enable}
+\mplibnumbersystem{double}
+\mpliblegacybehavior{disabled}
+%-------------------------------------------------------------------------
+\everymplib{
+  if unknown Ph1:
+    input mcf2graph;
+    outputformat:="eps";
+    sw_output:=Fig+Calc;
+    fsize:=(35mm,24mm);
+    max_blength:=4mm;
+  fi
+}%
+%-------------------------------------------------------------------------
 \pagestyle{empty}
 \topmargin=-24mm
 \oddsidemargin=-12mm
-\textwidth=190mm
+\textwidth=192mm
 \textheight=280mm
 \parindent=0mm
-\setlength\columnsep{8mm}
-%--------------------------------
-\newbox \f@box%
-\newcount \f@num%
-\newcount \tnum%
-\tnum=0%
-\font\labelM=cmtt8 at 6pt\relax%
-%--------------------------------
-\newif\ifCONT@%
-\newread\@auxf%
-%--------------------------------
-\f@num=1%
-\unitlength=0.01mm%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcount\headeroff
+\headeroff=0
+\makeatletter
+%-------------------------------------------------------------------------
 \begin{document}
+\ifnum\z@=\headeroff%
 \begin{center}
  {\Huge\sf Molecular Coding Format examples} \vspace{5mm} \\
  Author : Akira Yamaji \quad Date : \today \\
- Located at : http://www.ctan.org/pkg/mcf2graph \vspace{3mm} \\
+ Located at : http://www.ctan.org/pkg/mcf2graph
 \end{center}
-{\small ** use molecular data base file 'mcf\_data\_base.mcf'
- \vspace{3mm} \\
-%------------------------------------------------------------------------
+{\small *typeset with LuaLaTeX \quad
+        *use molecular library file 'mcf\_library.mcf' \\
+        ** FM(fm):molecular formula (calculated) \quad 
+        * MW(mw):molecular weight (calculated)} \vspace{3mm} \\
+\fi%
+%-------------------------------------------------------------------------
 \noindent%
-\openin\@auxf=\jobname-info.aux%
+\newbox \fig@box%
+\newcount \fig@num%
+\newcount \col@num%
+\font\labelM=cmtt8 at 6pt\relax%
+%-------------------------------------------------------------------------
+\fig@num=0%
+\col@num=0%
+\unitlength=0.01mm%
+\edef\zero{0}%
+\noindent%
+%-------------------------------------------------------------------------
+\newif\ifCONT@%
 \CONT@true%
 \loop%
-\read\@auxf to \info%
-\ifeof\@auxf\CONT@false\else%
-  \infotovar{\info}%
-  \begin{picture}(3750,3350)%
-     \put(20,3000){\footnotesize\bf \EN}%
-     \put(20,2750){\labelM MW:\mw { / }FM:\fm}%
-     \put(20,2530){\labelM MW:\MW(data){ / }[\the\f@num]}%
-     \put( 0,0){%
-       \makebox(3750,2530){%
-         \ifx\f@ext\@pk{\font\@font=\jobname\@font\char\f@num}%
-         \else%
-           \edef\f@file{\jobname-\z@num\f@num.\f@ext}%
-           \includegraphics{\f@file}%
-         \fi%
-       }%
-     }%
-  \end{picture}%
-  %------------------------------------------------------------
-  \advance\f@num1\relax%
-  \advance\tnum1\relax%
-  \ifnum\tnum=5 \\ \tnum=0 \fi%
-\fi%
-\ifCONT@ \repeat%
-\closein\@auxf%
+\advance\fig@num\@ne\relax%
+\advance\col@num\@ne\relax%
+\sbox{\fig@box}{%
+\begin{mplibcode}
+  beginfigm("t:EXA","v+:1")
+    if mc_check(mc)=0:
+      MC(scantokens(mc))
+      VerbatimTeX("\gdef\EN{"&inf_EN&"}");
+      VerbatimTeX("\gdef\MW{"&inf_MW&"}");
+      VerbatimTeX("\gdef\mw{"&cal_MW&"}");
+      VerbatimTeX("\gdef\fm{"&cal_FM&"}");
+   fi
+  endfigm
+  VerbatimTeX("\gdef\EOF{"&decimal(f_EOF)&"}");
+\end{mplibcode}
+}%
 %------------------------------------------------------------------------
+\ifx\EOF\zero%
+  \begin{picture}(3750,3350)%
+    \put(20,3000){\footnotesize\bf \EN}%
+    \put(20,2750){\labelM mw:\mw { / }fm:\fm}%
+    \put(20,2530){\labelM MW:\MW { / }[\the\fig@num]}%
+    \put(0,0){\makebox(3750,2530){\usebox{\fig@box}}}%
+  \end{picture}%
+  \ifnum\col@num=5 \\ \col@num=\z@ \fi%
+\else%
+  \CONT@false%
+\fi%
+%------------------------------------------------------------------------
+%%%%%%%%\ifnum\fig@num=10 \CONT@false \fi%
+\message{[\the\fig@num:\EN]}%
+\ifCONT@ \repeat%
+%------------------------------------------------------------------------------
 \end{document}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

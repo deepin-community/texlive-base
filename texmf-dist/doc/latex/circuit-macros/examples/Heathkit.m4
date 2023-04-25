@@ -27,6 +27,7 @@ define(`dimen_',dimen_*4/5)
   arrowht = arrowht*2/3
 
 #                               Grid
+  box invis fill_(1) wid picwid ht picht with .sw at (0,0)
   ifdpic(`linethick_(0.4)',`linethick_(0)')
   for i=0 to picwid/g do { line color "lightgray" up picht from (i*g,0) }
   for i=0 to picwid/g by 10 do { sprintf(tsf(%g),i) at (i*g,0) below }
@@ -103,8 +104,9 @@ define(`socket',`[
     rlabel(,tsf(3 A FUSE) rjust tsf(SLOW BLOW))
     line to (Here.x,int(Here.y/g)*g-g); dot
   Sckt1: socket at Here+(5*g,0)
-    line from Sckt1.w to (PL,Sckt1); A: dot; tsf(A) rjust
-    line from Sckt1.e right_ lin_leng(last line); B: dot; tsf(B) ljust
+    line from Sckt1.w to (PL,Sckt1); A: dot; tsf(A) at last [].w rjust
+    line from Sckt1.e right_ lin_leng(last line); B: dot
+      tsf(B) at last [].e ljust
   Sckt2: socket at (Sckt1,P1+(0,6*g))
     line from Sckt2.w to (A,Sckt2); dot
     line from Sckt2.e to (B,Sckt2); dot

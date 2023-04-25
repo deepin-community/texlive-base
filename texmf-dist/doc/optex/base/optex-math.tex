@@ -37,6 +37,20 @@
 \def\x`{\bgroup\_setverb\xx}
 \bgroup \lccode\string`\.=\string`\` \lowercase{\egroup \def\xx #1#2.{\i #2 \egroup `#1#2.}}
 
+\bgroup
+\globaldefs=-1
+\def\refs{} \tmpnum=0
+\def\_Xtoc#1#2#3{\incr\tmpnum
+   \ea\addto \ea\refs \expanded{{\noexpand\sdef{r:#3}{\the\tmpnum}}}
+   \scantoeol\ignoreit
+}
+\isfile{optex-doc.ref}\iftrue \input{optex-doc.ref}\fi
+\ea
+\egroup
+\refs
+
+\def\urloptexdoc{https://petr.olsak.net/ftp/olsak/optex/optex-doc.pdf}
+\def\optexdoc[#1]{\ea\ulink\expanded{[\urloptexdoc\#toc:\trycs{r:#1}{}]}}
 
 \hyperlinks\Green\Green
 
@@ -69,8 +83,8 @@ There are more types of extensions: e\TeX, lua\TeX/, Unicode math and
 is appended to the red triangle to inform you about the extension type.
 Nevertheless, \OpTeX/ user doesn't have to worry about it, all extensions
 are available if Unicode Math font is loaded (e.g., by the command
-`\fonfam[lmfonts]`). See section 1.3.3 in \OpTeX/ documentation about
-loading Unicode math fonts.
+`\fonfam[lmfonts]`). See \optexdoc[1.3.3]{section 1.3.3} in \OpTeX/
+documentation about loading Unicode math fonts.
 
 {\iindent=2em
 \bigskip
@@ -109,7 +123,8 @@ The math atoms are \ii single/math/object {\em single math objects} or
   \fnote{In \OpTeX/, the character `_` can be interpreted as a part of
   the control sequence name, not as the subscript constructor. But in common cases,
   constructions of math atoms are interpreted exactly as in plain \TeX. See sections
-  2.2.2 and 2.14 of \OpTeX/ documentation for more details. If you want to
+  \optexdoc[2.2.2]{2.2.2} and \optexdoc[2.15]{2.15}
+  of \OpTeX/ documentation for more details. If you want to
   be sure that `_` is just a subscript constructor in \OpTeX/ then you can set \code{\\catcode`\\_=8}
   but after this, you cannot use control sequences with `_` character.}
   The constructors for exponent `^` and subscript `_` can be used in arbitrary order
@@ -205,7 +220,10 @@ Ord atoms are printed without spaces between them. The spaces are not
 cumulated, so the rule about spaces mentioned above is only a rough idea.
 The exact rule for horizontal spaces is given for each pairs of atoms
 in the table here. The symbol 0 means no space, 1 thin space, 2 medium space,
-and 3 means thick space.
+and 3 means thick space.\fnote
+{The table presented here is built into \TeX. On the other hand,
+\LuaTeX/ allows to set arbitrary spaces between arbitrary pairs,
+see section 7.5.2 in the \LuaTeX/ manual.}
 
 \hangindent=-8.7cm \hangafter-2
 The Bin atom is automatically transformed to the
@@ -285,8 +303,8 @@ to their nucleus without any exception.
 The primitives \x`\displaystyle`, \x`\textstyle`, \x`\scriptstyle` and
 \x`\scriptscriptstyle` set the given style regardless the default rules. For
 example, you can create a formula in in-line math mode and in $D$ style by
-`$\displaystyle <fomula>$` or a formula in display mode and $T$ style can be printed
-by `$$\textstyle <fomrula>$$`.
+`$\displaystyle <formula>$` or a formula in display mode and $T$ style can be printed
+by `$$\textstyle <formula>$$`.
 
 If a subformula is placed below something (below a line from root symbol,
 below a fraction line), then the processed style $D, T, S$ or $SS$ is
@@ -576,6 +594,17 @@ There are more scalable accents in Unicode math fonts:
 \x`\overleftrightarrow` $\overleftrightarrow{abc}$,
 \x`\overleftharpoon` $\overleftharpoon{abc}$,
 \x`\overrightharpoon` $\overrightharpoon{abc}$,
+\x`\wideoverbar` $\wideoverbar{abc}$,
+\x`\widebreve` $\widebreve{abc}$,
+\x`\widecheck` $\widecheck{abc}$,\nl
+\x`\wideutilde` $\wideutilde{abc}$,
+\x`\mathunderbar` $\mathunderbar{abc}$,
+\x`\underleftrightarrow` $\underleftrightarrow{abc}$,
+\x`\widebridgeabove` $\widebridgeabove{abc}$,\nl
+\x`\underrightharpoondown` $\underrightharpoondown{abc}$,
+\x`\underleftharpoondown` $\underleftharpoondown{abc}$,
+\x`\underleftarrow` $\underleftarrow{abc}$,\nl
+\x`\underrightarrow` $\underrightarrow{abc}$.
 
 
 \secc Fixed math accents
@@ -630,8 +659,8 @@ in another than this default shape, then we can use
 \x`\mit`, \x`\rm`, \x`\it`, \x`\bf`, \x`\cal`.
 \new \OpTeX/
 \OpTeX/ supports more such selectors \x`\script`, \x`\frak`, \x`\bbchar`, \x`\bi`, see
-section 1.3.3 in the \OpTeX/ documentation. The math selectors have local
-validity in the group.
+\optexdoc[1.3.3]{section 1.3.3} in the \OpTeX/ documentation.
+The math selectors have local validity in the group.
 
 The control sequences \x`\rm`, \x`\it`, \x`\bf`, and \x`\bi` act as variant selectors
 of fonts in non-math mode (text mode) and they act
@@ -703,19 +732,17 @@ previous listing of math alphabets and sets as default:
 Moreover, it defines the alphabet selectors at user level (see section 1.3.3
 of the \OpTeX/ manual). For example
 \begtt \typosize[10/12]
-\def\rm {\_tryload\_tenrm \_inmath{\_rmavariables \_rmdigits}}
+\_def\_marm {\_inmath{\_rmavariables \_rmdigits}} % \_marm is used in \rm
 \endtt
 %
-The first part
-\new \OpTeX/
-`\_tryload\_tenrm` is applicable for text fonts and the
-`\_inmath` part is processed only in math mode and sets the math alphabets.
-You can see the file `unimath-codes.opm` where all user-level selectors are
+`\_inmath` runs its parameter only in math mode and sets the math alphabets.
+You can see the file `unimath-codes.opm` where all these selectors are
 defined. You can redefine them. For example, \OpTeX/ defines `\bf` as a math
 alphabet selector that selects sans serif bold in math. This is the common
-notation for vectors, tensors, and matrices. If you dislike this, then you can define:
+notation for vectors, tensors, and matrices. If you dislike this (maybe
+because plain \TeX/ has different defaults), then you can define:
 \begtt \typosize[10/12]
-\def\bf {\_tryloadbf\_tenbf \_inmath{\_bfvariables\_bfdigits\_bfgreek\_bfGreek}}
+\_def\_mabf {\_inmath{\_bfvariables\_bfdigits\_bfgreek\_bfGreek}} % used in \bf
 \endtt
 
 
@@ -741,9 +768,7 @@ And the result from `\input print-unimath.opm` looks like the following ten
 pages.
 
 Unsupported characters can be replaced by characters from other Unicode math
-font, see
-\ulink[http://petr.olsak.net/optex/optex-tricks.html\#addumathfont]{OpTeX trick 0030}
-or section~\ref[newfam].
+font, see section~\ref[newfam].
 
 
 \label[listA]\wlabel{}
@@ -859,9 +884,12 @@ stretchability in the `\>` space, and more stretchability in the `\;` space.
 The registers \x`\thinmuskip`, \x`\medmuskip`, and \x`\thickmuskip` store so-called
 \ii mu/values {\em mu values} given by math unit `mu`. It is 1/18 em and this unit depends
 on the current font size used in the math formula ($S$ or $SS$ styles use
-smaller font size, the `mu` unit is smaller here). You can use \x`\muskip`
-instead `\hskip` or \x`\mukern` instead `\kern` if you want to use this
-special mu unit. It is allowed only in math mode.
+smaller font size, the `mu` unit is smaller here). You can use \x`\mskip`
+instead `\hskip` or \x`\mkern` instead `\kern` if you want to use this
+special `mu` unit. It is allowed only in math mode.
+
+If \x`\nonscript` precedes `\hskip`, `\mskip`, `\kern`, or `\mkern` then this
+space is applied only in $D$ or $T$ style.
 
 The \x`\quad` and \x`\qquad` spaces have fixed width and they can be used in text
 mode too. (\OpTeX/ allows to use `\,` in text mode too).
@@ -972,7 +1000,7 @@ and `$1+2+\unicodecdots + n$`. You get $1,2,\unicodeellipsis, n$ and
 $1+2+\unicodecdots + n$. If you feel that this is better, then you can set:
 `\let\dots=\unicodeellipsis \let\cdots=\unicodecdots`.
 
-The Unicode fonts includes compact variants `\unicodevdots` $\unicodevdots$,
+The Unicode fonts include compact variants `\unicodevdots` $\unicodevdots$,
 `\unicodeddots` $\unicodeddots$ and `\unicodeadots` $\unicodeadots$ too.
 
 
@@ -1397,7 +1425,7 @@ operator:
 $$
   \sum/_{\eqlines{\baselineskip=.7\baselineskip}\eqstyle{\scriptstyle}\eqalign{
                   i &\in A  \cr
-           \quad  j &\in B\cup C  \cr
+                  j &\in B\cup C  \cr
                   m &\in C }}
    i + j + m
 $$
@@ -1405,7 +1433,7 @@ $$
 $$
   \sum_{\eqlines{\baselineskip=.7\baselineskip}\eqstyle{\scriptstyle}\eqalign{
                   i &\in A  \cr
-           \quad  j &\in B\cup C  \cr
+                  j &\in B\cup C  \cr
                   m &\in C }}
    i + j + m
 $$
@@ -1562,17 +1590,28 @@ used). So, the default `\_boldmath` macro defined by \OpTeX/ looks like:
 \let\_boldmath=\_boldunimath % this is done when Unicode math is initialized
 \endtt
 
-\secc[newfam] Example of using additional math font
-
-The font `bbold10.tfm` includes double stroked characters, for example,
-double stroked plus, double stroked Greek letters and digits.
-Try to run `pdftex testfont`, then answer the question about the name of the
-font: `bbold10` and then type command `\table\end`. The `testfont.pdf` is
-printed with the table of characters of this font.
-Most of these characters cannot be found in Unicode math fonts.
+\secc[newfam] Using additional math fonts
 
 \new \OpTeX/
-We show an example of how to add this font to the collection of used math fonts.
+The main Unicode math font is loaded by `\loadmath` and `\loadboldmath`
+(typically processed when `\fontfam[<family-name>]` is declared). Moreover,
+you can load {\em additional Unicode math fonts} and you can combine
+characters from main math font and these additional fonts. This can be
+usable if the main math font doesn't include all desired characters or you
+dislike some character shapes from main font. \OpTeX/ enables to load
+additional math fonts by `\addUmathfont` and characters from additional
+fonts can be declared by `\mathchars`. See the \optexdoc[2.16]{section 2.16}
+of \OpTeX/ documentation for more details about this.
+
+The rest of this section includes an example which shows another task: how
+to combine main Unicode math font with old 8-bit math font `bbold10.tfm`.
+This font includes double stroked characters, for example, double stroked
+plus, double stroked Greek letters and digits. Try to run `pdftex testfont`,
+then answer the question about the name of the font: `bbold10` and then type
+command `\table\end`. The `testfont.pdf` is printed with the table of
+characters of this font. Most of these characters cannot be found in Unicode
+math fonts.
+
 We can re-define the `\_normalmath` macro by:
 \begtt \typosize[10/12]
 \addto\_normalmath {\_loadmathfamily 5 bbold }
@@ -1647,10 +1686,6 @@ We have to settle for normal version of the font in the `\_boldmath` macro:
 \begtt \typosize[10/12]
    \addto \_boldmath {\_loadmathfamily 5 bbold }
 \endtt
-
-Another approach of using more Unicode math fonts in a single formula is
-shown in
-\ulink[http://petr.olsak.net/optex/optex-tricks.html\#addumathfont]{OpTeX trick 0030}.
 
 \sec Index
 

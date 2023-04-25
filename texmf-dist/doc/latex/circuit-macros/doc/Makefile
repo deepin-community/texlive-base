@@ -17,9 +17,11 @@ PICTEX = \
   Loop.tex MultiplexerMan.tex NPDTMan.tex NLGMan.tex NportMan.tex \
   Oblique.tex OpampMan.tex Opto.tex ParSeries.tex PconnMan.tex \
   Potentiometers.tex RelayMan.tex relaycoilMan.tex ResistorsMan.tex \
-  Series.tex ShiftRMan.tex Sinus.tex SourcesMan.tex SwitchesMan.tex \
+  Series.tex ShiftRMan.tex Sinus.tex SLDsMan.tex SourcesMan.tex \
+  SwitchesMan.tex \
   Taps.tex TgateMan.tex Thermal.tex Tline.tex \
   VariableMan.tex WindingsMan.tex Workflow.tex XformMan.tex \
+  arrowex.tex \
   bitr.tex bi_trans.tex bistableMan.tex \
   currents.tex eboxdims.tex fbfilter.tex fetMan.tex lrarrows.tex \
   MoreTableMan.tex mplex.tex opampex.tex quick.tex \
@@ -105,7 +107,8 @@ citations: mode.tex $(DOC).bbl $(PICTEX)
 $(DOC).bbl: $(DOC).bib $(DOC).aux
 	bibtex $(DOC)
 
-$(DOC).aux: mode.tex $(DOCSRC) heading.tex $(VERBATIM) $(PICTEX)
+# $(DOC).aux: mode.tex $(DOCSRC) heading.tex $(VERBATIM) $(PICTEX)
+$(DOC).aux: mode.tex $(DOCSRC) $(VERBATIM) $(PICTEX)
 	@printf "\n $(DOC).aux:\n\n"
 	$(LATEX) $(DOC) ; bibtex $(DOC)
 	rm -f $(BOXDIMS)
@@ -123,6 +126,7 @@ heading.tex:
 	printf '\\usepackage{verbatim,url}\n' >> heading.tex
 	printf '\\usepackage{multicol}\n' >> heading.tex
 	printf '\\usepackage{amssymb,boxdims}\n' >> heading.tex $(PST)
+	printf '\\usepackage{float}\n' >> heading.tex $(PST)
 
 opampex.tex tran.tex bitr.tex: opampex.m4
 	$(M4) $(M4LIBS) $*.m4 > $*.pic

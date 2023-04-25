@@ -1,6 +1,6 @@
 -- Interleaved 2 of 5 (ITF) barcode generator
 --
--- Copyright (C) 2020 Roberto Giacomelli
+-- Copyright (C) 2019-2022 Roberto Giacomelli
 -- see LICENSE.txt file
 
 local ITF = { -- main container
@@ -13,7 +13,7 @@ ITF._id_variant = {
     ITF14 = true, -- ITF 14 GS1 specification
 }
 
-ITF._start = 111 -- nnnn
+ITF._start = 1111 -- nnnn
 ITF._stop = 112 -- Wnn (integer must be in reverse order)
 
 ITF._pattern = { -- true -> narrow, false -> Wide
@@ -40,6 +40,7 @@ ITF._par_order = {
     "bearer_bars_enabled",
     "bearer_bars_thickness",
     "bearer_bars_layout",
+    "text_enabled",
 }
 ITF._par_def = {}
 local pardef = ITF._par_def
@@ -194,6 +195,19 @@ pardef.bearer_bars_layout = { -- enumeration
     end,
 }
 
+-- human readable information
+pardef.text_enabled = { -- boolean type
+    default    = true,
+    isReserved = false,
+    fncheck    = function (self, flag, _) --> boolean, err
+        if type(flag) == "boolean" then
+            return true, nil
+        else
+            return false, "[TypeErr] option 'text_enabled' is not a boolean value"
+        end
+    end,
+}
+
 -- ITF14: variant based on GS1 specification, see
 -- https://www.gs1.org/sites/default/files/docs/barcodes/GS1_General_Specifications.pdf
 -- GS1 ITF14 parameters vary in range and preferred value on the specific
@@ -300,7 +314,7 @@ itf14_pdef.bearer_bars_enabled = { -- boolean type
 -- SHALL be a minimum of twice the width of a narrow bar (dark bar) and need
 -- only appear at the top and bottom of the symbol, butting directly against
 -- the top and bottom of the symbol bars (dark bars).
-pardef.bearer_bars_thickness = { -- dimension
+itf14_pdef.bearer_bars_thickness = { -- dimension
     default    = 5 * 0.495 * 186467, -- 5 modules
     unit       = "sp", -- scaled point
     isReserved = false,
@@ -388,51 +402,50 @@ local function checkdigit(t, last, method)
     end
 end
 
+local function itf14_parse_state()
+    return {
+        is_space = false,
+        is_popen = false,
+        itf14_len = 0,
+    }
+end
+
 -- group char for readibility '(' or ')' or ' '
-local function itf14_check_char(enc, c, parse_state) --> elem, err
-    if type(c) ~= "string" or #c ~= 1 then
-        return nil, "[InternalErr] invalid char"
-    end
-    if parse_state.itf14_code == nil then parse_state.itf14_code = {} end
-    local code = parse_state.itf14_code
-    if parse_state.is_space == nil then parse_state.is_space = false end
-    if parse_state.is_popen == nil then parse_state.is_popen = false end
-    if parse_state.itf14_len == nil then parse_state.itf14_len = 0 end
-    local itf14_len = parse_state.itf14_len
+local function itf14_process_char(_, c, parse_state) --> e_data, e_text, err
+    local len14 = parse_state.itf14_len
     -- parsing
     if c == " " then
-        if itf14_len == 0 then -- ignore initial spaces
-            return nil, nil
+        if (len14 == 0) or (len14 == 14) then -- ignore initial or final spaces
+            return nil, nil, nil
         end
-        parse_state.is_space = true
-        return nil, nil
+        if parse_state.is_space then -- ignore more than one consecutive space
+            return nil, nil, nil
+        else
+            parse_state.is_space = true
+            return nil, c, nil
+        end
     elseif c == "(" then
         if parse_state.is_popen then
-            return nil, "[Err] a parenthesis group is already open"
+            return nil, nil, "[Err] a parenthesis is already opened"
         end
         parse_state.is_popen = true
-        code[#code + 1] = c
-        return nil, nil
+        return nil, c, nil
     elseif c == ")" then
         if not parse_state.is_popen then
-            return nil, "[Err] found a closing parenthesis without an opening one"
+            return nil, nil, "[Err] found a closing parenthesis without an opening one"
         end
         parse_state.is_popen = false
-        code[#code + 1] = c
-        return nil, nil
+        return nil, c, nil
     else -- c is at this point eventually a digit
         local n = string.byte(c) - 48
         if n < 0 or n > 9 then
             return nil, "[ArgErr] found a not digit or a not grouping char"
         end
         if parse_state.is_space then
-            code[#code + 1] = " "
             parse_state.is_space = false
         end
-        code[#code + 1] = c
-        itf14_len = itf14_len + 1
-        parse_state.itf14_len = itf14_len
-        return n, nil
+        parse_state.itf14_len = len14 + 1
+        return n, c, nil
     end
 end
 
@@ -443,23 +456,25 @@ function ITF:_config() --> ok, err
     local wide = narrow * self.ratio
     -- start symbol
     local Vbar = self._libgeo.Vbar -- Vbar class
-    self._vbar_start = Vbar:from_int_revpair(self._start, narrow, wide)
-    self._vbar_stop = Vbar:from_int_revpair(self._stop, narrow, wide)
+    local archive = self._libgeo.Archive -- Vbar_archive class
+    local Repo = archive:new()
+    self._vbar_data = Repo
+    Repo:insert(Vbar:from_int_revpair(self._start, narrow, wide), "start")
+    Repo:insert(Vbar:from_int_revpair(self._stop, narrow, wide), "stop")
     -- build every possible pair of digits from 00 to 99
-    self._vbar_data = {}
-    local vbar = self._vbar_data
     local pattern = self._pattern
     for dec = 0, 9 do
         for unit = 0, 9 do
             local t1 = pattern[dec]
             local t2 = pattern[unit]
             local n = dec*10 + unit
-            vbar[n] = Vbar:from_two_tab(t1, t2, narrow, wide)
+            Repo:insert(Vbar:from_two_tab(t1, t2, narrow, wide), n)
         end
     end
     local variant = self._variant
     if variant == "ITF14" then
-        self._check_char = itf14_check_char
+        self._process_char = itf14_process_char
+        self._init_parse_state = itf14_parse_state
     end
     return true, nil
 end
@@ -467,21 +482,24 @@ end
 -- internal methods for constructors
 
 -- input code post processing for ITF14 variant
-local function itf14_finalize(enc) --> ok, err
+local function itf14_finalize(enc, parse_state) --> ok, err
+    if parse_state.is_popen then
+        return false, "[ArgErr] unclosed group in input code"
+    end
     -- check digit action
     local policy = enc.check_digit_policy
-    local slen = enc._code_len
     local digits = enc._code_data
+    local slen = #digits
     local is_add
     if policy == "verify" then
         if slen ~= 14 then
-            return nil, "[DataErr] incorrect input lenght of "..slen..
+            return false, "[DataErr] incorrect input lenght of "..slen..
                 " respect to 14 (checksum policy 'verify')" 
         end
         is_add = false
     elseif policy == "add" then
         if slen ~= 13 then
-            return nil, "[DataErr] incorrect input lenght of "..slen..
+            return false, "[DataErr] incorrect input lenght of "..slen..
                 " respect to 13 (checksum policy 'add')" 
         end
         is_add = true
@@ -491,18 +509,27 @@ local function itf14_finalize(enc) --> ok, err
         elseif slen == 13 then
             is_add = true
         else
-            return nil, "[DataErr] incorrect input lenght of "..slen..
-                " respect to the policy '"..policy.."'"
+            return false, "[DataErr] incorrect input lenght of "..slen..
+                " respect to the current policy '"..policy.."'"
         end
     else
         return false, "[InternalErr] incorrect policy enum value '"..policy.."'"
     end
     assert(type(is_add) == "boolean")
     local cs = checkdigit(digits, 13, enc.check_digit_method)
-    if is_add then
+    if is_add then -- add the final checkdigit
         digits[14] = cs
-        enc._code_len = 14
-    else
+        local dtxt = enc._code_text
+        if dtxt then
+            local len = #dtxt
+            local last = dtxt[len]
+            if last == " " then
+                dtxt[len] = cs
+            else
+                dtxt[len + 1] = cs
+            end
+        end
+    else -- check only the final digit
         if cs ~= digits[14] then
             return false, "[DataErr] last digit is not equal to checksum"
         end
@@ -514,13 +541,13 @@ end
 local function basic_finalize(enc) --> ok, err
     -- check digit action
     local policy = enc.check_digit_policy
-    local slen = enc._code_len
-    local is_even = (slen % 2 == 0)
     local digits = enc._code_data
+    local slen = #digits
+    local is_even = (slen % 2 == 0)
+
     if policy == "none" then
         if not is_even then
             rshift(digits) -- add a heading zero for padding
-            slen = slen + 1
         end
     elseif policy == "add" then
         if is_even then
@@ -541,16 +568,15 @@ local function basic_finalize(enc) --> ok, err
     else
         return false, "[InternalError] wrong enum value"
     end
-    enc._code_len = slen
     return true, nil
 end
 
 -- input code post processing
-function ITF:_finalize() --> ok, err
+function ITF:_finalize(parse_state) --> ok, err
     local var = self._variant
     if var then
         assert(var == "ITF14")
-        return itf14_finalize(self)
+        return itf14_finalize(self, parse_state)
     else
         return basic_finalize(self)
     end
@@ -569,59 +595,74 @@ end
 
 -- drawing function
 -- tx, ty is an optional translator vector
-function ITF:append_ga(canvas, tx, ty) --> canvas
-    local err = canvas:start_bbox_group(); assert(not err, err)
+function ITF:_append_ga(canvas, tx, ty) --> bbox
+    local Repo = self._vbar_data
+    local queue = assert(Repo:get("start")) -- build the vbars queue
+    local digits = self._code_data
+    local n = #digits
+    for i = 1, n, 2 do
+        local index = 10 * digits[i] + digits[i+1]
+        queue = queue + assert(Repo:get(index))
+    end
+    queue = queue + assert(Repo:get("stop"))
     -- draw the start symbol
     local xdim = self.module
     local ratio = self.ratio
-    local symb_len = 2 * xdim * (3 + 2*ratio)
-    local x0 = tx or 0
-    local xpos = x0
-    local y0 = ty or 0
-    local y1 = y0 + self.height
-    local start = self._vbar_start
-    local err
-    err = canvas:encode_Vbar(start, xpos, y0, y1); assert(not err, err)
-    xpos = xpos + 4 * xdim
-    -- draw the code symbol
-    local digits = self._code_data
-    local vbars = self._vbar_data
-    for i = 1, #digits, 2 do
-        local index = 10 * digits[i] + digits[i+1]
-        local b = vbars[index]
-        err = canvas:encode_Vbar(b, xpos, y0, y1); assert(not err, err)
-        xpos = xpos + symb_len
-    end
-    -- draw the stop symbol
-    local stop = self._vbar_stop
-    err = canvas:encode_Vbar(stop, xpos, y0, y1); assert(not err, err)
+    local w = xdim * (6 + ratio + n * (3 + 2 * ratio))
+    local ax, ay = self.ax, self.ay
+    local h = self.height
+    local x0 = tx - w * ax
+    local y0 = ty - h * ay
+    local y1 = y0 + h
+    assert(canvas:encode_disable_bbox())
+    assert(canvas:encode_vbar_queue(queue, x0, y0, y1))
     -- bounding box setting
-    local x1 = xpos + (2 + ratio)*xdim
+    local x1 = x0 + w
     local qz = self.quietzone
-    if self._variant then
+    if self._variant == "ITF14" then -- "ITF14"
         qz = qz * xdim
     end
-    local b1x,  b1y = x0 - qz, y0
-    local b2x,  b2y = x1 + qz, y1
+    local b1x, b1y = x0 - qz, y0
+    local b2x, b2y = x1 + qz, y1
+    local bq1, bq3 = qz, qz
+    local bq2, bq4
     if self.bearer_bars_enabled then
-        local w = self.bearer_bars_thickness
-        err = canvas:encode_linethick(w); assert(not err, err)
-        b1y, b2y = b1y - w, b2y + w
+        local t = self.bearer_bars_thickness
+        local t2 = t/2
+        assert(canvas:encode_linewidth(t))
+        b1y, b2y = b1y - t, b2y + t
+        bq2, bq4 = t, t
         local layout = self.bearer_bars_layout
         if layout == "hbar" then
-            err = canvas:encode_hline(b1x, b2x, y0 - w/2); assert(not err, err)
-            err = canvas:encode_hline(b1x, b2x, y1 + w/2); assert(not err, err)
+            assert(canvas:encode_hline(b1x, b2x, y0 - t2))
+            assert(canvas:encode_hline(b1x, b2x, y1 + t2))
         elseif layout == "frame" then
-            err = canvas:encode_rectangle(b1x - w/2, y0 - w/2, b2x + w/2, y1 + w/2)
-            assert(not err, err)
-            b1x, b2x = b1x - w, b2x + w
+            assert(canvas:encode_rect(b1x - t2, y0 - t2, b2x + t2, y1 + t2))
+            b1x, b2x = b1x - t, b2x + t
+            bq1, bq3 = bq1 + t, bq3 + t
         else
-            error("[IntenalErr] bearer bars layout option is wrong")
+            error("[InternalErr] unexpected bearer bars layout option value")
         end
     end
-    local err = canvas:stop_bbox_group(b1x, b1y, b2x, b2y)
-    assert(not err, err)
-    return canvas
+    assert(canvas:encode_set_bbox(b1x, b1y, b2x, b2y))
+    assert(canvas:encode_enable_bbox())
+    if self.text_enabled then
+        local Text = self._libgeo.Text
+        local t
+        if self._variant == "ITF14" then
+            local code = self._code_text
+            if code == nil then
+                code = self._code_data
+            end
+            t = Text:from_chars(code)
+        else
+            t = Text:from_digit_array(self._code_data)
+        end
+        local y_top = b1y -  0.6 * 186467 -- mm
+        local x_top = (b1x + b2x)/2
+        assert(canvas:encode_Text(t, x_top, y_top, 0.50, 1))
+    end
+    return {x0, y0, x1, y1, bq1, bq2, bq3, bq4,}
 end
 
 return ITF

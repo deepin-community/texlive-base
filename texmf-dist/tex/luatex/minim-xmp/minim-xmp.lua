@@ -2,6 +2,7 @@
 local M = { } 
 local alloc = require('minim-alloc')
 alloc.remember('minim-xmp')
+local cb = require('minim-callbacks')
 
 local function sorted_pairs(t)
     local keys, i = { }, 0
@@ -506,11 +507,13 @@ M.aliases = {
     version = { 'xmpMM:VersionID' },
 }
 
-callback.register('finish_pdffile', function()
+cb.register('finish_pdffile', function()
+    if tex.count['writedocumentmetadata'] == 0 then return end
     if #XMP > 1 then
         alloc.err('Not all metadata has been written out.')
         XMP = { [1] = XMP[1] }
-    elseif #XMP > 0 then
+    end
+    if #XMP > 0 then
         local metadata_obj = M.write_metadata()
         local catalog = pdf.getcatalog() or ''
         pdf.setcatalog(catalog..string.format('/Metadata %s 0 R', metadata_obj))

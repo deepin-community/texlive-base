@@ -1,4 +1,4 @@
-%% $Id: hvfloat.sty 126 2021-06-29 12:56:04Z herbert $
+%% $Id: hvfloat.sty 653 2022-11-20 21:54:52Z herbert $
 %%
 %%
 %% IMPORTANT NOTICE:
@@ -6,6 +6,7 @@
 %% This is file `hvfloat.sty',
 %%
 %% Herbert Voss <hvoss@tug.org>
+%% Copyright (C) 2003-22
 %%
 %% This program can be redistributed and/or modified under the terms
 %% of the LaTeX Project Public License Distributed from CTAN archives
@@ -15,9 +16,8 @@
 %%   `hvfloat' offers rotating of captions and objects for floats
 %%
 \NeedsTeXFormat{LaTeX2e}
-\def\fileversion{2.33}
-\def\filedate{2021/07/14}
-%\message{`hvfloat' v\fileversion, \filedate\space (Herbert Voss)}
+\def\fileversion{2.44}
+\def\filedate{2022/11/21}
 \ProvidesPackage{hvfloat}[\filedate\space v\fileversion\space special floating objects (hv)]
 \let\hvFloatFileVersion\fileversion
 %
@@ -26,7 +26,7 @@
 \newif\ifhv@nostfloats \hv@nostfloatsfalse
 \newif\ifhv@tugboat \hv@tugboatfalse
 
-\DeclareOption{fbox}{\hv@fboxtrue\setlength{\fboxsep}{1pt}}
+\DeclareOption{fbox}{\hv@fboxtrue\setlength\fboxsep{1pt}}
 \DeclareOption{hyperref}{\hv@hyperreftrue}
 \DeclareOption{nostfloats}{\hv@nostfloatstrue}
 \DeclareOption{no-stfloats}{\hv@nostfloatstrue}
@@ -43,6 +43,7 @@
 \RequirePackage{subcaption}
 \RequirePackage{atbegshi}
 \RequirePackage{picture,trimclip}
+\RequirePackage{etoolbox,marginnote}% for "floats" in the margin
 
 \RequirePackage{expl3,multido}
 \RequirePackage{graphicx}
@@ -55,10 +56,17 @@
 \ifhv@hyperref
   \RequirePackage{hyperref}
 \fi
-\ifhv@nostfloats\else
+
+\ifhv@nostfloats
+\else
   \RequirePackage{stfloats}%  for bottom floats in a twocolumn mode
+%  \RequirePackage{floatpag}%  for bottom floats in a twocolumn mode
 \fi
 %
+%\def\hv@thisfloatpagestyle#1{%
+%  \global\@namedef{\number\@currbox @float}{\thispagestyle{#1}}\relax
+%}
+
 \providecommand*\LenToUnit[1]{\strip@pt\dimexpr#1*\p@/\unitlength}
 
 \newlength\hvObjectWidth
@@ -66,8 +74,9 @@
 \newlength\hvWideWidth
 \newlength\hvMultiFloatSkip
 \newlength\hvMaxCapWidth
-%\AtBeginDocument{%
-%  \setlength\hv@BottomSpace{\dimexpr\paperheight-1in-\topmargin-\headheight-\headsep-\textheight}}
+\newlength\hvFloatFullWidth % only for user purpose
+\AtBeginDocument{\hvFloatFullWidth=\the\dimexpr\textwidth+\marginparwidth+\marginparsep\relax}
+
 
 \newsavebox\hvObjectBox
 \newsavebox\hvCaptionBox
@@ -92,6 +101,7 @@
 \def\hv@Even{evenPage}
 \def\hv@Odd{oddPage}
 \def\hv@Natural{n}
+\def\hv@LineWidth{l}
 \def\hv@Width{w}
 \def\hv@Height{h}
 \def\hv@Zero{0}
@@ -104,7 +114,7 @@
 \define@key{hvSet}{rotAngle}[0]{%		rotates caption AND image together
 	\def\hvSet@rotAngle{#1}%
 }
-\define@key{hvSet}{capWidth}[n]{%		(n)atural width|object (w)idth)|object (h)eight|<scale of \columnwidth>
+\define@key{hvSet}{capWidth}[n]{%		(l)inewidth|(n)atural width|object (w)idth)|object (h)eight|<scale of \columnwidth>
 	\def\hvSet@capWidth{#1}%
 }
 \define@key{hvSet}{capAngle}[0]{%		-360..+360, only integers
@@ -138,17 +148,17 @@
   \def\hvSet@capVPos{center}%			it is relativ to the object
  }
 
-\define@choicekey*+{hvSet}{allHPos}[\val\nr]{left,center,right}[center]{% 
-  \def\hvSet@allHPos{#1}%
+\define@choicekey*+{hvSet}{capHPos}[\val\nr]{left,center,right}[center]{% 
+  \def\hvSet@capHPos{#1}%
   \ifcase\nr\relax
-    \gdef\hv@@allHPos{l}%
+    \gdef\hv@@caoHPos{l}%
   \or
-    \gdef\hv@@allHPos{c}%
+    \gdef\hv@@capHPos{c}%
   \else
-    \gdef\hv@@allHPos{r}%
+    \gdef\hv@@capHPos{r}%
   \fi
-}{\PackageWarning{hvfloat}{erroneous input (#1) for allHPos ignored. Using center.}%
-  \def\hvSet@capVPos{center}%			it is relativ to the object
+}{\PackageWarning{hvfloat}{erroneous input (#1) for capHPos ignored. Using center.}%
+  \def\hvSet@capHPos{center}%			it is relativ to the object
  }
 
 \define@choicekey*+{hvSet}{objectPos}[\val\nr]{left,center,right,inner,outer}[center]{% 
@@ -167,6 +177,7 @@
 }
 \define@boolkey{hvSet}[hv@]{useOBox}[true]{}%		use of the hvOBox contents
 \define@boolkey{hvSet}[hv@]{nonFloat}[true]{}%		Do not use float environment
+\define@boolkey{hvSet}[hv@]{inMargin}[true]{}%		use of the hvOBox contents
 \define@boolkey{hvSet}[hv@]{onlyText}[true]{}%		Write the caption only as text
 \define@boolkey{hvSet}[hv@]{wide}[true]{}%		Write the caption only as text
 \define@boolkey{hvSet}[hv@]{twoColumnCaption}[true]\global\@nameuse{hv@twoColumnCaption#1}{}%	Write the caption only as text
@@ -180,6 +191,8 @@
 \newif\ifhv@doublePage
 \newif\ifhv@setObjectLabel
 \newif\ifhv@global@sameHeight
+\newif\ifhv@forceOutput
+
 
 \newlength\hvSet@bindCorrection
 \newlength\hvSet@sepLineskip
@@ -195,10 +208,10 @@
 \define@key{hvSet}{doubleFULLPAGE}[true]{\global\@nameuse{hv@doubleFULLPAGE#1}\hv@doublePagefalse\hv@doublePAGEfalse}
 \define@key{hvSet}{doublePAGE}[true]{\global\@nameuse{hv@doublePAGE#1}\hv@doublePagefalse\hv@doubleFULLPAGEfalse}
 \define@key{hvSet}{doublePage}[true]{\global\@nameuse{hv@doublePage#1}\hv@doublePAGEfalse\hv@doubleFULLPAGEfalse}
-\define@key{hvSet}{bindCorr}[0]{%
+\define@key{hvSet}{bindCorr}[0pt]{%
   \def\hv@temp{#1}%
   \ifx\hv@temp\hv@Inner
-    \setlength\hvSet@bindCorr{\dimexpr1in+\oddsidemargin}%  
+    \hvSet@bindCorr=\the\dimexpr1in+\oddsidemargin\relax
   \else 
     \setlength\hvSet@bindCorr{#1}%  
   \fi
@@ -225,6 +238,8 @@
 }
 \define@key{hvSet}{capFormat}{\def\hv@caption@format{#1}}%
 \define@key{hvSet}{subcapFormat}{\def\hv@subcaption@format{#1}}%
+\define@boolkey{hvSet}[hv@]{forceOutput}[true]{%
+  \ifhv@forceOutput\hv@nonFloattrue\fi}% 	immediate output, no floating!
 
 \def\hv@set#1{\begingroup\edef\x{\endgroup\noexpand\setkeys{hvSet}{#1}}\x}
 \let\hvFloatSet\hv@set
@@ -235,22 +250,24 @@
 \newcommand\setDefaults{%
   \hv@set{%
 	floatPos=, rotAngle=0, capWidth=n, capAngle=0, objectAngle=0,
-	capPos=bottom, capVPos=center, objectPos=center, allHPos=center,
-	floatCapSep=5pt, useOBox=false, nonFloat=false,
+	capPos=bottom, capVPos=center, objectPos=center, capHPos=center,
+	floatCapSep=5pt, useOBox=false, 
 	onlyText=false, wide=false, fullpage=false, FULLPAGE=false, 
 	doubleFULLPAGE=false, doublePage=false, doublePAGE=false,
-        multiFloat=false,subFloat=false,
+        multiFloat=false,subFloat=false,inMargin=false,
 	separatorLine,objectFrame=false,multiFloatSkip=\normalbaselineskip,
 	capFormat={}, subcapFormat={}, twoColumnCaption=false,
 	sameHeight=false,
 	bindCorr=\z@,sepLineskip=0pt,
 	vFill=false, minTextlines=2,
+	forceOutput=false, nonFloat=false, 
 }%
 }
 
 \let\hvFloatSetDefaults\setDefaults
+\hvFloatSetDefaults%  onyl for first loading of the package
 
-\newcommand\hv@typeout[1]{\ifhv@Debug\typeout{>>>> #1}\fi}
+\providecommand\hv@typeout[1]{\ifhv@Debug\typeout{>>>> #1}\fi}
 
 \providecommand\@tugclass{\@empty}
 \ifx\@tugclass\@empty
@@ -274,8 +291,9 @@
 
 \newlength\fboxlinewidth
 \AtBeginDocument{%
-  \setlength\fboxlinewidth{\dimexpr\linewidth-2\fboxrule-2\fboxsep}%
+  \fboxlinewidth=\the\dimexpr\linewidth-2\fboxrule-2\fboxsep\relax
 }
+
 \setlength\belowcaptionskip{\abovecaptionskip}% it is in latex.ltx = 0pt
 \newcommand\saveCaptionSkip{%
 	\setlength{\hvAboveCaptionSkip}{\abovecaptionskip}%
@@ -291,13 +309,13 @@
 \newcommand\hv@set@noverticalSpace{%   no space on top for a float page 
   \let\hv@dblfptop\@dblfptop
   \let\hv@fptop\@fptop
-  \global\setlength{\@dblfptop}{0\p@}%
-  \global\setlength{\@fptop}{0\p@}%
+  \global\@dblfptop=0\p@
+  \global\@fptop=0\p@
 }
 
 \newcommand\hv@reset@noverticalSpace{%
-  \global\setlength{\@dblfptop}{\hv@dblfptop}%
-  \global\setlength{\@fptop}{\hv@fptop}%
+  \global\@dblfptop=\hv@dblfptop
+  \global\@fptop=\hv@fptop
 }
 
 \providecommand\figcaption[2][]{}%
@@ -322,9 +340,10 @@
   \expandafter\captionsetup\expandafter{\hv@caption@format,position=below}
   \ifx\relax#1\relax \caption{#2}\else\caption[#1]{#2}\fi
   \endgroup}
+
 %
 \newlength\hv@maxImageWidth
-\AtBeginDocument{\hv@maxImageWidth=\columnwidth}
+\AtBeginDocument{\setlength\hv@maxImageWidth{\columnwidth}}
 
 \define@key{Gin}{columnWidth}[true]{%
   \def\Gin@ewidth{\columnwidth}%
@@ -352,7 +371,7 @@
   \Gin@boolkey{false}{iso}%
 }
 \define@key{Gin}{doublefullPage}[true]{%
-  \def\Gin@ewidth{\dimexpr2\paperwidth-2in-2\evensidemargin}%
+  \def\Gin@ewidth{\the\dimexpr2\paperwidth-2in-2\evensidemargin}%
 %  \def\Gin@eheight{\paperheight}%
   \Gin@boolkey{true}{iso}%
 }
@@ -414,7 +433,6 @@
   \fi
 }
 
-
 \def\drawSepLine{%
   \par\noindent
   \if@twocolumn
@@ -437,6 +455,7 @@
 \newcounter{hv@ptable}%
 \newcounter{subhv@pfigure}%
 \newcounter{subhv@ptable}%
+\newcount\hv@tempcnt
 
 \newif\ifhv@star
 \newif\if@hvsubstar
@@ -452,6 +471,7 @@
 % #6: label
 %
 
+
 \def\hvFloat{\@ifnextchar*%     Main macro
   {\global\hv@startrue\hv@maxImageWidth=\textwidth\hvFloat@i}%
   {\global\hv@starfalse\hv@maxImageWidth=\columnwidth\hvFloat@i*}%
@@ -460,7 +480,7 @@
 \def\hvFloat@i*{\@ifnextchar[{\do@hvFloat}{\do@hvFloat[]}}
 \def\do@hvFloat[#1]{%
   \begingroup
-  \setlength\hvWideWidth{\dimexpr\columnwidth+\marginparwidth+\marginparsep}%
+  \hvWideWidth=\the\dimexpr\columnwidth+\marginparwidth+\marginparsep\relax%
 %  \setlength\hvWideWidth{\dimexpr\textwidth+\marginparwidth+\marginparsep}%
 %  \setlength\hvWideWidth{\dimexpr\linewidth+\marginparwidth}%
   \hv@maxImageWidth=\textwidth
@@ -551,8 +571,8 @@
   \gdef\hv@label{#3}%
   \ifhv@capbeside\def\@@temp{1}\else\def\@@temp{0}\fi
   \ifhv@sameHeight\global\hv@global@sameHeighttrue\else\global\hv@global@sameHeightfalse\fi  
-  \global\setlength\hvSet@bindCorrection{\hvSet@bindCorr}%  for doublepage objects   
-  \global\setlength\hv@floatCapSep{\hvSet@floatCapSep}%
+  \global\hvSet@bindCorrection=\hvSet@bindCorr%  for doublepage objects   
+  \global\hv@floatCapSep=\hvSet@floatCapSep%
 %
   \ifhv@fullpage
     \def\hvSet@CapWidth{n}%  relative value
@@ -572,7 +592,11 @@
           \ifhv@doublePage
             \expandafter\do@hvFloat@doublePage\@@temp%  fullpage with caption rotated or under on an odd page
           \else
-            \do@@@hvFloat
+	    \ifhv@inMargin
+              \do@@@hvFloatInMargin
+            \else
+              \do@@@hvFloat
+            \fi
           \fi
         \fi
       \fi
@@ -613,37 +637,41 @@
     \ifx\hvSet@capWidth\hv@Height%             captionwidth=objectheight
       \setlength\hvCapWidth{\ht\hvObjectBox}%
     \else
-      \ifx\hvSet@capWidth\hv@Natural%          captionwidth=\linewidth-\objectwidth-separation
-        \ifhv@capbeside
-          \ifhv@wide
-            \setlength\hvCapWidth{\the\dimexpr\hvWideWidth-\hvObjectWidth-\hv@floatCapSep\relax}%
-          \else
-            \ifhv@star
-              \setlength\hvCapWidth{\the\dimexpr\textwidth-\hvObjectWidth-\hv@floatCapSep\relax}%
-            \else
-              \setlength\hvCapWidth{\the\dimexpr\linewidth-\hvObjectWidth-\hv@floatCapSep\relax}%
-            \fi
-          \fi
-        \else
-          \setlength\hvCapWidth{\columnwidth}%
-        \fi
+      \ifx\hvSet@capWidth\hv@LineWidth%             captionwidth=objectheight
+        \setlength\hvCapWidth{\linewidth}%
       \else
-        \ifhv@capbeside
-          \ifhv@wide
-            \setlength\hvCapWidth{\hvSet@capWidth\hvWideWidth}%
-            \setlength\@tempdima{\the\dimexpr\hvWideWidth-\hvObjectWidth-\hv@floatCapSep\relax}%
+        \ifx\hvSet@capWidth\hv@Natural%          captionwidth=\linewidth-\objectwidth-separation
+          \ifhv@capbeside
+            \ifhv@wide
+              \hvCapWidth=\the\dimexpr\hvWideWidth-\hvObjectWidth-\hv@floatCapSep\relax
+            \else
+              \ifhv@star
+                \hvCapWidth=\the\dimexpr\textwidth-\hvObjectWidth-\hv@floatCapSep\relax
+              \else
+                \hvCapWidth=\the\dimexpr\linewidth-\hvObjectWidth-\hv@floatCapSep\relax
+              \fi
+            \fi
           \else
-            \setlength\hvCapWidth{\hvSet@capWidth\columnwidth}%
-            \setlength\@tempdima{\the\dimexpr\columnwidth-\hvObjectWidth-\hv@floatCapSep\relax}%
-          \fi
-          \ifdim\hvCapWidth>\@tempdima
-            \setlength\hvCapWidth{\@tempdima}%
+            \setlength\hvCapWidth{\columnwidth}%
           \fi
         \else
-          \ifhv@wide
-            \setlength\hvCapWidth{\hvSet@capWidth\hvWideWidth}%
+          \ifhv@capbeside
+            \ifhv@wide
+              \setlength\hvCapWidth{\hvSet@capWidth\hvWideWidth}%
+              \@tempdima=\the\dimexpr\hvWideWidth-\hvObjectWidth-\hv@floatCapSep\relax
+            \else
+              \setlength\hvCapWidth{\hvSet@capWidth\columnwidth}%
+              \@tempdima=\the\dimexpr\columnwidth-\hvObjectWidth-\hv@floatCapSep\relax
+            \fi
+            \ifdim\hvCapWidth>\@tempdima
+              \hvCapWidth=\@tempdima
+            \fi
           \else
-            \setlength\hvCapWidth{\hvSet@capWidth\columnwidth}%
+            \ifhv@wide
+              \setlength\hvCapWidth{\hvSet@capWidth\hvWideWidth}%
+            \else
+              \setlength\hvCapWidth{\hvSet@capWidth\columnwidth}%
+            \fi
           \fi
         \fi
       \fi
@@ -653,7 +681,8 @@
   \ifnum\hvSet@capAngle=0 % need rotation?
     \savebox\hvCaptionBox{%   NO rotation
       \minipage[b]{\hvCapWidth}%% minipage, to get hyphenation
-        \ifhv@nonFloat
+% 	  \ifx\relax\hv@caption@format\relax\else\expandafter\captionsetup\expandafter{\hv@caption@format}\fi
+      \ifhv@nonFloat
 	  \ifhv@onlyText
 	    \hv@longCap
   	  \else
@@ -675,18 +704,20 @@
 	  \ifhv@onlyText
 	    \hv@longCap
   	  \else
+  	   	  \expandafter\ifx\hv@longCap\@empty \else
             \let\@captype\hv@floatType
             \ifx\hv@shortCap\@empty\caption{\hv@longCap}\else\caption[\hv@shortCap]{\hv@longCap}\fi
             \ifx\hv@label\@empty\else\label{\hv@label}\fi
           \fi
+        \fi
 	\fi
       \endminipage
-    }%
+    }%     end CaptionBox without rotation
   \else
-    \savebox\hvCaptionBox{%   Rotation
+    \savebox\hvCaptionBox{%   with Rotation
       \rotatebox{\hvSet@capAngle}{%
         \minipage[b]{\hvCapWidth}%% minipage, to get hyphenation
-% 	  \ifx\relax\hv@caption@format\relax\else\expandafter\captionsetup\expandafter{\hv@caption@format}\fi
+%	  \ifx\relax\hv@caption@format\relax\else\expandafter\captionsetup\expandafter{\hv@caption@format}\fi
   	  \ifhv@nonFloat
   	    \ifhv@onlyText
   	      \hv@longCap
@@ -698,6 +729,7 @@
 	      \fi
 	    \fi
 	  \else
+	    \expandafter\ifx\hv@longCap\@empty \else
   	    \ifhv@onlyText
   	      \hv@longCap
             \else
@@ -705,6 +737,7 @@
               \ifx\hv@shortCap\@empty \caption{\hv@longCap}\else\caption[\hv@shortCap]{\hv@longCap}%
               \fi
             \fi
+          \fi
           \fi
           \ifx\hv@label\@empty\else\label{\hv@label}\fi
         \endminipage
@@ -770,10 +803,12 @@
             \ifoddpageoroneside\hv@@capPos=0\else\hv@@capPos=2\fi
           \else
             \ifx\hvSet@capPos\hv@Outer
-              \ifoddpageoroneside\hv@@capPos=2\else\hv@@capPos=0\fi
+              \ifoddpage\hv@@capPos=2\else\hv@@capPos=0\fi
+%              \ifoddpageoroneside\hv@@capPos=2\else\hv@@capPos=0\fi
+              %    even page (left=0) | odd page (oneside) (right=2)
             \else 
               \ifx\hvSet@capPos\hv@Before
-                \hv@@capPos=0% same as cappos=right
+                \hv@@capPos=0% same as cappos=left
               \else
                 \ifx\hvSet@capPos\hv@After
                   \hv@@capPos=2% same as capPos=right
@@ -786,8 +821,10 @@
     \fi
   \fi
 %%%%
+%\typeout{>>>>>>>>>Pos: \the\hv@@capPos}%
   \savebox{\@tempboxa}{%                     ***** @tempbox   start
-    \expandafter\ifcase\the\hv@@capPos% 0 is LEFT     START \ifcase
+    \expandafter%
+    \ifcase\the\hv@@capPos % 0 is LEFT     START \ifcase
       \ifx\hvSet@capVPos\hv@Center
         \put@CaptionBox 
         \hspace{\hv@floatCapSep}% capfloatsep
@@ -809,7 +846,15 @@
       \else
 	\begin{minipage}{\wd\hvObjectBox}%
       \fi
-      \centering
+      \ifx\hvSet@capHPos\hv@Left% horizontal justification
+        \raggedright
+      \else
+        \ifx\hvSet@capHPos\hv@Center
+          \centering
+        \else
+          \raggedleft
+        \fi
+      \fi
       \ifhv@fbox
 	\fbox{\usebox{\hvCaptionBox}}\\[0.5\hvBelowCaptionSkip]%
 	\fbox{\usebox{\hvObjectBox}}%
@@ -829,7 +874,7 @@
           \hspace{\hv@floatCapSep}% capfloatsep
           \put@CaptionBox[1]%
 	\else
-          \put@ObjectBox[2]%
+          \put@ObjectBox[2]%   bottom
           \hspace{\hv@floatCapSep}% capfloatsep
           \put@CaptionBox[2]%
 	\fi
@@ -840,7 +885,15 @@
       \else
         \begin{minipage}{\wd\hvObjectBox}%
       \fi
-      \centering
+      \ifx\hvSet@capHPos\hv@Left% horizontal justification
+        \raggedright
+      \else
+        \ifx\hvSet@capHPos\hv@Center
+          \centering
+        \else
+          \raggedleft
+        \fi
+      \fi
       \ifhv@fbox
         \fbox{\usebox{\hvObjectBox}}\\[0.5\hvAboveCaptionSkip]%
           \fbox{\usebox{\hvCaptionBox}}%
@@ -899,6 +952,212 @@
   \fi
   \endgroup% startet at main \hvFloat
 }
+
+
+\def\do@@@hvFloatInMargin{%  no special float page, caption and image on top of each other or side by side
+  \def\@tempa{90}%
+  \ifx\hvSet@rotAngle\@tempa \setlength\hvMaxCapWidth{\textheight}\else\setlength\hvMaxCapWidth{\marginparwidth}\fi
+%
+% First we save the object in \hvObjectBox
+%
+  \ifnum\hvSet@objectAngle=0 % rotate the object?
+    \ifhv@useOBox\let\hvObjectBox\hvOBox\else\savebox\hvObjectBox{\hv@floatObject}\fi
+  \else
+    \savebox\hvObjectBox{\rotatebox{\hvSet@objectAngle}{\ifhv@useOBox\usebox{\hvOBox}\else\hv@floatObject\fi}}%
+  \fi
+  \setlength\hvObjectWidth{\wd\hvObjectBox}%
+%
+% Now we save the caption with its defined \hvCapWidth
+% 
+  \renewcommand*{\raggedleftmarginnote}{}%
+  \renewcommand*{\raggedrightmarginnote}{}%
+  \marginnote{%
+  \ifx\hvSet@capWidth\hv@Width \setlength\hvCapWidth{\hvObjectWidth}%
+  \else
+    \ifx\hvSet@capWidth\hv@Height \setlength\hvCapWidth{\ht\hvObjectBox}%
+    \else
+      \ifx\hvSet@capWidth\hv@LineWidth \setlength\hvCapWidth{\marginparwidth}%
+      \else
+        \ifx\hvSet@capWidth\hv@Natural%          captionwidth=\linewidth-\objectwidth-separation
+          \ifhv@capbeside
+             \hvCapWidth=\the\dimexpr\marginparwidth-\hvObjectWidth-\hv@floatCapSep\relax
+          \else
+            \setlength\hvCapWidth{\marginparwidth}%
+          \fi
+        \else
+          \ifhv@capbeside
+            \setlength\hvCapWidth{\hvSet@capWidth\marginparwidth}%
+            \@tempdima=\the\dimexpr\marginparwidth-\hvObjectWidth-\hv@floatCapSep\relax
+            \ifdim\hvCapWidth>\@tempdima \hvCapWidth=\@tempdima \fi
+          \else
+              \setlength\hvCapWidth{\hvSet@capWidth\marginwidth}%
+          \fi
+        \fi
+      \fi
+    \fi
+  \fi
+  \saveCaptionSkip% we put this space ourselve
+  \ifnum\hvSet@capAngle=0 % need rotation?
+    \savebox\hvCaptionBox{%   NO rotation
+      \minipage[b]{\hvCapWidth}%% minipage, to get hyphenation
+	\ifx\hv@floatType\hv@figure
+	  \ifx\relax\hv@shortCap\relax 
+	    \figcaption{\hv@longCap\ifx\hv@label\@empty\else\label{\hv@label}\fi}%
+	  \else
+	    \figcaption[\hv@shortCap]{\hv@longCap\ifx\hv@label\@empty\else\label{\hv@label}\fi}%
+	  \fi
+	\else
+	  \ifx\relax\hv@shortCap\relax 
+	    \tabcaption{\hv@longCap\ifx\hv@label\@empty\else\label{\hv@label}\fi}%
+	  \else
+	    \tabcaption[\hv@shortCap]{\hv@longCap\ifx\hv@label\@empty\else\label{\hv@label}\fi}%
+	  \fi
+        \fi
+      \endminipage
+    }%     end CaptionBox without rotation
+  \else
+    \savebox\hvCaptionBox{%   with Rotation
+      \rotatebox{\hvSet@capAngle}{%
+        \minipage[b]{\hvCapWidth}%% minipage, to get hyphenation
+	  \ifx\hv@floatType\hv@figure 
+	    \ifx\hv@shortCap\@empty \figcaption{\hv@longCap}\else\figcaption[\hv@shortCap]{\hv@longCap}\fi
+	  \else
+	    \ifx\hv@shortCap\@empty \tabcaption{\hv@longCap}\else\tabcaption[\hv@shortCap]{\hv@longCap}\fi
+	  \fi
+          \ifx\hv@label\@empty\else\label{\hv@label}\fi
+        \endminipage
+      }%  rotatebox
+    }%  end \avesbox
+  \fi
+%
+% now we have the object and the caption with the right
+% rotated angles saved in different boxes
+%%
+  \restoreCaptionSkip% save old values
+%  \def\fps@figure{\hvSet@floatPos}%
+  \ifx\hvSet@floatPos\@empty \else\@namedef{fps@\hv@floatType}{\hvSet@floatPos}\fi   
+  \noindent
+  \begingroup%			Start the nonfloat part
+  \checkoddpage
+  \ifx\hvSet@objectPos\hv@Right \raggedleft\fi
+  \ifx\hvSet@objectPos\hv@Center \hspace*{\fill}\fi
+  \ifx\hvSet@objectPos\hv@Outer \ifoddpage\raggedleft\fi\fi
+  \ifx\hvSet@objectPos\hv@Inner \ifoddpage\else\raggedleft\fi\fi
+%
+% to rotate object and caption together, we save all in another box
+% the caption comes first, if its on the left or the top
+%  0 caption left, inner and odd page, oneside inner
+%  1 caption top
+%  2 caption right, inner and even page, oneside outer
+%  3 caption bottom
+%
+  \ifx\hvSet@capPos\hv@Left \hv@@capPos=0
+  \else
+    \ifx\hvSet@capPos\hv@Top \hv@@capPos=1
+    \else
+      \ifx\hvSet@capPos\hv@Right \hv@@capPos=2
+      \else
+        \ifx\hvSet@capPos\hv@Bottom \hv@@capPos=3
+        \else
+          \ifx\hvSet@capPos\hv@Inner \ifoddpageoroneside\hv@@capPos=0\else\hv@@capPos=2\fi
+          \else
+            \ifx\hvSet@capPos\hv@Outer \ifoddpage\hv@@capPos=2\else\hv@@capPos=0\fi
+%              \ifoddpageoroneside\hv@@capPos=2\else\hv@@capPos=0\fi
+              %    even page (left=0) | odd page (oneside) (right=2)
+            \else 
+              \ifx\hvSet@capPos\hv@Before \hv@@capPos=0% same as cappos=left
+              \else
+                \ifx\hvSet@capPos\hv@After \hv@@capPos=2% same as capPos=right
+                \fi
+              \fi
+            \fi
+          \fi
+        \fi
+      \fi
+    \fi
+  \fi
+%%%%
+%\typeout{>>>>>>>>>Pos: \the\hv@@capPos}%
+  \savebox{\@tempboxa}{%                     ***** @tempbox   start
+    \expandafter\ifcase\the\hv@@capPos % 0 is LEFT     START \ifcase
+      \ifx\hvSet@capVPos\hv@Center
+        \put@CaptionBox 
+        \hspace{\hv@floatCapSep}% capfloatsep
+        \put@ObjectBox
+      \else
+        \ifx\hvSet@capVPos\hv@Top% caption and object at top aligned
+          \put@CaptionBox[1]%
+          \hspace{\hv@floatCapSep}% capfloatsep
+          \put@ObjectBox[1]%
+        \else% caption on bottom
+          \put@CaptionBox[2]%
+          \hspace{\hv@floatCapSep}% capfloatsep
+          \put@ObjectBox[2]%
+        \fi
+      \fi%  end caption left
+    \or%1 is top
+      \ifdim\wd\hvCaptionBox>\wd\hvObjectBox
+	\begin{minipage}{\wd\hvCaptionBox}%
+      \else
+	\begin{minipage}{\wd\hvObjectBox}%
+      \fi
+      \ifx\hvSet@capHPos\hv@Left% horizontal justification
+        \raggedright
+      \else
+        \ifx\hvSet@capHPos\hv@Center \centering\else\raggedleft\fi
+      \fi
+      \ifhv@fbox
+	\fbox{\usebox{\hvCaptionBox}}\\[0.5\hvBelowCaptionSkip]%
+	\fbox{\usebox{\hvObjectBox}}%
+      \else
+	\usebox{\hvCaptionBox}\\[0.5\hvBelowCaptionSkip]%
+	\usebox{\hvObjectBox}%
+      \fi
+      \end{minipage}%
+    \or%2 is right
+      \ifx\hvSet@capVPos\hv@Center
+        \put@ObjectBox
+	\hspace{\hv@floatCapSep}%
+	\put@CaptionBox
+      \else
+	\ifx\hvSet@capVPos\hv@Top
+          \put@ObjectBox[1]%
+          \hspace{\hv@floatCapSep}% capfloatsep
+          \put@CaptionBox[1]%
+	\else
+          \put@ObjectBox[2]%   bottom
+          \hspace{\hv@floatCapSep}% capfloatsep
+          \put@CaptionBox[2]%
+	\fi
+      \fi
+    \or%3 bottom
+      \ifdim\wd\hvCaptionBox>\wd\hvObjectBox\begin{minipage}{\wd\hvCaptionBox}\else\begin{minipage}{\wd\hvObjectBox}\fi
+      \ifx\hvSet@capHPos\hv@Left% horizontal justification
+        \raggedright
+      \else
+        \ifx\hvSet@capHPos\hv@Center \centering\else\raggedleft\fi
+      \fi
+      \ifhv@fbox
+        \fbox{\usebox{\hvObjectBox}}\\[0.5\hvAboveCaptionSkip]%
+          \fbox{\usebox{\hvCaptionBox}}%
+        \else
+          \ifhv@objectFrame\frame{\usebox{\hvObjectBox}}\else\usebox{\hvObjectBox}\fi\\[0.5\hvAboveCaptionSkip]%
+          \usebox{\hvCaptionBox}%
+        \fi
+      \end{minipage}%
+    \fi%   \ifcase\the\hv@@capPos
+  }% End savebox Object and caption            %%%%%%%%%%%%%%%%%  @tempboxa
+%
+% now we rotate the object and caption, if needed
+%
+  \ifx\hvSet@rotAngle\hv@Zero\usebox{\@tempboxa}\else\rotatebox{\hvSet@rotAngle}{\usebox{\@tempboxa}}\fi
+  \ifx\hvSet@objectPos\hv@Center \hspace{\fill}\fi
+  \endgroup%	End the nonfloat part
+}%  end marginnote
+\endgroup}%  end of \marginnote and \@@@hvFloatInMargin
+
+
+
 %
 \newenvironment{hvFloatEnv}[1][\textwidth]
   {\minipage{#1}}
@@ -1063,12 +1322,12 @@
 %
 \def\do@hvFloat@doublePage#1{%  image on left and right page with caption on the right page 
   % #1-> 0/1 caption under/right
-  \global\setlength\hv@leftPageObjectWidth{\dimexpr\paperwidth-1in-\evensidemargin-\hvSet@bindCorrection}%
-  \global\setlength\hv@tempWidthA{\the\dimexpr1in+\oddsidemargin-\hvSet@bindCorrection}%
+  \hv@typeout{>>>doublePage: start with definitions of \hv@floatObject}%
+  \global\hv@leftPageObjectWidth=\the\dimexpr\paperwidth-1in-\evensidemargin-\hvSet@bindCorrection\relax
+  \global\hv@tempWidthA=\the\dimexpr1in+\oddsidemargin-\hvSet@bindCorrection\relax
   \xdef\hv@caption@format@temp{\hv@caption@format}%  it gets lost otherwise for next afterpage
-    \setlength\@dblfpbot{0\p@ \@plus 1fil}%
+  \@dblfpbot=0\p@ \@plus 1fil%
   \global\hv@switchTypefalse
-%  \endgroup% started at main macro \hvFloat
   \setcounter{hv@tempCNTfigA}{\value{figure}}%
   \setcounter{hv@tempCNTfigB}{\value{figure}}%
   \setcounter{hv@tempCNTtabA}{\value{table}}%
@@ -1091,16 +1350,24 @@
     \fi
   \fi
   \hv@typeout{do@hvFloat@doublePage:hv@tempWidthA=\the\hv@tempWidthA}%
+  \ifhv@forceOutput
+    \do@hvFloat@doublePAGECaptionRight{#1}%   no cheque
+  \else
   \checkoddpage
   \ifoddpage
     \if@twocolumn
       \if@firstcolumn
+        \hv@typeout{do@hvFloat@doublePage:oddpage->twocolumn->firstcolumn}%
         \ifhv@switchType
+          \hv@typeout{hvfloat: switched to floattype p}%
           \afterpage{\do@hvFloat@doublePAGECaptionRight{#1}}%
         \else
-          \afterpage{\afterpage{\do@hvFloat@doublePageCaptionRight{#1}}}%
+          \hv@typeout{calling do@hvFloat@doublePageCaptionRight}%
+          %\afterpage{
+          \afterpage{\do@hvFloat@doublePageCaptionRight{#1}}%}%
         \fi
       \else
+        \hv@typeout{do@hvFloat@doublePage:oddpage->twocolumn->secondcolumn}%
         \ifhv@tugboat
           \do@hvFloat@doublePageCaptionRight{#1}%
         \else
@@ -1142,23 +1409,25 @@
     \fi
   \fi
   \let\c@fptop\hv@fptop
+  \fi
  \endgroup% started at main macro \hvFloat
 }
 %
 \def\do@hvFloat@doublePageCaptionRight#1{%  image on left and right page with caption on the right page ----------------------------------
-  \do@hvFloat@doublePageCaptionRightObjectLeft{0pt}%
+  \hv@typeout{do@hvFloat@doublePageCaptionRight->start}%
+  \do@hvFloat@doublePageCaptionRightObjectLeft{0pt}% 
   \afterpage{\do@hvFloat@doublePageCaptionRightObjectRight{#1}}%
 }
 %
 \def\do@hvFloat@doublePageCaptionRightObjectLeft#1{% left part of the object
   \begin{\hv@floatType*}[!t]
+    \hv@typeout{>>>doublePage: start with left side of the object \hv@floatObject}%
     \hv@set@noverticalSpace
     \hfuzz=\maxdimen
     \let\c@hv@tempCNTfigA\c@figure
     \let\c@hv@tempCNTtabA\c@table
     \expandafter\hvFloatSet\expandafter{\hv@save@setting}% 
-    \expandafter\hvFloatSet\expandafter{\hv@save@setting}% 
-    \hv@typeout{Floatpositionsparameter: !t}%    
+    \hv@typeout{Float position parameter is for left page: !t}%    
     \global\savebox{\hvObjectBox}{\ifhv@useOBox\usebox{\hvOBox}\else\hv@floatObject\fi}%
     \clipbox*{0 -\depth{} \hv@leftPageObjectWidth{} \height}{\usebox\hvObjectBox}%
     \ifx\hv@label\@empty
@@ -1180,13 +1449,16 @@
 }
 \def\do@hvFloat@doublePageCaptionRightObjectRight#1{% right part of the object
   \begin{\hv@floatType*}[!t]
+    \hv@typeout{>>>doublePage: start with right side of the object \hv@floatObject}%
     \hv@set@noverticalSpace
     \hfuzz=\maxdimen
     \expandafter\hvFloatSet\expandafter{\hv@save@setting}%    
-    \global\savebox\hvObjectBox{\ifhv@useOBox\usebox{\hvOBox}\else\hv@floatObject\fi}%
+    \savebox\hvObjectBox{\ifhv@useOBox\usebox{\hvOBox}\else\hv@floatObject\fi}%
+    \hv@tempWidthA=\the\dimexpr1in+\oddsidemargin-\hvSet@bindCorrection\relax%   FÜR DTK
     \hspace*{-\hv@tempWidthA}%
+    \hv@leftPageObjectWidth=\the\dimexpr\paperwidth-1in-\evensidemargin-\hvSet@bindCorrection\relax%  FÜR FTK
     \savebox\hv@rightBox{\clipbox*{\hv@leftPageObjectWidth{} -\depth{} \width{} \height{}}{\usebox\hvObjectBox}}%
-    \global\setlength\hv@tempWidthB{\dimexpr\textwidth-\wd\hv@rightBox-\hvSet@bindCorrection+1in+\oddsidemargin-\hv@floatCapSep\relax}%
+    \hv@tempWidthB=\dimexpr\textwidth-\wd\hv@rightBox-\hvSet@bindCorrection+1in+\oddsidemargin-\hv@floatCapSep\relax
     \hv@typeout{Height of right box: \the\ht\hv@rightBox}%
     \hv@typeout{Depth of right box : \the\dp\hv@rightBox}%
        \ifdim\dp\hv@rightBox > \z@
@@ -1224,11 +1496,11 @@
            }}}%
            \ifx\hv@label\@empty\else\label{\hv@label-cap}\fi
          \else
-           \global\setlength\hv@tempWidthB{\dimexpr\textwidth-\wd\hv@rightBox-\hvSet@bindCorrection+1in+\oddsidemargin-\hv@floatCapSep\relax}%
+           \hv@tempWidthB=\dimexpr\textwidth-\wd\hv@rightBox-\hvSet@bindCorrection+1in+\oddsidemargin-\hv@floatCapSep\relax
            \hspace{\hv@floatCapSep}%
            \rlap{\parbox[b][\dimexpr\ht\hv@rightBox+\dp\hv@rightBox][\hv@@capVPos]{\hv@tempWidthB}{%
-             \abovecaptionskip=0pt% local inside parbox
-             \belowcaptionskip=0pt% local inside parbox
+             \abovecaptionskip=0pt % local inside parbox
+             \belowcaptionskip=0pt % local inside parbox
              \ifx\hv@shortCap\@empty
                \caption{\hv@longCap}%
              \else
@@ -1265,16 +1537,20 @@
   \expandafter\global\expandafter\savebox\expandafter\hv@boxRightPage\expandafter{\clipbox*{\hv@leftPageObjectWidth{} -\depth{} \width{} \height}{\usebox\hvObjectBox}}%
   \checkoddpage
   \ifoddpage
+    \hv@typeout{do@hvFloat@doublePAGE: oddpage}%
     \if@twocolumn
       \if@firstcolumn
+        \hv@typeout{do@hvFloat@doublePAGE: ifoddpage->twocolumn->firstcolumn}%
         \afterpage{\do@hvFloat@doublePAGECaptionRight{#1}}%
       \else
+        \hv@typeout{do@hvFloat@doublePAGE: ifoddpage->twocolumn->secondcolumn}%
         \do@hvFloat@doublePAGECaptionRight{#1}%
       \fi
     \else
       \do@hvFloat@doublePAGECaptionRight{#1}%
     \fi  
   \else
+    \hv@typeout{do@hvFloat@doublePAGE: evenpage}%
     \if@twocolumn
       \if@firstcolumn
         \afterpage{\afterpage{\afterpage{\do@hvFloat@doublePAGECaptionRight{#1}}}}%
@@ -1290,6 +1566,7 @@
 %
 \def\do@hvFloat@doublePAGECaptionRight#1{%  image on left and right page with caption on the right ----------------------------------
   % #1-> 0/1 caption under/right
+    \hv@typeout{do@hvFloat@doublePAGECaptionRight->start}%
     \afterpage{%
       \hfuzz=\maxdimen
       \expandafter\hvFloatSet\expandafter{\hv@save@setting}%
@@ -1299,8 +1576,8 @@
         \global\savebox\hvObjectBox{\hv@floatObject}%
       \fi
       \noindent
-      \global\setlength\hv@tempWidthA{\the\dimexpr1in+\oddsidemargin-\hvSet@bindCorrection}%
-      \global\setlength\hv@leftPageObjectWidth{\the\dimexpr\paperwidth-1in-\evensidemargin-\hvSet@bindCorrection}%
+      \global\hv@tempWidthA=\the\dimexpr1in+\oddsidemargin-\hvSet@bindCorrection%
+      \global\hv@leftPageObjectWidth=\the\dimexpr\paperwidth-1in-\evensidemargin-\hvSet@bindCorrection%
       \clipbox*{0 -\depth{} \hv@leftPageObjectWidth{} \height}{\usebox\hvObjectBox}%
       \null\newpage\if@twocolumn\null\newpage\fi
       \expandafter\global\expandafter\savebox\expandafter\hvObjectBox\expandafter{\ifhv@useOBox\usebox{\hvOBox}\else\hv@floatObject\fi}%
@@ -1358,17 +1635,22 @@
   \fi\fi
   \checkoddpage
   \global\savebox{\hvObjectBox}{\ifhv@useOBox\usebox{\hvOBox}\else\hv@floatObject\fi}%
-  \global\setlength\hv@tempWidthA{\dimexpr-\oddsidemargin-1in-\parindent+\hvSet@bindCorrection}%  the width of the right side offset
-  \global\setlength\hv@tempWidthB{\dimexpr\ht\hvCaptionBox+\wd\hvObjectBox+2\hvSet@bindCorrection}%
-  \global\setlength\hv@leftPageObjectWidth{\dimexpr\paperwidth-\hvSet@bindCorrection}%
+  \global\hv@tempWidthA=\dimexpr-\oddsidemargin-1in-\parindent+\hvSet@bindCorrection%  the width of the right side offset
+  \global\hv@tempWidthB=\dimexpr\ht\hvCaptionBox+\wd\hvObjectBox+2\hvSet@bindCorrection%
+  \global\hv@leftPageObjectWidth=\dimexpr\paperwidth-\hvSet@bindCorrection%
 %  \savebox\hv@leftBox{\clipbox*{0 0 \the\hv@leftPageObjectWidth{} \height}{\usebox\hvObjectBox}}%
 %  \savebox\hv@rightBox{\clipbox*{\the\hv@leftPageObjectWidth{} \depth{} \width{} \height}{\usebox\hvObjectBox}}%
 %  \expandafter\captionsetup\expandafter{\hv@caption@format}%
   \ifoddpage
+    \hv@typeout{do@hvFloat@doubleFULLPAGE: ifoddpage=true}%
     \ifcase\hv@@capPos % =0 Caption before
+      \hv@typeout{do@hvFloat@doubleFULLPAGE: caption before}%
       \if@twocolumn
+        \hv@typeout{do@hvFloat@doubleFULLPAGE: twocolumn=true}%
         \if@firstcolumn
+          \hv@typeout{do@hvFloat@doubleFULLPAGE: firstcolumn=true}%
           \ifhv@twoColumnCaption
+            \hv@typeout{do@hvFloat@doubleFULLPAGE: twoColumnCaption=true}%
             \set@Normal@Bottom@Caption*
             \afterpage{\do@hvFloat@doubleFULLPAGE@CaptionBefore}%
           \else
@@ -1383,10 +1665,14 @@
         \do@hvFloat@doubleFULLPAGE@CaptionBefore
       \fi
     \or  % =1 Caption after
+      \hv@typeout{do@hvFloat@doubleFULLPAGE: caption after}%
       \ifhv@twoColumnCaption
+        \hv@typeout{do@hvFloat@doubleFULLPAGE: twoColumnCaption=true}%
         \if@firstcolumn
+          \hv@typeout{do@hvFloat@doubleFULLPAGE: firstcolumn=true}%
           \afterpage{\do@hvFloat@doubleFULLPAGE@CaptionAfterTwoCol}%
         \else
+          \hv@typeout{do@hvFloat@doubleFULLPAGE: firstcolumn=false}%
           \do@hvFloat@doubleFULLPAGE@CaptionAfterTwoCol
         \fi
       \else
@@ -1465,10 +1751,14 @@
       \expandafter\hvFloatSet\expandafter{\hv@save@setting}%    
       \ifhv@separatorLine\drawSepLine\fi
 %      \expandafter\captionsetup\expandafter{\hv@caption@format}%
-      \ifx\hv@shortCap\@empty
-        \captionof{\hv@floatType}{\hv@longCap}%
+      \ifhv@onlyText
+        \hv@longCap
       \else
-        \captionof{\hv@floatType}[\hv@shortCap]{\hv@longCap}%
+        \ifx\hv@shortCap\@empty
+          \captionof{\hv@floatType}{\hv@longCap}%
+        \else
+          \captionof{\hv@floatType}[\hv@shortCap]{\hv@longCap}%
+        \fi
       \fi
       \ifx\hv@label\@empty\else\label{\hv@label-cap}\fi
     \end{\hv@floatType}%
@@ -1478,10 +1768,14 @@
       \expandafter\hvFloatSet\expandafter{\hv@save@setting}%    
       \ifhv@separatorLine\drawSepLine\fi
 %      \expandafter\captionsetup\expandafter{\hv@caption@format}%
-      \ifx\hv@shortCap\@empty
-        \captionof{\hv@floatType}{\hv@longCap}%
+      \ifhv@onlyText
+        \hv@longCap
       \else
-        \captionof{\hv@floatType}[\hv@shortCap]{\hv@longCap}%
+        \ifx\hv@shortCap\@empty
+          \captionof{\hv@floatType}{\hv@longCap}%
+        \else
+          \captionof{\hv@floatType}[\hv@shortCap]{\hv@longCap}%
+        \fi
       \fi
       \ifx\hv@label\@empty\else\label{\hv@label-cap}\fi
     \end{\hv@floatType*}%
@@ -1491,7 +1785,7 @@
   \afterpage{%
     \hfuzz=\maxdimen
     \global\savebox{\hvObjectBox}{\ifhv@useOBox\usebox{\hvOBox}\else\hv@floatObject\fi}%
-    \vspace*{\the\dimexpr-1in-\voffset-\topmargin-\headheight-\headsep-\baselineskip+2\lineskip}%  no interlineskip
+    \vspace*{\the\dimexpr-1in-\voffset-\topmargin-\headheight-\headsep-\baselineskip-\parskip+1.5\lineskip}%  no interlineskip
     \hspace*{\the\dimexpr-\evensidemargin-\parindent-1in}%
     \thispagestyle{empty}%
     \ifx\hv@floatType\hv@figure
@@ -1505,7 +1799,7 @@
       \if@twocolumn\newpage\null\newpage\fi
       \global\savebox{\hvObjectBox}{\ifhv@useOBox\usebox{\hvOBox}\else\hv@floatObject\fi}%
       \thispagestyle{empty}%
-      \vspace*{\the\dimexpr-1in-\voffset-\topmargin-\headheight-\headsep-\baselineskip+2\lineskip}%    -0.5\paperheight+0.5\ht\hvObjectBox
+      \vspace*{\the\dimexpr-1in-\voffset-\topmargin-\headheight-\headsep-\baselineskip-\parskip+1.5\lineskip}%    -0.5\paperheight+0.5\ht\hvObjectBox
       \hspace*{\hv@tempWidthA}%
       \global\savebox{\hvObjectBox}{\ifhv@useOBox\usebox{\hvOBox}\else\hv@floatObject\fi}%
       \clipbox*{\the\hv@leftPageObjectWidth{} \dp\hvObjectBox{} \wd\hvObjectBox{} \ht\hvObjectBox}{\usebox\hvObjectBox}%
@@ -1525,7 +1819,7 @@
   \afterpage{%
     \hfuzz=\maxdimen
     \global\savebox{\hvObjectBox}{\ifhv@useOBox\usebox{\hvOBox}\else\hv@floatObject\fi}%
-    \vspace*{\the\dimexpr-1in-\voffset-\topmargin-\headheight-\headsep-\baselineskip+2\lineskip}%  no interlineskip
+    \vspace*{\the\dimexpr-1in-\voffset-\topmargin-\headheight-\headsep-\baselineskip-\parskip+1.5\lineskip}%  no interlineskip
     \hspace*{\the\dimexpr-\evensidemargin-\parindent-1in}%
     \thispagestyle{empty}%
     \clipbox*{0 \the\dp\hvObjectBox{} \the\hv@leftPageObjectWidth{} \the\ht\hvObjectBox}{\usebox\hvObjectBox}%
@@ -1535,11 +1829,10 @@
       \refstepcounter{hv@tempCNTtabA}%   before caption
     \fi
     \ifx\hv@label\@empty\else\label{\hv@label}\fi            
-%    \afterpage{%
       \newpage\if@twocolumn\null\newpage\fi
       \global\savebox{\hvObjectBox}{\ifhv@useOBox\usebox{\hvOBox}\else\hv@floatObject\fi}%
       \thispagestyle{empty}%
-      \vspace*{\the\dimexpr-1in-\voffset-\topmargin-\headheight-\headsep-\baselineskip+2\lineskip}%    -0.5\paperheight+0.5\ht\hvObjectBox
+      \vspace*{\the\dimexpr-1in-\voffset-\topmargin-\headheight-\headsep-\baselineskip-\parskip+1.5\lineskip}%    -0.5\paperheight+0.5\ht\hvObjectBox
       \hspace*{\hv@tempWidthA}%
       \global\savebox{\hvObjectBox}{\ifhv@useOBox\usebox{\hvOBox}\else\hv@floatObject\fi}%
       \clipbox*{\the\hv@leftPageObjectWidth{} \dp\hvObjectBox{} \wd\hvObjectBox{} \ht\hvObjectBox}{\usebox\hvObjectBox}%
@@ -1553,20 +1846,26 @@
       \begin{\hv@floatType}[!b]
         \ifhv@separatorLine\drawSepLine\fi
 %        \expandafter\captionsetup\expandafter{\hv@caption@format}%
-        \ifx\hv@shortCap\@empty
-          \captionof{\hv@floatType}{\hv@longCap}%
+        \ifhv@onlyText
+          \hv@longCap
         \else
-          \captionof{\hv@floatType}[\hv@shortCap]{\hv@longCap}%
+          \ifx\hv@shortCap\@empty
+            \captionof{\hv@floatType}{\hv@longCap}%
+          \else
+            \captionof{\hv@floatType}[\hv@shortCap]{\hv@longCap}%
+          \fi
         \fi
         \ifx\hv@label\@empty\else\label{\hv@label-cap}\fi            
       \end{\hv@floatType}%
-  }%}%
+  }%
 }
 
 \def\do@hvFloat@doubleFULLPAGE@CaptionAfterTwoCol{%
+  \hv@typeout{do@hvFloat@doubleFULLPAGE@CaptionAfterTwoCol: start}  %
   \afterpage{%
+    \hv@typeout{do@hvFloat@doubleFULLPAGE@CaptionAfterTwoCol: afterpage start}  %
     \global\savebox{\hvObjectBox}{\ifhv@useOBox\usebox{\hvOBox}\else\hv@floatObject\fi}%
-    \vspace*{\the\dimexpr-1in-\voffset-\topmargin-\headheight-\headsep-\baselineskip+2\lineskip}%  no interlineskip
+    \vspace*{\the\dimexpr-1in-\voffset-\topmargin-\headheight-\headsep-\baselineskip-\parskip+1.5\lineskip}%  no interlineskip
     \hspace*{\the\dimexpr-\evensidemargin-\parindent-1in}%
     \thispagestyle{empty}%
     \ifx\hv@floatType\hv@figure
@@ -1576,10 +1875,11 @@
     \fi
     \ifx\hv@label\@empty\else\label{\hv@label}\fi
     \clipbox*{0 0 \the\hv@leftPageObjectWidth{} \height}{\usebox\hvObjectBox}%
-      \newpage\if@twocolumn\null\newpage\fi
+    \newpage\if@twocolumn\null\newpage\fi    
+    \hv@typeout{do@hvFloat@doubleFULLPAGE@CaptionAfterTwoCol: insert newpage}  %
       \global\savebox{\hvObjectBox}{\ifhv@useOBox\usebox{\hvOBox}\else\hv@floatObject\fi}%
       \thispagestyle{empty}%
-      \vspace*{\the\dimexpr-1in-\voffset-\topmargin-\headheight-\headsep-\baselineskip+2\lineskip}%    -0.5\paperheight+0.5\ht\hvObjectBox
+      \vspace*{\the\dimexpr-1in-\voffset-\topmargin-\headheight-\headsep-\baselineskip-\parskip+1.5\lineskip}%    -0.5\paperheight+0.5\ht\hvObjectBox
       \hspace*{\hv@tempWidthA}%
       \global\savebox{\hvObjectBox}{\ifhv@useOBox\usebox{\hvOBox}\else\hv@floatObject\fi}%
       \clipbox*{\the\hv@leftPageObjectWidth{} \dp\hvObjectBox{} \wd\hvObjectBox{} \ht\hvObjectBox}{\usebox\hvObjectBox}%
@@ -1589,28 +1889,33 @@
         \refstepcounter{hv@tempCNTtabB}%   before caption
       \fi
       \ifx\hv@label\@empty\else\label{\hv@label-2}\fi
-      \newpage
+      \newpage\if@twocolumn\null\newpage\fi
       \begin{\hv@floatType*}[!b]
         \hv@twoColumnCaptiontrue
         \ifhv@separatorLine\drawSepLine\fi
 %        \expandafter\captionsetup\expandafter{\hv@caption@format}%
-        \ifx\hv@shortCap\@empty
-          \captionof{\hv@floatType}{\hv@longCap}%
+        \ifhv@onlyText
+          \hv@longCap
         \else
-          \captionof{\hv@floatType}[\hv@shortCap]{\hv@longCap}%
+          \ifx\hv@shortCap\@empty
+            \captionof{\hv@floatType}{\hv@longCap}%
+          \else
+            \captionof{\hv@floatType}[\hv@shortCap]{\hv@longCap}%
+          \fi
         \fi
         \ifx\hv@label\@empty\else\label{\hv@label-cap}\fi
       \end{\hv@floatType*}%
   }%
+  \hv@typeout{do@hvFloat@doubleFULLPAGE@CaptionAfterTwoCol: afterpage done}  %
 }
 
 \def\do@hvFloat@doubleFULLPAGE@CaptionOther#1{%
   \afterpage{%
-    \hfuzz=\maxdimen
+    \vspace*{\the\dimexpr-1in-\voffset-\topmargin-\headheight-\headsep-\baselineskip-\parskip+1.5\lineskip}%    -0.5\paperheight+0.5\ht\hvObjectBox
+    \hspace*{\the\dimexpr-\evensidemargin-\parindent-1in}%
     \global\savebox{\hvObjectBox}{\ifhv@useOBox\usebox{\hvOBox}\else\hv@floatObject\fi}%
     \thispagestyle{empty}%
-    \vspace*{\the\dimexpr-1in-\voffset-\topmargin-\headheight-\headsep-\baselineskip+2\lineskip}%    -0.5\paperheight+0.5\ht\hvObjectBox
-    \hspace*{\the\dimexpr-\evensidemargin-\parindent-1in}%
+    \hfuzz=\maxdimen
     \global\savebox{\hvObjectBox}{\ifhv@useOBox\usebox{\hvOBox}\else\hv@floatObject\fi}%
     \clipbox*{0 \depth{} \hv@leftPageObjectWidth{} \height}{\usebox\hvObjectBox}%
     \ifx\hv@floatType\hv@figure
@@ -1623,7 +1928,7 @@
       \if@twocolumn\newpage\if@firstcolumn\else\null\newpage\fi\fi
       \global\savebox{\hvObjectBox}{\ifhv@useOBox\usebox{\hvOBox}\else\hv@floatObject\fi}%
       \thispagestyle{empty}%
-      \vspace*{\the\dimexpr-1in-\voffset-\topmargin-\headheight-\headsep-\baselineskip+2\lineskip}%    -0.5\paperheight+0.5\ht\hvObjectBox
+      \vspace*{\the\dimexpr-1in-\voffset-\topmargin-\headheight-\headsep-\baselineskip-\parskip+1.5\lineskip}%    -0.5\paperheight+0.5\ht\hvObjectBox
       \hspace*{\hv@tempWidthA}%
       \clipbox*{\hv@leftPageObjectWidth{} \dp\hvObjectBox{} \wd\hvObjectBox{} \ht\hvObjectBox}{\usebox\hvObjectBox}%
       \ifx\hv@floatType\hv@figure
@@ -1638,35 +1943,47 @@
         \ifdim\hv@tempWidthB < 2\paperwidth        
           \rotatebox[origin=lb]{90}{\makebox[\paperheight][c]{\parbox{0.8\ht\hvObjectBox}{%
 %            \expandafter\captionsetup\expandafter{\hv@caption@format}%
-            \ifx\hv@shortCap\@empty
-              \captionof{\hv@floatType}{\hv@longCap}%
+            \ifhv@onlyText
+              \hv@longCap
             \else
-              \captionof{\hv@floatType}[\hv@shortCap]{\hv@longCap}%
+              \ifx\hv@shortCap\@empty
+                \captionof{\hv@floatType}{\hv@longCap}%
+              \else
+                \captionof{\hv@floatType}[\hv@shortCap]{\hv@longCap}%
+              \fi
             \fi
           }}}% rotatebox
           \ifx\hv@label\@empty\else\label{\hv@label-cap}\fi
         \else% ifdim: no space left on page
           \put(-2\ht\hvCaptionBox,0.5\ht\hvObjectBox){\makebox(0,0){\rotatebox{90}{\minipage{\textwidth}\centering
             \parbox{0.8\textwidth}{%
-              \ifx\hv@shortCap\@empty
-                \captionof{\hv@floatType}{\hv@longCap}%
-              \else
-                \captionof{\hv@floatType}[\hv@shortCap]{\hv@longCap}%
+              \ifhv@onlyText
+	        \hv@longCap
+  	      \else
+                \ifx\hv@shortCap\@empty
+                  \captionof{\hv@floatType}{\hv@longCap}%
+                \else
+                  \captionof{\hv@floatType}[\hv@shortCap]{\hv@longCap}%
+                \fi
               \fi
             }%
             \ifx\hv@label\@empty\else\label{\hv@label-cap}\fi
           \endminipage}}}%
         \fi
       \else% ifnum, caption not rotated, under or over the right page
-        \setlength\hv@tempWidthA{\dimexpr\paperheight-\ht\hvObjectBox}%
+        \hv@tempWidthA=\the\dimexpr\paperheight-\ht\hvObjectBox\relax
         \ifdim\hv@tempWidthA > \ht\hvCaptionBox 
         \else 
           \put(\the\dimexpr1.5\paperwidth-\wd\hvObjectBox-\hvSet@bindCorrection,\the\dimexpr\ht\hvCaptionBox+\abovecaptionskip+\belowcaptionskip){\makebox[0pt][c]{\parbox{\textwidth}{%%   
 %            \expandafter\captionsetup\expandafter{\hv@caption@format}%
-            \ifx\hv@shortCap\@empty
-              \captionof{\hv@floatType}{\hv@longCap}%
-            \else
-              \captionof{\hv@floatType}[\hv@shortCap]{\hv@longCap}%
+  	    \ifhv@onlyText
+	      \hv@longCap
+  	    \else
+              \ifx\hv@shortCap\@empty
+                \captionof{\hv@floatType}{\hv@longCap}%
+              \else
+                \captionof{\hv@floatType}[\hv@shortCap]{\hv@longCap}%
+              \fi
             \fi
           }}}%
           \ifx\hv@label\@empty\else\label{\hv@label-cap}\fi
@@ -1679,12 +1996,20 @@
 
 
 \def\setBottomCaption{%
-  \begin{\hv@floatType}[!b]%
+  \ifhv@twoColumnCaption
+    \begin{\hv@floatType*}[!b]%
+  \else
+    \begin{\hv@floatType}[!b]%
+  \fi
   \expandafter\hvFloatSet\expandafter{\hv@save@setting}%    
   \ifhv@separatorLine\drawSepLine\fi
   \par
   \usebox\hvCaptionBox
-  \end{\hv@floatType}%
+  \ifhv@twoColumnCaption
+    \end{\hv@floatType*}%
+  \else
+    \end{\hv@floatType}%
+  \fi
 }
 
 \def\setPageObject{%
@@ -1693,9 +2018,11 @@
   \else
     \begin{\hv@floatType}[p]%
   \fi
+  \hv@tempcnt=\@floatpenalty% suppress "float too big" message
   \hfuzz=\maxdimen
   \expandafter\hvFloatSet\expandafter{\hv@save@setting}%    
   \ifhv@FULLPAGE
+    \@floatpenalty=\z@%   no message that float too large
     \vspace*{\the\dimexpr-1in-\voffset-\topmargin-\headheight-\headsep}%-0.5\baselineskip%
     \checkoddpage
     \if@twoside
@@ -1707,7 +2034,8 @@
     \else
       \hspace*{\the\dimexpr-\oddsidemargin-\parindent-1in}%
     \fi
-    \AtBeginShipoutNext{\thispagestyle{empty}}%
+    \AtBeginShipoutNext{\thispagestyle{empty}}%  to prevent heading/footer
+%    \afterpage{\AddToHookNext{shipout/after}{\thispagestyle{empty}}}%
     \usebox\hvObjectBox
   \else
     \usebox\hvObjectBox
@@ -1717,12 +2045,14 @@
   \else
     \end{\hv@floatType}%
   \fi
+  \@floatpenalty=\hv@tempcnt%   restore
 }
 
 \ExplSyntaxOn
 
 \def\getMultiCaptionAndLabel{%
-  \global\sbox\hvCaptionBox{\minipage[b]{\linewidth}%
+  \ifhv@twoColumnCaption\hv@tempWidthA=\textwidth \else \hv@tempWidthA=\linewidth\fi
+  \global\sbox\hvCaptionBox{\minipage[b]{\hv@tempWidthA}%
     \captionsetup{aboveskip=\z@,belowskip=\z@,position=below,parbox=none}%,skip=-1ex}%
     \expandafter\hvFloatSet\expandafter{\hv@save@setting}%    
     \parskip=-0.5\baselineskip
@@ -1863,11 +2193,21 @@
     \expandafter\hvFloatSet\expandafter{\hv@save@setting}%    
     \setlength\belowcaptionskip{5pt}%
     \setlength\abovecaptionskip{0pt}%
-    \edef\@captype{\hv@floatType}%
-    \expandafter\ifx\expandafter\relax\hv@shortCap\relax 
-        \caption{\hv@longCap}%
+    \ifhv@onlyText
+      \hv@longCap
     \else
-        \caption[\hv@shortCap]{\hv@longCap}%
+      \edef\@captype{\hv@floatType}%
+      \expandafter\ifx\expandafter\relax\hv@shortCap\relax 
+         \expandafter\ifx\hv@longCap\@empty \else % empty caption?
+			\caption{\hv@longCap}%
+		 \fi
+      \else
+	    \expandafter\ifx\hv@longCap\@empty 
+          \caption[\hv@shortCap]{}%
+        \else	    
+          \caption[\hv@shortCap]{\hv@longCap}%
+        \fi
+      \fi
     \fi
   \ifx\hv@label\@empty\else\label{\hv@label-cap}\fi
   \endminipage}%

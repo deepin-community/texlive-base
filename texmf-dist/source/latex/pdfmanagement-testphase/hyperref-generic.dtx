@@ -2,7 +2,7 @@
 %
 %% File: hyperref-generic.dtx
 %
-% Copyright (C) 2021 The LaTeX Project
+% Copyright (C) 2021-2022 The LaTeX Project
 %
 % It may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -25,13 +25,9 @@
 % for those people who are interested.
 %
 %<*driver>
-\RequirePackage{pdfmanagement-testphase}
-\DeclareDocumentMetadata{pdfstandard=A-2b}
-\makeatletter
-\declare@file@substitution{doc.sty}{doc-v3beta.sty}
-\makeatother
+\DocumentMetadata{pdfstandard=A-2b}
 \documentclass{l3doc}
-\usepackage{tabularx,array,booktabs,hyperxmp}
+\usepackage{tabularx,array,booktabs}
 \hypersetup{pdfauthor=The LaTeX Project,
   pdftitle=generic hyperref driver (LaTeX PDF management testphase bundle)}
 \premulticols=4cm
@@ -86,7 +82,7 @@
 %    }^^A
 % }
 %
-% \date{Version 0.95i, released 2021-08-28}
+% \date{Version 0.95t, released 2022-11-03}
 %
 % \maketitle
 % \begin{documentation}
@@ -104,7 +100,7 @@
 % should start like this
 % \begin{verbatim}
 % \RequirePackage{pdfmanagement-testphase} %loads the code
-% \DeclareDocumentMetadata % activates it
+% \DocumentMetadata % activates it
 %   {
 %    %% options
 %    %% e.g. pdf version, backend:
@@ -113,6 +109,18 @@
 %   }
 %  \end{verbatim}
 %
+%  Starting with \LaTeX-2022-06-01 (or a suitable latex-dev) loading the testphase
+%  package is no longer required and this can be simplified to
+% \begin{verbatim}
+% \DocumentMetadata
+%   {
+%    %% options
+%    %% e.g. pdf version, backend:
+%    % pdfversion=1.7,
+%    % backend = dvipdfmx
+%   }
+%  \end{verbatim}
+
 %  The new driver tries to be compatible with the standard \pkg{hyperref} drivers
 %  but there are nevertheless differences. Some of them due to the still experimental
 %  status of the driver, others are design decisions: one part of the project is
@@ -157,8 +165,9 @@
 %
 %  \enquote{Metadata}, informations about the document, are stored in a PDF in two
 %  places: The |/Info| dictionary and the XMP-metadata. \pkg{hyperref} only handles the
-%  |/Info| dictionary. The XMP-metadata can be added with like \pkg{pdfx} and
-%  \pkg{hyperxmp}.
+%  |/Info| dictionary. The XMP-metadata  are added by code from \pkg{l3pdfmeta}.
+%  (without the pdfmanagement the XMP-metadata can be added with packages like \pkg{pdfx} and
+%  \pkg{hyperxmp}).
 %
 %  The |/Info| dictionary can be filled with arbitrary keys, but the PDF viewer typically
 %  care only about a few, like |/Author|, |/Title| and |/Keywords|.
@@ -191,6 +200,18 @@
 %  \begin{verbatim}
 %  pdfauthor = {Bär, Peter Anteater, {Riley, the sloth}}
 %  \end{verbatim}
+%
+%  \item It is possible to store titles in more than one language. If the value begins with
+%  an \enquote{optional argument} which represents a language tag, the value is taken
+%  as a comma list and splitted. The first value is used for the Info dictionary,
+%  the others are used in the XMP-metadata. Commas in a title must then be
+%  protected with braces:
+%
+%  \begin{verbatim}
+%  pdftitle = {[en]English Title,[de] Deutscher Titel,[fr]{titre français, avec comma}}
+%  \end{verbatim}
+%
+%
 %  \item All values of relevant keys (including keys from the hyperxmp package)
 %  will be stored in a Metadata container, and can be retrieved with
 %  \cs{GetDocumentProperties}.
@@ -201,10 +222,9 @@
 %  If the key hasn't be set, the result is empty. This gives external
 %  packages a public and reliable access to the data.
 %
-%  \item |pdflang| is deprecated. Instead \cs{DeclareDocumentMetadata}
-%  should be used:
+%  \item |pdflang| is deprecated. Instead \cs{DocumentMetadata} should be used:
 %  \begin{verbatim}
-%  \DeclareDocumentMetadata{lang=de-DE}
+%  \cs{DocumentMetadata}{lang=de-DE}
 %  \end{verbatim}
 %
 %  The value can be retrieved as |document/lang|.
@@ -214,9 +234,6 @@
 %  \pkg{hyperref} has a few keys to set dates. They typically expect the date
 %  in \enquote{PDF} format: |D:YYYYMMDDhhmmss+01'00'|.
 %
-%  One should be aware that \pkg{hyperxmp} will sometimes
-%  overwrites such settings.
-%  ^^A XMP: yyyy-mm-ddThh:mm:ss+tt:tt, PDF: D:YYYYMMDDhhmmss+01'00'
 %
 %  \section{PDF page size (mediabox)}
 %  The standard \pkg{hyperref} driver contain code to set the PDF page size.
@@ -552,7 +569,7 @@
 %  \item |backref|
 %  \item |CJKbookmarks| this key should not be used anymore. At some time
 %  it will be removed.
-%  \item |destlabels|    (destination names are taken from \cs{label} if possible)
+%  \item |destlabel|    (destination names are taken from \cs{label} if possible)
 %  \item |encap|
 %  \item |hyperfigures|  (according to the \pkg{hyperref} manual
 %  it makes figures hyper links, but actually is a no-op for most drivers, and it
@@ -626,7 +643,7 @@
 %  \section{Dropped options}
 %  A number of options are ignored by this driver
 %  \begin{description}
-%  \item[pdfversion] The pdfversion should be set in \cs{DeclareDocumentMetadata}
+%  \item[pdfversion] The pdfversion should be set in \cs{DocumentMetadata}
 %  \item[setpagesize] The key is ignored and the PDF page size is not
 %  set. Load \pkg{color} or \pkg{graphicx} or use a class which sets the PDF page size.
 %  \item[breaklinks] The option does nothing sensible anyway (apart from triggering
@@ -636,9 +653,9 @@
 %  \item[pdfa] If this option is set to true \pkg{hyperref} normally checks and sets
 %  a small number of requirements for the PDF standard PDF/A.
 %  The key is ignored with this driver. Instead the wanted standard should be declared
-%  in \cs{DeclareDocumentMetadata}:
+%  in \cs{DocumentMetadata}:
 %  \begin{verbatim}
-%  \DeclareDocumentMetadata{pdfstandard=A-2b}
+%  \DocumentMetadata{pdfstandard=A-2b}
 %  \end{verbatim}
 %  Currently |A-1b|, |A-2b|, |A-3b| can be set.
 %  The support for various requirements is still incomplete, but the parts that
@@ -869,9 +886,10 @@
 % /D    & \meta{array of numbers} & dash pattern (lines/gaps) (default [3])
 % \end{tabular}
 %
-% \DescribeHypkey{pdfcreationdate}\DescribeHypkey{pdfmoddate}
+% \DescribeHypkey{pdfcreationdate}\DescribeHypkey{pdfmoddate}\DescribeHypkey{pdfmetadate}
 % Setting these keys is normally not needed. If they are used the values
-% are stored directly in the Info dictionary for |/Creationdate| and |/ModDate|.
+% of the first two keys are stored directly in the Info dictionary for
+% |/Creationdate| and |/ModDate|. All three keys are used in XMP-metadata.
 % The values are converted to strings but not processed further, so they should
 % have the correct PDF format without the enclosing parentheses,
 % e.g. |D:20200202111111+01'00'|.
@@ -882,7 +900,7 @@
 % the setting is global (and has to be done in the preamble).
 %
 % \DescribeHypkey{pdflang} The key will work, but it is recommended to the set
-% the language in \cs{DeclareDocumentMetadata} instead.
+% the language in \cs{DocumentMetadata} instead.
 %^^A %% This is an adapted version of hluatex.def
 %^^A %% meant to test the use of the commands
 %^^A %% from pdfmanagement.sty
@@ -951,7 +969,7 @@
 %<@@=hyp>
 %    \end{macrocode}
 %    \begin{macrocode}
-\ProvidesFile{hgeneric-testphase.def}[2021-08-28 v0.95i %
+\ProvidesFile{hgeneric-testphase.def}[2022-11-03 v0.95t %
   generic Hyperref driver for the LaTeX PDF management testphase bundle]
 
 \RequirePackage{etoolbox} %why?
@@ -971,31 +989,45 @@
 %    \end{macrocode}
 % At first a message for the testing of the resource management
 %    \begin{macrocode}
-\msg_new:nnnn
-  { hyp }
-  { missing-resource-management }
-  { The~PDF~resource~management~is~required~for~this~hyperref~driver! }
+\cs_if_exist:NTF \DocumentMetadata
   {
-     Activate~it~with \\
-     \tl_to_str:n{\RequirePackage{pdfmanagement-testphase}}\\
-     \tl_to_str:n{\DeclareDocumentMetadata{<options>}}\\
-     before~\tl_to_str:n{\documentclass}
+   \msg_new:nnnn
+      { hyp }
+      { missing-resource-management }
+      { The~PDF~resource~management~is~required~for~this~hyperref~driver! }
+      {
+         Activate~it~with \\
+         \tl_to_str:n{\DocumentMetadata{<options>}}\\
+         before~\tl_to_str:n{\documentclass}
+      }
   }
+  {
+    \msg_new:nnnn
+      { hyp }
+      { missing-resource-management }
+      { The~PDF~resource~management~is~required~for~this~hyperref~driver! }
+      {
+         Activate~it~with \\
+         \tl_to_str:n{\RequirePackage{pdfmanagement-testphase}}\\
+         \tl_to_str:n{\DocumentMetadata{<options>}}\\
+         before~\tl_to_str:n{\documentclass}
+      }
+   }
 %    \end{macrocode}
-% The pdfversion should be set in \cs{DeclareDocumentMetadata}
+% The pdfversion should be set in \cs{DocumentMetadata}
 %    \begin{macrocode}
 \msg_new:nnnn
   { hyp }
   { pdfversion-disabled }
   {
     This~hyperref~driver~ignores~the~pdfversion~key!\\
-    Set~the~pdfversion~in~\token_to_str:N \DeclareDocumentMetadata
+    Set~the~pdfversion~in~\token_to_str:N \DocumentMetadata
   }
   {
     For example:\\
     \tl_to_str:n
      {
-      \DeclareDocumentMetadata { pdfversion=1.7 }
+      \DocumentMetadata { pdfversion=1.7 }
      }
   }
 %    \end{macrocode}
@@ -1035,7 +1067,7 @@
   { empty-destination-name }
   {
     Empty~destination~name,\\
-            using~`#1'
+            using~'#1'
   }
 %    \end{macrocode}
 % A message if the destination check fails
@@ -1044,8 +1076,8 @@
   { hyp }
   { invalid-destination-value }
   {
-    Invalid~value~`#1'~of~`#2'  \\
-    is~replaced~by~`Fit'~\msg_line_context:.
+    Invalid~value~'#1'~of~'#2'  \\
+    is~replaced~by~'Fit'~\msg_line_context:.
   }
 %    \end{macrocode}
 % Some options or values should not be used in older pdf versions
@@ -1054,22 +1086,22 @@
   { hyp }
   { ignore-deprecated-or-unknown-option-in-pdf-version }
   {
-    Option~`#1'~is~unknown~or~deprecated~in\\
+    Option~'#1'~is~unknown~or~deprecated~in\\
     pdf~version~#2.~Ignored.
   }
 \msg_new:nnn
   { hyp }
   { ignore-deprecated-or-unknown-value-in-pdf-version }
   {
-    Value~`#1'~is~unknown~or~deprecated~in\\
+    Value~'#1'~is~unknown~or~deprecated~in\\
     pdf~version~#2.~Ignored.
   }
 \msg_new:nnn
   { hyp }
   { replace-deprecated-or-unknown-value-in-pdf-version }
   {
-    Value~`#1'~is~unknown~or~deprecated~in\\
-    pdf~version~#2. Value~`#3'~is used instead.
+    Value~'#1'~is~unknown~or~deprecated~in\\
+    pdf~version~#2. Value~'#3'~is used instead.
   }
 %    \end{macrocode}
 % During development not all standard hyperref keys are known and the
@@ -1080,7 +1112,7 @@
   { hyp }
   { unknown-key }
   {
-    unknown~key~#2~of~module~’#1’~set~to~’#3’.
+    unknown~key~#2~of~module~'#1'~set~to~'#3'.
   }
 \msg_new:nnn
   { hyp }
@@ -1121,7 +1153,7 @@
     *~true\\
     *~false \\
     *~and~an~empty~value~which~removes~the~setting.\\
-    No~value~is~equivalent~to~using~`true`.
+    No~value~is~equivalent~to~using~'true'.
   }
 %    \end{macrocode}
 % A message for creator and producer which can't be removed.
@@ -1148,8 +1180,10 @@
 %\cs_set_protected:Npn \PDF@SetupDoc{}
 %\\PDF@FinishDoc{}% dummy needed for hyperref ...
 %    \end{macrocode}
+% \begin{function}{\hypercalcbp}
+%  We define a better (expandable) version of \cs{hypercalcbp}
+% \end{function}
 % \begin{macro}[EXP]{\hypercalcbp}
-% We define a better (expandable) version of \cs{hypercalcbp}
 %    \begin{macrocode}
 \cs_set_eq:NN \hypercalcbp \dim_to_decimal_in_bp:n
 %    \end{macrocode}
@@ -1163,7 +1197,7 @@
 \def\Hy@numberline#1{#1\c_space_tl}   %needed by bookmark
 %    \end{macrocode}
 %
-% The pdfversion should be set in \cs{DeclareDocumentMetadata} but we must
+% The pdfversion should be set in \cs{DocumentMetadata} but we must
 % copy it to the \pkg{hyperref} command:
 %    \begin{macrocode}
 \cs_set_eq:NN \Hy@pdfminorversion \pdf_version_minor:
@@ -1295,7 +1329,6 @@
   \hook_use:n{cmd/href/before}
   \group_begin:
   \keys_set:nn { hyp / href } {#1}
-  \let\protect\@unexpandable@protect
   \bool_if:NTF \l_@@_href_url_encode_bool
     {
       \tl_set:Nn \l_@@_text_enc_uri_print_tl {utf8/URI}
@@ -1325,7 +1358,6 @@
    \hook_use:n{cmd/href/before}
    \group_begin:
    \keys_set:nn { hyp / href } {#1}
-   \let\protect\@unexpandable@protect
    \bool_if:NTF \l_@@_href_url_encode_bool
     {
       \tl_set:Nn \l_@@_text_enc_uri_print_tl {utf8/URI}
@@ -1349,7 +1381,6 @@
   \hook_use:n{cmd/hrefpdf/before}
   \group_begin:
   \keys_set:nn { hyp / href } {#1}
-  \let\protect\@unexpandable@protect
   \hyper@normalise\@@_href_pdf_aux:nn
  }
 
@@ -1367,7 +1398,6 @@
   \hook_use:n{cmd/hrefrun/before}
   \group_begin:
   \keys_set:nn { hyp / href } {#1}
-  \let\protect\@unexpandable@protect
   \hyper@normalise\@@_href_run_aux:nn
  }
 
@@ -1387,7 +1417,6 @@
    \hook_use:n{cmd/url/before}
    \group_begin:
    \keys_set:nn {hyp / href } {#1}
-   \let\protect \@unexpandable@protect
     \bool_if:NTF \l_@@_href_url_encode_bool
     {
       \tl_set:Nn \l_@@_text_enc_uri_print_tl {utf8/URI}
@@ -1493,7 +1522,7 @@
 % TODO We overwrite the color key here for now, but this should be moved to bookmark
 %
 %    \begin{macrocode}
-\AddToHook { package / after / bookmark}
+\AddToHook { package/bookmark/after}
  {
    \define@key{BKM}{color}
      {
@@ -1555,7 +1584,7 @@
         \protect\G@refundefinedtrue
         \@latex@warning
           {
-            Reference~`\tl_to_str:n {#1}'~with~attribute~`\tl_to_str:n {#2}'~
+            Reference~'\tl_to_str:n {#1}'~with~attribute~'\tl_to_str:n {#2}'~
             on~page~\thepage~\space undefined
           }
       }
@@ -2742,17 +2771,17 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_ocg_init:
   {
-     \pdf_object_new:nn   { @@/OCG/View }   { dict }
-     \pdf_object_new:nn   { @@/OCG/Print }  { dict }
-     \pdf_object_new:nn   { @@/OCG/config } { dict }
-     \pdf_object_new:nn   { @@/OCG/refarray }   { array }
-        \pdf_object_write:nx { @@/OCG/refarray }
+     \pdf_object_new:n   { @@/OCG/View }
+     \pdf_object_new:n   { @@/OCG/Print }
+     \pdf_object_new:n   { @@/OCG/config }
+     \pdf_object_new:n   { @@/OCG/refarray }
+        \pdf_object_write:nnx { @@/OCG/refarray } { array }
           {
             \pdf_object_ref:n { @@/OCG/View }
             \c_space_tl
             \pdf_object_ref:n { @@/OCG/Print }
           }
-        \pdf_object_write:nn { @@/OCG/View }
+        \pdf_object_write:nnn { @@/OCG/View } { dict }
           {
             /Type/OCG
             /Name(View)
@@ -2762,7 +2791,7 @@
               /View  <</ViewState/ON  >>~
              >>
           }
-        \pdf_object_write:nn { @@/OCG/Print }
+        \pdf_object_write:nnn { @@/OCG/Print } { dict }
           {
             /Type/OCG
             /Name(Print)
@@ -2774,7 +2803,7 @@
           }
        \pdfmanagement_add:nnx { Catalog / OCProperties }{OCGs }{ \pdf_object_ref:n {@@/OCG/View} }
        \pdfmanagement_add:nnx { Catalog / OCProperties }{OCGs }{ \pdf_object_ref:n {@@/OCG/Print} }
-       \pdf_object_write:nx { @@/OCG/config }
+       \pdf_object_write:nnx { @@/OCG/config } { dict }
          {
            /OFF[\pdf_object_ref:n { @@/OCG/Print }]
            /AS[
@@ -3071,12 +3100,8 @@
 %    \begin{macrocode}
 \keys_define:nn { hyp / setup }
  {
-   ,verbose .choice:
-   ,verbose / true  .code:n = { \Hy@verbosetrue}
-   ,verbose / false .code:n = { \Hy@verbosefalse}
-   ,verbose .default:n = {true}
-   ,debug .meta:n = {verbose=#1}
-   ,debug .default:n = {true}
+   ,verbose   .legacy_if_set:n  = {Hy@verbose}
+   ,debug     .legacy_if_set:n  = {Hy@verbose}
  }
 \keys_define:nn { hyp / setup }
   {
@@ -3101,27 +3126,12 @@
  {
    ,extension .tl_set:N = \XR@ext
    ,extension .initial:n= pdf
-   ,hypertexnames .choice:
-   ,hypertexnames / true  .code:n = { \Hy@hypertexnamestrue}
-   ,hypertexnames / false .code:n = { \Hy@hypertexnamesfalse}
-   ,hypertexnames .default:n = {true}
+   ,hypertexnames .legacy_if_set:n = {Hy@hypertexnames}
    ,linkfileprefix .tl_set:N  = \Hy@linkfileprefix
-   ,localanchorname .choice:
-   ,localanchorname / true  .code:n = { \Hy@localanchornametrue }
-   ,localanchorname / false .code:n = { \Hy@localanchornamefalse }
-   ,localanchorname .default:n = {true}
-   ,naturalnames .choice:
-   ,naturalnames / true  .code:n = { \Hy@naturalnamestrue}
-   ,naturalnames / false .code:n = { \Hy@naturalnamesfalse}
-   ,naturalnames .default:n = {true}
-   ,pageanchor .choice:
-   ,pageanchor / true  .code:n = { \Hy@pageanchortrue}
-   ,pageanchor / false .code:n = { \Hy@pageanchorfalse}
-   ,pageanchor .default:n = {true}
-   ,plainpages .choice:
-   ,plainpages / true  .code:n = { \Hy@plainpagestrue}
-   ,plainpages / false .code:n = { \Hy@plainpagesfalse}
-   ,plainpages .default:n = {true}
+   ,localanchorname .legacy_if_set:n = {Hy@localanchorname}
+   ,naturalnames .legacy_if_set:n = {Hy@naturalnames}
+   ,pageanchor   .legacy_if_set:n = {Hy@pageanchor}
+   ,plainpages   .legacy_if_set:n = {Hy@plainpages}
  }
 
 \keys_define:nn { hyp / setup }
@@ -3171,20 +3181,15 @@
           {
              \pdfmanagement_add:nnx {Catalog} { URI }{ <</Base \l_@@_tmpa_tl>> }
           }
+        \@@_store_metadata:nn {baseurl}{#1}
      }
    %only false does something ...
    ,bookmarks .choice:
    ,bookmarks / false .code:n = {\RemoveFromHook {begindocument/before}[hyperref/bookmark]}
    ,bookmarks / true .code:n = {}
    ,bookmarks .default:n = {true}
-   ,bookmarksnumbered .choice:
-   ,bookmarksnumbered / false .code:n = { \Hy@bookmarksnumberedfalse }
-   ,bookmarksnumbered / true .code:n  = { \Hy@bookmarksnumberedtrue }
-   ,bookmarksnumbered .default:n      = {true}
-   ,bookmarksopen .choice:
-   ,bookmarksopen / false .code:n = { \Hy@bookmarksopenfalse }
-   ,bookmarksopen / true .code:n  = { \Hy@bookmarksopentrue }
-   ,bookmarksopen .default:n      = {true}
+   ,bookmarksnumbered .legacy_if_set:n  = {Hy@bookmarksnumbered}
+   ,bookmarksopen .legacy_if_set:n = {Hy@bookmarksopen}
    ,bookmarksopenlevel .tl_set:N = \@bookmarksopenlevel
    ,bookmarkstype .tl_set:N = \Hy@bookmarkstype
    ,pdfcenterwindow    .choice:
@@ -3814,14 +3819,11 @@
   {
    ,pdflang       .code:n =
           {
-            \tl_if_empty:nTF { #1 }
-              {
-                \pdfmanagement_remove:nn {Catalog} { Lang }
-              }
+            \tl_if_empty:nF { #1 }
               {
                 \pdfmanagement_add:nnx {Catalog} { Lang } { (#1) }
+                \AddToDocumentProperties[document]{lang}{#1}
               }
-            \@@_store_metadata:nn {pdflang}{#1}
           }
    }
 %    \end{macrocode}
@@ -3829,10 +3831,14 @@
 %
 % \subsubsection{\enquote{info keys}}
 % \begin{hypkey}{pdfauthor,pdftitle,pdfcreator,pdfsubject,pdfproducer,pdfkeywords}
-% The keys store their value also in the metadate container, so that hyperxmp can
+% The keys store their value also in the metadata container, so that hyperxmp can
 % use them. Creator and Producer can't be removed with the pdfmanagement,
 % but we allow to set an empty value.
+% If the value begin with an optional argument, we assume a multilanguage clist and
+% use only the first value.
 %    \begin{macrocode}
+\regex_new:N\l_@@_optlang_regex
+\regex_set:Nn\l_@@_optlang_regex {\A\[([A-Za-z\-]+)\](.*)}
 \cs_new_protected:Npn \@@_setup_info_key:nn #1 #2
   {
     \keys_define:nn { hyp / setup }
@@ -3859,7 +3865,17 @@
                  }
               }
               {
-                \@@_text_pdfstring_info:nN {##1}\l_@@_tmpa_str
+                \tl_set:Nx\l_@@_tmpa_tl {\clist_item:nn{##1}{1}}
+                \exp_args:NNV
+                 \regex_extract_once:NnN \l_@@_optlang_regex \l_@@_tmpa_tl\l_@@_tmpa_seq
+                \seq_if_empty:NTF\l_@@_tmpa_seq
+                 {
+                   \@@_text_pdfstring_info:nN {##1}\l_@@_tmpa_str
+                 }
+                 {
+                   \exp_args:Nx
+                   \@@_text_pdfstring_info:nN {\seq_item:Nn \l_@@_tmpa_seq{3}}\l_@@_tmpa_str
+                 }
                 \str_if_eq:VnF\l_@@_tmpa_str{<FEFF>}
                   {
                     \pdfmanagement_add:nnx {Info}{#2}{\l_@@_tmpa_str}
@@ -3906,7 +3922,7 @@
 \@@_setup_info_key:nn {keywords}  {Keywords}
 %    \end{macrocode}
 % \end{hypkey}
-% \begin{hypkey}{pdfcreationdate,pdfmoddate}
+% \begin{hypkey}{pdfcreationdate,pdfmoddate,pdfmetadate}
 % These keys are not really needed. We store them too in the container.
 % CreationDate and ModDate should not use the hex encoding.
 %    \begin{macrocode}
@@ -3924,6 +3940,7 @@
                 \pdfmanagement_add:nnx {Info}{#2}{(##1)}
               }
              \@@_store_metadata:nn {pdf#1}{##1}
+             \AddToDocumentProperties[document]{#1}{#2}
           }
       }
     \keys_define:nn { hyp / info }
@@ -3944,6 +3961,10 @@
 
 \@@_setup_info_date_key:nn {creationdate}  {CreationDate}
 \@@_setup_info_date_key:nn {moddate}  {ModDate}
+\keys_define:nn { hyp / setup }
+      {
+        pdfmetadate  .code:n = { \@@_store_metadata:nn {pdfmetadate}{#1} }
+      }
 %    \end{macrocode}
 % \end{hypkey}
 % \begin{hypkey}{pdftrapped}
@@ -4001,7 +4022,7 @@
 %
 % \subsection{hyperxmp keys}
 % hyperxmp defines lots of keys for \cs{hypersetup}.
-% They now longer work with this driver. So we provide them,
+% They now longer work with this driver. So we provide most of them,
 % but they are only stored as metadata:
 %    \begin{macrocode}
 \clist_map_inline:nn
@@ -4012,10 +4033,6 @@
    ,pdfauthortitle
    ,pdfcaptionwriter
    ,pdfmetalang
-   ,pdfapart
-   ,pdfaconformance
-   ,pdfuapart
-   ,pdfxstandard
    ,pdfsource
    ,pdfdocumentid
    ,pdfinstanceid
@@ -4055,15 +4072,6 @@
       }
   }
 
-\str_if_eq:eeT {A}{\pdfmeta_standard_item:n{type}}
-  {
-    \exp_args:Nnx
-      \keys_set:nn {hyp / setup}
-        {
-          ,pdfapart        = \pdfmeta_standard_item:n {level}
-          ,pdfaconformance = \pdfmeta_standard_item:n {conformance}
-        }
-  }
 %    \end{macrocode}
 %
 % \subsection{Transitions}
@@ -4095,6 +4103,7 @@
 % |\hypersetup{pdfpagetransition={style=Fly,duration=2,direction=90,opaque=false}}|
 %
 % The keys allowed in the argument of |pdfpagetransition| are
+%
 % \begin{tabular}{l>{\raggedright\arraybackslash}p{6cm}}
 % style    &  one of Split, Blinds, Box, Wipe, Dissolve, Glitter, R, Fly, Push, Cover, Uncover, Fade\\
 % duration &  a number, describes the duration of the transition\\
@@ -4151,12 +4160,12 @@
       }
     ,direction .choices:nn =
       {H,V}
-      { \pdfdict_put:nnn {l_@@_page/Trans}{ S }{/#1} }
+      { \pdfdict_put:nnn {l_@@_page/Trans}{ Dm }{/#1} }
     ,direction .choices:nn =
       {0,90,180,270,315}
-      { \pdfdict_put:nnn {l_@@_page/Trans}{ DI }{ #1 } }
+      { \pdfdict_put:nnn {l_@@_page/Trans}{ Di }{ #1 } }
     ,direction / None .code:n =
-      { \pdfdict_put:nnn {l_@@_page/Trans}{ DI }{ /None } }
+      { \pdfdict_put:nnn {l_@@_page/Trans}{ Di }{ /None } }
     ,direction / unknown .code:n =
       {
         \msg_warning:nnxxx { hyp } { unknown-choice }
@@ -4737,10 +4746,10 @@
 \ExplSyntaxOn
 \def\Hy@FormObjects
   {
-    \pdf_object_new:nn   {@@/Encoding/pdfdoc }   { dict }
-    \pdf_object_new:nn   {@@/Font/ZaDb } { dict }
-    \pdf_object_new:nn   {@@/Font/Helv }    { dict }
-    \pdf_object_write:nx {@@/Encoding/pdfdoc }
+    \pdf_object_new:n   {@@/Encoding/pdfdoc }
+    \pdf_object_new:n   {@@/Font/ZaDb }
+    \pdf_object_new:n   {@@/Font/Helv }
+    \pdf_object_write:nnx {@@/Encoding/pdfdoc } { dict }
       {
         /Type/Encoding
         /Differences[
@@ -4782,14 +4791,14 @@
           /uacute/ucircumflex/udieresis/yacute/thorn/ydieresis
          ]
       }
-    \pdf_object_write:nn {@@/Font/ZaDb }
+    \pdf_object_write:nnn {@@/Font/ZaDb } { dict }
       {
         /Type/Font
         /Subtype/Type1
         /Name/ZaDb
         /BaseFont/ZapfDingbats
       }
-    \pdf_object_write:nx {@@/Font/Helv }
+    \pdf_object_write:nnx {@@/Font/Helv } { dict }
       {
         /Type/Font
         /Subtype/Type1
@@ -5279,6 +5288,8 @@
     \hss
   }%
 }
+\@ifundefined{hyper@nopatch@sectioning}
+{
 \let\H@old@ssect\@ssect
 \def\@ssect#1#2#3#4#5{%
   \Hy@MakeCurrentHrefAuto{section*}%
@@ -5367,6 +5378,7 @@
     \H@old@sect{#1}{#2}{#3}{#4}{#5}{#6}[{#7}]{#8}%
   }%
 }
+}{}
 \expandafter\def\csname Parent-4\endcsname{}
 \expandafter\def\csname Parent-3\endcsname{}
 \expandafter\def\csname Parent-2\endcsname{}
@@ -5377,7 +5389,7 @@
 \expandafter\def\csname Parent3\endcsname{}
 \expandafter\def\csname Parent4\endcsname{}
 %%
-%% End of file `hgeneric-testphase.def'.
+%% End of file 'hgeneric-testphase.def'.
 %</package>
 %    \end{macrocode}
 %    \begin{macrocode}

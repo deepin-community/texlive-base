@@ -1,18 +1,13 @@
 
 local M = {}
 
-local function log(msg, ...)
+local function log(...) end
+local function alog(...) end
+local function do_log(msg, ...)
     texio.write_nl('log', string.format(msg, ...))
 end
 
 --1 capturing the callback mechanism
-
--- if ltluatex is loaded, we must get callback.register back
-if luatexbase ~= nil then
-	local luatex_base = luatexbase
-	luatexbase.uninstall ()
-	luatexbase = luatex_base
-end
 
 local primitives = { }
 M.primitives = primitives
@@ -20,22 +15,37 @@ primitives.register = callback.register
 primitives.find     = callback.find
 primitives.list     = callback.list
 
-local own_callbacks = {}
-local callback_lists = {}
+-- use the ltluatex functions if needed
+local primitive_register = primitives.register
+if luatexbase then
+    primitive_register = function(cb, f)
+        if f == nil then
+            luatexbase.remove_from_callback(cb, 'minim callback')
+        elseif f == false then
+            luatexbase.disable_callback(cb)
+        else
+            luatexbase.add_to_callback(cb, f, 'minim callback')
+        end
+    end
+end
+
+
+local own_callbacks   = {}
+local callback_lists  = {}
 local callback_stacks = {}
 
 --1 finding callbacks
 
-function M.find (name)
-    local f = own_callbacks[name]
+function M.find(cb)
+    local f = own_callbacks[cb]
     if f == nil then
-        return primitives.find(name)
+        return primitives.find(cb)
     else
         return f
     end
 end
 
-function M.list (name)
+function M.list()
     local t = {}
     for n,f in pairs(callback_lists) do
         if f then
@@ -44,14 +54,16 @@ function M.list (name)
             t[n] = false
         end
     end
-    for n,f in pairs(own_callbacks) do
+    -- no stack callbacks, since the active callback is in one of the two below
+    for n,f in pairs(primitives.list()) do
         if f then
             t[n] = t[n] or true
         else
             t[n] = t[n] or false
         end
     end
-    for n,f in pairs(primitives.list()) do
+    -- this might obscure primitive callbacks (this is intended)
+    for n,f in pairs(own_callbacks) do
         if f then
             t[n] = t[n] or true
         else
@@ -63,42 +75,73 @@ end
 
 --1 registering callbacks
 
-local function register_simple (cb,f)
+local function register_simple(cb,f)
     -- prefer user-defined callbacks over built-in
-    local x = own_callbacks[cb]
-    if x == nil then
-        return primitives.register (cb, f)
+    local own = own_callbacks[cb]
+    log ('callback %s: %s (%s)', f == nil and 'removed' or f and 'set' or 'disabled',
+            cb, own == nil and 'primitive' or 'user-defined')
+    if own == nil then -- may be set to ‘false’
+        return primitive_register(cb, f)
     else
-        -- default to false because nil would delete the callback itself
-        own_callbacks[cb] = f or false
+        own_callbacks[cb] = f or false -- ‘nil’ would delete the callback
         return -1
     end
 end
 
 -- will be redefined later
-local function announce_callback(cb, f) end
 
-function M.register (cb, f)
-    announce_callback(cb, f)
+function M.register(cb, f)
     local list = callback_lists[cb]
+    if list then
+        if f == nil then
+            return tex.error('Use ‘deregister’ for removing list callbacks')
+        else
+            list[#list+1] = f
+            log('callback set: %s (#%d on list)', cb, #list)
+            return -2
+        end
+    end
     local stack = callback_stacks[cb]
     if stack then
         if f == nil then -- pop
             local p = stack[#stack]
             stack[#stack] = nil
-            return register_simple (cb,p)
+            return register_simple(cb,p)
         else             -- push
-            stack[#stack+1] = M.find (cb)
-            return register_simple (cb,f)
+            stack[#stack+1] = M.find(cb)
+            return register_simple(cb,f)
         end
-    elseif list ~= nil then
-        list[#list+1] = f
-        return -2
-    else
-        return register_simple (cb,f)
     end
+    return register_simple(cb, f)
 end
 
+function M.deregister(cb, f)
+    local list = callback_lists[cb]
+    if list then
+        for i,g in ipairs(list) do
+            if f == g then
+                log('callback removed: %s (#%d on list)', cb, i)
+                table.remove(list, i)
+                return true, -2
+            end
+        end
+        return false
+    end
+    local stack = callback_stacks[cb]
+    if stack then
+        for i,g in ipairs(stack) do
+            if f == g then
+                log('callback removed: %s (#%d on stack)', cb, i)
+                table.remove(stack, i)
+                return true, -3
+            end
+        end
+        -- no return: fall through to next
+    end
+    if f == M.find(cb) then
+        return true, register_simple(cb, nil)
+    end
+end
 
 --1 lists of callback functions
 
@@ -169,21 +212,39 @@ function M.call_callback (name, ...)
     end
 end
 
+-- 1 replace the primitive registering
+
+-- TODO: preserve return values
+local primitively_registered = { }
+function M.primitiveregister(cb, f)
+    local rv = false
+    if f == nil then
+        f = primitively_registered[cb]
+        if f == nil then
+            rv = M.register(cb)
+        else
+            _, rv = M.deregister(cb, f)
+        end
+    else
+        rv = M.register(cb, f)
+    end
+    alog(' through primitive interface')
+    primitively_registered[cb] = f
+    return rv
+end
+
+
 --1 initialisation
 
 -- save all registered callbacks
-local saved = {}
-for n,s in pairs(primitives.list()) do
-    if s then
-        log('save callback: %s', n)
-        saved[n] = callback.find(n)
+if not luatexbase then
+    for n,s in pairs(primitives.list()) do
+        if s then
+            do_log('save callback: %s', n)
+            primitively_registered[n] = primitives.find(n)
+        end
     end
 end
-
--- replace the primitive registering
-callback.register = M.register
-callback.find     = M.find
-callback.list     = M.list
 
 -- string processing callbacks
 register_list ('process_input_buffer', call_list_data)
@@ -202,7 +263,7 @@ register_list ('pre_output_filter', call_list_node)
 M.new_callback ('mlist_to_mlist', 'node')
 M.new_callback ('mlist_to_hlist', 'stack')
 M.register ('mlist_to_hlist', node.mlist_to_hlist )
-primitives.register ('mlist_to_hlist', function (head, ...)
+primitive_register ('mlist_to_hlist', function (head, ...)
     local newhead = M.call_callback ('mlist_to_mlist', head, ...)
     if newhead ~= true then
         head = newhead or head
@@ -232,7 +293,7 @@ stack_callback ('build_page_insert')
 
 -- process_rule
 M.new_callback ('process_rule', 'simple')
-primitives.register ('process_rule', function (rule, ...)
+primitive_register ('process_rule', function (rule, ...)
     local p = own_callbacks[rule.index]
     if p then
         p (rule, ...)
@@ -242,23 +303,23 @@ primitives.register ('process_rule', function (rule, ...)
 end)
 
 -- restore all registered callbacks
-for n,f in pairs(saved) do
-    log('restore callback: %s', n)
-    M.register (n,f)
+for n,f in pairs(primitively_registered) do
+    do_log('restore callback: %s', n)
+    M.primitiveregister (n,f)
 end
 saved = nil
 
-
-local function announce_callback(cb, f)
-    if f then
-        log('callback added: %s', cb)
-    else
-        log('callback removed: %s', cb)
-    end
-end
-
-
 --
+
+-- replace primitive callbacks
+callback.find     = M.find
+callback.list     = M.list
+callback.register = M.primitiveregister
+
+log = do_log
+local function alog(msg, ...)
+    texio.write('log', string.format(msg, ...))
+end
 
 return M
 

@@ -1,7 +1,7 @@
-%% The LaTeX package tikz-among-us - version 1.1.0 (2020-10-31)
+%% The LaTeX package tikz-among-us - version 1.2.0 (2021-10-27)
 %%
 %% -------------------------------------------------------------------------------------------
-%% Copyright (c) 2020 by FHZ
+%% Copyright (c) 2021 by FHZ
 %% -------------------------------------------------------------------------------------------
 %%
 %% This work may be distributed and/or modified under the
@@ -52,3 +52,5 @@ Version
     - Pokémon Amoonguss parts and full body;
     - rounded corners removed to improve scale;
 	- Ghost Amoonguss body.
+	
+1.2.0 (2021-10-27): Added Style III.

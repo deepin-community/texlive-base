@@ -54,7 +54,7 @@ Worm: [
     setrgb(r,g,b,tmpcolor)
     line shaded "tmpcolor" outlined "tmpcolor" \
       from C to Rect_(C.rad-0.05,90-(t-0.5)/90*360) \
-      then to Rect_(C.rad-0.05,90-(t+0.5)/90*360) \
+      then to   Rect_(C.rad-0.05,90-(t+0.5)/90*360) \
       then to C
     resetrgb }
 

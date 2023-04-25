@@ -1,18 +1,36 @@
 
-spectralsequences v1.3.0
+spectralsequences v1.3.2
 ========================
 Author: Hood Chatham  
 Email: hood@mit.edu  
-Date: 2019-02-18  
+Date: 2022-02-19
 License: All files have the Latex Project Public License.  
 Description: Print spectral sequence diagrams using pgf/tikz.  
 
 
-See the file manual/spectralsequencesmanual.pdf for a manual. See the examples directory for a large number of example files.
-Email me at hood@mit.edu to submit bug reports, request new features, etc. The current development copy is hosted at https://github.com/hoodmane/spectralsequences. 
+See the file manual/spectralsequencesmanual.pdf for a manual. See the examples
+directory for a large number of example files. The current development copy is
+hosted at https://github.com/SpectralSequences/latex. Open an issue on the
+github issue tracker https://github.com/SpectralSequences/latex/issues/new to
+submit bug reports, request new features, etc.
 
 Changelog:
 ==========
+## [1.3.2] (2022-02-19)
+
+### Fixed:
+- Bent edges now enter the shapes at their endpoints at the correct angle.
+- Fixed an incompatibility with versions of latex3 starting with 2022-01-12
+
+## [1.3.1] (2022-01-04)
+
+### Fixed:
+- Extensions now should have all of the same features as structlines. Before, a
+  bunch of things were missing or broken.
+- Various issues with range checks for rotated figures are fixed.
+- The `u` argument works again in `\DeclareSseqCommand` in versions of TeXLive
+  prior to 2021.
+
 ## [1.3.0] (2021-07-18)
 ### Added:
 - Added more control over page indicator in title and "print page as" key.

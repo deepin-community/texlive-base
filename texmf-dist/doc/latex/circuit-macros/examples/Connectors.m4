@@ -3,7 +3,7 @@
 log_init
 include(ics.m4)
 
-  ifelse(ifpgf(T)`'ifpstricks(T)`'ifpsfrag(T),T,`command "{\small\sf"')
+  ifelse(ifpgf(T)`'ifpstricks(T),T,`command "{\small\sf"')
 
 # ArduinoUno
  Ar:  ArduinoLeonardo #with .sw at last [].se+(0.25,0)
@@ -14,7 +14,7 @@ include(ics.m4)
 
  S: USB_C_Socket with .sw at (HD.e.x+0.25,RPI.s.y)
 
-  ifelse(ifpgf(T)`'ifpstricks(T)`'ifpsfrag(T),T,`command "}"')
+  ifelse(ifpgf(T)`'ifpstricks(T),T,`command "}"')
 
   "{\sf Arduino Leonardo}" at Ar.Connector.s below
   "{\sf Raspberry Pi 4 GPIO}" at RPI.GPIO.s below

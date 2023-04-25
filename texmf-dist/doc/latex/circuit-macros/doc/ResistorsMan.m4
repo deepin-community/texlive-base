@@ -9,22 +9,32 @@ vm = 0.28
    move right_ hm
    {resistor(,,Q) ; move ;"`\tt resistor(,{,}Q) '" ljust}
    move right_ hm
-   {resistor(,,E) ; move 
-    "`\shortstack[l]{\tt resistor(,{,}E)\\ {\tt $\equiv$ ebox}}'" ljust}
+   {resistor(,,V) ; move ;"`{\tt resistor(,{,}V)}'" ljust}
 }
    move down vm; right_
 {  {resistor(,,ES) ; move ;"`\tt resistor(,{,}ES) '" ljust}
    move right_ hm
    {resistor(,,H) ; move ;"`\tt resistor(,{,}H) '" ljust}
    move right_ hm
-   {ebox(,,,0.9) ; move ;"`{\tt ebox(,{,},0.9)}'" ljust}
+   {resistor(,,AC) ; move ;"`{\tt resistor(,{,}AC)}'" ljust}
 }
    move down vm; right_
-{  {resistor(,,V) ; move ;"`{\tt resistor(,{,}V)}'" ljust}
+{  {resistor(,,B) ; move ;"`{\tt resistor(,{,}B)}'" ljust}
+   move right_ hm
+   {resistor(,,E) ; move 
+    "`\shortstack[l]{\tt resistor(,{,}E)\\ {\tt $\equiv$ ebox}}'" ljust}
    move right_ hm
    {ebox(,0.5,0.3) ; move ;"`{\tt ebox(,0.5,0.3)}'" ljust}
-   move right_ hm+4bp__
-   {resistor(,,B) ; move movewid-4bp__ ;"`{\tt resistor(,{,}B)}'" ljust}
+}
+   move down vm; right_
+{  {ebox(,,,0.9) ; move ;"`{\tt ebox(,{,},0.9)}'" ljust}
+   move right_ hm
+   {ebox(,,,,shaded "green") ; move
+     "`{\tt ebox(,{,},{,}shaded \"green\")}'" ljust}
+}
+   move down vm; right_
+{  {ebox(,wdth=0.2;box=dashed shaded "green";text="X") ; move
+   "`{\tt ebox(,wdth=0.2;box=dashed shaded \"green\";text=\"X\")}'" ljust}
 }
 
 .PE

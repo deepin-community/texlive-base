@@ -1,7 +1,7 @@
-% Copyright 2018-2021 by Romano Giannetti
-% Copyright 2015-2021 by Stefan Lindner
-% Copyright 2013-2021 by Stefan Erhardt
-% Copyright 2007-2021 by Massimo Redaelli
+% Copyright 2018-2022 by Romano Giannetti
+% Copyright 2015-2022 by Stefan Lindner
+% Copyright 2013-2022 by Stefan Erhardt
+% Copyright 2007-2022 by Massimo Redaelli
 %
 % This file may be distributed and/or modified
 %
@@ -23,6 +23,7 @@
 \pgf@circ@declare@family@arrows{wiper}
 \pgf@circ@declare@family@arrows{switch}
 \pgf@circ@declare@family@arrows{gto gate}
+\pgf@circ@declare@family@arrows{opto}
 
 %>>>
 
@@ -49,6 +50,8 @@
     \ctikzset{bipoles/generic potentiometer/width=#1}%
     \ctikzset{bipoles/ageneric/width=#1}%
     \ctikzset{bipoles/tgeneric/width=#1}%
+    \ctikzset{bipoles/ldresistor/width=#1}%
+    \ctikzset{bipoles/ldgeneric/width=#1}%
 }}
 \ctikzset{wiper pos/.code={%
     \ctikzset{bipoles/potentiometer/wiper pos=#1}%
@@ -65,6 +68,9 @@
 \ctikzset{bipoles/vresistor/width/.initial=.8}
 \ctikzset{bipoles/resistivesens/height/.initial=.6}
 \ctikzset{bipoles/resistivesens/width/.initial=.8}
+\ctikzset{bipoles/ldresistor/height/.initial=.8}
+\ctikzset{bipoles/ldresistor/width/.initial=.8}
+\ctikzset{bipoles/ldresistor/internal scale/.initial=.8}
 % square resistors
 \ctikzset{bipoles/photoresistor/height/.initial=.6}
 \ctikzset{bipoles/photoresistor/height 2/.initial=.3}
@@ -96,6 +102,9 @@
 \ctikzset{bipoles/memristor/height/.initial=.30}
 \ctikzset{bipoles/memristor/wave height/.initial=.5}
 \ctikzset{bipoles/memristor/width/.initial=.80}
+\ctikzset{bipoles/ldgeneric/height/.initial=.8}
+\ctikzset{bipoles/ldgeneric/width/.initial=.8}
+\ctikzset{bipoles/ldgeneric/internal scale/.initial=.8}
 
 \newif\ifpgf@circuit@europeanresistor
 \ctikzset{resistor/.is choice}
@@ -246,6 +255,7 @@
 {\ctikzvalof{bipoles/generic/height}}
 {\ctikzvalof{bipoles/generic/width}}
 {
+    % \pgf@circ@debug@colors
     \pgfpathrectanglecorners{\pgfpoint{\pgf@circ@res@left}{\pgf@circ@res@up}}{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@down}}
     \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
     \pgf@circ@draworfill
@@ -274,7 +284,11 @@
 }
 %% Generic empty tunable
 \pgfcircdeclarebipolescaled{resistors}
-{}
+{
+    \anchor{wiper}{\northeast\pgf@x=-0.5\pgf@x\pgf@y=-\pgf@y}
+    \anchor{W}{\northeast\pgf@x=-0.5\pgf@x\pgf@y=-\pgf@y}
+    \anchor{tip}{\northeast\pgf@x=0.5\pgf@x}
+}
 {\ctikzvalof{bipoles/tgeneric/height}}
 {tgeneric}
 {\ctikzvalof{bipoles/tgeneric/height}}
@@ -350,7 +364,9 @@
 
 %% Photoresistor
 \pgfcircdeclarebipolescaled{resistors}
-{}
+{% anchor for light arrows
+    \anchor{arrows}{\northeast\pgf@x=0.575\pgf@x\pgf@y=1.1\pgf@y}%
+}
 {\ctikzvalof{bipoles/photoresistor/height 2}}
 {photoresistor}
 {\ctikzvalof{bipoles/photoresistor/height}}
@@ -363,7 +379,7 @@
     \endpgfscope
 
     \pgfscope
-        \pgfsetarrowsend{latexslim}
+        \pgf@circ@set@optoarrow@style
         \pgfpathmoveto{\pgfpoint{.7\pgf@circ@res@right}{\pgf@circ@res@up}}
         \pgfpathlineto{\pgfpoint{.3\pgf@circ@res@right}{-1.2\pgf@circ@res@down}}
         \pgfusepath{draw}
@@ -384,6 +400,9 @@
         \pgf@y=1.2\pgf@y
     }%
     \pgfcirc@border@extend@updown{1}{1.2}
+    \anchor{wiper}{\northeast\pgf@x=-\pgf@x\pgf@y=-1.2\pgf@y}
+    \anchor{W}{\northeast\pgf@x=-\pgf@x\pgf@y=-1.2\pgf@y}
+    \anchor{tip}{\northeast}
 }
 {\ctikzvalof{bipoles/thermistor/height}}
 {thermistor}
@@ -420,7 +439,6 @@
     \endpgfscope
 
     \pgfsetlinewidth{\pgfstartlinewidth}
-    \pgftext[top,x=.85\pgf@circ@res@left,y=.75\pgf@circ@res@down]{\pgf@circ@font@tiny$\vartheta$}
     \pgfsetarrowsend{latexslim}
     \pgfpathmoveto{\pgfpoint{.62\pgf@circ@res@left}{\pgf@circ@res@down}}
     \pgfpathlineto{\pgfpoint{.62\pgf@circ@res@left}{.7\pgf@circ@res@down}}
@@ -428,6 +446,8 @@
     \pgfpathmoveto{\pgfpoint{.45\pgf@circ@res@left}{\pgf@circ@res@down}}
     \pgfpathlineto{\pgfpoint{.45\pgf@circ@res@left}{.7\pgf@circ@res@down}}
     \pgfusepath{draw}
+    \pgf@circ@text@strokecolor
+    \pgftext[top,x=.85\pgf@circ@res@left,y=.75\pgf@circ@res@down]{\pgf@circ@font@tiny$\vartheta$}
 }
 
 %% Thermistor NTC
@@ -450,7 +470,6 @@
     \endpgfscope
 
     \pgfsetlinewidth{\pgfstartlinewidth}
-    \pgftext[top,x=.85\pgf@circ@res@left,y=.75\pgf@circ@res@down]{\pgf@circ@font@tiny$\vartheta$}
     \pgfsetarrowsend{latexslim}
     \pgfpathmoveto{\pgfpoint{.62\pgf@circ@res@left}{\pgf@circ@res@down}}
     \pgfpathlineto{\pgfpoint{.62\pgf@circ@res@left}{.7\pgf@circ@res@down}}
@@ -458,6 +477,8 @@
     \pgfpathmoveto{\pgfpoint{.45\pgf@circ@res@left}{.7\pgf@circ@res@down}}
     \pgfpathlineto{\pgfpoint{.45\pgf@circ@res@left}{\pgf@circ@res@down}}
     \pgfusepath{draw}
+    \pgf@circ@text@strokecolor
+    \pgftext[top,x=.85\pgf@circ@res@left,y=.75\pgf@circ@res@down]{\pgf@circ@font@tiny$\vartheta$}
 }
 
 %% Varistor
@@ -480,7 +501,7 @@
         \pgfpathlineto{\pgfpoint{\pgf@circ@res@left}{\pgf@circ@res@down}}
         \pgfusepath{draw}
     \endpgfscope
-
+    \pgf@circ@text@strokecolor
     \pgftext[top,x=.65\pgf@circ@res@left,y=1.2\pgf@circ@res@down]{{\pgf@circ@font@tiny\textsf{U}}}
 }
 
@@ -496,6 +517,7 @@
         }
     \anchor{wiper}{\wiper}
     \anchor{W}{\wiper}
+    \anchor{tip}{\wiper\pgf@xa=\pgf@x\southwest\pgf@x=\pgf@xa\pgf@y=-\pgf@y}
 }
 {\ctikzvalof{bipoles/generic potentiometer/height 2}}
 {genericpotentiometer}
@@ -520,6 +542,55 @@
         \pgfusepath{draw}
     \endpgfscope
 }
+
+%% european style LDR
+\pgfcircdeclarebipolescaled{resistors}
+{% anchor for light arrows
+    \anchor{arrows}{\northeast\pgf@x=1.6\pgf@x\pgf@y=1.4\pgf@y}%
+    \savedmacro{\zigs}{\edef\zigs{\ctikzvalof{resistors/zigs}}}
+}
+{\ctikzvalof{bipoles/ldgeneric/height}}
+{ldgeneric}
+{\ctikzvalof{bipoles/ldgeneric/height}}
+{\ctikzvalof{bipoles/ldgeneric/width}}
+{%
+    \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
+    \pgfscope
+        \pgfpathellipse{\pgfpointorigin}{\pgfpoint{0}{\pgf@circ@res@up}}{\pgfpoint{\pgf@circ@res@left}{0}}
+        \pgf@circ@draworfill
+    \endpgfscope
+    \pgfscope
+        % arrows
+        \pgf@circ@set@optoarrow@style
+        \pgfpathmoveto{\pgfpoint{1.4\pgf@circ@res@right}{1.4\pgf@circ@res@up}}
+        \pgfpathlineto{\pgfpoint{0.8\pgf@circ@res@right}{0.8\pgf@circ@res@up}}
+        \pgfusepath{draw}
+        \pgfpathmoveto{\pgfpoint{1.6\pgf@circ@res@right}{1.2\pgf@circ@res@up}}
+        \pgfpathlineto{\pgfpoint{1.0\pgf@circ@res@right}{0.6\pgf@circ@res@up}}
+        \pgfusepath{draw}
+    \endpgfscope
+    \edef\@@intscale{\ctikzvalof{bipoles/ldgeneric/internal scale}}%
+    \pgfmathsetmacro{\@@hscale}{0.5*\@@intscale}%
+    \pgftransformscale{\@@intscale}% the end of the bipole will deactivate it
+    % the generic will be reduced by @@intscale; let's undo the scaling to
+    % connect the leads to the end of the component.
+    \pgfpathmoveto{\pgfpoint{\pgf@circ@res@left/\@@intscale-\pgfhorizontaltransformationadjustment*0.5*\pgflinewidth}{+0pt}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@left-\pgfhorizontaltransformationadjustment*0.5*\pgflinewidth}{+0pt}}
+    \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right/\@@intscale+\pgfhorizontaltransformationadjustment*0.5*\pgflinewidth}{+0pt}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right+\pgfhorizontaltransformationadjustment*0.5*\pgflinewidth}{+0pt}}
+    \pgftransformationadjustments
+    \pgfmathsetlength{\pgf@circ@res@step}{\ctikzvalof{bipoles/ldgeneric/width}*\scaledRlen+\pgfhorizontaltransformationadjustment*0.5*\pgflinewidth}
+    \pgfusepath{draw}
+    \pgfscope
+        % reset the up at the "generic" thing
+        \pgf@circ@res@up=\ctikzvalof{bipoles/generic/height}\pgf@circ@scaled@Rlen
+        \pgf@circ@res@up=0.5\pgf@circ@res@up
+        \pgf@circ@res@down=-\pgf@circ@res@up
+        \pgfpathrectanglecorners{\pgfpoint{\pgf@circ@res@left}{\pgf@circ@res@up}}{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@down}}
+        \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
+        \pgfusepath{draw}
+    \endpgfscope
+}%
 
 %% Zig-zag resistors
 \def\pgf@circ@zigzag#1{%
@@ -569,6 +640,9 @@
 \pgfcircdeclarebipolescaled{resistors}
 {
 \savedmacro{\zigs}{\edef\zigs{\ctikzvalof{resistors/zigs}}}
+\anchor{wiper}{\northeast\pgf@x=-0.4\pgf@x\pgf@y=-\pgf@y}
+\anchor{W}{\northeast\pgf@x=-0.4\pgf@x\pgf@y=-\pgf@y}
+\anchor{tip}{\northeast\pgf@x=0.4\pgf@x}
 }
 {\ctikzvalof{bipoles/vresistor/height}}
 {vresistor}
@@ -584,11 +658,11 @@
         \pgf@circ@set@relative@thickness{modifier thickness}
         \pgfcirc@set@arrows{tunable}{}{latexslim}
         \ifpgf@circ@fixtunable@dir
-            \pgfpathmoveto{\pgfpoint{-.4\pgf@circ@res@other}{\pgf@circ@res@down}}
-            \pgfpathlineto{\pgfpoint{.4\pgf@circ@res@other}{\pgf@circ@res@up}}
+            \pgfpathmoveto{\pgfpoint{-.4\pgf@circ@res@right}{\pgf@circ@res@down}}
+            \pgfpathlineto{\pgfpoint{.4\pgf@circ@res@right}{\pgf@circ@res@up}}
         \else
-            \pgfpathmoveto{\pgfpoint{.4\pgf@circ@res@other}{\pgf@circ@res@up}}
-            \pgfpathlineto{\pgfpoint{-.4\pgf@circ@res@other}{\pgf@circ@res@down}}
+            \pgfpathmoveto{\pgfpoint{.4\pgf@circ@res@right}{\pgf@circ@res@up}}
+            \pgfpathlineto{\pgfpoint{-.4\pgf@circ@res@right}{\pgf@circ@res@down}}
         \fi
         \pgfusepath{draw}
     \endpgfscope
@@ -607,6 +681,7 @@
     \anchor{wiper}{\wiper}
     \anchor{W}{\wiper}
     \savedmacro{\zigs}{\edef\zigs{\ctikzvalof{resistors/zigs}}}
+    \anchor{tip}{\wiper\pgf@xa=\pgf@x\southwest\pgf@x=\pgf@xa\pgf@y=-\pgf@y}
 }
 {\ctikzvalof{bipoles/potentiometer/height 2}}
 {potentiometer}
@@ -634,6 +709,9 @@
 {% anchor for labelling the type of dependency
     \anchor{label}{\southwest\pgf@x=0.4\pgf@x}%
     \savedmacro{\zigs}{\edef\zigs{\ctikzvalof{resistors/zigs}}}
+    \anchor{wiper}{\northeast\pgf@x=-0.9\pgf@x\pgf@y=-\pgf@y}
+    \anchor{W}{\northeast\pgf@x=-0.9\pgf@x\pgf@y=-\pgf@y}
+    \anchor{tip}{\northeast\pgf@x=0.4\pgf@x}
 }
 {\ctikzvalof{bipoles/resistivesens/height}}
 {resistivesens}
@@ -647,12 +725,56 @@
 
     \pgfscope
         \pgf@circ@set@relative@thickness{modifier thickness}
-        \pgfpathmoveto{\pgfpoint{.4\pgf@circ@res@other}{\pgf@circ@res@up}}
-        \pgfpathlineto{\pgfpoint{-.4\pgf@circ@res@other}{\pgf@circ@res@down}}
-        \pgfpathlineto{\pgfpoint{-.9\pgf@circ@res@other}{\pgf@circ@res@down}}
+        \pgfpathmoveto{\pgfpoint{.4\pgf@circ@res@right}{\pgf@circ@res@up}}
+        \pgfpathlineto{\pgfpoint{-.4\pgf@circ@res@right}{\pgf@circ@res@down}}
+        \pgfpathlineto{\pgfpoint{-.9\pgf@circ@res@right}{\pgf@circ@res@down}}
         \pgfusepath{draw}
     \endpgfscope
-}% %>>>
+}%
+
+%% american style LDR
+\pgfcircdeclarebipolescaled{resistors}
+{% anchor for light arrows
+    \anchor{arrows}{\northeast\pgf@x=1.6\pgf@x\pgf@y=1.4\pgf@y}%
+    \savedmacro{\zigs}{\edef\zigs{\ctikzvalof{resistors/zigs}}}
+    % \pgfcirc@border@extend@full{1.2}{1.2}{1.2}{1.2}
+}
+{\ctikzvalof{bipoles/ldresistor/height}}
+{ldresistor}
+{\ctikzvalof{bipoles/ldresistor/height}}
+{\ctikzvalof{bipoles/ldresistor/width}}
+{%
+    \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
+    \pgfscope
+        \pgfpathellipse{\pgfpointorigin}{\pgfpoint{0}{\pgf@circ@res@up}}{\pgfpoint{\pgf@circ@res@left}{0}}
+        \pgf@circ@draworfill
+    \endpgfscope
+    \pgfscope
+        % arrows
+        \pgf@circ@set@optoarrow@style
+        \pgfpathmoveto{\pgfpoint{1.4\pgf@circ@res@right}{1.4\pgf@circ@res@up}}
+        \pgfpathlineto{\pgfpoint{0.8\pgf@circ@res@right}{0.8\pgf@circ@res@up}}
+        \pgfusepath{draw}
+        \pgfpathmoveto{\pgfpoint{1.6\pgf@circ@res@right}{1.2\pgf@circ@res@up}}
+        \pgfpathlineto{\pgfpoint{1.0\pgf@circ@res@right}{0.6\pgf@circ@res@up}}
+        \pgfusepath{draw}
+    \endpgfscope
+    \edef\@@intscale{\ctikzvalof{bipoles/ldresistor/internal scale}}%
+    \pgfmathsetmacro{\@@hscale}{0.5*\@@intscale}%
+    \pgftransformscale{\@@intscale}% the end of the bipole will deactivate it
+    % the zigzag will be reduced by @@intscale; let's undo the scaling to
+    % connect the leads to the end of the component.
+    \pgfpathmoveto{\pgfpoint{\pgf@circ@res@left/\@@intscale-\pgfhorizontaltransformationadjustment*0.5*\pgflinewidth}{+0pt}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@left-\pgfhorizontaltransformationadjustment*0.5*\pgflinewidth}{+0pt}}
+    \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right/\@@intscale+\pgfhorizontaltransformationadjustment*0.5*\pgflinewidth}{+0pt}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right+\pgfhorizontaltransformationadjustment*0.5*\pgflinewidth}{+0pt}}
+    \pgftransformationadjustments
+    \pgfmathsetlength{\pgf@circ@res@step}{\ctikzvalof{bipoles/ldresistor/width}*\scaledRlen+\pgfhorizontaltransformationadjustment*0.5*\pgflinewidth}
+    \pgf@circ@zigzag{\@@hscale}
+}%
+
+
+%>>>
 
 %% Paths for resistive components: generic, resistors and wires% %<<<
 
@@ -693,6 +815,12 @@
 \pgfcirc@node@to@style{l}{resistivesens}{american resistive sensor}{}
 \pgfcirc@node@to@style{l}{thermistor}{european resistive sensor}{}
 \pgfcirc@style@to@style{resistive sensor}{sR}
+
+\def\pgf@circ@ldresistor@path#1{\ifpgf@circuit@europeanresistor\pgf@circ@bipole@path{ldgeneric}{#1}\else\pgf@circ@bipole@path{ldresistor}{#1}\fi}
+\pgfcirc@path@to@style{l}{ldresistor}{light dependent resistor}{}
+\pgfcirc@node@to@style{l}{ldresistor}{american light dependent resistor}{}
+\pgfcirc@node@to@style{l}{ldgeneric}{european light dependent resistor}{}
+\pgfcirc@style@to@style{light dependent resistor}{ldR}
 
 \def\pgf@circ@potentiometer@path#1{\ifpgf@circuit@europeanresistor\pgf@circ@bipole@path{genericpotentiometer}{#1}\else\pgf@circ@bipole@path{potentiometer}{#1}\fi}
 \pgfcirc@path@to@style{l}{potentiometer}{potentiometer}{}
@@ -796,6 +924,9 @@
 {
     \anchor{label}{\southwest\pgf@x=2.6\pgf@x\pgf@y=1.2\pgf@y}%
     \pgfcirc@border@extend@full{2.6}{1}{4.4}{1.2}
+    \anchor{wiper}{\northeast\pgf@x=-4.4\pgf@x\pgf@y=-1.2\pgf@y}
+    \anchor{W}{\northeast\pgf@x=-4.4\pgf@x\pgf@y=-1.2\pgf@y}
+    \anchor{tip}{\northeast\pgf@x=2.6\pgf@x}
 }
 {\ctikzvalof{bipoles/capacitor/height}}
 {capacitivesens}
@@ -896,32 +1027,44 @@
 {\ctikzvalof{bipoles/ecapacitor/height}}
 {\ctikzvalof{bipoles/ecapacitor/width}}
 {
-    \pgfsetrectcap
-    % % % Draw plus pole
-    \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
-    \pgfpathmoveto{\pgfpoint{\pgf@circ@res@left}{\pgf@circ@res@up}}
-    \pgfpathlineto{\pgfpoint{.4\pgf@circ@res@left}{\pgf@circ@res@up}}
-    \pgfpathlineto{\pgfpoint{.4\pgf@circ@res@left}{\pgf@circ@res@down}}
-    \pgfpathlineto{\pgfpoint{\pgf@circ@res@left}{\pgf@circ@res@down}}
-    \pgfpathlineto{\pgfpoint{\pgf@circ@res@left}{\pgf@circ@res@up}}
-    \pgf@circ@draworfill
-    % % Draw minus pole
-    \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@up}}
-    \pgfpathlineto{\pgfpoint{.4\pgf@circ@res@right}{\pgf@circ@res@up}}
-    \pgfpathlineto{\pgfpoint{.4\pgf@circ@res@right}{\pgf@circ@res@down}}
-    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@down}}
-    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@up}}
-    \pgfsetfillcolor{\ctikzvalof{color}}
-    \pgfusepath{draw,fill}
-    \pgfsetfillcolor{\ctikzvalof{color}}
+    \pgfscope
+        \pgfsetrectcap
+        % % % Draw plus pole
+        \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
+        \pgfpathmoveto{\pgfpoint{\pgf@circ@res@left}{\pgf@circ@res@up}}
+        \pgfpathlineto{\pgfpoint{.4\pgf@circ@res@left}{\pgf@circ@res@up}}
+        \pgfpathlineto{\pgfpoint{.4\pgf@circ@res@left}{\pgf@circ@res@down}}
+        \pgfpathlineto{\pgfpoint{\pgf@circ@res@left}{\pgf@circ@res@down}}
+        \pgfpathlineto{\pgfpoint{\pgf@circ@res@left}{\pgf@circ@res@up}}
+        \pgf@circ@draworfill
+        % % Draw minus pole
+        \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@up}}
+        \pgfpathlineto{\pgfpoint{.4\pgf@circ@res@right}{\pgf@circ@res@up}}
+        \pgfpathlineto{\pgfpoint{.4\pgf@circ@res@right}{\pgf@circ@res@down}}
+        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@down}}
+        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@up}}
+        \pgf@circ@setcolor
+        \pgf@circ@fill@strokecolor
+        \pgfusepath{draw,fill}
+    \endpgfscope
     % % plus pole annotation
+    \pgf@circ@text@strokecolor
     \pgftext[right,at=\pgfpoint{1.2\pgf@circ@res@left}{.6\pgf@circ@res@up}]
     {\ctikzvalof{bipoles/ecapacitor/font} $+$}
 }
 
 %% Variable Capacitor
 \pgfcircdeclarebipolescaled{capacitors}
-{}
+{
+    \saveddimen{\tunablewidth}{%
+        \pgfmathsetlength{\pgf@x}{\ctikzvalof{bipoles/vcapacitor/tunable width}*
+            \ctikzvalof{bipoles/vcapacitor/width}*0.5*
+            \ctikzvalof{\ctikzclass/scale}*\pgf@circ@Rlen}
+    }
+    \anchor{wiper}{\northeast\pgf@x=-\tunablewidth\pgf@y=-\pgf@y}
+    \anchor{W}{\northeast\pgf@x=-\tunablewidth\pgf@y=-\pgf@y}
+    \anchor{tip}{\northeast\pgf@x=\tunablewidth}
+}
 {\ctikzvalof{bipoles/vcapacitor/height}}
 {vcapacitor}
 {\ctikzvalof{bipoles/vcapacitor/height}}
@@ -1125,13 +1268,37 @@
 %
 % generic core anchor settings
 \ctikzset{bipoles/inductors/core distance/.initial={2pt}}
+\ctikzset{bipoles/inductors/dot x distance/.initial={4pt}}
+\ctikzset{bipoles/inductors/dot y distance/.initial={1pt}}
 \def\pgfcir@basic@core@anchors{%
     \saveddimen{\coredistance}{\pgfmathsetlength{\pgf@x}{\ctikzvalof{bipoles/inductors/core distance}}}
+    \saveddimen{\dotXdistance}{\pgfmathsetlength{\pgf@x}{\ctikzvalof{bipoles/inductors/dot x distance}}}
+    \saveddimen{\dotYdistance}{\pgfmathsetlength{\pgf@x}{\ctikzvalof{bipoles/inductors/dot y distance}}}
     \anchor{core east}{%
         \northeast\advance\pgf@y by\coredistance
     }
     \anchor{core west}{%
         \northeast\advance\pgf@y by\coredistance\pgf@x=-\pgf@x
+    }
+    \anchor{ll dot}{%
+        \southwestborder
+        \advance\pgf@x by -\dotXdistance
+        \advance\pgf@y by -\dotYdistance
+    }
+    \anchor{ul dot}{%
+        \northeastborder
+        \advance\pgf@x by \dotXdistance\pgf@x=-\pgf@x
+        \advance\pgf@y by \dotYdistance
+    }
+    \anchor{lr dot}{%
+        \southwestborder
+        \advance\pgf@x by -\dotXdistance\pgf@x=-\pgf@x
+        \advance\pgf@y by -\dotYdistance
+    }
+    \anchor{ur dot}{%
+        \northeastborder
+        \advance\pgf@x by \dotXdistance
+        \advance\pgf@y by \dotYdistance
     }
 }
 %
@@ -1226,6 +1393,9 @@
     \anchor{midtap}{\midtap}
     \pgfcirc@border@extend@full{1}{2}{1.6}{2.6}
     \pgfcir@basic@core@anchors
+    \anchor{wiper}{\southwest\pgf@x=1.6\pgf@x\pgf@y=2.6\pgf@y}
+    \anchor{W}{\southwest\pgf@x=1.6\pgf@x\pgf@y=2.6\pgf@y}
+    \anchor{tip}{\northeast\pgf@x=0.8\pgf@x\pgf@y=2\pgf@y}
 }
 {\ctikzvalof{bipoles/cuteinductor/lower coil height}}
 {scuteinductor}
@@ -1336,6 +1506,9 @@
     \anchor{core west}{%
         \northeast\pgf@y=0.5\pgf@y\advance\pgf@y by\coredistance\pgf@x=-\pgf@x
     }
+    \anchor{wiper}{\southwest\pgf@x=0.4\pgf@x\pgf@y=\pgf@y}
+    \anchor{W}{\southwest\pgf@x=0.4\pgf@x\pgf@y=\pgf@y}
+    \anchor{tip}{\northeast\pgf@x=0.4\pgf@x}
 }
 {\ctikzvalof{bipoles/vcuteinductor/lower coil height}}
 {vcuteinductor}
@@ -1427,6 +1600,9 @@
     \anchor{midtap}{\midtap}
     \pgfcirc@border@extend@full{1}{2}{1.6}{2.6}
     \pgfcir@basic@core@anchors
+    \anchor{wiper}{\southwest\pgf@x=1.6\pgf@x\pgf@y=2.6\pgf@y}
+    \anchor{W}{\southwest\pgf@x=1.6\pgf@x\pgf@y=2.6\pgf@y}
+    \anchor{tip}{\northeast\pgf@x=0.8\pgf@x\pgf@y=2\pgf@y}
 }
 {\ctikzvalof{bipoles/americaninductor/height 2}}
 {samericaninductor}
@@ -1478,6 +1654,9 @@
     \anchor{core west}{%
         \northeast\pgf@y=0.5\pgf@y\advance\pgf@y by\coredistance\pgf@x=-\pgf@x
     }
+    \anchor{wiper}{\southwest\pgf@x=0.4\pgf@x\pgf@y=\pgf@y}
+    \anchor{W}{\southwest\pgf@x=0.4\pgf@x\pgf@y=\pgf@y}
+    \anchor{tip}{\northeast\pgf@x=0.4\pgf@x}
 }
 {\ctikzvalof{bipoles/vamericaninductor/height 2}}
 {vamericaninductor}
@@ -1524,6 +1703,7 @@
     \pgfpathrectanglecorners{\pgfpoint{\pgf@circ@res@left}{\pgf@circ@res@up}}{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@down}}
     \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
 
+    \pgf@circ@fill@strokecolor
     \pgfusepath{draw,fill}
 }
 
@@ -1534,6 +1714,9 @@
     \anchor{midtap}{\northeast\pgf@x=0pt\relax}
     \pgfcirc@border@extend@full{1}{2}{1}{2}
     \pgfcir@basic@core@anchors
+    \anchor{wiper}{\northeast\pgf@x=-\pgf@x\pgf@y=-2\pgf@y}
+    \anchor{W}{\northeast\pgf@x=-\pgf@x\pgf@y=-2\pgf@y}
+    \anchor{tip}{\northeast\pgf@y=2\pgf@y}
 }
 {\ctikzvalof{bipoles/fullgeneric/height}}
 {sfullgeneric}
@@ -1543,6 +1726,7 @@
 
     \pgfpathrectanglecorners{\pgfpoint{\pgf@circ@res@left}{\pgf@circ@res@up}}{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@down}}
     \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
+    \pgf@circ@fill@strokecolor
     \pgfusepath{draw,fill}
     \pgfscope
         \pgf@circ@set@relative@thickness{modifier thickness}
@@ -1564,6 +1748,9 @@
     \anchor{core west}{%
         \northeast\pgf@y=0.4\pgf@y\advance\pgf@y by \coredistance\pgf@x=-\pgf@x
     }
+    \anchor{wiper}{\northeast\pgf@x=-0.5\pgf@x\pgf@y=-\pgf@y}
+    \anchor{W}{\northeast\pgf@x=-0.5\pgf@x\pgf@y=-\pgf@y}
+    \anchor{tip}{\northeast\pgf@x=0.5\pgf@x}
 }
 {\ctikzvalof{bipoles/tfullgeneric/height}}
 {tfullgeneric}
@@ -1575,6 +1762,7 @@
 
     \pgfpathrectanglecorners{\pgfpoint{\pgf@circ@res@left}{.4\pgf@circ@res@up}}{\pgfpoint{\pgf@circ@res@right}{.4\pgf@circ@res@down}}
     \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
+    \pgf@circ@fill@strokecolor
     \pgfusepath{draw,fill}
 
     \pgfscope
@@ -1772,6 +1960,12 @@
 \pgfkeys{tikz/tert/wye/.add code={}{\pgf@circ@tert@wyetrue}}
 \pgfkeys{tikz/tert/zig/.add code={}{\pgf@circ@tert@zigtrue}}%
 
+% nullator and norator
+\ctikzset{bipoles/nullator/height/.initial=.30}
+\ctikzset{bipoles/nullator/width/.initial=.60}
+\ctikzset{bipoles/norator/height/.initial=.25}
+\ctikzset{bipoles/norator/width/.initial=.60}%must be greater than 2*height
+
 %%>>>
 
 %% Nodes definitions for sources%<<<
@@ -1929,12 +2123,14 @@
 {\ctikzvalof{bipoles/vsourceam/width}}
 {
 
-    \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
-    \pgfpathellipse{\pgfpointorigin}{\pgfpoint{0}{\pgf@circ@res@up}}{\pgfpoint{\pgf@circ@res@left}{0}}
-    \pgf@circ@draworfill
-    \pgfsetcolor{\ctikzvalof{color}}
+    \pgfscope
+        \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
+        \pgfpathellipse{\pgfpointorigin}{\pgfpoint{0}{\pgf@circ@res@up}}{\pgfpoint{\pgf@circ@res@left}{0}}
+        \pgf@circ@draworfill
+    \endpgfscope
+    \pgf@circ@text@strokecolor
     \ifpgf@circ@oldvoltagedirection
-    \pgftext[bottom,rotate=90,y=\ctikzvalof{bipoles/vsourceam/margin}\pgf@circ@res@down]{\ctikzvalof{bipoles/vsourceam/inner plus}}
+        \pgftext[bottom,rotate=90,y=\ctikzvalof{bipoles/vsourceam/margin}\pgf@circ@res@down]{\ctikzvalof{bipoles/vsourceam/inner plus}}
         \pgftext[top,rotate=90,y=\ctikzvalof{bipoles/vsourceam/margin}\pgf@circ@res@up]{\ctikzvalof{bipoles/vsourceam/inner minus}}
     \else
         \pgftext[bottom,rotate=90,y=\ctikzvalof{bipoles/vsourceam/margin}\pgf@circ@res@down]{\ctikzvalof{bipoles/vsourceam/inner minus}}
@@ -2075,14 +2271,13 @@
     \pgf@circ@draworfill
 
     % Draw triangle
-  	\pgfpathmoveto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@up}}
-  	\pgfpathlineto{\pgfpoint{0.5\pgf@circ@res@right}{0}}
-  	\pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@down}}
-  	\pgfpathmoveto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@up}}
-  	\pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@down}}
+    \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@up}}
+    \pgfpathlineto{\pgfpoint{0.5\pgf@circ@res@right}{0}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@down}}
+    \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@up}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@down}}
     \pgf@circ@draworfill
-
-  	\pgfusepath{draw}
+    \pgfusepath{draw}
 }
 
 %% Empty Source
@@ -2109,8 +2304,10 @@
 {
     \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
     \pgfpathmoveto{\pgfpointorigin}
-    \pgfpathellipse{\pgfpointorigin}{\pgfpoint{0}{\pgf@circ@res@up}}{\pgfpoint{\pgf@circ@res@left}{0}}
-    \pgf@circ@maybefill
+    \pgfscope
+        \pgfpathellipse{\pgfpointorigin}{\pgfpoint{0}{\pgf@circ@res@up}}{\pgfpoint{\pgf@circ@res@left}{0}}
+        \pgf@circ@maybefill
+    \endpgfscope
     \edef\@@angle{\ctikzvalof{bipoles/dcisource/angle}}
     \pgfpathmoveto{\pgfpointpolar{\@@angle}{\pgf@circ@res@up}}
     \pgfpatharc{\@@angle}{-\@@angle}{\pgf@circ@res@up}
@@ -2636,15 +2833,16 @@
 {\ctikzvalof{bipoles/cvsourceam/height}}
 {\ctikzvalof{bipoles/cvsourceam/width}}
 {
-    \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
-    \pgfpathmoveto{\pgfpoint{\pgf@circ@res@left}{\pgf@circ@res@zero}}
-    \pgfpathlineto{\pgfpoint{\pgf@circ@res@zero}{\pgf@circ@res@up}}
-    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@zero}}
-    \pgfpathlineto{\pgfpoint{\pgf@circ@res@zero}{\pgf@circ@res@down}}
-    \pgfpathclose
-    \pgf@circ@draworfill
-
-    \pgfsetcolor{\ctikzvalof{color}}
+    \pgfscope
+        \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
+        \pgfpathmoveto{\pgfpoint{\pgf@circ@res@left}{\pgf@circ@res@zero}}
+        \pgfpathlineto{\pgfpoint{\pgf@circ@res@zero}{\pgf@circ@res@up}}
+        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@zero}}
+        \pgfpathlineto{\pgfpoint{\pgf@circ@res@zero}{\pgf@circ@res@down}}
+        \pgfpathclose
+        \pgf@circ@draworfill
+    \endpgfscope
+    \pgf@circ@text@strokecolor
     \ifpgf@circ@oldvoltagedirection
         \pgftext[bottom,rotate=90,y=\ctikzvalof{bipoles/cvsourceam/margin}\pgf@circ@res@left]{\ctikzvalof{bipoles/cvsourceam/inner plus}}
         \pgftext[top,rotate=90,y=\ctikzvalof{bipoles/cvsourceam/margin}\pgf@circ@res@right]{\ctikzvalof{bipoles/cvsourceam/inner minus}}
@@ -2957,6 +3155,49 @@
     \pgfpathlineto{\pgfpoint{\pgf@circ@res@step}{.6\pgf@circ@res@down}}
     \pgfsetroundcap\pgfusepath{draw}
 }
+
+% nullator
+\pgfcircdeclarebipolescaled{sources}
+{}
+{\ctikzvalof{bipoles/nullator/height}}
+{nullator}
+{\ctikzvalof{bipoles/nullator/height}}
+{\ctikzvalof{bipoles/nullator/width}}
+{
+    \pgfpointorigin
+    \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
+    \pgfpathellipse{\pgfpointorigin}{\pgfpoint{0}{\pgf@circ@res@up}}{\pgfpoint{\pgf@circ@res@left}{0}}
+    \pgf@circ@draworfill
+}
+% norator
+\pgfcircdeclarebipolescaled{sources}
+{}
+{\ctikzvalof{bipoles/norator/height}}
+{norator}
+{\ctikzvalof{bipoles/norator/height}}
+{\ctikzvalof{bipoles/norator/width}}
+{
+    \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
+    \pgf@circ@res@other=\dimexpr\pgf@circ@res@right-\pgf@circ@res@up\relax
+    \pgfmathsetmacro{\@@angle}{atan2(\pgf@circ@res@other,\pgf@circ@res@up)}
+    % \typeout{ANGLE\space\@@angle}
+    \pgfmathsetlength{\pgf@circ@res@step}{\pgf@circ@res@up*cos(\@@angle)}
+    \pgfmathsetlength{\pgf@circ@res@temp}{\pgf@circ@res@up*sin(\@@angle)}
+    % right semicircle
+    \pgfpathmoveto{\pgfpoint{\pgf@circ@res@other-\pgf@circ@res@step}{\pgf@circ@res@temp}}
+    \pgfpatharc{180-\@@angle}{-180+\@@angle}{\pgf@circ@res@up}
+    % connect to left semicircle
+    \pgfpathlineto
+        {\pgfpoint{-\pgf@circ@res@other+\pgf@circ@res@step}{\pgf@circ@res@temp}}
+    % left semicircle
+    \pgfpatharc{\@@angle}{360-\@@angle}{\pgf@circ@res@up}
+    % connect to right semicircle
+    \pgfpathlineto
+        {\pgfpoint{\pgf@circ@res@other-\pgf@circ@res@step}{\pgf@circ@res@temp}}
+    \pgfpathclose
+    \pgf@circ@draworfill
+}
+
 % %>>>
 
 %% Paths definitions for Sources%<<<
@@ -3119,6 +3360,10 @@
 \pgfcirc@style@to@style{noise current source}{isourceN}
 \pgfcirc@style@to@style{noise current source}{nI}
 
+% norator, nullator
+\pgfcirc@activate@bipole@simple{l}{nullator}
+\pgfcirc@activate@bipole@simple{l}{norator}
+
 % build alias with voltage and current directions (legacy)
 
 \def\pgf@temp#1{
@@ -3140,6 +3385,7 @@
 \pgf@temp{>} \pgf@temp{<} \pgf@temp{^} \pgf@temp{_}
 % %>>>
 
+
 %%%%%%%%%%%%%%
 %% Diodes
 %%%%%%%%%%%%%%
@@ -3148,6 +3394,9 @@
 
 \ctikzset{bipoles/diode/height/.initial=.50}
 \ctikzset{bipoles/diode/width/.initial=.40}
+% for horizontally-double-sided diodes, like tvs diodes (transorb)
+\ctikzset{bipoles/ddiode/width/.initial=.80}% must be 2*diode width
+% for vertically taller diodes
 \ctikzset{bipoles/bidirectionaldiode/height/.initial=1.1}
 \ctikzset{bipoles/bidirectionaldiode/width/.initial=1}
 \ctikzset{bipoles/bidirectionaldiode/diode width left/.initial=.3}
@@ -3239,6 +3488,18 @@
 
 %% Node components for diodes %<<<1
 
+% beware, this shift to the left the coordinates
+\def\pgf@circ@fulldiode@triangle@shift{%
+        \pgftransformxshift{\pgf@circ@res@left}
+        \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{0pt}}
+        \pgfpathlineto{\pgfpoint{0pt}{\pgf@circ@res@up}}
+        \pgfpathlineto{\pgfpoint{0pt}{\pgf@circ@res@down}}
+        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{0pt}}
+        \pgf@circ@fill@strokecolor
+        \pgfusepath{draw,fill}
+        % \pgf@circ@debug@colors
+}
+
 %% Black generic diode
 \pgfcircdeclarebipolescaled{diodes}
 {}
@@ -3249,14 +3510,8 @@
 {
 
     \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
-
     \pgfscope
-        \pgftransformxshift{\pgf@circ@res@left}
-        \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{0pt}}
-        \pgfpathlineto{\pgfpoint{0pt}{\pgf@circ@res@up}}
-        \pgfpathlineto{\pgfpoint{0pt}{\pgf@circ@res@down}}
-        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{0pt}}
-        \pgfusepath{draw,fill}
+        \pgf@circ@fulldiode@triangle@shift
     \endpgfscope
     \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@down}}
     \pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@up}}
@@ -3271,21 +3526,12 @@
 {\ctikzvalof{bipoles/diode/height}}
 {\ctikzvalof{bipoles/diode/width}}
 {
-
     \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
-
-    \pgfscope
-        \pgftransformxshift{\pgf@circ@res@left}
-        \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{0pt}}
-        \pgfpathlineto{\pgfpoint{0pt}{\pgf@circ@res@up}}
-        \pgfpathlineto{\pgfpoint{0pt}{\pgf@circ@res@down}}
-        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{0pt}}
-        \pgfusepath{draw,fill}
-        \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{\pgf@circ@res@down}}
-        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{\pgf@circ@res@up}}
-        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-.6\pgf@circ@res@left}{\pgf@circ@res@up}}
-        \pgfusepath{draw}
-    \endpgfscope
+    \pgf@circ@fulldiode@triangle@shift
+    \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{\pgf@circ@res@down}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{\pgf@circ@res@up}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-.6\pgf@circ@res@left}{\pgf@circ@res@up}}
+    \pgfusepath{draw}
 }
 
 %% Black alternative zigzag Zener diode
@@ -3298,22 +3544,13 @@
 {\ctikzvalof{bipoles/diode/height}}
 {\ctikzvalof{bipoles/diode/width}}
 {
-
     \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
-
-    \pgfscope
-        \pgftransformxshift{\pgf@circ@res@left}
-        \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{0pt}}
-        \pgfpathlineto{\pgfpoint{0pt}{\pgf@circ@res@up}}
-        \pgfpathlineto{\pgfpoint{0pt}{\pgf@circ@res@down}}
-        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{0pt}}
-        \pgfusepath{draw,fill}
-        \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right-1.8\pgf@circ@res@left}{\pgf@circ@res@down-0.5\pgf@circ@res@up}}
-        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{\pgf@circ@res@down}}
-        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{\pgf@circ@res@up}}
-        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-0.2\pgf@circ@res@left}{\pgf@circ@res@up-0.5\pgf@circ@res@down}}
-        \pgfusepath{draw}
-    \endpgfscope
+    \pgf@circ@fulldiode@triangle@shift
+    \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right-1.8\pgf@circ@res@left}{\pgf@circ@res@down-0.5\pgf@circ@res@up}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{\pgf@circ@res@down}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{\pgf@circ@res@up}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-0.2\pgf@circ@res@left}{\pgf@circ@res@up-0.5\pgf@circ@res@down}}
+    \pgfusepath{draw}
 }
 
 %% Black Schottky diode
@@ -3324,26 +3561,16 @@
 {\ctikzvalof{bipoles/diode/height}}
 {\ctikzvalof{bipoles/diode/width}}
 {
-
     \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
-    \pgfscope
-        \pgftransformxshift{\pgf@circ@res@left}
-        \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{0pt}}
-        \pgfpathlineto{\pgfpoint{0pt}{\pgf@circ@res@up}}
-        \pgfpathlineto{\pgfpoint{0pt}{\pgf@circ@res@down}}
-        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{0pt}}
-        \pgfusepath{draw,fill}
-
-        \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right-.6\pgf@circ@res@left}{.6\pgf@circ@res@down}}
-        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-.6\pgf@circ@res@left}{\pgf@circ@res@down}}
-        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{\pgf@circ@res@down}}
-        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{\pgf@circ@res@down}}
-        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{\pgf@circ@res@up}}
-        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-1.4\pgf@circ@res@left}{\pgf@circ@res@up}}
-        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-1.4\pgf@circ@res@left}{.6\pgf@circ@res@up}}
-        \pgfusepath{draw}
-    \endpgfscope
-
+    \pgf@circ@fulldiode@triangle@shift
+    \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right-.6\pgf@circ@res@left}{.6\pgf@circ@res@down}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-.6\pgf@circ@res@left}{\pgf@circ@res@down}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{\pgf@circ@res@down}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{\pgf@circ@res@down}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{\pgf@circ@res@up}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-1.4\pgf@circ@res@left}{\pgf@circ@res@up}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-1.4\pgf@circ@res@left}{.6\pgf@circ@res@up}}
+    \pgfusepath{draw}
 }
 
 %% Black tunnel diode
@@ -3354,30 +3581,24 @@
 {\ctikzvalof{bipoles/diode/height}}
 {\ctikzvalof{bipoles/diode/width}}
 {
-
     \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
-    \pgfscope
-        \pgftransformxshift{\pgf@circ@res@left}
-        \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{0pt}}
-        \pgfpathlineto{\pgfpoint{0pt}{\pgf@circ@res@up}}
-        \pgfpathlineto{\pgfpoint{0pt}{\pgf@circ@res@down}}
-        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{0pt}}
-        \pgfusepath{draw,fill}
-
-        \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right-.6\pgf@circ@res@left}{\pgf@circ@res@down}}
-        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{\pgf@circ@res@down}}
-        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{\pgf@circ@res@up}}
-        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-.6\pgf@circ@res@left}{\pgf@circ@res@up}}
-        \pgfusepath{draw}
-    \endpgfscope
+    \pgf@circ@fulldiode@triangle@shift
+    \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right-.6\pgf@circ@res@left}{\pgf@circ@res@down}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{\pgf@circ@res@down}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{\pgf@circ@res@up}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-.6\pgf@circ@res@left}{\pgf@circ@res@up}}
+    \pgfusepath{draw}
 }
+% the styling of optical arrows is defined in pgfcirc.define.tex because
+% they are common to phototransistors
 
 %
 % draw LED arrows
 %
 \def\pgf@circ@draw@ledarrows{%
     \pgfsetlinewidth{\pgfstartlinewidth}
-    \pgfsetarrowsend{latexslim}
+    \pgf@circ@fill@strokecolor
+    \pgf@circ@set@optoarrow@style
     \ifpgf@led@fliparrows
         \pgfpathmoveto{\pgfpoint{0pt}{0.8\pgf@circ@res@up}}
         \pgfpathlineto{\pgfpoint{-0.6\pgf@circ@res@right}{1.8\pgf@circ@res@up}}
@@ -3399,74 +3620,117 @@
 %
 \def\pgf@circ@draw@pdarrows{%
     \pgfsetlinewidth{\pgfstartlinewidth}
-    \pgfsetarrowsstart{latexslim}
+    \pgf@circ@fill@strokecolor
+    \pgf@circ@set@optoarrow@style
     \ifpgf@pd@fliparrows
-        \pgfpathmoveto{\pgfpoint{0pt}{0.8\pgf@circ@res@up}}
-        \pgfpathlineto{\pgfpoint{-0.6\pgf@circ@res@right}{1.8\pgf@circ@res@up}}
+        \pgfpathmoveto{\pgfpoint{-0.6\pgf@circ@res@right}{1.8\pgf@circ@res@up}}
+        \pgfpathlineto{\pgfpoint{0pt}{0.8\pgf@circ@res@up}}
         \pgfusepath{draw}
-        \pgfpathmoveto{\pgfpoint{0.6\pgf@circ@res@right}{0.6\pgf@circ@res@up}}
-        \pgfpathlineto{\pgfpoint{0pt}{1.6\pgf@circ@res@up}}
+        \pgfpathmoveto{\pgfpoint{0pt}{1.6\pgf@circ@res@up}}
+        \pgfpathlineto{\pgfpoint{0.6\pgf@circ@res@right}{0.6\pgf@circ@res@up}}
         \pgfusepath{draw}
     \else
-        \pgfpathmoveto{\pgfpoint{-0.4\pgf@circ@res@right}{\pgf@circ@res@up}}
-        \pgfpathlineto{\pgfpoint{0.6\pgf@circ@res@right}{2\pgf@circ@res@up}}
+        \pgfpathmoveto{\pgfpoint{0.6\pgf@circ@res@right}{2\pgf@circ@res@up}}
+        \pgfpathlineto{\pgfpoint{-0.4\pgf@circ@res@right}{\pgf@circ@res@up}}
         \pgfusepath{draw}
-        \pgfpathmoveto{\pgfpoint{0.2\pgf@circ@res@right}{0.8\pgf@circ@res@up}}
-        \pgfpathlineto{\pgfpoint{1.2\pgf@circ@res@right}{1.8\pgf@circ@res@up}}
+        \pgfpathmoveto{\pgfpoint{1.2\pgf@circ@res@right}{1.8\pgf@circ@res@up}}
+        \pgfpathlineto{\pgfpoint{0.2\pgf@circ@res@right}{0.8\pgf@circ@res@up}}
         \pgfusepath{draw}
     \fi
+}
+%
+% --and laser diode arrows - contributed by Andre Alves
+%
+\def\pgf@circ@draw@laserarrows{%
+    \pgfsetlinewidth{\pgfstartlinewidth}
+    \pgf@circ@fill@strokecolor
+    \pgf@circ@set@optoarrow@style
+    \pgfpathmoveto{\pgfpoint{-0.4\pgf@circ@res@right}{1.1\pgf@circ@res@up}}
+    \pgfpathlineto{\pgfpoint{-0.4\pgf@circ@res@right}{2.1\pgf@circ@res@up}}
+    \pgfusepath{draw}
+    \pgfpathmoveto{\pgfpoint{0.2\pgf@circ@res@right}{1.1\pgf@circ@res@up}}
+    \pgfpathlineto{\pgfpoint{0.2\pgf@circ@res@right}{2.1\pgf@circ@res@up}}
+    \pgfusepath{draw}
+}
+
+\def\pgf@circ@generate@diode@saved@arrows#1#2#3#4#5{%
+    \savedanchor{\arrows}{%
+        \pgf@circ@scaled@Rlen=\ctikzvalof{\ctikzclass/scale}\pgf@circ@Rlen
+        \pgf@ya=\ctikzvalof{bipoles/diode/height}\pgf@circ@scaled@Rlen
+        \pgf@xa=\ctikzvalof{bipoles/diode/width}\pgf@circ@scaled@Rlen
+        \pgf@x=.5\pgf@xa\pgf@y=.5\pgf@ya
+        \csname ifpgf@#5@fliparrows\endcsname
+            \pgf@x=#1\pgf@x\pgf@y=#2\pgf@y
+        \else
+            \pgf@x=#3\pgf@x\pgf@y=#4\pgf@y
+        \fi
+    }
 }
 %% Black light emitting diode
 \pgfcircdeclarebipolescaled{diodes}
 {% fix the anchor border
     \pgfcirc@border@extend@updown{1.8}{1}
+    \pgf@circ@generate@diode@saved@arrows{-0.2}{2.0}{1.0}{2.0}{led}
+    \anchor{arrows}{\arrows}
 }
 {\ctikzvalof{bipoles/diode/height}}
 {fulllediode}
 {\ctikzvalof{bipoles/diode/height}}
 {\ctikzvalof{bipoles/diode/width}}
 {
-
     \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
     \pgfscope
-        \pgftransformxshift{\pgf@circ@res@left}
-        \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{0pt}}
-        \pgfpathlineto{\pgfpoint{0pt}{\pgf@circ@res@up}}
-        \pgfpathlineto{\pgfpoint{0pt}{\pgf@circ@res@down}}
-        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{0pt}}
-        \pgfusepath{draw,fill}
+        \pgf@circ@fulldiode@triangle@shift
     \endpgfscope
     \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@down}}
     \pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@up}}
     \pgfusepath{draw}
-
     \pgf@circ@draw@ledarrows
+}
+
+%% Black laser diode - contributed by Andre Alves
+\pgfcircdeclarebipolescaled{diodes}
+{% fix the anchor border
+    \pgfcirc@border@extend@updown{1.8}{1}
+    \pgf@circ@generate@diode@saved@arrows{-0.1}{2.2}{-0.1}{2.2}{pd}%pd or led dosen't matter
+    \anchor{arrows}{\arrows}
+}
+{\ctikzvalof{bipoles/diode/height}}
+{fulllaserdiode}
+{\ctikzvalof{bipoles/diode/height}}
+{\ctikzvalof{bipoles/diode/width}}
+{
+    \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
+    \pgfscope
+        \pgf@circ@fulldiode@triangle@shift
+    \endpgfscope
+    \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@down}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@up}}
+    \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right+\pgf@circ@res@left}{\pgf@circ@res@up}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right+\pgf@circ@res@left}{\pgf@circ@res@down}}
+    \pgfusepath{draw}
+    \pgf@circ@draw@laserarrows
 }
 
 %% Black photodiode
 \pgfcircdeclarebipolescaled{diodes}
 {% fix the anchor border
     \pgfcirc@border@extend@updown{1.8}{1}
+    \pgf@circ@generate@diode@saved@arrows{-0.2}{2.0}{1.0}{2.0}{pd}
+    \anchor{arrows}{\arrows}
 }
 {\ctikzvalof{bipoles/diode/height}}
 {fullpdiode}
 {\ctikzvalof{bipoles/diode/height}}
 {\ctikzvalof{bipoles/diode/width}}
 {
-
     \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
     \pgfscope
-        \pgftransformxshift{\pgf@circ@res@left}
-        \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{0pt}}
-        \pgfpathlineto{\pgfpoint{0pt}{\pgf@circ@res@up}}
-        \pgfpathlineto{\pgfpoint{0pt}{\pgf@circ@res@down}}
-        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-\pgf@circ@res@left}{0pt}}
-        \pgfusepath{draw,fill}
+        \pgf@circ@fulldiode@triangle@shift
     \endpgfscope
     \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@down}}
     \pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@up}}
     \pgfusepath{draw}
-
     \pgf@circ@draw@pdarrows
 }
 
@@ -3484,6 +3748,7 @@
     \pgfpathlineto{\pgfpoint{\pgf@circ@res@left}{\pgf@circ@res@up}}
     \pgfpathlineto{\pgfpoint{\pgf@circ@res@left}{\pgf@circ@res@down}}
     \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-2\pgf@circ@res@temp}{0pt}}
+    \pgf@circ@fill@strokecolor
     \pgfusepath{draw,fill}
     %
     \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right-2\pgf@circ@res@temp}{\pgf@circ@res@down}}
@@ -3621,6 +3886,8 @@
 \pgfcircdeclarebipolescaled{diodes}
 {% fix the anchor border
     \pgfcirc@border@extend@updown{1.8}{1}
+    \pgf@circ@generate@diode@saved@arrows{-0.2}{2.0}{1.0}{2.0}{led}
+    \anchor{arrows}{\arrows}
 }
 {\ctikzvalof{bipoles/diode/height}}
 {emptylediode}
@@ -3639,10 +3906,38 @@
     \pgf@circ@draw@ledarrows
 }
 
+%% Empty laser diode - contributed by Andre Alves
+\pgfcircdeclarebipolescaled{diodes}
+{% fix the anchor border
+    \pgfcirc@border@extend@updown{1.8}{1}
+    \pgf@circ@generate@diode@saved@arrows{-0.1}{2.2}{-0.1}{2.2}{pd}%pd or led dosen't matter
+    \anchor{arrows}{\arrows}
+}
+{\ctikzvalof{bipoles/diode/height}}
+{emptylaserdiode}
+{\ctikzvalof{bipoles/diode/height}}
+{\ctikzvalof{bipoles/diode/width}}
+{
+
+    \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
+    \pgfscope
+        \pgf@circ@basicdiodeshape
+    \endpgfscope
+    \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@down}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@up}}
+    \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right+\pgf@circ@res@left}{\pgf@circ@res@up}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right+\pgf@circ@res@left}{\pgf@circ@res@down}}
+    \pgfusepath{draw}
+
+    \pgf@circ@draw@laserarrows
+}
+
 %% Empty photodiode
 \pgfcircdeclarebipolescaled{diodes}
 {% fix the anchor border
     \pgfcirc@border@extend@updown{1.8}{1}
+    \pgf@circ@generate@diode@saved@arrows{-0.2}{2.0}{1.0}{2.0}{pd}
+    \anchor{arrows}{\arrows}
 }
 {\ctikzvalof{bipoles/diode/height}}
 {emptypdiode}
@@ -3689,6 +3984,109 @@
     %
     \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right-2\pgf@circ@res@temp}{\pgf@circ@res@down}}
     \pgfpathlineto{\pgfpoint{\pgf@circ@res@right-2\pgf@circ@res@temp}{\pgf@circ@res@up}}
+    \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@down}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@up}}
+    \pgfusepath{draw}
+}
+
+%% Transorbs
+%% Empty zigzag TVS diode (transorb)
+\pgfcircdeclarebipolescaled{diodes}
+{% fix the anchor border
+    \pgfcirc@border@extend@updown{1.3}{1.3}
+}
+{\ctikzvalof{bipoles/diode/height}}
+{emptytvsdiode}
+{\ctikzvalof{bipoles/diode/height}}
+{\ctikzvalof{bipoles/ddiode/width}}
+{
+    \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
+    \pgfscope
+        \pgfscope
+            \pgftransformxscale{0.5}
+            \pgftransformxshift{\pgf@circ@res@left}
+            \pgf@circ@basicdiodeshape
+        \endpgfscope
+        \pgfscope
+            \pgftransformxscale{-0.5}
+            \pgftransformxshift{\pgf@circ@res@left}
+            \pgf@circ@basicdiodeshape
+        \endpgfscope
+        \pgfpathmoveto{\pgfpoint{0.4\pgf@circ@res@left}{1.3\pgf@circ@res@up}}
+        \pgfpathlineto{\pgfpoint{0pt}{\pgf@circ@res@up}}
+        \pgfpathlineto{\pgfpoint{0pt}{\pgf@circ@res@down}}
+        \pgfpathlineto{\pgfpoint{0.4\pgf@circ@res@right}{1.3\pgf@circ@res@down}}
+        \pgfusepath{draw}
+    \endpgfscope
+}
+%% Black zigzag TVS diode (transorb)
+\pgfcircdeclarebipolescaled{diodes}
+{% fix the anchor border
+    \pgfcirc@border@extend@updown{1.3}{1.3}
+}
+{\ctikzvalof{bipoles/diode/height}}
+{fulltvsdiode}
+{\ctikzvalof{bipoles/diode/height}}
+{\ctikzvalof{bipoles/ddiode/width}}
+{
+    \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
+    \pgfscope
+        \pgftransformxscale{0.5}
+        \pgftransformxshift{\pgf@circ@res@left}
+        \pgf@circ@fulldiode@triangle@shift
+    \endpgfscope
+    \pgfscope
+        \pgftransformxscale{-0.5}
+        \pgftransformxshift{\pgf@circ@res@left}
+        \pgf@circ@fulldiode@triangle@shift
+    \endpgfscope
+    \pgfpathmoveto{\pgfpoint{0.4\pgf@circ@res@left}{1.3\pgf@circ@res@up}}
+    \pgfpathlineto{\pgfpoint{0pt}{\pgf@circ@res@up}}
+    \pgfpathlineto{\pgfpoint{0pt}{\pgf@circ@res@down}}
+    \pgfpathlineto{\pgfpoint{0.4\pgf@circ@res@right}{1.3\pgf@circ@res@down}}
+    \pgfusepath{draw}
+}
+
+%% Black Shockley diode
+\pgfcircdeclarebipolescaled{diodes}
+{}
+{\ctikzvalof{bipoles/diode/height}}
+{fullshdiode}
+{\ctikzvalof{bipoles/diode/height}}
+{\ctikzvalof{bipoles/diode/width}}
+{
+
+    \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
+    \pgfscope
+        \pgfpathmoveto{\pgfpoint{\pgf@circ@res@left}{\pgf@circ@res@down}}
+        \pgfpathlineto{\pgfpoint{\pgf@circ@res@left}{\pgf@circ@res@up}}
+        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{0pt}}
+        \pgfpathlineto{\pgfpoint{\pgf@circ@res@left}{0pt}}
+        \pgfpathclose
+        \pgf@circ@fill@strokecolor
+        \pgfusepath{draw,fill}
+    \endpgfscope
+    \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@down}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@up}}
+    \pgfusepath{draw}
+}
+%% Empty generic diode
+\pgfcircdeclarebipolescaled{diodes}
+{}
+{\ctikzvalof{bipoles/diode/height}}
+{emptyshdiode}
+{\ctikzvalof{bipoles/diode/height}}
+{\ctikzvalof{bipoles/diode/width}}
+{
+    \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
+    \pgfscope
+        \pgfpathmoveto{\pgfpoint{\pgf@circ@res@left}{\pgf@circ@res@down}}
+        \pgfpathlineto{\pgfpoint{\pgf@circ@res@left}{\pgf@circ@res@up}}
+        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{0pt}}
+        \pgfpathlineto{\pgfpoint{\pgf@circ@res@left}{0pt}}
+        \pgfpathclose
+        \pgf@circ@draworfill
+    \endpgfscope
     \pgfpathmoveto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@down}}
     \pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@up}}
     \pgfusepath{draw}
@@ -3755,6 +4153,7 @@
     \pgfpathlineto{\pgfpoint{\pgf@circ@res@step}{-1.414*(\pgf@circ@res@other-\pgf@circ@res@step)}}
     \pgfpathlineto{\pgfpoint{\pgf@circ@res@step}{1.414*(\pgf@circ@res@other-\pgf@circ@res@step)}}
 
+    \pgf@circ@fill@strokecolor
     \pgfusepath{draw, fill}
 
     \pgfsetlinewidth{\pgfstartlinewidth}
@@ -3799,6 +4198,7 @@
             \pgfpathlineto{\pgfpoint{\pgf@circ@res@step}{0pt}}
             \pgfpathclose
             \ifnum#2=0\relax
+                \pgf@circ@fill@strokecolor
                 \pgfusepath{draw,fill}
             \else
                 \pgf@circ@draworfill
@@ -3818,7 +4218,7 @@
         \fi
 
         % draw the gate thing;
-        #4
+        #4%
 
         % draw the leads in/out
         \pgfpathmoveto{\pgfpoint{\pgf@circ@res@other}{0pt}}
@@ -4010,7 +4410,8 @@
         \pgfpathlineto{\pgfpoint{\pgf@circ@res@step}{1.414*(\pgf@circ@res@other-\pgf@circ@res@step)}}
 
         \ifnum#2=0\relax
-                \pgfusepath{draw,fill}
+            \pgf@circ@fill@strokecolor
+            \pgfusepath{draw,fill}
         \else
             \pgf@circ@draworfill
         \fi
@@ -4056,10 +4457,16 @@
     \pgfcirc@style@to@style{#1 tunnel diode}{tD#2}
     \pgfcirc@activate@bipole{l}{#1lediode}{#1lediode}{#1 led}
     \pgfcirc@style@to@style{#1 led}{leD#2}
+    \pgfcirc@activate@bipole{l}{#1laserdiode}{#1laserdiode}{#1 laser diode}
+    \pgfcirc@style@to@style{#1 laser diode}{lasD#2}
     \pgfcirc@activate@bipole{l}{#1pdiode}{#1pdiode}{#1 photodiode}
     \pgfcirc@style@to@style{#1 photodiode}{pD#2}
     \pgfcirc@activate@bipole{l}{#1varcap}{#1varcap}{#1 varcap}
     \pgfcirc@style@to@style{#1 varcap}{VC#2}
+    \pgfcirc@activate@bipole{l}{#1tvsdiode}{#1tvsdiode}{#1 TVS diode}
+    \pgfcirc@style@to@style{#1 TVS diode}{tvsD#2}
+    \pgfcirc@activate@bipole{l}{#1shdiode}{#1shdiode}{#1 Shockley diode}
+    \pgfcirc@style@to@style{#1 Shockley diode}{shD#2}
     \pgfcirc@activate@bipole{l}{#1bidirectionaldiode}{#1bidirectionaldiode}{#1 bidirectionaldiode}
     \pgfcirc@style@to@style{#1 bidirectionaldiode}{biD#2}
     \pgfcirc@activate@bipole{l}{#1thyristor}{#1thyristor}{#1 thyristor}
@@ -4090,10 +4497,16 @@
     \pgfcirc@style@to@style{#1 tunnel diode}{tD#2}
     \pgfcirc@node@to@style{l}{emptylediode}{#1 led}{\circuitikzbasekey/bipole/is strokedsymbol=true}
     \pgfcirc@style@to@style{#1 led}{leD#2}
+    \pgfcirc@node@to@style{l}{emptylaserdiode}{#1 laser diode}{\circuitikzbasekey/bipole/is strokedsymbol=true}
+    \pgfcirc@style@to@style{#1 laser diode}{lasD#2}
     \pgfcirc@node@to@style{l}{emptypdiode}{#1 photodiode}{\circuitikzbasekey/bipole/is strokedsymbol=true}
     \pgfcirc@style@to@style{#1 photodiode}{pD#2}
     \pgfcirc@node@to@style{l}{emptyvarcap}{#1 varcap}{\circuitikzbasekey/bipole/is strokedsymbol=true}
     \pgfcirc@style@to@style{#1 varcap}{VC#2}
+    \pgfcirc@node@to@style{l}{emptytvsdiode}{#1 TVS diode}{\circuitikzbasekey/bipole/is strokedsymbol=true}
+    \pgfcirc@style@to@style{#1 TVS diode}{tvsD#2}
+    \pgfcirc@node@to@style{l}{emptyshdiode}{#1 Shockley diode}{\circuitikzbasekey/bipole/is strokedsymbol=true}
+    \pgfcirc@style@to@style{#1 Shockley diode}{shD#2}
     \pgfcirc@node@to@style{l}{emptybidirectionaldiode}{#1 bidirectionaldiode}{\circuitikzbasekey/bipole/is strokedsymbol=true}
     \pgfcirc@style@to@style{#1 bidirectionaldiode}{biD#2}
     \pgfcirc@node@to@style{l}{emptythyristor}{#1 thyristor}{\circuitikzbasekey/bipole/is strokedsymbol=true}
@@ -4126,8 +4539,14 @@
 \pgfcirc@style@to@style{led}{leD}
 \pgfcirc@style@to@style{\pgfcircdiodestylemacro photodiode}{photodiode}
 \pgfcirc@style@to@style{photodiode}{pD}
+\pgfcirc@style@to@style{\pgfcircdiodestylemacro laser diode}{laser diode}
+\pgfcirc@style@to@style{laser diode}{lasD}
 \pgfcirc@style@to@style{\pgfcircdiodestylemacro varcap}{varcap}
 \pgfcirc@style@to@style{varcap}{VC}
+\pgfcirc@style@to@style{\pgfcircdiodestylemacro TVS diode}{TVS diode}
+\pgfcirc@style@to@style{TVS diode}{tvsD}
+\pgfcirc@style@to@style{\pgfcircdiodestylemacro Shockley diode}{Shockley diode}
+\pgfcirc@style@to@style{Shockley diode}{shD}
 \pgfcirc@style@to@style{\pgfcircdiodestylemacro bidirectionaldiode}{bidirectionaldiode}
 \pgfcirc@style@to@style{bidirectionaldiode}{biD}
 \pgfcirc@style@to@style{\pgfcircdiodestylemacro thyristor}{thyristor}
@@ -4145,7 +4564,7 @@
 % %>>>
 
 %%%%%%%%%%%%%
-%% switches and buttons
+%% switches, buttons and jumpers
 %%%%%%%%%%%%%
 
 %% Definitions for switches%<<<1
@@ -4446,7 +4865,7 @@
     {\ctikzvalof{bipoles/cuteswitch/width}}{
         \pgfscope
         % This is the radius of the "ocirc" shape (see pgfcircshapes.tex)
-        % If cnnecting nodes are scaled, we have to modify this
+        % If connecting nodes are scaled, we have to modify this
         \pgf@circ@res@temp=\ctikzvalof{nodes width}\pgf@circ@Rlen
         \pgf@circ@res@temp=\ctikzvalof{bipoles/cuteswitch/thickness}\pgf@circ@res@temp
         \pgfsetlinewidth{2\pgf@circ@res@temp}
@@ -4455,7 +4874,8 @@
         \pgfsetroundcap\pgfusepath{draw}
         \endpgfscope
         \pgfscope % arrow
-        #3
+            \pgf@circ@fill@strokecolor
+            #3%
         \endpgfscope
         \pgftransformshift{\pgfpoint{\pgf@circ@res@left}{0pt}}
         \pgfnode{\cshape}{center}{}{\thisshape-in}{\pgfusepath{draw}}
@@ -4621,8 +5041,8 @@
         \pgf@x=-\pgf@x
         \pgf@y=-\pgf@y
     }
-    \backgroundpath{
-        \pgfsetcolor{\ctikzvalof{color}}
+    \pgf@circ@draw@component{
+        \pgf@circ@setcolor
 
         \northwest
         \pgf@circ@res@up = \pgf@y
@@ -4724,8 +5144,8 @@
         \anchor{north west}{ \northwest }
         \anchor{south east}{ \northwest \pgf@x=-\pgf@x \pgf@y=-\pgf@y }
 
-        \backgroundpath{
-            \pgfsetcolor{\ctikzvalof{color}}
+        \pgf@circ@draw@component{
+            \pgf@circ@setcolor
             \northwest
             \pgf@circ@res@up = \pgf@y
             \pgf@circ@res@down = -\pgf@y
@@ -4742,7 +5162,8 @@
             \pgfsetroundcap\pgfusepath{draw}
             \endpgfscope
             \pgfscope % arrow
-            #3
+                \pgf@circ@fill@strokecolor
+                #3%
             \endpgfscope
             % terminals
             \pgfscope
@@ -4843,6 +5264,309 @@
 \pgfcirc@style@to@style{cute closing switch}{ccgsw}
 \pgfcirc@activate@bipole{l}{cuteopeningswitch}{cuteopeningswitch}{cute opening switch}
 \pgfcirc@style@to@style{cute opening switch}{cogsw}% %>>>
+
+%% Proximity switch auxiliary shapes%<<<
+%% proximeter shape, for usage with switches
+\ctikzset{proximeter/width/.initial=0.3}
+\ctikzset{proximeter/hlines thickness/.initial=0.5}
+\ctikzset{proximeter/hlines position/.initial=0.3}
+\pgfdeclareshape{proximeter}
+{
+    \savedmacro{\ctikzclass}{\edef\ctikzclass{switches}}
+    \saveddimen{\scaledRlen}{\pgfmathsetlength{\pgf@x}{\ctikzvalof{\ctikzclass/scale}\pgf@circ@Rlen}}
+    \savedmacro{\hlinepos}{\edef\hlinepos{\ctikzvalof{proximeter/hlines position}}}
+    \savedanchor\northeast{%
+        \pgfmathsetlength{\pgf@y}{\ctikzvalof{proximeter/width}*\ctikzvalof{\ctikzclass/scale}*\pgf@circ@Rlen}
+        \pgf@x=\pgf@y
+    }
+    \anchor{center}{\pgfpointorigin}
+    % geo anchors based on north-east
+    \pgfcirc@northeast@symmetric@geoanchors
+    \anchor{text}{%
+        \northeast
+        \pgf@x=\dimexpr -.5\wd\pgfnodeparttextbox\relax
+        \advance\pgf@y by .6\ht\pgfnodeparttextbox\relax
+    }
+    \anchor{hlines ne}{%
+        \northeast
+        \pgf@y=\hlinepos\pgf@y
+        \advance\pgf@x by -\pgf@y
+    }
+    \anchor{hlines nw}{%
+        \northeast
+        \pgf@y=\hlinepos\pgf@y
+        \advance\pgf@x by -\pgf@y\pgf@x=-\pgf@x
+    }
+    \anchor{hlines se}{%
+        \northeast
+        \pgf@y=\hlinepos\pgf@y
+        \advance\pgf@x by -\pgf@y
+        \pgf@y=-\pgf@y
+    }
+    \anchor{hlines sw}{%
+        \northeast
+        \pgf@y=\hlinepos\pgf@y
+        \advance\pgf@x by -\pgf@y\pgf@x=-\pgf@x
+        \pgf@y=-\pgf@y
+    }
+    \anchorborder{
+        % \typeout{IN\space X:\the\pgf@x\space Y:\the\pgf@y}
+        \pgfmathsetmacro{\@@switchx}{ifthenelse(\pgf@x>0,1,-1)}
+        \pgfmathsetmacro{\@@switchy}{ifthenelse(\pgf@y>0,1,-1)}
+        \pgfmathsetlength{\pgf@xa}{abs(\pgf@x)}
+        \pgfmathsetlength{\pgf@ya}{abs(\pgf@y)}
+        \pgfextracty{\pgf@circ@res@up}{\northeast}
+        % \typeout{MID\space X:\the\pgf@xa\space Y:\the\pgf@ya\space L:\the\pgf@circ@res@up}
+        % \typeout{MID\space SX:\@@switchx\space SY:\@@switchy}
+        \pgfpointintersectionoflines
+            {\pgfpointorigin}{\pgfqpoint{\pgf@xa}{\pgf@ya}}
+            {\pgfqpoint{0pt}{\pgf@circ@res@up}}{\pgfqpoint{\pgf@circ@res@up}{0pt}}
+        % \typeout{CROSS \space X:\the\pgf@x\space Y:\the\pgf@y}
+        \pgf@x=\@@switchx\pgf@x
+        \pgf@y=\@@switchy\pgf@y
+    }
+    \pgf@circ@draw@component{
+        \northeast\pgf@circ@res@temp=\pgf@y
+        \pgf@circ@setcolor
+        \pgf@circ@setlinewidth{tripoles}{\pgflinewidth}
+        \pgfpathmoveto{\pgfpoint{-\pgf@circ@res@temp}{0pt}}
+        \pgfpathlineto{\pgfpoint{0pt}{\pgf@circ@res@temp}}
+        \pgfpathlineto{\pgfpoint{\pgf@circ@res@temp}{0pt}}
+        \pgfpathlineto{\pgfpoint{0pt}{-\pgf@circ@res@temp}}
+        \pgfpathclose
+        \pgf@circ@draworfill
+        \pgfsetlinewidth{\ctikzvalof{proximeter/hlines thickness}*\pgflinewidth}
+        \pgfmathsetlength{\pgf@circ@res@up}{\hlinepos*\pgf@circ@res@temp}
+        \pgfmathsetlength{\pgf@circ@res@right}{\pgf@circ@res@temp-\pgf@circ@res@up}
+        \pgfpathmoveto{\pgfpoint{-\pgf@circ@res@right}{\pgf@circ@res@up}}
+        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@up}}
+        \pgfpathmoveto{\pgfpoint{-\pgf@circ@res@right}{-\pgf@circ@res@up}}
+        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{-\pgf@circ@res@up}}
+        \pgfusepath{draw}
+    }
+
+}
+\pgfcirc@node@to@path{proximeter}{inline proximeter}{}
+% %>>>
+
+% jumpers: definitions and code %<<<
+% definitons for jumpers
+\ctikzset{bipoles/jumper/width/.initial=0.4}
+\ctikzset{bipoles/tjumper/width/.initial=0.6}% normally is less than 0.4*2
+\ctikzset{tjumper connections/.initial=00}% bare-bare
+\ctikzset{bipoles/jumper/height/.initial=0.4}
+\ctikzset{bipoles/jumper/depth/.initial=0.1}
+\ctikzset{bipoles/jumper/shape/.initial=ocirc}
+\ctikzset{bipoles/jumper/curvature/.initial=2}  % curvature of the arc
+\ctikzset{bipoles/jumper/open shift/.initial=3} % displacement to open the arc
+
+% jumpers
+% simple jumpers
+% #1 -> name
+% #2 -> height of the link arc (0 means no link, 1 closed, 2 open)
+\long\def\pgfcircdeclarejumper#1#2{
+    \pgfcircdeclarebipolescaled{switches}
+        {
+            % This is the radius of the "ocirc" shape (see pgfcircshapes.tex)
+            \saveddimen{\radius}{\pgfmathsetlength\pgf@x{\pgf@circ@Rlen*\ctikzvalof{nodes width}}}
+            % shapename
+            \savedmacro{\thisshape}{\edef\thisshape{\tikz@fig@name}}
+            % shape type
+            \savedmacro{\cshape}{\edef\cshape{\ctikzvalof{bipoles/jumper/shape}}}
+            % arc characteristics (can vary, must be saved...)
+            \savedmacro{\curvature}{\edef\curvature{\ctikzvalof{bipoles/jumper/curvature}}}
+            \savedmacro{\openshift}{\edef\openshift{\ctikzvalof{bipoles/jumper/open shift}}}
+            %
+            \anchor{cout}{\northeast \pgf@y=0cm}
+            \anchor{cin}{\southwest\pgf@y=0cm}
+            \anchor{out}{\northeast \pgf@y=0cm\advance\pgf@x by \radius}
+            \anchor{in}{\southwest\pgf@y=0cm\advance\pgf@x by -\radius}
+            \anchor{text}{\northeast
+                \pgf@x=\dimexpr -.5\wd\pgfnodeparttextbox\relax
+                \advance\pgf@y by .6\ht\pgfnodeparttextbox\relax
+            }
+            \anchor{top arc}{\northeast
+                \pgf@circ@res@other=\pgf@x
+                \pgf@circ@res@temp=\radius
+                \ifnum #2=1 \edef\@@b{1}\else\edef\@@b{\openshift}\fi
+                \pgfpointcurveattime{0.5}
+                    {\pgfpoint{-0.9\pgf@circ@res@other}{{(\@@b)*\radius}}}
+                    {\pgfpoint{-0.5\pgf@circ@res@other}{{(\@@b+\curvature)*\radius}}}
+                    {\pgfpoint{0.5\pgf@circ@res@other}{{(\@@b+\curvature)*\radius}}}
+                    {\pgfpoint{0.9\pgf@circ@res@other}{{(\@@b)*\radius}}}
+            }
+        }
+        {\ctikzvalof{bipoles/jumper/depth}}
+        {#1}
+        {\ctikzvalof{bipoles/jumper/height}}
+        {\ctikzvalof{bipoles/jumper/width}}{
+            %
+            \ifnum #2=0 \else
+                \ifnum #2=1 \edef\@@b{1}\else\edef\@@b{\openshift}\fi
+                \pgfpathmoveto{\pgfpoint{0.9*\pgf@circ@res@left}{(\@@b)*\radius}}
+                \pgfpathcurveto
+                    {\pgfpoint{.5\pgf@circ@res@left}{(\@@b+\curvature)*\radius}}
+                    {\pgfpoint{.5\pgf@circ@res@right}{(\@@b+\curvature)*\radius}}
+                    {\pgfpoint{0.9*\pgf@circ@res@right}{(\@@b)*\radius}}
+                \pgfusepath{draw}
+            \fi
+            \pgftransformshift{\pgfpoint{\pgf@circ@res@left}{0pt}}
+            \pgfnode{\cshape}{center}{}{\thisshape-in}{\pgfusepath{draw}}
+            \pgftransformshift{\pgfpoint{2\pgf@circ@res@right}{0pt}}
+            \pgfnode{\cshape}{center}{}{\thisshape-out}{\pgfusepath{draw}}
+        }
+}
+\pgfcircdeclarejumper{bjumper}{0}
+\pgfcircdeclarejumper{cjumper}{1}
+\pgfcircdeclarejumper{ojumper}{2}
+\pgfcirc@activate@bipole{l}{bjumper}{bjumper}{bare jumper}
+\pgfcirc@activate@bipole{l}{ojumper}{ojumper}{open jumper}
+\pgfcirc@activate@bipole{l}{cjumper}{cjumper}{closed jumper}
+% jumpers
+% three pins (two-ways) jumpers
+% #1 -> name
+% #2 -> height of the first link arc (0 means no link, 1 closed, 2 open)
+% #3 -> height of the second link arc (0 means no link, 1 closed, 2 open)
+\def\pgf@circ@tjumper@splitstatus#1#2\relax{%split the two values
+    \edef\@@a{#1}\edef\@@b{#2}%
+}
+\pgfcircdeclarebipolescaled{switches}
+    {
+        % This is the radius of the "ocirc" shape (see pgfcircshapes.tex)
+        \saveddimen{\radius}{\pgfmathsetlength\pgf@x{\pgf@circ@Rlen*\ctikzvalof{nodes width}}}
+        % shapename
+        \savedmacro{\thisshape}{\def\thisshape{\tikz@fig@name}}
+        % shape type
+        \savedmacro{\cshape}{\def\cshape{\ctikzvalof{bipoles/jumper/shape}}}
+        % arc characteristics (can vary, must be saved...)
+        \savedmacro{\curvature}{\edef\curvature{\ctikzvalof{bipoles/jumper/curvature}}}
+        \savedmacro{\openshift}{\edef\openshift{\ctikzvalof{bipoles/jumper/open shift}}}
+        \savedmacro{\jumpertype}{\edef\jumpertype{\ctikzvalof{tjumper connections}}}
+        %
+        \anchor{cout}{\northeast \pgf@y=0cm}
+        \anchor{cin}{\southwest\pgf@y=0cm}
+        \anchor{ctap}{\pgf@x=0cm\pgf@y=0cm}
+        \anchor{out}{\northeast \pgf@y=0cm\advance\pgf@x by \radius}
+        \anchor{in}{\southwest\pgf@y=0cm\advance\pgf@x by -\radius}
+        \anchor{tap}{\pgf@x=0cm\pgf@y=0cm\advance\pgf@y by -\radius}
+        \anchor{top arc left}{\northeast
+            \pgf@circ@res@other=-\pgf@x
+            \pgf@circ@res@temp=\pgf@x
+            %
+            % read the status of the jumper
+            %
+            \expandafter\pgf@circ@tjumper@splitstatus\jumpertype\relax% a bit of magic...
+            \edef\@@S{S}%the "S" letter
+            \ifx\@@a\@@S %span, it's in the center
+                \ifnum \@@b=0\pgfpointorigin\else % no arc, anchor on the center-base
+                    \ifnum \@@b=2 \edef\@@b{\openshift} \else \edef\@bb{1}\relax \fi
+                    \pgfpointcurveattime{0.5}
+                        {\pgfpoint{0.9*\pgf@circ@res@other}{(\@@b)*\radius}}
+                        {\pgfpoint{.5*\pgf@circ@res@other}{(\@@b+\curvature)*\radius}}
+                        {\pgfpoint{.5*\pgf@circ@res@temp}{(\@@b+\curvature)*\radius}}
+                        {\pgfpoint{0.9*\pgf@circ@res@temp}{(\@@b)*\radius}}
+                \fi
+            \else
+                % adjust the lengths of the gap, if needed
+                \ifnum \@@a=2 \edef\@@a{\openshift} \else \edef\@aa{1} \relax \fi
+                \ifnum \@@b=2 \edef\@@b{\openshift} \else \edef\@bb{1} \relax \fi
+                % left join
+                \ifnum \@@a=0 \pgfpoint{0.475*\pgf@circ@res@other}{0pt}\else
+                    \pgfpointcurveattime{0.5}
+                        {\pgfpoint{0.95*\pgf@circ@res@other}{\@@a*\radius}}
+                        {\pgfpoint{.75*\pgf@circ@res@other}{(\@@a+\curvature)*\radius}}
+                        {\pgfpoint{.25*\pgf@circ@res@other}{(\@@a+\curvature)*\radius}}
+                        {\pgfpoint{0.05*\pgf@circ@res@other}{\@@a*\radius}}
+                \fi
+            \fi
+        }
+        \anchor{top arc right}{\northeast
+            \pgf@circ@res@other=-\pgf@x
+            \pgf@circ@res@temp=\pgf@x
+            %
+            % read the status of the jumper
+            %
+            \expandafter\pgf@circ@tjumper@splitstatus\jumpertype\relax% a bit of magic...
+            \edef\@@S{S}%the "S" letter
+            \ifx\@@a\@@S %span, it's in the center
+                \ifnum \@@b=0\pgfpointorigin\else % no arc, anchor on the center-base
+                    \ifnum \@@b=2 \edef\@@b{\openshift} \else \edef\@bb{1}\relax \fi
+                    \pgfpointcurveattime{0.5}
+                        {\pgfpoint{0.9*\pgf@circ@res@other}{(\@@b)*\radius}}
+                        {\pgfpoint{.5*\pgf@circ@res@other}{(\@@b+\curvature)*\radius}}
+                        {\pgfpoint{.5*\pgf@circ@res@temp}{(\@@b+\curvature)*\radius}}
+                        {\pgfpoint{0.9*\pgf@circ@res@temp}{(\@@b)*\radius}}
+                \fi
+            \else
+                % adjust the lengths of the gap, if needed
+                \ifnum \@@a=2 \edef\@@a{\openshift} \else \edef\@aa{1} \relax \fi
+                \ifnum \@@b=2 \edef\@@b{\openshift} \else \edef\@bb{1} \relax \fi
+                % right join
+                \ifnum \@@b=0 \pgfpoint{0.475*\pgf@circ@res@temp}{0pt}\else
+                    \pgfpointcurveattime{0.5}
+                        {\pgfpoint{0.95*\pgf@circ@res@temp}{\@@b*\radius}}
+                        {\pgfpoint{.75\pgf@circ@res@temp}{(\@@b+\curvature)*\radius}}
+                        {\pgfpoint{.25\pgf@circ@res@temp}{(\@@b+\curvature)*\radius}}
+                        {\pgfpoint{0.05*\pgf@circ@res@temp}{\@@b*\radius}}
+                \fi
+            \fi
+        }
+    }
+    {\ctikzvalof{bipoles/jumper/depth}}
+    {tjumper}
+    {\ctikzvalof{bipoles/jumper/height}}
+    {\ctikzvalof{bipoles/tjumper/width}}{
+        %
+        % read the status of the jumper
+        %
+        \expandafter\pgf@circ@tjumper@splitstatus\jumpertype\relax% a bit of magic...
+        \edef\@@S{S}%the "S" letter
+        \ifx\@@a\@@S %span
+            \ifnum \@@b=0 \else
+                \ifnum \@@b=2 \edef\@@b{\openshift} \else \edef\@bb{1}\relax \fi
+                \pgfpathmoveto{\pgfpoint{0.9*\pgf@circ@res@left}{(\@@b)*\radius}}
+                \pgfpathcurveto
+                    {\pgfpoint{.5\pgf@circ@res@left}{(\@@b+\curvature)*\radius}}
+                    {\pgfpoint{.5\pgf@circ@res@right}{(\@@b+\curvature)*\radius}}
+                    {\pgfpoint{0.9*\pgf@circ@res@right}{(\@@b)*\radius}}
+                \pgfusepath{draw}
+            \fi
+        \else
+        % let's do the connection, if needed
+            % adjust the lengths of the gap, if needed
+            \ifnum \@@a=2 \edef\@@a{\openshift} \else \edef\@aa{1} \relax \fi
+            \ifnum \@@b=2 \edef\@@b{\openshift} \else \edef\@bb{1} \relax \fi
+            % left arc
+            \ifnum \@@a=0 \else
+                \pgfpathmoveto{\pgfpoint{0.95*\pgf@circ@res@left}{\@@a*\radius}}
+                \pgfpathcurveto
+                    {\pgfpoint{.75\pgf@circ@res@left}{(\@@a+\curvature)*\radius}}
+                    {\pgfpoint{.25\pgf@circ@res@left}{(\@@a+\curvature)*\radius}}
+                    {\pgfpoint{0.05*\pgf@circ@res@left}{\@@a*\radius}}
+                \pgfusepath{draw}
+            \fi
+            % right arc
+            \ifnum \@@b=0 \else
+                \pgfpathmoveto{\pgfpoint{0.95*\pgf@circ@res@right}{\@@b*\radius}}
+                \pgfpathcurveto
+                    {\pgfpoint{.75\pgf@circ@res@right}{(\@@b+\curvature)*\radius}}
+                    {\pgfpoint{.25\pgf@circ@res@right}{(\@@b+\curvature)*\radius}}
+                    {\pgfpoint{0.05*\pgf@circ@res@right}{\@@b*\radius}}
+                \pgfusepath{draw}
+            \fi
+        \fi
+        % draw the poles (always filled!)
+        \pgftransformshift{\pgfpoint{\pgf@circ@res@left}{0pt}}
+        \pgfnode{\cshape}{center}{}{\thisshape-in}{\pgfusepath{draw}}
+        \pgftransformshift{\pgfpoint{\pgf@circ@res@right}{0pt}}
+        \pgfnode{\cshape}{center}{}{\thisshape-tap}{\pgfusepath{draw}}
+        \pgftransformshift{\pgfpoint{\pgf@circ@res@right}{0pt}}
+        \pgfnode{\cshape}{center}{}{\thisshape-out}{\pgfusepath{draw}}
+    }
+
+\pgfcirc@activate@bipole{l}{tjumper}{tjumper}{three-pins jumper}
+
+% %>>>
 
 %%%%%%%%%%%%%%%%%
 %% Instruments
@@ -5077,9 +5801,11 @@
 {\ctikzvalof{bipoles/esource/width}}
 {
     \pgfpointorigin
-    \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
-    \pgfpathellipse{\pgfpointorigin}{\pgfpoint{0}{\pgf@circ@res@up}}{\pgfpoint{\pgf@circ@res@left}{0}}
-    \pgf@circ@draworfill
+    \pgfscope
+        \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
+        \pgfpathellipse{\pgfpointorigin}{\pgfpoint{0}{\pgf@circ@res@up}}{\pgfpoint{\pgf@circ@res@left}{0}}
+        \pgf@circ@draworfill
+    \endpgfscope
     % draw the text label
     % get the rotation
     \ifpgf@circuit@straightinstruments
@@ -5090,7 +5816,7 @@
     \fi
     % and unrotate the scope
     \pgfscope
-        \pgfsetcolor{\ctikzvalof{color}}
+    \pgf@circ@text@strokecolor
         \pgftransformrotate{\rot}
         \pgftext[center,x=0,y=0]{\ctikzvalof{bipoles/twoport/text}}
     \endpgfscope
@@ -5105,9 +5831,11 @@
 {\ctikzvalof{bipoles/esource/width}}
 {
     \pgfpointorigin
-    \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
-    \pgfpathellipse{\pgfpointorigin}{\pgfpoint{0}{\pgf@circ@res@up}}{\pgfpoint{\pgf@circ@res@left}{0}}
-    \pgf@circ@draworfill
+    \pgfscope
+        \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
+        \pgfpathellipse{\pgfpointorigin}{\pgfpoint{0}{\pgf@circ@res@up}}{\pgfpoint{\pgf@circ@res@left}{0}}
+        \pgf@circ@draworfill
+    \endpgfscope
     % draw the text label
     % get the rotation
     \ifpgf@circuit@straightinstruments
@@ -5119,7 +5847,7 @@
     % and unrotate the scope
     \pgfscope
         \pgftransformrotate{\rot}
-        \pgfsetcolor{\ctikzvalof{color}}
+        \pgf@circ@setcolor
         \pgfsetlinewidth{\pgfstartlinewidth}
         % arrow: create  a center hole to have better visual
         \pgfscope
@@ -5138,6 +5866,7 @@
             \pgfpathlineto{\pgfpoint{.8\pgf@circ@res@right}{1.2\pgf@circ@res@up}}
             \pgfusepath{draw}
         \endpgfscope
+        \pgf@circ@text@strokecolor
         \pgftext[center]{\ctikzvalof{bipoles/twoport/text}}
     \endpgfscope
 }
@@ -5194,6 +5923,7 @@
             \pgfpathlineto{\pgfpointpolar{80}{2.4\pgf@circ@res@up}}
             \pgfusepath{draw}
         \endpgfscope
+        \pgf@circ@text@strokecolor
         \pgftext[center, y=0.5\pgf@circ@res@down]{\ctikzvalof{bipoles/twoport/text}}
     \endpgfscope
 }
@@ -5228,7 +5958,7 @@
             \pgfscope
                 \pgfsetcornersarced{\pgfpoint{\pgf@circ@res@step}{\pgf@circ@res@step}}
                 \pgfpathrectanglecorners{\pgfpoint{\pgf@circ@res@left}{\pgf@circ@res@down}}{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@up}}
-            \pgf@circ@draworfill
+                \pgf@circ@draworfill
             \endpgfscope
             \def\@starta{103}\def\@stopa{77}
             \pgfsetlinewidth{\pgfstartlinewidth}
@@ -5244,7 +5974,7 @@
                 \pgfusepath{draw}
                 \pgf@circ@draworfill
             \endpgfscope
-            #2
+            #2%
         \endpgfscope
     }
 }
@@ -5327,7 +6057,7 @@
     \pgf@circ@res@left=-\pgf@circ@res@right
     \pgfscope
         \pgfstartlinewidth=\pgflinewidth
-        \pgfsetcolor{\ctikzvalof{color}}
+        \pgf@circ@setcolor
         % external ellipse
         \pgfscope
             \pgf@circ@setlinewidth{bipoles}{\pgflinewidth}
@@ -5402,7 +6132,7 @@
     \def\@minus{\pgfpointpolar{75}{\pgf@circ@res@step and \pgf@circ@res@other}}
     \pgfscope
         \pgfstartlinewidth=\pgflinewidth
-        \pgfsetcolor{\ctikzvalof{color}}
+        \pgf@circ@setcolor
         % external ellipse
         \pgfscope
             \pgf@circ@setlinewidth{bipoles}{\pgflinewidth}
@@ -5749,8 +6479,8 @@
         \pgf@y=-\pgf@y
         \pgf@x=0.5\pgf@x
     }
-    \behindbackgroundpath{
-        \pgfsetcolor{\ctikzvalof{color}}
+    \pgf@circ@draw@component{
+        \pgf@circ@setcolor
         \pgf@circ@scaled@Rlen=\scaledRlen
         \pgf@circ@res@step=\ctikzvalof{tripoles/elmech/width}\pgf@circ@scaled@Rlen
         \pgf@circ@res@up=\ctikzvalof{tripoles/elmech/height}\pgf@circ@scaled@Rlen
@@ -5763,7 +6493,7 @@
                 \pgfseteorule
                 \pgfusepath{clip}
                 \pgfpathrectangle{\pgfpoint{-.25\pgf@circ@res@step}{-.5\pgf@circ@res@up}}{\pgfpoint{.5\pgf@circ@res@step}{\pgf@circ@res@up}}
-                \pgfsetfillcolor{\ctikzvalof{color}}
+                \pgf@circ@fill@strokecolor
                 \pgfusepath{fill, draw}
             \endpgfscope
             \pgfpathcircle{\pgfpoint{0}{0}} {0.5\pgf@circ@res@step}
@@ -5824,8 +6554,6 @@
 \ctikzset{bipoles/lamp/width/.initial=.60}
 \ctikzset{bipoles/bulb/height/.initial=.8}
 \ctikzset{bipoles/bulb/width/.initial=.8}
-\ctikzset{bipoles/tline/height/.initial=.3}
-\ctikzset{bipoles/tline/width/.initial=.6}
 \ctikzset{bipoles/squid/height/.initial=.60}
 \ctikzset{bipoles/squid/width/.initial=.60}
 \ctikzset{bipoles/barrier/height/.initial=.60}
@@ -6017,6 +6745,7 @@
     \pgfusepath{draw}
 
     \pgfpathrectanglecorners{\pgfpoint{.7\pgf@circ@res@right}{\pgf@circ@res@up}}{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@down}}
+    \pgf@circ@fill@strokecolor
     \pgfusepath{stroke,fill}
 }
 
@@ -6147,6 +6876,67 @@
 \pgfcirc@path@to@style{l}{gfsurgearrester}{gf surge arrester}{}
 \pgfcirc@activate@bipole@simple{l}{mic}
 \pgfcirc@activate@bipole@simple{l}{loudspeaker}
+% %>>>
+
+%% Buzzer and reverse buzzer %<<<
+\ctikzset{bipoles/buzzer/height/.initial=0.6}
+\ctikzset{bipoles/buzzer/width/.initial=.4}%
+\ctikzset{bipoles/buzzer/span/.initial=.6}%
+
+\pgfcircdeclarebipolescaled{misc}
+{}
+{0}
+{buzzer}
+{\ctikzvalof{bipoles/buzzer/height}}
+{\ctikzvalof{bipoles/buzzer/width}}{
+    % this is the height of the semicircle
+    \pgf@circ@res@other=\dimexpr\pgf@circ@res@up-\pgf@circ@res@right\relax
+    \pgfscope
+        \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
+        \pgfpathmoveto{\pgfpoint{\pgf@circ@res@left}{\pgf@circ@res@other}}
+        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@other}}
+        \pgfpatharc{0}{180}{\pgf@circ@res@right}
+        \pgfpathclose
+        \pgf@circ@draworfill
+    \endpgfscope
+    \pgfpathmoveto{\pgfpoint{\ctikzvalof{bipoles/buzzer/span}*\pgf@circ@res@left}{\pgf@circ@res@other}}
+    \pgfpathlineto{\pgfpoint{\ctikzvalof{bipoles/buzzer/span}*\pgf@circ@res@left}{0pt}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@left}{0pt}}
+    \pgfpathmoveto{\pgfpoint{\ctikzvalof{bipoles/buzzer/span}*\pgf@circ@res@right}{\pgf@circ@res@other}}
+    \pgfpathlineto{\pgfpoint{\ctikzvalof{bipoles/buzzer/span}*\pgf@circ@res@right}{0pt}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{0pt}}
+    \pgfusepath{draw}
+}
+\pgfcirc@activate@bipole@simple{l}{buzzer}
+%
+\pgfcircdeclarebipolescaled{misc}
+{}
+{0}
+{rbuzzer}
+{\ctikzvalof{bipoles/buzzer/height}}
+{\ctikzvalof{bipoles/buzzer/width}}{
+    % this is the height of the semicircle
+    \pgf@circ@res@other=\dimexpr\pgf@circ@res@up-\pgf@circ@res@right\relax
+    % this is the height where the pins touch the semicircle
+    \pgfmathsetlength\pgf@circ@res@temp{\pgf@circ@res@up-
+        \pgf@circ@res@right*sqrt(1-\ctikzvalof{bipoles/buzzer/span}*\ctikzvalof{bipoles/buzzer/span})}
+    \pgfscope
+        \pgf@circ@setlinewidth{bipoles}{\pgfstartlinewidth}
+        \pgfpathmoveto{\pgfpoint{\pgf@circ@res@left}{\pgf@circ@res@up}}
+        \pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{\pgf@circ@res@up}}
+        \pgfpatharc{0}{-180}{\pgf@circ@res@right}
+        \pgfpathclose
+        \pgf@circ@draworfill
+    \endpgfscope
+    \pgfpathmoveto{\pgfpoint{\ctikzvalof{bipoles/buzzer/span}*\pgf@circ@res@left}{\pgf@circ@res@temp}}
+    \pgfpathlineto{\pgfpoint{\ctikzvalof{bipoles/buzzer/span}*\pgf@circ@res@left}{0pt}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@left}{0pt}}
+    \pgfpathmoveto{\pgfpoint{\ctikzvalof{bipoles/buzzer/span}*\pgf@circ@res@right}{\pgf@circ@res@temp}}
+    \pgfpathlineto{\pgfpoint{\ctikzvalof{bipoles/buzzer/span}*\pgf@circ@res@right}{0pt}}
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@right}{0pt}}
+    \pgfusepath{draw}
+}
+\pgfcirc@activate@bipole@simple{l}{rbuzzer}
 % %>>>
 
 % end of pgfcircbipoles.tex

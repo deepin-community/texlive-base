@@ -2,7 +2,7 @@
 %
 %% File: l3deprecation.dtx
 %
-% Copyright (C) 2017-2021 The LaTeX Project
+% Copyright (C) 2017-2023 The LaTeX Project
 %
 % It may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -43,7 +43,7 @@
 %    }^^A
 % }
 %
-% \date{Released 2021-08-27}
+% \date{Released 2023-01-16}
 %
 % \maketitle
 %
@@ -53,31 +53,6 @@
 %
 % A few commands have had to be deprecated over the years.  This module
 % defines deprecated and deleted commands to produce an error.
-%
-% The life of a deprecated command has several stages.
-% \begin{itemize}
-% \item When we decide it should be eventually removed the command's
-%   definition is put in this file \pkg{l3deprecation.dtx} and the name
-%   of the command is added to the list in \pkg{l3obsolete.txt}.  The
-%   command remains defined by default for $12$ or more months,
-%   typically until the end of a year.  During that time, if \pkg{expl3}
-%   is loaded with any of the options \texttt{check-declarations} or
-%   \texttt{log-functions} or \texttt{enable-debug} typically used in
-%   package test files, the command will produce a warning.
-% \item Then by default the command produces an error for all users,
-%   which can be suppressed for $6$ months through the option
-%   \texttt{undo-recent-deprecations}.
-% \item After this $6$-month grace period, the command irreversibly
-%   produces an error.  Its original definition can then be removed from
-%   the sources, leaving only the error definition.  In
-%   \pkg{l3obsolete.txt} its name is moved from the \enquote{Deprecated
-%   functions and variables} list to the \enquote{Removed functions and
-%   variables} list.
-% \end{itemize}
-% Package authors are encouraged to have a test file with
-% \cs{debug_on:n} |{deprecation}|, which makes commands at all stages of
-% this list into errors.  This helps detect uses of deprecated commands
-% before user complain.
 %
 % \end{documentation}
 %
@@ -90,96 +65,8 @@
 %    \end{macrocode}
 %
 %    \begin{macrocode}
-%<*kernel>
-%    \end{macrocode}
-%
-%    \begin{macrocode}
 %<@@=deprecation>
 %    \end{macrocode}
-%
-% \subsection{Helpers and variables}
-%
-% \begin{variable}{\l_@@_grace_period_bool}
-%   This is set to \texttt{true} when the deprecated command that is
-%   being defined is in its grace period, meaning between the time it
-%   becomes an error by default and the time $6$~months later where even
-%   \texttt{undo-recent-deprecations} stops restoring it.
-%    \begin{macrocode}
-\bool_new:N \l_@@_grace_period_bool
-%    \end{macrocode}
-% \end{variable}
-%
-% \begin{variable}{\s_@@_mark,\s_@@_stop}
-%   Internal scan marks.
-%    \begin{macrocode}
-\scan_new:N \s_@@_mark
-\scan_new:N \s_@@_stop
-%    \end{macrocode}
-% \end{variable}
-%
-% \begin{macro}[EXP]{\@@_date_compare:nNnTF, \@@_date_compare_aux:w}
-%   Expects |#1| and |#3| to be dates in the format YYYY-MM-DD (but
-%   accepts YYYY or YYYY-MM too, filling in zeros for the missing data).
-%   Compares them using |#2| (one of |<|, |=|, |>|).
-%    \begin{macrocode}
-\cs_new:Npn \@@_date_compare:nNnTF #1#2#3
-  { \@@_date_compare_aux:w #1 -0-0- \s_@@_mark #2 #3 -0-0- \s_@@_stop }
-\cs_new:Npn \@@_date_compare_aux:w
-  #1 - #2 - #3 - #4 \s_@@_mark #5 #6 - #7 - #8 - #9 \s_@@_stop
-  {
-    \int_compare:nNnTF {#1} = {#6}
-      {
-        \int_compare:nNnTF {#2} = {#7}
-          { \int_compare:nNnTF {#3} #5 {#8} }
-          { \int_compare:nNnTF {#2} #5 {#7} }
-      }
-      { \int_compare:nNnTF {#1} #5 {#6} }
-  }
-%    \end{macrocode}
-% \end{macro}
-%
-% \begin{variable}{\g__kernel_deprecation_undo_recent_bool}
-%    \begin{macrocode}
-\bool_new:N \g__kernel_deprecation_undo_recent_bool
-%    \end{macrocode}
-% \end{variable}
-%
-% \begin{macro}{\@@_not_yet_deprecated:nTF, \@@_minus_six_months:w}
-%   Receives a deprecation \meta{date} and runs the \texttt{true}
-%   (\texttt{false}) branch if the \pkg{expl3} date is earlier (later)
-%   than \meta{date}.  If \texttt{undo-recent-deprecations} is used we
-%   subtract $6$ months to the \pkg{expl3} date (equivalently add $6$
-%   months to the \meta{date}).  In addition, if the \pkg{expl3} date is
-%   between \meta{date} and \meta{date} plus $6$ months,
-%   \cs{l_@@_grace_period_bool} is set to \texttt{true}, otherwise
-%   \texttt{false}.
-%    \begin{macrocode}
-\cs_new_protected:Npn \@@_not_yet_deprecated:nTF #1
-  {
-    \bool_set_false:N \l_@@_grace_period_bool
-    \exp_args:No \@@_date_compare:nNnTF { \ExplLoaderFileDate } < {#1}
-      { \use_i:nn }
-      {
-        \exp_args:Nf \@@_date_compare:nNnTF
-          {
-            \exp_after:wN \@@_minus_six_months:w
-            \ExplLoaderFileDate -0-0- \s_@@_stop
-          } < {#1}
-          {
-            \bool_set_true:N \l_@@_grace_period_bool
-            \bool_if:NTF \g__kernel_deprecation_undo_recent_bool
-          }
-          { \use_ii:nn }
-      }
-  }
-\cs_new:Npn \@@_minus_six_months:w #1 - #2 - #3 - #4 \s_@@_stop
-  {
-    \int_compare:nNnTF {#2} > 6
-      { #1 - \int_eval:n { #2 - 6 } - #3 }
-      { \int_eval:n { #1 - 1 } - \int_eval:n { #2 + 6 } - #3 }
-  }
-%    \end{macrocode}
-% \end{macro}
 %
 % \subsection{Patching definitions to deprecate}
 %
@@ -231,20 +118,6 @@
 %   In both scenarios we the \meta{function} may be \tn{outer} so we
 %   undefine it with \cs{tex_let:D} before redefining it, with
 %   \cs{__kernel_deprecation_error:Nnn} or with some code added shortly.
-%
-%   Then check the date (taking into account
-%   \texttt{undo-recent-deprecations}) to see if the command should be
-%   deprecated right away (\texttt{false} branch of
-%   \cs{@@_not_yet_deprecated:nTF}), in which case
-%   \cs{@@_just_error:nnNN} makes \meta{function} into an error (not
-%   \tn{outer}), ignoring its \meta{parameters} and \meta{code}
-%   completely.
-%
-%   Otherwise distinguish cases where we should give a warning from
-%   those where we shouldn't: warnings can only happen for protected
-%   commands, and we only want them if either
-%   \texttt{undo-recent-deprecations} or \texttt{enable-debug} is in
-%   force, not for standard users.
 %    \begin{macrocode}
 \cs_new_protected:Npn \__kernel_patch_deprecation:nnNNpn #1#2#3#4#5#
   { \@@_patch_aux:nnNNnn {#1} {#2} #3 #4 {#5} }
@@ -256,18 +129,9 @@
         \__kernel_deprecation_error:Nnn #4 {#2} {#1}
       }
       { \tex_let:D #4 \scan_stop: }
-    \@@_not_yet_deprecated:nTF {#1}
-      {
-        \bool_if:nTF
-          {
-            \cs_if_eq_p:NN #3 \cs_gset_protected:Npn &&
-            \__kernel_if_debug:TF
-              { \c_true_bool } { \g__kernel_deprecation_undo_recent_bool }
-          }
-          { \@@_warn_once:nnNnn {#1} {#2} #4 {#5} {#6} }
-          { \@@_patch_aux:Nn #3 { #4 #5 {#6} } }
-      }
-      { \@@_just_error:nnNN {#1} {#2} #3 #4 }
+     \cs_if_eq:NNTF #3 \cs_gset_protected:Npn
+        { \@@_warn_once:nnNnn {#1} {#2} #4 {#5} {#6} }
+        { \@@_patch_aux:Nn #3 { #4 #5 {#6} } }
   }
 %    \end{macrocode}
 %   In case we want a warning, the \meta{function} is defined to produce
@@ -315,32 +179,6 @@
       { \__kernel_deprecation_code:nn { } { \cs_set:Npn #2 } }
   }
 %    \end{macrocode}
-%   Finally, if we want an error we reuse the same \cs{@@_patch_aux:Nn}
-%   as the previous case.  Indeed, we want \cs{debug_off:n}
-%   |{deprecation}| to make the \meta{function} into an error, just like
-%   it is by default.  The error is expandable or not, and the last
-%   argument of the error message is empty or is \texttt{grace} to
-%   denote the case where we are in the $6$~month grace period, in which
-%   case the error message is more detailed.
-%    \begin{macrocode}
-\cs_new_protected:Npn \@@_just_error:nnNN #1#2#3#4
-  {
-    \exp_args:NNx \@@_patch_aux:Nn #3
-      {
-        \exp_not:N #4
-        {
-          \cs_if_eq:NNTF #3 \cs_gset_protected:Npn
-            { \exp_not:N \msg_error:nnnnnn }
-            { \exp_not:N \msg_expandable_error:nnnnnn }
-            { deprecation } { deprecated-command }
-            {#1}
-            { \token_to_str:N #4 }
-            { \tl_to_str:n {#2} }
-            { \bool_if:NT \l_@@_grace_period_bool { grace } }
-        }
-      }
-  }
-%    \end{macrocode}
 % \end{macro}
 %
 % \begin{macro}{\__kernel_deprecation_error:Nnn}
@@ -368,13 +206,6 @@
   {
     \tl_if_blank:nF {#3} { Use~ \tl_trim_spaces:n {#3} ~not~ }
     #2~deprecated~on~#1.
-    \str_if_eq:nnT {#4} { grace }
-      {
-        \c_space_tl
-        For~6~months~after~that~date~one~can~restore~a~deprecated~
-        command~by~loading~the~expl3~package~with~the~option~
-        'undo-recent-deprecations'.
-      }
   }
 %    \end{macrocode}
 %
@@ -382,7 +213,7 @@
 %
 % \begin{macro}{\@@_old_protected:Nnn, \@@_old:Nnn}
 %   Short-hands for old commands whose definition does not matter
-%   anymore, i.e., commands past the grace period.
+%   any more as they were removed.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_old_protected:Nnn #1#2#3
   {
@@ -394,9 +225,13 @@
     \__kernel_patch_deprecation:nnNNpn {#3} {#2}
     \cs_gset:Npn #1 { }
   }
-\@@_old:Nnn \box_resize:Nnn
+\@@_old_protected:Nnn \box_gset_eq_clear:NN
+  { \box_gset_eq_drop:NN } { 2021-07-01 }
+\@@_old_protected:Nnn \box_set_eq_clear:NN
+  { \box_set_eq_drop:NN } { 2021-07-01 }
+\@@_old_protected:Nnn \box_resize:Nnn
   { \box_resize_to_wd_and_ht_plus_dp:Nnn } { 2019-01-01 }
-\@@_old:Nnn \box_use_clear:N
+\@@_old_protected:Nnn \box_use_clear:N
   { \box_use_drop:N } { 2019-01-01 }
 \@@_old:Nnn \c_job_name_tl
   { \c_sys_jobname_str } { 2017-01-01 }
@@ -448,22 +283,26 @@
   { 1000 } { 2020-01-01 }
 \@@_old:Nnn \c_ten_thousand
   { 10000 } { 2020-01-01 }
+\@@_old:Nnn \c_term_ior
+  { -1 } { 2021-07-01 }
 \@@_old:Nnn \dim_case:nnn
   { \dim_case:nnF } { 2015-07-14 }
-\@@_old:Nnn \file_add_path:nN
+\@@_old_protected:Nnn \file_add_path:nN
   { \file_get_full_name:nN } { 2019-01-01 }
 \@@_old_protected:Nnn \file_if_exist_input:nT
   { \file_if_exist:nT and~ \file_input:n } { 2018-03-05 }
 \@@_old_protected:Nnn \file_if_exist_input:nTF
   { \file_if_exist:nT and~ \file_input:n } { 2018-03-05 }
-\@@_old:Nnn \file_list:
+\@@_old_protected:Nnn \file_list:
   { \file_log_list: } { 2019-01-01 }
 \@@_old:Nnn \file_path_include:n
   { \seq_put_right:Nn \l_file_search_path_seq } { 2019-01-01 }
-\@@_old:Nnn \file_path_remove:n
+\@@_old_protected:Nnn \file_path_remove:n
   { \seq_remove_all:Nn \l_file_search_path_seq } { 2019-01-01 }
 \@@_old:Nnn \g_file_current_name_tl
   { \g_file_curr_name_str } { 2019-01-01 }
+\@@_old_protected:Nnn \hbox_unpack_clear:N 
+  { \hbox_unpack_drop:N  } { 2021-07-01 }
 \@@_old:Nnn \int_case:nnn
   { \int_case:nnF } { 2015-07-14 }
 \@@_old:Nnn \int_from_binary:n
@@ -480,13 +319,13 @@
   { \int_to_oct:n } { 2016-01-05 }
 \@@_old_protected:Nnn \ior_get_str:NN
   { \ior_str_get:NN } { 2018-03-05 }
-\@@_old:Nnn \ior_list_streams:
+\@@_old_protected:Nnn \ior_list_streams:
   { \ior_show_list: } { 2019-01-01 }
-\@@_old:Nnn \ior_log_streams:
+\@@_old_protected:Nnn \ior_log_streams:
   { \ior_log_list: } { 2019-01-01 }
-\@@_old:Nnn \iow_list_streams:
+\@@_old_protected:Nnn \iow_list_streams:
   { \iow_show_list: } { 2019-01-01 }
-\@@_old:Nnn \iow_log_streams:
+\@@_old_protected:Nnn \iow_log_streams:
   { \iow_log_list: } { 2019-01-01 }
 \@@_old:Nnn \lua_escape_x:n
   { \lua_escape:e } { 2020-01-01 }
@@ -560,12 +399,28 @@
   { \tl_case:cnF } { 2015-07-14 }
 \@@_old:Nnn \tl_case:Nnn
   { \tl_case:NnF } { 2015-07-14 }
+\@@_old_protected:Nnn \tl_gset_from_file:Nnn
+  { \file_get:nnN } { 2021-07-01 }
+\@@_old_protected:Nnn \tl_gset_from_file_x:Nnn
+  { \file_get:nnN } { 2021-07-01 }
+\@@_old_protected:Nnn \tl_set_from_file:Nnn
+  { \file_get:nnN } { 2021-07-01 }
+\@@_old_protected:Nnn \tl_set_from_file_x:Nnn
+  { \file_get:nnN } { 2021-07-01 }
 \@@_old_protected:Nnn \tl_to_lowercase:n
   { \tex_lowercase:D } { 2018-03-05 }
 \@@_old_protected:Nnn \tl_to_uppercase:n
   { \tex_uppercase:D } { 2018-03-05 }
-\@@_old:Nnn \token_new:Nn
+\@@_old:Nnn \token_get_arg_spec:N
+  { \cs_argument_spec:N } { 2021-07-01 }
+\@@_old:Nnn \token_get_prefix_spec:N
+  { \cs_prefix_spec:N } { 2021-07-01 }
+\@@_old:Nnn \token_get_replacement_spec:N
+  { \cs_replacement_spec:N } { 2021-07-01 }
+\@@_old_protected:Nnn \token_new:Nn
   { \cs_new_eq:NN } { 2019-01-01 }
+\@@_old_protected:Nnn \vbox_unpack_clear:N 
+  { \vbox_unpack_drop:N  } { 2021-07-01 }
 \@@_old:Nnn \xetex_if_engine_p:
   { \sys_if_engine_xetex_p: } { 2017-01-01 }
 \@@_old:Nnn \xetex_if_engine:F
@@ -577,45 +432,20 @@
 %    \end{macrocode}
 % \end{macro}
 %
-% \subsection{Loading the patches}
-%
-% When loaded first, the patches are simply read here.
-% Here the deprecation code is loaded with the lower-level |\__kernel_...|
-% macro because we don't want it to flip the \cs{g__sys_deprecation_bool}
-% boolean, so that the deprecation code can be re-loaded later (when using
-% \texttt{undo-recent-deprecations}).
+% \subsection{Deprecated \pkg{l3basics} functions}
 %
 %    \begin{macrocode}
-\group_begin:
-\cs_set_protected:Npn \ProvidesExplFile
-  {
-    \char_set_catcode_space:n { `\  }
-    \ProvidesExplFileAux
-  }
-\cs_set_protected:Npx \ProvidesExplFileAux #1#2#3#4
-  {
-    \group_end:
-    \cs_if_exist:NTF \ProvidesFile
-      { \exp_not:N \ProvidesFile {#1} [ #2~v#3~#4 ] }
-      { \iow_log:x { File:~#1~#2~v#3~#4 } }
-  }
-\cs_gset_protected:Npn \__kernel_sys_configuration_load:n #1
-  { \file_input:n { #1 .def } }
-\__kernel_sys_configuration_load:n { l3deprecation }
+%<@@=cs>
 %    \end{macrocode}
 %
+% \begin{macro}[EXP]{\cs_argument_spec:N}
+%   For the present, do not deprecate fully as \LaTeXe{} will need to catch
+%   up: one for Fall 2022.
 %    \begin{macrocode}
-%</kernel>
+%\__kernel_patch_deprecation:nnNNpn { 2022-06-24 } { \cs_parameter_spec:N }
+\cs_gset:Npn \cs_argument_spec:N { \cs_parameter_spec:N }
 %    \end{macrocode}
-%
-%    \begin{macrocode}
-%<*patches>
-%    \end{macrocode}
-%
-% Standard file identification.
-%    \begin{macrocode}
-\ProvidesExplFile{l3deprecation.def}{2019-04-06}{}{L3 Deprecated functions}
-%    \end{macrocode}
+% \end{macro}
 %
 % \subsection{Deprecated \pkg{l3str} functions}
 %
@@ -623,35 +453,45 @@
 %<@@=str>
 %    \end{macrocode}
 %
-% \begin{macro}[EXP, deprecated = 2022-07-01]
+% \begin{macro}[EXP]
 %   {
 %     \str_lower_case:n, \str_lower_case:f,
 %     \str_upper_case:n, \str_upper_case:f,
 %     \str_fold_case:n,  \str_fold_case:V
 %   }
 %    \begin{macrocode}
-\__kernel_patch_deprecation:nnNNpn { 2022-01-01 } { \str_lowercase:n }
+\__kernel_patch_deprecation:nnNNpn { 2020-01-03 } { \str_lowercase:n }
 \cs_gset:Npn \str_lower_case:n { \str_lowercase:n }
-\__kernel_patch_deprecation:nnNNpn { 2022-01-01 } { \str_lowercase:f }
+\__kernel_patch_deprecation:nnNNpn { 2020-01-03 } { \str_lowercase:f }
 \cs_gset:Npn \str_lower_case:f { \str_lowercase:f }
-\__kernel_patch_deprecation:nnNNpn { 2022-01-01 } { \str_uppercase:n }
+\__kernel_patch_deprecation:nnNNpn { 2020-01-03 } { \str_uppercase:n }
 \cs_gset:Npn \str_upper_case:n { \str_uppercase:n }
-\__kernel_patch_deprecation:nnNNpn { 2022-01-01 } { \str_uppercase:f }
+\__kernel_patch_deprecation:nnNNpn { 2020-01-03 } { \str_uppercase:f }
 \cs_gset:Npn \str_upper_case:f { \str_uppercase:f }
-\__kernel_patch_deprecation:nnNNpn { 2022-01-01 } { \str_foldcase:n }
-\cs_gset:Npn \str_fold_case:n { \str_foldcase:n }
-\__kernel_patch_deprecation:nnNNpn { 2022-01-01 } { \str_foldcase:V }
-\cs_gset:Npn \str_fold_case:V { \str_foldcase:V }
+\__kernel_patch_deprecation:nnNNpn { 2020-01-03 } { \str_casefold:n }
+\cs_gset:Npn \str_fold_case:n { \str_casefold:n }
+\__kernel_patch_deprecation:nnNNpn { 2020-01-03 } { \str_casefold:V }
+\cs_gset:Npn \str_fold_case:V { \str_casefold:V }
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}[EXP, deprecated = 2022-07-01]
+% \begin{macro}[EXP]
+%   {\str_foldcase:n,  \str_foldcase:V}
+%    \begin{macrocode}
+\__kernel_patch_deprecation:nnNNpn { 2020-10-17 } { \str_casefold:n }
+\cs_gset:Npn \str_foldcase:n { \str_casefold:n }
+\__kernel_patch_deprecation:nnNNpn { 2022-10-17 } { \str_casefold:V }
+\cs_gset:Npn \str_foldcase:V { \str_casefold:V }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}[EXP]
 %   {\str_declare_eight_bit_encoding:nnn}
 %   This command was made internal, with one more argument.  There is no
 %   easy way to compute a reasonable value for that extra argument so we
-%   take a value that is big enough to accomodate all of Unicode.
+%   take a value that is big enough to accommodate all of Unicode.
 %    \begin{macrocode}
-\__kernel_patch_deprecation:nnNNpn { 2022-01-01 } { }
+\__kernel_patch_deprecation:nnNNpn { 2020-08-20 } { }
 \cs_gset_protected:Npn \str_declare_eight_bit_encoding:nnn #1
   { \@@_declare_eight_bit_encoding:nnnn {#1} { 1114112 } }
 %    \end{macrocode}
@@ -659,15 +499,27 @@
 %
 % \subsection{Deprecated \pkg{l3seq} functions}
 %
-% \begin{macro}[EXP, deprecated = 2023-01-01]
-%   {
-%     \seq_indexed_map_inline:Nn, \seq_indexed_map_function:NN
-%   }
+% \begin{macro}{\seq_indexed_map_inline:Nn}
+% \begin{macro}[EXP]{ \seq_indexed_map_function:NN}
 %    \begin{macrocode}
-\__kernel_patch_deprecation:nnNNpn { 2022-07-01 } { \seq_map_indexed_inline:Nn }
-\cs_gset:Npn \seq_indexed_map_inline:Nn { \seq_map_indexed_inline:Nn }
-\__kernel_patch_deprecation:nnNNpn { 2022-07-01 } { \seq_map_indexed_function:NN }
+\__kernel_patch_deprecation:nnNNpn { 2020-06-18 } { \seq_map_indexed_inline:Nn }
+\cs_gset_protected:Npn \seq_indexed_map_inline:Nn { \seq_map_indexed_inline:Nn }
+\__kernel_patch_deprecation:nnNNpn { 2020-06-18 } { \seq_map_indexed_function:NN }
 \cs_gset:Npn \seq_indexed_map_function:NN { \seq_map_indexed_function:NN }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \subsection{Deprecated \pkg{l3sys} functions}
+%
+%    \begin{macrocode}
+%<@@=sys>
+%    \end{macrocode}
+%
+% \begin{macro}{\sys_load_deprecation:}
+%    \begin{macrocode}
+\__kernel_patch_deprecation:nnNNpn { 2021-01-11 } { (no~longer~required) }
+\cs_gset_protected:Npn \sys_load_deprecation: { }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -677,29 +529,29 @@
 %<@@=tl>
 %    \end{macrocode}
 %
-% \begin{macro}[deprecated = 2022-07-01]
+% \begin{macro}
 %   {
 %     \tl_lower_case:n, \tl_lower_case:nn,
 %     \tl_upper_case:n, \tl_upper_case:nn,
 %     \tl_mixed_case:n, \tl_mixed_case:nn,
 %   }
 %    \begin{macrocode}
-\__kernel_patch_deprecation:nnNNpn { 2022-01-01 } { \text_lowercase:n }
+\__kernel_patch_deprecation:nnNNpn { 2020-01-03 } { \text_lowercase:n }
 \cs_gset:Npn \tl_lower_case:n #1
   { \text_lowercase:n {#1} }
-\__kernel_patch_deprecation:nnNNpn { 2022-01-01 } { \text_lowercase:nn }
+\__kernel_patch_deprecation:nnNNpn { 2020-01-03 } { \text_lowercase:nn }
 \cs_gset:Npn \tl_lower_case:nn #1#2
   { \text_lowercase:nn {#1} {#2} }
-\__kernel_patch_deprecation:nnNNpn { 2022-01-01 } { \text_uppercase:n }
+\__kernel_patch_deprecation:nnNNpn { 2020-01-03 } { \text_uppercase:n }
 \cs_gset:Npn \tl_upper_case:n #1
   { \text_uppercase:n {#1} }
-\__kernel_patch_deprecation:nnNNpn { 2022-01-01 } { \text_uppercase:nn }
+\__kernel_patch_deprecation:nnNNpn { 2020-01-03 } { \text_uppercase:nn }
 \cs_gset:Npn \tl_upper_case:nn #1#2
   { \text_uppercase:nn {#1} {#2} }
-\__kernel_patch_deprecation:nnNNpn { 2022-01-01 } { \text_titlecase:n }
+\__kernel_patch_deprecation:nnNNpn { 2020-01-03 } { \text_titlecase:n }
 \cs_gset:Npn \tl_mixed_case:n #1
   { \text_titlecase:n {#1} }
-\__kernel_patch_deprecation:nnNNpn { 2022-01-01 } { \text_titlecase:nn }
+\__kernel_patch_deprecation:nnNNpn { 2020-01-03 } { \text_titlecase:nn }
 \cs_gset:Npn \tl_mixed_case:nn #1#2
   { \text_titlecase:nn {#1} {#2} }
 %    \end{macrocode}
@@ -707,7 +559,23 @@
 %
 % \subsection{Deprecated \pkg{l3token} functions}
 %
-% \begin{macro}[EXP, deprecated = 2022-07-01]
+% \begin{macro}[EXP]{\char_to_utfviii_bytes:n}
+%    \begin{macrocode}
+\__kernel_patch_deprecation:nnNNpn { 2022-10-09 } { [ \codepoint_generate:n ] }
+\cs_gset:Npn \char_to_utfviii_bytes:n { \__kernel_codepoint_to_bytes:n }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}[EXP]{\char_to_nfd:Nm, \char_to_nfd:n}
+%    \begin{macrocode}
+\__kernel_patch_deprecation:nnNNpn { 2022-10-09 } { \codepoint_to_nfd:n }
+\cs_gset:Npn \char_to_nfd:N #1 { \codepoint_to_nfd:n {`#1} }
+\__kernel_patch_deprecation:nnNNpn { 2022-10-09 } { \codepoint_to_nfd:n }
+\cs_gset:Npn \char_to_nfd:n { \codepoint_to_nfd:n }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}[EXP]
 %   {
 %     \char_lower_case:N, \char_upper_case:N,
 %     \char_mixed_case:Nn, \char_fold_case:N,
@@ -715,28 +583,87 @@
 %     \char_str_mixed_case:Nn, \char_str_fold_case:N,
 %   }
 %    \begin{macrocode}
-\__kernel_patch_deprecation:nnNNpn { 2022-01-01 } { \char_lowercase:N }
-\cs_gset:Npn \char_lower_case:N { \char_lowercase:N }
-\__kernel_patch_deprecation:nnNNpn { 2022-01-01 } { \char_uppercase:N }
-\cs_gset:Npn \char_upper_case:N { \char_uppercase:N }
-\__kernel_patch_deprecation:nnNNpn { 2022-01-01 } { \char_titlecase:N }
-\cs_gset:Npn \char_mixed_case:N { \char_titlecase:N }
-\__kernel_patch_deprecation:nnNNpn { 2022-01-01 } { \char_foldcase:N }
-\cs_gset:Npn \char_fold_case:N { \char_foldcase:N }
-\__kernel_patch_deprecation:nnNNpn { 2022-01-01 } { \char_str_lowercase:N }
-\cs_gset:Npn \char_str_lower_case:N { \char_str_lowercase:N }
-\__kernel_patch_deprecation:nnNNpn { 2022-01-01 } { \char_str_uppercase:N }
-\cs_gset:Npn \char_str_upper_case:N { \char_str_uppercase:N }
-\__kernel_patch_deprecation:nnNNpn { 2022-01-01 } { \char_str_titlecase:N }
-\cs_gset:Npn \char_str_mixed_case:N { \char_str_titlecase:N }
-\__kernel_patch_deprecation:nnNNpn { 2022-01-01 } { \char_str_foldcase:N }
-\cs_gset:Npn \char_str_fold_case:N { \char_str_foldcase:N }
+\__kernel_patch_deprecation:nnNNpn { 2020-01-03 } { \text_lowercase:n }
+\cs_gset:Npn \char_lower_case:N { \text_lowercase:n }
+\__kernel_patch_deprecation:nnNNpn { 2020-01-03 } { \text_uppercase:n }
+\cs_gset:Npn \char_upper_case:N { \text_uppercase:n }
+\__kernel_patch_deprecation:nnNNpn { 2020-01-03 } { \text_titlecase:n }
+\cs_gset:Npn \char_mixed_case:N { \text_titlecase:n }
+\__kernel_patch_deprecation:nnNNpn { 2020-01-03 } { \str_casefold:n }
+\cs_gset:Npn \char_fold_case:N { \str_casefold:n }
+\__kernel_patch_deprecation:nnNNpn { 2020-01-03 } { \str_lowercase:n }
+\cs_gset:Npn \char_str_lower_case:N { \str_lowercase:n }
+\__kernel_patch_deprecation:nnNNpn { 2020-01-03 } { \str_uppercase:n }
+\cs_gset:Npn \char_str_upper_case:N { \str_uppercase:n }
+\__kernel_patch_deprecation:nnNNpn { 2020-01-03 } { \str_titlecase:n }
+\cs_gset:Npn \char_str_mixed_case:N { \str_titlecase:n }
+\__kernel_patch_deprecation:nnNNpn { 2020-01-03 } { \str_casefold:n }
+\cs_gset:Npn \char_str_fold_case:N { \str_casefold:n }
 %    \end{macrocode}
 % \end{macro}
 %
+% \begin{macro}[EXP]
+%   {
+%     \char_lowercase:N, \char_uppercase:N,
+%     \char_foldcase:N,
+%     \char_str_lowercase:N, \char_str_uppercase:N,
+%     \char_str_foldcase:N,
+%   }
 %    \begin{macrocode}
-%</patches>
+\__kernel_patch_deprecation:nnNNpn { 2022-10-17 } { \text_lowercase:n }
+\cs_gset:Npn \char_lowercase:N { \text_lowercase:n }
+\__kernel_patch_deprecation:nnNNpn { 2022-10-17 } { \text_uppercase:n }
+\cs_gset:Npn \char_uppercase:N { \text_uppercase:n }
+\__kernel_patch_deprecation:nnNNpn { 2022-10-17 } { \str_casefold:n }
+\cs_gset:Npn \char_foldcase:N { \str_casefold:n }
+\__kernel_patch_deprecation:nnNNpn { 2022-10-17 } { \str_lowercase:n }
+\cs_gset:Npn \char_str_lowercase:N { \str_lowercase:n }
+\__kernel_patch_deprecation:nnNNpn { 2022-10-17 } { \str_uppercase:n }
+\cs_gset:Npn \char_str_uppercase:N { \str_uppercase:n }
+\__kernel_patch_deprecation:nnNNpn { 2022-10-17 } { \str_casefold:n }
+\cs_gset:Npn \char_str_foldcase:N { \str_casefold:n }
 %    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}[TF]
+%   {
+%     \peek_catcode_ignore_spaces:N, \peek_catcode_remove_ignore_spaces:N,
+%     \peek_charcode_ignore_spaces:N, \peek_charcode_remove_ignore_spaces:N,
+%     \peek_meaning_ignore_spaces:N, \peek_meaning_remove_ignore_spaces:N
+%   }
+%    A little extra fun here to deal with the expansion.
+%    \begin{macrocode}
+\tl_map_inline:nn
+  {
+    { catcode } { catcode_remove }
+    { charcode } { charcode_remove }
+    { meaning } { meaning_remove }
+  }
+  {
+    \use:x
+      {
+        \__kernel_patch_deprecation:nnNNpn { 2022-01-11 } { \peek_remove_spaces:n }
+        \cs_gset_protected:Npn \exp_not:c { peek_ #1 _ignore_spaces:NTF } ####1####2####3
+          {
+            \peek_remove_spaces:n
+              { \exp_not:c { peek_ #1 :NTF } ####1 {####2} {####3} }
+          }
+        \__kernel_patch_deprecation:nnNNpn { 2022-01-11 } { \peek_remove_spaces:n }
+        \cs_gset_protected:Npn \exp_not:c { peek_ #1 _ignore_spaces:NT } ####1####2
+          {
+            \peek_remove_spaces:n
+              { \exp_not:c { peek_ #1 :NT } ####1 {####2} }
+          }
+        \__kernel_patch_deprecation:nnNNpn { 2022-01-11 } { \peek_remove_spaces:n }
+        \cs_gset_protected:Npn \exp_not:c { peek_ #1 _ignore_spaces:NF } ####1####2
+          {
+            \peek_remove_spaces:n
+              { \exp_not:c { peek_ #1 :NF } ####1 {####2} }
+          }
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
 %
 %    \begin{macrocode}
 %</package>

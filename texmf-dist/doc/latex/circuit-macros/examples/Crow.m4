@@ -8,13 +8,14 @@ sinclude(tst.dim)
 # Custom macros --------------------------
 
 #                                   `crowline(linespec,wid,ht)'
+#                                   `Single-segment line with crowfoot end'
 define(`crowline',
  `line `$1'
   M4_E: last line.end
   crow_wd = ifelse(`$2',,`(arrowwid*8/5)',`$2')
   crow_ht = ifelse(`$3',,`(1.5*crow_wd)',`$3')
   M4_P: vperp(last line,crow_wd)
-  M4_X: crow_ht/lin_leng(last line) between M4_E and last line.start 
+  M4_X: Along_(last line,crow_ht,R)
   ifdpic(
    `spline 0.4 from M4_E+M4_P to M4_X+M4_P then to M4_X-M4_P then to M4_E-M4_P',
    `spline from M4_E+(M4_P.x,M4_P.y) to M4_X+(M4_P.x,M4_P.y) \

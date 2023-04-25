@@ -59,6 +59,7 @@
 \bool_new:N \l__knot_append_next_bool
 \bool_new:N \l__knot_skip_bool
 \bool_new:N \l__knot_save_bool
+\bool_new:N \l__knot_debugging_bool
 
 \seq_new:N \g__knot_nodes_seq
 
@@ -191,6 +192,14 @@
     \bool_set_true:N \l__knot_draft_bool
     \bool_set_true:N \l__knot_super_draft_bool
   },
+  debug/.is~ choice,
+  debug/true/.code={
+    \bool_set_true:N \l__knot_debugging_bool
+  },
+  debug/false/.code={
+    \bool_set_false:N \l__knot_debugging_bool
+  },
+  debug/.default=true,
   draft/.is~ family,
   draft,
   crossing~ label/.style={
@@ -212,8 +221,18 @@
     inner~ sep=0pt
   },
 }
+\cs_new_nopar:Npn \knot_debug:n #1
+{
+  \bool_if:NT \l__knot_debugging_bool
+  {
+    \iow_term:n {===Knot~ debug: #1===}
+  }
+}
+
+\cs_generate_variant:Nn \knot_debug:n {x}
 \cs_new_nopar:Npn \knot_apply_style:N #1
 {
+  \knot_debug:n {knot~ apply~ style}
   \tl_if_exist:NT #1 {
     \exp_args:NV \tikzset #1
   }
@@ -239,6 +258,7 @@
 }
 \cs_new_protected_nopar:Npn \knot_initialise:n #1
 {
+  \knot_debug:n {knot~ initialise}
   \tikzset{knot~ diagram/.cd,every~ knot~ diagram/.try,#1}
   \int_zero:N \l__knot_strands_int
   \tl_clear:N \l__knot_redraws_tl
@@ -246,6 +266,7 @@
 }
 \cs_new_protected_nopar:Npn \knot_render:
 {
+  \knot_debug:n {knot~ render}
   \pgfscope
   \pgftransformreset
   \dim_set:Nn \l__knot_redraw_tolerance_dim {\fp_to_dim:n
@@ -296,9 +317,12 @@
     \seq_use:Nn \g__knot_nodes_seq {}
   }
   \endpgfscope
+  \knot_debug:x {knot~rendered,
+    ~found~\int_use:N  \g__knot_intersections_int \c_space_tl~intersections}
 }
 \cs_new_protected_nopar:Npn \knot_draw_strand:n #1
 {
+  \knot_debug:n {knot~ draw~ strand~ #1}
   \pgfscope
   \group_begin:
   \spath_bake_round:c {knot strand #1}
@@ -308,7 +332,7 @@
   {
     ,
     knot~ diagram/only~ when~ rendering/.try,
-    only~ when~ rendering/.try
+    only~ when~ rendering/.try,
   }
   \spath_tikz_path:Vv \l__knot_tmpa_tl {knot strand #1}
   \group_end:
@@ -317,6 +341,7 @@
 \cs_generate_variant:Nn \tl_put_right:Nn {Nv}
 \cs_new_protected_nopar:Npn \knot_draw_labels:n #1
 {
+  \knot_debug:n {knot~ draw~ labels}
   \bool_if:NT \l__knot_draft_bool
   {
     \spath_finalpoint:Nv \l__knot_tmpb_tl {knot strand #1}
@@ -348,6 +373,7 @@
 }
 \cs_new_protected_nopar:Npn \knot_split_self_intersects:N #1
 {
+  \knot_debug:n {knot~ split~ self~ intersects}
   \tl_set:Nx \l__knot_tmpc_tl {\tl_item:nn {#1} {4}}
   \tl_case:NnF \l__knot_tmpc_tl
   {
@@ -385,9 +411,11 @@
       }
       {
         \fp_set:Nn \l__knot_tmpa_fp {.5 * \l__knot_tmpa_fp / \l__knot_tmpb_fp}
-        \fp_compare:nTF
+        \bool_if:nTF
         {
-          0 < \l__knot_tmpa_fp && \l__knot_tmpa_fp < 1
+          \fp_compare_p:n {0 < \l__knot_tmpa_fp}
+          &&
+          \fp_compare_p:n {\l__knot_tmpa_fp < 1}
         }
         {
           \spath_split_curve:NNnV
@@ -435,6 +463,8 @@
 }
 \cs_new_protected_nopar:Npn \knot_intersections:nn #1#2
 {
+  \knot_debug:x {knot~ intersections~ between~
+    \l__knot_prefix_tl \c_space_tl #1~ and~ #2}
   \group_begin:
   \tl_set_eq:NN \l__knot_tmpa_tl \l__knot_prefix_tl
   \tl_put_right:Nn \l__knot_tmpa_tl {#1}
@@ -466,6 +496,7 @@
 
   }
 
+  \knot_debug:x {found~\pgfintersectionsolutions\c_space_tl~ intersections}
   \int_compare:nT {\pgfintersectionsolutions > 0}
   {
     \int_step_function:nnnN
@@ -480,6 +511,7 @@
 }
 \cs_new_protected_nopar:Npn \knot_save_intersections:nn #1#2
 {
+  \knot_debug:n {knot~ save~ intersections}
   \bool_if:NT \l__knot_save_bool
   {
     \tl_clear:N \l__knot_aux_tl
@@ -527,9 +559,12 @@
 \cs_generate_variant:Nn \knot_save_intersections:nn {VV}
 \cs_new_protected_nopar:Npn \knot_do_intersection:n #1
 {
+  \knot_debug:n {knot~ do~ intersection~ #1}
   \pgfpointintersectionsolution{#1}
   \dim_set:Nn \l__knot_tmpa_dim {\pgf@x}
   \dim_set:Nn \l__knot_tmpb_dim {\pgf@y}
+  \knot_debug:x {intersection~at~
+    (\dim_use:N \l__knot_tmpa_dim,\dim_use:N \l__knot_tmpb_dim)}
   \bool_set_false:N \l__knot_skip_bool
   \bool_if:NT \l__knot_self_intersections_bool
   {
@@ -578,6 +613,7 @@
   {
 
     \int_gincr:N \g__knot_intersections_int
+    \knot_debug:x {Processing~intersection~\int_use:N \g__knot_intersections_int}
     \bool_if:nF
     {
       \tl_if_exist_p:c {l__knot_ignore_crossing_ \int_use:N
@@ -643,6 +679,8 @@
             !\tl_if_empty_p:c {knot previous \tl_use:N \l__knot_tmpg_tl}
           }
           {
+            \knot_debug:x {Prepending~
+              \tl_use:c {knot previous \tl_use:N \l__knot_tmpg_tl}}
             \spath_prepend_no_move:cv
             {knot \tl_use:N \l__knot_prefix_tl -1}
             {knot \tl_use:c {knot previous \tl_use:N \l__knot_tmpg_tl}}
@@ -650,9 +688,13 @@
             {
               \l__knot_splits_bool
               &&
-              \tl_if_exist_p:c {knot previous \tl_use:N \l__knot_tmpg_tl}
+              \tl_if_exist_p:c {knot previous
+                \tl_use:c {knot previous \tl_use:N \l__knot_tmpg_tl}
+              }
               &&
-              !\tl_if_empty_p:c {knot previous \tl_use:N \l__knot_tmpg_tl}
+              !\tl_if_empty_p:c {knot previous
+                \tl_use:c {knot previous \tl_use:N \l__knot_tmpg_tl}
+              }
             }
             {
               \knot_test_endpoint:NvnT
@@ -660,6 +702,11 @@
               {knot previous \tl_use:N \l__knot_tmpg_tl}
               {initial point}
               {
+                \knot_debug:x {Prepending~
+                  \tl_use:c {knot previous
+                    \tl_use:c {knot previous \tl_use:N \l__knot_tmpg_tl}
+                  }
+                }
                 \spath_prepend_no_move:cv
                 {knot \tl_use:N \l__knot_prefix_tl -1}
                 {knot \tl_use:c
@@ -667,19 +714,23 @@
                     {knot previous \tl_use:N \l__knot_tmpg_tl}
                   }
                 }
-                \tl_set_eq:Nc \l__knot_tmpa_tl {knot \tl_use:N \l__knot_prefix_tl -1}
+                \tl_set_eq:Nc \l__knot_tmpa_tl
+                {knot \tl_use:N \l__knot_prefix_tl -1}
               }
             }
           }
+
           \bool_if:nT
           {
             \l__knot_append_next_bool
             &&
             \tl_if_exist_p:c {knot next \tl_use:N \l__knot_tmpg_tl}
             &&
-            !\tl_if_empty_p:c {knot previous \tl_use:N \l__knot_tmpg_tl}
+            !\tl_if_empty_p:c {knot next \tl_use:N \l__knot_tmpg_tl}
           }
           {
+            \knot_debug:x {Appending~
+              \tl_use:c {knot next \tl_use:N \l__knot_tmpg_tl}}
             \spath_append_no_move:cv
             {knot \tl_use:N \l__knot_prefix_tl -1}
             {knot \tl_use:c {knot next \tl_use:N \l__knot_tmpg_tl}}
@@ -687,17 +738,25 @@
             {
               \l__knot_splits_bool
               &&
-              \tl_if_exist_p:c {knot previous \tl_use:N
-                \l__knot_tmpg_tl}
+              \tl_if_exist_p:c {knot next \tl_use:c { knot next \tl_use:N
+                \l__knot_tmpg_tl}}
               &&
-              !\tl_if_empty_p:c {knot previous \tl_use:N \l__knot_tmpg_tl}
+              !\tl_if_empty_p:c {knot next
+                \tl_use:c { knot next \tl_use:N \l__knot_tmpg_tl}
+              }
             }
             {
+              \knot_debug:x {Testing~ whether~ to~ append~
+                {knot next \tl_use:c { knot next \tl_use:N \l__knot_tmpg_tl}}
+              }
               \knot_test_endpoint:NvnT
               \l__knot_redraw_tolerance_dim
-              {knot previous \tl_use:N \l__knot_tmpg_tl}
+              {knot next \tl_use:N \l__knot_tmpg_tl}
               {final point}
               {
+                \knot_debug:x {Appending~
+                  {knot next \tl_use:c { knot next \tl_use:N \l__knot_tmpg_tl}}
+                }
                 \spath_append_no_move:cv
                 {knot \tl_use:N \l__knot_prefix_tl -1}
                 {knot \tl_use:c
@@ -773,6 +832,7 @@
 \cs_generate_variant:Nn \knot_test_endpoint:NnnTF {NVnTF,NvnTF}
 \cs_new_protected_nopar:Npn \knot_draw_crossing:nnn #1#2#3
 {
+  \knot_debug:n {knot~ draw~ crossing}
   \group_begin:
   \pgfscope
   \path[knot~ diagram/background~ clip] (#2, #3)
@@ -821,17 +881,20 @@
 }
 \cs_new_protected_nopar:Npn \knot_split_strands:
 {
+  \knot_debug:n {knot~ split~ strands}
   \int_gzero:N \g__knot_filaments_int
   \int_step_function:nnnN {1} {1} {\l__knot_strands_int} \knot_split_strand:n
   \int_step_function:nnnN {1} {1} {\g__knot_filaments_int} \knot_compute_nexts:n
 }
 \cs_new_protected_nopar:Npn \knot_compute_nexts:n #1
 {
+  \knot_debug:n {knot~ compute~ nexts}
   \tl_clear_new:c {knot next \tl_use:c {knot previous filament #1}}
   \tl_set:cn {knot next \tl_use:c {knot previous filament #1}} {filament #1}
 }
 \cs_new_protected_nopar:Npn \knot_split_strand:n #1
 {
+  \knot_debug:n {knot~ split~ strand}
   \int_set_eq:NN \l__knot_component_start_int \g__knot_filaments_int
   \int_incr:N \l__knot_component_start_int
   \tl_set_eq:Nc \l__knot_tmpa_tl {l__knot_options_strand #1}
@@ -840,6 +903,7 @@
 }
 \cs_new_protected_nopar:Npn \knot_save_filament:N #1
 {
+  \knot_debug:n {knot~ save~ filament}
   \tl_set:Nx \l__knot_tmpb_tl {\tl_item:nn {#1} {4}}
   \tl_case:NnF \l__knot_tmpb_tl
   {

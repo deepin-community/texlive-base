@@ -1,0 +1,420 @@
+% !TeX spellcheck = en_US
+% !TeX root = tikz-ext-manual.tex
+% Copyright 2022 by Qrrbrbirlbel
+%
+% This file may be distributed and/or modified
+%
+% 1. under the LaTeX Project Public License and/or
+% 2. under the GNU Free Documentation License.
+%
+
+\usepackage[version=latest]{pgf}
+
+\usepackage{xkeyval,calc,listings,tikz,fp}
+
+\usepackage{imakeidx}
+\makeindex
+
+%%% Bibliography
+\usepackage{csquotes}
+\usepackage[backend=biber,style=numeric,backref]{biblatex}
+\addbibresource{tikz-ext-manual.bib}
+
+\usepackage{hyperref}
+\hypersetup{%
+    colorlinks=true, % use true to enable colors below:
+    linkcolor=blue,%red,
+    filecolor=blue,%magenta,
+    urlcolor=blue,%cyan,
+    citecolor=blue,
+    pdfborder=0 0 0,
+}
+
+\usepackage[a4paper,left=2.25cm,right=2.25cm,top=2.5cm,bottom=2.5cm,nohead,columnsep=1cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{xxcolor}
+\usepackage{pifont}
+
+\usepackage[T1]{fontenc}
+% Promote `Missing character` reports to full errors
+% require texlive 2021 or above
+\tracinglostchars=3
+
+\input{pgfmanual-en-macros}
+\newenvironment{pgfkeyslibrary}[1]{% from pgfmanual-en-macros
+  \begin{pgfmanualentry}%
+    \pgfmanualentryheadline{%
+      \pgfmanualpdflabel{#1}{}%
+      \textbf{pgfkeys Library} \texttt{\declare{#1}}}%
+    \index{#1@\protect\texttt{#1} pgfkeys library}%
+    \index{pgfkeys Libraries!#1@\protect\texttt{#1}}%
+    \vskip.25em
+    {{\ttfamily\char`\\usepgfkeyslibrary\char`\{\declare{#1}\char`\}\space\space \char`\%\space\space  \LaTeX\space and plain \TeX}}\\
+    {{\ttfamily\char`\\usepgfkeyslibrary[\declare{#1}]\space \char`\%\space\space Con\TeX t}}\\[.5em]%
+    \pgfmanualbody
+}%
+{%
+  \end{pgfmanualentry}%
+}
+
+\usepackage{unicode-math}
+\setmathfont[Scale=MatchUppercase]{libertinusmath-regular.otf}
+\usepackage[ttscale=.85]{libertine}
+\setmonofont[Scale=0.8]{Bitstream Vera Sans Mono}
+
+\makeatletter
+\renewcommand*\l@section[2]{%
+  \ifnum \c@tocdepth >\z@
+    \addpenalty\@secpenalty
+    \addvspace{1.0em \@plus\p@}%
+    \setlength\@tempdima{2.5em}%
+    \begingroup
+      \parindent \z@ \rightskip \@pnumwidth
+      \parfillskip -\@pnumwidth
+      \leavevmode \bfseries
+      \advance\leftskip\@tempdima
+      \hskip -\leftskip
+      #1\nobreak\hfil \nobreak\hb@xt@\@pnumwidth{\hss #2}\par
+    \endgroup
+  \fi}
+\renewcommand*\l@subsection{\@dottedtocline{2}{2.5em}{3.3em}}
+\renewcommand*\l@subsubsection{\@dottedtocline{3}{5.8em}{4.2em}}
+\def\@pnumwidth{2.2em}
+\makeatother
+
+% Global styles:
+\tikzset{
+  every plot/.style={prefix=plots/pgf-},
+  shape example/.style={
+    color=black!30,
+    draw,
+    fill=yellow!30,
+    line width=.5cm,
+    inner xsep=2.5cm,
+    inner ysep=0.5cm}
+}
+
+% Detect changed labels
+% by David Carlisle https://tex.stackexchange.com/a/169245
+\makeatletter
+\def\@testdef#1#2#3{%
+  \def\reserved@a{#3}%
+  \expandafter\ifx\csname #1@#2\endcsname\reserved@a\else
+    \typeout{^^JLabel `#2' changed:^^J\meaning\reserved@a^^J\expandafter\meaning\csname #1@#2\endcsname^^J}%
+    \@tempswatrue
+  \fi}
+\makeatother
+
+\usetikzlibrary{
+  ext.calendar-plus,
+  ext.misc,
+  ext.node-families,
+  ext.node-families.shapes.geometric,
+  ext.paths.arcto,
+  ext.paths.ortho,
+  ext.paths.timer,
+  ext.patterns.images,
+  ext.positioning-plus,
+  ext.scalepicture,
+  ext.shapes.heatmark,
+  ext.shapes.circlearrow,
+  ext.shapes.circlecrosssplit,
+  ext.shapes.rectangleroundedcorners,
+  ext.shapes.superellipse,
+  ext.shapes.uncenteredrectangle,
+  ext.topaths.arcthrough,
+  ext.transformations.mirror,
+  %
+  calc,
+  cd,
+  fit,
+  matrix,
+  shapes.geometric,
+  through,
+  trees,
+}
+
+%% needs Lua!
+\usetikzlibrary{graphs,graphdrawing}
+\usegdlibrary{force}
+
+\makeatletter
+\def\endofcodeexample#1{% original from tex/latex/pgf/doc/pgfmanual-en-macros.tex by Till Tantau et al
+  \endgroup%
+  \ifpgfmanual@setup@code%
+    \gdef\pgfmanual@do@this{%
+      {%
+        \returntospace%
+        \commenthandler%
+        \xdef\code@temp{#1}% removes returns and comments
+      }%
+      \edef\pgfmanualmcatcode{\the\catcode`\^^M}%
+      \catcode`\^^M=9\relax%
+      \expandafter\scantokens\expandafter{\code@temp}%
+      \catcode`\^^M=\pgfmanualmcatcode%
+    }%
+  \fi%
+  \ifcode@hidden\else
+    \ifcode@execute%
+      \setbox\codeexamplebox=\hbox{%
+        \ifx\code@render\pgfutil@empty%
+        {%
+          {%
+            \returntospace%
+            \commenthandler%
+            \xdef\code@temp{#1}% removes returns and comments
+          }%
+          \catcode`\^^M=9%
+          \colorbox{graphicbackground}{\color{black}\ignorespaces%
+            \code@pre\expandafter\scantokens\expandafter{\code@temp\ignorespaces}\code@post\ignorespaces}%
+        }%
+        \else%
+          \global\let\code@temp\code@render%
+          \colorbox{graphicbackground}{\color{black}\ignorespaces%
+            \code@render}%
+        \fi%
+      }%
+      \ifx\code@animation@list\pgfutil@empty%
+      \else%
+      \setbox\codeexampleboxanim=\vbox{%
+        \rightskip0pt\leftskip0pt plus1filll%
+        \ifdim\wd\codeexamplebox>\codeexamplewidth%
+        \else%
+          \hsize\codeexamplewidth%
+          \advance\hsize by2cm%
+        \fi%
+        \leavevmode\catcode`\^^M=9%
+        \foreach \pgfmanualtime/\pgfmanualtimehow in\code@animation@list{%
+          \setbox\codeexampleboxanim=\hbox{\colorbox{animationgraphicbackground}{%
+              \tikzset{make snapshot of=\pgfmanualtime}%
+              \scalebox{\pgfmanualanimscale}{\color{black}\ignorespaces%
+                \code@animation@pre\expandafter\scantokens\expandafter{\code@temp\ignorespaces}\code@animation@post\ignorespaces}%
+            }}%
+          \space\raise4pt\hbox to0pt{\vrule width0pt height1em\hbox
+            to\wd\codeexampleboxanim{\hfil\scriptsize$t{=}\pgfmanualtimehow \mathrm s$\hfil}\hss}%
+          \lower\ht\codeexampleboxanim\box\codeexampleboxanim\hfil\penalty0\hskip0ptplus-1fil%
+        }%
+      }%
+      \setbox\codeexampleboxanim=\hbox{\hbox{}\hskip-2cm\box\codeexampleboxanim}%
+      \fi%
+      \ifdim\wd\codeexamplebox>\codeexamplewidth%
+        \def\code@start{\par}%
+        \def\code@flushstart{}\def\code@flushend{}%
+        \def\code@mid{\parskip2pt\par\noindent}%
+        \def\code@width{\linewidth-6pt}%
+        \def\code@end{}%
+      \else%
+        \def\code@start{%
+%          \linewidth=\textwidth% removed this line
+          \parshape \@ne 0pt \linewidth
+          \leavevmode%
+          \hbox\bgroup}%
+        \def\code@flushstart{\hfill}%
+        \def\code@flushend{\hbox{}}%
+        \def\code@mid{\hskip6pt}%
+        \def\code@width{\linewidth-12pt-\codeexamplewidth}%
+        \def\code@end{\egroup}%
+      \fi%
+      \code@start%
+      \noindent%
+      \begin{minipage}[t]{\codeexamplewidth}\raggedright
+        \hrule width0pt%
+        \footnotesize\vskip-1em%
+        \code@flushstart\box\codeexamplebox\code@flushend%
+        \vskip0pt%
+        \leavevmode%
+        \box\codeexampleboxanim%
+        \vskip-1ex
+        \leavevmode%
+      \end{minipage}%
+    \else%
+      \def\code@mid{\par}
+      \def\code@width{\linewidth-6pt}
+      \def\code@end{}
+    \fi%
+    \code@mid%
+      \ifpgfmanual@multipage@code%
+        {%
+          \pgfkeysvalueof{/codeexample/prettyprint/base color}%
+          \pgfmanualdolisting{#1}%
+        }%
+      \else%
+        \colorbox{codebackground}{%
+          \pgfkeysvalueof{/codeexample/prettyprint/base color}%
+          \begin{minipage}[t]{\code@width}%
+            \pgfmanualdolisting{#1}%
+          \end{minipage}}%
+      \fi%
+    \code@end%
+    \par%
+    \medskip
+  \fi
+  \endcodeexample\endgroup%
+}
+
+\newenvironment{pathoperation'}[3][]{
+  \begin{pgfmanualentry}
+    \def\pgfmanualtest{#1}%
+    \pgfmanualentryheadline{%
+      \ifx\pgfmanualtest\@empty%
+        \pgfmanualpdflabel{#2}{}%
+      \fi%
+      %\textcolor{gray}{{\ttfamily\char`\\path}\ \ \dots}
+      %\declare{\texttt{\noligs{#2}}}#3\ \textcolor{gray}{\dots\texttt{;}}
+    }%
+    \ifx\pgfmanualtest\@empty%
+      \index{#2@\protect\texttt{#2} path operation}%
+      \index{Path operations!#2@\protect\texttt{#2}}%
+    \fi%
+    \pgfmanualbody
+}
+{
+  \end{pgfmanualentry}
+}
+\makeatother
+
+\usepackage{paracol}
+
+%% normal references
+\newcommand*{\indexLibrary}[1]{%
+  \index{#1@\protect\texttt{#1} library}%
+  \index{Libraries!#1@\protect\texttt{#1}}%
+}
+\newcommand*{\indexMathFunction}[1]{%
+  \index{#1@\protect\texttt{#1} math function}%
+  \index{Math functions!#1@\protect\texttt{#1}}%
+}
+\newcommand*{\indexShape}[1]{%
+  \index{#1@\protect\texttt{#1} shape}%
+  \index{Shapes!#1@\protect\texttt{#1}}%
+}
+\newcommand*{\indexHandler}[1]{%
+  \index{\gobble#1@\protect\texttt{#1} handler}%
+  \index{Key handlers!#1@\protect\texttt{#1}}
+}
+\newcommand*{\indexKey}[2][/tikz/]{%
+\begingroup
+  \def\mykey{#1#2}%
+  \def\mypath{}%
+  \gdef\myname{}%
+  \firsttimetrue
+  \decompose#1#2/\nil
+\endgroup
+}
+\newcommand*{\indexPathOperation}[1]{%
+  \index{#1@\protect\texttt{#1} path operation}%
+  \index{Path operations!#1@\protect\texttt{#1}}%
+}
+
+%% references to original
+\newcommand*{\indexLibraryO}[1]{%
+  \index{#1@\originalprefix\protect\texttt{\original{#1}} library\originalsuffix}%
+  \index{Libraries!#1@\originalprefix\protect\texttt{\original{#1}}\originalsuffix}%
+}
+\newcommand*{\indexMathFunctionO}[1]{%
+  \index{#1@\protect\texttt{\original{#1}} math function\originalsuffix}%
+  \index{Math functions!#1@\protect\texttt{\original{#1}}\originalsuffix}%
+}
+\newcommand*{\indexShapeO}[1]{%
+  \index{#1@\originalprefix\protect\texttt{\original{#1}} shape\originalsuffix}%
+  \index{Shapes!#1@\originalprefix\protect\texttt{\original{#1}}\originalsuffix}%
+}
+\newcommand*{\indexHandlerO}[1]{%
+  \index{\gobble#1@\originalprefix\protect\texttt{\original{#1}} handler\originalsuffix}%
+  \index{Key handlers!#1@\originalprefix\protect\texttt{\original{#1}}\originalsuffix}
+}
+\newcommand*{\indexKeyO}[2][/tikz/]{%TODO
+  \begingroup\let\decomposetoodeep\decomposetoodeepO
+    \def\mykey{#1#2}%
+    \def\mypath{}%
+    \gdef\myname{}%
+    \firsttimetrue
+    \decomposeO#1#2/\nil
+  \endgroup
+}
+\def\decomposetoodeepO#1/#2/\nil{%
+  % avoid too-deep nesting in index
+  \index{#1/#2@\originalprefix\protect\texttt{\original{#1/#2}} key\originalsuffix}%
+  \index{\mypath#1/#2@\originalprefix\protect\texttt{\original{#1/#2}}\originalsuffix}%
+  \decomposefindlast/#1/#2/\nil%
+}
+\def\decomposeO/#1/#2\nil{%
+  \def\test{#2}%
+  \ifx\test\empty%
+    % aha.
+    \index{#1@\originalprefix\protect\texttt{\original{#1}} key\originalsuffix}%
+    \index{\mypath#1@\originalprefix\protect\texttt{\original{#1}}\originalsuffix}%
+    \gdef\myname{#1}%
+    \pgfmanualpdflabel{#1}{}
+  \else%
+    \advance\pgfmanualdecomposecount by1\relax%
+    \ifnum\pgfmanualdecomposecount>2\relax%
+      \decomposetoodeepO#1/#2\nil%
+    \else%
+      \iffirsttime%
+        \begingroup%  
+          % also make a pdf link anchor with full key path.
+          \def\hyperlabelwithoutslash##1/\nil{%
+            \pgfmanualpdflabel{##1}{}%
+          }%
+          \hyperlabelwithoutslash/#1/#2\nil%
+        \endgroup%
+        \def\mypath{#1@\protect\texttt{/#1/}!}%
+        \firsttimefalse%
+      \else%
+        \expandafter\def\expandafter\mypath\expandafter{\mypath#1@\protect\texttt{#1/}!}%
+      \fi%
+      \def\firsttime{}%
+      \decomposeO/#2\nil%
+    \fi%
+  \fi%
+}
+\newcommand*{\indexPathOperationO}[1]{%
+  \index{#1@\originalprefix\protect\texttt{\original{#1}} path operation\originalsuffix}%
+  \index{Path operations!#1@\originalprefix\protect\texttt{\original{#1}}\originalsuffix}%
+}
+
+\newcommand*{\indexCommandO}[1]{%
+  \removeats{#1}%
+  \index{\strippedat @\originalprefix\protect\texttt{\original{\protect\string\protect#1}}\originalsuffix}%
+}
+
+\newcommand*{\referenceKeyandIndexO}[2][/tikz/]{\texttt{#1#2}\indexKeyO[#1]{#2}}
+\newcommand*{\referenceKeyandIndex}[2][/tikz/]{\texttt{#1#2}\indexKey[#1]{#2}}
+\newcommand*{\referenceShapeandIndex}[1]{\texttt{#1}\indexShape{#1}}
+\newcommand*{\referenceShapeandIndexO}[1]{\texttt{#1}\indexShapeO{#1}}
+\newcommand*{\referenceLibraryandIndexO}[1]{\texttt{#1}\indexLibraryO{#1}}
+
+\colorlet{originalindex}{gray}
+\newcommand*{\original}[1]{\textcolor{originalindex}{#1}}
+\newcommand*{\originalsuffix}{}%\textsuperscript{\textdagger}}%\normalsize
+\newcommand*{\originalprefix}{}%\footnotesize
+
+%\newcommand*{\original}[1]{\textcolor{originalindex}{#1}}
+%\newcommand*{\original}[1]{#1}%\textcolor{originalindex}{#1}}
+%\newcommand*{\originalsuffix}{}%\textsuperscript{\color{blue}\tikzname}}
+%\DeclareRobustCommand*{\originalprefix}{\smash{\footnotesize\llap{\textbullet\space}}}
+
+\newcommand*{\filetype}[1]{\textsc{#1}}
+
+\makeatletter
+\def\index@prologue{\section*{Index}\addcontentsline{toc}{section}{Index}
+  This index contains automatically generated entries as well as {\originalprefix\original{references}\originalsuffix} to
+  original functionalities of \pgfname/\tikzname.
+  \bigskip
+}
+\makeatother
+
+\DeclareMathOperator{\sgn}{sgn}
+
+\newenvironment{implementation}{%
+  \noindent\rule[.5ex]{\linewidth}{.4pt}\par
+  \paragraph*{Notes on Implementation:}\par%
+  \small
+  \begin{quotation}%
+}{\end{quotation}}
+
+\newcommand*{\inspiration}[2]{%
+  \par\textbf{Q\,\&\,A:} \cite{#1} \& \cite{#2}\par
+}
+\newcommand*\inspirationQ[1]{\par\textbf{Q:} \cite{#1}}

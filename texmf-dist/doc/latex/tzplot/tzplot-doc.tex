@@ -1,22 +1,33 @@
 %!TEX program = arara
 % arara: xelatex: {shell: yes, synctex: yes}
 % arara: xelatex: {shell: yes, synctex: yes}
-% arara: makeindex: {style: tzplot} 
+% arara: komkindex: {script: makeindex, style: tzplot} 
 % arara: xelatex: {shell: yes, synctex: yes}
 % arara: xelatex: {shell: yes, synctex: yes}
 
-%% 2021/03/20 v1.0.1
-\def\tmpdate{2021/03/20}
-\def\tmpversion{1.0.1}
+%% 2022/09/28 v2.1
+\def\tmpdate{\today}
+\def\tmpversion{2.1}
+
+\def\printtodos{}
+\def\printtmptest{}
+\def\printtzplottest{}
+%--------------------------------------------
+%\renewcommand\printtodos{\input{todos.tex}}
+%\renewcommand\printtmptest{\input{tz-tmp-test.tex}}
+%\renewcommand\printtzplottest{\input{tzplot-test.tex}}
 
 %------------------------------------------------------
 \def\myincludeonly{%
 \includeonly{%
-tzplot-doc-A-v\tmpversion,  % getting ready
-tzplot-doc-B-v\tmpversion,  % intuitive introductions (getting started)
-tzplot-doc-C-v\tmpversion,  % points, lines, and curves
-tzplot-doc-D-v\tmpversion,  % plotting graphs
-%tzplot-eco-v\tmpversion,    % economics
+tzplot-doc-A-v\tmpversion,   % getting ready
+tzplot-doc-B-v\tmpversion,   % intuitive introductions (getting started)
+tzplot-doc-C-v\tmpversion,   % points, lines, and curves -- Part III
+tzplot-doc-C1-v\tmpversion,  % connecting points -- Part III
+tzplot-doc-C2-v\tmpversion,  % polygons and angles -- Part III
+tzplot-doc-D-v\tmpversion,   % plotting graphs -- Part IV
+tzplot-doc-E-v\tmpversion,   % misc : final chapter : (-- Part V: not yet)
+%tzplot-eco-v\tmpversion,     % economics
 }}
 %------------------------------------------------------
 
@@ -24,7 +35,11 @@ tzplot-doc-D-v\tmpversion,  % plotting graphs
 
 \gdef\clearforchapter{} % no clearpage for chapter
 
+%\usepackage{istgame} % middle arrow test
+%\usepackage{tzplot-v\tmpversion}
 \usepackage{tzplot}
+
+%\AtBeginDocument{\tikzset{>=to}}
 
 % ndh
 \usepackage{etoolbox}
@@ -36,12 +51,10 @@ tzplot-doc-D-v\tmpversion,  % plotting graphs
 %\settocdepth{subsubsection}
 %\setlength\cftsubsubsectionindent{4.5em}
 
-\renewcommand*\contentsname{Contents}
-\renewcommand*\figurename{Figure}
-\renewcommand*\tablename{Table}
-\renewcommand*\abstractname{Abstract}
-\renewcommand*\indexname{Index}
-\renewcommand*\pagerefname{\kern-4pt}
+%% us date
+\usepackage{datetime}
+\usdate \let\mytoday\today
+\AtBeginDocument{\let\today\mytoday}
 
 \hypersetup{pdfborder={0 0 0}} % to suppress the hyperlink red box
 
@@ -71,7 +84,7 @@ tzplot-doc-D-v\tmpversion,  % plotting graphs
 \setlength\cftsectionindent{1.8em}
 \setlength\cftsectionnumwidth{2.7em}
 \setlength\cftsubsectionindent{4.5em}
-\setlength\cftsubsectionnumwidth{3em}
+\setlength\cftsubsectionnumwidth{3.5em} % 3em -> 3.5em
 
 %%% chapter style
 \makechapterstyle{tzdoc}{%
@@ -84,6 +97,7 @@ tzplot-doc-D-v\tmpversion,  % plotting graphs
 
 %\usepackage{xparse}  %% oblivoir loads xparse
 \usepackage{tikz}
+\usetikzlibrary{shapes.misc}
 
 
 \usepackage{makecell}
@@ -91,9 +105,11 @@ tzplot-doc-D-v\tmpversion,  % plotting graphs
 \usepackage[normalem]{ulem} % [normalem] to correct the pdf bookmark broken characters
 \usepackage{idxlayout}
 
+%\usepackage{tabu,tabu-fix}
+
 
 \usepackage{tcolorbox}
-\tcbuselibrary{minted,listings,breakable}
+\tcbuselibrary{minted,xparse,listings,breakable}
 \tcbset{%
   listing engine=minted,breakable,
   after={\par\vspace{.5\baselineskip}\noindent}
@@ -106,21 +122,31 @@ tzplot-doc-D-v\tmpversion,  % plotting graphs
   center upper,
   center lower,
   sidebyside gap=5pt,
-  listing options={%
-    style=tcblatex,
-    keywordstyle=\color{blue},
-    commentstyle=\color{black!20!green},
-    morekeyword={
-      tzline,tzlines,tzdot,tzdots,
-      tznode,tznodes
-    },
-  }
+  minted style=igor, %tango, **igor, xcode, ***manni, *autumn, colorful, 
+%  listing options={%
+%    style=tcblatex,
+%    keywordstyle=\color{blue},
+%    commentstyle=\color{black!20!green},
+%    morekeywords={
+%      tzline,tzlines,tzdot,tzdots,
+%      tznode,tznodes
+%    },
+%  }, % end of listing options
 }
 
-\newtcblisting{tzdef}[1]{colback=blue!5!white,listing only,#1}
-\newtcblisting{tzsty}[1]{colback=green!5!white,listing only,#1}
-\newtcblisting{tztikz}[1]{colback=white,colframe=gray!15,listing only,#1}
-\newtcblisting{tzcode}[2][]{righthand width=\expandafter#2\linewidth,#1}
+%\newtcblisting{tzdef}[1]{colback=blue!5!white,listing only,#1}
+%\newtcblisting{tzsty}[1]{colback=green!5!white,listing only,#1}
+%\newtcblisting{tztikz}[1]{colback=white,colframe=gray!15,listing only,#1}
+%\newtcblisting{tzcode}[2][]{righthand width=\expandafter#2\linewidth,#1}
+
+\DeclareTCBListing{tzdef}{ !O{} }
+  {colback=blue!5!white,listing only,#1}
+\DeclareTCBListing{tzsty}{ !O{} }
+  {colback=green!5!white,listing only,#1}
+\DeclareTCBListing{tztikz}{ !O{} }
+  {colback=white,colframe=gray!15,listing only,#1}
+\DeclareTCBListing{tzcode}{ !G{1} !O{} }
+  {righthand width=\expandafter#1\linewidth,#2}
 
 \NewDocumentEnvironment{mytcblisting}{O{}}
 { \medskip
@@ -169,9 +195,14 @@ tzplot-doc-D-v\tmpversion,  % plotting graphs
 \newcommand\ipkg[1]{\textsf{#1}\index{#1@\textsf{#1}}}
 \newcommand\ienv[1]{\textsf{#1}\index{#1@\textsf{#1}}}
 
+%\makeatletter
+%\newcommand{\icmd}[1]{\cmdprint{#1}%
+%  \index{\expandafter\@gobble\string#1@\string\cmdprint{\string#1}}}
+%\makeatother
+
 \makeatletter
 \newcommand{\icmd}[1]{\cmdprint{#1}%
-  \index{\expandafter\@gobble\string#1@\string\cmdprint{\string#1}}}
+  \index{\expandafter\@gobble\string#1(@\string\cmdprint{\string#1}}}
 \makeatother
 
 \makeindex
@@ -201,8 +232,37 @@ tzplot-doc-D-v\tmpversion,  % plotting graphs
 \def\listdivider{\leavevmode\smallskip\hrule width 1.5em\smallskip}
 
 \newcommand\remark{\bigskip\noindent \textbf{Remark: }}
+\newcommand\remarkafterskip{\bigskip}
 \newcommand\warning{\bigskip\noindent \textbf{Warning: }}
 \newcommand\threeways{\textsc{Three Ways}}
+
+
+\usepackage{filecontents}
+
+\begin{filecontents*}{sine.data}
+#Curve 0, 20 points
+#x y type
+0.00000 0.00000  i
+0.52632 0.50235  i
+1.05263 0.86873  i
+1.57895 0.99997  i
+2.10526 0.86054  i
+2.63158 0.48819  i
+3.15789 -0.01630  i
+3.68421 -0.51638  i
+4.21053 -0.87669  i
+4.73684 -0.99970  i
+5.26316 -0.85212  i
+5.78947 -0.47390  i
+6.31579 0.03260  i
+6.84211 0.53027  i
+7.36842 0.88441  i
+7.89474 0.99917  i
+8.42105 0.84348  i
+8.94737 0.45948  i
+9.47368 -0.04889  i
+10.00000 -0.54402  i
+\end{filecontents*}
 
 
 %\parindent=0pt
@@ -212,6 +272,15 @@ tzplot-doc-D-v\tmpversion,  % plotting graphs
       \tmpdate\quad version \tmpversion}
 
 \def\tmpclearpage{\clearpage}
+
+\AtBeginDocument{%
+\renewcommand*\contentsname{Contents}
+\renewcommand*\figurename{Figure}
+\renewcommand*\tablename{Table}
+\renewcommand*\abstractname{Abstract}
+\renewcommand*\indexname{Index}
+\renewcommand*\pagerefname{\kern-4pt}
+}
 
 \AtBeginDocument{\MakeShortVerb{\|}}
 
@@ -226,6 +295,10 @@ tzplot-doc-D-v\tmpversion,  % plotting graphs
 
 \myincludeonly
 
+\firmlists
+
+\renewcommand\cleardoublepage{\clearpage}
+
 %=============================================================
 \begin{document}
 
@@ -235,7 +308,7 @@ tzplot-doc-D-v\tmpversion,  % plotting graphs
 \renewcommand{\abstracttextfont}{\normalfont\small\noindent\ignorespaces}
 \begin{abstract}
 This is a \LaTeX{} package that provides \Tikz\ based macros to make it easy to draw graphs.
-The macros provided in the \pkg{tzplot} package are just \emph{abbreviations} for \Tikz\ codes, which can be complicated, but using the package, hopefully, makes drawing easier, especially when drawing repeatedly. The macros were chosen and developed with an emphasis on drawing graphs in \emph{economics}.
+The macros provided in the \pkg{tzplot} package are just \emph{abbreviations} for \Tikz\ codes, which can be complicated, but using the package, hopefully, makes drawing easier, especially when drawing repeatedly. The macros have been chosen and developed with an emphasis on drawing graphs in \emph{economics}.
 
 \begin{keywords}
 lines, dots, curves, axes, functions, 
@@ -247,42 +320,242 @@ projection, ticks, intersections, tangent lines
 
 \mainmatter
 
-\include{tzplot-doc-A-v\tmpversion}
 
-\include{tzplot-doc-B-v\tmpversion}
+\printtodos
 
-\include{tzplot-doc-C-v\tmpversion}
+\printtmptest
 
-\include{tzplot-doc-D-v\tmpversion}
+\printtzplottest
 
-%\include{tzplot-eco-v\tmpversion}
+
+% Part I
+\include{tzplot-doc-A-v\tmpversion} % getting ready
+
+% Part II
+\include{tzplot-doc-B-v\tmpversion} % getting started
+
+% Part III
+\include{tzplot-doc-C-v\tmpversion} % dots, lines, curves, angles
+\include{tzplot-doc-C1-v\tmpversion} % connecting points
+\include{tzplot-doc-C2-v\tmpversion} % polygons and angles
+
+% Part IV
+\include{tzplot-doc-D-v\tmpversion} % plot functions
+
+% Part V (chapter now) %%% Part: not yet. 
+\include{tzplot-doc-E-v\tmpversion} % misc and examples
+
+% Not Yet!
+\include{tzplot-eco-v\tmpversion} % application to economics
 
 
 \chapter*{Version history}
 \addcontentsline{toc}{chapter}{Version history}
 
 \begin{itemize}
-\item v\tmpversion (\tmpdate)
+%\item v\tmpversion (\tmpdate)
+%  \begin{itemize}
+%  \item Uploaded to CTAN
+%  \item document done
+%  \end{itemize}
+\item v\tmpversion (2022/09/28)
+  \begin{itemize}
+  \item Uploaded to CTAN
+  \item document done
+  \end{itemize}
+\item v2.1 (2022/09/24)
+  \begin{itemize}
+%  \item corrected typos in the document
+  \item fixed bugs: |\tzplot|, |\tzplotcurve|, |\tzslope|
+  \item redesigned |\tzaxes| to have one path with ``liftpen" for naming paths
+  \item redesigned |\tzaxesL| to have one path with ``liftpen" for naming paths
+  \item redisigned |\tzslopeat| and |\tzslope|
+  \item added the swap versions |\tzslopeat'| and |\tzslope'|
+  \item added |\tznormal(*)(')|, |\tznormalat(*)(')|, |\settznormalepsilon| and |\settznormallayer|
+  \end{itemize}
+\item v2.1 (2022/04/15)
+  \begin{itemize}
+  \item modified |\tzaxisx| and |\tzaxisy| to add the option |"<path name>"|
+  \item added |\tzdistance| to calculate the distance between two coordinates 
+  % (2022/04/23)
+  \end{itemize}
+\item v2.0 (2022/02/28)
+  \begin{itemize}
+  \item Uploaded to CTAN
+%  \item document done
+  \end{itemize}
+%%%\item v1.98 (2022/02/27)
+%%%  \begin{itemize}
+%%%  \item added |\tzpointangle|
+%%%  \item added |\tzfnarealine(')|, |\settzfnarealinestyle|
+%%%  \end{itemize}
+%%%\item v1.97 (2022/02/26)
+%%%  \begin{itemize}
+%%%  \item corrected |\tzpdfN|: bug fix
+%%%  \item redesigned |\tzfnarea| (renamed from |\tzfnArea|)
+%%%  \item added |\settzfnarearlayer|
+%%%  \end{itemize}
+%%%\item v1.96 (2022/02/25)
+%%%  \begin{itemize}
+%%%  \item modified |\tzanglemark|, |\tzrightanglemark|
+%%%  \item added |\settzAAlinestyle| and |\settzRAlinestyle|
+%%%  \item added |\settzAAradius|, |\settzRAsize|
+%%%  \item predefined coordinates |(tzAAmid)|, |(tzRAvertex)|
+%%%  \item corrected |\tzdefLFn|, |\tzdefLFnofy|, |\tzLfn|, |\tzLFnofy|
+%%%  \item added |error message|: infinite slope error (for |LFn...| things)
+%%%  \end{itemize}
+%%%\item v1.95 (2022/02/24)
+%%%  \begin{itemize}
+%%%  \item documented
+%%%  \item redefined |\tzedge(+)| and |\tzedges(+)| to make them consistent with \Tikz\ way
+%%%  \item added aliases: |\tzbox|, |\tzboxring|, |\tzcirclering|
+%%%  \item renamed |\tzangleONE|, |\tzangleTWO|, |\tzanglresult|
+%%%  \end{itemize}
+%%%\item v1.94 (2022/02/22)
+%%%  \begin{itemize}
+%%%  \item added |\tzprojs(*)|, |\tzprojsx(*)|, |\tzprojsy(*)| (semicolon versions)
+%%%  \item added |\tznoderectangle(*)| and |\tznodebox(*)|: aliases of |\tznodeframe(*)|
+%%%  \item added |\tznodeoval(*)|: an alias of |\tznodeellipse(*)|
+%%%  \item modified |\tznode(*)|: to use full features of the \Tikz\ |node| operation with |<node.code>|
+%%%  \end{itemize}
+%%%\item v1.93 (2022/02/19)
+%%%  \begin{itemize}
+%%%  \item added middle arrow tip styles: |-->--|, |--o--|, |--x--|, and |--/--|
+%%%  \item added |\settzmidarrow| to control middle arrow tips
+%%%  \item added libraries |arrows.meta| and |bending|
+%%%  \item added |error message|: when a semicolon is forgotten for semicolon versions
+%%%  \end{itemize}
+%%%\item v1.92 (2022/02/17)
+%%%  \begin{itemize}
+%%%  \item redefined |\tzfn| and |\tzfnofy| to resolve issue with |\tz<...>AtBegin|
+%%%    \begin{itemize}
+%%%    \item used |(current subpath start)|
+%%%    \end{itemize}
+%%%  \item redefined |\tzfnmax| and |\tzfnmin| to resolve issue with |\tz<...>AtBegin|
+%%%  \item redefined |\tzLFn| and |\tzLFnofy| to resolve issue with |\tz<...>AtBegin|
+%%%  \item redefined |\tzplot| and |\tzplotcurve| to resolve issue with |\tz<...>AtBegin|
+%%%  \end{itemize}
+%%%\item v1.91 (2022/02/15)
+%%%  \begin{itemize}
+%%%  \item added |\tznodedots(*)| and |\tznodes(*)|: semicolon versions
+%%%    \begin{itemize}
+%%%    \item modified |\tzdots| for consistency with |\tznodedots|
+%%%    \end{itemize}
+%%%  \end{itemize}
+%%%\item v1.9 (2022/02/11)
+%%%  \begin{itemize}
+%%%  \item redefined |\tzparabola| to add |\tzparabolaAtBegin|, |\tzparabolaAtEnd|
+%%%  \item redefined |\tzbezier| to add |\tzbezierAtBegin|, |\tzbezierAtEnd|
+%%%  \item redefined |\tzplot|, |\tzplotcurve| to use string replacement for angles
+%%%  \item redefined |\tznodedot| to use string replacement for angles
+%%%  \item modified |\tzlinks| and |\tzpath| to make them to be (almost) equal
+%%%    \begin{itemize}
+%%%    \item |\let\tzpathstyle\tzlinkstyle| and |\let\settzpathstyle\settzlinkstyle|
+%%%    \end{itemize}
+%%%  \end{itemize}
+%%%\item v1.8 (2022/02/08)
+%%%  \begin{itemize}
+%%%  \item redefined |\tzdot| and many other macros related to points, dots, and coordinates
+%%%    \begin{itemize}
+%%%    \item allows users to place labels not only by angles but also by string replacement:
+%%%    \item |\tzdot(s)|, |\tzcdot(s)|, |\tzcoor(s)|, |\tzcoorsquick|
+%%%    \item |\tzXpoint|, |\tzLFnXpoint|, |\tzhXpoint(at)|, |\tzvXpoint(at)|
+%%%    \end{itemize}
+%%%  \item modified |\tzfn| and |\tzfn'| (for functions of |\x| only)
+%%%  \item modified |\tzfnofy| and |\tzfnofy'| (for functions of |\y| only)
+%%%  \item modified |\tzdeffn|, |\tzdeffnofy|, |\tzdefLFn|, |\tzdefLFnofy| (no prime versions)
+%%%  \item redefined |\tzLFnofy| to add |\tzLFnofy'|
+%%%  \item rearraged document
+%%%  \end{itemize}
+%%%\item v1.7 (2022/02/06)
+%%%  \begin{itemize}
+%%%  \item redefined |\tzrightanglemark|
+%%%    \begin{itemize}
+%%%    \item added |\tzrightanglemark*| to replace |\tzrightanglefill|, to be removed
+%%%    \item added |\tzrightanglemark'| to avoid frequent coding error
+%%%    \end{itemize}
+%%%  \item redefined |\tzanglemark|
+%%%    \begin{itemize}
+%%%    \item added |\tzanglemark*| to replace |\tzanglefill|, to be removed
+%%%    \item added |\tzanglemark'| to avoid frequent coding error
+%%%    \end{itemize}
+%%%  \end{itemize}
+%%%\item v1.6 (2022/01/26)
+%%%  \begin{itemize}
+%%%  \item renamed |\tzmarkangle(')| to |\tzanglemark(')|
+%%%  \item renamed |\tzfillkangle(')| to |\tzanglefill(')|
+%%%  \item renamed |\tzmarkrightangle| to |\tzrightanglemark|
+%%%  \item renamed |\tzfillrightangle| to |\tzrightanglefill|
+%%%  \item redefined |\tzpath| and its friends to make |\settzpathlayer| work with them
+%%%  \item added |\tzlineAtBegin| and |\tzlineAtEnd|
+%%%  \item added |\tzlinesAtBegin| and |\tzlinesAtEnd|
+%%%  \item added |\tztoAtBegin| and |\tztoAtEnd|
+%%%  \item added |\tztosAtBegin| and |\tztosAtEnd|
+%%%  \item added |\tzLFnAtBegin| and |\tzLFnAtEnd|
+%%%  \item added |\tzLFnofyAtBegin| and |\tzLFnofyAtEnd|
+%%%  \item added |\tzvfn(at)AtBegin| and |\tzvfn(at)AtEnd|
+%%%  \item added |\tzhfn(at)AtBegin| and |\tzhfn(at)AtEnd|
+%%%  \end{itemize}
+%%%\item v1.5 (2021/11/29)
+%%%  \begin{itemize}
+%%%  \item added |\tzfnArea| (need to be completed, and then rename to |\tzfnarea|)
+%%%    \begin{itemize}
+%%%    \item currently |no shift|, |no extension|, |no code.append|
+%%%    \end{itemize}
+%%%  \item added |\tzpdfZ| and |\tzpdfN| for normal distribution functions
+%%%  \end{itemize}
+%%%\item v1.4 (2021/11/05)
+%%%  \begin{itemize}
+%%%  \item revived |\tzslope|, |\tzslopeat|, |\settzslopelayer|, |\tzslopeepsilon|
+%%%  \item revived |\tzdeffn(')|, |\tzdeffnofy(')|, |\tzdefLFn(')|, |\tzdefLFnofy|
+%%%  \item revived |\tzfn'|, |\tzfnofy|, |\tzLFnofy|, |\tzLFnXpoint(*)|
+%%%  \end{itemize}
+%%%\item v1.3 (2021/04/09)
+%%%  \begin{itemize}
+%%%  \item revived |\tzlink(+)|, |\tzlinkAtBegin|, |\tzlinkAtEnd|, |\settzlinkstyle|
+%%%  \item revived |\tzlinks(+)|, |\tzlinksAtBegin|, |\tzlinksAtEnd|
+%%%  \item revived |\tzedge(+)|, |\tzedges(+)|
+%%%  \item revived |\tzslope|, |\tzslopeat|
+%%%  \item revived |\tzLFXpoint(*)|
+%%%  \item revived |\tzfnofy|, |\tzdeffn|, |\tzdeffnofy|
+%%%  \item revived |\tzLFnofy|, |\tzdefLFn|, |\tzdefLFnofy|
+%%%  \item revived |\tzplotfile|
+%%%  \end{itemize}
+%%%\item v1.2 (2021/04/03)
+%%%  \begin{itemize}
+%%%  \item revived |\tzsnake|, |\tzspy|
+%%%  \item added |\tzmarkrightangle|, |\tzfillrightangle|
+%%%  \item added |\tzmarkangle(')|, |\tzfillangle(')|
+%%%  \item added |\settzanglelayer|, |\tzangleresult|, |\tzangleONEresult|, |\tzangleTWOresult|
+%%%  \item added |\tzpicangle| (considering to drop later)
+%%%  \item added |\tzfnmax|, |\tzfnmin|, |\tz<...>AtBegin|, |\tz<...>AtEnd|
+%%%  \end{itemize}
+%%%\item v1.1 (2021/03/23)
+%%%  \begin{itemize}
+%%%  \item added |\tzring(*)|, |\tzellipsering(*)|, |\tzrectanglering(*)|
+%%%  \item added aliases: |\tzovalring(*)|, |\tzframering(*)|
+%%%  \end{itemize}
+\item v1.0.1 (2021/03/20) uploaded to CTAN
   \begin{itemize}
   \item revised the document with typo corrections
   \item added the option |<code.append>| to |\tzframe|, |\tzcircle|, and |\tzellipse|
   \item added aliases: |\let\tzrectangle\tzframe| and |\let\tzoval\tzellipse|
   \end{itemize}
 \item v1.0 (2021/02/28) uploaded to CTAN
-\item v0.999a (2021/02/27)
-  \begin{itemize}
-  \item writing document
-  \item some |\tz<...>AtBegin| and |\tz<...>AtEnd| not documented
-  \end{itemize}
-\item v0.999 (2021/02/24)
-  \begin{itemize}
-  \item fixed the title. ``Plot Graphs with \Tikz\ Abbreviations"
-  \item changed the default |\tzpathstyle| and |\tzlinkstyle| from `|--|' to `|to|' (no harm)
-  \item added |\tzpathlayer| and |\settzpathlayer|, for later use. (currently not used)
-  \item removed explanation of the option |<+or++>| in the document (considering to remove later)
-  \item changed the delimiter |<path style>| to |[<path style>]| in |\tzpath| and |\tzlink(s)| (critical change)
-  \item added |text opactiy=1| everywhere |fill opacity=.3| is used
-  \end{itemize}
+%%%\item v0.999a (2021/02/27)
+%%%  \begin{itemize}
+%%%  \item writing document
+%%%  \item some |\tz<...>AtBegin| and |\tz<...>AtEnd| not documented
+%%%  \end{itemize}
+%%%\item v0.999 (2021/02/24)
+%%%  \begin{itemize}
+%%%  \item fixed the title. ``Plot Graphs with \Tikz\ Abbreviations"
+%%%  \item changed the default |\tzpathstyle| and |\tzlinkstyle| from `|--|' to `|to|' (no harm)
+%%%  \item added |\tzpathlayer| and |\settzpathlayer|, for later use. (currently not used)
+%%%  \item removed explanation of the option |<+or++>| in the document (considering to remove later)
+%%%  \item changed the delimiter |<path style>| to |[<path style>]| in |\tzpath| and |\tzlink(s)| (critical change)
+%%%  \item added |text opacity=1| everywhere |fill opacity=.3| is used
+%%%  \end{itemize}
 %%%\item v0.99j (2021/02/18)
 %%%  \begin{itemize}
 %%%  \item added |\tzplotcurve*| to show dots
@@ -359,7 +632,7 @@ projection, ticks, intersections, tangent lines
 \chapter*{Acknowledgement}
 \addcontentsline{toc}{chapter}{Acknowledgement}
 
-I am grateful to Kangsoo Kim of KTUG (Korean TeX Users Group) who has written many packages including |oblivoir.cls| for helping to implement the idea of the semicolon version with |expl3|.
+Many thanks to Kangsoo Kim from KTUG (Korean TeX Users Group) who wrote many packages, including |oblivoir.cls|, for helping to implement the semicolon versions and to handle \TeX\ expansion issues using |expl3|.
 
 \chapter*{References}
 \addcontentsline{toc}{chapter}{Reference}
@@ -368,7 +641,7 @@ I am grateful to Kangsoo Kim of KTUG (Korean TeX Users Group) who has written ma
 
 \hpara{}\uline{\hphantom{Casteleyn, Jean Pierre}}~(2018), ``Visual TikZ," version 0.66.
 
-\hpara{}Tantau, Till~(2020), ``\TikZ\ and PGF: Manual for version 3.1.8b," \url{http://sourceforge.net/projects/pgf}.
+\hpara{}Tantau, Till~(2021), ``\TikZ\ and PGF: Manual for version 3.1.9a," \url{http://sourceforge.net/projects/pgf}.
 
 \clearpage
 \printindex

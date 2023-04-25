@@ -5,8 +5,8 @@
 
 assert(luaotfload_module, "This is a part of luaotfload and should not be loaded independently") { 
     name          = "luaotfload-features",
-    version       = "3.18",       --TAGVERSION
-    date          = "2021-05-21", --TAGDATE
+    version       = "3.23",       --TAGVERSION
+    date          = "2022-10-03", --TAGDATE
     description   = "luaotfload submodule / features",
     license       = "GPL v2.0",
     author        = "Hans Hagen, Khaled Hosny, Elie Roux, Philipp Gesang, Marcel Krüger",
@@ -54,15 +54,6 @@ else
     normalize = otf.features.normalize
 end
 
---[[HH (font-xtx) --
-    tricky: we sort of bypass the parser and directly feed all into
-    the sub parser
---HH]]--
-
-function definers.getspecification(str)
-    return "", str, "", ":", str
-end
-
 local log              = luaotfload.log
 local report           = log.report
 
@@ -74,7 +65,7 @@ local function cmp_by_idx (a, b) return a.idx < b.idx end
 
 local defined_combos = 0
 
-local function handle_combination (combo, spec)
+local function handle_combination (combo, spec, size)
     defined_combos = defined_combos + 1
     if not combo [1] then
         report ("both", 0, "features",
@@ -141,7 +132,7 @@ local function handle_combination (combo, spec)
 
     local basechar       = basefnt.characters
     local baseprop       = basefnt.properties
-    baseprop.name        = spec.name
+    baseprop.name        = spec
     baseprop.virtualized = true
     basefnt.fonts        = fontids
 
@@ -192,13 +183,16 @@ local function handle_combination (combo, spec)
                 " *> font %d / %d: imported %d glyphs into combo.",
                 i, nc, cnt)
     end
-    spec.lookup     = "combo"
-    spec.file       = basefnt.filename
-    spec.name       = stringformat ("luaotfload<%d>", defined_combos)
-    spec.features   = { normal = { spec.specification } }
-    spec.forced     = "evl"
-    spec.eval       = function () return basefnt end
-    return spec
+    return {
+        lookup        = "combo",
+        file          = basefnt.filename,
+        name          = stringformat ("luaotfload<%d>", defined_combos),
+        specification = spec,
+        features      = { normal = { } },
+        forced        = "evl",
+        eval          = function () return basefnt end,
+        size          = size,
+    }
 end
 
 ---[[ begin excerpt from font-ott.lua ]]
@@ -322,6 +316,7 @@ local supported = {
     b    = "b",
     i    = "i",
     bi   = "bi",
+    r    = "r",
     aat  = false,
     icu  = false,
     gr   = false,
@@ -356,10 +351,9 @@ do
     extract_subfont   = full_path * sub_expr
 end
 
---- spec -> spec
-local function handle_request (specification)
+local function analyze(spec_string, size)
     local request = lpegmatch(luaotfload.parsers.font_request,
-                              specification.specification)
+                              spec_string)
 ----inspect(request)
     if not request then
         --- happens when called with an absolute path
@@ -367,7 +361,7 @@ local function handle_request (specification)
         --- we try to behave as friendly as possible
         --- just go with it ...
         report("log", 1, "features", "invalid request %q of type anon",
-            specification.specification)
+               spec_string)
         report("log", 1, "features",
                "use square bracket syntax or consult the documentation.")
         --- The result of \fontname must be re-feedable into \font
@@ -379,35 +373,61 @@ local function handle_request (specification)
         --- parentheses).
         --- https://github.com/lualatex/luaotfload/issues/57
         local fullpath, sub = lpegmatch(extract_subfont,
-                                        specification.specification)
+                                        spec_string)
         if fullpath and sub then
-            specification.sub  = tonumber(sub) or sub
-            specification.name = fullpath
+            return {
+                lookup = 'path',
+                sub = tonumber(sub) or sub,
+                name = fullpath,
+                size = size,
+            }
         else
-            specification.name = specification.specification
+            return {
+                lookup = 'path',
+                name = spec_string,
+                size = size,
+            }
         end
-        specification.lookup = "path"
-        return specification
     end
 
     local lookup, name = request.lookup, request.name
     if lookup == "combo" then
-        return handle_combination (name, specification)
+        return handle_combination (name, spec_string, size)
     end
 
-    local features = specification.features
-    if not features then
-        features = { }
-        specification.features = features
+    local features = {
+        raw = request.features or {}
+    }
+
+    local specification = {
+        specification = spec_string,
+        size = size,
+        lookup = lookup,
+        name = name,
+        sub = request.sub or false,
+        features = features,
+    }
+
+    if lookup == 'id' then
+        local original_font = fontidentifiers [request.id]
+        if not original_font then return end
+        local original_spec = original_font.specification
+        if not original_spec then return end
+        if size < 0 then
+            specification.size = original_spec.size * size // -1000
+        end
+        specification.lookup = original_spec.lookup
+        specification.name = original_spec.name
+        specification.sub = specification.sub or original_spec.sub
+        specification.style = original_spec.style
+        specification.optsize = original_spec.optsize
+        specification.forced = original_spec.forced
+        if original_spec.features then
+            features.raw = table.merged(original_spec.features.raw, features.raw)
+        end
     end
 
-    features.raw = request.features or {}
-    request.features = apply_default_features(features.raw)
-
-    if name then
-        specification.name     = name
-        specification.lookup   = lookup or specification.lookup
-    end
+    local processed_features = apply_default_features(features.raw)
 
     if request.modifiers then
         local style, optsize = handle_slashed(request.modifiers)
@@ -417,11 +437,11 @@ local function handle_request (specification)
     for n=1, #import_values do
         local feat       = import_values[n][1]
         local keep       = import_values[n][2]
-        local newvalue   = request.features[feat]
+        local newvalue   = processed_features[feat]
         if newvalue then
-            specification[feat] = request.features[feat]
+            specification[feat] = newvalue
             if not keep then
-                request.features[feat] = nil
+                processed_features[feat] = nil
             end
         end
     end
@@ -429,7 +449,7 @@ local function handle_request (specification)
     --- The next line sets the “rand” feature to “random”; I haven’t
     --- investigated it any further (luatex-fonts-ext), so it will
     --- just stay here.
-    features.normal = normalize (request.features)
+    features.normal = normalize (processed_features)
     if features.normal.instance then
         if features.normal.axis then
             report("term and log", 0, "features", "instance and axis provided, instance will be ignored")
@@ -437,7 +457,6 @@ local function handle_request (specification)
             specification.instance = features.normal.instance
         end
     end
-    specification.sub = request.sub or specification.sub or false
 
     local forced_mode = request.features and request.features.mode
     if forced_mode then
@@ -450,8 +469,7 @@ local function handle_request (specification)
     return specification
 end
 
-fonts.names.handle_request = handle_request
-
+fonts.definers.analyze = analyze
 
 if as_script == true then --- skip the remainder of the file
     report ("log", 5, "features",
@@ -460,12 +478,13 @@ if as_script == true then --- skip the remainder of the file
 end
 
 do
-    local helpers = fonts.handlers.otf.readers.helpers
+    local helpers = otf.readers.helpers
     local axistofactors = helpers.axistofactors
     local cleanname = helpers.cleanname
     local getaxisscale = helpers.getaxisscale
     local function search(table, term, key_field, value_field)
         if not table then return end
+        term = cleanname(term)
         for i=1, #table do
             local entry = table[i]
             if cleanname(entry[key_field]) == term then
@@ -476,7 +495,7 @@ do
     function helpers.getfactors(tfmdata, instance) -- `instance` might refer to an `axis` value here
         assert(instance == true or type(instance) == "string", "Fontloader changed interface of helpers.getfactors. This is a bug, please notify the luaotfload maintainers.")
         local variabledata = tfmdata.variabledata
-        if not variabledata or instance == "" then return end
+        if not variabledata then return end
         local instances = variabledata.instances
         local axis = variabledata.axis
         local designaxis = variabledata.designaxis
@@ -521,15 +540,6 @@ do
         end
     end
 end
-
--- MK: Added
-function fonts.definers.analyze (spec_string, size)
-    return handle_request {
-        size = size,
-        specification = spec_string,
-    }
-end
--- /MK
 
 -- We assume that the other otf stuff is loaded already; though there’s
 -- another check below during the initialization phase.
@@ -776,6 +786,104 @@ do
         },
     }
 end
+
+do
+    local function restore(tfmdata, value, features)
+        if not tfmdata.properties.monospaced then return end
+        if features.fixedspace then return end -- In this case, 'auto' is true
+        local parameters = tfmdata.parameters
+        local space = parameters.space
+        parameters.space_stretch, parameters.space_shrink = space/2, space/3
+    end
+    fonts.constructors.features.otf.register {
+        name = 'internal__variablespace',
+        default = true,
+        initializers = {
+            base = restore,
+            node = restore,
+        },
+    }
+    local function node_fixedspace(tfmdata, value, features)
+        if value == 'auto' then return end
+        if tfmdata.properties.monospaced then return end -- handled by internal__variablespace
+        local parameters = tfmdata.parameters
+        parameters.space_stretch, parameters.space_shrink = 0, 0
+    end
+    local hb = luaotfload.harfbuzz
+    local post_tag = hb and hb.Tag.new'post'
+    local function harf_fixedspace(tfmdata, value, features)
+        if value == 'auto' then
+            -- We have to determine if we have a monospace font.
+            -- Let's be honest, it would be boring if that were easy.
+            local post_table = tfmdata.hb.shared.face:get_table(post_tag):get_data()
+            if #post_table < 16 then
+                -- Invalid OpenType font... Let's assume that it's not
+                -- monospaced:
+                return
+            end
+            local monospaced = string.unpack('>I4', post_table, 13) ~= 0
+            if not monospaced then return end -- FIXME: How to determine?
+        end
+        local parameters = tfmdata.parameters
+        parameters.space_stretch, parameters.space_shrink = 0, 0
+    end
+    fonts.constructors.features.otf.register {
+        name = 'fixedspace',
+        description = 'Do not stretch or shrink spaces',
+        default = 'auto',
+        initializers = {
+            base = node_fixedspace,
+            node = node_fixedspace,
+            plug = harf_fixedspace,
+        },
+    }
+end
+
+local uni_normalize = require'lua-uni-normalize'.direct
+local normalize_lookup = setmetatable({}, {__index = function(t, f)
+    local fontdir = assert(font.getfont(f))
+    local normalize_func = t[fontdir]
+    local characters = fontdir.characters
+    local function result(head)
+        return normalize_func(head, f, characters, true)
+    end
+    t[f] = result
+    return result
+end})
+-- When this is loaded as part of luaotfload-tool, then we can't access nodes
+-- and therefore uni_normalize doesn't exists. In that case we don't need it
+-- anyway, so just skip it then.
+local normalize_funcs = uni_normalize and {
+    nfc = uni_normalize.NFC,
+    nfd = uni_normalize.NFD,
+    nfkd = uni_normalize.NFKD,
+}
+fonts.constructors.features.otf.register {
+    name = 'normalize',
+    default = 'nfc',
+    description = 'Normalize text to NFC before shaping',
+    manipulators = {
+        node = function(fonttable, _, value)
+            if value == true then
+                value = 'nfc'
+            end
+            local func = normalize_funcs[value]
+            if not func then
+                report ("report", 0, "features",
+                        "Unsupported normalization method replaced by NFC")
+                func = normalize_funcs.nfc
+            end
+            normalize_lookup[fonttable] = func
+        end,
+    },
+    processors = {
+      position = 1,
+      node = function(head, f, _, _, _)
+          return normalize_lookup[f](head)
+      end,
+    },
+}
+
 
 return function ()
     if not fonts and fonts.handlers then

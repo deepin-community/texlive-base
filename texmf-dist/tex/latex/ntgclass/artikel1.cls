@@ -10,7 +10,7 @@
 %% The source is maintained by Johannes Braams and bug
 %% reports for it can be sent to texniek at braams.xs4all.nl
 %% 
-%% Copyright (C) 1990-2020 Nederlandstalige TeX Gebruikersgroep.
+%% Copyright (C) 1990-2023 Nederlandstalige TeX Gebruikersgroep.
 %% All rights reserved.
 %% 
 %% This file was generated from file(s) of the NTG document classes distribution.
@@ -40,7 +40,7 @@
 %% extension .ins) which are part of the distribution.
 \NeedsTeXFormat{LaTeX2e}[1995/12/01]
 \ProvidesClass{artikel1}%
-              [2020-11-17 v2.1e
+              [2023-01-10 v2.1f
        NTG LaTeX document class]
 \newcommand*\@ptsize{}
 
@@ -783,7 +783,11 @@
   \newcommand*\toc@font[1]{\relax}
 \else
   \newcommand*\toc@font[4]{%
-    #2{#3}#4\toc@fontsel#1}
+    \ifx\Hy@toclinkstart#2%
+      \def\@next{#2\toc@font#1#3#4}%
+    \else
+      \def\@next{#2{#3}\toc@fontsel#1#4}%
+    \expandafter\fi\@next}
   \newcommand*\toc@fontsel[1]{%
     \ifcase#1\relax
     \or\bfseries

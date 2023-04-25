@@ -2,7 +2,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % Copyright (C) Martin Schröder, 1996–2019
-% 				Marei Peischl (peiTeX)  <marei@peitex.de>, 2021
+% 				Marei Peischl (peiTeX)  <marei@peitex.de>, 2021–2022
 %
 % This work may be distributed and/or modified under the
 % conditions of the LaTeX Project Public License, either version 1.3c
@@ -29,9 +29,9 @@
 %
 % \fi
 % \iffalse
-\NeedsTeXFormat{LaTeX2e}[2017/03/29]
+\NeedsTeXFormat{LaTeX2e}[2021/06/01]
 %<package>\ProvidesPackage{ragged2e}
-%<package>         [2021/02/05 v3.0 ragged2e Package]
+%<package>         [2022/11/13 v3.2 ragged2e Package]
 %
 %<*driver>
 \documentclass[a4paper]{ltxdoc}
@@ -42,10 +42,10 @@
 \usepackage{array}
 \usepackage{tabularx}
 \usepackage{gitinfo2}
-\usepackage{hypdoc}
 \usepackage{geometry}
 \usepackage{booktabs}
 \usepackage[document]{ragged2e}
+\usepackage{hyperref}
 \setlength{\RaggedRightRightskip}{0pt plus 4em}%
 \GetFileInfo{ragged2e.sty}
 \EnableCrossrefs
@@ -76,7 +76,7 @@
 \end{document}
 %</driver>
 % \fi
-% \CheckSum{486}
+% \CheckSum{490}
 %
 %% \CharacterTable
 %% {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
@@ -209,14 +209,17 @@
 %  \subsection{\LaTeX}
 %  ^^A
 %  \LaTeX{} defines e.\,g.\ \cs{raggedright} as follows:
+%  \changes{v3.1}{2021/12/15}{Use the updated definition of \cs{raggedright}}
 %    \begin{macrocode}
 %<*latex>
-\def\raggedright{%
-   \let\\=\@centercr
-   \@rightskip\@flushglue
-   \rightskip\@rightskip
-   \leftskip\z@
-   \parindent\z@}
+\DeclareRobustCommand
+	\raggedright{%
+	\let\\\@centercr
+	\@rightskip\@flushglue
+	\rightskip\@rightskip
+	\finalhyphendemerits=\z@
+	\leftskip\z@skip
+	\parindent\z@}
 %    \end{macrocode}
 %  Initially, \cs{@flushglue} is defined as
 %    \begin{macrocode}
@@ -588,6 +591,8 @@
 %  features.\newline
 %  Jordan Firth (\url{jafirth@ncsu.edu}) provided the final push for
 %  version~2.2.
+%  Maurice Hansen reported and helped testing the fix for the bug adding
+%  an additional parskip fixed in version 3.2.
 %
 % ^^A -----------------------------
 %
@@ -1138,7 +1143,21 @@
 \let\@raggedtwoe@saved@gnewline\@gnewline
 %    \end{macrocode}
 %  \end{macro}
-%
+%  \begin{macro}{\@raggedtwoe@centercrNoindent}
+%  \changes{v3.2}{2022/11/13}{New macro}
+%  With the bugfix in version 3.2 we also take care of the indent which
+%  might be set when ragged2e's newline definition or \cs{@centercr} are
+%  triggered. This can be easily archieved using the ltpara hooks.
+%  This is not a final solution for this because on the long run one
+%  has to replace the paragraph break within \cs{@centercr} to match
+%  the content structure for tagging.
+%    \begin{macrocode}
+\def\@raggedtwoe@centercrNoindent{%
+	\AddToHookNext{para/begin}{\OmitIndent}%
+	\@centercr%
+}
+%    \end{macrocode}
+%  \end{macro}
 %  \begin{macro}{\@raggedtwoe@gnewline}
 %  The following definition of a \cs{@gnewline} used by the ragged
 %  commands was suggested by Markus Kohm:
@@ -1154,11 +1173,14 @@
     \unskip
     \ifmmode
 %    \end{macrocode}
-% In formulas we use the original code of \cs{@gnewline}.
+% In formulas we adjusted the original code of \cs{g@newline} to a negative fill to match the alignment of text.
+% Outside those we use \cs{@centercr} to remove the added parskip.
+% \changes{v3.2}{2022/11/13}{Fix bug adding parskip with newline}
 %    \begin{macrocode}
-      \reserved@e {\reserved@f #1}\nobreak \hfil \break
+      \reserved@e {\reserved@f #1}\nobreak \hskip\z@ \break
     \else
-      \reserved@e {\reserved@f #1}{\parskip\z@\par}%
+      \reserved@e {\reserved@f #1}%
+			\@raggedtwoe@centercrNoindent
     \fi
   \fi
   }
@@ -1180,12 +1202,13 @@
 %  \end{Quote}
 %  Finally we signal the code inserted into \cs{selectfont} that
 %  we are active and call that code directly.
+%  \changes{v3.1}{2021/12/15}{Robustify the user macros (Thanks to Markus Kohm for the hint)}
 %  \changes{v2.00}{2003/01/04}{Call \cs{@raggedtwoe@everyselectfont}
 %                              and switch \cs{@gnewline}}
 %    \begin{macrocode}
-\newcommand{\Centering}{%
+\DeclareRobustCommand{\Centering}{%
    \ifx\\\@raggedtwoe@savedcr
-      \let\\\@centercr
+      \let\\\@raggedtwoe@centercrNoindent
    \fi
    \let\@gnewline\@raggedtwoe@gnewline
    \leftskip\CenteringLeftskip
@@ -1202,12 +1225,13 @@
 %  \begin{macro}{\RaggedLeft}
 %  \cs{RaggedLeft} is like \cs{Centering}; it only uses other
 %  parameters.
+%  \changes{v3.1}{2021/12/15}{Robustify the user macros}
 %  \changes{v2.00}{2003/01/04}{Call \cs{@raggedtwoe@everyselectfont}
 %                              and switch \cs{@gnewline}}
 %    \begin{macrocode}
-\newcommand{\RaggedLeft}{%
+\DeclareRobustCommand{\RaggedLeft}{%
    \ifx\\\@raggedtwoe@savedcr
-      \let\\\@centercr
+      \let\\\@raggedtwoe@centercrNoindent
    \fi
    \let\@gnewline\@raggedtwoe@gnewline
    \leftskip\RaggedLeftLeftskip
@@ -1224,12 +1248,13 @@
 %  \begin{macro}{\RaggedRight}
 %  \cs{RaggedRight} is like \cs{Centering}; it only uses other
 %  parameters.
+%  \changes{v3.1}{2021/12/15}{Robustify the user macros (Thanks to Markus Kohm for the hint)}
 %  \changes{v2.00}{2003/01/04}{Call \cs{@raggedtwoe@everyselectfont}
 %                              and switch \cs{@gnewline}}
 %    \begin{macrocode}
-\newcommand{\RaggedRight}{%
+\DeclareRobustCommand{\RaggedRight}{%
    \ifx\\\@raggedtwoe@savedcr
-      \let\\\@centercr
+      \let\\\@raggedtwoe@centercrNoindent
    \fi
    \let\@gnewline\@raggedtwoe@gnewline
    \leftskip\RaggedRightLeftskip
@@ -1246,9 +1271,10 @@
 %  \begin{macro}{\justifying}
 %  \cs{justifying} switches back to the defaults used by \LaTeX{} for
 %  typesetting justyfied text.
+%  \changes{v3.1}{2021/12/15}{Robustify the user macros (Thanks to Markus Kohm for the hint)}
 %  \changes{v2.00}{2003/01/04}{New macro}
 %    \begin{macrocode}
-\newcommand{\justifying}{%
+\DeclareRobustCommand{\justifying}{%
    \let\\\@raggedtwoe@savedcr
    \let\@gnewline\@raggedtwoe@saved@gnewline
    \leftskip\z@

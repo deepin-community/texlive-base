@@ -43,15 +43,20 @@ P2: [
    `"\tt (L,GF)"' at last [].s below
   C10: pconnex(,GC) with .w at last [].e + (0.2,0)
    `"\tt (,GC)"' ht 11pt__ at last [].s below
-  C10: pconnex(,GCF) with .w at last [].e + (0.2,0)
+  C12: pconnex(,GCF) with .w at last [].e + (0.2,0)
    `"\tt (,GCF)"' ht 11pt__ at last [].s below
-] with .nw at P1.C1.sw + (0,-0.35)
 
-P3: [ 
-  C4: pconnex(,P)
+  C4: pconnex(,P) with .w at last [].e + (0.2,0)
    `"\tt (,P)"' at last [].s below
   C11: pconnex(,PF) with .w at last [].e+(0.2,0)
    `"\tt (,PF)"' at (C11,last "") below
-] with .nw at P2.C9.sw + (0,-0.35)
+] with .nw at P1.C1.sw + (0,-0.35)
+
+#P3: [ 
+#  C4: pconnex(,P)
+#   `"\tt (,P)"' at last [].s below
+#  C11: pconnex(,PF) with .w at last [].e+(0.2,0)
+#   `"\tt (,PF)"' at (C11,last "") below
+#] with .nw at P2.C9.sw + (0,-0.35)
 
 .PE

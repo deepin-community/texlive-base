@@ -1,0 +1,108 @@
+
+\input minim-doc.sty
+
+\nopagenumbers
+\setbox\notehead=\vtop to 0pt
+    {\halign{&\strut#\quad\cr a1&b1&c1\cr a2&b2&c2\cr a3&b3&c3\cr}
+    \vskip-\baselineskip}
+
+\startmetadata
+    author   {Esger Renkema}
+    title    {tsvtemplate}
+    date     {2022-01-01}
+    version  {2022/1.0}
+    keywords {tsv; tab-separated values}
+    stopmetadata
+\maketitle
+\stopformulatagging
+
+This is a small package with a single purpose: reading tab-separated value 
+(tsv) files and applying a template to the content of their rows.
+
+
+\section Loading this package
+
+Plain tex users can say ⟦\input tsvtemplate⟧; latex users can say
+⟦\usepackage {tsvtemplate}⟧. You must use the lua(la)tex compiler.
+
+
+\section Using this package
+
+The main command of this package is ⟦*\tsvtemplate⟧, used like this
+
+{\leftskip2em
+⟦*\tsvtemplate⟧⟦ [names,of,the,columns]
+        {... template ...} {filename.tsv}⟧\par}
+
+This will read the file named ⟦filename.tsv⟧ row-by-row and assign the 
+contents of the fields of every row to the control sequences
+⟦\names \of \the \columns⟧. These control sequences can then be used in the 
+⟦template⟧, which will be repeated for every row.
+
+If you do not specify column names, they will be read from the first line of 
+the file. In that case spaces will be ignored, so that a column headed by e.g.
+⟦Postal Code⟧ is available as ⟦\PostalCode⟧.
+
+In the latex case, an environment is also available as
+
+{\leftskip2em
+⟦\begin{⟧⟦*tsv template⟧⟦}[names,of,the,columns]{filename.tsv}
+    ... template ...
+\end{⟧⟦*tsv template⟧⟦}⟧\par}
+
+
+\section Field separators
+
+You can use other field separators than tabs by using the lower-level command 
+⟦*\applytemplate⟧; in fact, ⟦\tsvtemplate[fields]⟧ is equivalent to
+
+{\leftskip2em
+⟦*\applytemplate⟧⟦ \^^I {fields}⟧\par}
+
+(Note that ⟦\^^I⟧ is just the tab character, preceded by a backslash. For 
+colon-separated values you could say ⟦\:⟧ etc.)
+The ⟦fields⟧ may be separated either by commas or by the separator character. 
+Note that they are no longer optional: leave the argument empty in order to 
+have tsv read the first line of the file as a header line.
+
+
+\section Limitations
+
+Every row in the tsv file must have the exact same number of columns; an error 
+is emitted otherwise.
+
+When reading files with commas or semicolons as field separators, be aware of 
+programs generating fields surrounded by double quotes (⟦"⟧ characters) 
+containing commas (or semicolons) themselves. Such files will confuse this 
+package. The best thing you can do is convert them to proper tsv, which has no 
+need for quoting.
+
+
+\section Implementation
+
+\font\eighttt {Latin Modern Mono:script=latn;+smcp;} at 8pt
+\font\eightit {Latin Modern Roman/I:script=latn;} at 8pt
+\def\r#1{\baselineskip10pt\input{#1}}
+\def\showfile#1{\begingroup
+    \noindent \vrule height 2pt depth 8pt
+    \raise1.6pt\vbox{\hrule width 2em} file: #1\par\nointerlineskip
+    \let\tentt\eighttt\let\tenit\eightit
+    \baselineskip10pt \leftskip1em
+    \hbox{\vrule\vtop{⟦\relax\input{#1}⟧}}\nointerlineskip
+    \vskip-\baselineskip\endgroup
+    \noindent \raise1.6pt\hbox{\vrule height 1em}%
+    \raise1.6pt\vbox{\hrule width 8em}\par}
+
+The latex style file simply loads the plain tex implementation:
+
+\showfile{tsvtemplate.sty}
+
+\dots which has been kept quite short, so that you may the more easier copy and 
+modify it to suit your own needs:
+
+\showfile{tsvtemplate.tex}
+
+\licencesection
+
+\bye
+

@@ -19,10 +19,10 @@
 %% and all files in that bundle must be distributed together.
 %% 
 %% File: pdfmanagement-firstaid.dtx
-\ProvidesExplPackage{pdfmanagement-firstaid}{2021-08-28}{0.95i}
+\ProvidesExplPackage{pdfmanagement-firstaid}{2022-11-03}{0.95t}
   {LaTeX PDF management testphase bundle / firstaid-patches}
 
-\clist_map_inline:nn {pgf,transparent,hyperxmp,pdflscape,xcolor,color,beamer,output}
+\clist_map_inline:nn {pgf,transparent,xmp,pdflscape,xcolor,color,beamer,output,colorspace,fontspec}
   {
     \bool_new:c       { g__pdfmanagement_firstaid_#1_bool }
     \bool_gset_true:c { g__pdfmanagement_firstaid_#1_bool }
@@ -36,29 +36,71 @@
   }
 \msg_new:nnn  { pdfmanagement } { firstaid }
               { loading~pdfmanagement~firstaid~code~for~#1 }
+\msg_new:nnn  { pdfmanagement } { firstaid-changed }
+              { package~#1~has~changed.~Check~if~patch~is~still~valid! }
+\msg_new:nnn  { pdfmanagement } { firstaid-disabled }
+              { The~loading~of~package~#1~is~disabled.\\
+                It~is~not~compatible~with~the~PDF~management. }
+\msg_new:nnn  { pdfmanagement } { firstaid-too-old }
+              { Package~#1~is~too~old~and~not~compatible.\\
+                Get~at~least~version~#2.}
+
+\sys_if_engine_luatex:T
+   {
+     \lua_now:n
+       {
+        if~not~luaotfload.set_transparent_colorstack~
+        then~
+          tex.print("\\bool_gset_false:N\\g__pdfmanagement_firstaid_fontspec_bool")~
+        end
+       }
+     \bool_if:NT \g__pdfmanagement_firstaid_fontspec_bool
+       {
+            \msg_info:nnn{pdfmanagement}{firstaid}{fontspec}
+            \file_if_exist:nT { luaotfload-l3color-tmp.lua }
+              {
+                \lua_load_module:n { luaotfload-l3color-tmp.lua }
+              }
+
+         \declare@file@substitution{fontspec-luatex.sty}{fontspec-luatex-tmp-ltx.sty}
+         \AddToHook{package/fontspec/after}
+          {
+            \str_if_eq:vnF{ver@fontspec.sty}{2022/01/15~v2.8a~Font~selection~for~XeLaTeX~and~LuaLaTeX}
+             {\msg_warn:nnn{pdfmanagement}{firstaid-changed}{fontspec}}
+          }
+       }
+   }
 \bool_if:NT \g__pdfmanagement_firstaid_output_bool
   {
-    \RequirePackage{output-patches-tmp-ltx}
+    \file_if_exist:nF {new-or-1-latex-lab-testphase.ltx}
+      {
+        \AddToHook{package/latex-lab-testphase-new-or/after}
+          {\RequirePackage{output-patches-tmp-ltx}}
+        \AddToHook{package/tagpdf/after}
+          {\RequirePackage{output-patches-tmp-ltx}}
+      }
   }
 
-\bool_if:NT \g__pdfmanagement_firstaid_beamer_bool
-  {
-    \color_set:nnn{.5~.5~.5}{rgb}{0.5,0.5,0.5}
-  }
 \bool_if:NT \g__pdfmanagement_firstaid_color_bool
   {
     \declare@file@substitution{color.sty}{color-ltx.sty}
   }
 \bool_if:NT \g__pdfmanagement_firstaid_xcolor_bool
   {
-    \AddToHook{package/after/xcolor}
-       {\RequirePackage{xcolor-patches-tmp-ltx}\XC@@names}
+    \AddToHook
+       {
+         package/xcolor/after
+       }
+       {\RequirePackage{xcolor-patches-tmp-ltx}}
   }
 
 \bool_if:NT \g__pdfmanagement_firstaid_pgf_bool
   {
     \msg_info:nnn{pdfmanagement }{firstaid}{pgf}
-    \AddToHook{file/after/pgfrcs.sty}
+    \AddToHook
+      {
+        file/pgfrcs.sty/after
+      }
       {
         \cs_set_eq:NN
           \__pdfmanagement_pgfori_pgfutil@setuppdfresources
@@ -132,57 +174,52 @@
 
 \bool_if:NT \g__pdfmanagement_firstaid_transparent_bool
  {
-   \declare@file@substitution{transparent.sty}{transparent-ltx.sty}
+  \AddToHook{package/transparent/after}
+    {
+     \@ifpackagelater{transparent}{2022-10-27}{}
+       {
+         \msg_warning:nnnn{pdfmanagement}{firstaid-too-old}
+         {transparent}
+         {1.5~from~2022-10-27}
+       }
+    }
  }
 \bool_if:NT \g__pdfmanagement_firstaid_pdflscape_bool
  {
-   \declare@file@substitution{pdflscape.sty}{pdflscape-ltx.sty}
+  \AddToHook{package/pdflscape/after}
+    {
+     \@ifpackagelater{pdflscape}{2022-10-27}{}
+       {
+         \msg_warning:nnnn{pdfmanagement}{firstaid-too-old}
+         {pdflscape}
+         {0.13~from~2022-10-27}
+       }
+    }
  }
-\bool_if:NT \g__pdfmanagement_firstaid_hyperxmp_bool
+\bool_if:NT \g__pdfmanagement_firstaid_xmp_bool
+ {
+   \disable@package@load{hyperxmp}{\msg_warning:nnn{pdfmanagement}{firstaid-disabled}{hyperxmp}}
+   \disable@package@load{pdfx}    {\msg_warning:nnn{pdfmanagement}{firstaid-disabled}{pdfx}}
+   \AddToHook{package/doclicense/after}
+    {
+      \AtBeginDocument
+        {
+          \hypersetup
+            {
+              pdfcopyright  = {\doclicenseLongTextForHyperref},
+              pdflicenseurl = {\doclicenseURL},
+            }
+        }
+    }
+ }
+\bool_if:NT \g__pdfmanagement_firstaid_colorspace_bool
  {
     \AddToHook
-      {file/after/hyperxmp.sty}
-      {\RequirePackage{hyperxmp-patches-tmp-ltx}}
+      {
+       package/colorspace/after
+      }
+      {\RequirePackage{colorspace-patches-tmp-ltx}}
  }
-\hook_gput_code:nnn {begindocument} {pdf}
-  {
-    \tl_if_exist:NT \spc@op
-      {
-        \def\spc@Pageresources#1{}
-      }
-
-  }
-
-\hook_gput_code:nnn {begindocument/end} {pdf}
-  {
-    \tl_if_exist:NT \spc@op
-      {
-        \__pdf_backend_object_new:nn  {__spc_extgstate_op_false}{dict}
-        \__pdf_backend_object_write:nn
-          {__spc_extgstate_op_false}
-          {/Type /ExtGState~/op~false~/OP~false}
-        \pdfmanagement_add:nnn
-          {Page/Resources/ExtGState}
-          {SPCko}
-          {\__pdf_backend_object_ref:n {__spc_extgstate_op_false}}
-        \__pdf_backend_object_new:nn  {__spc_extgstate_op_true0}{dict}
-        \__pdf_backend_object_write:nn
-          {__spc_extgstate_op_true0}
-          {/Type /ExtGState~/op~true~/OP~true~/OPM~0}%
-        \pdfmanagement_add:nnn
-          {Page/Resources/ExtGState}
-          {SPCmz}
-          {\__pdf_backend_object_ref:n {__spc_extgstate_op_true0}}
-        \__pdf_backend_object_new:nn  {__spc_extgstate_op_true1}{dict}
-        \__pdf_backend_object_write:nn
-          {__spc_extgstate_op_true1}
-          {/Type /ExtGState~/op~true~/OP~true~/OPM~1}%
-         \pdfmanagement_add:nnn
-          {Page/Resources/ExtGState}
-          {SPCop}
-          {\__pdf_backend_object_ref:n {__spc_extgstate_op_true1}}
-      }
-  }
 %% 
 %%
 %% End of file `pdfmanagement-firstaid.sty'.

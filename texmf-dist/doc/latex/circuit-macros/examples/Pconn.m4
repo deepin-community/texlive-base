@@ -19,6 +19,7 @@ P1: [
    arrow from G.w to C1.G.e
    arrow from G.e to C2.G.w
    `"\tt (,AF)"' at last [].s below
+   thicklines_
   C03: pconnex(,AC) with .w at C2.e+(0.25,0)
    `"\tt (,AC)"' at last [].s below
   C3: pconnex(,ACF) with .w at last [].e+(0.2,0)
@@ -45,13 +46,18 @@ P2: [
    `"\tt (,GC)"' ht 11pt__ at last [].s below
   C12: pconnex(,GCF) with .w at last [].e + (0.2,0)
    `"\tt (,GCF)"' ht 11pt__ at last [].s below
-] with .nw at P1.C1.sw + (0,-0.35)
 
-P3: [ 
-  C4: pconnex(,P)
+  C4: pconnex(,P) with .w at last [].e + (0.2,0)
    `"\tt (,P)"' at last [].s below
   C11: pconnex(,PF) with .w at last [].e+(0.2,0)
    `"\tt (,PF)"' at (C11,last "") below
-] with .nw at P2.C9.sw + (0,-0.35)
+] with .nw at P1.C1.sw + (0,-0.35)
+
+#P3: [ 
+#  C4: pconnex(,P)
+#   `"\tt (,P)"' at last [].s below
+#  C11: pconnex(,PF) with .w at last [].e+(0.2,0)
+#   `"\tt (,PF)"' at (C11,last "") below
+#] with .nw at P2.C9.sw + (0,-0.35)
 
 .PE

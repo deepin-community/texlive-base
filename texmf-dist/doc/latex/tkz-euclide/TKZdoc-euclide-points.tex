@@ -1,4 +1,15 @@
-\section{Definition of a point}
+\section{First step: fixed points}
+
+The first step in a geometric construction is to define the fixed points from which the figure will be constructed.
+
+The general idea is to avoid manipulating coordinates and to prefer to use the references of the points fixed in the first step or obtained using the tools provided by the package. Even if it's possible, I think it's a bad idea to work directly with coordinates. Preferable is to use named points.
+
+\tkzname{\tkznameofpack} uses macros and vocabulary specific to geometric construction. It is of course possible to use the tools of \TIKZ\ but it seems more logical to me not to mix the different syntaxes.
+
+A point in \tkzname{\tkznameofpack} is a particular "node" for \TIKZ. In the next section we will see how to define points using coordinates. The style of the points (color and shape) will not be discussed. You will find some indications in some examples; for more information you can read the following section \ref{custom}.
+
+
+\section{Definition of a point : \tkzcname{tkzDefPoint} or \tkzcname{tkzDefPoints}}
 
  Points can be specified in any of the following ways:
 \begin{itemize}
@@ -8,31 +19,10 @@
 \item Relative points.
 \end{itemize}
 
-Even if it's possible, I think it's a bad idea to work directly with coordinates. Preferable is to use named points.
+
 A point is defined if it has a name linked to a unique pair of decimal numbers. 
  Let $(x,y)$ or $(a:d)$  i.e. ($x$ abscissa, $y$ ordinate) or  ($a$ angle: $d$ distance).
- This is possible because the plan has been provided with an orthonormed Cartesian coordinate system.   The working axes are supposed to be (ortho)normed with unity equal to $1$~cm or something equivalent like $0.39370$~in.
- Now by default if you use a grid or axes, the rectangle used is defined by the coordinate points: $(0,0)$ and $(10,10)$. It's the macro \tkzcname{tkzInit} of the package \tkzNamePack{tkz-base} that creates this rectangle. Look at the following two codes and the result of their compilation:
- 
-\begin{tkzexample}[latex=10cm,small]
-\begin{tikzpicture}
-\tkzGrid
-\tkzDefPoint(0,0){O}
-\tkzDrawPoint[red](O)
-\tkzShowBB[line width=2pt,teal]
-\end{tikzpicture}
-\end{tkzexample}
-
-
-\begin{tkzexample}[latex=7cm,small]
-\begin{tikzpicture}
- \tkzDefPoint(0,0){O}
- \tkzDefPoint(5,5){A}
- \tkzDrawSegment[blue](O,A)
- \tkzDrawPoints[red](O,A)
- \tkzShowBB[line width=2pt,teal]
-\end{tikzpicture}
-\end{tkzexample}
+ This is possible because the plan has been provided with an orthonormed Cartesian coordinate system.   The working axes are  (ortho)normed with unity equal to $1$~cm.
  
  The Cartesian coordinate $(a,b)$ refers to the
  point $a$ centimeters in the $x$-direction and $b$ centimeters in the
@@ -42,17 +32,23 @@ A point is defined if it has a name linked to a unique pair of decimal numbers.
  and a distance  $d$ from the origin with a dimensional
  unit by default it's the \texttt{cm}.
  
-
-\begin{minipage}[b]{0.5\textwidth}
+ The \tkzNameMacro{tkzDefPoint} macro is used to define a point by assigning coordinates to it. This macro is based on 
+ 
+ \tkzNameMacro{coordinate}, a macro of \TIKZ. It can use \TIKZ-specific options such as \tkzname{shift}. If calculations are required then the \tkzNamePack{xfp} package is chosen. We can use Cartesian or polar coordinates.
+ 
+\begin{minipage}[t]{0.45\textwidth}
  Cartesian coordinates 
-\begin{tkzexample}[vbox,small]
+\begin{tkzexample}[code only,small]
 \begin{tikzpicture}[scale=1] 
-  \tkzInit[xmax=5,ymax=5] 
+  \tkzInit[xmax=5,ymax=5]
+  % necessary to limit
+  % the size of the axes
+  \tkzDrawX[>=latex]
+  \tkzDrawY[>=latex]
   \tkzDefPoints{0/0/O,1/0/I,0/1/J}
-  \tkzDrawXY[noticks,>=latex]
   \tkzDefPoint(3,4){A} 
   \tkzDrawPoints(O,A) 
-  \tkzLabelPoint(A){$A_1 (x_1,y_1)$} 
+  \tkzLabelPoint[above](A){$A_1 (x_1,y_1)$} 
   \tkzShowPointCoord[xlabel=$x_1$,
                      ylabel=$y_1$](A) 
   \tkzLabelPoints(O,I)
@@ -61,22 +57,23 @@ A point is defined if it has a name linked to a unique pair of decimal numbers.
 \end{tikzpicture}
 \end{tkzexample}%
 \end{minipage}
-\begin{minipage}[b]{0.5\textwidth}
+\begin{minipage}[t]{0.45\textwidth}
  Polar coordinates
-\begin{tkzexample}[vbox,small]
+\begin{tkzexample}[code only,small]
 \begin{tikzpicture}[,scale=1]
   \tkzInit[xmax=5,ymax=5]
+  \tkzDrawX[>=latex]
+  \tkzDrawY[>=latex]  
   \tkzDefPoints{0/0/O,1/0/I,0/1/J}
-  \tkzDefPoint(40:4){P}
-  \tkzDrawXY[noticks,>=triangle 45]    
+  \tkzDefPoint(40:4){P} 
   \tkzDrawSegment[dim={$d$,
                  16pt,above=6pt}](O,P)
   \tkzDrawPoints(O,P) 
   \tkzMarkAngle[mark=none,->](I,O,P) 
-  \tkzFillAngle[fill=blue!20,
-                opacity=.5](I,O,P) 
-  \tkzLabelAngle[pos=1.25](I,O,P){$\alpha$}  
-  \tkzLabelPoint(P){$P  (\alpha : d )$} 
+  \tkzFillAngle[opacity=.5](I,O,P) 
+  \tkzLabelAngle[pos=1.25](I,O,P){%
+                              $\alpha$}  
+  \tkzLabelPoint[right](P){$P  (\alpha : d )$} 
   \tkzDrawPoints[shape=cross](I,J) 
   \tkzLabelPoints(O,I)
   \tkzLabelPoints[left](J) 
@@ -84,22 +81,55 @@ A point is defined if it has a name linked to a unique pair of decimal numbers.
 \end{tkzexample}
 \end{minipage}%
 
-The \tkzNameMacro{tkzDefPoint} macro is used to define a point by assigning coordinates to it. This macro is based on \tkzNameMacro{coordinate}, a macro of \TIKZ. It can use \TIKZ-specific options such as \tkzname{shift}. If calculations are required then the \tkzNamePack{xfp} package is chosen. We can use Cartesian or polar coordinates.
+\begin{minipage}[b]{0.45\textwidth}
+\begin{tikzpicture}[scale=1] 
+  \tkzInit[xmax=5,ymax=5]
+  \tkzDrawX[>=latex]
+  \tkzDrawY[>=latex]
+  \tkzDefPoints{0/0/O,1/0/I,0/1/J}
+  \tkzDefPoint(3,4){A} 
+  \tkzDrawPoints(O,A) 
+  \tkzLabelPoint[above](A){$A_1 (x_1,y_1)$} 
+  \tkzShowPointCoord[xlabel=$x_1$,ylabel=$y_1$](A) 
+  \tkzLabelPoints(O,I)
+  \tkzLabelPoints[left](J)
+  \tkzDrawPoints[shape=cross](I,J) 
+\end{tikzpicture}
+\end{minipage}
+\begin{minipage}[b]{0.45\textwidth}
+\begin{tikzpicture}[,scale=1]
+  \tkzInit[xmax=5,ymax=5]
+  \tkzDrawX[>=latex]
+  \tkzDrawY[>=latex]  
+  \tkzDefPoints{0/0/O,1/0/I,0/1/J}
+  \tkzDefPoint(40:4){P} 
+  \tkzDrawSegment[dim={$d$,
+                 16pt,above=6pt}](O,P)
+  \tkzDrawPoints(O,P) 
+  \tkzMarkAngle[mark=none,->](I,O,P) 
+  \tkzFillAngle[opacity=.5](I,O,P) 
+  \tkzLabelAngle[pos=1.25](I,O,P){$\alpha$}  
+  \tkzLabelPoint[right](P){$P  (\alpha : d )$} 
+  \tkzDrawPoints[shape=cross](I,J) 
+  \tkzLabelPoints(O,I)
+  \tkzLabelPoints[left](J) 
+\end{tikzpicture}
+\end{minipage}%
 
 \subsection{Defining a named point  \tkzcname{tkzDefPoint}}
 
-\begin{NewMacroBox}{tkzDefPoint}{\oarg{local options}\parg{$x,y$}\marg{name} or \parg{$\alpha$:$d$}\marg{name}}%
+\begin{NewMacroBox}{tkzDefPoint}{\oarg{local options}\parg{$x,y$}\marg{ref} or \parg{$\alpha$:$d$}\marg{ref}}%
 \begin{tabular}{lll}%
 arguments &  default & definition  \\ 
 \midrule
 \TAline{($x,y$)}{no default}{$x$ and $y$ are two dimensions, by default in cm.}
 \TAline{($\alpha$:$d$)}{no default}{$\alpha$ is an angle in degrees, $d$ is a dimension}
-\TAline{\{name\}}{no default}{Name assigned to the point: $A$, $T_a$ ,$P1$ etc ...}
+\TAline{\{ref\}}{no default}{Reference assigned to the point: $A$, $T\_a$ ,$P1$ or $P_1$}
 \bottomrule
 \end{tabular}
 
 \medskip
-The obligatory arguments of this macro are two dimensions expressed with decimals, in the first case they are two measures of length, in the second case they are a measure of length and the measure of an angle in degrees.
+\emph{The obligatory arguments of this macro are two dimensions expressed with decimals, in the first case they are two measures of length, in the second case they are a measure of length and the measure of an angle in degrees. Do not confuse the reference with the name of a point. The reference is used by calculations, but frequently, the name is identical to the reference.}
 
 \medskip
 \begin{tabular}{lll}%
@@ -113,9 +143,11 @@ options             & default & definition  \\
 
 \subsubsection{Cartesian coordinates }
  
-\begin{tkzexample}[latex=7cm,small]
+\begin{tkzexample}[latex=5cm,small]
   \begin{tikzpicture}
-  \tkzInit[xmax=5,ymax=5]
+  \tkzInit[xmax=5,ymax=5] % limits the size of the axes
+  \tkzDrawX[>=latex]
+  \tkzDrawY[>=latex]  
   \tkzDefPoint(0,0){A}
   \tkzDefPoint(4,0){B}
   \tkzDefPoint(0,3){C} 
@@ -129,14 +161,13 @@ options             & default & definition  \\
  \begin{tkzexample}[latex=7cm,small]
 \begin{tikzpicture}[scale=1]
   \tkzInit[xmax=4,ymax=4]
-  \tkzGrid
+  \tkzDrawX\tkzDrawY
   \tkzDefPoint(-1+2,sqrt(4)){O}
   \tkzDefPoint({3*ln(exp(1))},{exp(1)}){A}
   \tkzDefPoint({4*sin(pi/6)},{4*cos(pi/6)}){B}
-  \tkzDrawPoints[color=blue](O,B,A)
+  \tkzDrawPoints(O,B,A)
 \end{tikzpicture}
 \end{tkzexample}
-
 
 \subsubsection{Polar coordinates }
 
@@ -149,25 +180,12 @@ options             & default & definition  \\
   \end{tikzpicture}
 \end{tkzexample}
 
-\subsubsection{Calculations and coordinates}
-You must follow the syntax of \tkzNamePack{xfp} here. It is always possible to go through \tkzNamePack{pgfmath} but in this case, the coordinates must be calculated before using the macro \tkzcname{tkzDefPoint}.
-
-\begin{tkzexample}[latex=6cm,small]
-  \begin{tikzpicture}[scale=.5]
-  \foreach \an [count=\i] in {0,2,...,358}
-   { \tkzDefPoint(\an:sqrt(sqrt(\an mm))){A_\i}}
-   \tkzDrawPoints(A_1,A_...,A_180)
-  \end{tikzpicture}
-\end{tkzexample}
-
-
 \subsubsection{Relative points}
 First, we can use the \tkzNameEnv{scope} environment from \TIKZ.
 In the following example, we have a way to define an equilateral triangle.
 
 \begin{tkzexample}[latex=7cm,small]
 \begin{tikzpicture}[scale=1]
-  \tkzSetUpLine[color=blue!60]
  \begin{scope}[rotate=30]
   \tkzDefPoint(2,3){A}
   \begin{scope}[shift=(A)]
@@ -182,14 +200,14 @@ In the following example, we have a way to define an equilateral triangle.
 \end{tikzpicture}
 \end{tkzexample}
 
-%<--------------------------------------------------------------------------->
 \subsection{Point relative to another: \tkzcname{tkzDefShiftPoint}}
-\begin{NewMacroBox}{tkzDefShiftPoint}{\oarg{Point}\parg{$x,y$}\marg{name} or \parg{$\alpha$:$d$}\marg{name}}%
+\begin{NewMacroBox}{tkzDefShiftPoint}{\oarg{Point}\parg{$x,y$}\marg{ref} or \parg{$\alpha$:$d$}\marg{ref}}%
 \begin{tabular}{lll}%
 arguments &  default & definition \\
 \midrule
 \TAline{($x,y$)}{no default}{$x$ and $y$ are two dimensions, by default in cm.}
 \TAline{($\alpha$:$d$)}{no default}{$\alpha$ is an angle in degrees, $d$ is a dimension}
+\TAline{\{ref\}}{no default}{Reference assigned to the point: $A$, $T\_a$ ,$P1$ or $P_1$}
 
 \midrule
 options &  default & definition \\
@@ -199,7 +217,7 @@ options &  default & definition \\
 \end{tabular}
 \end{NewMacroBox}
 
-\subsubsection{Isosceles triangle with  \tkzcname{tkzDefShiftPoint}}
+\subsubsection{Isosceles triangle}
 This macro allows you to place one point relative to another. This is equivalent to a translation. Here is how to construct an isosceles triangle with main vertex $A$ and angle at vertex of $30^{\circ} $.
 
 \begin{tkzexample}[latex=7cm,small]
@@ -208,9 +226,9 @@ This macro allows you to place one point relative to another. This is equivalent
  \tkzDefShiftPoint[A](0:4){B}
  \tkzDefShiftPoint[A](30:4){C}
  \tkzDrawSegments(A,B B,C C,A)
- \tkzMarkSegments[mark=|,color=red](A,B A,C)
+ \tkzMarkSegments[mark=|](A,B A,C)
  \tkzDrawPoints(A,B,C)
- \tkzLabelPoints(B,C)
+ \tkzLabelPoints[right](B,C)
  \tkzLabelPoints[above left](A)
 \end{tikzpicture}
 \end{tkzexample}
@@ -225,9 +243,9 @@ Let's see how to get an equilateral triangle (there is much simpler)
  \tkzDefShiftPoint[A](-30:3){C}
  \tkzDrawPolygon(A,B,C)
  \tkzDrawPoints(A,B,C)
- \tkzLabelPoints(B,C)
+ \tkzLabelPoints[right](B,C)
  \tkzLabelPoints[above left](A)
- \tkzMarkSegments[mark=|,color=red](A,B A,C B,C)
+ \tkzMarkSegments[mark=|](A,B A,C B,C)
 \end{tikzpicture}
 \end{tkzexample}
 
@@ -244,17 +262,16 @@ There's a simpler way
 \end{tikzpicture}
 \end{tkzexample}
 
-%<--------------------------------------------------------------------------->
 \subsection{Definition of multiple points: \tkzcname{tkzDefPoints}}
 
-\begin{NewMacroBox}{tkzDefPoints}{\oarg{local options}\marg{$x_1/y_1/n_1,x_2/y_2/n_2$, ...}}%
-$x_i$ and $y_i$ are the coordinates of a referenced point $n_i$
+\begin{NewMacroBox}{tkzDefPoints}{\oarg{local options}\marg{$x_1/y_1/n_1,x_2/y_2/r_2$, ...}}%
+$x_i$ and $y_i$ are the coordinates of a referenced point $r_i$
 
 \begin{tabular}{lll}%
 \toprule
 arguments &  default  & example  \\
 \midrule
-\TAline{$x_i/y_i/n_i$}{}{\tkzcname{tkzDefPoints\{0/0/O,2/2/A\}}}
+\TAline{$x_i/y_i/r_i$}{}{\tkzcname{tkzDefPoints\{0/0/O,2/2/A\}}}
 \end{tabular}
 
 \medskip
@@ -267,7 +284,7 @@ options             & default & definition   \\
 
 \subsection{Create a triangle}
 \begin{tkzexample}[latex=6cm,small]
-\begin{tikzpicture}[scale=1]
+\begin{tikzpicture}[scale=.75]
  \tkzDefPoints{0/0/A,4/0/B,4/3/C}
  \tkzDrawPolygon(A,B,C)
  \tkzDrawPoints(A,B,C)
@@ -280,132 +297,8 @@ Note here the syntax for drawing the polygon.
 \begin{tikzpicture}[scale=1]
  \tkzDefPoints{0/0/A,2/0/B,2/2/C,0/2/D}
  \tkzDrawPolygon(A,...,D)
- \tkzDrawPoints(A,B,C,D)
-\end{tikzpicture}
-\end{tkzexample}
-
-\section{Special points}
-The introduction of the dots was done in \tkzname{tkz-base}, the most important macro being \tkzcname{tkzDefPoint}. Here are some special points.
-%<--------------------------------------------------------------------------->
-\subsection{Middle of a segment \tkzcname{tkzDefMidPoint}}
-It is a question of determining the middle of a segment.
-
-\begin{NewMacroBox}{tkzDefMidPoint}{\parg{pt1,pt2}}%
-The result is in \tkzname{tkzPointResult}. We can access it with \tkzcname{tkzGetPoint}.
-
- \medskip
-\begin{tabular}{lll}%
-\toprule
-arguments & default & definition \\
-\midrule
-\TAline{(pt1,pt2)}{no default}{pt1 and pt2 are two points}
-\end{tabular}
-\end{NewMacroBox}
-
-\subsubsection{Use of \tkzcname{tkzDefMidPoint}}
-Review the use of \tkzcname{tkzDefPoint} in \tkzNamePack{tkz-base}.
-\begin{tkzexample}[latex=7cm,small]
-\begin{tikzpicture}[scale=1]
- \tkzDefPoint(2,3){A}
- \tkzDefPoint(4,0){B}
- \tkzDefMidPoint(A,B) \tkzGetPoint{C}
- \tkzDrawSegment(A,B)
- \tkzDrawPoints(A,B,C)
- \tkzLabelPoints[right](A,B,C)
-\end{tikzpicture}
-\end{tkzexample}
-
-\subsection{Barycentric coordinates }
-
-$pt_1$, $pt_2$, \dots, $pt_n$ being $n$ points, they define $n$ vectors $\overrightarrow{v_1}$, $\overrightarrow{v_2}$, \dots, $\overrightarrow{v_n}$ with the origin of the referential as the common endpoint. $\alpha_1$, $\alpha_2$,
-\dots $\alpha_n$ are $n$ numbers, the vector obtained by:
-\begin{align*}
-  \frac{\alpha_1 \overrightarrow{v_1} + \alpha_2 \overrightarrow{v_2} + \cdots + \alpha_n \overrightarrow{v_n}}{\alpha_1
-    + \alpha_2 + \cdots + \alpha_n}
-\end{align*}
-defines a single point.
-
-\begin{NewMacroBox}{tkzDefBarycentricPoint}{\parg{pt1=$\alpha_1$,pt2=$\alpha_2$,\dots}}%
-\begin{tabular}{lll}%
-arguments & default & definition \\
-\midrule
-\TAline{(pt1=$\alpha_1$,pt2=$\alpha_2$,\dots)}{no default}{Each point has a assigned weight}
-\bottomrule
-\end{tabular}
-
-\medskip
-You need at least two points.
-\end{NewMacroBox}
-
-
-\subsubsection{Using \tkzcname{tkzDefBarycentricPoint} with two points}
-In the following example, we obtain the barycentre of points $A$ and $B$ with coefficients $1$ and $2$, in other words:
-\[
-  \overrightarrow{AI}= \frac{2}{3}\overrightarrow{AB}
-\]
-
-\begin{tkzexample}[latex=7cm,small]
-\begin{tikzpicture}
-  \tkzDefPoint(2,3){A}
-  \tkzDefShiftPointCoord[2,3](30:4){B}
-  \tkzDefBarycentricPoint(A=1,B=2)
-  \tkzGetPoint{I}
-  \tkzDrawPoints(A,B,I)
-  \tkzDrawLine(A,B)
-  \tkzLabelPoints(A,B,I)
-\end{tikzpicture}
-\end{tkzexample}
-
-\subsubsection{Using \tkzcname{tkzDefBarycentricPoint} with three points}
-This time $M$ is simply the centre of gravity of the triangle. For reasons of simplification and homogeneity, there is also \tkzcname{tkzCentroid}.
-\begin{tkzexample}[latex=7cm,small]
-\begin{tikzpicture}[scale=.8]
-  \tkzDefPoint(2,1){A}
-  \tkzDefPoint(5,3){B}
-  \tkzDefPoint(0,6){C}
-  \tkzDefBarycentricPoint(A=1,B=1,C=1)
-  \tkzGetPoint{M}
-  \tkzDefMidPoint(A,B)  \tkzGetPoint{C'}
-  \tkzDefMidPoint(A,C)  \tkzGetPoint{B'}
-  \tkzDefMidPoint(C,B)  \tkzGetPoint{A'}
-  \tkzDrawPolygon(A,B,C)
-  \tkzDrawPoints(A',B',C')
-  \tkzDrawPoints(A,B,C,M)
-  \tkzDrawLines[add=0 and 1](A,M B,M C,M)
-  \tkzLabelPoint(M){$M$}
-  \tkzAutoLabelPoints[center=M](A,B,C)
-  \tkzAutoLabelPoints[center=M,above right](A',B',C')
-\end{tikzpicture}
-\end{tkzexample}
-
-\subsection{Internal Similitude Center}
-The centres of the two homotheties in which two circles correspond are called external and internal centres of similitude.
-
-\begin{tkzexample}[latex=6cm,small]
-\begin{tikzpicture}[scale=.75,rotate=-30]
- \tkzDefPoint(0,0){O}
- \tkzDefPoint(4,-5){A}
- \tkzDefIntSimilitudeCenter(O,3)(A,1) 
- \tkzGetPoint{I}
- \tkzExtSimilitudeCenter(O,3)(A,1) 
- \tkzGetPoint{J}
- \tkzDefTangent[from with R= I](O,3 cm)  
- \tkzGetPoints{D}{E}
- \tkzDefTangent[from with R= I](A,1 cm)  
- \tkzGetPoints{D'}{E'}
- \tkzDefTangent[from  with R= J](O,3 cm) 
- \tkzGetPoints{F}{G}
- \tkzDefTangent[from with R= J](A,1 cm)   
- \tkzGetPoints{F'}{G'}
- \tkzDrawCircle[R,fill=red!50,opacity=.3](O,3 cm)
- \tkzDrawCircle[R,fill=blue!50,opacity=.3](A,1 cm)
- \tkzDrawSegments[add = .5 and .5,color=red](D,D' E,E')
- \tkzDrawSegments[add= 0 and 0.25,color=blue](J,F J,G)
- \tkzDrawPoints(O,A,I,J,D,E,F,G,D',E',F',G')
- \tkzLabelPoints[font=\scriptsize](O,A,I,J,D,E,F,G,D',E',F',G')
+ \tkzDrawPoints(A,...,D)
 \end{tikzpicture}
 \end{tkzexample}
 
 \endinput
-
-

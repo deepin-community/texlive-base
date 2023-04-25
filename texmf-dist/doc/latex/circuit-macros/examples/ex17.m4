@@ -32,7 +32,7 @@ define(`elen_',linewid)        # shorter default length
   parallel_(Sep=1.75*dimen_;
     parallel_(
      `capacitor(,C); rlabel(,,C_2)',
-     `resistor; llabel(,R_2)' ),
+     `resistor; rlabel(,R_2)' ),
     parallel_(
      `resistor; rlabel(,R_1); move to rvec_(-dimen_/5,0)
                  inductor(,W); rlabel(,L_1)',

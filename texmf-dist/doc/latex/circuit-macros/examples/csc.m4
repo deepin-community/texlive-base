@@ -1,12 +1,11 @@
 .PS
 #.PS 3.5
 # csc.m4
+# This file includes AntiqueClock and works for PSTricks, Tikz, and SVG
 gen_init
 NeedDpicTools
-ifelse(ifpstricks(T)`'ifmpost(T)`'ifpostscript(T)`'ifpgf(T),,
- `PSTricks, MetaPost, PGF, or Postscript required for this diagram',`
 
-skale = 3.5/3.97*0.9955
+skale = 0.878
 circlerad=1.91*skale
 hubrad=0.10*skale
 s=0.5*skale
@@ -49,7 +48,6 @@ rgbdraw(midnight,
 
 #                               Sail
   thinlines_
-  setrgb(midnight)
   rgbfill(midnight,
     line from coord(0.44,3.38) to coord(0.44,2.6) \
       then to coord(2.1,-1.75) \
@@ -76,16 +74,18 @@ rgbdraw(midnight,
      spline to coord(-1,-2.08) then to coord(0.55,-1.77)
      )
   ]
-')
-# PSTricks or tikz only:
-ifelse(ifpstricks(T)`'ifpgf(T),T,`
+
 Clock: [
+# PSTricks, tikz, or svg only:
+ifelse(ifpstricks(T)`'ifpgf(T)`'ifsvg(T),T,`
 #.PS
 # AntiqueClock.m4
 #gen_init
 #NeedDpicTools
 
 iflatex(`latexcommand({\sf)')
+ifsvg(svg_font(font-family="sans-serif" font-stretch="condensed")
+        svg_rot_init(test))
 
 # https://tex.stackexchange.com/questions/236923/generate-analog-clock-with-numbered-face-add-seconds-roman-numerals
 
@@ -127,17 +127,27 @@ define(`AntiqueHourHand',`[ hhsf = (`$1')/2.2
   move to C
   v = 0.25*hhsf
   { line to rvec_(1.1*hhsf,0) thick 0.15/(1bp__)*hhsf }
-  { C1: circle rad v at rvec_(1.25*hhsf,0) fill_(0) }
+  C1: rvec_(1.25*hhsf,0)
   d = `$1'-1.25*hhsf
   q = 1bp__*hhsf
   r1 = (d^2 + q^2 - v^2)/(v-q)/2
-  h = r1+v
-  shade(0,
-    arc ccw from C1+vec_(d/h*v,(r1+q)/h*v) to \
-      C1+vec_(d,q) rad r1 with .c at C1+vec_(d,r1+q)
-    arc ccw  from C1+vec_(d,-q) to C1+vec_(d/h*v,-(r1+q)/h*v) rad r1 \
-      with .c at C1+vec_(d,-r1-q))
-   ]')
+  tang = atan2((r1+q),d)
+  for i=0 to 3 do {
+    X[i]: C1+vec_(rect_(v, pi_+i/3*( tang-pi_)))
+    Y[i]: C1+vec_(rect_(v,-pi_+i/3*(-tang+pi_)))
+    }
+  n = 3
+  for i=1 to 4 do { aa = -pi_+tang + i/4*(pi_/2-tang)
+    XX: (d,r1+q)+(rect_(r1,aa))
+    n+=1;
+    X[n]: C1+vec_(XX.x, XX.y)
+    Y[n]: C1+vec_(XX.x,-XX.y)
+    }
+  m = n
+  for i= 0 to m do { n+=1; X[n]: Y[m-i] }
+  fitcurve(X,n,shaded rgbstring(0,0,0))
+  ]')
+
 
 define(`AntiqueClock',`[    # h,m,s,diam
 #                           Clock size parameters:
@@ -183,27 +193,34 @@ Face: circle thick 0 fill_(1) rad r3 at C
   circle rad r6 at C
   circle rad r7 at C
 
-#                           Text rotation for PSTricks or TikZ
-  define(`rottext',
-   `ifpstricks(`\rput[c]{%g}(0,0)',`ifpgf(`\pgftext[rotate=%g]',%g)')')
+#                           Ad hoc shift of rotated SVG text
+  ifsvg(`define adj {+(-cosd($`'1)*textht*0.5*sign(180-($`'1)),\
+   (0.25+0.25*cosd(2*($`'1)))*textht) }',
+   `define adj {}')
+
 #                           Outer numbers
-  command sprintf("\font\outerfont=cmss12 at %4.2fin",r3-r4)
-  for mn = -15 to 15 by 5 do { sprintf("rottext{\outerfont %g}",\
-   -mn/60*360,pmod(mn,60)) at C+(Rect_((r3+r4)/2,90-mn/60*360)) }
-  for mn = 20 to 40 by 5 do {  sprintf("rottext{\outerfont %g}",\
-   180-mn/60*360,mn) at C+(Rect_((r3+r4)/2,90-mn/60*360)) }
+  iflatex(`command sprintf("\font\outerfont=cmss12 at %4.2fin",r3-r4)')
+  ifsvg(`textht = (r3-r4)*0.6')
+  for_(-15,15,5,`aa=90-(m4x)*6
+    r_text(eval(-(m4x)*6),eval((m4x+60)%60),
+     at C+(Rect_((r3+r4)/2,aa)) adj(aa))')
+  for_(20,40,5,`aa=450-(m4x)*6
+    r_text(eval(180-m4x*6),m4x,at C+(Rect_((r3+r4)/2,aa)) adj(aa))')
 #                           Outer tics
   for mn = 1 to 60 do { t = 90-mn/60*360
     line from C+(Rect_(r5,t)) to C+(Rect_(r4,t)) }
 
 #                           Inner numbers
-  command sprintf("\font\innerfont=cmss12 at %4.2fin",r5-r6)
-  Loopover_(`mx',`t = (m4Lx-4)/12*360;
-    sprintf("rottext{\scalebox{0.7}[1.0]{\innerfont mx}}",-t) \
-      at C+(Rect_((r5+r6)/2,90-t))', IX,X,XI,XII,I,II,III)
-  Loopover_(`mx',`t = (m4Lx+3)/12*360;
-    sprintf("rottext{\scalebox{0.7}[1.0]{\innerfont mx}}",-t+180) \
-      at C+(Rect_((r5+r6)/2,90-t))', IV,V,VI,VII,VIII)
+  iflatex(`command sprintf("\font\innerfont=cmss12 at %4.2fin",r5-r6)')
+  ifsvg(`textht = (r5-r6)*0.6')
+  Loopover_(`mx',`aa=180-(m4Lx-1)*30
+    r_text(eval(120-m4Lx*30),iflatex({\innerfont mx},mx),
+    at C+(Rect_((r5+r6)/2,aa)) adj(aa))',
+    IX,X,XI,XII,I,II,III)
+  Loopover_(`mx',`aa=360-m4Lx*30
+    r_text(eval(90-m4Lx*30), iflatex({\innerfont mx},mx),
+    at C+(Rect_((r5+r6)/2,aa)) adj(aa))',
+    IV,V,VI,VII,VIII)
 
 #                           Inner tics
   for mn = 5 to 60 by 5 do { t = 90-mn/60*360
@@ -216,15 +233,15 @@ Face: circle thick 0 fill_(1) rad r3 at C
 
 #                           Center
   dot(at C,0.1/4*r1,1)
- ]')
+ ]') `# AntiqueClock'
 
   Clock1: AntiqueClock(,,,3.5)
 # Clock2: AntiqueClock(4,50,07,2) at Clock1.e+(1.5,0)
 
   iflatex(`latexcommand(}%)')
-
+  ifsvg(`command "</g>"')
 
 #.PE
+',` "AntiqueClock.m4 requires" "PSTricks, Tikz-pgf, or SVG" ')
   ] with .sw at last [].se+(0.25,0)
-',` "AntiqueClock.m4 requires pstricks or pgf" ')
 .PE

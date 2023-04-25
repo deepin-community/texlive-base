@@ -19,28 +19,37 @@ MKDIM=printf '=boxdimfile{$(DIMFILE)}\n'
 #---------------------------------------------
 
 DOC = examplesmpost
-FIGS = Adder.1 Alogix.1 ABlogix.1 Antennas.1 AmpTable.1 Audio.1 \
-  AntiqueClock.1 \
-  Bip.1 Btree.1 Byte.1 Buttons.1 \
-  Connectors.1 Contact.1 Contacts.1 \
-  Counting.1 Crossbar.1 Crow.1 Csource.1 CanLogic.1 CctTable.1 Conn.1 \
-  Decoder.1 Demultiplexer.1 Dini.1 Diodes.1 Drive.1 \
-  Emarrows.1 Flow.1 Fuses.1 \
-  GrayCode.1 Grounds.1 Headers.1 Heathkit.1 I2L.1 Inclpdf.1 Jack.1 \
-  Lyap.1 Logic.1 Loglog.1 MC.1 Mixer.1 MotorControl.1 Multiplexer.1 \
-  NLG.1 NPDT.1 Nport.1 \
-  Opamp.1 Optoiso.1 Pconn.1 PushPull.1 Quantum.1 \
-  Rectifiers.1 Relay.1 relaycoil.1 Rotbox.1 \
-  Schottky.1 Sierpinski.1 ShiftR.1 Sixpole.1 Sources.1 SQUID.1 Switches.1 \
-  Tgate.1 Three.1 Timer.1 TTLnand.1 Ttree.1 Tubediags.1 \
-  Variable.1 Windings.1 Xform.1 \
-  control.1 csc.1 diamond.1 ex00.1 ex01.1 ex02.1 \
-  ex03.1 ex04.1 ex05.1 ex06.1 ex08.1 ex09.1 ex10.1 \
-  ex11.1 ex12.1 ex15.1 ex16.1 ex17.1 ex18.1 ex21.1 exp.1 \
-  fet.1 graysurf.1 lcct.1 pwrsupply.1 quick.1 \
-  random.1 recycle.1 rose.1 shapes.1 thyristor.1 sfg.1 ujt.1 worm.1 XOR.1
 
-BOXDIMS = ex09 Crow Inclpdf Loglog Opamp Ttree Windings
+FIGS = \
+  ABlogix.1 Adder.1 Alogix.1 AmpTable.1 Antennas.1 Arresters.1 \
+  Audio.1 Bip.1 Btree.1 Buttons.1 Byte.1 \
+  Capacitors.1 CanLogic.1 Chips.1 Conn.1 Connectors.1 \
+  Contacts.1 Contact.1 control.1 Crow.1 \
+  csc.1 Csource.1 Decoder.1 \
+  Demultiplexer.1 diamond.1 Dini.1 Diodes.1 Drive.1 \
+  Emarrows.1 Escher.1 \
+  ex00.1 ex01.1 ex02.1 ex03.1 ex04.1 ex05.1 ex06.1 ex08.1 \
+  ex09.1 ex10.1 ex11.1 ex12.1 ex15.1 ex16.1 ex17.1 ex18.1 \
+  ex21.1 exp.1 fet.1 Flow.1 Fuses.1 \
+  Geometry.1 GrayCode.1 graysurf.1 Grounds.1 \
+  Headers.1 Heathkit.1 \
+  I2L.1 Inclpdf.1 Inductors.1 Jack.1 \
+  lcct.1 Logic.1 Loglog.1 MC.1 Mixer.1 MoreTable.1 \
+  MotorControl.1 Multiplexer.1 \
+  NLG.1 NPDT.1 Nport.1 Opamp.1 Optoiso.1 \
+  Pconn.1 Plate.1 PushPull.1 pwrsupply.1 \
+  Quantum.1 quick.1 \
+  random.1 Rectifiers.1 recycle.1 relaycoil.1 Relay.1 \
+  Resistors.1 Rotbox.1 \
+  Schottky.1 sfg.1 shapes.1 ShiftR.1 Sierpinski.1 Sixpole.1 \
+  Smithchart.1 Sources.1 SQUID.1 Switches.1 \
+  Tgate.1 Three.1 thyristor.1 TTLnand.1 Tubediags.1 \
+  UNO.1 ujt.1 Variable.1 Windings.1 worm.1 Xform.1 XOR.1
+
+REMOVED = \
+  EEP.1 EVplugs.1
+
+BOXDIMS = ex09 Crow Inclpdf Loglog Opamp Btree Windings
 
 # It is advisable to do `make clean' between test examples.
 #---------------------------------------------
@@ -79,6 +88,7 @@ DIMFILE = tmp.dim
 	dpic -s $(DOC).pic >> $*.mp
 	@printf 'end\n' >> $*.mp
 	$(MPOST) $*.mp
+	chmod 644 $*.*
 
 $(DOC).ps: $(DOC).dvi
 	$(DVIPS) $(DOC) -o
@@ -123,7 +133,7 @@ tst1: test.1 tstmpost.tex
 	dvips tstmpost
 
 clean:
-	rm -f stamp-* $(FIGS) *.pic
+	rm -f stamp-* $(FIGS) *.pic mp*.tex
 	-if /usr/bin/test -f exlinks ; then \
      ls -l *.m4 *.bb *.gz | grep '\->' | \
        sed -e 's/^.* \([^ ][^ ]*\) ->.*$$/rm -f \1/' | sh; fi

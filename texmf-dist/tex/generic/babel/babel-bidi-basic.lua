@@ -7,7 +7,7 @@
 -- babel.dtx  (with options: `basic')
 -- 
 --
--- Copyright (C) 2012-2021 Javier Bezos and Johannes L. Braams.
+-- Copyright (C) 2012-2022 Javier Bezos and Johannes L. Braams.
 -- Copyright (C) 1989-2012 Johannes L. Braams and
 --           any individual authors listed elsewhere in this file.
 -- All rights reserved.
@@ -105,6 +105,8 @@ function Babel.bidi(head, ispar, hdir)
 
   local has_en = false
   local first_et = nil
+
+  local has_hyperlink = false
 
   local ATDIR = Babel.attr_dir
 
@@ -209,7 +211,7 @@ function Babel.bidi(head, ispar, hdir)
 
     elseif item.id == DIR then
       d = nil
-      new_d = true
+      if head ~= item then new_d = true end
 
     elseif item.id == node.id'glue' and item.subtype == 13 then
       glue_d = d
@@ -218,6 +220,9 @@ function Babel.bidi(head, ispar, hdir)
 
     elseif item.id == node.id'math' then
       inmath = (item.subtype == 0)
+
+    elseif item.id == 8 and item.subtype == 19 then
+      has_hyperlink = true
 
     else
       d = nil
@@ -341,7 +346,10 @@ function Babel.bidi(head, ispar, hdir)
         item = nodes[r][1]    -- MIRRORING
         if Babel.mirroring_enabled and item.id == GLYPH
              and temp == 'r' and characters[item.char] then
-          local font_mode = font.fonts[item.font].properties.mode
+          local font_mode = ''
+          if item.font > 0 and font.fonts[item.font].properties then
+            font_mode = font.fonts[item.font].properties.mode
+          end
           if font_mode ~= 'harf' and font_mode ~= 'plug' then
             item.char = characters[item.char].m or item.char
           end
@@ -414,5 +422,35 @@ function Babel.bidi(head, ispar, hdir)
 
   end
 
-  return node.prev(head) or head
+  head = node.prev(head) or head
+
+  -------------- FIX HYPERLINKS ----------------
+
+  if has_hyperlink then
+    local flag, linking = 0, 0
+    for item in node.traverse(head) do
+      if item.id == DIR then
+        if item.dir == '+TRT' or item.dir == '+TLT' then
+          flag = flag + 1
+        elseif item.dir == '-TRT' or item.dir == '-TLT' then
+          flag = flag - 1
+        end
+      elseif item.id == 8 and item.subtype == 19 then
+        linking = flag
+      elseif item.id == 8 and item.subtype == 20 then
+        if linking > 0 then
+          if item.prev.id == DIR and
+              (item.prev.dir == '-TRT' or item.prev.dir == '-TLT') then
+            d = node.new(DIR)
+            d.dir = item.prev.dir
+            node.remove(head, item.prev)
+            node.insert_after(head, item, d)
+          end
+        end
+        linking = 0
+      end
+    end
+  end
+
+  return head
 end

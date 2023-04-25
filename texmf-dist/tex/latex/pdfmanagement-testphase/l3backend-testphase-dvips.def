@@ -20,7 +20,7 @@
 %% 
 %% File: l3backend-testphase.dtx
 \ProvidesExplFile
-  {l3backend-testphase-dvips.def}{2021-08-28}{}
+  {l3backend-testphase-dvips.def}{2022-11-03}{}
   {LaTeX~PDF~management~testphase~bundle~backend~support: dvips}
 \RequirePackage{l3ref-tmp}
 \cs_generate_variant:Nn \ref_label:nn {en}
@@ -158,6 +158,9 @@
       }
 \cs_new_protected:Npn \__pdf_backend_link_off:{}
 \cs_new_protected:Npn \__pdf_backend_link_on: {}
+\tl_new:N \l__pdf_backend_xform_tmpwd_tl
+\tl_new:N \l__pdf_backend_xform_tmpdp_tl
+\tl_new:N \l__pdf_backend_xform_tmpht_tl
 \cs_new_protected:Npn\__pdf_backend_xform_new:nnnn #1 #2 #3 #4 % #1 name, #2 attribute, #4  content
   {
     \int_gincr:N \g__pdf_backend_object_int
@@ -181,31 +184,51 @@
     \tl_const:cx
       { c__pdf_backend_xform_dp_ \tl_to_str:n {#1} _tl }
       { \tex_the:D \box_dp:N \l__pdf_backend_tmpa_box }
-    %mirror the box
-    \box_scale:Nnn \l__pdf_backend_tmpa_box {1} {-1}
+   %store content dimensions in DPI units (Dots) (code from issue 25)
+    \tl_set:Nx\l__pdf_backend_xform_tmpwd_tl
+      {
+        \dim_to_decimal_in_sp:n{ \box_wd:N \l__pdf_backend_tmpa_box }~
+        65536~div~72.27~div~DVImag~mul~Resolution~mul~
+      }
+    \tl_set:Nx\l__pdf_backend_xform_tmpht_tl
+      {
+        \dim_to_decimal_in_sp:n{ \box_ht:N \l__pdf_backend_tmpa_box }~
+        65536~div~72.27~div~DVImag~mul~VResolution~mul~
+      }
+    \tl_set:Nx\l__pdf_backend_xform_tmpdp_tl
+      {
+        \dim_to_decimal_in_sp:n{ \box_dp:N \l__pdf_backend_tmpa_box }~
+        65536~div~72.27~div~DVImag~mul~VResolution~mul~
+      }
+    % mirror the box
+    %\box_scale:Nnn \l__pdf_backend_tmpa_box {1} {-1}
     \hbox_set:Nn\l__pdf_backend_tmpb_box
       {
         \__kernel_backend_postscript:x
           {
-            gsave~currentpoint~translate~
+            gsave~currentpoint~
+            initclip~ % restore default clipping path (page device/whole page)
+            clippath~pathbbox~newpath~pop~pop~
+            \tl_use:N\l__pdf_backend_xform_tmpdp_tl~add~translate~
             mark~
-            /_objdef~{ pdf.obj \int_use:N\g__pdf_backend_object_int }\c_space_tl~
-            /BBox[
-            currentpoint~\dim_to_decimal:n{\box_dp:N \l__pdf_backend_tmpa_box}~72.27~div~VResolution~mul~add~
-            currentpoint~
-              exch~\dim_to_decimal:n{\box_wd:N \l__pdf_backend_tmpa_box}~72.27~div~Resolution~mul~add~
-              exch~\dim_to_decimal:n{\box_ht:N \l__pdf_backend_tmpa_box}~72.27~div~VResolution~mul~sub~
-             ]
-             \str_if_eq:eeF{#1}{}
-              {
-                product~(Distiller)~search~{pop~pop~pop~#2}{pop}ifelse~
-              }
-             /BP~pdfmark~grestore~
+              /_objdef~{ pdf.obj \int_use:N\g__pdf_backend_object_int }\c_space_tl~
+              /BBox[
+                0~
+                \tl_use:N\l__pdf_backend_xform_tmpht_tl~
+                \tl_use:N\l__pdf_backend_xform_tmpwd_tl~
+                \tl_use:N\l__pdf_backend_xform_tmpdp_tl~
+                neg
+              ]
+              \str_if_eq:eeF{#1}{}
+               {
+                 product~(Distiller)~search~{pop~pop~pop~#2}{pop}ifelse~
+               }
+            /BP~pdfmark~1~-1~scale~neg~exch~neg~exch~translate
           }
         \box_use_drop:N\l__pdf_backend_tmpa_box
         \__kernel_backend_postscript:n
           {
-            mark ~ /EP~pdfmark
+            mark ~ /EP~pdfmark  ~ grestore
           }
        \str_if_eq:eeF{#1}{}
          {
@@ -261,6 +284,34 @@
   }
 \prg_new_eq_conditional:NNn \pdfxform_if_exist:n\__pdf_backend_xform_if_exist:n
   { TF , T , F , p }
+\tl_new:N   \l_pdf_current_structure_destination_tl
+\cs_new_protected:Npn \pdf_activate_structure_destination:
+ {
+   \cs_gset_eq:NN \__pdf_backend_destination:nn \__pdf_backend_structure_destination:nn
+   \cs_gset_eq:NN \__pdf_backend_destination:nnnn \__pdf_backend_structure_destination:nnnn
+   \cs_gset_eq:NN \__pdf_backend_link_begin_goto:nnw  \__pdf_backend_link_begin_structure_goto:nnw
+ }
+\cs_set_eq:NN \__pdf_backend_structure_destination:nn       \__pdf_backend_destination:nn
+\cs_set_eq:NN \__pdf_backend_structure_destination:nnnn \__pdf_backend_destination:nnnn
+\cs_set_eq:NN \__pdf_backend_link_begin_structure_goto:nnw  \__pdf_backend_link_begin_goto:nnw
+\cs_new_protected:Npn \__pdf_backend_set_regression_data:
+  {
+    \sys_gset_rand_seed:n{1000}
+    \pdfmanagement_add:nnn{Info}{Creator}{(TeX)}
+    \__kernel_backend_literal:e{!~<</DocumentUUID~(DocumentUUID)>>~setpagedevice}
+    \__kernel_backend_literal:e{!~<</InstanceUUID~(InstanceUUID)>>~setpagedevice}
+    \pdfmanagement_add:nnn{Info}{CreationDate}{(D:20010101205959-00'00')}
+    \pdfmanagement_add:nnn{Info}{ModDate}{(D:20010101205959-00'00')}
+    \AddToDocumentProperties[document]{pdfcreationdate}{D:20010101205959-00'00'}
+    \AddToDocumentProperties[document]{pdfmoddate}{D:20010101205959-00'00'}
+    \AddToDocumentProperties[hyperref]{pdfmetadate}{D:20010101205959-00'00'}
+    \AddToDocumentProperties[hyperref]{pdfdate}{D:20010101205959-00'00'}
+    \AddToDocumentProperties[hyperref]{pdfinstanceid}{uuid:0a57c455-157a-4141-8c19-6237d832fc80}
+   }
+\cs_new_protected:Npn \__pdf_backend_metadata_stream:n #1
+  {
+    \pdf_object_unnamed_write:nn {stream}{{/Type~/Metadata~/Subtype~/XML}{#1}}
+  }
 %% 
 %%
 %% End of file `l3backend-testphase-dvips.def'.

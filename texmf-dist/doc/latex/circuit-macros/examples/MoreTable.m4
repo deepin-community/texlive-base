@@ -5,6 +5,11 @@ cct_init
 movewid = 2 pt__
 hm = 2.05
 vm = 0.28
+{  right; {lamp ; move;"`{\tt lamp}'" ljust}
+   move right_ hm
+   {thermocouple ; move;"`{\tt thermocouple}'" ljust }
+}
+   move down 0.25; right_
 {  {memristor ; move;"`{\tt memristor}'" ljust}
    move right_ hm
    {heater; move;"`{\tt heater}'" ljust}
@@ -26,11 +31,9 @@ vm = 0.28
   {arrowline ; move;"`{\tt arrowline}'" ljust}
 }
    move down 0.25; right_
-{  move down 0.10; right; {lamp ; move;"`{\tt lamp}'" ljust}
+{  {xtal ; move ;"`{\tt xtal}'" ljust}
    move right_ hm
-   {thermocouple ; move;"`{\tt thermocouple}'" ljust }
-#  move up 0.10 right_ hm
-#  {arrester ; move ;"`{\tt arrester}'" ljust}
+   {xtal(,type=R;outerdiam=0.2) ; move ;"`{\tt xtal(,type=R)}'" ljust}
 }
 
 .PE

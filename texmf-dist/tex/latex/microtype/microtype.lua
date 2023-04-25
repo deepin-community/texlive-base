@@ -10,19 +10,20 @@
 -- 
 --                       The `microtype' package
 --         Subliminal refinements towards typographical perfection
---           Copyright (c) 2004--2021 R Schlicht <w.m.l@gmx.net>
+--           Copyright (c) 2004--2022 R Schlicht <w.m.l@gmx.net>
 -- 
 -- This work may be distributed and/or modified under the conditions of the
 -- LaTeX Project Public License, either version 1.3c of this license or (at
 -- your option) any later version. The latest version of this license is in:
--- http://www.latex-project.org/lppl.txt, and version 1.3c or later is part
+-- https://www.latex-project.org/lppl.txt, and version 1.3c or later is part
 -- of all distributions of LaTeX version 2005/12/01 or later.
 -- 
--- This work has the LPPL maintenance status `author-maintained'.
+-- This work has the LPPL maintenance status `maintained'.
 -- 
--- This work consists of the files microtype.dtx and microtype.ins and the
--- derived files microtype.sty, microtype-pdftex.def, microtype-luatex.def,
--- microtype-xetex.def, microtype.lua and letterspace.sty.
+-- This work consists of the files microtype.dtx, microtype-utf.dtx and
+-- microtype.ins and the derived files microtype.sty, microtype-pdftex.def,
+-- microtype-luatex.def, microtype-xetex.def, microtype.lua, letterspace.sty
+-- and microtype-show.sty.
 -- 
 -- ------------------------------------------------------------------------
 --   This file contains auxiliary lua functions.
@@ -34,13 +35,14 @@ microtype        = microtype or {}
 local microtype  = microtype
 microtype.module = {
     name         = "microtype",
-    version      = "2.8c",
-    date         = "2021/03/14",
+    version      = "3.0f",
+    date         = "2022/06/23",
     description  = "microtype module.",
     author       = "E. Roux, R. Schlicht and P. Gesang",
     copyright    = "E. Roux, R. Schlicht and P. Gesang",
     license      = "LPPL",
 }
+luatexbase.provides_module(microtype.module)
 
 function microtype.info(...)
   luatexbase.module_info("microtype",...)
@@ -58,6 +60,16 @@ else
 end
 function microtype.sprint (...)
   tex.sprint(catpackage, ...)
+end
+
+if not math.tointeger or not pcall(math.tointeger,0) then
+  math.mininteger=-0x4FFFFFFFFFFF
+  math.maxinteger=0x4FFFFFFFFFFF
+  local floor=math.floor
+  function math.tointeger(n)
+    local f=floor(n)
+    return f==n and f or nil
+  end
 end
 
 local function if_int(s)
@@ -101,13 +113,31 @@ local function do_font()
   local thefont = font.getfont(font.current())
   if thefont then
     for i,v in next,thefont.characters do
-      if v.index == nil or v.index > 0 then
+      if v.index == nil or ( v.index > 0 and i < 1114112 ) then
         microtype.sprint([[\@tempcnta=]]..i..[[\relax\MT@dofont@function]])
       end
     end
   end
 end
 microtype.do_font = do_font
+
+local function add_ls(k)
+  local f = tex.fontname(font.current())
+  local spec,size = match(f,'^(.+)( at .+)$')
+  if not spec then spec = f end
+  local a,b,c = match(spec,'^([^:]+):?([^:]*):?(.*)$')
+  local ls = "kernfactor=" .. k/1000 .. ';'
+  microtype.sprint(a..':')
+  if (a == "name" or a == "file") then
+    microtype.sprint(b..':'..ls..c)
+  else
+    microtype.sprint(ls..b)
+  end
+  if size then
+    microtype.sprint(size)
+  end
+end
+microtype.add_ls = add_ls
 
 microtype.ligs = microtype.ligs or { }
 
@@ -153,7 +183,10 @@ end
 if luaotfload and luaotfload.aux and luaotfload.aux.slot_of_name then
   local slot_of_name = luaotfload.aux.slot_of_name
   microtype.name_to_slot = function(name, unsafe)
-    return slot_of_name(font.current(), name, unsafe)
+    local n = slot_of_name(font.current(), name, unsafe)
+    if not n then return -1 end
+    if n > 1114111 then return -1 end
+    return math.tointeger(n)
   end
 else
   -- we dig into internal structure (should be avoided)

@@ -1,10 +1,10 @@
 # The Lualibs Package
 
-VERSION: 2.74
+VERSION: 2.75
 
-DATE: 2021-05-20
+DATE: 2022-10-04
 
-FONTLOADERDATE: 2021-05-20
+FONTLOADERDATE: 2022-10-04
 
 Lualibs is a collection of Lua modules useful for general programming.
 
@@ -47,7 +47,6 @@ See the 'NEWS' file for version history.
 |    lualibs-compat.lua              |tex/luatex/lualibs/lualibs-compat.lua
 |    lualibs-dir.lua                 |tex/luatex/lualibs/lualibs-dir.lua
 |    lualibs-file.lua                | tex/luatex/lualibs/lualibs-file.lua
-|    lualibs-gzip.lua                | tex/luatex/lualibs/lualibs-gzip.lua
 |    lualibs-function.lua            | tex/luatex/lualibs/lualibs-function.lua
 |    lualibs-io.lua                  | tex/luatex/lualibs/lualibs-io.lua
 |    lualibs-lpeg.lua                | tex/luatex/lualibs/lualibs-lpeg.lua
@@ -68,11 +67,13 @@ See the 'NEWS' file for version history.
 |    lualibs-util-jsn.lua            | tex/luatex/lualibs/lualibs-util-jsn.lua
 |    lualibs-util-lua.lua            | tex/luatex/lualibs/lualibs-util-lua.lua
 |    lualibs-util-prs.lua            | tex/luatex/lualibs/lualibs-util-prs.lua
+|    lualibs-util-sac.lua            | tex/luatex/lualibs/lualibs-util-sac.lua
 |    lualibs-util-sta.lua            | tex/luatex/lualibs/lualibs-util-sta.lua
 |    lualibs-util-sto.lua            | tex/luatex/lualibs/lualibs-util-sto.lua
 |    lualibs-util-str.lua            | tex/luatex/lualibs/lualibs-util-str.lua
 |    lualibs-util-tab.lua            | tex/luatex/lualibs/lualibs-util-tab.lua
 |    lualibs-util-tpl.lua            | tex/luatex/lualibs/lualibs-util-tpl.lua
+|    lualibs-util-zip.lua            | tex/luatex/lualibs/lualibs-util-zip.lua
 |    LICENSE                         | doc/luatex/lualibs/LICENSE
 |    NEWS                            | doc/luatex/lualibs/NEWS
 |    README                          | doc/luatex/lualibs/README

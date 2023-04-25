@@ -1,6 +1,6 @@
 % \iffalse meta-comment
 %
-% Copyright (C) 1993-2021
+% Copyright (C) 1993-2022
 % The LaTeX Project and any individual authors listed elsewhere
 % in this file.
 %
@@ -36,7 +36,7 @@
 %
 %
 \ProvidesFile{ltfssdcl.dtx}
-            [2021/02/15 v3.0w LaTeX Kernel (NFSS Declarative Interface)]
+            [2022/09/20 v3.1b LaTeX Kernel (NFSS Declarative Interface)]
 % \iffalse
 \documentclass{ltxdoc}
 \begin{document}
@@ -77,7 +77,7 @@
 %  completely accurate.
 % \end{quote}
 %
-% \StopEventually{}
+% \MaybeStop{}
 %
 % \section{Interface Commands}
 %
@@ -454,25 +454,88 @@
 %    \end{macrocode}
 % \end{macro}
 %
+%
+%
+%
+%  \begin{macro}{\c@localmathalphabets}
+% \changes{v3.0x}{2021/09/26}{Counter added for (gh/676)}
+%    To avoid hitting the ``no more math fams available'' limit of 16, we
+%    keep a defined number of math alphabets flexible/local. If we have to
+%    allocate any of those we roll back the allocation after the
+%    formula has ended, so the next formula can use other alphabets in
+%    the slot(s). This makes the processing a bit slower if you are
+%    working at the limit, but that is better than dying with ``out of memory''.
+%    \begin{macrocode}
+%</2ekernel>
+%<latexrelease>\IncludeInRelease{2021/11/15}
+%<latexrelease>  {\document@select@group}{\document@select@group}%
+%<*2ekernel|latexrelease>
+%    \end{macrocode}
+%    We don't really undo the declaration on rollback (as that would
+%    be hard to maintain), so rolling
+%    forward needs to check if the declaration was already made.
+%    \begin{macrocode}
+\ifx\c@localmathalphabets\@undefined
+%    \end{macrocode}
+%    There is no need to have this counter as part of the include
+%    checkpoints, given that it makes little sense to alter its
+%    settings mid document. All we want is the ability to change it
+%    using the \cs{setcounter} interface.
+%
+%    By default we keep two math fams flexible.
+%    \begin{macrocode}
+  \newcount\c@localmathalphabets
+  \setcounter{localmathalphabets}{2}
+\fi
+%    \end{macrocode}
+%  \end{macro}
+%
+%
+%
+%
+%
 % \begin{macro}{\document@select@group}
-%    We surround |\select@group| with braces so that functions using it
-%    can be used directly after |_| or |^|.
-% \changes{v2.1p}{1994/12/10}{Surround with braces (add fourth arg)}
-% \changes{v2.1q}{1995/04/02}{fix problem for pr/1275}
+%    The \cs{document@select@group} command is the version of
+%    \cs{select@group} (inside math versions) that is used in the
+%    document body to set up math alphabets (if used).
+%
 % \changes{v3.0g}{1997/11/20}
 %      {(DPC) inline use of \cs{stepcounter} (faster, and saves a csname
 %       per math version as no reset list)}
 % \changes{v3.0q}{2015/03/18}{Introduce \cs{e@mathgroup@top}}
 %    \begin{macrocode}
-%</2ekernel>
-%<latexrelease>\IncludeInRelease{2020/10/01}
-%<latexrelease>  {\document@select@group}{\document@select@group}%
-%<*2ekernel|latexrelease>
 \def\document@select@group#1#2#3#4{%
  \ifx\math@bgroup\bgroup\else\relax\expandafter\@firstofone\fi
  {%
  \ifmmode
+%    \end{macrocode}
+%    We first check if there is still room for allocating another
+%    mathgroup. If there is, we check if it can be globally allocated
+%    or if we have reached the limit which is given by
+%    \cs{e@mathgroup@top} with \cs{c@localmathalphabets} subtracted.
+% 
+% \changes{v3.0x}{2021/09/26}{Test if we should freeze the version (gh/676)}
+%    \begin{macrocode}
    \ifnum\csname c@mv@\math@version\endcsname<\e@mathgroup@top
+     \ifnum \numexpr\e@mathgroup@top-\c@localmathalphabets
+              >\csname c@mv@\math@version\endcsname
+     \else
+%    \end{macrocode}
+%    If we are past this point we freeze the current state of the math
+%    version so that we can return to it after the formula has
+%    ended. Of course, that should be done only once, so we check if
+%    \cs{mv@\meta{version}@frozen} already exists.
+%    \begin{macrocode}
+       \ifcsname mv@\math@version @frozen\endcsname \else
+%    \end{macrocode}
+%    We have to pass the current value of \cs{math@version} not the
+%    macro itself, because some of the processing is delayed to a
+%    point where the value may have changed again---not doing this
+%    caused a puzzling error in one setup.
+%    \begin{macrocode}
+         \expandafter\freeze@math@version\expandafter{\math@version}%
+       \fi
+     \fi
      \begingroup
        \escapechar\m@ne
        \getanddefine@fonts{\csname c@mv@\math@version\endcsname}#3%
@@ -486,16 +549,21 @@
      \global\advance\csname c@mv@\math@version\endcsname\@ne
    \else
      \let#1\relax
-     \@latex@error{Too many math alphabets used
-                   in version \math@version}%
+     \@latex@error{Too many math alphabets used in
+                   version \math@version}%
         \@eha
   \fi
 %    \end{macrocode}
-% extra \cs{expandafter} to remove the \cs{expandafter} added below
-% \changes{v3.0w}{2021/02/115}{fix for (gh/501)}
+%    Extra \cs{expandafter} to remove the \cs{expandafter} added below
+% \changes{v3.0w}{2021/02/15}{fix for (gh/501)}
 %    \begin{macrocode}
  \else \expandafter\expandafter\expandafter\non@alpherr\fi
 %    \end{macrocode}
+%    We surround |\select@group| with braces so that functions using it
+%    can be used directly after |_| or |^|.
+% \changes{v2.1p}{1994/12/10}{Surround with braces (add fourth arg)}
+% \changes{v2.1q}{1995/04/02}{fix problem for pr/1275}
+%
 %    If the legacy interface is used, e.g., \verb=$\sf -1$= the math
 %    alphabet \verb=#1= does not take an argument so we better do not
 %    surround \verb=#4= with braces, because then we get
@@ -507,7 +575,40 @@
  \expandafter#1\ifx\math@bgroup\bgroup{#4}\else#4\fi
  }%
 }
+%    \end{macrocode}
+%
+%    \begin{macrocode}
 %</2ekernel|latexrelease>
+%<latexrelease>\EndIncludeInRelease
+%<latexrelease>\IncludeInRelease{2020/10/01}
+%<latexrelease>  {\document@select@group}{\document@select@group}%
+%<latexrelease>
+%<latexrelease>\def\document@select@group#1#2#3#4{%
+%<latexrelease> \ifx\math@bgroup\bgroup\else\relax\expandafter\@firstofone\fi
+%<latexrelease> {%
+%<latexrelease> \ifmmode
+%<latexrelease>   \ifnum\csname c@mv@\math@version\endcsname<\e@mathgroup@top
+%<latexrelease>     \begingroup
+%<latexrelease>       \escapechar\m@ne
+%<latexrelease>       \getanddefine@fonts{\csname c@mv@\math@version\endcsname}#3%
+%<latexrelease>       \globaldefs\@ne  \math@fonts
+%<latexrelease>     \endgroup
+%<latexrelease>     \expandafter\extract@alph@from@version
+%<latexrelease>         \csname mv@\math@version\expandafter\endcsname
+%<latexrelease>         \expandafter{\number\csname
+%<latexrelease>                       c@mv@\math@version\endcsname}%
+%<latexrelease>          #1%
+%<latexrelease>     \global\advance\csname c@mv@\math@version\endcsname\@ne
+%<latexrelease>   \else
+%<latexrelease>     \let#1\relax
+%<latexrelease>     \@latex@error{Too many math alphabets used
+%<latexrelease>                   in version \math@version}%
+%<latexrelease>        \@eha
+%<latexrelease>  \fi
+%<latexrelease> \else \expandafter\expandafter\expandafter\non@alpherr\fi
+%<latexrelease> \expandafter#1\ifx\math@bgroup\bgroup{#4}\else#4\fi
+%<latexrelease> }%
+%<latexrelease>}
 %<latexrelease>\EndIncludeInRelease
 %<latexrelease>\IncludeInRelease{2015/01/01}
 %<latexrelease>  {\document@select@group}{\document@select@group}%
@@ -573,7 +674,132 @@
 %<latexrelease>\EndIncludeInRelease
 %<*2ekernel>
 %    \end{macrocode}
-% \end{macro}
+%  \end{macro}
+%
+%
+%
+%
+%  \begin{macro}{\freeze@math@version}
+% \changes{v3.0x}{2021/09/26}{Macro added for (gh/676)}
+% \changes{v3.1a}{2022/09/17}{New logic for freezing math versions (gh/921)}
+%    This command stores the current state of the math version and sets
+%    things up to return to it after each formula from now on. We use
+%    L3 programming layer code to set it up.
+%    \begin{macrocode}
+%</2ekernel>
+%<*2ekernel|latexrelease>
+%<latexrelease>\IncludeInRelease{2022/11/01}%
+%<latexrelease>                 {\freeze@math@version}{freeze math version}%
+\ExplSyntaxOn
+\cs_new_protected:Npn\freeze@math@version #1 {
+%    \end{macrocode}
+%    Save the current \cs{mv@\meta{version}} code and the number of
+%    allocated mathgroups inside.
+%    \begin{macrocode}
+  \@font@info{Freeze~ math~ alphabet~ allocation~ in~ version~
+              #1.\MessageBreak
+              Allocated~math~groups:~\int_use:c{ c@mv@ #1 }~ 
+              (local:~  \int_use:N\c@localmathalphabets)      }
+  \cs_gset_eq:cc { mv@#1@frozen }{ mv@#1 }
+  \tl_gset:cx { g__nfss_frozen_mv_ #1 _tl }{ \int_use:c { c@mv@#1 } }
+%    \end{macrocode}
+%    Here is the definition of \cs{mv@\meta{version}@reset}. If there
+%    has been no new math alphabet allocation, doing a reset would
+%    just cause a lot of unnecessary processing, so we do a quick
+%    check upfront for this.
+%    \begin{macrocode}
+  \cs_gset:cpn{mv@#1@reset}
+     {
+         \int_compare:nNnTF { \int_use:c{c@mv@#1} } > 
+                            { \tl_use:c{g__nfss_frozen_mv_ #1 _tl} }
+             {
+               \@font@info{Undo~ math~ alphabet~ allocation~ in~ version~ #1}
+%    \end{macrocode}
+%    If the undo is necessary, we restore the \cs{mv@\meta{version}} code.
+%    \begin{macrocode}
+               \cs_gset_eq:cc { mv@#1 }{ mv@#1@frozen }
+               \int_gset:cn { c@mv@#1 }{ \tl_use:c {g__nfss_frozen_mv_ #1 _tl} }
+%    \end{macrocode}
+%    But we also should undo changes to the math alphabet
+%    definitions. We therefore run this code with a modified
+%    definition for \cs{getanddefine@fonts} because there is no need
+%    to do anything to the symbol fonts that are permanently allocated.
+%    \begin{macrocode}
+               \group_begin:
+                 \cs_set_eq:NN \getanddefine@fonts \use_none:nn
+                 \use:c {mv@#1}
+               \group_end:
+             }
+             {
+%    \end{macrocode}
+%    If there was no change, we report that in the log (but this
+%    branch could go completely).
+%    \begin{macrocode}
+               \@font@info{No~ math~ alphabet~ change~ to~ frozen~ version~ #1}
+             }
+%    \end{macrocode}
+%    If this is executed after a math display, we may have to arrange
+%    for ignoring spaces, because they are now hidden if
+%    the tokens from above intervene. This is signaled by the 2e
+%    switch \texttt{@ignore} which is set in \cs{frozen@everymath} and
+%    \cs{frozen@everydisplay}.
+%
+%    This is all 2e code so we use that syntax.
+% \changes{v3.0z}{2022/07/04}{Ignore spaces if necessary (gh/886)}
+%    \begin{macrocode}
+         \if@ignore \ignorespaces \fi
+    }
+}
+\ExplSyntaxOff
+%</2ekernel|latexrelease>
+%<latexrelease>\EndIncludeInRelease
+%<latexrelease>\IncludeInRelease{2021/11/15}
+%<latexrelease>                 {\freeze@math@version}{freeze math version}%
+%<latexrelease>
+%<latexrelease>\ExplSyntaxOn
+%<latexrelease>\cs_set_protected:Npn\freeze@math@version #1 {
+%<latexrelease>  \@font@info{Freeze~ math~ alphabet~ allocation~ in~ version~
+%<latexrelease>              #1.\MessageBreak
+%<latexrelease>              Allocated~math~groups:~\int_use:c{ c@mv@ #1 }~
+%<latexrelease>              (local:~  \int_use:N\c@localmathalphabets)      }
+%<latexrelease>  \cs_gset_eq:cc { mv@#1@frozen }{ mv@#1 }
+%<latexrelease>  \tl_gset:cx { g__nfss_frozen_mv_ #1 _tl }{ \int_use:c { c@mv@#1 } }
+%<latexrelease>  \group_insert_after:N \__nfss_init_mv_freeze:N
+%<latexrelease>  \exp_after:wN \group_insert_after:N \cs:w mv@#1@reset \cs_end:
+%<latexrelease>  \tl_gput_right:No \check@mathfonts
+%<latexrelease>       {
+%<latexrelease>         \exp_after:wN \group_insert_after:N \cs:w mv@#1@reset \cs_end:
+%<latexrelease>       }
+%<latexrelease>  \cs_gset:cpn{mv@#1@reset}
+%<latexrelease>     {
+%<latexrelease>         \int_compare:nNnTF { \int_use:c{c@mv@#1} } >
+%<latexrelease>                            { \tl_use:c{g__nfss_frozen_mv_ #1 _tl} }
+%<latexrelease>             {
+%<latexrelease>               \@font@info{Undo~ math~ alphabet~ allocation~ in~ version~ #1}
+%<latexrelease>               \cs_gset_eq:cc { mv@#1 }{ mv@#1@frozen }
+%<latexrelease>               \int_gset:cn { c@mv@#1 }{ \tl_use:c {g__nfss_frozen_mv_ #1 _tl} }
+%<latexrelease>               \group_begin:
+%<latexrelease>                 \cs_set_eq:NN \getanddefine@fonts \use_none:nn
+%<latexrelease>                 \use:c {mv@#1}
+%<latexrelease>               \group_end:
+%<latexrelease>             }
+%<latexrelease>             {
+%<latexrelease>               \@font@info{No~ math~ alphabet~ change~ to~ frozen~ version~ #1}
+%<latexrelease>             }
+%<latexrelease>         \if@ignore \ignorespaces \fi
+%<latexrelease>    }
+%<latexrelease>}
+%<latexrelease>\cs_set_protected:Npn \__nfss_init_mv_freeze:N #1 {%
+%<latexrelease>  \mode_if_math:T { \group_insert_after:N \__nfss_init_mv_freeze:N
+%<latexrelease>                    \group_insert_after:N } #1
+%<latexrelease>}
+%<latexrelease>\ExplSyntaxOff
+%<latexrelease>
+%<latexrelease>\EndIncludeInRelease
+%<*2ekernel>
+%    \end{macrocode}
+%  \end{macro}
+%
 %
 % \begin{macro}{\process@table}
 %    \begin{macrocode}
@@ -653,9 +879,57 @@
 %
 % \begin{macro}{\DeclareMathVersion}
 %    \begin{macrocode}
+%</2ekernel>
+%<*2ekernel|latexrelease>
+%<latexrelease>\IncludeInRelease{2022/11/01}%
+%<latexrelease>                 {\DeclareMathVersion}{local alphabets}%
 \def\DeclareMathVersion#1{%
+%    \end{macrocode}
+%    When declaring a new math version we need to instantiate an L3
+%    variable that is used when we freeze the version, because too many
+%    alphabets got allocated. If we don't do this, L3 programming layer
+%    complains if it is run in checking mode.
+% \changes{v3.0y}{2021/10/15}{Initialize variable for freezing
+%       math version (gh/676)}
+%    \begin{macrocode}
+  \@namedef{g__nfss_frozen_mv_#1_tl}{}%
+%    \end{macrocode}
+%    We also extend \cs{check@mathfonts} to call a version reset (once
+%    frozen) after a formula has finished.
+% \changes{v3.1a}{2022/09/17}{New logic for freezing math versions (gh/921)}
+%    \begin{macrocode}
+  \expandafter\ifx\csname mv@#1\endcsname \relax
+    \expandafter \g@addto@macro \expandafter \check@mathfonts
+         \expandafter {\expandafter \aftergroup \csname mv@#1@reset\endcsname}%
+%    \end{macrocode}
+%    Initially this macro does nothing. It is, however, important that
+%    it doesn't stop any \cs{ignorespaces}, so we make it expandable
+%    and not \cs{relax}.
+%    \begin{macrocode}
+    \@namedef{mv@#1@reset}{}%
+  \fi
+%    \end{macrocode}
+%
+%    \begin{macrocode}
   \expandafter\new@mathversion\csname mv@#1\endcsname}
 \@onlypreamble\DeclareMathVersion
+%</2ekernel|latexrelease>
+%<latexrelease>\EndIncludeInRelease
+%    \end{macrocode}
+%    
+%    \begin{macrocode}
+%<latexrelease>\IncludeInRelease{2021/11/15}%
+%<latexrelease>                 {\DeclareMathVersion}{local alphabets}%
+%<latexrelease>\def\DeclareMathVersion#1{%
+%<latexrelease>  \@namedef{g__nfss_frozen_mv_#1_tl}{}%
+%<latexrelease>  \expandafter\new@mathversion\csname mv@#1\endcsname}
+%<latexrelease>\EndIncludeInRelease
+%<latexrelease>\IncludeInRelease{0000/00/00}%
+%<latexrelease>                 {\DeclareMathVersion}{local alphabets}%
+%<latexrelease>\def\DeclareMathVersion#1{%
+%<latexrelease>  \expandafter\new@mathversion\csname mv@#1\endcsname}
+%<latexrelease>\EndIncludeInRelease
+%<*2ekernel>
 %    \end{macrocode}
 % \end{macro}
 %
@@ -723,8 +997,24 @@
 % \end{macro}
 %
 % \begin{macro}{\DeclareSymbolFont}
+%    First drop any surplus \texttt{m} from the series argument then
+%    do what has been done since 1994.
+% \changes{v3.1b}{2022/09/20}{Drop any surplus 'm' in series argument (gh/918)}
 %    \begin{macrocode}
-\def\DeclareSymbolFont#1#2#3#4#5{%
+%</2ekernel>
+%<*2ekernel|latexrelease>
+%<latexrelease>\IncludeInRelease{2022/11/01}%
+%<latexrelease>                 {\DeclareSymbolFont}{maybe drop m}%
+\def\DeclareSymbolFont #1#2#3#4#5{%
+ \def\reserved@a{\DeclareSymbolFont@m@dropped{#1}{#2}{#3}}%
+ \edef\reserved@b{#4}%
+ \series@maybe@drop@one@m\reserved@b\reserved@b
+ \expandafter\reserved@a\expandafter{\reserved@b}{#5}%
+}
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+\def\DeclareSymbolFont@m@dropped #1#2#3#4#5{%
  \@tempswafalse
  \edef\reserved@b{#2}%
  \def\cdp@elt##1##2##3##4{\def\reserved@c{##1}%
@@ -778,6 +1068,16 @@
   \fi
   }
 \@onlypreamble\DeclareSymbolFont
+%</2ekernel|latexrelease>
+%<latexrelease>\EndIncludeInRelease
+%<latexrelease>\IncludeInRelease{0000/00/00}%
+%<latexrelease>                 {\DeclareSymbolFont}{maybe drop m}%
+%<latexrelease>
+%<latexrelease>\let\DeclareSymbolFont\DeclareSymbolFont@m@dropped
+%<latexrelease>\let\DeclareSymbolFont@m@dropped\@undefined
+%<latexrelease>
+%<latexrelease>\EndIncludeInRelease
+%<*2ekernel>
 %    \end{macrocode}
 % \end{macro}
 %
@@ -814,8 +1114,24 @@
 % \end{macro}
 %
 % \begin{macro}{\SetSymbolFont}
+%    First drop any surplus \texttt{m} from the series argument then
+%    do what has been done since 1994.
+% \changes{v3.1b}{2022/09/20}{Drop any surplus 'm' in series argument (gh/918)}
 %    \begin{macrocode}
-\def\SetSymbolFont#1#2#3#4#5#6{%
+%</2ekernel>
+%<*2ekernel|latexrelease>
+%<latexrelease>\IncludeInRelease{2022/11/01}%
+%<latexrelease>                 {\SetSymbolFont}{maybe drop m}%
+\def\SetSymbolFont #1#2#3#4#5#6{%
+ \def\reserved@a{\SetSymbolFont@m@dropped{#1}{#2}{#3}{#4}}%
+ \edef\reserved@b{#5}%
+ \series@maybe@drop@one@m\reserved@b\reserved@b
+ \expandafter\reserved@a\expandafter{\reserved@b}{#6}%
+}
+%    \end{macrocode}
+%    
+%    \begin{macrocode}
+\def\SetSymbolFont@m@dropped#1#2#3#4#5#6{%
  \@tempswafalse
  \edef\reserved@b{#3}%
  \def\cdp@elt##1##2##3##4{\def\reserved@c{##1}%
@@ -830,6 +1146,16 @@
  \fi
 }
 \@onlypreamble\SetSymbolFont
+%</2ekernel|latexrelease>
+%<latexrelease>\EndIncludeInRelease
+%<latexrelease>\IncludeInRelease{0000/00/00}%
+%<latexrelease>                 {\SetSymbolFont}{maybe drop m}%
+%<latexrelease>
+%<latexrelease>\let\SetSymbolFont\SetSymbolFont@m@dropped
+%<latexrelease>\let\SetSymbolFont@m@dropped\@undefined
+%<latexrelease>
+%<latexrelease>\EndIncludeInRelease
+%<*2ekernel>
 %    \end{macrocode}
 % \end{macro}
 %

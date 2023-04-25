@@ -1,4 +1,4 @@
-# $Id: Makefile 848 2021-02-18 17:49:17Z karl $
+# $Id: Makefile 875 2022-03-01 02:08:10Z karl $
 # Makefile for pdfTeX documentation.  Public domain.
 
 # Get version we're documenting from the \def in the manual.
@@ -88,7 +88,7 @@ pdftex-syntax.txt: pdftex-t.tex pdftex-syntax.tex syntaxform.awk
 #  Install from this source directory to TL.
 
 # svn co svn://u:pw@tug.org/texlive/trunk/Master/texmf-dist/doc/pdftex
-tltree = /r/tug/home/texlive/karl/Master/texmf-dist
+tltree = /v/texlive/karl/Master/texmf-dist
 dest = $(tltree)/doc/pdftex/manual
 
 INSTALL_DATA = cp -p
@@ -145,3 +145,6 @@ maintainer-clean: clean
 	rm -f pdftex-w.pdf pdftex-w.txt
 
 clobber allclean realclean distclean: maintainer-clean
+
+spell:
+	myspell pdftex-t.tex
