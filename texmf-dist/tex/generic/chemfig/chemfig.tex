@@ -4,9 +4,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                    %
 \def\CFname                    {chemfig}                             %
-\def\CFver                       {1.6b}                              %
+\def\CFver                       {1.6c}                              %
 %                                                                    %
-\def\CFdate                   {2021/08/01}                           %
+\def\CFdate                   {2022/09/27}                           %
 %                                                                    %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -15,9 +15,7 @@
 % Status     : Maintained                                            |
 % Email      : unbonpetit@netc.fr                                    |
 % Package URL: https://www.ctan.org/pkg/chemfig                      |
-% Bug tracker: https://framagit.org/unbonpetit/chemfig/issues        |
-% Repository : https://framagit.org/unbonpetit/chemfig/tree/master   |
-% Copyright  : Christian Tellechea 2010-2021                         |
+% Copyright  : Christian Tellechea 2010-2022                         |
 % Licence    : Released under the LaTeX Project Public License v1.3c |
 %              or later, see http://www.latex-project.org/lppl.txt   |
 % Files      : 1) chemfig.tex                                        |
@@ -406,7 +404,7 @@
 	stack sep           = 1.5pt,
 	autoreset cntcycle  = true,
 	show cntcycle       = false,
-	debug               =false,
+	debug               = false,
 	scheme debug        = false,
 	compound style      = {},
 	compound sep        = 5em,
@@ -422,6 +420,9 @@
 	+ sep left          = 0.5em,
 	+ sep right         = 0.5em,
 	+ vshift            = 0pt,
+	gchemname           = true,% ajout de cette clé v1.6c
+	schemestart code    = {},% ajout de cette clé v1.6c
+	schemestop code     = {}% ajout de cette clé v1.6c
 }%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1844,9 +1845,9 @@
 
 \def\chemnameinit#1{%
 	\setbox\CF_boxstuff\hbox{#1}%
-	\xdef\CF_dpmax{\the\dp\CF_boxstuff}%
+	\ifboolKV[chemfig]{gchemname}\xdef\edef\CF_dpmax{\the\dp\CF_boxstuff}%
 }
-\let\CF_dpmax\CF_zero
+\chemnameinit{}
 
 \def\CF_parsemolname#1\\#2\_nil{%
 	\hbox to\CF_wdstuffbox{\hss#1\hss}%
@@ -1865,7 +1866,9 @@
 	\setbox\CF_boxstuff\hbox{#2}%
 	\edef\CF_wdstuffbox{\the\wd\CF_boxstuff}\edef\CF_dpstuffbox{\the\dp\CF_boxstuff}%
 	\leavevmode
-	\ifdim\CF_dpmax<\CF_dpstuffbox\global\let\CF_dpmax\CF_dpstuffbox\fi
+	\ifdim\CF_dpmax<\CF_dpstuffbox
+		\ifboolKV[chemfig]{gchemname}\global{}\let\CF_dpmax\CF_dpstuffbox
+	\fi
 	\vtop{%
 		\box\CF_boxstuff
 		\nointerlineskip
@@ -1943,6 +1946,7 @@
 
 \def\schemestart{%
 	\begingroup
+	\ifnum\CF_schemenest=0 \expandafter\CF_id\else\expandafter\CF_gobarg\fi{\useKV[chemfig]{schemestart code}}%
 	\xdef\CF_schemenest{\number\numexpr\CF_schemenest+1}%
 	\CF_testopt\CF_schemestarta{}%
 }
@@ -2067,6 +2071,7 @@
 	\CF_directarrowlist
 	\endtikzpicture
 	\xdef\CF_schemenest{\number\numexpr\CF_schemenest-1}%
+	\ifnum\CF_schemenest=0 \expandafter\CF_id\else\expandafter\CF_gobarg\fi{\useKV[chemfig]{schemestop code}}%
 	\endgroup
 }
 
@@ -3049,3 +3054,7 @@ v1.6b       2021/08/01
     - encodage UTF-8
     - la macro \# n'était pas définie pour remplacer «#(...)» lorsque
       \chemfig se trouve dans l'argument d'une macro.
+----------------------------------------------------------------------
+v1.6c       2022/09/27
+    - nouvelles clés "gchemname", "schemestart code" et
+      "schemestop code" (suggestion de Balazs Debreceni)

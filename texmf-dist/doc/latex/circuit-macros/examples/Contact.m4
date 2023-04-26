@@ -9,16 +9,16 @@ movw = 0.45
   "\sl P" rjust at last [].P.w
   "\sl O" ljust at last [].O
   "\sl C" ljust at last [].C }
- move right_ movw; contact(R)
- {`"\tt (R)"' at (last [].s,S)
+ move right_ movw; contact(RX)
+ {`"\tt (RX)"' at (last [].s,S)
   "\sl P" rjust at last [].P.w
   "\sl O" ljust at last [].O
   "\sl C" ljust at last [].C }
- move right_ movw; contact(O); {`"\tt (O)"' at (last [],S)}
- move right_ movw; contact(C); {`"\tt (C)"' at (last [],S)}
+ move right_ movw; contact(OX); {`"\tt (OX)"' at (last [],S)}
+ move right_ movw; contact(CX); {`"\tt (CX)"' at (last [],S)}
 
- move right_ movw; contact(P)
- {S: `"\tt (P)"' at last [].s+(0,-0.15)
+ move right_ movw; contact(X)
+ {S: `"\tt (X)"' at last [].s+(0,-0.15)
   "\sl P" rjust at last [].P.w
   "\sl O" ljust at last [].O
   "\sl C" ljust at last [].C }
@@ -30,7 +30,7 @@ movw = 0.45
  move right_ movw; contact(PO); {`"\tt (PO)"' at (last [],S)}
  {"\sl O" ljust at last [].O
   "\sl C" ljust at last [].C }
- move right_ movw; contact(PC); {`"\tt (PC)"' at (last [],S)}
+ move right_ movw; contact(PCX); {`"\tt (PCX)"' at (last [],S)}
 }
 
 move down 0.75; right_ ; {
@@ -50,7 +50,11 @@ move down 0.75; right_ ; {
  {"\sl O" ljust at last [].O.e
   "\sl C" ljust at last [].C.e }
  move right_ movw; contact(PIO); {`"\tt (PIO)"' at (last [],S) }
- move right_ movw; contact(PIC); {`"\tt (PIC)"' at (last [],S) }
+ {"\sl C" ljust at last [].C.e}
+ {"\sl O" ljust at last [].O.e}
+ move right_ movw; contact(PICX); {`"\tt (PICX)"' at (last [],S) }
+ {"\sl C" ljust at last [].C.e}
+ {"\sl O" ljust at last [].O.e}
 }
 
 movewid = movw

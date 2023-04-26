@@ -6,13 +6,13 @@
 %%
 %% tikzsymbols.dtx  (with options: `package')
 %% 
-%%  Copyright (C) 2013--2019 by Ben Vitecek (current Maintainer)
+%%  Copyright (C) 2013--2021 by Ben Vitecek (current Maintainer)
 %% 
 %%  This work may be distributed and/or modified under the
 %%  conditions of the LaTeX Project Public License, either version 1.3c
 %%  of this license or (at your option) any later version.
 %%  The latest version of this license is in
-%%    http://www.latex-project.org/lppl.txt
+%%    https://www.latex-project.org/lppl/
 %%  and version 1.3c or later is part of all distributions of LaTeX
 %%  version 2005/12/01 or later.
 %% 
@@ -21,9 +21,10 @@
 %%  This work consists of the files README.md, tikzsymbols.dtx,
 %%  tikzsymbols.ins and the derived files tikzsymbols.sty.
 %% 
+
 \@ifpackageloaded{xparse}{}{\RequirePackage{xparse}}
 \@ifpackageloaded{expl3}{}{\RequirePackage{expl3}}
-\@ifpackagelater{expl3}{2018/02/21}
+\@ifpackagelater{expl3}{2021/08/27}
   {}
   {%
     \PackageError { tikzsymbols }{ Support~package~expl3~too~old }
@@ -36,8 +37,8 @@
   }
 \ProvidesExplPackage
   {tikzsymbols}
-  {2019/02/08}
-  {4.10c}
+  {2021/12/14}
+  {4.12a}
   {Some symbols created using tikz and LaTeX3.}
 \@ifpackageloaded { tikz } {} { \RequirePackage { tikz } }
 \@ifpackageloaded { xcolor } {} { \RequirePackage { xcolor } }
@@ -49,7 +50,9 @@
 \bool_new:N \l__tikzsymbols_if_scale_negative_bool
 \bool_new:N \g__tikzsymbols_if_opt_tree_print_bool
 \bool_new:N \l__tikzsymbols_if_opt_draft_bool
+\bool_new:N \l_tikzsymbols_if_opt_draft_bool
 \bool_new:N \g__tikzsymbols_if_opt_marvosym_bool
+\bool_new:N \l__tikzsymbols_argument_parser_error_bool
 \bool_gset_true:N \g__tikzsymbols_if_opt_tree_print_bool
 \tl_clear_new:N \g__tikzsymbols_command_prefix_tl
 \tl_new:N \l__tikzsymbols_tikzsymbols_after_symbol_tl
@@ -151,7 +154,7 @@
 \msg_new:nnnn { tikzsymbols } { SchrodingersCat  }
   {
     \SchrodingersCat\ only \ accepts \ '-1' \ (dead), \ '0'\ (unknown)\ or \ '1'\
-    (alive) \ for \ its \ mandatroy \ argument. \ You \ have \ given \ '#1'.
+    (alive) \ for \ its \ mandatory \ argument. \ You \ have \ given \ '#1'.
   }{
     Your \ input \ number \ is \ not \ allowed.
     \msg_see_documentation_text:n { tikzsymbols }
@@ -164,6 +167,22 @@
     is \ '#1'.
   }{
     I \ apologize \ for \ that.
+    \msg_see_documentation_text:n { tikzsymbols }
+  }
+\msg_new:nnnn { tikzsymbols } { unknown-argument-type  }
+  {
+    The \ argument \ type ~ '#1' ~ is ~ not ~ known ~ by ~ this ~
+    package. ~ Perhaps ~ you ~ misspelled ~ it? ~ The  ~ allowed  ~
+    argument ~ types ~ are ~ 'm',  ~ 'B'  ~ and ~ 'S'.
+  }{
+    You ~ cannot ~ use ~ '#1' ~ as  ~ an ~ argument ~ type.
+    \msg_see_documentation_text:n { tikzsymbols }
+  }
+\msg_new:nnnn { tikzsymbols } { bad-argument-spec }
+  { Bad ~ argument ~ specification ~ '#2' ~ for ~ symbol ~ #1 . }
+  {
+    The ~ argument ~ specification~provided~was~not~valid:~
+    one~or~more~mandatory~pieces~of~information~were~missing.
     \msg_see_documentation_text:n { tikzsymbols }
   }
 \msg_new:nnnn { tikzsymbols } { package-option }
@@ -192,14 +211,15 @@
       {
         \fp_set:cn { l__tikzsymbols_ \l_tmpa_tl _scale_fp } {#2}
       }{
-        \fp_if_exist:cTF { l__tikzsymbols_#1_scale_fp }
-          { \fp_set:cn { l__tikzsymbols_#1_scale_fp } {#2} }
+        \fp_if_exist:cTF { l__tikzsymbols_ #1 _scale_fp }
+          { \fp_set:cn { l__tikzsymbols_ #1 _scale_fp } {#2} }
           { \msg_error:nnn { tikzsymbols} { symbol-name-unknown } {#1} }
       }
   }
 \cs_new:Npn \__tikzsymbols_set_scale_abs_tl:n #1
   {
-    \tl_set:Nn \l__tikzsymbols_scale_abs_tl { \fp_abs:n {#1} }
+    \tl_set:Nf \l__tikzsymbols_scale_abs_tl { \fp_abs:n {#1} }
+    \tl_set_eq:NN \tikzsymbolsscaleabs \l__tikzsymbols_scale_abs_tl
   }
 \cs_new:Npn \__tikzsymbols_create_draftbox:nn #1#2
   {
@@ -247,10 +267,21 @@
 \cs_set_eq:NN \__tikzsymbols_provide_savebox_and_use:nn
   \__tikzsymbols_provide_savebox_and_use_default:nn
 \pgfkeys{ /__tikzsymbols/baseline /.style= { baseline=default } }
-\pgfkeys{ /__tikzsymbols/.style= { /__tikzsymbols/baseline } }
+\pgfkeys{ /__tikzsymbols/arrows /.style= { arrows=- } }
+\pgfkeys{ /__tikzsymbols/.style= { /__tikzsymbols/baseline , /__tikzsymbols/arrows } }
+\pgfkeys{ /tikzsymbolsstyle/.style= { /__tikzsymbols } }
 \keys_define:nn { tikzsymbols }
   {
-    final .bool_set_inverse:N = \l__tikzsymbols_if_opt_draft_bool ,
+    final .choices:nn =
+      { true , false }
+      {
+        \int_case:nn { \l_keys_choice_int }
+          {
+            { 1 } { \bool_set_false:N \l__tikzsymbols_if_opt_draft_bool }
+            { 2 } { \bool_set_true:N \l__tikzsymbols_if_opt_draft_bool }
+          }
+        \bool_set_eq:NN \l_tikzsymbols_if_opt_draft_bool \l__tikzsymbols_if_opt_draft_bool
+      } ,
     final .default:n = { true } ,
     draft .choices:nn =
       { true , false , absolute }
@@ -266,6 +297,7 @@
               \bool_set_true:N \l__tikzsymbols_if_opt_draft_bool
             }
           }
+        \bool_set_eq:NN \l_tikzsymbols_if_opt_draft_bool \l__tikzsymbols_if_opt_draft_bool
       } ,
     draft .default:n= { false } ,
     draftabsolute .code:n =
@@ -273,6 +305,7 @@
         \msg_error:nnnn { tikzsymbols } { obsolete-option }
           { draftabsolute } { draft = true }
         \bool_set_true:N \l__tikzsymbols_if_opt_draft_bool
+        \bool_set_eq:NN \l_tikzsymbols_if_opt_draft_bool \l__tikzsymbols_if_opt_draft_bool
       } ,
     marvosym .bool_gset:N = \g__tikzsymbols_if_opt_marvosym_bool ,
     marvosym .default:n = { true } ,
@@ -318,6 +351,7 @@
     global-scale .default:n = { 1 } ,
     symbol-scale .code:n =
       {
+        %% This key will be redefined later.
         \tl_set:Nn \l__tikzsymbols_save_global_scale_for_later_because_no_better_idea_tl
           {
             symbol-scale = {#1} ,
@@ -331,80 +365,107 @@
     symbol-scale .code:n =
       { \keyval_parse:NNn \__tikzsymbols_symbol_scale_i:n \__tikzsymbols_symbol_scale_ii:nn {#1} }
   }
-\cs_new:Npn \__tikzsymbols_if_empty:Tn #1#2
+\cs_new:Npn \__tikzsymbols_process_B_argument:nn #1#2
   {
     \tl_if_empty:nTF {#2}
       { \tl_set:Nn \ProcessedArgument {#1} }
       { \tl_set:Nn \ProcessedArgument {#2} }
   }
-\cs_new:Npn \__tikzsymbols_scale_if_empty:nTn #1#2#3
+\cs_new:Npn \__tikzsymbols_process_S_argument:nn #1#2
   {
     \tl_set:Nx \ProcessedArgument
       {
         \fp_eval:n
           {
-            \tl_if_empty:nTF {#3} {#2} {#3}
+            \tl_if_empty:nTF {#2} { 1 } {#2}
             * \l__tikzsymbols_global_scale_fp
             * \use:c { l__tikzsymbols_#1_scale_fp }
           }
       }
+    \__tikzsymbols_set_scale_abs_tl:n { \ProcessedArgument }
   }
 \cs_new_protected:Npn \__tikzsymbols_parse_command_options:nn #1#2
   {
+    \bool_set_false:N \l__tikzsymbols_argument_parser_error_bool
     \clist_clear:N \l__tikzsymbols_symbol_options_clist
     \tl_set:Nn \l__tikzsymbols_symbol_name_tl {#1}
-    \__tikzsymbols_parse_command_options:N #2
+    \__tikzsymbols_parse_command_options_parse:n #2
       \q_recursion_tail \q_recursion_tail \q_recursion_tail \q_recursion_stop
   }
-\cs_new_protected:Npn \__tikzsymbols_parse_command_options:N #1
+\cs_new_protected:Npn \__tikzsymbols_parse_command_options_parse:n #1
   {
-    \quark_if_recursion_tail_stop:N #1
-    \tl_if_eq:NNTF #1 O
-      { \__tikzsymbols_parse_option_type_O:w #1 }
+    \quark_if_recursion_tail_stop:n {#1}
+    \cs_if_exist_use:cF { __tikzsymbols_check_option_type_ \tl_to_str:n {#1} : }
       {
-        \tl_if_eq:NNTF #1 S
-          { \__tikzsymbols_parse_option_type_S:Vw \l__tikzsymbols_symbol_name_tl #1 }
-          { \__tikzsymbols_parse_option_type:w #1 }
+        \msg_error:nnn { tikzsymbols } { unknown-argument-type } {#1}
+        \bool_set_true:N \l__tikzsymbols_argument_parser_error_bool
+        \use_none_delimit_by_q_recursion_stop:w
       }
   }
-\cs_new_protected:Npn \__tikzsymbols_parse_option_type:w #1
+\cs_new:Npn \__tikzsymbols_check_option_type_m:
   {
-    \str_case:nnF {#1}
+    \int_incr:c { l__tikzsymbols_ \l__tikzsymbols_symbol_name_tl _nr_arguments_int }
+    \__tikzsymbols_parse_option_type_m:
+  }
+\cs_new:Npn \__tikzsymbols_check_option_type_B:
+  {
+    \int_incr:c { l__tikzsymbols_ \l__tikzsymbols_symbol_name_tl _nr_arguments_int }
+    \__tikzsymbols_parse_option_type_B:n
+  }
+\cs_new:Npn \__tikzsymbols_check_option_type_S:
+  {
+    \int_incr:c { l__tikzsymbols_ \l__tikzsymbols_symbol_name_tl _nr_arguments_int }
+    \__tikzsymbols_parse_option_type_S:V \l__tikzsymbols_symbol_name_tl
+  }
+\cs_new:Npn \__tikzsymbols_parse_option_type_m:
+  {
+    \clist_put_right:Nn \l__tikzsymbols_symbol_options_clist { m }
+    \__tikzsymbols_parse_command_options_parse:n
+  }
+\cs_new_protected:Npn \__tikzsymbols_parse_option_type_B:n #1
+  {
+    \quark_if_recursion_tail_stop_do:nn {#1}
       {
-        { m } { }
+        \msg_error:nnxx { tikzsymbols } { bad-argument-spec }
+          { \l__tikzsymbols_symbol_name_tl }{ \tl_to_str:n {#1} }
+        \bool_set_true:N \l__tikzsymbols_argument_parser_error_bool
+        \use_none_delimit_by_q_recursion_stop:w
       }
-      { \msg_error:nnn { tikzsymbols } { internal-message } { internal-parsing } }
-    \clist_put_right:Nn \l__tikzsymbols_symbol_options_clist {#1}
-    \__tikzsymbols_parse_command_options:N
-  }
-\cs_new_protected:Npn \__tikzsymbols_parse_option_type_O:w #1#2
-  {
     \clist_put_right:Nn \l__tikzsymbols_symbol_options_clist
-      { >{ \__tikzsymbols_if_empty:Tn {#2} } O{#2}  }
-    \__tikzsymbols_parse_command_options:N
+      { >{ \__tikzsymbols_process_B_argument:nn {#1} } O{#1}  }
+    \__tikzsymbols_parse_command_options_parse:n
   }
-\cs_new_protected:Npn \__tikzsymbols_parse_option_type_S:nw #1#2
+\cs_new_protected:Npn \__tikzsymbols_parse_option_type_S:n #1
   {
+    \quark_if_recursion_tail_stop_do:nn {#1}
+      {
+        \msg_error:nnn { tikzsymbols } { internal-message }
+         { S-type-wrong-argument }
+      }
     \clist_put_right:Nn \l__tikzsymbols_symbol_options_clist
-      { >{ \__tikzsymbols_scale_if_empty:nTn {#1} { 1 } } O{ 1 }  }
-    \__tikzsymbols_parse_command_options:N
+      { >{ \__tikzsymbols_process_S_argument:nn {#1} } O{ 1 }  }
+    \__tikzsymbols_parse_command_options_parse:n
   }
-\cs_generate_variant:Nn \__tikzsymbols_parse_option_type_S:nw { Vw }
+\cs_generate_variant:Nn \__tikzsymbols_parse_option_type_S:n { V }
 \cs_new:Npn \__tikzsymbols_Declare_Document_Command:nnn #1#2#3
   {
-    \fp_new:c { l__tikzsymbols_#1_scale_fp }
-    \fp_set:cn { l__tikzsymbols_#1_scale_fp } { 1.0 }
+    \fp_zero_new:c { l__tikzsymbols_ #1 _scale_fp }
+    \fp_set:cn { l__tikzsymbols_ #1 _scale_fp } { 1.0 }
+    \int_zero_new:c { l__tikzsymbols_ #1 _nr_arguments_int }
     \__tikzsymbols_parse_command_options:nn {#1} {#2}
-    \exp_args:Ncx \DeclareDocumentCommand
-      { \g__tikzsymbols_command_prefix_tl #1 }
-      { \clist_use:Nn \l__tikzsymbols_symbol_options_clist { } }
+    \bool_if:NF \l__tikzsymbols_argument_parser_error_bool
       {
-        \cs_if_exist:NT \tikzsymbolsaftersymbolinput
+        \exp_args:Ncx \DeclareDocumentCommand
+          { \g__tikzsymbols_command_prefix_tl #1 }
+          { \clist_use:Nn \l__tikzsymbols_symbol_options_clist { } }
           {
-            \msg_error:nn { tikzsymbols } { tikzsymbolsaftersymbolinput }
+            \cs_if_exist:NT \tikzsymbolsaftersymbolinput
+              {
+                \msg_error:nn { tikzsymbols } { tikzsymbolsaftersymbolinput }
+              }
+            #3
+           \tl_use:N \l__tikzsymbols_tikzsymbols_after_symbol_tl
           }
-        #3
-       \tl_use:N \l__tikzsymbols_tikzsymbols_after_symbol_tl
       }
   }
 \cs_new:Npn \__tikzsymbols_Declare_Document_Commands:nnnn #1#2#3#4
@@ -422,6 +483,20 @@
   {
     \cs_set_eq:cc { \g__tikzsymbols_command_prefix_tl #1 } { \g__tikzsymbols_command_prefix_tl #2 }
   }
+\tl_new:N \tikzsymbolsscaleabs
+\cs_new_protected:Npn \tikzsymbolssetscaleabs #1
+  { \__tikzsymbols_set_scale_abs_tl:n {#1} }
+\cs_new:Npn \tikzsymbolsdefinesymbol #1#2#3
+  {
+    \exp_args:Nx
+    \__tikzsymbols_Declare_Document_Command:nnn { \tl_trim_spaces:n {#1} } {#2} {#3}
+  }
+\cs_new:Npn \tikzsymbolsprovideandusesavebox #1#2
+  { \__tikzsymbols_provide_savebox_and_use:nn {#1} {#2} }
+\cs_new:Npn \tikzsymbols_create_draftbox:nn #1#2
+  { \__tikzsymbols_create_draftbox:nn {#1} {#2} }
+\cs_new:Npn \tikzsymbols_create_squared_draftbox:n #1
+  { \__tikzsymbols_create_squared_draftbox:n {#1} }
 \tl_const:Nn \c__tikzsymbols_tikz_set_tl
   {
     \pgfkeys
@@ -489,7 +564,6 @@
 \cs_new:Npn \__tikzsymbols_Basic_Tree_on:nnnnn #1#2#3#4#5
   {
     \group_begin:
-      \__tikzsymbols_set_scale_abs_tl:n {#1}
       \fp_compare:nNnT {#1} < { 0 } { \bool_set_true:N \l__tikzsymbols_scale_negative_bool }
       \tl_set:Nn \l_tmpa_tl {#5}
       \tl_use:N \c__tikzsymbols_tikz_set_tl
@@ -534,14 +608,12 @@
                 };
            }
       \end{tikzpicture}
-      \bool_set_false:N \l__tikzsymbols_scale_negative_bool
     \group_end:
   }
 \__tikzsymbols_Declare_Document_Commands:nnnn { Kochtopf } { pot } { S }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Kochtopf_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -574,7 +646,6 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Bratpfanne_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -607,7 +678,6 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Schneebesen_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -636,7 +706,6 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Sieb_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -665,7 +734,6 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Purierstab_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -690,7 +758,6 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Dreizack_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -715,7 +782,6 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Backblech_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -742,7 +808,6 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Ofen_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -768,7 +833,6 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Pfanne_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -802,7 +866,6 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Herd_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -828,7 +891,6 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Saftpresse_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -863,7 +925,6 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Schussel_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -887,7 +948,6 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Schaler_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -912,7 +972,6 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Reibe_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -937,7 +996,6 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Flasche_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -961,7 +1019,6 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Nudelholz_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -991,7 +1048,6 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Knoblauchpresse_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -1016,11 +1072,10 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { Sadey } { S O{none} }
+\__tikzsymbols_Declare_Document_Command:nnn { Sadey } { S B{none} }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Sadey_#1_#2 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.684ex * \l__tikzsymbols_scale_abs_tl }
@@ -1038,11 +1093,10 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { dSadey } { S O{yellow} }
+\__tikzsymbols_Declare_Document_Command:nnn { dSadey } { S B{yellow} }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { dSadey_#1_#2 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.584ex * \l__tikzsymbols_scale_abs_tl }
@@ -1060,13 +1114,12 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { Changey } { S O{white} m }
+\__tikzsymbols_Declare_Document_Command:nnn { Changey } { S B{white} m }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Changey_#1_#2_#3 }
       {
         \fp_compare:nNnT { abs(#3) } > { 2 }
           { \msg_error:nnn { tikzsymbols } { Changey-number-too-large } {#3}  }
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.704ex * \l__tikzsymbols_scale_abs_tl }
@@ -1090,13 +1143,12 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { dChangey } { S O{yellow} m }
+\__tikzsymbols_Declare_Document_Command:nnn { dChangey } { S B{yellow} m }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { dChangey_#1_#2_#3 }
       {
         \fp_compare:nNnT { abs(#3) } > { 2 }
           { \msg_error:nnn { tikzsymbols } { Changey-number-too-large } {#3}  }
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.584ex * \l__tikzsymbols_scale_abs_tl }
@@ -1130,14 +1182,13 @@
     \filldraw[fill=#2!#1!#3]
   }
 \cs_generate_variant:Nn \__tikzsymbols_cChangey_aux:nnn { x }
-\__tikzsymbols_Declare_Document_Command:nnn { cChangey } { S O{red} O{yellow} O{green} m }
+\__tikzsymbols_Declare_Document_Command:nnn { cChangey } { S B{red} B{yellow} B{green} m }
   {
     \__tikzsymbols_provide_savebox_and_use:nn
       { cChangey_#1_#2_#3_#4_#5 }
       {
         \fp_compare:nNnT { abs(#5) } > { 2 }
           { \msg_error:nnn { tikzsymbols } { cChangey-number-too-large } {#5}  }
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.704ex * \l__tikzsymbols_scale_abs_tl }
@@ -1184,14 +1235,13 @@
     \shade [ball ~ color=#2!#1!#3]
   }
 \cs_generate_variant:Nn \__tikzsymbols_dcChangey_aux:nnn { x }
-\__tikzsymbols_Declare_Document_Command:nnn { dcChangey } { S O{red} O{yellow} O{green} m }
+\__tikzsymbols_Declare_Document_Command:nnn { dcChangey } { S B{red} B{yellow} B{green} m }
   {
     \__tikzsymbols_provide_savebox_and_use:nn
       { dcChangey_#1_#2_#3_#4_#5 }
       {
         \fp_compare:nNnT { abs(#5) } > { 2 }
           { \msg_error:nnn { tikzsymbols } { cChangey-number-too-large } {#5}  }
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.584ex * \l__tikzsymbols_scale_abs_tl }
@@ -1228,11 +1278,10 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { Annoey } { S O{none} }
+\__tikzsymbols_Declare_Document_Command:nnn { Annoey } { S B{none} }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Annoey_#1_#2 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.704ex * \l__tikzsymbols_scale_abs_tl }
@@ -1250,11 +1299,10 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { dAnnoey } { S O{yellow} }
+\__tikzsymbols_Declare_Document_Command:nnn { dAnnoey } { S B{yellow} }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { dAnnoey_#1_#2 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.584ex * \l__tikzsymbols_scale_abs_tl }
@@ -1274,11 +1322,10 @@
   }
 \bool_if:NF \g__tikzsymbols_if_opt_marvosym_bool
   {
-    \__tikzsymbols_Declare_Document_Command:nnn { Smiley } { S O{none} }
+    \__tikzsymbols_Declare_Document_Command:nnn { Smiley } { S B{none} }
       {
         \__tikzsymbols_provide_savebox_and_use:nn { Smiley_#1_#2 }
           {
-            \__tikzsymbols_set_scale_abs_tl:n {#1}
             \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
               {
                 \__tikzsymbols_create_squared_draftbox:n { 1.704ex * \l__tikzsymbols_scale_abs_tl }
@@ -1297,11 +1344,10 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { dSmiley } { S O{yellow} }
+\__tikzsymbols_Declare_Document_Command:nnn { dSmiley } { S B{yellow} }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { dSmiley_#1_#2 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.584ex * \l__tikzsymbols_scale_abs_tl }
@@ -1319,11 +1365,10 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { Laughey } { S O{none} O{none} }
+\__tikzsymbols_Declare_Document_Command:nnn { Laughey } { S B{none} B{none} }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Laughey_#1_#2_#3 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.704ex * \l__tikzsymbols_scale_abs_tl }
@@ -1342,11 +1387,10 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { dLaughey } { S O{yellow} O{red} }
+\__tikzsymbols_Declare_Document_Command:nnn { dLaughey } { S B{yellow} B{red} }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { dLaughey_#1_#2_#3 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.584ex * \l__tikzsymbols_scale_abs_tl }
@@ -1370,11 +1414,10 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { Neutrey } { S O{none}  }
+\__tikzsymbols_Declare_Document_Command:nnn { Neutrey } { S B{none}  }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Neutrey_#1_#2 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.704ex * \l__tikzsymbols_scale_abs_tl }
@@ -1392,11 +1435,10 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { dNeutrey } { S O{yellow}  }
+\__tikzsymbols_Declare_Document_Command:nnn { dNeutrey } { S B{yellow}  }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Neutrey_#1_#2 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.584ex * \l__tikzsymbols_scale_abs_tl }
@@ -1414,11 +1456,10 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { Winkey } { S O{none}  }
+\__tikzsymbols_Declare_Document_Command:nnn { Winkey } { S B{none}  }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Winkey_#1_#2 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.704ex * \l__tikzsymbols_scale_abs_tl }
@@ -1436,11 +1477,10 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { oldWinkey } { S O{none}  }
+\__tikzsymbols_Declare_Document_Command:nnn { oldWinkey } { S B{none}  }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { oldWinkey_#1_#2 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.704ex * \l__tikzsymbols_scale_abs_tl }
@@ -1458,11 +1498,10 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { dWinkey } { S O{yellow}  }
+\__tikzsymbols_Declare_Document_Command:nnn { dWinkey } { S B{yellow}  }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { dWinkey_#1_#2 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.584ex * \l__tikzsymbols_scale_abs_tl }
@@ -1480,11 +1519,10 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { olddWinkey } { S O{yellow}  }
+\__tikzsymbols_Declare_Document_Command:nnn { olddWinkey } { S B{yellow}  }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { olddWinkey_#1_#2 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.584ex * \l__tikzsymbols_scale_abs_tl }
@@ -1502,11 +1540,10 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { Sey } { S O{none}  }
+\__tikzsymbols_Declare_Document_Command:nnn { Sey } { S B{none}  }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Sey_#1_#2 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.704ex * \l__tikzsymbols_scale_abs_tl }
@@ -1524,11 +1561,10 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { dSey } { S O{yellow}  }
+\__tikzsymbols_Declare_Document_Command:nnn { dSey } { S B{yellow}  }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { dSey_#1_#2 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.584ex * \l__tikzsymbols_scale_abs_tl }
@@ -1546,11 +1582,10 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { Xey } { S O{none}  }
+\__tikzsymbols_Declare_Document_Command:nnn { Xey } { S B{none}  }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Xey_#1_#2 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.704ex * \l__tikzsymbols_scale_abs_tl }
@@ -1568,11 +1603,10 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { dXey } { S O{yellow}  }
+\__tikzsymbols_Declare_Document_Command:nnn { dXey } { S B{yellow}  }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { dXey_#1_#2 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.584ex * \l__tikzsymbols_scale_abs_tl }
@@ -1592,11 +1626,10 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { Innocey } { S O{none} O{yellow} }
+\__tikzsymbols_Declare_Document_Command:nnn { Innocey } { S B{none} B{yellow} }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Innocey_#1_#2_#3 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -1632,11 +1665,10 @@
     \tikzsymbolsuse { Innocey } [#1] [none] [white]
     \group_end:
   }
-\__tikzsymbols_Declare_Document_Command:nnn { dInnocey } { S O{yellow} O{yellow}  }
+\__tikzsymbols_Declare_Document_Command:nnn { dInnocey } { S B{yellow} B{yellow}  }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { dInnocey_#1_#2_#3 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -1663,11 +1695,10 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { Cooley } { S O{none}  }
+\__tikzsymbols_Declare_Document_Command:nnn { Cooley } { S B{none}  }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Cooley_#1_#2 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.704ex * \l__tikzsymbols_scale_abs_tl }
@@ -1689,11 +1720,10 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { dCooley } { S O{yellow}  }
+\__tikzsymbols_Declare_Document_Command:nnn { dCooley } { S B{yellow}  }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { dCooley_#1_#2 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.584ex * \l__tikzsymbols_scale_abs_tl }
@@ -1715,11 +1745,10 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { Tongey } { S O{none} O{none} }
+\__tikzsymbols_Declare_Document_Command:nnn { Tongey } { S B{none} B{none} }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Tongey_#1_#2_#3 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.704ex * \l__tikzsymbols_scale_abs_tl }
@@ -1744,11 +1773,10 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { dTongey } { S O{yellow} O{red} }
+\__tikzsymbols_Declare_Document_Command:nnn { dTongey } { S B{yellow} B{red} }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { dTongey_#1_#2_#3 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_squared_draftbox:n { 1.584ex * \l__tikzsymbols_scale_abs_tl }
@@ -1763,7 +1791,7 @@
               \shade[ball ~ color=black] (0.1,0.1) circle [radius=0.05];
               \shadedraw
                 [
-                  ball ~ color=#3, draw=black,line ~ width=0.058ex* \l__tikzsymbols_scale_abs_tl ,
+                  ball ~ color=#3, draw=black, line ~ width=0.058ex* \l__tikzsymbols_scale_abs_tl ,
                   rounded ~ corners=0.12ex* \l__tikzsymbols_scale_abs_tl
                 ]
                  (0,-0.09) -- (0.05,-0.2) -- (0.16,-0.23) -- (0.2,-0.15) -- (0.19,-0.03);
@@ -1773,11 +1801,10 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { Nursey } { S O{none} O{none} O{} }
+\__tikzsymbols_Declare_Document_Command:nnn { Nursey } { S B{none} B{none} B{} }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Nursey_#1_#2_#3_#4 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -1804,11 +1831,11 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { dNursey } { S O{yellow} O{white} O{red} }
+\__tikzsymbols_Declare_Document_Command:nnn { dNursey } { S B{yellow} B{white} B{red} }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { dNursey_#1_#2_#3_#4 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -1840,11 +1867,11 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { Vomey } { S O{none} O{opacity=0} }
+\__tikzsymbols_Declare_Document_Command:nnn { Vomey } { S B{none} B{opacity=0} }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Vomey_#1_#2_#3 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -1877,11 +1904,11 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { dVomey } { S O{yellow} O{brown!10!olive}  }
+\__tikzsymbols_Declare_Document_Command:nnn { dVomey } { S B{yellow} B{brown!10!olive}  }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { dVomey_#1_#2_#3 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -1916,11 +1943,11 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { Walley } { S O{none} O{none} }
+\__tikzsymbols_Declare_Document_Command:nnn { Walley } { S B{none} B{none} }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Walley_#1_#2_#3 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -1957,11 +1984,11 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { rWalley } { S O{none} O{none} }
+\__tikzsymbols_Declare_Document_Command:nnn { rWalley } { S B{none} B{none} }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { rWalley_#1_#2_#3 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -1990,11 +2017,11 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { dWalley } { S O{yellow} }
+\__tikzsymbols_Declare_Document_Command:nnn { dWalley } { S B{yellow} }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { dWalley_#1_#2 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -2027,11 +2054,11 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { drWalley } { S O{yellow} }
+\__tikzsymbols_Declare_Document_Command:nnn { drWalley } { S B{yellow} }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { drWalley_#1_#2 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -2149,7 +2176,7 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Cat_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -2170,7 +2197,7 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { SchrodingersCat_#1_#2 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -2193,11 +2220,11 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { Ninja } { S O{black} O{red} O{white} }
+\__tikzsymbols_Declare_Document_Command:nnn { Ninja } { S B{black} B{red} B{white} }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Ninja_#1_#2_#3_#4 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -2248,11 +2275,11 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { dNinja } { S O{black} O{red} O{white} }
+\__tikzsymbols_Declare_Document_Command:nnn { dNinja } { S B{black} B{red} B{white} }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { dNinja_#1_#2_#3_#4 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -2300,11 +2327,11 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { Sleepey } { S O{none} O{none} O{black} }
+\__tikzsymbols_Declare_Document_Command:nnn { Sleepey } { S B{none} B{none} B{black} }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Sleepey_#1_#2_#3_#4 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -2349,11 +2376,11 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { dSleepey } { S O{yellow} O{blue} O{black} }
+\__tikzsymbols_Declare_Document_Command:nnn { dSleepey } { S B{yellow} B{blue} B{black} }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { dSleepey_#1_#2_#3_#4 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -2398,11 +2425,41 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { NiceReapey } { S O{black!20!white} }
+\__tikzsymbols_Declare_Document_Command:nnn { Maskey } { S B{none} B{none} }
+  {
+    \__tikzsymbols_provide_savebox_and_use:nn { Maskey_#1_#2_#3 }
+      {
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
+        \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
+          {
+            \__tikzsymbols_create_squared_draftbox:n { 1.704ex * \l__tikzsymbols_scale_abs_tl }
+          }{
+            \begin{tikzpicture}
+              [
+                /__tikzsymbols,
+                x=2.4ex, y=2.4ex, line ~ width=0.12ex*\l__tikzsymbols_scale_abs_tl , scale=\l__tikzsymbols_scale_abs_tl
+              ]
+                \filldraw[fill=#2] (0,0) circle [radius=0.33];
+                \fill (-0.1,0.1) circle [radius=0.05];
+                \fill (0.1,0.1) circle [radius=0.05];
+                \filldraw[fill=#3] (-0.18,-0.19)  .. controls (-0.08,-0.23) and (0.08,-0.23) .. (0.18,-0.19)
+                  .. controls (0.22,-0.15) and (0.24,-0.05) .. (0.24,-0.00)
+                  .. controls (0.1,0.03) and (-0.1,0.03) .. (-0.24,-0.00)
+                  .. controls (-0.24,-0.05) and (-0.22,-0.15) .. cycle
+                ;
+                \draw (0.24,-0.0) -- (0.33,0.06);
+                \draw (-0.24,-0.0) -- (-0.33,0.06);
+                \draw (-0.18,-0.19) -- (-0.25,-0.24);
+                \draw (0.18,-0.19) -- (0.25,-0.24);
+              \end{tikzpicture}%
+          }
+      }
+  }
+\__tikzsymbols_Declare_Document_Command:nnn { NiceReapey } { S B{black!20!white} }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { NiceReapey_#1_#2 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -2451,12 +2508,12 @@
     \fp_compare:nNnT {#1} < { 0 } { \fp_zero:N #1 }
   }
 \__tikzsymbols_Declare_Document_Command:nnn { Strichmaxerl }
-  { S O{-22} O{22} O{27} O{-27} }
+  { S B{-22} B{22} B{27} B{-27} }
   {
     \__tikzsymbols_provide_savebox_and_use:nn
       { Strichmaxerl_#1_#2_#3_#4_#5 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \fp_set:Nn \l__tikzsymbols_Strichmaxerl_x_LA_fp { -0.27 * cosd (#2) }
@@ -2533,7 +2590,7 @@
           }
       }
   }
-\__tikzsymbols_Declare_Document_Command:nnn { Person } { S O{-22} O{22} O{27} O{-27} }
+\__tikzsymbols_Declare_Document_Command:nnn { Person } { S B{-22} B{22} B{27} B{-27} }
   {
     \msg_error:nnnn
       { tikzsymbols }
@@ -2542,11 +2599,91 @@
       { \Strichmaxerl }
     \tikzsymbolsuse { Strichmaxerl } [#1] [#2] [#3] [#4] [#5]
   }
+\bool_if:NF \g__tikzsymbols_if_opt_marvosym_bool
+  {
+\__tikzsymbols_Declare_Document_Command:nnn { Heart } { S B{none} }
+  {
+    \__tikzsymbols_provide_savebox_and_use:nn { Heart_#1_#2 }
+      {
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
+        \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
+          {
+            \__tikzsymbols_create_draftbox:nn
+              { 1.97ex * \l__tikzsymbols_scale_abs_tl }
+              { 1.97ex * \l__tikzsymbols_scale_abs_tl }
+          }{
+            \begin{tikzpicture}
+              [
+                /__tikzsymbols ,
+                x=0.185ex,y=0.185ex, scale=#1, line ~ width=0.12ex* \l__tikzsymbols_scale_abs_tl
+              ]
+              \filldraw[fill=#2] (0,-0.1) .. controls (-0.1,4) and (5,4) .. (5,0)
+                .. controls (5,-3) and (1,-6) .. (0,-6)
+                .. controls (-1,-6) and (-5,-3) .. (-5,0)
+                .. controls (-5,4) and (0.1,4) .. cycle
+                ;
+            \end{tikzpicture}%
+          }
+      }
+  }
+  }
+\__tikzsymbols_Declare_Document_Command:nnn { dHeart } { S B{red} }
+  {
+    \__tikzsymbols_provide_savebox_and_use:nn { dHeart_#1_#2 }
+      {
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
+        \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
+          {
+            \__tikzsymbols_create_draftbox:nn
+              { 1.93ex * \l__tikzsymbols_scale_abs_tl }
+              { 1.93ex * \l__tikzsymbols_scale_abs_tl }
+          }{
+            \begin{tikzpicture}
+              [
+                /__tikzsymbols ,
+                x=0.185ex,y=0.185ex, scale=#1
+              ]
+              \fill[ball ~ color=#2] (0,0)
+                .. controls (-0.62,4.2) and (5.2,4.2) .. (5.2,0)
+                .. controls (5.2,-3.2) and (1.2,-6.2) .. (0,-6.2)
+                .. controls (-1.2,-6.2) and (-5.2,-3.2) .. (-5.2,0)
+                .. controls (-5.2,4.2) and (0.62,4.2) .. cycle
+                ;
+            \end{tikzpicture}%
+          }
+      }
+  }
+\__tikzsymbols_Declare_Document_Command:nnn { HeartBroken } { S B{none} }
+  {
+    \__tikzsymbols_provide_savebox_and_use:nn { HeartBroken_#1_#2 }
+      {
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
+        \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
+          {
+            \__tikzsymbols_create_draftbox:nn
+              { 1.93ex * \l__tikzsymbols_scale_abs_tl }
+              { 1.93ex * \l__tikzsymbols_scale_abs_tl }
+          }{
+            \begin{tikzpicture}
+              [
+                /__tikzsymbols ,
+                x=0.185ex,y=0.185ex, scale=#1, line ~ width=0.08ex* \l__tikzsymbols_scale_abs_tl
+              ]
+              \draw[fill=#2] (0,0) .. controls (-0.2,4) and (5,4) .. (5,0)
+                .. controls (5,-3) and (1,-6) .. (0,-6)
+                .. controls (-1,-6) and (-5,-3) .. (-5,0)
+                .. controls (-5,4) and (0.2,4) .. (0,0)
+                -- (0.5,-1) -- (-0.5,-2) -- (0.5,-3) -- (-0.5,-4) -- (0.5,-5) -- (0,-6);
+                ;
+            \end{tikzpicture}%
+          }
+      }
+  }
 \__tikzsymbols_Declare_Document_Command:nnn { Candle } { S }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Candle_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -2572,7 +2709,7 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Fire_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -2619,7 +2756,7 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Coffeecup_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -2652,7 +2789,7 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Chair_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -2681,7 +2818,7 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Bed_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -2704,11 +2841,11 @@
       }
   }
 \__tikzsymbols_Declare_Document_Command:nnn { Tribar }
-  { S O{opacity=0} O{opacity=0} O{opacity=0} }
+  { S B{opacity=0} B{opacity=0} B{opacity=0} }
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Tribar_#1_#2_#3_#4 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -2742,7 +2879,7 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Moai_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
         \fp_compare:nNnTF { \l__tikzsymbols_scale_abs_tl } < { 2 }
           {
             \dim_set:Nn \l__tikzsymbols_Moai_thickness_dim { 0.05ex }
@@ -2792,7 +2929,7 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { Snowman_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn
@@ -2861,7 +2998,7 @@
   {
     \__tikzsymbols_provide_savebox_and_use:nn { WorstTree_#1 }
       {
-        \__tikzsymbols_set_scale_abs_tl:n {#1}
+        % \__tikzsymbols_set_scale_abs_tl:n {#1}
         \bool_if:NTF \l__tikzsymbols_if_opt_draft_bool
           {
             \__tikzsymbols_create_draftbox:nn

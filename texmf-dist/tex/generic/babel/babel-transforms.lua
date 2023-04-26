@@ -7,7 +7,7 @@
 -- babel.dtx  (with options: `transforms')
 -- 
 --
--- Copyright (C) 2012-2021 Javier Bezos and Johannes L. Braams.
+-- Copyright (C) 2012-2022 Javier Bezos and Johannes L. Braams.
 -- Copyright (C) 1989-2012 Johannes L. Braams and
 --           any individual authors listed elsewhere in this file.
 -- All rights reserved.
@@ -36,6 +36,7 @@
 Babel.linebreaking.replacements = {}
 Babel.linebreaking.replacements[0] = {}  -- pre
 Babel.linebreaking.replacements[1] = {}  -- post
+Babel.linebreaking.replacements[2] = {}  -- post-line WIP
 
 -- Discretionaries contain strings as nodes
 function Babel.str_to_nodes(fn, matches, base)
@@ -187,6 +188,7 @@ Babel.us_char = string.char(31)
 function Babel.hyphenate_replace(head, mode)
   local u = unicode.utf8
   local lbkr = Babel.linebreaking.replacements[mode]
+  if mode == 2 then mode = 0 end -- WIP
 
   local word_head = head
 
@@ -209,6 +211,7 @@ function Babel.hyphenate_replace(head, mode)
     for k=1, #lbkr[lang] do
       local p = lbkr[lang][k].pattern
       local r = lbkr[lang][k].replace
+      local attr = lbkr[lang][k].attr or -1
 
       if Babel.debug then
         print('*****', p, mode)
@@ -246,15 +249,22 @@ function Babel.hyphenate_replace(head, mode)
         first = u.len(w:sub(1, first-1)) + 1
         last  = u.len(w:sub(1, last-1)) -- now last points to C
 
-        -- This loop stores in n small table the nodes
+        -- This loop stores in a small table the nodes
         -- corresponding to the pattern. Used by 'data' to provide a
-        -- predictable behavior with 'insert' (now w_nodes is modified on
+        -- predictable behavior with 'insert' (w_nodes is modified on
         -- the fly), and also access to 'remove'd nodes.
         local sc = first-1           -- Used below, too
         local data_nodes = {}
 
+        local enabled = true
         for q = 1, last-first+1 do
           data_nodes[q] = w_nodes[sc+q]
+          if enabled
+              and attr > -1
+              and not node.has_attribute(data_nodes[q], attr)
+            then
+            enabled = false
+          end
         end
 
         -- This loop traverses the matched substring and takes the
@@ -298,7 +308,7 @@ function Babel.hyphenate_replace(head, mode)
             step = crep.step or 0
           end
 
-          if crep and next(crep) == nil then -- = {}
+          if (not enabled) or (crep and next(crep) == nil) then -- = {}
             last_match = save_last    -- Optimization
             goto next
 

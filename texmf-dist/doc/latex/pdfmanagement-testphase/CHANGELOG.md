@@ -5,6 +5,131 @@ first release 0.95a, 2021-02-23 will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 this project uses date-based 'snapshot' version identifiers.
 
+## [2022-11-03]
+
+### Added 
+ - ltdocinit: expl3 functions to retrieve values from the document properties.
+    
+### Changed
+ - removed firstaid for transparent as the package is now compatible.
+ - removed firstaid for pdflscape as the package is now compatible. 
+ - ltdocinit/firstaid: the output patches for header and footer 
+   are no longer loaded by default but must be loaded with the testphase key.
+ - removed firstaid for beamer as no longer needed
+ - ltdocinit: removed definition for \DocumentMetadata, it is now provided by latex-lab
+### Fixed
+ - faulty firstaid for doclicense
+ 
+## [2022-09-26]
+
+### Added
+ - XMP-Metadata are now created by code in l3pdfmeta. 
+   More details can be found in l3pdfmeta. 
+ 
+### Removed 
+ -  The patch which allowed the use of hyperxmp has been removed as no longer needed. 
+ 
+### Changed
+ - XMP-Metadata are uncompressed (if supported by the engines).
+ - pdftitle allows to set the titles in various languages.
+
+## [2022-08-24]
+
+### Changed
+ - internal cleanup
+ - prepare for change in l3backend object handling
+  
+### Fixed
+ - ensure that pdfproducer is set with hyperxmp
+
+## [2022-07-08]
+### Fixed 
+  - link detection if french is active (issue #28)
+  - loop with \url if french is active
+  - remove pdfaid-rev is standard is less than A-4 (issue #33)
+  - quotes in messages are more consistent (PR #37)
+  
+### Changed  
+  - removed protection code for utf8 as they are now protected anyway (fixed #28 and loop)
+  
+## [2022-06-14]
+### Fixed 
+  - avoid errors with spot color models
+  - opacity of fontspec (issue #30)
+### Added
+  - firstaid support for spot colors for open type fonts    
+  
+
+## [2022-05-11]
+
+### Added
+ - allow standard pdf/A-4
+ - check requirement for max-pdfversion
+ - add requirement for Info dictionary
+ - load tagpdf-base if it exists to provide the
+   tagging commands.
+ 
+### Fixed
+ - Support/firstaid for colorspace package
+ - Support for metadata with hyperxmp and xetex
+ 
+ 
+## [2022-04-14]
+### Fixed
+ - l3pdffield-radiobutton: handling of Opt array.
+ 
+### Added
+ - l3pdffield-radiobutton: inunison key.  
+
+## [2022-03-16]
+
+### Added
+ - \pdfmeta_set_regression_data: for regression tests.
+ 
+## [2022-02-16]
+
+### Fixed
+ - transition for directions was wrong
+ 
+### Added
+ - preliminery support for new OR code 
+
+## [2022-01-28] 
+
+### Changed 
+ - adapted the color patch to the changes in (x)color.sty (mathcolor)
+ - documentation uses new doc version (so needs currently latex-dev to compile)
+  
+### Fixed
+
+ - xcolor patch failed with color names containing active chars (e.g. from french)
+ - clipping of xform object on the dvips route (issue #25)
+
+## [2022-01-13]
+### Changed
+ - the keys `firstaidoff` and `pdfmanagement` should now be set with the `debug` key.
+  - `testphase` will now load files from the latex-lab bundle. This requires a current 
+    latex-dev: LaTeX2e <2022-06-01> pre-release-1.  
+ -  new values for `testphase`: `phase-I` and `phase-II`. 
+    `phase-I` will loaded tagpdf and activate tagging and interword spaces, `phase-II will
+    additionally activate paratagging. The value `tagpdf` for the `testphase` 
+    key has been deprecated. It will not error for some time and has been aliased to 
+    `phase-II`, but it is recommended to use the new values `phase-I` and `phase-II` instead.     
+ - renamed `\DeclareDocumentMetadata` to `\DocumentMetadata` (the older version is still provided)
+   to follow the development in latex-dev.
+ 
+### Fixed
+
+ - adapted the file hooks to the changes in LaTeX
+ - small bugs
+
+### Removed
+
+ - the `activate` key has been removed, its function is integrated in the testphase key. 
+
+### Added 
+ - preliminary support for structure destination to prepare for binary changes in texlive 2022
+ 
 ## [2021-08-28]
 ### Changed
  - colorscheme 'original' has been renamed to 'primary-colors'

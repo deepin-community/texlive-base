@@ -27,7 +27,7 @@
 %% File: l3pdffield.dtx
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesExplPackage{l3pdffield-testphase}{2021-08-28}{0.95i}%
+\ProvidesExplPackage{l3pdffield-testphase}{2022-11-03}{0.95t}%
   {form fields}
 \csname HyField@NeedAppearancesfalse\endcsname % suppress NeedAppearances
 \str_new:N \l__pdffield_tmpa_str
@@ -50,17 +50,17 @@
 
 \msg_new:nnn {pdffield}{no-period}
   {
-    The~field~name~`#1`~contains~a~period. \\
-    This~is~not~allowed. `
+    The~field~name~'#1'~contains~a~period. \\
+    This~is~not~allowed.
   }
 \msg_new:nnn {pdffield}{empty-name}
   {
     The~field~name~is~empty. \\
-    This~is~not~allowed. `
+    This~is~not~allowed.
   }
 \msg_new:nnn {pdffield}{appearance-missing}
   {
-    The~appearance~definition~`#1`~is~missing~for~the~#2~appearance.
+    The~appearance~definition~'#1'~is~missing~for~the~#2~appearance.
   }
 \msg_new:nnn {pdffield}{not-implemented}
   {
@@ -69,8 +69,8 @@
   }
 \msg_new:nnn {pdffield}{key-disabled}
   {
-    key~`#2`~is~disabled~and~ignored~in~the~`#1`~command.\\
-    Use~key~`#3`~instead.
+    key~'#2'~is~disabled~and~ignored~in~the~'#1'~command.\\
+    Use~key~'#3'~instead.
   }
 \msg_new:nnn {pdffield}{parent-field-missing}
   {
@@ -79,7 +79,7 @@
   }
 \msg_new:nnn {pdffield}{key-ignored}
   {
-    key~`#1`~has~no~function~and~is~ignored
+    key~'#1'~has~no~function~and~is~ignored
   }
 
 \cs_new_protected:Npn \__pdffield_key_disable:nnn #1#2#3
@@ -163,8 +163,8 @@
 \pdfdict_new:n   {l__pdffield/field/AA}
 \cs_new_protected:Npn \__pdffield_field:n #1
   {
-    \pdf_object_new:nn {__pdffield/field/#1}      {dict}
-    \pdf_object_new:nn {__pdffield/field/Kids/#1} {array}
+    \pdf_object_new:n {__pdffield/field/#1}
+    \pdf_object_new:n {__pdffield/field/Kids/#1}
     \tl_if_empty:NTF \l__pdffield_currentparent_tl
       {
         \pdfmanagement_add:nnx
@@ -216,12 +216,12 @@
       }
     \hook_gput_code:nnn {shipout/lastpage}{pdffield} %xetex needs this ...
       {
-        \pdf_object_write:nx {__pdffield/field/Kids/#1}
+        \pdf_object_write:nnx {__pdffield/field/Kids/#1} { array }
           {
             \seq_use:cn{g__pdffield_field/Kids/#1_seq}{~}
           }
       }
-    \pdf_object_write:nx {__pdffield/field/#1} { \pdfdict_use:n {l__pdffield/field} }
+    \pdf_object_write:nnx {__pdffield/field/#1} { dict } { \pdfdict_use:n {l__pdffield/field} }
   }
 
 \hook_gput_code:nnn {shipout/lastpage}{pdffield}
@@ -1101,9 +1101,9 @@
       {
         \pdf_object_if_exist:nF {__pdffield/checkbox/AP/#1}
           {
-            \pdf_object_new:nn {__pdffield/checkbox/AP/#1}{dict}
-            \pdf_object_write:nx
-              {__pdffield/checkbox/AP/#1}
+            \pdf_object_new:n {__pdffield/checkbox/AP/#1}
+            \pdf_object_write:nnx
+              {__pdffield/checkbox/AP/#1} { dict }
               {
                 /Yes ~ \pdfxform_ref:n { #1/Yes}
                 /Off ~ \pdfxform_ref:n { #1/Off}
@@ -1119,12 +1119,13 @@
 \cs_set_eq:NN \pdffield_checkbox:n \__pdffield_checkbox:n
 
 %% File: l3pdfpdffield-radiobutton.dtx
-
 \RequirePackage{l3draw}
 \tl_new:N  \l__pdffield_radio_value_tl
-\tl_new:N  \l__pdffield_radio_default_tl
+\bool_new:N  \l__pdffield_radio_default_bool
 \int_new:N \l__pdffield_radio_value_num_int
 \tl_new:N  \l__pdffield_radio_appearance_code_tl
+\bool_new:N \l__pdffield_radio_unison_bool % if true use same name (e.g. /1) for same value
+\bool_set_true:N \l__pdffield_radio_unison_bool
 \cs_new_protected:Npn \__pdffield_radio_default_appearances:
   {
     \pdffield_appearance:nn {pdffield/radio/default/Yes}
@@ -1168,26 +1169,35 @@
       }
     \cs_gset_eq:NN \__pdffield_radio_default_appearances: \prg_do_nothing:
   }
+\ref_attribute_gset:nnnn {pdfradioindex}{0}{now}
+  {
+    \int_use:N\l__pdffield_radio_value_num_int
+  }
+\cs_generate_variant:Nn \ref_label:nn {V}
+\cs_generate_variant:Nn \ref_value:nn {V}
 \cs_new_protected:Npn \__pdffield_radio_field:n #1 %name
   {
     \pdf_object_if_exist:nF {__pdffield/field/__pdffield/radio/#1}
       {
-        \pdf_object_new:nn {__pdffield/field/__pdffield/radio-Opt/#1}{array}
+        \pdf_object_new:n {__pdffield/field/__pdffield/radio-Opt/#1}
         \pdfdict_put:nnx { l__pdffield/field }{Opt} { \pdf_object_ref:n {__pdffield/field/__pdffield/radio-Opt/#1} }
         \seq_new:c { g__pdffield_radio_opt_#1_seq }
         \hook_gput_code:nnn {shipout/lastpage}{pdffield/radio}
           {
-            \pdf_object_write:nx
-              {__pdffield/field/__pdffield/radio-Opt/#1}
+            \pdf_object_write:nnx
+              {__pdffield/field/__pdffield/radio-Opt/#1} { array }
               {\seq_use:cn {g__pdffield_radio_opt_#1_seq}{~}}
           }
-        \tl_if_eq:NnF \l__pdffield_radio_default_tl{()}
-         {
-           \seq_gput_left:cV { g__pdffield_radio_opt_#1_seq }\l__pdffield_radio_default_tl
-         }
-        \pdfdict_put:nnx { l__pdffield/field }{V}  { /0 }
-        \pdfdict_put:nnx { l__pdffield/field }{DV} { /0 }
+        \pdfdict_put:nnx { l__pdffield/field }{V}  { /\ref_value:nn{#1}{pdfradioindex} }
+        \pdfdict_put:nnx { l__pdffield/field }{DV} { /\ref_value:nn{#1}{pdfradioindex} }
         \__pdffield_field:n { __pdffield/radio/#1 }
+    \bool_if:NF \l__pdffield_radio_unison_bool
+      {
+        \cs_new:cpn {g__pdffield_radio_unison_state_#1_tl}
+         {
+           \bool_set_false:N \l__pdffield_radio_unison_bool
+         }
+      }
       }
     \keys_set:nn {pdffield}{parent=__pdffield/radio/#1}
   }
@@ -1199,12 +1209,14 @@
     \cs_set_eq:NN\__pdffield_value_handler:n      \__pdffield_radio_value_handler:n
     \cs_set_eq:NN\__pdffield_default_handler:n    \__pdffield_radio_default_handler:n
     \tl_set:Nn\l__pdffield_radio_appearance_code_tl{}
+    \bool_set_false:N\l__pdffield_radio_default_bool
     \keys_set:nn {pdffield}
       {
          fieldID=
         ,name=radio
         ,width  = \normalbaselineskip
         ,height = \normalbaselineskip
+        ,inunison
         ,__pdffield/preset/radiobutton
         ,#1
         ,unsetFf={Pushbutton}
@@ -1216,15 +1228,15 @@
         \pdfdict_get:nnN {l__pdffield/field}{T}\l__pdffield_fieldID_tl
         \tl_put_left:Nn \l__pdffield_fieldID_tl {__pdffield/radio/}
       }
+   \cs_if_exist_use:c {g__pdffield_radio_unison_state_ \l__pdffield_fieldID_tl _tl}
     \__pdffield_radio_field:V\l__pdffield_fieldID_tl
-    \seq_if_in:cVF { g__pdffield_radio_opt_ \l__pdffield_fieldID_tl _seq }\l__pdffield_radio_value_tl
+    \seq_gput_right:cV { g__pdffield_radio_opt_ \l__pdffield_fieldID_tl _seq }\l__pdffield_radio_value_tl
+  \bool_if:NTF \l__pdffield_radio_unison_bool
+    {
+     \int_zero:N \l__pdffield_radio_value_num_int
+     \exp_args:Nc
+     \seq_map_inline:Nn { g__pdffield_radio_opt_ \l__pdffield_fieldID_tl _seq }
       {
-        \seq_gput_right:cV { g__pdffield_radio_opt_ \l__pdffield_fieldID_tl _seq }\l__pdffield_radio_value_tl
-      }
-    \int_zero:N \l__pdffield_radio_value_num_int
-    \exp_args:Nc
-    \seq_map_inline:Nn { g__pdffield_radio_opt_ \l__pdffield_fieldID_tl _seq }
-     {
        \str_if_eq:nVTF { ##1 } \l__pdffield_radio_value_tl
         {
           \seq_map_break:
@@ -1232,9 +1244,23 @@
         {
           \int_incr:N \l__pdffield_radio_value_num_int
         }
+      }
      }
-   \int_compare:nNnTF { \l__pdffield_radio_value_num_int } = 0
-     { \pdfannot_dict_put:nnx {widget}{AS}{/0} }
+     {
+       \int_set:Nn \l__pdffield_radio_value_num_int
+         {\seq_count:c { g__pdffield_radio_opt_ \l__pdffield_fieldID_tl _seq } -1 }
+     }
+     \bool_if:NT\l__pdffield_radio_default_bool
+      {
+        \exp_args:Ne
+        \ref_label:nn{\l__pdffield_fieldID_tl}{pdfradioindex}
+      }
+
+   \int_compare:nNnTF { \l__pdffield_radio_value_num_int } =
+       {
+         \ref_value:Vn\l__pdffield_fieldID_tl{pdfradioindex}
+       }
+     { \pdfannot_dict_put:nnx {widget}{AS}{/\ref_value:Vn\l__pdffield_fieldID_tl{pdfradioindex}} }
      { \pdfannot_dict_put:nnx {widget}{AS}{/Off} }
     \tl_if_empty:NT\l__pdffield_radio_appearance_code_tl
       {
@@ -1251,15 +1277,31 @@
   }
 \cs_new_protected:Npn \__pdffield_radio_value_handler:n #1
   {
-    \pdf_string_from_unicode:nnN {utf8/string}{#1}\l__pdffield_radio_value_tl
+    \pdf_string_from_unicode:nnN {utf16/string}{#1}\l__pdffield_radio_value_tl
   }
 \cs_new_protected:Npn \__pdffield_radio_default_handler:n #1
   {
-    \pdf_string_from_unicode:nnN {utf8/string}{#1}\l__pdffield_radio_default_tl
+    %\pdf_string_from_unicode:nnN {utf8/string}{#1}\l__pdffield_radio_default_tl
+    \bool_set_true:N \l__pdffield_radio_default_bool
   }
 \keys_define:nn { pdffield }
  {
     group .meta:n = {T=#1}
+ }
+\keys_define:nn { pdffield }
+ {
+    inunison .choice:
+   ,inunison / true .code:n =
+     {
+       \bool_set_true:N  \l__pdffield_radio_unison_bool
+       \bitset_set_true:Nn \l__pdffield_Ff_bitset {RadiosInUnison}
+     }
+   ,inunison / false .code:n =
+     {
+       \bool_set_false:N  \l__pdffield_radio_unison_bool
+       \bitset_set_false:Nn \l__pdffield_Ff_bitset {RadiosInUnison}
+     }
+   ,inunison .default:n = {true}
  }
 \cs_new_protected:Npn \__pdffield_radio_appearance_handler:nnn #1 #2 #3 %name, type, text
   {
@@ -1853,7 +1895,7 @@
 
 \msg_new:nnn {pdffield}{action-name-undefined}
   {
-    The~`#1`~action~name~`#2`~is~not~defined~and~
+    The~'#1'~action~name~'#2'~is~not~defined~and~
     will~be~ignored.
   }
 

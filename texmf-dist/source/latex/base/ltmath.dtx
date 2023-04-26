@@ -1,6 +1,6 @@
 % \iffalse meta-comment
 %
-% Copyright (C) 1993-2021
+% Copyright (C) 1993-2022
 % The LaTeX Project and any individual authors listed elsewhere
 % in this file.
 %
@@ -38,7 +38,7 @@
 %<*driver>
 % \fi
 \ProvidesFile{ltmath.dtx}
-              [2021/04/20 v1.2i LaTeX Kernel (Math Setup)]
+              [2022/09/07 v1.2m LaTeX Kernel (Math Setup)]
 % \iffalse
 %</driver>
 %
@@ -74,7 +74,7 @@
 % This file contains a lot of the original plain \TeX{} code, as well
 % as the \LaTeX{} environments for math. It still needs sorting out.
 %
-% \StopEventually{}
+% \MaybeStop{}
 %
 %    \begin{macrocode}
 %<*2ekernel>
@@ -370,9 +370,39 @@
 %    \begin{macrocode}
 \def\makesm@sh#1{%
   \setbox\z@\hbox{\color@begingroup#1\color@endgroup}\finsm@sh}
-\def\mathsm@sh#1#2{%
-  \setbox\z@\hbox{$\m@th#1{#2}$}\finsm@sh}
 %    \end{macrocode}
+%
+%    \begin{macrocode}
+%</2ekernel>
+%<*2ekernel|latexrelease>
+%<latexrelease>\IncludeInRelease{2022/11/01}%
+%<latexrelease>                 {\mathsm@sh}{Guard against reboxing}%
+\def\mathsm@sh#1#2{%
+  \setbox\z@\hbox{$\m@th#1{#2}$}%
+%    \end{macrocode}
+%    The empty brace groups in front of the smashed box (which is
+%    placed by \cs{finsm@sh}) ensures that a \cs{smash} in math is not
+%    just producing a single box  with its dimensions altered, but a
+%    box plus this second ord atom. The reason is that \TeX{} sometimes reboxes a
+%    box if its the only thing in a place like the denominator of a
+%    fraction. This would then undo the smashing and the additional
+%    ord atom prevents that. Two ord atoms in a row do not alter the
+%    horizontal spacing in a formula so this is otherwise transparent. 
+% \changes{v1.2m}{2022/09/03}{Guard against reboxing in fractions (gh/517)}
+%    \begin{macrocode}
+  {}\finsm@sh}
+%    \end{macrocode}
+%    \begin{macrocode}
+%</2ekernel|latexrelease>
+%<latexrelease>\EndIncludeInRelease
+%<latexrelease>\IncludeInRelease{0000/00/00}%
+%<latexrelease>                 {\mathsm@sh}{Guard against reboxing}%
+%<latexrelease>\def\mathsm@sh#1#2{%
+%<latexrelease>  \setbox\z@\hbox{$\m@th#1{#2}$}\finsm@sh}
+%<latexrelease>\EndIncludeInRelease
+%<*2ekernel>
+%    \end{macrocode}
+%
 % \changes{v1.2b}{2018/09/24}{Start LR-mode if necessary (git/49)}
 %    \begin{macrocode}
 %</2ekernel>
@@ -467,8 +497,9 @@
 % \end{macro}
 %
 % \begin{macro}{\openup}
+% \changes{v1.2k}{2022/04/08}{Make \cs{protected} (gh/123)}
 %    \begin{macrocode}
-\def\openup{\afterassignment\@penup\dimen@}
+\protected\def\openup{\afterassignment\@penup\dimen@}
 %    \end{macrocode}
 %
 %    \begin{macrocode}
@@ -915,10 +946,13 @@
 %    whole display. Note that we can't use \cs{refstepcounter} as this
 %    results in |\@currentlabel| getting restored at the wrong and
 %    thus always writing the first label to the \texttt{.aux} file.
+% \changes{v1.2j}{2021/10/14}
+%         {Explicitly set \cs{@currentcounter} (gh/687)}
 %    \begin{macrocode}
 \def\eqnarray{%
    \stepcounter{equation}%
    \def\@currentlabel{\p@equation\theequation}%
+   \def\@currentcounter{equation}%
    \global\@eqnswtrue
    \m@th
    \global\@eqcnt\z@
@@ -1086,6 +1120,18 @@
 %    \end{macrocode}
 % \end{macro}
 %
+% \changes{v1.2l}{2022/05/08}{Use consistent math styles under \LuaTeX}
+% \LuaTeX\ contains new math primitives to place expression over or under
+% horizontally extensible glyphs. Before \LuaTeX\ 1.14 these did not work
+% correctly with the |\mathstyle| primitive and sometimes did not use
+% cramped style in consistent ways. For newer version, we opt into the
+% corrected behavior.
+%    \begin{macrocode}
+\ifx\mathdefaultsmode\@undefined\else
+  \mathdefaultsmode=1
+\fi
+%    \end{macrocode}
+%
 %    \begin{macrocode}
 %</2ekernel>
 %    \end{macrocode}
@@ -1231,10 +1277,13 @@
 %
 % \begin{environment}{eqnarray}
 %    The \textsf{eqnarray} environment
+% \changes{v1.2j}{2021/10/14}
+%         {Explicitly set \cs{@currentcounter} (gh/687)}
 %    \begin{macrocode}
 \renewenvironment{eqnarray}{%
     \stepcounter{equation}%
     \def\@currentlabel{\p@equation\theequation}%
+    \def\@currentcounter{equation}%
     \global\@eqnswtrue\m@th
     \global\@eqcnt\z@
     \tabskip\mathindent

@@ -62,58 +62,48 @@
 
 % 1 ltluatex compatibility
 
+% \ProvidesFile identifies most problematic files
+\ifdefined \ProvidesFile
+    \let\minim:providesfile=\ProvidesFile\else
+    \def\minim:providesfile#1#2[#3]{%
+        \wlog{Loading file #1 version #3.}}\fi
+\def\ProvidesFile#1{\begincsname minim:intercept:#1\endcsname
+    \minim:providesfile{#1}}
+
+
 % repair ltluatex, which, without apparent reason, resets all allocation 
 % counters, even if they already exist
-\def\minim:ltltx:file{ltluatex.tex}
-\let\ProvidesFile:saved=\ProvidesFile
-\def\ProvidesFile#1#2[#3]{%
-    \ifdefined\ProvidesFile:saved \ProvidesFile:saved{#1}#2[#3]\fi
-    \def\minim:ltltx:arg{#1}%
-    \ifx\minim:ltltx:file\minim:ltltx:arg
-        \let\ProvidesFile=\ProvidesFile:saved
-        \let\endinput:saved=\endinput
-        \protected\edef\endinput{%
-            \minim:ltltx:fix{e@alloc@attribute@count}%
-            \minim:ltltx:fix{e@alloc@whatsit@count}%
-            \minim:ltltx:fix{e@alloc@bytecode@count}%
-            \minim:ltltx:fix{e@alloc@luafunction@count}%
-            \minim:ltltx:fix{e@alloc@luachunk@count}%
-            \minim:ltltx:fix{e@alloc@ccodetable@count}%
-            % also patch in remembering allocations to lua
-            \alloc:patch \noexpand\attribute
-            \alloc:patch \noexpand\whatsit
-            \alloc:patch \noexpand\luabytecode
-            \alloc:patch \noexpand\luachunkname
-            \alloc:patch \noexpand\catcodetable
-            \alloc:patch \noexpand\userrule
-            % restore register allocation functions
-            \directlua{ local C = require('minim-callbacks')
-                callback.register, callback.find, callback.list
-                    = C.register, C.find, C.list }%
-            \let\noexpand\endinput=\noexpand\endinput:saved
-            \noexpand\endinput}\fi}
+\expandafter\def\csname minim:intercept:ltluatex.tex\endcsname
+    {\wlog{minim: applying ltluatex patches.}%
+     \edef\endinput{\let\noexpand\endinput=\noexpand\minim:endinput
+        \minim:ltltx:fix{e@alloc@attribute@count}%
+        \minim:ltltx:fix{e@alloc@whatsit@count}%
+        \minim:ltltx:fix{e@alloc@bytecode@count}%
+        \minim:ltltx:fix{e@alloc@luafunction@count}%
+        \minim:ltltx:fix{e@alloc@luachunk@count}%
+        \minim:ltltx:fix{e@alloc@ccodetable@count}%
+        % restore register allocation functions
+        \noexpand\directlua{ callback.register =
+            require('minim-callbacks').primitiveregister }%
+        \noexpand\endinput}}
+\let\minim:endinput = \endinput
 \def\minim:ltltx:fix#1{%
     \ifnum0<\the\csname#1\endcsname
         \wlog{Restoring \csname#1\endcsname to previous value \the\csname#1\endcsname}%
         \expandafter\noexpand\csname#1\endcsname =\the\csname#1\endcsname\relax\fi}
-\protected\def\alloc:patch#1{%
-    \expandafter\expandafter\expandafter\let
-        \expandafter\expandafter\csname\csstring#1:ltluatex:new\endcsname
-            \csname new\csstring#1\endcsname
-    \expandafter\edef\csname new\csstring#1\endcsname##1{%
-        \noexpand\minim:rememberalloc{\csstring#1}{\noexpand\csstring##1}%
-        \expandafter\noexpand\csname\csstring#1:ltluatex:new\endcsname{##1}}}
 
 % 1 allocation
 
 % use global allocation (see etex.src)
-\let\newcount  = \globcount
-\let\newdimen  = \globdimen
-\let\newskip   = \globskip
-\let\newmuskip = \globmuskip
-\let\newbox    = \globbox
-\let\newtoks   = \globtoks
-\let\newmarks  = \globmarks
+\ifdefined \globcount
+    \let\newcount  = \globcount
+    \let\newdimen  = \globdimen
+    \let\newskip   = \globskip
+    \let\newmuskip = \globmuskip
+    \let\newbox    = \globbox
+    \let\newtoks   = \globtoks
+    \let\newmarks  = \globmarks
+\fi
 
 % new allocation macros
 
@@ -121,8 +111,7 @@
     \unless\ifcsname#3\endcsname
         \expandafter\newcount \csname#3\endcsname
         \csname#3\endcsname 0\fi
-    \ifcsname new\csstring#1\endcsname
-        \alloc:patch#1\else
+    \unless\ifcsname new\csstring#1\endcsname
         \expandafter\edef\csname new\csstring#1\endcsname{%
             \noexpand\minim:alloc\noexpand#1\noexpand#2%
             \expandafter\noexpand\csname#3\endcsname}\fi}
@@ -131,9 +120,7 @@
     \global\advance#31%
     \allocationnumber#3%
     \global#2#4\allocationnumber
-    \wlog{\string#4=\string#1\the\allocationnumber}%
-    % minim:rememberalloc will be defined from lua side
-    \minim:rememberalloc{\csstring#1}{\csstring#4}}
+    \wlog{\string#4=\string#1\the\allocationnumber}}
 
 % all names and counters below are identical to those from ltluatex
 % note: we cannot use \newluafunction, or ltluatex will not load
@@ -147,7 +134,10 @@
 
 % initialise new catcode tables
 \def\catcode:chardef#1#2{\chardef#1#2\initcatcodetable#2}
-\csname e@alloc@ccodetable@count\endcsname = 4 % because ltluatex allocates 4...
+% ltluatex initialises the catcode tables 1–4, so we make sure not to claim 
+% those ourselves:
+\ifnum\csname e@alloc@ccodetable@count\endcsname = 0
+    \csname e@alloc@ccodetable@count\endcsname = 4 \fi
 
 % set initial chunk name value
 \def\chardef:chunk#1#2{\chardef#1#2\directlua{lua.name[\the#2]='\csstring#1'}}
@@ -156,16 +146,21 @@
 \protected\def\setluachunkname#1#2{\newluachunkname#1%
     \directlua{lua.name[\the#1]='\luaescapestring{#2}'}}
 
-% patch in remembering box allocations
-\def\minim:boxchardef#1{%
-    \minim:rememberalloc{box}{\csstring#1}%
-    \mathchardef#1}
-\edef\newbox{%
-    \expandafter\noexpand\csname et@xglob\endcsname
-    4\box\noexpand\minim:boxchardef}
-
 % undefine our helper functions
 \let\alloc:makenew=\undefined
+
+% patch in our callback to \uselanguage
+%  \minim:uselanguagecallback is defined from Lua
+\ifcsname uselanguage@hook\endcsname
+    \expandafter\let
+        \expandafter\minim:uselanguagehook
+            \lastnamedcs \fi
+\expandafter\edef\csname uselanguage@hook\endcsname#1{%
+    % our uselanguage callback
+    \noexpand\minim:uselanguagecallback{#1}%
+    % previous definitions
+    \ifdefined\minim:uselanguagehook
+        \noexpand\minim:uselanguagehook{#1}\fi}
 
 % 1 format file compatibility
 

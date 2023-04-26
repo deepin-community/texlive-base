@@ -20,7 +20,7 @@ h = 0.5
 c = 1
 #                             The projected ellipse is (x/q)^2 + y^2 = c.
 #                             The cost is v = c+h
-define(`vs',``$2'*q*cos(`$1'),`$2'*sin(`$1')')
+define(`vs',`(`$2')*q*cos(`$1'),(`$2')*sin(`$1')')
 define(`vp',`vs(`$1',`$2'),0')
 define(`vx',`sum3D(vp(`$1',`$2'),0,0,h+(`$2')^2)')
 
@@ -133,7 +133,7 @@ ifpstricks(`
   fitcurve(X2,nx,dotted 0.025)
   fitcurve(X3,nx)
   fitcurve(X4,3,dotted 0.015)
-  arca(from X4[4] to X4[2],ccw,0.3,<-)
+  arca(from X4[4] to X4[3],ccw,0.3,<-)
 
 #                             Projected trajectory
   np = np-2
@@ -144,6 +144,7 @@ ifpstricks(`
 #                             Axes and vertical lines
 thinlines_
   line from X1[0] to Xp[0]
+  line from X4[4] to Xp[np]
 arrow from Origin to Project(1.5,0,0)
 "$x_1$" rjust below
 arrow from Origin to Project(0,1.5,0)
@@ -153,7 +154,7 @@ arrow from F[n/2] to Project(0,0,2)
 "$v(X)$" ljust
 
 "`${0}$'" at Origin+(0,1 pt__) below
-"$\Omega$" at Project(0,0.9*c,0) above
+"$\Omega$" at Project(0,0.9*c,0)+(0,3bp__) above
 "`$v(X) = c$'" at (Project(vp(100*dtor_,c)))+(2bp__,0) above ljust
 
 .PE

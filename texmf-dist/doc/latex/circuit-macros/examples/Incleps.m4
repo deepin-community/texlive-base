@@ -4,6 +4,7 @@
 darrow_init
 s_init(Incleps)
 sinclude(F_Incleps.dim) # Inserted for the web-page version.
+sinclude(tmp.dim) # for psfrag
 sinclude(examples.dim)  # Change examples to the name of the main LaTeX file.
 
 define(`backarrow',`darrow(`$1',,,2pt__,6pt__,6pt__,<-|)')

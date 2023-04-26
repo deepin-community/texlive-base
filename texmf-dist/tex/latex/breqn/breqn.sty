@@ -32,7 +32,7 @@
 %% 
 \NeedsTeXFormat{LaTeX2e}
 \RequirePackage{expl3}
-\ProvidesExplPackage{breqn}{2020/09/24}{0.98k}{Breaking equations}
+\ProvidesExplPackage{breqn}{2021/10/28}{0.98l}{Breaking equations}
 \ExplSyntaxOff
 \edef\breqnpopcats{%
   \catcode\number`\"=\number\catcode`\"
@@ -55,6 +55,15 @@
 }
 \RequirePackage{keyval,calc}\relax
 \newcommand{\breqnsetup}[1]{\setkeys{breqn}{#1}}
+\providecommand\IfFormatAtLeastTF{\@ifl@t@r\fmtversion}
+\IfFormatAtLeastTF{2021/06/01}
+  {%
+    \def\MaybeRawNoindent{\ifvmode\expandafter\RawNoindent\fi}%
+  }%
+  {%
+   \let\MaybeRawNoindent\noindent
+   \let\RawParEnd\@@par
+  }
 \let\@nx\noexpand
 \let\@xp\expandafter
 \@ifundefined{@emptytoks}{\newtoks\@emptytoks}{}
@@ -545,19 +554,23 @@
 \def\eq@typeset@L@single{%
   \nobreak
   \eq@params\eq@parshape
-  \nointerlineskip\noindent
+  \nointerlineskip
+  \MaybeRawNoindent
   \add@grp@label
   \rlap{\kern-\leftskip\box\EQ@numbox}%
   \if F\eq@frame
   \else
     \rlap{\raise\eq@firstht\hbox to\z@{\eq@addframe\hss}}%
   \fi
-  \eq@dump@box\unhbox\EQ@box \@@par
+  \eq@dump@box\unhbox\EQ@box
+  %\@@par
+  \RawParEnd
 }
 \def\eq@typeset@R@single{%
   \nobreak
   \eq@params\eq@parshape
-  \nointerlineskip\noindent
+  \nointerlineskip
+  \MaybeRawNoindent
   \add@grp@label
   \if F\eq@frame
   \else
@@ -565,7 +578,8 @@
   \fi
   \rlap{\kern-\leftskip\kern\linewidth\kern-\wd\EQ@numbox\copy\EQ@numbox}%
   \eq@dump@box\unhbox\EQ@box
-  \@@par
+  %\@@par
+  \RawParEnd
 }
 \def\peek@branch#1#2{%
   \let\peek@b#1\let\peek@space#2\futurelet\@let@token\peek@a
@@ -709,7 +723,8 @@
 \def\eq@startup{%
   \global\let\EQ@hasLHS\@False
   \setbox\z@\vbox\bgroup
-    \noindent \@@math \displaystyle
+    \MaybeRawNoindent                   % no matching \RawParEnd (implicit at box end)
+    \@@math \displaystyle
     \penalty-\@Mi
 }
 \def\eq@setup@a{%
@@ -1274,7 +1289,8 @@
   \tolerance9999 \pretolerance\m@ne
 }
 \def\eq@dump@box#1#2{%
-  \noindent #1#2\setbox\f@ur\lastbox \setbox\tw@\lastbox
+  \MaybeRawNoindent                                   % did not find the end yet
+  #1#2\setbox\f@ur\lastbox \setbox\tw@\lastbox
   \if L\eq@layout \box\tw@ \else\unhbox\tw@\fi
   \adjust@rel@penalty \unhbox\f@ur
 }
@@ -1451,9 +1467,11 @@
 \def\eq@typeset@equation{%
   \nobreak
   \eq@params\eq@parshape
-  \nointerlineskip\noindent
+  \nointerlineskip
+  \MaybeRawNoindent
   \add@grp@label
-  \eq@dump@box\unhbox\EQ@box\@@par
+  \eq@dump@box\unhbox\EQ@box
+  \RawParEnd
 }
 \newcommand\eqframe[2]{%
   \begingroup
@@ -1617,7 +1635,8 @@
 }
 \def\eq@lrunpack{\setbox\z@\lastbox
   \unskip \nointerlineskip
-  \noindent\unhbox\z@ \unskip
+  \MaybeRawNoindent
+  \unhbox\z@ \unskip
   \subsup@flag-\lastpenalty \unpenalty
   \xdef\right@delim@code{\number\lastpenalty}%
   \unpenalty
@@ -1630,7 +1649,8 @@
   \ifvoid\tw@ \unhbox\z@
   \else \lrss@reattach % uses \subsup@flag, box\z@, box\tw@
   \fi
-  \penalty-\@Mi\z@rule\@@par
+  \penalty-\@Mi\z@rule
+  \RawParEnd
   \setbox\z@\lastbox \unskip\unpenalty
 %%{\showboxbreadth\maxdimen\showboxdepth99\showlists}%
 }

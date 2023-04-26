@@ -2,6 +2,7 @@
 local M = { } 
 local alloc = require('minim-alloc')
 local cb = require('minim-callbacks')
+alloc.remember('minim-hooks')
 alloc.remember('minim-pdf')
 
 -- 1 helper functions
@@ -18,9 +19,27 @@ local function add_to_names(...)
     pdf.setnames((pdf.getnames() or '') .. string.format(...) .. ' ')
 end
 
+local pdf_name = alloc.pdf_name
+local pdf_string = alloc.pdf_string
+local options_scanner = alloc.options_scanner
+
+-- has this table just one element?
+local function singleton(t)
+    local one = false
+    for _, _ in pairs(t) do
+        if one then
+            return false
+        else
+            one = true
+        end
+    end
+    return one
+end
+
 -- in-depth node list traversal
 -- returns current and parent node
--- only dives into hbox and vbox nodes
+-- only dives into hbox, vbox and ins nodes
+-- returns node and enclosing box
 local function full_traverse(head)
     return function(stack, last)
         local next = last.next
@@ -36,103 +55,8 @@ local function full_traverse(head)
     end, { { } }, { next = head }
 end
 
--- re-encode to utf-16 and surround by <>
-local function pdf_hex_string(text)
-    local str = { [1] = '<feff' }
-    for i in text:utfvalues() do
-        if i < 0xFFFF then
-            insert_formatted(str, '%04x', i)
-        else
-            i = i - 0x10000
-            m = math.floor(i/0x400) + 0xD800
-            n = ( i % 0x400 ) + 0xDC00
-            insert_formatted(str, '%04x%04x' ,m, n)
-        end
-    end
-    table.insert(str, '>')
-    return table.concat(str,'')
-end
-
--- try and produce a () string first, then fall back to <>
-function M.pdf_string(text)
-    local str = { '(' }
-    for i in text:utfvalues() do
-        if i > 0x7E then
-            return pdf_hex_string(text)
-        elseif i < 0x20 then
-            insert_formatted(str, '\\%03o', i)
-        elseif i == 0x28 or i == 0x29 or i == 0x5c then
-            insert_formatted(str, '\\%c', i)
-        else
-            insert_formatted(str, '%c', i)
-        end
-    end
-    table.insert(str, ')')
-        return table.concat(str,'')
-    end
-
--- make available as \pdfstring{...}
-alloc.luadef('pdfstring', function() M.pdf_string(token.scan_string()) end)
-
--- try and produce a date of the format (D:YYYYMMDD)
-function M.pdf_date(text)
-    local y, m, d = string.match(text, '^([12][0-9][0-9][0-9])-([0-9][0-9]?)-([0-9][0-9]?)$')
-    if not y then d, m, y  = string.match(text, '^([0-9][0-9]?)-([0-9][0-9]?)-([12][0-9][0-9][0-9])$') end
-    if y then
-        return string.format('(D:%4d%02d%02d)', y, m, d)
-    else
-        return string.format('(D:%s)', text)
-    end
-end
-
-function M.options_scanner()
-    return { scanners = { },
-        add = function(this, name, scanner)
-            this.scanners[name] = scanner
-            return this
-        end,
-        keyword = function(this, name)
-            return this:add(name, function() return true end)
-        end,
-        int = function(this, name)
-            return this:add(name, token.scan_int)
-        end,
-        glue = function(this, name)
-            return this:add(name, token.scan_glue)
-        end,
-        dimen = function(this, name)
-            return this:add(name, token.scan_dimen)
-        end,
-        string = function(this, name)
-            return this:add(name, token.scan_string)
-        end,
-        argument = function(this, name)
-            return this:add(name, token.scan_argument)
-        end,
-        word = function(this, name)
-            return this:add(name, token.scan_word)
-        end,
-        list = function(this, name)
-            return this:add(name, token.scan_list)
-        end,
-        scan = function(this, defaults)
-            local res = defaults or { }
-            repeat
-                local matched = false
-                for name, scanner in pairs(this.scanners) do
-                    if token.scan_keyword(name) then
-                        matched, this.scanners[name] = true, nil
-                        res[name] = scanner()
-                    end
-                end
-            until not matched
-            return res
-        end
-    }
-end
-
 local function pdf_err(n, msg)
-    local m = node.new(8,16)
+    local m = node.new(8,16) -- pdf_literal
     m.mode, m.token = 2, '%% Warning: '..msg
     node.insert_after(n, n, m)
 end
@@ -158,10 +82,10 @@ local structure = { {
 local parent_tree = { } -- list of list of structure elements
 
 -- Our four helper attributes
-local current_struct = alloc.new_attribute('tagging:current:se')
-local current_order  = alloc.new_attribute('tagging:element:order')
-local current_status = alloc.new_attribute('tagging:current:status')
-local current_lang   = alloc.new_attribute('tagging:current:language')
+local current_struct = alloc.registernumber('tagging:current:se')
+local current_order  = alloc.registernumber('tagging:element:order')
+local current_status = alloc.registernumber('tagging:current:status')
+local current_lang   = alloc.registernumber('tagging:current:language')
 
 local function current_structure_element()
     return structure[tex.attribute[current_struct]]
@@ -242,7 +166,7 @@ local structure_types = alloc.saved_table('structure types', {
     Note       = { type = 'inline' },
     Reference  = { type = 'inline' },
     BibEntry   = { type = 'inline' },
-    Code       = { type = 'inline' },
+    Code       = { type = 'inline', attributes = { ['CSS-2.00'] = { ['white-space'] = '(pre)' } } },
     Link       = { type = 'inline' }, -- contains link objects
     Annot      = { type = 'inline' }, -- contains other annotations
     -- ruby/warichu
@@ -318,7 +242,6 @@ alloc.luadef('struct:addalias', function()
     M.add_structure_alias(stype, alias, settings)
 end, 'protected')
 
-
 -- 1 writing the document structure
 
 local function stable_sort_on_order_field(unsorted)
@@ -373,11 +296,38 @@ local function make_rolemap()
     local aliases = { }
     for k, v in pairs(structure_types) do
         if v.aliasof and v.inuse and v.aliasof ~= k then
-            insert_formatted(aliases, '/%s/%s', k, v.aliasof)
+            insert_formatted(aliases, '%s%s', pdf_name(k), pdf_name(v.aliasof))
         end
     end
     if #aliases > 0 then
         return '\n/RoleMap << ' .. table.concat(aliases,' ') .. ' >>'
+    end
+    return ''
+end
+
+local function make_attributes(res, t)
+    -- is there just one attribute?
+    local list = not singleton(t)
+    if list then table.insert(res, '[') end
+    for ao, ac in pairs(t) do
+        insert_formatted(res, '<< /O %s', pdf_name(ao))
+        for k,v in pairs(ac) do
+            insert_formatted(res, '%s %s', pdf_name(k), v)
+        end
+        table.insert(res, '>>')
+    end
+    if list then table.insert(res, ']') end
+end
+
+local attribute_classes = alloc.saved_table('attribute classes')
+local function make_classmap()
+    local classes = { }
+    for c, as in pairs(attribute_classes) do
+        insert_formatted(classes, '\n%s', pdf_name(c))
+        make_attributes(classes, as)
+    end
+    if #classes > 0 then
+        return '\n/ClassMap << ' .. table.concat(classes, ' ') .. ' >>'
     end
     return ''
 end
@@ -395,22 +345,29 @@ local function write_structure()
     add_to_catalog('/StructTreeRoot %s 0 R', root_obj)
     -- write the structure tree root
     pdf.immediateobj(root_obj, string.format(
-        '<< /Type/StructTreeRoot /K %d 0 R /ParentTree %d 0 R%s >>',
-            structure[1].objnum, parent_tree_obj, make_rolemap()))
+        '<< /Type/StructTreeRoot /K %d 0 R /ParentTree %d 0 R%s%s >>',
+            structure[1].objnum, parent_tree_obj, make_rolemap(), make_classmap()))
     -- write structure elements
     for _, se in ipairs(structure) do
         if not se.hidden then
             local res = { '<<' }
-            insert_formatted(res, '/Type/StructElem /S/%s /P %d 0 R', se.struct, se.parent.objnum)
+            insert_formatted(res, '/Type/StructElem /S%s /P %d 0 R', pdf_name(se.struct), se.parent.objnum)
             if se.lang and se.lang ~= se.parent.lang then insert_formatted(res, '/Lang (%s)', se.lang) end
-            if se.alt then insert_formatted(res, '/Alt %s', M.pdf_string(se.alt)) end
-            if se.actual then insert_formatted(res, '/ActualText %s', M.pdf_string(se.actual)) end
+            if se.alt then insert_formatted(res, '/Alt %s', pdf_string(se.alt)) end
+            if se.actual then insert_formatted(res, '/ActualText %s', pdf_string(se.actual)) end
             if #se.children > 0 then insert_formatted(res, '\n/K %s', format_K_array(se)) end
             if se.mainpage then insert_formatted(res, '/Pg %d 0 R', se.mainpage) end
+            if se.class then
+                table.insert(res, '/C')
+                if #se.class > 1 then table.insert(res, '[') end
+                for _, c in ipairs(se.class) do
+                    insert_formatted(res, '%s', pdf_name(c))
+                end
+                if #se.class > 1 then table.insert(res, ']') end
+            end
             if se.attributes then
-                table.insert(res, '/A <<')
-                for k,v in pairs(se.attributes) do insert_formatted(res, '/%s %s', k, v) end
-                table.insert(res, '>>')
+                table.insert(res, '/A')
+                make_attributes(res, se.attributes)
             end
             if se.files then
                 table.insert(res, '/AF [')
@@ -487,11 +444,10 @@ end, 'protected')
 
 -- \uselanguage patch; provide default document language
 -- and associate names with numbers
-alloc.luadef('minim:apply:language:code', function()
-    local name = token.scan_string()
+cb.register('uselanguage', function(name)
     local nr = language_codes[name] or alloc.err('No language code known for ‘%s’', name) and 1
     if not structure[1].lang then M.set_document_language(language_codes[nr]) end
-    tex.sprint(nr)
+    tex.attribute['tagging:current:language'] = nr
 end)
 
 local function write_language()
@@ -536,24 +492,20 @@ end, 'protected')
 function M.open_structure_node(n)
     local info = structure_types[n.struct]
     if not info then
-        alloc.err('Unknown structure type %s replaced by NonStruct', n.struct)
+        alloc.err('Unknown structure type %s replaced with NonStruct', n.struct)
         n.struct, info = 'NonStruct', structure_types.NonStruct
     end
     info.inuse = true
     if info.attributes then
-        n.attributes = n.attributes or { }
-        for k,v in pairs(info.attributes) do
-            n.attributes[k] = n.attributes[k] or v
+        n.attributes = n.attr or { }
+        for k1,v1 in pairs(info.attributes) do
+            n.attributes[k1] = n.attributes[k1] or { }
+            for k2, v2 in pairs(v1) do
+                n.attributes[k1][k2] = n.attributes[k1][k2] or v2
+            end
         end
-    end
-    if n.block then
-        n.type = 'block'
-        n.attributes = n.attributes or { }
-        n.attributes.Placement = '/Block'
-    elseif n.inline then
-        n.type = 'inline'
-        n.attributes = n.attributes or { }
-        n.attributes.Placement = '/Inline'
+    else
+        n.attributes = n.attr
     end
     n.index = #structure + 1
     n.children = { }
@@ -573,13 +525,13 @@ function M.open_structure_node(n)
 end
 
 alloc.luadef('tagging:startelement', function()
-    local s = M.options_scanner()
+    local s = options_scanner()
         :string('type') -- 'section', 'group', 'block' etc.
         :argument('alt')
         :argument('actual')
         :string('lang')
-        :keyword('block')
-        :keyword('inline')
+        :subtable('attr')
+        :string('class', true)
         :scan()
     s.struct = token.scan_string()
     M.open_structure_node(s)
@@ -592,6 +544,11 @@ end)
 alloc.luadef('tagging:actual', function()
     current_structure_element().actual = token.scan_string()
 end)
+
+alloc.luadef('newattributeclass', function()
+    local s = options_scanner():subtable('attr')
+    attribute_classes[token.scan_string()] = s:scan().attr
+end, 'protected')
 
 
 -- 1 marking content items
@@ -613,7 +570,7 @@ local function clear_page_tagging_parameters()
     _open_mci_node_ = function (se_num, order)
         pageobj = pageobj or pdf.getpageref(status.total_pages + 1)
         local se = structure[se_num]
-        pdf.print(string.format('/%s <</MCID %d>> BDC ', se.struct, #mcid_list))
+        pdf.print(string.format('%s <</MCID %d>> BDC ', pdf_name(se.struct), #mcid_list))
         table.insert(se.children, { mcid = #mcid_list, order = order, pageobj = pageobj })
         table.insert(mcid_list, se)
         -- unhide hidden parents (done here to preserve the correct order)
@@ -631,17 +588,13 @@ local function new_open_mci_node(se, order)
     return n
 end
 
-local function new_open_art_node(atype)
+local function pdf_literal(token)
     local n = node.new(8,16) -- pdf_literal
-    n.mode, n.token = 1, string.format('/Artifact << /Type/%s >> BDC', atype)
+    n.mode, n.token = 1, token
     return n
 end
 
-local function new_emc_node()
-    local n = node.new(8,16) -- pdf_literal
-    n.mode, n.token = 1, 'EMC'
-    return n
-end
+local open_artifacts = { }
 
 cb.register('finish_pdfpage', function(shippingout)
     if shippingout then
@@ -655,17 +608,17 @@ cb.register('finish_pdfpage', function(shippingout)
     end
 end)
 
--- 1 content item boundaries and linking
+-- 1 content item boundaries and linking (in pre-shipout)
 
 function M.mark_content_items(box)
-    local se, order, open
+    local se, order, art, open
     local start_node, end_node, parent_node
     local pageobj = pdf.getpageref(status.total_pages + 1)
-    -- inserting mci markers
+    -- helper functions for inserting mci markers
     local insert_tags = function(end_parent)
         if not open then return end
         parent_node.list = node.insert_before(parent_node.list, start_node, open)
-        node.insert_after(end_parent.list, end_node, new_emc_node())
+        node.insert_after(end_parent.list, end_node, pdf_literal('EMC'))
         start_node, end_node, parent_node, open = nil, nil, nil, nil
     end
     local start_content = function(n, b)
@@ -676,18 +629,31 @@ function M.mark_content_items(box)
     for n, b in full_traverse(box) do
         local marker = n.id == 8 and n.subtype == 8
            and n.user_id == marker_whatsit and n.value
-        if marker and marker.what == 'art_start' then
+        local stat = n[current_status]
         -- first we start with marking artifacts
+        if marker and marker.what == 'art_start' then
             insert_tags(b);
             start_content(n, b)
-            open = new_open_art_node(marker.it)
+            local a = string.format('/Artifact << /Type/%s >> BDC', marker.it)
+            open_artifacts[stat], open, art = a, pdf_literal(a), stat
         elseif marker and marker.what == 'art_stop' then
             end_node = n
             insert_tags(b);
-        elseif n[current_status] then
-            -- inside artifact, do nothing
-        elseif n.id == 8 and n.subtype == 19 then -- pdf_start_link
+            open_artifacts[art], art = nil, nil
+        elseif stat and stat >10 and stat ~=art then -- broken artifact
+            insert_tags(b);
+            start_content(n, b)
+            local a = open_artifacts[stat]
+            if not a then
+                alloc.err('Encountered tail of unknown artifact (see pdf)')
+                pdf_err(n, 'unknown artifact (this should not be possible)')
+                a = '/Artifact << /Type/Unknown >> BDC'
+            end
+            open, art = pdf_literal(a), stat
+        elseif stat then -- inside artifact or tagging disabled
+            end_node = n
         -- then attach links to Link elements
+        elseif n.id == 8 and n.subtype == 19 then -- pdf_start_link
             local _se, _order = n[current_struct], n[current_order]
             local link = structure[_se]
             if link.struct == 'Link' then
@@ -698,16 +664,16 @@ function M.mark_content_items(box)
                 alloc.err('Link found outside Link structure element (see pdf)')
                 pdf_err(n, 'unmarked link')
             end
+        -- handle explicit start and stop nodes
         elseif marker and marker.what == 'mci_start' then
-        -- explicit start and stop nodes
             insert_tags(b);
             start_content(n, b)
             open = new_open_mci_node(se, order)
         elseif marker and marker.what == 'mci_stop' then
             end_node = end_node and n; insert_tags(b)
+        -- finally, see if we need to intervene between content nodes
         elseif n.id == 2 or n.id == 29 -- rule, glyph or content marker
         or marker and marker.what == 'content' then
-        -- now see if we need to intervene between content nodes
             local _se, _order = n[current_struct], n[current_order]
             if n.id == 2 and (n.width == 0 or n.height == 0 and n.depth == 0) then
                 -- ignore invisible rules
@@ -720,8 +686,7 @@ function M.mark_content_items(box)
                 insert_tags(b);
                 start_content(n, b)
                 open = new_open_mci_node(se, order)
-            else
-                -- nothing changed: continue current mci
+            else -- nothing changed: continue current mci
                 end_node = n
             end
         elseif n.id == 12 and n.subtype > 2 and n.subtype < 8 then
@@ -730,10 +695,6 @@ function M.mark_content_items(box)
         end
     end
     -- close the last mci
-    if start_node and start_node.user_id and start_node.value
-    and start_node.value.what == 'art_start' then
-        alloc.err('Page %d ends with a broken artifact', status.total_pages+1)
-    end
     insert_tags(box)
 end
 
@@ -786,7 +747,7 @@ local function write_bookmarks()
     -- write bookmark objects
     for i=2, #bookmarks do
         local bm, res = bookmarks[i], { }
-        insert_formatted(res, '<< /Title %s\n/Parent %s 0 R /Dest (%s)', M.pdf_string(bm.title),
+        insert_formatted(res, '<< /Title %s\n/Parent %s 0 R /Dest (%s)', pdf_string(bm.title),
             bm.parent and bm.parent.outline_obj or bookmarks[1].outline_obj, bm.dest)
         if bm.next then insert_formatted(res, '/Next %s 0 R', bm.next.outline_obj) end
         if bm.prev then insert_formatted(res, '/Prev %s 0 R', bm.prev.outline_obj) end
@@ -827,9 +788,8 @@ function M.add_bookmark(bm)
 end
 
 alloc.luadef('outline', function()
-    local s = M.options_scanner()
-        :keyword('open')
-        :keyword('closed') -- default; ignored
+    local s = options_scanner()
+        :keyword('open', 'closed')
         :string('dest')
         :scan()
     s.title = token.scan_string()
@@ -866,8 +826,8 @@ function M.embed_file(t)
     end
     -- embed the file
     local attr = { '/Type/EmbeddedFile' }
-    if t.mimetype then insert_formatted(attr, '/Subtype/%s', string.gsub(t.mimetype, '/', '#2F')) end
-    if t.moddate then insert_formatted(attr, '/Params << /ModDate %s >>', M.pdf_date(t.moddate)) end
+    if t.mimetype then insert_formatted(attr, '/Subtype%s', pdf_name(t.mimetype)) end
+    if t.moddate then insert_formatted(attr, '/Params << /ModDate %s >>', alloc.pdf_date(t.moddate)) end
     local ef = pdf.obj {
         immediate = true,
         compresslevel = t.uncompressed and 0 or nil,
@@ -878,7 +838,7 @@ function M.embed_file(t)
     -- write the filespec
     local res = { '<< /Type/Filespec' }
     insert_formatted(res, '/F %s /UF %s /EF << /F %d 0 R /UF %d 0 R >>', t.name, t.name, ef, ef)
-    if t.desc then insert_formatted(res, '/Desc %s', M.pdf_string(t.desc)) end
+    if t.desc then insert_formatted(res, '/Desc %s', pdf_string(t.desc)) end
     if t.relation then insert_formatted(res, '/AFRelationship /%s', t.relation) end
     table.insert(res, '>>')
     local fs = pdf.immediateobj(table.concat(res, ' '))
@@ -887,7 +847,7 @@ function M.embed_file(t)
 end
 
 alloc.luadef('embedfile', function()
-    local t = M.options_scanner()
+    local t = options_scanner()
         :string('desc')
         :string('file')
         :string('string')
@@ -901,7 +861,7 @@ alloc.luadef('embedfile', function()
     if not t.name then
         t.name = t.file or aloc.err('No name specified for embedded file stream')
     end
-    t.name = M.pdf_string(t.name or '(unnamed)')
+    t.name = pdf_string(t.name or '(unnamed)')
     local fs, ef = M.embed_file(t, t.global)
     -- where to attach?
     if t.global then
@@ -1036,7 +996,7 @@ local function write_pagelabels()
     end
     local res = { '/PageLabels << /Nums [' }
     for _, l in ipairs(pagelabels) do
-        local s, p = l.s and '/S/'..l.s, l.p and ' /P '..M.pdf_string(l.p)
+        local s, p = l.s and '/S/'..l.s, l.p and ' /P '..pdf_string(l.p)
         table.insert(res, string.format('%d << /St %d %s%s >>', l.start, l.st, s or '', p or ''))
     end
     table.insert(res, ']')
@@ -1083,7 +1043,7 @@ function M.add_default_rgb_output_intent(t)
         N = 3, path = 'sRGB.icc' }
 end
 
-function M.add_default_cmyk_output_intents(t)
+function M.add_default_cmyk_output_intent(t)
     t = t or {}
     M.add_output_intent {
         subtype = t.subtype or 'GTS_PDFA1',

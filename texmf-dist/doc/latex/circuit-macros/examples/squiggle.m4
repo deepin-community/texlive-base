@@ -1,4 +1,5 @@
 .PS
+# squiggle.m4
 gen_init
 
 divert(-1)
@@ -20,6 +21,6 @@ divert(0)dnl
 
 squiggle(up_ 1 right_ 2,,,outlined "red")
 squiggle(up 2 right_ 2,0.1,0.15,outlined "red" <-> wid 0.06 ht 0.05)
-squiggle(right_ 1,,,dotted outlined "blue" wid 0.06 ht 0.05)
+squiggle(right_ 1,,,thick 2 dotted outlined "blue" )
 
 .PE

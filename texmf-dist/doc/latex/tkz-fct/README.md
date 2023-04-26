@@ -1,6 +1,6 @@
 # tkz-fct – Tools for drawing graphs of functions
 
-Release 1.4c 2020/05/05
+Release 1.7c 2022/02/07
 
 ## Description
 
@@ -52,7 +52,11 @@ In order to format the numbers correctly, you place the following two lines
 Documentation for `tkz-fct`   is available on CTAN and in your TeX distribution.
 
 ## History
+- 1.7c Correction of the documentation
+- 1.6c Correction of bug which prevented "tkz" packages from being loaded at the same time.
+       Minor corrections to the documentation
 
+- 1.5c Added a warning message that tkz-fct must be loaded before tkz-euclide
 - 1.4c Correction of a bug in the macro \tkzFct. Correction of the documentation.
 
 - 1.3c Correction of a bug ( incompatibility between tkz-fct and tkzexample).

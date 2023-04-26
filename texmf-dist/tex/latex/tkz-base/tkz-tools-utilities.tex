@@ -1,5 +1,5 @@
-% tkz-tools-utilities
-% Copyright 2020  Alain Matthes
+% tkz-tools-eu-utilities
+% Copyright 2022  Alain Matthes
 % This work may be distributed and/or modified under the
 % conditions of the LaTeX Project Public License, either version 1.3
 % of this license or (at your option) any later version.
@@ -7,22 +7,38 @@
 %   http://www.latex-project.org/lppl.txt
 % and version 1.3 or later is part of all distributions of LaTeX
 % version 2005/12/01 or later.
-%
 % This work has the LPPL maintenance status “maintained”.
-% 
 % The Current Maintainer of this work is Alain Matthes.
-%  utf8 encoding
-\def\fileversion{3.06c}
-\def\filedate{2020/03/18} 
-\typeout{2020/03/18 3.06c  tkz-tools-utilities.tex}  
+
+\def\fileversion{4.2c}
+\def\filedate{2022/07/14} 
+\typeout{2022/07/14 4.2c  tkz-tools-utilities.tex}  
 \makeatletter
+\pgfkeys{/tkzClip/.cd, 
+space/.store in    = {\tkz@CLI@space},
+space    = {}} 
+
+\def\tkzClip{\pgfutil@ifnextchar[{\tkz@Clip}{\tkz@Clip[]}} 
+\def\tkz@Clip[#1]{%
+
+\pgfqkeys{/tkzClip}{#1} 
+\ifx\tkzutil@empty\tkz@CLI@space
+    \clip (\tkz@xa,\tkz@ya) rectangle (\tkz@xb,\tkz@yb);
+ \else
+ \edef\tkz@xxa{\fpeval{\tkz@xa-\tkz@CLI@space}}
+ \edef\tkz@yya{\fpeval{\tkz@ya-\tkz@CLI@space}}
+ \edef\tkz@xxb{\fpeval{\tkz@xb+\tkz@CLI@space}} % correction bug 2020
+ \edef\tkz@yyb{\fpeval{\tkz@yb+\tkz@CLI@space}}
+ \clip (\tkz@xxa,\tkz@yya) rectangle (\tkz@xxb,\tkz@yyb);
+\fi
+} 
+
 % for testing results
 \def\extractxy#1{%
 \pgfextractx{\pgf@x}{\pgfpointanchor{#1}{center}}
 \pgfextracty{\pgf@y}{\pgfpointanchor{#1}{center}}
 \typeout{#1 \the\pgf@x,\the\pgf@y} 
 } 
-
 %<-------------- some tools -------------------------------------------------> 
 \def\tkzutil@empty{}
 \def\tkzutil@firstofone#1{#1}
@@ -51,44 +67,6 @@
    \catcode`\!=\tkzPtExCode\relax
    \catcode`\;=\tkzPtVirCode\relax
 }% 
-%<------  Initialisation of the colors with tkzSetUpColors  -----------------> 
-% Première macro SetUpColors %%%%%%%%%%%%%%%%%%%%%
-%Possible
-\pgfkeys{/tkzsucolor/.is family}
-\def\setupcolorkeys#1{%
-   \pgfkeys{/tkzsucolor,#1}}
-\setupcolorkeys{
-   background/.estore in   =  \setupcolor@background,
-   text/.estore in         =  \setupcolor@text,
-   @initial/.style         =  {background=white,text=black},
-   @apply/.code            =  {\pagecolor{\setupcolor@background}%
-                                    \color{\setupcolor@text}%
- },
-}
-\def\tkzSetUpColors{\pgfutil@ifnextchar[{\tkz@SetUpColors}{\tkz@SetUpColors[]}}
-\def\tkz@SetUpColors[#1]{\setupcolorkeys{@initial,#1,@apply}}
-
-%<------  Initialisation of all colors   -----------------> 
-\pgfkeys{/tkzsupallcol/.cd,
-         background/.store in       = \tkz@suac@bkc,
-         text/.store in             = \tkz@suac@txt,
-         background              = \tkz@backgroundcolor,% see tkz-base.cfg
-         text                    = \tkz@textcolor% idem
-        } 
-\def\tkzSetUpAllColors{\pgfutil@ifnextchar[{\tkz@SetUpAllColors}{%
-                                 \tkz@SetUpAllColors[]}} 
-\def\tkz@SetUpAllColors[#1]{%
-   \pgfqkeys{/tkzsupallcol}{#1} % now we redine the based colors
-   \def\tkz@fillcolor{\tkz@suac@bkc}   
-   \def\tkz@mainlinecolor{\tkz@suac@txt}
-   \def\tkz@textcolor{\tkz@suac@txt}
-   \def\tkz@otherlinecolor{\tkz@suac@txt!50}
-   \def\tkz@sua@color{\tkz@suac@txt} 
-   \tkzSetUpAxis[color=\tkz@suac@txt]
-   \tkzSetUpGrid[color=\tkz@suac@txt]      
-   \pagecolor{\tkz@suac@bkc}
-   \color{\tkz@suac@txt}  
-}
 %<--------------------------------------------------------------------------–>
 %              Pour savoir le nombre de décimales d'un nombre
 % le nombre dans #1 et le résultat dans \c@pgfmath@countb
@@ -125,6 +103,9 @@
    \expandafter\C@untToken
  \fi
 }
+%<---------------------------------------------------------–>
+\def\tkz@recuplast(#1,#2){\def\tkz@last{#1}}
+\def\tkz@stop{\tkz@stop}
 % end code from JCC    
 %<---------------------------------------------------------–>
 %            Tools
@@ -187,5 +168,69 @@
       }
 \def\EnabledNumprint{\let\numprint\tkz@numprint} 
 %<---------------------------------------------------------–>
+\def\tkzSwapPoints(#1,#2){
+  \pgfnodealias{tkzPointTmp}{#2}
+   \pgfnodealias{#2}{#1}
+  \pgfnodealias{#1}{tkzPointTmp}}
+%<---------------------------------------------------------–>
+\def\tkzPermute(#1,#2,#3){
+\tkzURotateWithNodes(#1,#3,#2)(#3)  \tkzGetPoint{tkzpt}
+\tkzURotateWithNodes(#1,#2,#3)(#2) \tkzGetPoint{#2}
+\tkzSwapPoints(tkzpt,#3)}
+%<---------------------------------------------------------–>
+\def\tkzDotProduct(#1,#2,#3){%
+\begingroup
+\pgfextractx{\pgf@x}{\pgfpointanchor{#1}{center}}%
+\pgfextracty{\pgf@y}{\pgfpointanchor{#1}{center}}% 
+\tkz@ax\pgf@x%
+\tkz@ay\pgf@y%
+\pgfextractx{\pgf@x}{\pgfpointanchor{#2}{center}}%
+\pgfextracty{\pgf@y}{\pgfpointanchor{#2}{center}} 
+\tkz@bx\pgf@x%
+\tkz@by\pgf@y%
+\pgfextractx{\pgf@x}{\pgfpointanchor{#3}{center}}%
+\pgfextracty{\pgf@y}{\pgfpointanchor{#3}{center}}% 
+\tkz@cx\pgf@x%
+\tkz@cy\pgf@y%
+\edef\tkz@dotprod{\fpeval{round(((\tkz@bx-\tkz@ax)*(\tkz@cx-\tkz@ax)+(\tkz@by-\tkz@ay)*(\tkz@cy-\tkz@ay))/(809.55841),5)}}
+\global\let\tkzMathResult\tkz@dotprod
+\endgroup}
+%<---------------------------------------------------------–>
+ \def\tkzGetResult#1{%
+   \global\expandafter\edef\csname #1\endcsname{\tkzMathResult}}
+%<---------------------------------------------------------–>
+% #1,#2 and #3 aligned
+\def\tkzIsLinear(#1,#2,#3){%
+\begingroup
+\tkz@@CalcLengthcm(#1,#2){tkz@la}
+\tkz@@CalcLengthcm(#1,#3){tkz@lb}
+\tkzDotProduct(#1,#2,#3)
+\edef\tkzMathResult{\fpeval{abs(abs(\tkzMathResult)-(\tkz@la)*(\tkz@lb))}}
+\ifdim \tkzMathResult pt < 0.0001 pt\relax%
+\global\tkzLineartrue
+\else
+\global\tkzLinearfalse
+\fi
+\endgroup
+}
+%<---------------------------------------------------------–>
+% syntax : vec(#2,#1) ortho vec(#3,#1)
+\def\tkzIsOrtho(#1,#2,#3){%
+\begingroup
+\tkzDotProduct(#1,#2,#3)
+\edef\tkzMathResult{\fpeval{abs(\tkzMathResult)}}
+\ifdim \tkzMathResult pt < 0.0001 pt\relax%
+\global\tkzOrthotrue
+\else
+\global\tkzOrthofalse
+\fi
+\endgroup
+}
+%<---------------------------------------------------------–>
+  \def\tkzHelpGrid{%
+   \draw[help lines] (current bounding box.south west) grid
+          (current bounding box.north east);
+  }
+   
 \makeatother
 \endinput

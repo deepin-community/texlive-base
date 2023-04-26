@@ -1,0 +1,397 @@
+% Kale Ewasiuk (kalekje@gmail.com)
+% 2022-11-06
+% Copyright (C) 2021-2022 Kale Ewasiuk
+%
+% Permission is hereby granted, free of charge, to any person obtaining a copy
+% of this software and associated documentation files (the "Software"), to deal
+% in the Software without restriction, including without limitation the rights
+% to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+% copies of the Software, and to permit persons to whom the Software is
+% furnished to do so, subject to the following conditions:
+%
+% The above copyright notice and this permission notice shall be included in
+% all copies or substantial portions of the Software.
+%
+% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+% ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+% TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+% PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT
+% SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
+% ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+% ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+% OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+\documentclass[11pt,parskip=half]{scrartcl}
+\setlength{\parindent}{0ex}
+\newcommand{\llcmd}[1]{\leavevmode\llap{\texttt{\detokenize{#1}\ }}}
+\newcommand{\cmd}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\qcmd}[1]{``\cmd{#1}''}
+\usepackage{url}
+\usepackage{xcolor}
+\usepackage{showexpl}
+\lstset{explpreset={justification=\raggedright,pos=r,wide=true}}
+\setlength\ResultBoxRule{0mm}
+\lstset{
+	language=[LaTeX]TeX,
+	basicstyle=\ttfamily\small,
+	commentstyle=\ttfamily\small\color{gray},
+	frame=none,
+	numbers=left,
+	numberstyle=\ttfamily\small\color{gray},
+	prebreak=\raisebox{0ex}[0ex][0ex]{\color{gray}\ensuremath{\hookleftarrow}},
+	extendedchars=true,
+	breaklines=true,
+	tabsize=4,
+}
+\addtokomafont{title}{\raggedright}
+\addtokomafont{author}{\raggedright}
+\addtokomafont{date}{\raggedright}
+\author{Kale Ewasiuk (\url{kalekje@gmail.com})}
+\usepackage[yyyymmdd]{datetime}\renewcommand{\dateseparator}{--}
+\date{\today}
+
+
+\usepackage[pl,extrasnoglobals]{penlight}
+\usepackage[overwritedefs]{YAMLvars}
+\title{YAMLvars}
+\subtitle{a YAML variable parser for LuaLaTeX}
+
+\begin{document}
+
+
+\maketitle
+
+
+%%%%%
+
+%{NOTE::: \Huge todo use LTXexample and improve examples/testing\\
+%todo need way better error tracing for this pkg}
+
+
+
+%%%%%%%%%%%
+
+
+YAMLvars is a LuaLaTeX-based package to help make definitions or produce LaTeX code using a YAML file.
+This package might be useful for you if you want to batch create documents
+by pushing various sets YAML data to a fixed LaTeX template,
+or just find it easier to read document metadata from a YAML file compared to the
+standard title, author, etc. commands.
+
+\section{Package Options}
+\leavevmode\llap{\texttt{useyv}\ \ \ }By default, when you specify a YAML variable, it will be defined using \texttt{gdef}
+(only if it wasn't defined previously).
+If you use this setting, unless otherwise specified, YAML variables will be accessible under
+the \texttt{\textbackslash yv\{<var>\}} command.
+This also allows numbers and symbols in the variable names.
+Note that internally, the variables are stored in the command sequence
+\texttt{yv--<var>}.
+
+\leavevmode\llap{\texttt{parseCLI}\ \ \ }If this option is enabled, any arguments passed to your lualatex compile
+command that end in ``.yaml'' will be used, separated by a space.
+If two yaml files are passed, the first one will be the declaration file,
+and the second will be the parsing file.
+They will be used at the beginning of the document.
+If one yaml file is passed, it will be treated as a parsing file, so you should
+declare the variables somewhere in the preamble.
+This option is offered to help with automation scripts.
+An example is showin in Section \ref{example}.
+
+\hspace*{3ex}\llcmd{allowundeclared}%
+It might be helpful to define something in your YAML parsing doc without declaring it.
+If you want this flexibility, use this setting. Note that existing definitions will not be overwritten and an error
+will br thrown if the name exists. Alternatively, you can use the commands \cmd{\AllowUndeclaredYV} or \cmd{\ForbidUndeclaredYV} to toggle this behavior.
+
+\llcmd{overwritedefs}Danger! This will allow you to \cmd{gdef} commands with YAML. Caution should be taken to not set definitions like \cmd{begin}, \cmd{section}, etc.
+
+\section{Dependencies}
+%This package contains the \texttt{tinyyaml} Lua package.
+\llcmd{Note:}This package requires that the \cmd{markdown} (\url{https://ctan.org/pkg/markdown}) be installed. This package does not use the package in its entirety, but rather depends on the YAML interpreter it comes with: \cmd{markdown-tinyyaml.lua}. This dependency is chosen to avoid redundancy in your TeX installation and align development of the \cmd{tinyyaml} Lua package.
+If you want to use the YAML interpreter for other purposes, you can bring it into Lua by either:
+\begin{verbatim}
+\directlua{yaml = YAMLvars.yaml}           or
+\directlua{yaml = require'markdown-tinyyaml'}
+\end{verbatim}
+The distribution: \url{https://github.com/api7/lua-tinyyaml}\\
+The YAML specification: \url{https://yaml.org/spec/}\\
+
+Many of the ``transform'' and ``processing'' functions built-in to this package rely on other packages,
+like
+\texttt{hyperref}, for example, but it is not loaded, and this package will only load
+\cmd{penlight},
+\cmd{luacode},
+\cmd{xspace}, and
+\cmd{etoolbox}.
+
+\section{Declaring variables}
+A declaration file can either be parsed with the command \texttt{declareYAMLvarsFile} command,
+or, if you want to do it \LaTeX, you can put the YAML code in the \texttt{declareYAMLvars} environment.
+It is a declaring YAML document is (like all YAML) key-value dictionary:
+The top level key is the name of the variable to be defined/used.
+If the value of the top level is a string: it's interpreted as a single transform function to be applied.
+Otherwise, it must
+be a table that contains at least one of the following keys:\\
+\texttt{xfm} (transform, may be a string or list of strings),\\
+\texttt{prc} (processing, must be a single string), or \\
+\texttt{dft} (default value, if being defined. Must be a string).
+
+If you want to change the way a variable is initialized, you can change the function
+\cmd{YAMLvars.dec.PRC = function (var) ... end } where \cmd{PRC} is how the variable will be processed (\cmd{gdef}, \cmd{yvdef}, \cmd{length}, or something of your choosing).
+
+The default value for variables is the Lua \texttt{nil}.
+YAMLvars will first check if the definition exists, if so, an error will be thrown
+so that we avoid overwriting.
+If the token is available, it is set to a package error, so that if the variable no defined later on, an error will
+tell the user they forgot to set it.
+This will be overwritten when you parse the variables and assign a value to it.
+
+\paragraph{If you want a case-insensitive variable} In the declaration YAML document,
+add a \cmd{lowcasevar: true} under the variable name.
+This will make the variable name lowercase before any transforms or processing is done.
+For example, if you have \cmd{title} as a YAML variable to set
+the \cmd{prc} function \cmd{setdocvar}, a user could write
+\cmd{Title} in the parsing file and still have it work.
+You can toggle this behaviour globally with
+the commands \cmd{\lowercasevarYVon} and \cmd{\lowercasevarYVoff}
+See the last example below.
+
+You can change the default \texttt{xfm}, \texttt{prc}, or \texttt{dft} by changing
+the value (in Lua): \texttt{YAMLvars.xfmDefault = ''} etc.
+
+Here is an example of a declaration document.
+\begin{verbatim}
+\begin{declareYAMLvars}
+Location: addxspace                      # sets xfm=addxspace
+People: [arrsortlastnameAZ, list2nl]     # BAD! don't do.
+People:
+  xfm: [arrsortlastnameAZ, list2nl]      # Correct way
+Company:
+  dft: Amazon                            # Change default only
+Revisions:
+  dft: '1 & \today & initial version \\'
+  xfm: [sortZA, list2tab]
+Rhead:
+  prc: setRightHead
+
+
+author:
+  xfm: list2and     # (joins a list with \and (or lets a single string be passed)
+  prc: setdocvar # calls \author{val}
+  lowcasevar: true  # allows user to use Title: or TITLE:
+  
+title:
+  xfm: lb2nl     # (make line-breaks \\)
+  prc: setdocvar # calls \title{val}
+  lowcasevar: true  # allows user to use Title: or TITLE:
+\end{declareYAMLvars}
+\end{verbatim}
+
+
+To change how a variable is declared (initialize), you can modify or add functions in
+\texttt{YAMLvars.dec} table, where the index is the same as the \texttt{prc} name. 
+This function accepts two variables, the var name, and the default value set by dft.
+For lengths and toggles (from etoolbox), these functions are used to initialize lengths
+with newlength and newtoggle.
+
+
+\section{Parsing variables}
+A YAML file to be parsed will contain the variables as the top level keys, similar to declaring.
+The value can be anything you want; as long as you have applied appropriate transform and declaring
+functions to it so that it can be useful. For example, a value specified as a YAML list will first be
+interpreted as a Lua table (with numeric indexes/keys). You could declare a series of transforms functions
+to sort this table, map functions, and convert it to a series of \LaTeX  \texttt{\textbackslash item}s.
+
+Here is an example of a parsing document.
+
+
+\begin{verbatim}
+\begin{parseYAMLvars}
+Location: Planet Earth
+People:                # a YAML list
+  - Some One           # turns into Lua table
+  - No Body
+# company assumed Amazon if not set here
+Rhead: \today
+\end{parseYAMLvars}
+\end{verbatim}
+
+
+ \section{xfm -- Transform Functions}
+These functions accept two arguments: \texttt{(var, val)} where \texttt{var} is the variable (or key) and val is the value.
+The transforms are specified as a list and are iteratively applied to the val.
+Usually, the final \texttt{xfm} function should produce a string so it can be defined.
+
+Hint: if for some reason, your \texttt{xfm} and \texttt{prc} depends on other variables,
+you can access them within the function
+with \texttt{YAMLvars.varsvals}
+
+\subsection{Defining your own transform functions}
+After the package is loaded, you may add your function (somewhere in Lua)
+by adding it to the \texttt{YAMLvars.xfm} table.
+For example, if you wanted to wrap a variable's value with ``xxx'', here's how you could do that.
+\begin{verbatim}
+function myfunction(var, val)
+        return 'xxx'..val..'xxx'
+end
+YAMLvars.xfm['addmyfunction'] = myfunction
+\end{verbatim}
+
+If you want to run some Lua code and write in your YAML file (weird idea, but maybe useful for one-off functions),
+you can do so by specifying a transform function with an \texttt{=} in it to make a lambda function.
+For example, a \texttt{xfm} equal to
+``\texttt{= '---'..x..'---'}''
+would surround your YAML variable's value with em-dashes.
+You can access the variable name with this lambda function with \texttt{v}.
+If you want to just execute code (instead of settings \texttt{x = }, use \texttt{/}).
+
+  \section{prc -- Processing Functions}
+Like the transform functions, the processing function must accept \texttt{(var, val)}.
+Only one processing function is applied to the final (var, val) after the transforms are done.
+
+This package includes \texttt{gdef} to set a definition, \texttt{yvdef} to define a variable under the \texttt{yv} command.
+\texttt{title, author, date} to set \texttt{\textbackslash @title, \textbackslash @author, \textbackslash @date},
+respectively
+
+\pagebreak
+
+\section{Some Examples}
+
+\begin{LTXexample}
+%! language = yaml
+\begin{declareYAMLvars}
+address:
+  xfm:
+    - list2nl
+    - = x..'!!!'
+name: null
+
+title:
+    xfm:
+        - lb2nl
+#        - / YAMLvars.prvcmd(titletext, YAMLvars.varsvals['atitle']:gsub('\n', ' ')..'\\xspace{}')
+\end{declareYAMLvars}
+
+%! language = yaml
+\begin{parseYAMLvars}
+title: |-
+    A Multiline
+    Monumental Title!
+
+name: Joe Smith
+address:
+  - 1234 Fake St.
+  - City
+\end{parseYAMLvars}
+
+\title
+
+%\titletext!
+
+\name
+
+\address
+
+\end{LTXexample}
+
+\pagebreak
+    \section{Automation Example}\label{example}
+
+    Suppose you had a number of bills of sales in yaml format and wanted to produce some nice pdfs.
+    The following code shows how this could be done.
+
+    \pagebreak
+    \vspace*{-5em}
+    \subsection{The main tex template}
+    \begin{verbatim}
+ %% main.tex
+\documentclass{article}
+\usepackage[paperheight=4in,paperwidth=3in,margin=0.25in]{geometry}
+\usepackage[pl,func,extras]{penlight}
+\usepackage[useyv,parseCLI]{YAMLvars}  % using command line option to make files
+\usepackage{hyperref}
+\usepackage{xspace}
+\usepackage{luacode}
+
+\setlength{\parindent}{0ex}
+\setlength{\parskip}{0.75em}
+
+\begin{luacode*} -- adding a custom function, put hfill between k-v pairs
+    function YAMLvars.xfm.kv2hfill(var, val)
+        local t = {}
+        for k, v in pairs(val) do
+            t[#t+1] = k..'\\hfill '..tostring(v)
+        end
+        return t
+    end
+\end{luacode*}
+
+
+%! language = yaml
+\begin{declareYAMLvars}
+Customer: addxspace
+Date: addxspace
+Items:
+    xfm: [kv2hfill, arr2itemize]
+\end{declareYAMLvars}
+
+\begin{document}
+    Bill of sale for: \hfill \yv{Customer}\\
+    Purchased: \hfill \yv{Date}\\
+    \begin{itemize}
+        \item[] ITEM \hfill PRICE
+        \yv{Items}             % the yaml variable
+        \begin{luacode*}
+            totalcost = pl.tablex.reduce('+',
+                pl.tablex.values(YAMLvars.varsvals['Items']), 0)
+            tex.print('\\item[] TOTAL:\\hfill'..tostring(totalcost))
+        \end{luacode*}
+    \end{itemize}
+\end{document}
+    \end{verbatim}
+
+    \subsection{The lua automation script}
+    \begin{verbatim}
+--automate.lua
+for f in io.popen('dir .'):lines() do  -- get all files and info in cwd
+    local i, j = f:find('%S*%.yaml')  --  find fnames
+    if i ~= nil then
+        f = f:sub(i,j) --  extract .yaml file name (no space in fname allowed)
+        os.execute('lualatex -output-format=pdf main.tex '.. f)
+                                    -- compile w/ yaml file as arg
+        local fnew = f:gsub('yaml', 'pdf') -- file name for output pdf
+        os.remove(fnew) -- delete if it exists already
+        os.rename('main.pdf', fnew) -- change main.pdf to same as yaml file name
+    end
+end
+    \end{verbatim}
+
+\subsection{The yaml data files}
+    \begin{verbatim}
+# sale1.yaml
+Customer: Someone Cold
+Date: January 2, 2021
+Items:
+    Toque: 12
+    Mitts: 5.6
+    Boots: 80
+
+# sale2.yaml
+Customer: Someone Warm
+Date: July 1, 2021
+Items:
+    Beer (24 pk): 24
+    Sunscreen: 5
+    Hat: 12
+    \end{verbatim}
+
+
+
+\clearpage
+\section{xfm, dec, prc functions (from yamlvars.lua)}
+
+\lstinputlisting[linerange=113-296]{yamlvars.lua}
+
+\end{document}
+

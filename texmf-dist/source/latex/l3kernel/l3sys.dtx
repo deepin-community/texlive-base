@@ -2,7 +2,7 @@
 %
 %% File: l3sys.dtx
 %
-% Copyright (C) 2015-2021 The LaTeX Project
+% Copyright (C) 2015-2023 The LaTeX Project
 %
 % It may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -43,7 +43,7 @@
 %    }^^A
 % }
 %
-% \date{Released 2021-08-27}
+% \date{Released 2023-01-16}
 %
 % \maketitle
 %
@@ -220,8 +220,8 @@
 %   \cs{q_no_value} in the non-branching version.
 %   Note that quote characters (|"|) \emph{cannot} be used inside the
 %   \meta{shell command}.  The \cs{sys_get_shell:nnNTF} conditional
-%   returns \texttt{true} if the shell is available and no quote is
-%   detected, and \texttt{false} otherwise.
+%   inserts the \texttt{true code} if the shell is available and no quote is
+%   detected, and the \texttt{false code} otherwise.
 % \end{function}
 %
 % \begin{variable}[added = 2017-05-27]{\c_sys_shell_escape_int}
@@ -290,18 +290,32 @@
 %   use will be loaded. This command may only be used once.
 % \end{function}
 %
+% \begin{function}[added = 2022-07-29]{\sys_ensure_backend:}
+%   \begin{syntax}
+%     \cs{sys_ensure_backend:}
+%   \end{syntax}
+%   Ensures that a backend has been loaded by calling \cs{sys_load_backend:n}
+%   if required.
+% \end{function}
+%
 % \begin{variable}{\c_sys_backend_str}
 %   Set to the name of the backend in use by \cs{sys_load_backend:n} when
-%   issued.
+%   issued. Possible values are
+%   \begin{itemize}
+%    \item \texttt{pdftex}
+%    \item \texttt{luatex}
+%    \item \texttt{xetex}
+%    \item \texttt{dvips}
+%    \item \texttt{dvipdfmx}
+%    \item \texttt{dvisvgm}
+%   \end{itemize}
 % \end{variable}
 %
-% \begin{function}[added = 2019-09-12]{\sys_load_debug:, \sys_load_deprecation:}
+% \begin{function}[added = 2019-09-12]{\sys_load_debug:}
 %   \begin{syntax}
 %     \cs{sys_load_debug:}
-%     \cs{sys_load_deprecation:}
 %   \end{syntax}
-%   Load the additional configuration files for debugging support and rolling
-%   back deprecations, respectively.
+%   Load the additional configuration file for debugging support.
 % \end{function}
 %
 % \subsection{Final settings}
@@ -563,14 +577,24 @@
 % \end{macro}
 % \end{macro}
 %
-% \begin{variable}{\g_@@_debug_bool, \g_@@_deprecation_bool}
+% \begin{macro}{\sys_ensure_backend:}
+%   A simple wrapper.
+%    \begin{macrocode}
+\cs_new_protected:Npn \sys_ensure_backend:
+  {
+    \str_if_exist:NF \c_sys_backend_str
+      { \sys_load_backend:n { } }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{variable}{\g_@@_debug_bool}
 %    \begin{macrocode}
 \bool_new:N \g_@@_debug_bool
-\bool_new:N \g_@@_deprecation_bool
 %    \end{macrocode}
 % \end{variable}
 %
-% \begin{macro}{\sys_load_debug:, \sys_load_deprecation:}
+% \begin{macro}{\sys_load_debug:}
 %   Simple.
 %    \begin{macrocode}
 \cs_new_protected:Npn \sys_load_debug:
@@ -578,12 +602,6 @@
     \bool_if:NF \g_@@_debug_bool
       { \__kernel_sys_configuration_load:n { l3debug } }
     \bool_gset_true:N \g_@@_debug_bool
-  }
-\cs_new_protected:Npn \sys_load_deprecation:
-  {
-    \bool_if:NF \g_@@_deprecation_bool
-      { \__kernel_sys_configuration_load:n { l3deprecation } }
-    \bool_gset_true:N \g_@@_deprecation_bool
   }
 %    \end{macrocode}
 % \end{macro}
@@ -709,20 +727,26 @@ do
 % \begin{macro}{\@@_shell_shipout:e}
 %   Execute commands through shell escape at shipout.
 %
-%   For \LuaTeX, we use the same helper as above but delayed to using a late_lua whatsit.
+%   For \LuaTeX, we use the same helper as above but delayed using a |late_lua| whatsit.
+%   Creating a |late_lua| whatsit works a bit different if we are running under Con\TeX{}t.
 %    \begin{macrocode}
 %<*lua>
-  local whatsit_id = node.id'whatsit'
-  local latelua_sub = node.subtype'late_lua'
-  local node_new = node.direct.new
-  local setfield = node.direct.setwhatsitfield or node.direct.setfield
+  local new_latelua = nodes and nodes.nuts and nodes.nuts.pool and nodes.nuts.pool.latelua or (function()
+    local whatsit_id = node.id'whatsit'
+    local latelua_sub = node.subtype'late_lua'
+    local node_new = node.direct.new
+    local setfield = node.direct.setwhatsitfield or node.direct.setfield
+    return function(f)
+      local n = node_new(whatsit_id, latelua_sub)
+      setfield(n, 'data', f)
+      return n
+    end
+  end)()
   local node_write = node.direct.write
 
   luacmd("@@_shell_shipout:e", function()
     local cmd = scan_string()
-    local n = node_new(whatsit_id, latelua_sub)
-    setfield(n, 'data', function() shellescape(cmd) end)
-    node_write(n)
+    node_write(new_latelua(function() shellescape(cmd) end))
   end, "global", "protected")
 end
 %</lua>
@@ -903,9 +927,6 @@ end
           { \int_value:w \tex_elapsedtime:D }
       }
       {
-        \msg_new:nnnn { kernel } { no-elapsed-time }
-          { No~clock~detected~for~#1. }
-          { The~current~engine~provides~no~way~to~access~the~system~time. }
         \cs_new:Npn \sys_timer:
           {
             \int_value:w

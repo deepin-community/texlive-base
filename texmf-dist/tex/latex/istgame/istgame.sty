@@ -2,7 +2,7 @@
 %%
 %% Drawing Game Trees with TikZ
 %%
-%% (C) Copyright 2015-2019 In-Sung Cho <ischo at ktug.org>
+%% (C) Copyright 2015-2022 In-Sung Cho <ischo at ktug.org>
 %%
 %% This work may be distributed and/or modified 
 %% under the conditions of the LaTeX Project Public License, 
@@ -11,7 +11,7 @@
 %%  http://www.latex-project.org/lppl.txt.
 %%
 %% -------------------------------------------------
-\ProvidesPackage{istgame}[2019/01/27 v2.0 Draw Game Trees with TikZ]
+\ProvidesPackage{istgame}[2022/03/22 v2.1 Draw Game Trees with TikZ]
 
 % expl3,xparse: LPPL
 % tikz: LPPL and/or GNU GPL
@@ -19,10 +19,11 @@
 \usetikzlibrary
 { 
     trees , calc , arrows , shapes , positioning ,
-    backgrounds ,             % for information sets and subgames
-    fit ,                     % for \xtSubgameBox(Oval)
-    decorations.markings ,    % for \xtShowArrows and middle arrows
-    patterns , intersections  % for additional use
+    backgrounds ,              % for information sets and subgames
+    fit ,                      % for \xtSubgameBox(Oval)
+    decorations.markings ,     % for \xtShowArrows and middle arrows
+    patterns , intersections , % for additional use
+    arrows.meta , bending      % added in version 2.1
 }
 
 % backgrounds
@@ -288,13 +289,13 @@
 % \istownerstyle
 \NewDocumentCommand \istownerstyle { m }
 {
-  	\ifnum 1 = \istmathflagowner
-    	\ensuremath {#1}
-  	  \else
-  	  \expandafter \csname \ist@owner@text@font \endcsname {#1} % owner text font
-  	\fi
+  	\int_compare:nTF { \istmathflagowner == 1 }
+    {	\ensuremath {#1} }
+  	{
+	    \tl_if_empty:NF \ist@owner@text@font 
+	    { \exp_args:No \use:c { \ist@owner@text@font } } {#1} % owner text font
+	  }
 }
-
 
 % action labels: (default: mathtrue)
 
@@ -311,11 +312,12 @@
 % \istactionlabelstyle
 \NewDocumentCommand \istactionlabelstyle{m}
 {
-  	\ifnum 1 = \istmathflagactionlabel
-    	\ensuremath {#1}
-	    \else
-    	\expandafter \csname \ist@actionlabel@text@font \endcsname {#1} % AL text font
-  	\fi
+  \int_compare:nTF { \istmathflagactionlabel == 1 }
+  { \ensuremath {#1} }
+  {
+    \tl_if_empty:NF \ist@actionlabel@text@font
+    { \exp_args:No \use:c { \ist@actionlabel@text@font } } {#1} % AL text font
+  }
 }
 
 % payoffs: (default: mathtrue)
@@ -333,26 +335,27 @@
 % \istpayoffstyle
 \NewDocumentCommand \istpayoffstyle{m}
 {
-    \ifnum 1 = \istmathflagpayoff
-      \ensuremath {#1}
-      \else 
-    	\expandafter \csname \ist@payoff@text@font \endcsname {#1} % payoff text font
-    \fi
+  \int_compare:nTF { \istmathflagpayoff == 1 }
+  { \ensuremath {#1} }
+  {
+    \tl_if_empty:NF \ist@payoff@text@font
+    { \exp_args:No \use:c { \ist@payoff@text@font } } {#1} % payoff text font
+  }
 }
 
 % \setistmathTF(*)
-% * {} {} {} <owner font> [action labels font] {payoff font]
+% * {} {} {} <owner font> {action labels font} [payoff font]
 \NewDocumentCommand \setistmathTF{ s m m m D<>{} G{textit} O{} }
 { 
-    \ifnum #2 = 1 \istownermathtrue       \else \istownermathfalse       \fi
-    \ifnum #3 = 1 \istactionlabelmathtrue \else \istactionlabelmathfalse \fi
-    \ifnum #4 = 1 \istpayoffmathtrue      \else \istpayoffmathfalse      \fi
-    \IfBooleanT {#1}
-    {
-  	  \istownertextfont { #5 }
-  	  \istactionlabeltextfont { #6 }
-  	  \istpayofftextfont { #7 }
-    }
+  \int_compare:nTF { #2 == 1 } { \istownermathtrue }       { \istownermathfalse }
+  \int_compare:nTF { #3 == 1 } { \istactionlabelmathtrue } { \istactionlabelmathfalse }
+  \int_compare:nTF { #4 == 1 } { \istpayoffmathtrue }      { \istpayoffmathfalse }
+  \IfBooleanT {#1}
+  {
+	  \istownertextfont { #5 }
+	  \istactionlabeltextfont { #6 }
+	  \istpayofftextfont { #7 }
+  }
 }
 
 
@@ -423,7 +426,7 @@
 %---syntaxoff-----
 % \ISTRoot
 % (used in \istroot)
-% ' [grow] (root) (at) [node] <angle> {owner} +levdis..sibdist+
+% ' [grow] (root) (at) [node] <angle> {owner} +levdist..sibdist+
 \NewDocumentCommand \ISTRoot
 { t' O{south} r() D(){0,0} O{} D<>{} G{} D+.{\xtlevdist} D.+{\xtsibdist} } 
 { 
@@ -512,7 +515,7 @@
     }
 }
 
-%% istgame environment
+%% istgame environment (can be used in the preamble)
 
 \def\istgame@default@fontsize { \normalsize }
 \def\istgame@default@arrowend@shorten { 0pt } % 0pt needed, otherwise affects all the lines
@@ -526,6 +529,31 @@
 {
     \renewcommand*{\istgame@default@arrowend@shorten} {#1}
 }
+
+%% (2021/04/09)
+%% more global macros (can be used in the preamble)
+
+\NewDocumentCommand \setistsolidnodesize { m } 
+{
+    \renewcommand*{\istdefault@solid@node@size} {#1}
+}
+
+\NewDocumentCommand \setisthollownodesize { m } 
+{
+    \renewcommand*{\istdefault@hollow@node@size} {#1}
+}
+
+\NewDocumentCommand \setistellipsenodesize { m } 
+{
+%    \renewcommand*{\istdefault@ellipse@node@size} {#1}
+    \renewcommand*{\istellipsenodesize} {#1}
+}
+
+\NewDocumentCommand \setistrectagnlenodesize { m } 
+{
+    \renewcommand*{\istdefault@rectangle@node@size} {#1}
+}
+
 
 % get ready for checking (x)(y)scale option
 \clist_new:N \l_parseopt_clist
@@ -564,7 +592,50 @@
 }
 
 
-\DeclareDocumentEnvironment {istgame} { O{} }   % accepts tikzpicture options
+% to resolve TikZ problem: sloped label conflict with x-y-scale
+% temporary solution (experimental)
+
+% \xtcureslopedlabelsNS (for north and south growing tree)
+\NewDocumentCommand \xtcureslopedlabelsNS { }
+{
+    \istgameScaleCallTestAndAdjust
+    \bool_if:NTF \xt_xscale_call_bool
+    {
+        \pgfmathsetmacro\xtsibdistadj {\xtxscale*\xtsibdist}
+        \pgfmathsetmacro\xtlevdistadj {1*\xtlevdist}
+    }
+    {
+      \bool_if:NT \xt_yscale_call_bool
+      {
+        \pgfmathsetmacro\xtsibdistadj {1*\xtsibdist}
+        \pgfmathsetmacro\xtlevdistadj {\xtyscale*\xtlevdist}
+      }
+    }
+    \xtdistance{\xtlevdistadj}{\xtsibdistadj}
+}
+
+% \xtcureslopedlabelsEW (for east and west growing tree)
+\NewDocumentCommand \xtcureslopedlabelsEW { }
+{
+    \istgameScaleCallTestAndAdjust
+    \bool_if:NTF \xt_xscale_call_bool
+    {
+        \pgfmathsetmacro\xtsibdistadj {1*\xtsibdist}
+        \pgfmathsetmacro\xtlevdistadj {\xtxscale*\xtlevdist}
+    }
+    {
+      \bool_if:NT \xt_yscale_call_bool
+      {
+        \pgfmathsetmacro\xtsibdistadj {\xtyscale*\xtsibdist}
+        \pgfmathsetmacro\xtlevdistadj {1*\xtlevdist}
+      }
+    }
+    \xtdistance{\xtlevdistadj}{\xtsibdistadj}
+}
+
+
+%%% istgame: main environment
+\DeclareDocumentEnvironment {istgame} { s O{} }   % accepts tikzpicture options
 {
     % call set (false)
     \bool_set_false:N \cntm_distance_call_bool            % to distinguish cntm sibdist
@@ -580,9 +651,21 @@
     \bool_set_false:N \_cntm_distance_local_call_bool     % for \istbA
     \bool_set_false:N \_cntmA_distance_local_call_bool    % for \istbA
     
+  \IfBooleanTF { #1 }
+  {
+    \def\xtxscale{1}
+    \def\xtyscale{1}
+    \def\xtscale{1}
+    
+    \def\xtcureslopedlabelsNS{}
+    \def\xtcureslopedlabelsEW{}
+  
+    \begin{tikzpicture} [ #2 ]
+  }
+  {
     % extract the value of xscale/yscale/scale
     % (extract scale value, only if it is used alone)
-    \clist_set:Nn \l_parseopt_clist { #1 }
+    \clist_set:Nn \l_parseopt_clist { #2 }
     \tl_gset:Nn \xtxscale {1.0}
     \tl_gset:Nn \xtyscale {1.0}
     \tl_gset:Nn \xtscale {1.0}
@@ -623,14 +706,15 @@
   	{
 	    \bool_set_true:N \_arrow_option_exist_bool
   		\clist_remove_all:Nn \l_parseopt_clist { -> }
-  		\clist_put_left:Nn \l_parseopt_clist { -> , shorten~> = \istgame@default@arrowend@shorten }
+  		\clist_put_left:No \l_parseopt_clist { -> , shorten~> = \istgame@default@arrowend@shorten }
   	}
-      
+
   	\tl_set:Nn \l_tmpa_tl { font = \istgame@default@fontsize , > = stealth , }
     \tl_put_right:Nx \l_tmpa_tl { \clist_use:Nn \l_parseopt_clist { , } }
     
     \exp_last_unbraced:NnNo 
     \begin{tikzpicture} [ \l_tmpa_tl ]
+  }
 }
 {
   	\end{tikzpicture}
@@ -683,46 +767,6 @@
     }
 }
 
-% to resolve TikZ problem: sloped label conflict with x-y-scale
-% temporary solution (experimental)
-
-% \xtcureslopedlabelsNS (for north and south growing tree)
-\NewDocumentCommand \xtcureslopedlabelsNS { }
-{
-    \istgameScaleCallTestAndAdjust
-    \bool_if:NTF \xt_xscale_call_bool
-    {
-        \pgfmathsetmacro\xtsibdistadj {\xtxscale*\xtsibdist}
-        \pgfmathsetmacro\xtlevdistadj {1*\xtlevdist}
-    }
-    {
-      \bool_if:NT \xt_yscale_call_bool
-      {
-        \pgfmathsetmacro\xtsibdistadj {1*\xtsibdist}
-        \pgfmathsetmacro\xtlevdistadj {\xtyscale*\xtlevdist}
-      }
-    }
-    \xtdistance{\xtlevdistadj}{\xtsibdistadj}
-}
-
-% \xtcureslopedlabelsEW (for east and west growing tree)
-\NewDocumentCommand \xtcureslopedlabelsEW { }
-{
-    \istgameScaleCallTestAndAdjust
-    \bool_if:NTF \xt_xscale_call_bool
-    {
-        \pgfmathsetmacro\xtsibdistadj {1*\xtsibdist}
-        \pgfmathsetmacro\xtlevdistadj {\xtxscale*\xtlevdist}
-    }
-    {
-      \bool_if:NT \xt_yscale_call_bool
-      {
-        \pgfmathsetmacro\xtsibdistadj {\xtyscale*\xtsibdist}
-        \pgfmathsetmacro\xtlevdistadj {1*\xtlevdist}
-      }
-    }
-    \xtdistance{\xtlevdistadj}{\xtsibdistadj}
-}
 
 %% ---------------
 %% core macro part
@@ -743,7 +787,7 @@
                edge~from~parent [ #1 ] 
                node [ above~left , text~depth = .25ex , 
                       xshift = \istactionlabelxshift ,  yshift = -\istactionlabelyshift ] 
-                    {\istactionlabelstyle{#3} } 
+                    { \istactionlabelstyle{#3} } 
              }
       { ar } {
                edge~from~parent [ #1 ] 
@@ -1174,17 +1218,26 @@
 %    \str_case_e:nnF {#6}
     \str_case:nnF {#6}
     {
-      {al} { \node at ( $ (#3) ! .5 ! (#4) $ ) [ above~left ]  { \istownerstyle{#5} } ; }
-      {ar} { \node at ( $ (#3) ! .5 ! (#4) $ ) [ above~right ] { \istownerstyle{#5} } ; }
-      {bl} { \node at ( $ (#3) ! .5 ! (#4) $ ) [ below~left ]  { \istownerstyle{#5} } ; }
-      {br} { \node at ( $ (#3) ! .5 ! (#4) $ ) [ below~right ] { \istownerstyle{#5} } ; }
-      {l}  { \node at ( $ (#3) ! .5 ! (#4) $ ) [ left ]        { \istownerstyle{#5} } ; }
-      {r}  { \node at ( $ (#3) ! .5 ! (#4) $ ) [ right ]       { \istownerstyle{#5} } ; }
-      {a}  { \node at ( $ (#3) ! .5 ! (#4) $ ) [ above ]       { \istownerstyle{#5} } ; }
-      {b}  { \node at ( $ (#3) ! .5 ! (#4) $ ) [ below ]       { \istownerstyle{#5} } ; }
+      {al} { \node [-] at ( $ (#3) ! .5 ! (#4) $ ) 
+                   [ above~left ]  { \istownerstyle{#5} } ; }
+      {ar} { \node [-] at ( $ (#3) ! .5 ! (#4) $ ) 
+                   [ above~right ] { \istownerstyle{#5} } ; }
+      {bl} { \node [-] at ( $ (#3) ! .5 ! (#4) $ ) 
+                   [ below~left ]  { \istownerstyle{#5} } ; }
+      {br} { \node [-] at ( $ (#3) ! .5 ! (#4) $ ) 
+                   [ below~right ] { \istownerstyle{#5} } ; }
+      {l}  { \node [-] at ( $ (#3) ! .5 ! (#4) $ ) 
+                   [ left ]        { \istownerstyle{#5} } ; }
+      {r}  { \node [-] at ( $ (#3) ! .5 ! (#4) $ ) 
+                   [ right ]       { \istownerstyle{#5} } ; }
+      {a}  { \node [-] at ( $ (#3) ! .5 ! (#4) $ ) 
+                   [ above ]       { \istownerstyle{#5} } ; }
+      {b}  { \node [-] at ( $ (#3) ! .5 ! (#4) $ ) 
+                   [ below ]       { \istownerstyle{#5} } ; }
     }
     {
-             \node at ( $ (#3) ! .5 ! (#4) $ ) [ above , #6 ]  { \istownerstyle{#5} } ;
+             \node [-] at ( $ (#3) ! .5 ! (#4) $ ) 
+                   [ above , #6 ]  { \istownerstyle{#5} } ;
     }
     \end{pgfonlayer}
 }
@@ -1206,10 +1259,10 @@
     \str_if_eq:nnTF { #3 } { #4 }
     {% singleton infoset with a circle
       \begin{pgfonlayer}{\xtinfosetlayer}
-      \draw (xtinfoA) node [ - , draw ,  circle , samples=500 , inner~sep = 0pt, 
+      \draw [ - ] (xtinfoA) node [ - , draw ,  circle , samples=500 , inner~sep = 0pt, 
             minimum~size = \xtinfosetheightvar , infoset~style , #2 ] {} ; % -var needed for scaling
       \end{pgfonlayer}
-      \draw [ draw = none ] (#3) node [ #6 ] { \istownerstyle{#5} } ;      
+      \draw [ draw = none , - ] (#3) node [ - , #6 ] { \istownerstyle{#5} } ;      
     }
     {% connecting two nodes
       \renewcommand*\xtinfosetheight {#7}
@@ -1225,8 +1278,8 @@
                  rounded~corners = .5*\xtinfosetheightvar , % var needed for scaling
                  minimum~width = \n1 + \xtinfosetheight , 
                  minimum~height = \xtinfosetheight , infoset~style , #2 ] { } ;
-        \draw [ draw = none ] (xtinfoA) to 
-              [ edge~node = { node [ #6 ] { \istownerstyle{#5} } } ] (xtinfoB) ; % (in group)
+        \draw [ draw = none , - ] (xtinfoA) to 
+              [ edge~node = { node [ - , #6 ] { \istownerstyle{#5} } } ] (xtinfoB) ; % (in group)
       \end{pgfonlayer}
     }
     \end{scope}
@@ -1546,7 +1599,7 @@
           plot [ smooth ] coordinates { (xtA) (xtC) (xtB) } ;
     % detoured abbreviations (\node at (xtC) [ above , #8 ] { \istownerstyle{#7} } ;)
     \xtCInfosetAbbreviations {#8}
-    \expandafter \node \xtcioptionstring { \istownerstyle{#7} };
+    \expandafter \node \xtcioptionstring [-] { \istownerstyle{#7} };
     \end{pgfonlayer}
 \end{scope}
 }
@@ -1604,11 +1657,13 @@
     \xtCITestCoordinates{#3}{#5}
     \ifxtCIsamecoordinates 
       \begin{pgfonlayer}{\xtinfosetlayer}
-      \draw (xtA) node [ draw , circle , samples = 500 , inner sep = 0pt , 
-                         minimum size=\xtinfosetheightvar , % var needed for scaling
-                         infoset style , #2] {} ; 
+      \draw [ - ] (xtA) 
+            node [ - , draw , circle , samples = 500 , inner sep = 0pt , 
+                   minimum size=\xtinfosetheightvar , % var needed for scaling
+                   infoset style , #2 
+                 ] { } ; 
       \end{pgfonlayer}
-      \node at (#3) [ #8 ] { \istownerstyle{#7} } ;
+      \node at (#3) [ - , #8 ] { \istownerstyle{#7} } ;
     \else
       \edef\xtciplotfactor{#6}
       \def\xtcitension{1}
@@ -1629,25 +1684,31 @@
       \coordinate (xtcimid-var) at ($(xtA)!\xtcimidvarfactor!(xtB)$) ;
       \coordinate (xtC) at ($(xtciroot)!\xtciplotfactor!(xtcimid-var)$) ;
   
-      \path (xtciroot) -- (xtA) -- ( [turn] \xtciangA+\xtcibegang:\xradius) coordinate (xtAA1) ; 
-      \path (xtciroot) -- (xtB) -- ( [turn] \xtciangB+\xtciendang:\xradius) coordinate (xtBB1) ; 
+      \path (xtciroot) -- (xtA) -- 
+            ( [turn] \xtciangA+\xtcibegang:\xradius) coordinate (xtAA1) ; 
+      \path (xtciroot) -- (xtB) -- 
+            ( [turn] \xtciangB+\xtciendang:\xradius) coordinate (xtBB1) ; 
   
       \coordinate (xtAA2) at ($(xtAA1)!2!(xtA)$) ;
       \coordinate (xtBB2) at ($(xtBB1)!2!(xtB)$) ;
   
-      \draw [draw=none] (xtciroot) -- (xtC) -- ([turn]0:\xradius) coordinate (xtCC1) ;
-      \draw [draw=none] (xtciroot) -- (xtC) -- ([turn]180:\xradius) coordinate (xtCC2) ;
+      \draw [ draw=none , - ] (xtciroot) -- (xtC) -- ([turn]0:\xradius) coordinate (xtCC1) ;
+      \draw [ draw=none , - ] (xtciroot) -- (xtC) -- ([turn]180:\xradius) coordinate (xtCC2) ;
       
       \coordinate (XpointA) at ($(xtA)!\xradius!-\xtCIangNew:(xtAA1)$) ;
       \coordinate (XpointB) at ($(xtB)!\xradius! \xtCIangNew:(xtBB1)$) ;
   
       \begin{pgfonlayer}{\xtinfosetlayer}
       \draw [ - , samples = 500 , tension = \xtcitension , infoset style , #2 ]
-            plot [smooth] coordinates {(xtAA1)(xtCC1)(xtBB1)} --
-            plot [smooth,tension=1.75] coordinates {(xtBB1)(XpointB)(xtBB2)} --
-            plot [smooth] coordinates {(xtBB2)(xtCC2)(xtAA2)} --
-            plot [smooth,tension=1.75] coordinates {(xtAA2)(XpointA)(xtAA1)} -- cycle ;
-      \node at (xtC) [ #8 ] { \istownerstyle{#7} } ;
+            plot [smooth] 
+                 coordinates {(xtAA1)(xtCC1)(xtBB1)} --
+            plot [smooth,tension=1.75] 
+                 coordinates {(xtBB1)(XpointB)(xtBB2)} --
+            plot [smooth] 
+                 coordinates {(xtBB2)(xtCC2)(xtAA2)} --
+            plot [smooth,tension=1.75] 
+                 coordinates {(xtAA2)(XpointA)(xtAA1)} -- cycle ;
+      \node at (xtC) [ - , #8 ] { \istownerstyle{#7} } ;
       \end{pgfonlayer}
     \fi
     \end{scope}
@@ -1703,10 +1764,12 @@
     % X circles
     \ifxtXcircles
       \ifxtXcircleX
-        \node at (xtA) [-,circle,draw=blue,opacity=.5,minimum size=\tosstoxtXcircles ] {} ;
+        \node at (xtA) [ - , circle , draw=blue , opacity=.5 , 
+                         minimum size=\tosstoxtXcircles ] {} ;
       \fi
       \ifxtXcircleY
-        \node at (xtB) [-,circle,draw=red,opacity=.5,minimum size=\tosstoxtXcircles ] {} ;
+        \node at (xtB) [ - , circle , draw=red , opacity=.5 , 
+                         minimum size=\tosstoxtXcircles ] {} ;
       \fi
     \fi
     %++++++++++++++++++++++++++++++++++++
@@ -1843,24 +1906,32 @@
     \coordinate (cimid) at ($(ciA)!.5!(ciB)$) ;
     \coordinate (ciC) at ($(ciroot)!\ciplotfactorVal!(cimid)$) ;
 
-    \path (ciroot) -- (ciA) -- ( [turn] \ciangA-\ciXadj:\ciradius) coordinate (ciAA1) ;
-    \path (ciroot) -- (ciB) -- ( [turn] \ciangB+\ciXadj:\ciradius) coordinate (ciBB1) ;
+    \path (ciroot) -- (ciA) -- 
+          ( [turn] \ciangA-\ciXadj:\ciradius) coordinate (ciAA1) ;
+    \path (ciroot) -- (ciB) -- 
+          ( [turn] \ciangB+\ciXadj:\ciradius) coordinate (ciBB1) ;
 
     \coordinate (ciAA2) at ($(ciAA1)!2!(ciA)$) ;
     \coordinate (ciBB2) at ($(ciBB1)!2!(ciB)$) ;
 
-    \draw [draw=none] (ciroot) -- (ciC) -- ([turn]0:\ciradius) coordinate (ciCC1) ;
-    \draw [draw=none] (ciroot) -- (ciC) -- ([turn]180:\ciradius) coordinate (ciCC2) ;
+    \draw [ draw=none , - ] 
+          (ciroot) -- (ciC) -- ([turn]0:\ciradius) coordinate (ciCC1) ;
+    \draw [ draw=none , - ] 
+          (ciroot) -- (ciC) -- ([turn]180:\ciradius) coordinate (ciCC2) ;
     
     \coordinate (ciXpointA) at ($(ciA)!\ciradius! \ciangNew:(ciAA1)$) ;
     \coordinate (ciXpointB) at ($(ciB)!\ciradius!-\ciangNew:(ciBB1)$) ;
 
     \begin{pgfonlayer}{\xtinfosetlayer}
     \draw [ - , samples=500 , tension = \citension , infoset style , #1 ]
-          plot [smooth] coordinates {(ciAA1)(ciCC1)(ciBB1)} --
-          plot [smooth,tension=1.75] coordinates {(ciBB1)(ciXpointB)(ciBB2)} --
-          plot [smooth] coordinates {(ciBB2)(ciCC2)(ciAA2)} --
-          plot [smooth,tension=1.75] coordinates {(ciAA2)(ciXpointA)(ciAA1)} -- cycle ;
+          plot [smooth] 
+               coordinates {(ciAA1)(ciCC1)(ciBB1)} --
+          plot [smooth,tension=1.75] 
+               coordinates {(ciBB1)(ciXpointB)(ciBB2)} --
+          plot [smooth] 
+               coordinates {(ciBB2)(ciCC2)(ciAA2)} --
+          plot [smooth,tension=1.75] 
+               coordinates {(ciAA2)(ciXpointA)(ciAA1)} -- cycle ;
     \end{pgfonlayer}
     \end{scope}
     %++++++++++++++++++++++++++++++++++++
@@ -1912,10 +1983,12 @@
     % X circles
     \ifxtXcircles
       \ifxtXcircleX
-        \node at (ciA) [-,circle,draw=blue,opacity=.5,minimum size=\tosstocntmXcircles ] {} ;
+        \node at (ciA) [ - , circle , draw=blue , opacity=.5,
+                         minimum size=\tosstocntmXcircles ] {} ;
       \fi
       \ifxtXcircleY
-        \node at (ciB) [-,circle,draw=red,opacity=.5,minimum size=\tosstocntmXcircles ] {} ;
+        \node at (ciB) [ - , circle , draw=red , opacity=.5 , 
+                         minimum size=\tosstocntmXcircles ] {} ;
       \fi
     \fi
     %++++++++++++++++++++++++++++++++++++
@@ -2010,7 +2083,10 @@
 % USE this BEFORE \istrootcntm
 % * [ line opt ] { LEFT AL } [ LEFT pos ] { RIGHT AL } [ RIGHT pos ]
 \NewDocumentCommand \cntmistb{ s O{} +G{} O{} +G{} O{} }
-{    
+{
+    % to resolve the nullfont problem (ndh)
+    \tl_set_eq:NN \l_nullfont_tl \cntm@show@endpoint
+
     \renewcommand*\cntmbranchopt { - , draw=none, #2 }
     \renewcommand*\cntmLeftAL    {#3}
     \renewcommand*\cntmRightAL   {#5}
@@ -2062,8 +2138,8 @@
     { % disobey \xtShowEndPoints* -- force to print solid node
       \renewcommand*\cntm@show@endpoint { node [ at~end , solid~node ] {} }
     }
-    { % obey \xtShowEndPoints* and toss the value to \istrootntm(A) via \cntmOUTERistb
-      \cntm@show@endpoint
+    { % obey \xtShowEndPoints* and toss the value to \istrootcntm(A) via \cntmOUTERistb
+	    \tl_set:NV \cntm@show@endpoint \l_nullfont_tl  % (ndh)
     }
 }
 
@@ -2076,6 +2152,9 @@
 % * [ line opt ] { LEFT AL } [ LEFT pos ] { RIGHT AL } [ RIGHT pos ]
 \NewDocumentCommand \cntmAistb { s O{-} +G{} O{} +G{} O{} }
 {    
+    % to resolve the nullfont problem (ndh)
+    \tl_set_eq:NN \l_nullfont_tl \cntm@show@endpoint
+
     \renewcommand*\cntmAbranchdrawopt {#2}
     \renewcommand*\cntmALeftAL        {#3}
     \renewcommand*\cntmARightAL       {#5}
@@ -2127,8 +2206,8 @@
     { % disobey \xtShowEndPoints* -- force to print solid node
       \renewcommand*\cntm@show@endpoint { node [ at~end , solid~node ] {} }
     }
-    { % obey \xtShowEndPoints* and toss the value to \istrootntm(A) via \cntmOUTERistb
-      \cntm@show@endpoint
+    { % obey \xtShowEndPoints* and toss the value to \istrootcntm(A) via \cntmOUTERistb
+	    \tl_set:NV \cntm@show@endpoint \l_nullfont_tl  % (ndh)
     }
 }
 
@@ -2426,7 +2505,7 @@
     % sqrt(1/3) is to make the cntmdist ratio 1/3 as standard
     \pgfmathsetmacro\cntmAplotfactorVal
       { 1 + (\cntmAplotfactor-1) * sqrt(1/3) / sqrt(\cntmdistratio) }
-    \pgfextra{\xdef\cntmAplotfactorAdj{\cntmAplotfactorVal}} % used also in \istbA(t)
+    \xdef\cntmAplotfactorAdj{\cntmAplotfactorVal} % used also in \istbA(t)
     \coordinate (cntmA-beg) at ( $ (cntm) ! \cntmApos ! (cntm-1) $ ) ; % begin point
     \coordinate (cntmA-end) at ( $ (cntm) ! \cntmApos ! (cntm-2) $ ) ; % end point
     \coordinate (cntmA-mid-base) at ( $ (cntm-1) ! .5 ! (cntm-2)$) ; % base midpoint
@@ -2641,7 +2720,7 @@
     % sqrt(1/3) is to make the cntmdist ratio 1/3 as standard
     \pgfmathsetmacro\cntmAplotfactorVal
       { 1 + (\cntmAplotfactor-1) * sqrt(1/3) / sqrt(\cntmdistratio) }
-    \pgfextra{\xdef\cntmAplotfactorAdj{\cntmAplotfactorVal}} % used also in \istbA(t)
+    \xdef\cntmAplotfactorAdj{\cntmAplotfactorVal} % used also in \istbA(t)
     \coordinate (cntmA-beg) at ( $ (cntm) ! \cntmApos ! (cntm-1) $ ) ; % begin point
     \coordinate (cntmA-end) at ( $ (cntm) ! \cntmApos ! (cntm-2) $ ) ; % end point
     \coordinate (cntmA-mid-base) at ( $ (cntm-1) ! .5 ! (cntm-2)$) ; % base midpoint
@@ -3225,7 +3304,7 @@
 
 
 % \setxtarrowtips
-% to toss values to arrow tip styls
+% to toss values to arrow tip styles
 \NewDocumentCommand \setxtarrowtips
 {
     D<>{ \xt@default@arrow@pos } 
@@ -3238,7 +3317,7 @@
     \renewcommand*\xtarrowopt     { - , thin , solid , shorten~> = 0 , #3}
 }
 % initial set for defaults
-\setxtarrowtips
+\AtBeginDocument{\setxtarrowtips}
 
 % variable style [->]: 
 % accepts an option value changed by \xtarrowopt (this is better)

@@ -1,8 +1,8 @@
 # The `ragged2e' package
 
-Copyright (C) Martin Schröder, 1996–2019, Marei Peischl (peiTeX)  <marei@peitex.de>, 2021
+Copyright (C) Martin Schröder, 1996–2019, Marei Peischl (peiTeX)  <marei@peitex.de>, 2021–2022
 
- ragged2e 2021/02/05 v3.0
+ ragged2e 2022/11/13 v3.2
 
 ***************************************************************************
 
@@ -38,5 +38,7 @@ or want to report a suggestion for improvement, please visit
 
 ## Version History
    * 3.0 Move from everysel package to lthooks
+   * 3.1 Robustify the user macros (Thanks for Markus Kohm for the hint)
+   * 3.2 Fix bug adding a parskip when using `\newline` within the raggged2e alignments (Thanks to Maurice Hansen for reporting)
 
 

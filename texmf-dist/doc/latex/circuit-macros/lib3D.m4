@@ -3,7 +3,7 @@ lib3D.m4                        Macros for rotation, projection, and other
                                 operations on argument triples representing
                                 3D vectors or colors.
 
-* Circuit_macros Version 9.6, copyright (c) 2021 J. D. Aplevich under      *
+* Circuit_macros Version 10.1, copyright (c) 2022 J. D. Aplevich under     *
 * the LaTeX Project Public Licence in file Licence.txt. The files of       *
 * this distribution may be redistributed or modified provided that this    *
 * copyright notice is included and provided that modifications are clearly *

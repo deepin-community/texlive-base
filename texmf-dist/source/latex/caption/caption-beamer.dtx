@@ -2,7 +2,7 @@
 % 
 % This is file `caption-beamer.dtx'.
 % 
-% Copyright (C) 2007-2020 Axel Sommerfeldt (axel.sommerfeldt@f-m.fm)
+% Copyright (C) 2007-2022 Axel Sommerfeldt (axel.sommerfeldt@f-m.fm)
 % 
 % --------------------------------------------------------------------------
 % 
@@ -27,12 +27,11 @@
 %   caption.sty, caption-light.sty, caption2.sty, caption3.sty,
 %   caption-ams-smf.sto, caption-beamer.sto, caption-elsarticle.sto,
 %   caption-koma.sto, caption-memoir.sto, caption-ntg.sto,
-%   caption-thesis.sto, bicaption.sty, ltcaption.sty, subcaption.sty,
-% and the user manuals
-%   caption-deu.tex, caption-eng.tex, caption-rus.tex.
+%   caption-thesis.sto, bicaption.sty, ltcaption.sty, subcaption.sty.
 % 
 % \fi
-% \CheckSum{104}
+%
+% \CheckSum{113}
 %
 % \iffalse
 %<*driver>
@@ -122,7 +121,7 @@
 % \DoNotIndex{\@ehc,\@ehd,\@empty,\@esphack,\@expandtwoargs}
 % \DoNotIndex{\@for,\@firstofone,\@firstoftwo}
 % \DoNotIndex{\@gobble,\@gobblefour,\@gobbletwo,\@hangfrom}
-% \DoNotIndex{\if@minipage\@ifnextchar,\@ifpackagelater,\@ifpackageloaded}
+% \DoNotIndex{\if@minipage,\@ifnextchar,\@ifpackagelater,\@ifpackageloaded}
 % \DoNotIndex{\@ifstar,\@ifundefined,\@latex@error,\@minipagefalse,\@minipagetrue}
 % \DoNotIndex{\@namedef,\@nameuse}
 % \DoNotIndex{\@onlypreamble,\@parboxrestore,\@plus,\@ptionlist}
@@ -139,6 +138,7 @@
 % \DoNotIndex{\hangindent,\hbox,\hfil,\hsize,\hskip,\hspace,\hss}
 % \DoNotIndex{\ifcase,\ifdim,\ifnum,\ifodd,\ifvoid,\ifvmode}
 % \DoNotIndex{\ifx,\ignorespaces,\itshape}
+% \DoNotIndex{\kernel@ifnextchar}
 % \DoNotIndex{\Large,\large,\leavevmode,\leftmargini,\leftskip,\let,\linewidth}
 % \DoNotIndex{\llap,\long,\m@ne,\margin,\mdseries,\message}
 % \DoNotIndex{\newcommand,\newdimen,\newlength,\newline,\newif,\newsavebox}
@@ -188,7 +188,7 @@
 %
 %    \begin{macrocode}
 \NeedsTeXFormat{LaTeX2e}[1994/12/01]
-\ProvidesFile{caption-beamer.sto}[2020/08/22 v2.0 Adaption of the caption package to the beamer document classes (AR)]
+\ProvidesFile{caption-beamer.sto}[2022/01/06 v2.0c Adaption of the caption package to the beamer document classes (AR)]
 %    \end{macrocode}
 %
 % \section{Helper macros}
@@ -219,7 +219,7 @@
     \@firstoftwo} % \@firstoftwo  -> singlelinecheck=on
 %    \end{macrocode}
 %
-% \begin{macro}{\caption@prepareslc}
+% \begin{macro}{\footnote}
 % \changes{v1.12b}{2020/07/20}{Special adaption to \class{beamer} added}
 % The patch of \cs{footnote} provided by the \package{caption3} package assumes
 % that the optional arguments of \cs{footnote} and \cs{footnotemark} match.
@@ -230,7 +230,9 @@
 % \cs{beamer@footnotetext}. (Unfortunately \cs{footnote} is defined too monolithic
 % in \class{beamer} to offer a less dirty patch.)
 %    \begin{macrocode}
-\g@addto@macro\caption@prepareslc{%
+\providecommand*\AtCaptionSingleLineCheck{\g@addto@macro\caption@prepareslc} % for caption v3.5
+\let\caption@footnote@ORI\footnote
+\AtCaptionSingleLineCheck{%
   \def\footnote{%
     \begingroup
     \let\stepcounter\caption@l@stepcounter
@@ -334,12 +336,13 @@
 % \section{Adaption of figure and table environment}
 %
 %    \begin{macrocode}
-\AtCaptionPackage{%
+\AfterCaptionPackage{%
 %    \end{macrocode}
 %
 % \begin{macro}{\figure}
 % \changes{v1.1f}{2007/12/17}{This re-definition for \class{beamer} document class added}
 % \changes{v1.8d}{2019/09/01}{This re-definition for \class{beamer} document class revised}
+%  We re-define |figure| so our type-specific options will be used etc.
 %    \begin{macrocode}
   \expandafter\let\expandafter\caption@beamer@figure
     \csname\string\figure\endcsname
@@ -353,13 +356,23 @@
 % \changes{v1.1f}{2007/12/17}{This re-definition for \class{beamer} document class added}
 % \changes{v1.8d}{2019/09/01}{This re-definition for \class{beamer} document class revised}
 % \changes{v1.8e}{2019/10/18}{Bug fixed which was introduced in previous revision}
-%  We redefine |figure| \& |table| so our type-specific options will be used etc.
+%  We re-define |table| as well so our type-specific options will be used etc.
 %    \begin{macrocode}
   \expandafter\let\expandafter\caption@beamer@table
     \csname\string\table\endcsname
   \@namedef{\string\table}[#1]{%
     \caption@beamer@table[#1]% use original beamer code first
     \caption@settype{table}} % set "type=table" afterwards
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\caption@nobreak}
+% \changes{v2.0c}{2022/01/06}{This re-definition for \class{beamer} document class added}
+%  We re-define |\caption@nobreak| to activate the usage of |\nobreak| inside |\caption|.
+%  |\caption@nobreak| is only available since \version{3.6} of the \package{caption}
+%  package, for this reason we use |\def| instead of |\renewcommand|.
+%    \begin{macrocode}
+  \def\caption@nobreak{\nobreak}
 %    \end{macrocode}
 % \end{macro}
 %

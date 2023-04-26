@@ -1,3 +1,8 @@
+--
+-- polyglossia-tibt.lua
+-- part of polyglossia v1.59 -- 2022/11/29
+--
+
 require('polyglossia') -- just in case...
 
 local add_to_callback = luatexbase.add_to_callback

@@ -6,7 +6,7 @@
 --
 -- lua-ul.dtx  (with options: `luacode')
 -- 
--- Copyright (C) 2020-2021 by Marcel Krueger
+-- Copyright (C) 2020-2022 by Marcel Krueger
 --
 -- This file may be distributed and/or modified under the
 -- conditions of the LaTeX Project Public License, either

@@ -8,8 +8,8 @@
 \else \startmetadata
     author   {Esger Renkema}
     title    {minim-mp}
-    date     {2021-06-01}
-    version  {2021/1.0}
+    date     {2022-03-03}
+    version  {2022/1.1}
     keywords {LuaTeX; Plain TeX; MetaPost; mplib}
     stopmetadata
 \maketitle \fi
@@ -35,7 +35,11 @@ error occurs, the logging will also be shown on the terminal.
 This package can also be used as a stand-alone metapost compiler. Saying
 \stopformulatagging$$\hbox{⟦luatex  --fmt=minim-mp  your_file.mp⟧}$$\startformulatagging
 will create a pdf file of all images in ⟦your_file.mp⟧, in order, with page 
-sizes adjusted to image dimensions.
+sizes adjusted to image dimensions. You might need generate the format first, 
+this is done with
+\stopformulatagging$$\hbox{⟦luatex  --ini  minim-mp.ini⟧}$$\startformulatagging
+Use minim-lamp instead of minim-mp for an experimental latex-based version 
+of the minim-mp format.
 
 \section Metapost instances %1
 
@@ -95,10 +99,15 @@ Arbitrary tex statements may be included in ⟦*verbatimtex ... etex⟧, which m
 occur anywhere. These ⟦btex⟧ and ⟦verbatimtex⟧ statements are executed in the 
 order they are given.
 
+Previously-defined box resources can be included with ⟦*boxresource(nr)⟧. The 
+result will be an image object with the proper dimensions. This image can be 
+transformed in any way you like, but you cannot inspect the contents of the 
+resource within metapost.
+
 You can also use metapost’s ⟦*infont⟧ operator, which restricts the text 
 to-be-typeset to a single font, but returns an ⟦picture⟧ containing a ⟦picture⟧ 
 for each character. The right-hand argument of ⟦infont⟧ should either be 
-a (numerical) font id or the (cs)name of a font.
+a (numerical) font~id or the (cs)name of a font (without backslash).
 
 One possible use of the ⟦infont⟧ operator is setting text along curves:
 
@@ -128,6 +137,52 @@ beginfig(1)
                shifted (-r*sind(a)-x, r*cosd(a));
     endfor
 endfig;}\starttagging \stopelement{Figure}
+
+For the greatest amount of control, however, you will need the ⟦*glyph g of f⟧ 
+operator, which returns the contours that make up a glyph. It is a bit more 
+versatile than its traditional metapost counterpart: ⟦g⟧ may also be the name 
+of the glyph instead of its index, while ⟦f⟧ can be a font~id or font name (as 
+with ⟦infont⟧).
+
+A variant of ⟦glyph of⟧ is the ⟦*contours t of f⟧ macro: it first typesets the 
+string ⟦t⟧ in the same way as ⟦infont⟧ does (so that kerning and font shaping 
+are applied), but returns a (comma-separated) list of contours, such as may be 
+used in a ⟦for⟧ loop. Due to rounding errors, the glyphs will not match exactly.
+
+Be aware that the contours returned by these operators may be disjoint: 
+a letter ⟦o⟧, for example, will consists of two. This means you cannot recreate 
+the characters by just filling each contour: this would turn the ⟦o⟧ into 
+a filled-in circle. Instead, you must use ⟦multifill⟧ on the entire output of 
+⟦glyph of⟧ or ⟦contours of⟧ (see the next section).
+
+
+\section Partial paths and the even-odd rule %1
+
+You can fill or draw two or more disjoint paths in one go by using ⟦*nofill⟧ as 
+drawing operator for all paths but the last. This may make it easier to cut 
+something out of a shape, since you do not have to worry about stitching the 
+paths together.
+
+While metapost fills paths according to the winding number, the pdf format also 
+supports filling according to the even-odd rule. This has been made possible 
+with the ⟦*eofill⟧ and ⟦*eofilldraw⟧ drawing statements, which can of course 
+also be used as the final statement after a series of nofills.
+
+The macros ⟦*multi(draw|fill|filldraw|eofill|eofilldraw)⟧ take a list of paths 
+between parentheses and can be followed by the usual drawing options.
+For example,
+⟦multidraw (contours "example" of "tenbf") withpen currentpen scaled 1/10;⟧
+will give the word%
+\markelement{Span}{\setactualtext{example }
+\directmetapost{beginfig(1) multidraw (contours "example" of "tenbf")
+withpen currentpen scaled 1/10; baseline 0; endfig;}}
+in a thin outline.
+
+Finally, two handy clipping macros have been added:
+⟦*clipout⟧ and ⟦*clipto⟧, which both receive a list of paths as a ‘text’ 
+parameter and either clip their ensemble out of the picture, or the picture to 
+the ensemble.
+
 
 \section Running lua from within metapost %1
 
@@ -194,7 +249,7 @@ beginfig(1)
     fill fullcircle scaled 3cm withpattern(a) withcolor 3/4red;
     draw fullcircle scaled 3cm withpen pencircle scaled 1;
 endfig;}\stopelement{Figure}\vss}\hskip10pt\strut
-
+\par\nobreak
 ⟦% define the pattern
 picture letter; letter = maketext("a");
 beginpattern(a)
@@ -209,24 +264,15 @@ endfig;⟧
 
 A small pattern library is available in the ⟦*minim-hatching.mp⟧ file; see the 
 accompanying documentation sheet for an overview of patterns.
-Tiling patterns cannot be used together with tikz/pgf; see below under 
-‘Resource management’.
 
 
 \section Other metapost extensions %1
-
-There is currently no support for the ⟦*glyph of⟧ operator.
 
 You can set the baseline of an image with ⟦*baseline(p)⟧. There, ⟦p⟧ must 
 either be a point through which the baseline should pass, or a number (where an 
 x~coordinate of zero will be added). Transformations will be taken into 
 account, hence the specification of two coordinates. The last given baseline 
 will be used.
-
-Previously-defined box resources can be included with ⟦*boxresource(nr)⟧. The 
-result will be an image object with the proper dimensions. This image can be 
-transformed in any way you like, but you cannot inspect the contents of the 
-resource within metapost.
 
 You can write to tex’s log directly with ⟦*texmessage "hello"⟧.
 
@@ -235,6 +281,15 @@ can add comments to the pdf file with ⟦*special "pdfcomment: comments"⟧.
 Say ⟦*special "latelua: lua code"⟧ to insert a ⟦late_lua⟧ whatsit.
 All three specials can also be given as pre- or postscripts to another object.
 In that case, they will be added before or after the object they are attached to.
+Do note that all ⟦special⟧ statements will appear at the beginning of the 
+image; use pre- and postscripts to drawing statements if the order matters.
+
+Minim-mp also provides a few elementary macros and constants that are 
+conspicuously absent from plain.mp; I hope their addition is uncontroversial.
+The constants are ⟦*pi⟧ (355/113), ⟦*fullsquare⟧, ⟦*unitcircle⟧ and the 
+cmyk-colours ⟦*cyan⟧, ⟦*magenta⟧, ⟦*yellow⟧ and ⟦*key⟧. The macros are 
+⟦*clockwise⟧, ⟦*xshifted⟧, ⟦*yshifted⟧, ⟦*hflip⟧ and ⟦*vflip⟧, where the flips 
+are defined in such a way that ⟦p & hflip p⟧ gives the expected result.
 
 
 \section Lua interface %1
@@ -260,29 +315,6 @@ Each metapost instance is a table containing the following entries:
 ⟦status⟧&The last exit status (will never decrease).\cr
 ⟦catcodes⟧&Number of the catcode table used with ⟦btex ... etex⟧.\cr
 ⟦env⟧&The lua environment for ⟦runscript⟧.\cr}
-
-
-\section PDF resource management %1
-
-This package can add ⟦/Pattern⟧ and ⟦/ColorSpace⟧ entries to all page and xform 
-resource dictionaries.
-Both refer to a single, global dictionary shared by all pages.
-Support for other keys may be added in the future.
-
-At the moment, this implementation only serves tiling pattern support;
-the mechanism will be enabled automatically at the first use of a tiling 
-pattern (merely defining a pattern will not enable it) and is of little use for 
-anything else.
-The relevant tables, should you want to expand on it yourself, are
-⟦M.colourspaces⟧ and ⟦M.patterns⟧; see the source file for additional 
-instructions.
-
-Since pdf resource management must be done exactly once, this package may clash 
-with other graphics packages doing the same.
-In particular, minim’s resource management will cause double (and thus invalid) 
-entries in pages’ attribute dictionaries when used together with \red{tikz} or 
-\red{pgf}.
-They can be used together, however, if you do not use minim’s tiling patterns.
 
 
 \section Debugging %1
@@ -321,9 +353,9 @@ processed; this information is still available inside the ⟦*finish_mpfigure⟧
 callback that is executed just before the processed image is surrounded by 
 properly-dimensioned boxes.
 
-The ⟦*M.init_files⟧ table contains the list of metapost files that new instances 
-are initialised with.
-The actual format will be loaded after the files in this table.
+The ⟦*M.init_code⟧ table contains the code used for initialing new instances. 
+In it, the string ⟦INIT⟧ will be replaced with the value of the ⟦format⟧ option 
+(normally ⟦plain.mp⟧).
 
 \endmanual %
 

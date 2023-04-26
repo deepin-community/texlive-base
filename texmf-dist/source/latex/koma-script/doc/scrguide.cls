@@ -1,6 +1,6 @@
 % ======================================================================
 % scrguide.cls
-% Copyright (c) Markus Kohm, 2005-2021
+% Copyright (c) Markus Kohm, 2005-2022
 %
 % This file is part of the LaTeX2e KOMA-Script bundle.
 %
@@ -15,10 +15,10 @@
 %
 % The Current Maintainer and author of this work is Markus Kohm.
 %
-% This work consists of all files listed in manifest.txt.
+% This work consists of all files listed in MANIFEST.md.
 % ----------------------------------------------------------------------
 % scrguide.cls
-% Copyright (c) Markus Kohm, 2005-2021
+% Copyright (c) Markus Kohm, 2005-2022
 %
 % Dieses Werk darf nach den Bedingungen der LaTeX Project Public Lizenz,
 % Version 1.3c, verteilt und/oder veraendert werden.
@@ -32,19 +32,52 @@
 %
 % Der Aktuelle Verwalter und Autor dieses Werkes ist Markus Kohm.
 % 
-% Dieses Werk besteht aus den in manifest.txt aufgefuehrten Dateien.
+% Dieses Werk besteht aus den in MANIFEST.md aufgefuehrten Dateien.
 % ======================================================================
 %
 % \section{Identification}
 %
 %    \begin{macrocode}
-\ProvidesClass{scrguide}[2021/02/11 v1.25 internal KOMA-Script guide class]
+\ProvidesClass{scrguide}[2022/07/17 v1.28 internal KOMA-Script guide class]
 %    \end{macrocode}
 %
 %
 % \section{Options on my own}
 %
 % This class also has options.
+%
+% The class knows two language options (and some aliases)
+% \begin{option}{english}
+%    \begin{macrocode}
+\DeclareOption{english}{\def\languagename{english}}
+\DeclareOption{UKenglish}{%
+  \ClassWarning{scrguide}{Language `english' will be used instead of
+    `\CurrentOption'}%
+  \def\languagename{english}%
+}
+\DeclareOption{USenglish}{%
+  \ClassWarning{scrguide}{Language `english' will be used instead of
+    `\CurrentOption'}%
+  \def\languagename{english}%
+}
+\DeclareOption{british}{%
+  \ClassWarning{scrguide}{Language `english' will be used instead of
+    `\CurrentOption'}%
+  \def\languagename{english}%
+}
+\DeclareOption{american}{%
+  \ClassWarning{scrguide}{Language `english' will be used instead of
+    `\CurrentOption'}%
+  \def\languagename{english}%
+}
+\DeclareOption{ngerman}{\def\languagename{ngerman}}
+\DeclareOption{german}{%
+  \ClassWarning{scrguide}{Language `ngerman will be used instead of
+    `\CurrentOption'}%
+  \def\languagename{ngerman}%
+}
+%    \end{macrocode}
+% \end{option}
 %
 % \begin{option}{pagereftolabel}
 %   |\autopageref| should reference the label not the page.
@@ -122,12 +155,25 @@
 \RequirePackage[TS1,T1]{fontenc}
 \newcommand*{\strngerman}{ngerman}
 \newcommand*{\strenglish}{english}
-\edef\languages{\ifx\languagename\strngerman main=\fi ngerman,%
-  \ifx\languagename\strenglish main=\fi english}
+\edef\reserved@a{\languagename}%
+\@onelevel@sanitize\reserved@a
+\@onelevel@sanitize\strngerman
+\@onelevel@sanitize\strenglish
+\edef\languages{\ifx\reserved@a\strngerman main=\fi ngerman,%
+  \ifx\reserved@a\strenglish main=\fi english}
 \edef\uselanguage{\languagename}
 \expandafter\RequirePackage\expandafter[\languages]{babel}%
 \AtBeginDocument{%
-  \typeout{TRACE: Current language is `\languagename`.}}%
+  \edef\reserved@a{\languagename}%
+  \@onelevel@sanitize\reserved@a
+  \typeout{TRACE: Current language is `\reserved@a`.}%
+  \ifx\reserved@a\strngerman
+    \newcommand*{\shortlang}{de}%
+  \else
+    \newcommand*{\shortlang}{en}%
+  \fi
+}
+\newcommand*{\linclude}[1]{\include{#1-\shortlang}}
 %    \end{macrocode}
 % In future we should use biblatex instead of babelbib, but currently some
 % things are still missing:
@@ -142,7 +188,7 @@
 \newif\ifusebabelbib\usebabelbibtrue % Should be deactivated soon
 \ifusebabelbib
   \RequirePackage[fixlanguage]{babelbib}
-  \newcommand*{\printbibliography}[1][]{\bibliography{\jobname}}
+  \newcommand*{\printbibliography}[1][]{\bibliography{scrguide}}
 \else
   \RequirePackage[backend=bibtex,style=alphabetic,block=ragged]{biblatex}
   \DeclareFieldFormat{url}{\url{#1}}
@@ -181,6 +227,8 @@
 \InputIfFileExists{scrnonfree.tex}{}{%
   \RequirePackage[svgnames]{xcolor}%
   \RequirePackage{tikz}%
+  \usetikzlibrary{decorations}%
+  \usetikzlibrary{arrows}%
   \usetikzlibrary{calc}%
   \RequirePackage[\uselanguage]{hyperref}%
   \RequirePackage[open,openlevel=0]{bookmark}% improved pdf bookmarks
@@ -238,7 +286,7 @@
   \renewcommand*{\chapterpagestyle}{scrheadings}%
   \setlength{\@tempdimc}{\oddsidemargin}%
   \addtolength{\@tempdimc}{1in}%
-  \setheadwidth[-\@tempdimc]{paper}%
+  \KOMAoptions{headwidth=paper:-\@tempdimc}%
   % Entweder:
   \hypersetup{colorlinks,citecolor=Green,linkcolor=Crimson,urlcolor=Blue}% 
   % oder:
@@ -320,7 +368,7 @@
       \ThisCommonLabelBase
       \thiscommonfirsttrue
     }{\thiscommonfirstfalse}%
-    \input{common-\ThisCommonFile.tex}%
+    \input{common-\ThisCommonFile-\shortlang.tex}%
     \thiscommonfirstfalse
     \let\ThisCommonLabelBase\@empty
     \let\ThisCommonFile\@empty
@@ -333,9 +381,9 @@
 }
 \newcommand*{\InternalCommonFileUsageError}{%
   \GenericError{%
-    (common-\ThisCommonFile.tex)\@spaces
+    (common-\ThisCommonFile-\shortlang.tex)\@spaces
   }{%
-    Common File common-\ThisCommonFile.tex Error: Unprepared usage%
+    Common File common-\ThisCommonFile-\shortlang.tex Error: Unprepared usage%
   }{%
     You have to prepare the file for the label base \ThisCommonLabelBase.%
   }{}%
@@ -348,13 +396,13 @@
 % of the extensions to the language.
 %    \begin{macrocode}
 \AtBeginDocument{%
-  \InputIfFileExists{\jobname-\uselanguage.tex}{%
-    \ClassInfo{scrguide}{Loading language dependencies for \uselanguage}%
+  \InputIfFileExists{terms-\shortlang.tex}{%
+    \ClassInfo{scrguide}{Loading language dependencies for \languagename}%
   }{%
-    \ClassError{scrguide}{\uselanguage\space not supported}{%
-      You've tried to generate a guide for language `\uselanguage' but
+    \ClassError{scrguide}{\languagename\space not supported}{%
+      You've tried to generate a guide for language `\languagename' but
       language\MessageBreak
-      dependency file `\jobname-\uselanguage.tex' was not found.\MessageBreak
+      dependency file `terms-\shortlang.tex' was not found.\MessageBreak
       This may result in a lot of errors and warnings, if you'll continue}%
   }%
   \expandafter\addto\csname extras\uselanguage\endcsname
@@ -1693,11 +1741,11 @@
 % \begin{macro}{\printchangelog}
 %   We don't want to generate the change log only. We also have to print it.
 %    \begin{macrocode}
-\newcommand*{\printchangelog}{\@input@{\jobname.chn}}
+\newcommand*{\printchangelog}{\@input@{\jobname.gls}}
 %    \end{macrocode}
 % \end{macro}
 % \begin{environment}{thechangelog}
-%   And this will be used at the \texttt{chn} file. The change log index will
+%   And this will be used at the \texttt{gls} file. The change log index will
 %   always generate an entry to the table of contents.
 %    \begin{macrocode}
 \newenvironment{thechangelog}{%
@@ -2297,13 +2345,20 @@ KOMAScript \endcsname
 % \section{Logos}
 %
 % I don't want to use package \textsf{hologo} for only one logo:
+% \changes{v1.28}{2022/07/17}{\cs{LuaTeX} and \cs{LuaLaTeX} added}
 %    \begin{macrocode}
 \DeclareRobustCommand{\XeTeX}{%
-  X\kern-.125em\lower.5ex\hbox{\reflectbox{E}}\kern-.10em\TeX%
+  X\kern-.125em\lower.5ex\hbox{\reflectbox{E}}\kern-.10em\TeX
 }%
 \DeclareRobustCommand{\XeLaTeX}{%
-  X\kern-.125em\lower.5ex\hbox{\reflectbox{E}}\kern-.10em\LaTeX%
+  X\kern-.125em\lower.5ex\hbox{\reflectbox{E}}\kern-.10em\LaTeX
 }%
+\DeclareRobustCommand{\LuaTeX}{%
+  Lua\TeX
+}
+\DeclareRobustCommand{\LuaLaTeX}{%
+  Lua\LaTeX
+}
 %    \end{macrocode}
 %
 % \section{Appendix}
@@ -2339,6 +2394,7 @@ KOMAScript \endcsname
   \AtBeginDocument{%
     \setbibpreamble{\GuideBibPreamble\bigskip}%
     \bibliographystyle{babalpha-fl}%
+    \nocite{homepage}% added because of l3build
     \renewcommand*{\@openbib@code}{%
       \setlength{\parsep}{0pt}%
       \renewcommand*{\btxauthorcolon}[1]{:\par\nobreak}%
@@ -2941,5 +2997,7 @@ KOMAScript \endcsname
 %
 %%% Local Variables: 
 %%% mode: doctex
-%%% TeX-master: "test.tex"
+%%% coding: utf-8
+%%% ispell-local-dictionary: "en_US"
+%%% eval: (flyspell-mode 1)
 %%% End: 

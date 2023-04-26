@@ -1,0 +1,443 @@
+%% wheelchart.sty
+%% Copyright 2022 Matthias Floré
+%
+% This work may be distributed and/or modified under the
+% conditions of the LaTeX Project Public License, either version 1.3c
+% of this license or (at your option) any later version.
+% The latest version of this license is in
+%   http://www.latex-project.org/lppl.txt
+% and version 1.3c or later is part of all distributions of LaTeX
+% version 2005/12/01 or later.
+%
+% This work has the LPPL maintenance status `maintained'.
+% 
+% The Current Maintainer of this work is Matthias Floré.
+%
+% This work consists of the files wheelchart.pdf, wheelchart.sty,
+% wheelchart.tex and README.md.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{wheelchart}[2022/09/11 v1.0 Draw wheelcharts with TikZ]
+\RequirePackage{tikz}
+\usetikzlibrary{calc}
+\def\wheelchart@slicesstart{}
+\def\wheelchart@slicesend{}
+\newif\ifwheelchart@contour
+\newif\ifwheelchart@counterclockwise
+\newif\ifwheelchart@definnercontour
+\newif\ifwheelchart@draw
+\newif\ifwheelchart@linesextfixed
+\newif\ifwheelchart@middlefill
+\newif\ifwheelchart@pie
+\newif\ifwheelchart@slicesarcadaptangle
+\newif\ifwheelchart@wheellines
+\newcommand{\wheelchart@slicesarcdefmacros}[2]{
+\pgfmathsetmacro{\wheelchart@slicesarcA}{#1}
+\pgfmathsetmacro{\wheelchart@slicesarcB}{#2}
+\pgfmathsetmacro{\wheelchart@slicesarcradius}{(1-(\wheelchart@slicesarcB))*\n1*abs((1/(\wheelchart@slicesarcA))+(\wheelchart@slicesarcA))/2}
+\wheelchart@slicesarcadaptanglefalse
+\ifdim \wheelchart@slicesarcA pt<\z@
+\pgfmathsetmacro{\wheelchart@slicesarccoord}{max(\wheelchart@slicesarcB,0)}
+\wheelchart@slicesarcadaptangletrue
+\ifdim \wheelchart@slicesarcB pt<\z@
+\else
+\pgfmathsetmacro{\wheelchart@halflengthsliceinnerstartplussliceouterstart}{veclen(\x3/\pgf@xx,\y3/\pgf@yy)}
+\pgfmathsetmacro{\wheelchart@slicesarcradiusbound}{sqrt((\wheelchart@halflengthsliceinnerstartplussliceouterstart^2-((\wheelchart@gap)^2)+((\wheelchart@gap-\wheelchart@slicesarcA*(1-(\wheelchart@slicesarcB))*\n1-\wheelchart@slicesarcradius)^2))}
+\pgfmathsetmacro{\wheelchart@slicesarcradiusboundminusslicesarcradius}{\wheelchart@slicesarcradiusbound-\wheelchart@slicesarcradius}
+\pgfmathsetmacro{\wheelchart@slicesarcradiusboundplusslicesarcradius}{\wheelchart@slicesarcradiusbound+\wheelchart@slicesarcradius}
+\ifdim \wheelchart@slicesarcradiusboundminusslicesarcradius pt>\wheelchart@innerradius pt
+\ifdim \wheelchart@slicesarcradiusboundplusslicesarcradius pt<\wheelchart@outerradius pt
+\wheelchart@slicesarcadaptanglefalse
+\fi
+\fi
+\fi
+\else
+\pgfmathsetmacro{\wheelchart@slicesarccoord}{\wheelchart@slicesarcB}
+\fi
+\pgfmathsetmacro{\wheelchart@slicesarccoordtimesnone}{\wheelchart@slicesarccoord*\n1}
+\ifwheelchart@slicesarcadaptangle
+\pgfmathsetmacro{\wheelchart@slicesarcangle}{-acos((2*(\wheelchart@slicesarccoord-1))/((1-(\wheelchart@slicesarcB))*((1/(\wheelchart@slicesarcA))+(\wheelchart@slicesarcA))))}
+\else
+\pgfmathsetmacro{\wheelchart@slicesarcangle}{atan(((1/(\wheelchart@slicesarcA))-(\wheelchart@slicesarcA))/2)}
+\fi
+}
+\newcommand{\wheelchart@slicesarrowdefmacros}[2]{
+\pgfmathsetmacro{\wheelchart@slicesarrowA}{#1}
+\pgfmathsetmacro{\wheelchart@slicesarrowB}{#2}
+\pgfmathsetmacro{\wheelchart@slicesarrowlength}{\n1}
+\ifdim \wheelchart@slicesarrowA pt<\z@
+\pgfmathsetmacro{\wheelchart@slicesarrowcoord}{max(\wheelchart@slicesarrowB,0)}
+\else
+\pgfmathsetmacro{\wheelchart@slicesarrowcoord}{\wheelchart@slicesarrowB}
+\fi
+\pgfmathsetmacro{\wheelchart@slicesarrowtip}{(1-\wheelchart@slicesarrowcoord)*\wheelchart@slicesarrowA}
+}
+\pgfkeys{
+/wheelchart/.is family,
+/wheelchart,
+anchor xsep/.initial=5,
+anchor ysep/.initial=5,
+at/.initial={(0,0)},
+caption/.store in=\wheelchart@caption,
+caption style/.style={caption style@options/.style={#1}},
+caption style@options/.style={},
+caption left/.store in=\wheelchart@captionleft,
+caption left style/.style={caption left style@options/.style={#1}},
+caption left style@options/.style={},
+contour@boolean/.is if=wheelchart@contour,
+contour/.style={contour@boolean=true,contour@options/.style={#1}},
+contour@options/.style={},
+counterclockwise/.is if=wheelchart@counterclockwise,
+data/.initial={\WCvarC},
+data angle shift/.initial=0,
+data sep/.initial=0.2,
+data style/.style={data style@options/.style={#1}},
+data style@options/.style={},
+expand list/.is choice,
+expand list/false/.code={\def\wheelchart@expandlistvalue{false}\def\wheelchart@foreachdeflist##1{\def\wheelchart@foreachlist{##1}}},
+expand list/once/.code={\def\wheelchart@expandlistvalue{true}\def\wheelchart@foreachdeflist##1{\def\wheelchart@foreachlist{\unexpanded\expandafter{##1}}}},
+expand list/true/.code={\def\wheelchart@expandlistvalue{true}\def\wheelchart@foreachdeflist##1{\def\wheelchart@foreachlist{##1}}},
+expand list=once,
+explode/.initial=0,
+explode/.default=0.2,
+gap/.initial=0,
+gap/.default=0.05,
+gap polar/.initial=0,
+gap polar/.default=1,
+inner data/.store in=\wheelchart@innerdata,
+inner data sep/.initial=0.2,
+inner data style/.style={inner data style@options/.style={#1}},
+inner data style@options/.style={},
+inner radius/.initial=2,
+legend/.store in=\wheelchart@legend,
+legend entry/.store in=\wheelchart@legendentry,
+lines/.initial=0,
+lines/.default=1,
+lines ext/.initial=0,
+lines ext/.default=0.5,
+lines ext bottom dir/.is choice,
+lines ext bottom dir/left/.code={\pgfmathsetmacro{\wheelchart@linesextbottomdir}{-1}},
+lines ext bottom dir/right/.code={\pgfmathsetmacro{\wheelchart@linesextbottomdir}{1}},
+lines ext bottom dir=right,
+lines ext dirsep/.initial=0,
+lines ext fixed/.is if=wheelchart@linesextfixed,
+lines ext left anchor/.initial={mid east},
+lines ext right anchor/.initial={mid west},
+lines ext top dir/.is choice,
+lines ext top dir/left/.code={\pgfmathsetmacro{\wheelchart@linesexttopdir}{-1}},
+lines ext top dir/right/.code={\pgfmathsetmacro{\wheelchart@linesexttopdir}{1}},
+lines ext top dir=right,
+lines sep/.initial=0.2,
+lines style/.style={lines style@options/.style={#1}},
+lines style@options/.style={},
+middle/.store in=\wheelchart@middle,
+middle fill@boolean/.is if=wheelchart@middlefill,
+middle fill/.style={middle fill@boolean=true,middle fill@options/.style={#1}},
+middle fill@options/.style={},
+middle style/.style={middle style@options/.style={#1}},
+middle style@options/.style={},
+name/.code={\xdef\wheelchart@name{#1}},
+name=wheelchart@name,
+outer radius/.initial=3,
+perc precision/.initial=0,
+pie/.is if=wheelchart@pie,
+radius/.code 2 args={\pgfkeys{/wheelchart,inner radius={#1},outer radius={#2}}},
+slices/.store in=\wheelchart@slices,
+slices arc/.code 2 args={\pgfkeys{/wheelchart,slices start arc={-(#1)}{#2},slices end arc={#1}{#2}}},
+slices arrow/.code 2 args={\pgfkeys{/wheelchart,slices start arrow={-(#1)}{#2},slices end arrow={#1}{#2}}},
+slices end arc/.code 2 args={\def\wheelchart@slicesend{{[shift={(wheelchart@sliceouterend)},rotate={90-atan2(\p2)},/utils/exec={\wheelchart@slicesarcdefmacros{#1}{#2}}]--({-\wheelchart@slicesarccoordtimesnone},0) arc[start angle={\wheelchart@counterorclockwise*\wheelchart@slicesarcangle},end angle={\wheelchart@counterorclockwise*(sign(#1)*180-\wheelchart@slicesarcangle)},radius={\wheelchart@slicesarcradius}]}}},
+slices end arrow/.code 2 args={\def\wheelchart@slicesend{{[shift={(wheelchart@sliceouterend)},rotate={90-atan2(\p2)},/utils/exec={\wheelchart@slicesarrowdefmacros{#1}{#2}}]--({-\wheelchart@slicesarrowcoord*\wheelchart@slicesarrowlength},0)--({-\wheelchart@slicesarrowlength},{\wheelchart@counterorclockwise*\wheelchart@slicesarrowtip*\wheelchart@slicesarrowlength})--({(\wheelchart@slicesarrowcoord-2)*\wheelchart@slicesarrowlength},0)}}},
+slices start arc/.code 2 args={\def\wheelchart@slicesstart{{[shift={(wheelchart@sliceinnerstart)},rotate={90-atan2(\p1)},/utils/exec={\wheelchart@slicesarcdefmacros{#1}{#2}}]({\wheelchart@slicesarccoordtimesnone},0) arc[start angle={-\wheelchart@counterorclockwise*(sign(#1)*180-\wheelchart@slicesarcangle)},end angle={-\wheelchart@counterorclockwise*\wheelchart@slicesarcangle},radius={\wheelchart@slicesarcradius}]}--}},
+slices start arrow/.code 2 args={\def\wheelchart@slicesstart{{[shift={(wheelchart@sliceinnerstart)},rotate={90-atan2(\p1)},/utils/exec={\wheelchart@slicesarrowdefmacros{#1}{#2}}]({\wheelchart@slicesarrowcoord*\wheelchart@slicesarrowlength},0)--({\wheelchart@slicesarrowlength},{-\wheelchart@counterorclockwise*\wheelchart@slicesarrowtip*\wheelchart@slicesarrowlength})--({(2-\wheelchart@slicesarrowcoord)*\wheelchart@slicesarrowlength},0)}--}},
+slices style/.style={slices style@options/.style={#1}},
+slices style@options/.style={},
+slices style={\WCvarB},
+start angle/.initial=90,
+start half/.store in=\wheelchart@starthalf,
+start half/.default=90,
+title/.store in=\wheelchart@title,
+title style/.style={title style@options/.style={#1}},
+title style@options/.style={},
+title left/.store in=\wheelchart@titleleft,
+title left style/.style={title left style@options/.style={#1}},
+title left style@options/.style={},
+total angle/.initial=360,
+total count/.code={\pgfmathsetmacro{\wheelchart@totalcount}{int(#1)}},
+value/.initial={\WCvarA},
+wheel data/.store in=\wheelchart@wheeldata,
+wheel data pos/.initial=0.66,
+wheel data style/.style={wheel data style@options/.style={#1}},
+wheel data style@options/.style={},
+wheel lines@boolean/.is if=wheelchart@wheellines,
+wheel lines/.style={wheel lines@boolean=true,wheel lines@options/.style={#1}},
+wheel lines@options/.style={},
+}
+\newcommand{\wheelchart@foreachinitial}[2]{\ifcsname wheelchart@totalcount\endcsname\ifnum\wheelchart@totalcount>1\gdef\wheelchart@foreachlist{}\foreach\wheelchart@n in {2,...,\wheelchart@totalcount}{\xdef\wheelchart@foreachlist{\wheelchart@foreachlist,}}\else\ifnum\wheelchart@totalcount=1\gdef\wheelchart@foreachlist{{}}\else\gdef\wheelchart@foreachlist{}\fi\fi\else\wheelchart@foreachdeflist{#1}\fi\foreach\WCvarA/\WCvarB/\WCvarC/\WCvarD/\WCvarE/\WCvarF/\WCvarG/\WCvarH/\WCvarI/\WCvarJ/\WCvarK/\WCvarL/\WCvarM/\WCvarN/\WCvarO/\WCvarP/\WCvarQ/\WCvarR/\WCvarS/\WCvarT/\WCvarU/\WCvarV/\WCvarW/\WCvarX/\WCvarY/\WCvarZ [count=\WCcount,expand list=\wheelchart@expandlistvalue] in \wheelchart@foreachlist{#2}}
+\newcommand{\wheelchart@foreach}[2]{\pgfmathsetmacro{\wheelchart@angle}{\wheelchart@startangle}\wheelchart@foreachinitial{#1}{\pgfmathsetmacro{\wheelchart@outerradius}{\pgfkeysvalueof{/wheelchart/outer radius}}
+\ifwheelchart@pie
+\pgfmathsetmacro{\wheelchart@innerradius}{0}
+\else
+\pgfmathsetmacro{\wheelchart@innerradius}{\pgfkeysvalueof{/wheelchart/inner radius}}
+\fi
+\pgfmathsetmacro{\wheelchart@gap}{\pgfkeysvalueof{/wheelchart/gap}}
+\pgfmathsetmacro{\wheelchart@gappolar}{\pgfkeysvalueof{/wheelchart/gap polar}}
+\pgfmathsetmacro{\wheelchart@value}{\pgfkeysvalueof{/wheelchart/value}}
+\pgfmathsetmacro{\wheelchart@newangle}{\wheelchart@angle+(\wheelchart@counterorclockwise*\wheelchart@value*(\wheelchart@totalangle/\WCtotalnum))}
+\pgfmathsetmacro{\wheelchart@abshalfangleminusnewangle}{abs((\wheelchart@angle-\wheelchart@newangle)/2)}
+\wheelchart@drawfalse
+\pgfmathsetmacro{\wheelchart@abshalfangleminusnewangleminusgappolar}{\wheelchart@abshalfangleminusnewangle-\wheelchart@gappolar}
+\ifdim \wheelchart@abshalfangleminusnewangleminusgappolar pt=180 pt
+\pgfmathsetmacro{\wheelchart@outergap}{asin(\wheelchart@gap/\wheelchart@outerradius)}
+\ifdim \wheelchart@gap pt<\wheelchart@innerradius pt
+\pgfmathsetmacro{\wheelchart@innergap}{asin(\wheelchart@gap/\wheelchart@innerradius)}
+\else
+\pgfmathsetmacro{\wheelchart@innergap}{90}
+\pgfmathsetmacro{\wheelchart@innerradius}{\wheelchart@gap}
+\fi
+\ifdim \wheelchart@innerradius pt<\wheelchart@outerradius pt
+\wheelchart@drawtrue
+\fi
+\else
+\ifdim \wheelchart@abshalfangleminusnewangleminusgappolar pt>\z@
+\pgfmathsetmacro{\wheelchart@outerradiustimessinabshalfangleminusnewangleminusgappolar}{\wheelchart@outerradius*sin(\wheelchart@abshalfangleminusnewangleminusgappolar)}
+\ifdim \wheelchart@outerradiustimessinabshalfangleminusnewangleminusgappolar pt<\wheelchart@gap pt
+\else
+\pgfmathsetmacro{\wheelchart@outergap}{asin(\wheelchart@gap/\wheelchart@outerradius)+\wheelchart@gappolar}
+\pgfmathsetmacro{\wheelchart@innerradiustimessinabshalfangleminusnewangleminusgappolar}{\wheelchart@innerradius*sin(\wheelchart@abshalfangleminusnewangleminusgappolar)}
+\ifdim \wheelchart@innerradiustimessinabshalfangleminusnewangleminusgappolar pt>\wheelchart@gap pt
+\pgfmathsetmacro{\wheelchart@innergap}{asin(\wheelchart@gap/\wheelchart@innerradius)+\wheelchart@gappolar}
+\else
+\pgfmathsetmacro{\wheelchart@innergap}{\wheelchart@abshalfangleminusnewangle}
+\ifdim \wheelchart@innerradiustimessinabshalfangleminusnewangleminusgappolar pt<\wheelchart@gap pt
+\pgfmathsetmacro{\wheelchart@innerradius}{\wheelchart@gap/sin(\wheelchart@abshalfangleminusnewangleminusgappolar)}
+\fi
+\fi
+\ifdim \wheelchart@innerradius pt<\wheelchart@outerradius pt
+\wheelchart@drawtrue
+\fi
+\fi
+\fi
+\fi
+\pgfmathsetmacro{\wheelchart@explode}{\pgfkeysvalueof{/wheelchart/explode}}
+\pgfmathsetmacro{\WCmidangle}{Mod((\wheelchart@angle+\wheelchart@newangle)/2,360)}
+\pgfmathsetmacro{\wheelchart@dataangleshift}{\pgfkeysvalueof{/wheelchart/data angle shift}}
+\pgfmathsetmacro{\WCdataangle}{Mod(\wheelchart@counterorclockwise*\wheelchart@dataangleshift+\WCmidangle,360)}
+\pgfmathsetmacro{\WCpercentage}{\wheelchart@value/(\WCtotalnum/100)}
+\pgfmathprintnumberto[precision=\pgfkeysvalueof{/wheelchart/perc precision}]{\WCpercentage}{\WCpercentagerounded}
+\begin{scope}[shift={(\WCmidangle:\wheelchart@explode)}]
+#2
+\end{scope}
+\global\let\wheelchart@angle=\wheelchart@newangle}}
+\AtBeginDocument{\@ifpackageloaded{siunitx}{\newcommand{\WCperc}{\qty[round-mode=places,round-precision=\pgfkeysvalueof{/wheelchart/perc precision}]{\WCpercentage}{\percent}}}{\newcommand{\WCperc}{\WCpercentagerounded\,\%}}}
+\newcommand{\wheelchart@ifnotext}[3]{%%https://tex.stackexchange.com/questions/42280/expand-away-empty-macros-within-ifthenelse%https://tex.stackexchange.com/questions/44919/proper-way-to-detect-empty-blank-text
+\begingroup%
+\begin{pgfinterruptpicture}%%https://tex.stackexchange.com/questions/459853/savebox-within-tikzpicture-results-in-an-empty-savebox
+\sbox0{#1}%
+\ifdim\wd0=\z@%
+\gdef\wheelchart@node{0}%
+\else%
+\gdef\wheelchart@node{1}%
+\fi%
+\end{pgfinterruptpicture}%
+\endgroup%
+\ifnum\wheelchart@node=0%
+{#2}%%if #1 is empty
+\else%
+{#3}%%if #1 is not empty
+\fi%
+}
+\newcommand{\wheelchart}[2][]{{
+\pgfkeys{/wheelchart,#1}
+\begin{scope}[shift/.expanded={\pgfkeysvalueof{/wheelchart/at}},local bounding box/.expanded=\wheelchart@name]
+\ifwheelchart@counterclockwise
+\pgfmathsetmacro{\wheelchart@counterorclockwise}{1}
+\else
+\pgfmathsetmacro{\wheelchart@counterorclockwise}{-1}
+\fi
+\pgfmathsetmacro{\wheelchart@totalangle}{\pgfkeysvalueof{/wheelchart/total angle}}
+\pgfmathsetmacro{\WCtotalnum}{0}
+\wheelchart@foreachinitial{#2}{
+\pgfmathsetmacro{\wheelchart@value}{\pgfkeysvalueof{/wheelchart/value}}
+\pgfmathparse{\wheelchart@value+\WCtotalnum}
+\global\let\WCtotalnum=\pgfmathresult
+\ifnum\WCcount=1
+\xdef\wheelchart@firstvalue{\wheelchart@value}
+\fi
+\xdef\WCtotalcount{\WCcount}
+}
+\ifcsname wheelchart@starthalf\endcsname
+\pgfmathsetmacro{\wheelchart@startangle}{Mod(\wheelchart@starthalf-(\wheelchart@counterorclockwise*\wheelchart@firstvalue*0.5*(\wheelchart@totalangle/\WCtotalnum)),360)}
+\else
+\pgfmathsetmacro{\wheelchart@startangle}{Mod(\pgfkeysvalueof{/wheelchart/start angle},360)}
+\fi
+\wheelchart@definnercontourfalse
+\ifwheelchart@contour
+\wheelchart@definnercontourtrue
+\xdef\wheelchart@outercontour{}
+\wheelchart@foreach{#2}{
+\xdef\wheelchart@outercontour{(\wheelchart@newangle:\wheelchart@outerradius) arc[start angle=\wheelchart@newangle,end angle=\wheelchart@angle,radius=\wheelchart@outerradius]--\wheelchart@outercontour}
+}
+\else
+\ifwheelchart@middlefill
+\wheelchart@definnercontourtrue
+\fi
+\fi
+\ifwheelchart@definnercontour
+\xdef\wheelchart@innercontour{}
+\wheelchart@foreach{#2}{
+\xdef\wheelchart@innercontour{\wheelchart@innercontour(\wheelchart@angle:\wheelchart@innerradius) arc[start angle=\wheelchart@angle,end angle=\wheelchart@newangle,radius=\wheelchart@innerradius]--}
+}
+\fi
+\ifwheelchart@middlefill
+\fill[/wheelchart/middle fill@options]
+\ifdim \wheelchart@totalangle pt=360 pt
+\else
+(0,0)--
+\fi
+\wheelchart@innercontour cycle;
+\fi
+\wheelchart@foreach{#2}{
+\ifcsname wheelchart@slices\endcsname
+\begin{scope}[shift={(\WCmidangle:{(\wheelchart@innerradius+\wheelchart@outerradius)/2})},rotate=\WCmidangle]
+\fill[/wheelchart/slices style@options] \wheelchart@slices
+\end{scope}
+\else
+\ifwheelchart@draw
+\pgfmathsetmacro{\wheelchart@sliceinnerstartangle}{\wheelchart@angle+(\wheelchart@counterorclockwise*(\wheelchart@innergap))}
+\pgfmathsetmacro{\wheelchart@sliceinnerendangle}{\wheelchart@newangle-(\wheelchart@counterorclockwise*(\wheelchart@innergap))}
+\pgfmathsetmacro{\wheelchart@sliceouterstartangle}{\wheelchart@angle+(\wheelchart@counterorclockwise*(\wheelchart@outergap))}
+\pgfmathsetmacro{\wheelchart@sliceouterendangle}{\wheelchart@newangle-(\wheelchart@counterorclockwise*(\wheelchart@outergap))}
+\coordinate (wheelchart@sliceinnerstart) at (\wheelchart@sliceinnerstartangle:\wheelchart@innerradius);
+\coordinate (wheelchart@sliceinnerend) at (\wheelchart@sliceinnerendangle:\wheelchart@innerradius);
+\coordinate (wheelchart@sliceouterstart) at (\wheelchart@sliceouterstartangle:\wheelchart@outerradius);
+\coordinate (wheelchart@sliceouterend) at (\wheelchart@sliceouterendangle:\wheelchart@outerradius);
+\fill[/wheelchart/slices style@options] let \p1=($(wheelchart@sliceouterstart)-(wheelchart@sliceinnerstart)$),\p2=($(wheelchart@sliceouterend)-(wheelchart@sliceinnerend)$),\p3=($(wheelchart@sliceinnerstart)!0.5!(wheelchart@sliceouterstart)$),\n1={veclen(\x1/\pgf@xx,\y1/\pgf@yy)/2} in \wheelchart@slicesstart(wheelchart@sliceouterstart) arc[start angle=\wheelchart@sliceouterstartangle,end angle=\wheelchart@sliceouterendangle,radius=\wheelchart@outerradius]\wheelchart@slicesend--(wheelchart@sliceinnerend) arc[start angle=\wheelchart@sliceinnerendangle,end angle=\wheelchart@sliceinnerstartangle,radius=\wheelchart@innerradius]--cycle;
+\fi
+\fi
+}
+\ifwheelchart@wheellines
+\ifdim \wheelchart@totalangle pt=360 pt
+\def\wheelchart@start{1}
+\else
+\def\wheelchart@start{0}
+\fi
+\wheelchart@foreach{#2}{
+\foreach\wheelchart@n in {\wheelchart@start,...,\wheelchart@value}{
+\pgfmathsetmacro{\wheelchart@anglewheellines}{\wheelchart@angle+(\wheelchart@counterorclockwise*\wheelchart@n*(\wheelchart@totalangle/\WCtotalnum))}
+\draw[/wheelchart/wheel lines@options] (\wheelchart@anglewheellines:\wheelchart@innerradius)--(\wheelchart@anglewheellines:\wheelchart@outerradius);
+}
+\gdef\wheelchart@start{1}
+}
+\fi
+\ifwheelchart@contour
+\ifdim \wheelchart@totalangle pt=360 pt
+\draw[/wheelchart/contour@options] \wheelchart@innercontour cycle;
+\draw[/wheelchart/contour@options] \wheelchart@outercontour cycle;
+\else
+\draw[/wheelchart/contour@options] \wheelchart@innercontour\wheelchart@outercontour cycle;
+\fi
+\fi
+\wheelchart@foreach{#2}{
+\pgfmathsetmacro{\wheelchart@datasep}{\pgfkeysvalueof{/wheelchart/data sep}}
+\pgfmathsetmacro{\wheelchart@lines}{\pgfkeysvalueof{/wheelchart/lines}}
+\pgfmathsetmacro{\wheelchart@linesext}{\pgfkeysvalueof{/wheelchart/lines ext}}
+\pgfmathsetmacro{\wheelchart@linessep}{\pgfkeysvalueof{/wheelchart/lines sep}}
+\ifdim \wheelchart@linesext pt>\z@
+\pgfmathsetmacro{\wheelchart@linesextdirsep}{\pgfkeysvalueof{/wheelchart/lines ext dirsep}}
+\pgfmathparse{
+(\WCdataangle<90-\wheelchart@linesextdirsep?"1":
+(\WCdataangle<=90+\wheelchart@linesextdirsep?"\wheelchart@linesexttopdir":
+(\WCdataangle<270-\wheelchart@linesextdirsep?"-1":
+(\WCdataangle<=270+\wheelchart@linesextdirsep?"\wheelchart@linesextbottomdir":
+"1"
+))))
+}
+\edef\wheelchart@linesextdir{\pgfmathresult}
+\draw[/wheelchart/lines style@options] let \p1=(\WCdataangle:{\wheelchart@outerradius+\wheelchart@linessep+\wheelchart@lines}) in (\WCdataangle:{\wheelchart@outerradius+\wheelchart@linessep})--(\p1)
+\ifwheelchart@linesextfixed
+--({\wheelchart@linesextdir*(\wheelchart@outerradius+\wheelchart@linessep+\wheelchart@lines+\wheelchart@linesext)},\y1)
+\else
+--++({\wheelchart@linesextdir*\wheelchart@linesext},0)
+\fi
+coordinate (wheelchart@datacoord);
+\pgfmathparse{
+(\wheelchart@linesextdir==1?"\pgfkeysvalueof{/wheelchart/lines ext right anchor}":
+(\wheelchart@linesextdir==-1?"\pgfkeysvalueof{/wheelchart/lines ext left anchor}":
+))
+}
+\edef\wheelchart@dataanchor{\pgfmathresult}
+\else
+\pgfmathsetmacro{\wheelchart@anchorxsep}{\pgfkeysvalueof{/wheelchart/anchor xsep}}
+\pgfmathsetmacro{\wheelchart@anchorysep}{\pgfkeysvalueof{/wheelchart/anchor ysep}}
+\pgfmathparse{
+(\WCdataangle==0?"west":
+(\WCdataangle==90?"south":
+(\WCdataangle==180?"east":
+(\WCdataangle==270?"north":
+(\WCdataangle<=\wheelchart@anchorysep?"west":
+(\WCdataangle<90-\wheelchart@anchorxsep?"south west":
+(\WCdataangle<=90+\wheelchart@anchorxsep?"south":
+(\WCdataangle<180-\wheelchart@anchorysep?"south east":
+(\WCdataangle<=180+\wheelchart@anchorysep?"east":
+(\WCdataangle<270-\wheelchart@anchorxsep?"north east":
+(\WCdataangle<=270+\wheelchart@anchorxsep?"north":
+(\WCdataangle<360-\wheelchart@anchorysep?"north west":
+"west"
+))))))))))))
+}
+\edef\wheelchart@dataanchor{\pgfmathresult}
+\ifdim \wheelchart@lines pt>\z@
+\draw[/wheelchart/lines style@options] (\WCdataangle:{\wheelchart@outerradius+\wheelchart@linessep})--++(\WCdataangle:\wheelchart@lines) coordinate[shift={(\WCdataangle:\wheelchart@datasep)}] (wheelchart@datacoord);
+\else
+\coordinate (wheelchart@datacoord) at (\WCdataangle:{\wheelchart@outerradius+\wheelchart@datasep});
+\fi
+\fi
+\wheelchart@ifnotext{\pgfkeysvalueof{/wheelchart/data}}{}{\node[anchor=\wheelchart@dataanchor,align=left,/wheelchart/data style@options] at (wheelchart@datacoord) {\pgfkeysvalueof{/wheelchart/data}};}
+\ifcsname wheelchart@innerdata\endcsname
+\wheelchart@ifnotext{\wheelchart@innerdata}{}{%
+\pgfmathsetmacro{\wheelchart@innerdatasep}{\pgfkeysvalueof{/wheelchart/inner data sep}}%
+\node[align=left,/wheelchart/inner data style@options] at (\WCdataangle:{\wheelchart@innerradius-(\wheelchart@innerdatasep)}) {\wheelchart@innerdata};%
+}
+\fi
+\ifcsname wheelchart@wheeldata\endcsname
+\wheelchart@ifnotext{\wheelchart@wheeldata}{}{%
+\pgfmathsetmacro{\wheelchart@wheeldatapos}{\pgfkeysvalueof{/wheelchart/wheel data pos}}%
+\node[align=left,/wheelchart/wheel data style@options] at (\WCdataangle:{\wheelchart@wheeldatapos*\wheelchart@outerradius+(1-\wheelchart@wheeldatapos)*\wheelchart@innerradius}) {\wheelchart@wheeldata};%
+}
+\fi
+\ifcsname wheelchart@legendentry\endcsname
+\wheelchart@legendentry
+\fi
+}
+\ifcsname wheelchart@middle\endcsname
+\wheelchart@ifnotext{\wheelchart@middle}{}{%
+\node[align=center,/wheelchart/middle style@options] at (0,0) {\wheelchart@middle};%
+}
+\fi
+\ifcsname wheelchart@legend\endcsname
+\wheelchart@legend
+\fi
+\end{scope}
+\ifcsname wheelchart@captionleft\endcsname
+\wheelchart@ifnotext{\wheelchart@captionleft}{}{%
+\node[anchor=north west,align=left,/wheelchart/caption left style@options] at ($(\wheelchart@name.south west)-(0,0.5)$) {\wheelchart@captionleft};%
+}
+\fi
+\ifcsname wheelchart@caption\endcsname
+\wheelchart@ifnotext{\wheelchart@caption}{}{%
+\coordinate[shift/.expanded={\pgfkeysvalueof{/wheelchart/at}}] (wheelchart@center) at (0,0);%
+\node[anchor=north,align=center,/wheelchart/caption style@options] at ($(\wheelchart@name.south-|wheelchart@center)-(0,0.5)$) {\wheelchart@caption};%
+}
+\fi
+\ifcsname wheelchart@titleleft\endcsname
+\wheelchart@ifnotext{\wheelchart@titleleft}{}{%
+\node[anchor=south west,align=left,/wheelchart/title left style@options] at ($(\wheelchart@name.north west)+(0,0.5)$) {\wheelchart@titleleft};%
+}
+\fi
+\ifcsname wheelchart@title\endcsname
+\wheelchart@ifnotext{\wheelchart@title}{}{%
+\coordinate[shift/.expanded={\pgfkeysvalueof{/wheelchart/at}}] (wheelchart@center) at (0,0);%
+\node[anchor=south,align=center,/wheelchart/title style@options] at ($(\wheelchart@name.north-|wheelchart@center)+(0,0.5)$) {\wheelchart@title};%
+}
+\fi
+}}
+\endinput

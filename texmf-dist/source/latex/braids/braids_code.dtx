@@ -35,7 +35,7 @@ See http://www.latex-project.org/lppl.txt
 \endpreamble
 \postamble
 
-Copyright (C) 2011-2019 by Andrew Stacey <loopspace@mathforge.org>
+Copyright (C) 2011-2022 by Andrew Stacey <loopspace@mathforge.org>
 
 This work may be distributed and/or modified under the
 conditions of the LaTeX Project Public License (LPPL), either
@@ -103,7 +103,7 @@ and the derived files            README.txt,
 %</driver>
 % \fi
 %
-% \CheckSum{1949}
+% \CheckSum{2352}
 %
 % \CharacterTable
 %  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
@@ -125,6 +125,8 @@ and the derived files            README.txt,
 % \changes{1.0}{2011/05/03}{Converted to DTX file}
 % \changes{1.1}{2011/05/03}{Extended syntax}
 % \changes{2.0}{2019/03/20}{Converted TikZ library}
+% \changes{2.1}{2019/08/14}{Extended crossing capability}
+% \changes{2.2}{2022/10/26}{Advanced positioning}
 %
 % \DoNotIndex{\newcommand,\newenvironment}
 %
@@ -1181,7 +1183,7 @@ and the derived files            README.txt,
 % Life is so much easier with \LaTeX3.
 %    \begin{macrocode}
 \ProvidesFile{tikzlibrarybraids.code.tex}[%
-  2019/03/20 v2.0 Tikz/PGF library for drawing braid diagrams%
+  2022/10/26 v2.2 Tikz/PGF library for drawing braid diagrams%
 ]
 \RequirePackage{expl3}
 \ExplSyntaxOn
@@ -1207,11 +1209,19 @@ and the derived files            README.txt,
 \fp_new:N \l_@@_anchor_x_fp
 \fp_new:N \l_@@_anchor_y_fp
 \int_new:N \l_@@_tmpa_int
+\int_new:N \l_@@_tmpb_int
 \int_new:N \l_@@_length_int
 \int_new:N \l_@@_strands_int
 \int_new:N \l_@@_crossing_int
+\int_new:N \l_@@_crossing_start_int
+\int_new:N \l_@@_crossing_end_int
+\int_new:N \l_@@_crossing_width_int
+\int_new:N \l_@@_crossing_long_int
+\int_new:N \l_@@_crossing_start_factor_int
+\int_new:N \l_@@_crossing_end_factor_int
 \int_new:N \l_@@_anchor_level_int
 \int_new:N \l_@@_floor_int
+\seq_new:N \l_@@_tmpa_seq
 \seq_new:N \l_@@_word_seq
 \seq_new:N \l_@@_crossing_seq
 \seq_new:N \l_@@_anchor_seq
@@ -1235,22 +1245,19 @@ and the derived files            README.txt,
 \prop_new:N \l_@@_crossing_permutation_prop
 \prop_new:N \l_@@_inverse_prop
 \prop_new:N \l_@@_anchor_prop
+\cs_generate_variant:Nn \seq_set_split:Nnn {NVn}
 %    \end{macrocode}
 % Our interface is through a TikZ pic.
 %    \begin{macrocode}
 \tikzset{
    braid/.pic={
-     code={
-       \@@_parse_word:n {#1}
-       \@@_count:
-       \@@_render:
-     }
+     \@@_parse_word:n {#1}
+     \@@_count:
+     \@@_render:
    },
    floor/.pic={
-     code={
-       \path[pic~ actions, draw=none] (0,0) rectangle (1,1);
-       \path[pic~ actions, fill=none] (0,0) -- (1,0) (0,1) -- (1,1);
-     }
+     \path[pic~ actions, draw=none] (0,0) rectangle (1,1);
+     \path[pic~ actions, fill=none] (0,0) -- (1,0) (0,1) -- (1,1);
    },
    /tikz/braid/.search~ also={/tikz},
    braid/.cd,
@@ -1431,15 +1438,35 @@ and the derived files            README.txt,
 %    \begin{macrocode}
 \cs_new_nopar:Npn \@@_parse_index:n #1
 {
-  \seq_set_from_clist:Nn \l_@@_crossing_seq {#1}
+  \seq_clear:N \l_@@_crossing_seq
+  \clist_map_inline:nn {#1}
+  {
+    \tl_if_in:nnTF {##1} {-}
+    {
+      \seq_set_split:Nnn \l_@@_tmpa_seq {-} {##1}
+      \int_compare:nTF {\seq_item:Nn \l_@@_tmpa_seq {1} < \seq_item:Nn \l_@@_tmpa_seq {2} }
+      {
+        \int_set:Nn \l_@@_tmpa_int {1}
+      }
+      {
+        \int_set:Nn \l_@@_tmpa_int {-1}
+      }
+      \int_step_inline:nnnn {\seq_item:Nn \l_@@_tmpa_seq {1}} {\l_@@_tmpa_int} {\seq_item:Nn \l_@@_tmpa_seq {2}}
+      {
+        \seq_put_right:Nn \l_@@_crossing_seq {####1}
+      }
+    }
+    {
+      \seq_put_right:Nn \l_@@_crossing_seq {##1}
+    }
+  }
   \int_compare:nT {\seq_count:N \l_@@_crossing_seq == 1}
   {
     \seq_put_right:Nx \l_@@_crossing_seq {\int_eval:n {#1 + 1} }
   }
-  \bool_if:NT \l_@@_swap_crossing_bool
+  \bool_if:NF \l_@@_swap_crossing_bool
   {
-    \seq_pop_left:NN \l_@@_crossing_seq \l_@@_tmpa_tl
-    \seq_put_right:NV \l_@@_crossing_seq \l_@@_tmpa_tl
+    \seq_reverse:N \l_@@_crossing_seq
   }
 }
 %    \end{macrocode}
@@ -1507,15 +1534,11 @@ and the derived files            README.txt,
 %    \begin{macrocode}
     \seq_if_empty:NF \l_@@_crossing_seq
     {
-      \int_set:Nn \l_@@_strands_int
+      \seq_map_inline:Nn \l_@@_crossing_seq
       {
-        \int_max:nn
+        \int_set:Nn \l_@@_strands_int
         {
-          \int_max:nn {\l_@@_strands_int}
-          { \seq_item:Nn \l_@@_crossing_seq {1}}
-        }
-        {
-          \seq_item:Nn \l_@@_crossing_seq {2}
+          \int_max:nn {\l_@@_strands_int} {####1}
         }
       }
     }
@@ -1534,37 +1557,50 @@ and the derived files            README.txt,
 % Now we step through the braid word again and record the permutations so that we can calculate the overall permutation defined by the braid.
 %
 % We will also figure out our shift from the anchor, so first we need to get some information about the anchor.
+%
+% If the anchor specification has a hyphen then it is of the form strand-level, otherwise it is an anchor as if the whole braid were contained in a rectangular node.  
 %    \begin{macrocode}
   \tl_set:Nx \l_@@_tmpa_tl {\@@_value:n {anchor}}
-  \seq_set_split:NnV \l_@@_anchor_seq {-} \l_@@_tmpa_tl
+  \tl_if_in:NnTF \l_@@_tmpa_tl {-}
+  {
+    \seq_set_split:NnV \l_@@_anchor_seq {-} \l_@@_tmpa_tl
 
-  \tl_set:Nx \l_@@_tmpa_tl {\seq_item:Nn \l_@@_anchor_seq {1}}
-  \tl_if_eq:VnTF \l_@@_tmpa_tl {rev}
-  {
-    \tl_set:Nx \l_@@_anchor_strand_tl {\seq_item:Nn \l_@@_anchor_seq {2}}
-    \tl_set:Nx \l_@@_anchor_level_tl {\seq_item:Nn \l_@@_anchor_seq {3}}
-  }
-  {
-    \tl_set:Nx \l_@@_anchor_strand_tl {\seq_item:Nn \l_@@_anchor_seq {1}}
-    \tl_set:Nx \l_@@_anchor_level_tl {\seq_item:Nn \l_@@_anchor_seq {2}}
-  }
+    \tl_set:Nx \l_@@_tmpa_tl {\seq_item:Nn \l_@@_anchor_seq {1}}
+    \tl_if_eq:VnTF \l_@@_tmpa_tl {rev}
+    {
+      \tl_set:Nx \l_@@_anchor_strand_tl {\seq_item:Nn \l_@@_anchor_seq {2}}
+      \tl_set:Nx \l_@@_anchor_level_tl {\seq_item:Nn \l_@@_anchor_seq {3}}
+    }
+    {
+      \tl_set:Nx \l_@@_anchor_strand_tl {\seq_item:Nn \l_@@_anchor_seq {1}}
+      \tl_set:Nx \l_@@_anchor_level_tl {\seq_item:Nn \l_@@_anchor_seq {2}}
+    }
 %    \end{macrocode}
 % The important information is as to the level at which the requested anchor resides.
 % If it is at the end or start of a strand, we set the level to \(-1\) so that it never matches a level number. 
 %    \begin{macrocode}
-  \tl_if_eq:VnTF \l_@@_anchor_level_tl {s}
-  {
-    \int_set:Nn \l_@@_anchor_level_int {-1}
-  }
-  {
-    \tl_if_eq:VnTF \l_@@_anchor_level_tl {e}
+    \tl_if_eq:VnTF \l_@@_anchor_level_tl {s}
     {
       \int_set:Nn \l_@@_anchor_level_int {-1}
     }
     {
-      \int_set:Nn \l_@@_anchor_level_int
-      {\tl_use:N \l_@@_anchor_level_tl}
+      \tl_if_eq:VnTF \l_@@_anchor_level_tl {e}
+      {
+        \int_set:Nn \l_@@_anchor_level_int {-1}
+      }
+      {
+        \int_set:Nn \l_@@_anchor_level_int
+        {\tl_use:N \l_@@_anchor_level_tl}
+      }
     }
+  }
+  {
+%    \end{macrocode}
+% There wasn't a hyphen in the anchor specification, so assume it's an anchor on a node surrounding the entire braid.
+% For now, set the anchor strand and level to \(-1\).
+%    \begin{macrocode}
+    \int_set:Nn \l_@@_anchor_level_int {-1}
+    \tl_set:Nn \l_@@_anchor_strand_tl {-1}
   }
   
   \int_zero:N \l_@@_crossing_int
@@ -1580,23 +1616,29 @@ and the derived files            README.txt,
     ##1
     \seq_if_empty:NF \l_@@_crossing_seq
     {
-      \prop_get:NxN \l_@@_permutation_prop
+      \int_step_inline:nnn {2} {\seq_count:N \l_@@_crossing_seq}
       {
-        \seq_item:Nn \l_@@_crossing_seq {1}
-      } \l_@@_tmpa_tl
-      \prop_get:NxN \l_@@_permutation_prop
-      {
-        \seq_item:Nn \l_@@_crossing_seq {2}
-      } \l_@@_tmpb_tl
+        \int_set:Nn \l_@@_tmpa_int {####1}
+        \int_set:Nn \l_@@_tmpb_int {####1 - 1}
 
-      \prop_put:NxV \l_@@_permutation_prop
-      {
-        \seq_item:Nn \l_@@_crossing_seq {2}
-      } \l_@@_tmpa_tl
-      \prop_put:NxV \l_@@_permutation_prop
-      {
-        \seq_item:Nn \l_@@_crossing_seq {1}
-      } \l_@@_tmpb_tl
+        \prop_get:NxN \l_@@_permutation_prop
+        {
+          \seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpa_int}
+        } \l_@@_tmpa_tl
+        \prop_get:NxN \l_@@_permutation_prop
+        {
+          \seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpb_int}
+        } \l_@@_tmpb_tl
+
+        \prop_put:NxV \l_@@_permutation_prop
+        {
+          \seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpb_int}
+        } \l_@@_tmpa_tl
+        \prop_put:NxV \l_@@_permutation_prop
+        {
+          \seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpa_int}
+        } \l_@@_tmpb_tl
+      }
     }
 %    \end{macrocode}
 % See if the current level is what was requested by the anchor.
@@ -1629,24 +1671,30 @@ and the derived files            README.txt,
   }
 %    \end{macrocode}
 % Now that we have the inverse, we can figure out our anchor.
-% First, see if we requested a strand by its position at the end of the braid.
+% If the strand was recorded as \(-1\), then we want to figure out the position from the braid as a whole so we don't bother with processing.
 %    \begin{macrocode}
-  \tl_set:Nx \l_@@_tmpa_tl {\seq_item:Nn \l_@@_anchor_seq {1}}
-  \tl_if_eq:VnT \l_@@_tmpa_tl {rev}
+  \tl_if_eq:VnF \l_@@_anchor_strand_tl {-1}
   {
-    \prop_get:NVN \l_@@_permutation_prop
-    \l_@@_anchor_strand_tl \l_@@_anchor_strand_tl
-  }
-  \tl_if_eq:VnF \l_@@_anchor_level_tl {s}
-  {
-    \tl_if_eq:VnTF \l_@@_anchor_level_tl {e}
+%    \end{macrocode}
+% Now, see if we requested a strand by its position at the end of the braid.
+%    \begin{macrocode}
+    \tl_set:Nx \l_@@_tmpa_tl {\seq_item:Nn \l_@@_anchor_seq {1}}
+    \tl_if_eq:VnT \l_@@_tmpa_tl {rev}
     {
-      \prop_get:NVN \l_@@_inverse_prop
+      \prop_get:NVN \l_@@_permutation_prop
       \l_@@_anchor_strand_tl \l_@@_anchor_strand_tl
     }
+    \tl_if_eq:VnF \l_@@_anchor_level_tl {s}
     {
-      \prop_get:NVN \l_@@_anchor_prop
-      \l_@@_anchor_strand_tl \l_@@_anchor_strand_tl
+      \tl_if_eq:VnTF \l_@@_anchor_level_tl {e}
+      {
+        \prop_get:NVN \l_@@_inverse_prop
+        \l_@@_anchor_strand_tl \l_@@_anchor_strand_tl
+      }
+      {
+        \prop_get:NVN \l_@@_anchor_prop
+        \l_@@_anchor_strand_tl \l_@@_anchor_strand_tl
+      }
     }
   }
 %    \end{macrocode}
@@ -1684,28 +1732,91 @@ and the derived files            README.txt,
 \cs_new_nopar:Npn \@@_render:
 {
 %    \end{macrocode}
-%
+% Start by figuring out our anchor.
 %    \begin{macrocode}
-  \fp_set:Nn \l_@@_anchor_x_fp { - 1 * (\tl_use:N \l_@@_anchor_strand_tl - 1) * \@@_dim_value:n {width} }
-
-  \tl_if_eq:VnTF \l_@@_anchor_level_tl {s}
+  \tl_if_eq:VnTF \l_@@_anchor_strand_tl {-1}
   {
-    \fp_set:Nn \l_@@_anchor_y_fp {0}
+%    \end{macrocode}
+% The strand is \(-1\) then we're working with the braid as if a node.
+% We'll redefine this node later anyway.
+%    \begin{macrocode}
+    \tl_set:cn {pgf@sh@ns@temporary braid node}{rectangle}
+    \tl_set:cx {pgf@sh@np@temporary braid node}{%
+      \exp_not:N\def
+      \exp_not:N\southwest
+      {
+        \exp_not:N\pgfqpoint
+        {0pt}
+        {0pt}
+      }
+      \exp_not:N\def
+      \exp_not:N\northeast
+      {
+        \exp_not:N\pgfqpoint
+        {
+          \fp_to_dim:n
+          {
+            (\l_@@_strands_int - 1)
+            *
+            abs(\@@_dim_value:n {width})
+          }
+        }
+        {
+          \fp_to_dim:n
+          {
+            \l_@@_length_int * abs(\@@_dim_value:n {height})
+            + 2 * \@@_dim_value:n {border~ height}
+          }
+        }
+      }
+    }%
+    \pgfgettransform\l_@@_tmpa_tl
+    \tl_set:cV {pgf@sh@nt@temporary braid node} \l_@@_tmpa_tl
+    \tl_set:cV {pgf@sh@pi@temporary braid node} \pgfpictureid
+    \pgfpointanchor{temporary braid node} {\@@_value:n {anchor}}
+%    \end{macrocode}
+% Adjustments due to the possibility of negative widths/heights
+%    \begin{macrocode}
+    \fp_set:Nn \l_@@_anchor_x_fp {
+      - \dim_use:c {pgf@x}
+      - (1 - sign(\@@_dim_value:n {width})) / 2
+      * (\l_@@_strands_int - 1)
+      * \@@_dim_value:n {width}
+    }
+    \fp_set:Nn \l_@@_anchor_y_fp {
+      - \dim_use:c {pgf@y}
+      - (1 - sign(\@@_dim_value:n {height})) / 2
+      * (
+      \l_@@_length_int * abs(\@@_dim_value:n {height})
+      + 2 * \@@_dim_value:n {border~ height} 
+      ) * sign(\@@_dim_value:n {height})
+    }
   }
   {
-    \tl_if_eq:VnTF \l_@@_anchor_level_tl {e}
+%    \end{macrocode}
+% The strand is not \(-1\) so we're setting the anchor via strand and level numbers.
+%    \begin{macrocode}
+    \fp_set:Nn \l_@@_anchor_x_fp { - 1 * (\tl_use:N \l_@@_anchor_strand_tl - 1) * \@@_dim_value:n {width} }
+
+    \tl_if_eq:VnTF \l_@@_anchor_level_tl {s}
     {
-      \fp_set:Nn \l_@@_anchor_y_fp {
-        -1 * \l_@@_length_int * \@@_dim_value:n {height}
-        - sign(\@@_dim_value:n {height})
-        * 2 * \@@_dim_value:n {border~ height}
-      }
+      \fp_set:Nn \l_@@_anchor_y_fp {0}
     }
     {
-      \fp_set:Nn \l_@@_anchor_y_fp {
-        -1 * \l_@@_anchor_level_tl * \@@_dim_value:n {height}
-        - sign(\@@_dim_value:n {height})
-        * \@@_dim_value:n {border~ height}
+      \tl_if_eq:VnTF \l_@@_anchor_level_tl {e}
+      {
+        \fp_set:Nn \l_@@_anchor_y_fp {
+          -1 * \l_@@_length_int * \@@_dim_value:n {height}
+          - sign(\@@_dim_value:n {height})
+          * 2 * \@@_dim_value:n {border~ height}
+        }
+      }
+      {
+        \fp_set:Nn \l_@@_anchor_y_fp {
+          -1 * \l_@@_anchor_level_tl * \@@_dim_value:n {height}
+          - sign(\@@_dim_value:n {height})
+          * \@@_dim_value:n {border~ height}
+        }
       }
     }
   }
@@ -1860,190 +1971,321 @@ and the derived files            README.txt,
 %    \begin{macrocode}
     \seq_if_empty:NF \l_@@_crossing_seq
     {
+      \int_set:Nn \l_@@_crossing_long_int
+      {
+        %        \seq_item:Nn \l_@@_crossing_seq {\seq_count:N \l_@@_crossing_seq}
+        \seq_item:Nn \l_@@_crossing_seq {1}
+      }
+      \int_set:Nn \l_@@_crossing_start_int
+      {
+        \int_min:nn
+        {
+          \seq_item:Nn \l_@@_crossing_seq {1}
+        }
+        {
+          \seq_item:Nn \l_@@_crossing_seq {\seq_count:N \l_@@_crossing_seq}          
+        }
+      }
+      \int_set:Nn \l_@@_crossing_end_int
+      {
+        \int_max:nn
+        {
+          \seq_item:Nn \l_@@_crossing_seq {1}
+        }
+        {
+          \seq_item:Nn \l_@@_crossing_seq {\seq_count:N \l_@@_crossing_seq}          
+        }
+
+      }
+      \int_set:Nn \l_@@_crossing_width_int
+      {
+        \l_@@_crossing_end_int
+        -
+        \l_@@_crossing_start_int
+      }
+%    \end{macrocode}
+% Step through the crossing
+%    \begin{macrocode}
+      \int_step_inline:nnn {2} {\seq_count:N \l_@@_crossing_seq}
+      {
+        \int_set:Nn \l_@@_tmpa_int {####1}
+        \int_set:Nn \l_@@_tmpb_int {####1 - 1}
 %    \end{macrocode}
 % Keep track of the current permutation.      
 %    \begin{macrocode}
       \prop_get:NxN \l_@@_crossing_permutation_prop
-      {\seq_item:Nn \l_@@_crossing_seq {1}} \l_@@_tmpa_tl
+      {\seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpa_int}} \l_@@_tmpa_tl
       \prop_get:NxN \l_@@_crossing_permutation_prop
-      {\seq_item:Nn \l_@@_crossing_seq {2}} \l_@@_tmpb_tl
+      {\seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpb_int}} \l_@@_tmpb_tl
 
       \prop_put:NxV \l_@@_crossing_permutation_prop
-      {\seq_item:Nn \l_@@_crossing_seq {2}} \l_@@_tmpa_tl
+      {\seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpb_int}} \l_@@_tmpa_tl
       \prop_put:NxV \l_@@_crossing_permutation_prop
-      {\seq_item:Nn \l_@@_crossing_seq {1}} \l_@@_tmpb_tl
+      {\seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpa_int}} \l_@@_tmpb_tl
 %    \end{macrocode}
 % Now get the strands corresponding to the ones involved in the crossing.
 %    \begin{macrocode}
       \prop_get:NxN \l_@@_strands_prop
-      {\seq_item:Nn \l_@@_crossing_seq {1}} \l_@@_tmpa_tl
+      {\seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpa_int}} \l_@@_tmpa_tl
       \prop_get:NxN \l_@@_strands_prop
-      {\seq_item:Nn \l_@@_crossing_seq {2}} \l_@@_tmpb_tl
+      {\seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpb_int}} \l_@@_tmpb_tl
 %    \end{macrocode}
 % The over-strand is easy as that's a single curve.
 %    \begin{macrocode}
+%      \int_set:Nn \l_@@_crossing_start_factor_int {1}
+%     \int_set:Nn \l_@@_crossing_end_factor_int {1}
+%      \int_compare:nT {
+%        \seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpa_int}
+%        =
+%        \l_@@_crossing_long_int
+%      }
+%      {
+        \int_set:Nn \l_@@_crossing_start_factor_int {0}
+        \int_set:Nn \l_@@_crossing_end_factor_int {0}
+
+        \int_compare:nT {
+          ####1 = \seq_count:N \l_@@_crossing_seq
+        }
+        {
+          \int_set:Nn \l_@@_crossing_end_factor_int {1}
+        }
+        \int_compare:nT {
+          ####1 = 2
+        }
+        {
+          \int_set:Nn \l_@@_crossing_start_factor_int {1}
+        }
+%      }
+
       \tl_put_right:Nx \l_@@_tmpa_tl
       {
         \exp_not:N \@@_lineto:nn
       
         {\fp_eval:n
           {
-            (\seq_item:Nn \l_@@_crossing_seq {1} - 1)
+            (\seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpa_int} - 1)
             * \@@_dim_value:n {width}
           }
         }
-        {\fp_eval:n { \l_@@_height_fp + \l_@@_nudge_fp } }
+        {\fp_eval:n { \l_@@_height_fp + \l_@@_nudge_fp * \l_@@_crossing_start_factor_int
+            + \@@_dim_value:n {height} * (####1 - 2)/(\seq_count:N \l_@@_crossing_seq - 1)
+ } }
 
         \exp_not:N \@@_curveto:nnnnnn
 
         {0}
-        {\fp_eval:n { \l_@@_control_fp}}
+        {\fp_eval:n { \l_@@_control_fp
+%            * \l_@@_crossing_start_factor_int
+            * 1/(\seq_count:N \l_@@_crossing_seq - 1)}}
 
         {0}
-        {\fp_eval:n {- \l_@@_control_fp}}
+        {\fp_eval:n {- \l_@@_control_fp
+%            * \l_@@_crossing_end_factor_int
+            * 1/(\seq_count:N \l_@@_crossing_seq - 1)}}
 
         {\fp_eval:n
           {
-            (\seq_item:Nn \l_@@_crossing_seq {2} - 1)
+            (\seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpb_int} - 1)
             * \@@_dim_value:n {width}
           }
         }
         {\fp_eval:n
           {
             \l_@@_height_fp
-            + \@@_dim_value:n {height}
-            - \l_@@_nudge_fp
+            + \@@_dim_value:n {height} * (####1 - 1)/(\seq_count:N \l_@@_crossing_seq - 1)
+            - \l_@@_nudge_fp * \l_@@_crossing_end_factor_int
           }
         }
       }
 %    \end{macrocode}
 % The under-strand is a bit more complicated as we need to break it in the middle.
 %    \begin{macrocode}
+%      \int_set:Nn \l_@@_crossing_start_factor_int {1}
+%      \int_set:Nn \l_@@_crossing_end_factor_int {1}
+%      \int_compare:nT {
+%        \seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpb_int}
+%        =
+%        \l_@@_crossing_long_int
+%      }
+%      {
+        \int_set:Nn \l_@@_crossing_start_factor_int {0}
+        \int_set:Nn \l_@@_crossing_end_factor_int {0}
+
+        \int_compare:nT {
+          ####1 = \seq_count:N \l_@@_crossing_seq
+        }
+        {
+          \int_set:Nn \l_@@_crossing_end_factor_int {1}
+        }
+        \int_compare:nT {
+          ####1 = 2
+        }
+        {
+          \int_set:Nn \l_@@_crossing_start_factor_int {1}
+        }
+%      }
+
       \tl_put_right:Nx \l_@@_tmpb_tl
       {
         \exp_not:N \@@_lineto:nn
       
         {\fp_eval:n
           {
-            (\seq_item:Nn \l_@@_crossing_seq {2} - 1)
+            (\seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpb_int} - 1)
             * \@@_dim_value:n {width}
           }
         }
-        {\fp_eval:n { \l_@@_height_fp + \l_@@_nudge_fp } }
+        {\fp_eval:n { \l_@@_height_fp + \l_@@_nudge_fp * \l_@@_crossing_start_factor_int
+            + \@@_dim_value:n {height} * (####1 - 2)/(\seq_count:N \l_@@_crossing_seq - 1)
+
+        } }
 
         \exp_not:N \@@_curveto:nnnnnn
 
         {0}
         {
           \fp_eval:n {
-            \l_@@_control_fp  * (.5 - \@@_value:n {gap} )
+            \l_@@_control_fp  * (.5 - \@@_value:n {gap} * (\seq_count:N \l_@@_crossing_seq - 1) ) * 1/(\seq_count:N \l_@@_crossing_seq - 1)
+%            * \l_@@_crossing_start_factor_int
           }
         }
 
         {
           \fp_eval:n {
-            - (.5 - \@@_value:n {gap} ) / 3 *
+            - (.5 - \@@_value:n {gap} * (\seq_count:N \l_@@_crossing_seq - 1) ) / 3 *
             \@@_bezier_tangent:nnnnn
-            {.5 - \@@_value:n {gap} }
+            {.5 - \@@_value:n {gap} * (\seq_count:N \l_@@_crossing_seq - 1) }
             {0}
             {0}
             {
-              (\seq_item:Nn \l_@@_crossing_seq {1}
-              - \seq_item:Nn \l_@@_crossing_seq {2})
+              (\seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpa_int}
+              - \seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpb_int})
               * \@@_dim_value:n {width}
             }
             {
-              (\seq_item:Nn \l_@@_crossing_seq {1}
-              - \seq_item:Nn \l_@@_crossing_seq {2})
+              (\seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpa_int}
+              - \seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpb_int})
               * \@@_dim_value:n {width}
             }
           }
         }
         {
           \fp_eval:n {
-            -(.5 - \@@_value:n {gap} ) / 3 *
+            -(.5 - \@@_value:n {gap} * (\seq_count:N \l_@@_crossing_seq - 1) ) / 3 *
             \@@_bezier_tangent:nnnnn
-            {.5 - \@@_value:n {gap} }
+            {.5 - \@@_value:n {gap} * (\seq_count:N \l_@@_crossing_seq - 1) }
             {0}
-            {\l_@@_control_fp}
             {
-              \@@_dim_value:n {height}
-              - 2* \l_@@_nudge_fp
-              - \l_@@_control_fp
+              \l_@@_control_fp * 1/(\seq_count:N \l_@@_crossing_seq - 1)
+%              * \l_@@_crossing_start_factor_int
             }
-            {\@@_dim_value:n {height} - 2* \l_@@_nudge_fp}
+            {
+              \@@_dim_value:n {height} * 1/(\seq_count:N \l_@@_crossing_seq - 1)
+              - \l_@@_nudge_fp * \l_@@_crossing_start_factor_int
+              - \l_@@_nudge_fp * \l_@@_crossing_end_factor_int
+              - \l_@@_control_fp * 1/(\seq_count:N \l_@@_crossing_seq - 1)
+%              * \l_@@_crossing_end_factor_int
+            }
+            {
+              \@@_dim_value:n {height} *  1/(\seq_count:N \l_@@_crossing_seq - 1)
+              - \l_@@_nudge_fp * \l_@@_crossing_start_factor_int
+              - \l_@@_nudge_fp * \l_@@_crossing_end_factor_int
+            }
           }
         }
 
         {
           \fp_eval:n {
-            (\seq_item:Nn \l_@@_crossing_seq {2} - 1)
+            (\seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpb_int} - 1)
             * \@@_dim_value:n {width} +
             \@@_bezier_point:nnnnn
-            {.5 - \@@_value:n {gap} }
+            {.5 - \@@_value:n {gap} * (\seq_count:N \l_@@_crossing_seq - 1) }
             {0}
             {0}
             {
-              (\seq_item:Nn \l_@@_crossing_seq {1}
-              - \seq_item:Nn \l_@@_crossing_seq {2})
+              (\seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpa_int}
+              - \seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpb_int})
               * \@@_dim_value:n {width}
             }
             {
-              (\seq_item:Nn \l_@@_crossing_seq {1}
-              - \seq_item:Nn \l_@@_crossing_seq {2})
+              (\seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpa_int}
+              - \seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpb_int})
               * \@@_dim_value:n {width}
             }
           }
         }
         {
           \fp_eval:n {
-          \l_@@_height_fp + \l_@@_nudge_fp +
+            \l_@@_height_fp
+            + \l_@@_nudge_fp * \l_@@_crossing_start_factor_int
+            + \@@_dim_value:n {height} * (####1 - 2)/(\seq_count:N \l_@@_crossing_seq - 1)
+            + 
             \@@_bezier_point:nnnnn
-            {.5 - \@@_value:n {gap} }
+            {.5 - \@@_value:n {gap} * (\seq_count:N \l_@@_crossing_seq - 1) }
             {0}
-            {\l_@@_control_fp}
             {
-              \@@_dim_value:n {height}
-              - 2* \l_@@_nudge_fp
-              - \l_@@_control_fp
+              \l_@@_control_fp * 1/(\seq_count:N \l_@@_crossing_seq - 1)
+%              * \l_@@_crossing_start_factor_int
             }
-            {\@@_dim_value:n {height} - 2* \l_@@_nudge_fp}
+            {
+              \@@_dim_value:n {height} *  1/(\seq_count:N \l_@@_crossing_seq - 1)
+              - \l_@@_nudge_fp * \l_@@_crossing_start_factor_int
+              - \l_@@_nudge_fp * \l_@@_crossing_end_factor_int
+              - \l_@@_control_fp * 1/(\seq_count:N \l_@@_crossing_seq - 1)
+%              * \l_@@_crossing_end_factor_int
+            }
+            {\@@_dim_value:n {height} *  1/(\seq_count:N \l_@@_crossing_seq - 1)
+              - \l_@@_nudge_fp * \l_@@_crossing_start_factor_int
+              - \l_@@_nudge_fp * \l_@@_crossing_end_factor_int
+            }
           }
         }
 
         \exp_not:N \@@_moveto:nn
         {
           \fp_eval:n {
-            (\seq_item:Nn \l_@@_crossing_seq {2} - 1)
+            (\seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpb_int} - 1)
             * \@@_dim_value:n {width} +
             \@@_bezier_point:nnnnn
-            {.5 + \@@_value:n {gap} }
+            {.5 + \@@_value:n {gap} * (\seq_count:N \l_@@_crossing_seq - 1) }
             {0}
             {0}
             {
-              (\seq_item:Nn \l_@@_crossing_seq {1}
-              - \seq_item:Nn \l_@@_crossing_seq {2})
+              (\seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpa_int}
+              - \seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpb_int})
               * \@@_dim_value:n {width}
             }
             {
-              (\seq_item:Nn \l_@@_crossing_seq {1}
-              - \seq_item:Nn \l_@@_crossing_seq {2})
+              (\seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpa_int}
+              - \seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpb_int})
               * \@@_dim_value:n {width}
             }
           }
         }
         {
           \fp_eval:n {
-          \l_@@_height_fp + \l_@@_nudge_fp +
+            \l_@@_height_fp
+            + \l_@@_nudge_fp * \l_@@_crossing_start_factor_int
+            + \@@_dim_value:n {height} * (####1 - 2)/(\seq_count:N \l_@@_crossing_seq - 1)
+            + 
             \@@_bezier_point:nnnnn
-            {.5 + \@@_value:n {gap} }
+            {.5 + \@@_value:n {gap} * (\seq_count:N \l_@@_crossing_seq - 1) }
             {0}
-            {\l_@@_control_fp}
             {
-              \@@_dim_value:n {height} - 2* \l_@@_nudge_fp
-              - \l_@@_control_fp
+              \l_@@_control_fp * 1/(\seq_count:N \l_@@_crossing_seq - 1)
+%              * \l_@@_crossing_start_factor_int
             }
-            {\@@_dim_value:n {height} - 2* \l_@@_nudge_fp}
+            {
+              \@@_dim_value:n {height} *  1/(\seq_count:N \l_@@_crossing_seq - 1)
+              - \l_@@_nudge_fp * \l_@@_crossing_start_factor_int
+              - \l_@@_nudge_fp * \l_@@_crossing_end_factor_int
+              - \l_@@_control_fp * 1/(\seq_count:N \l_@@_crossing_seq - 1)
+%              * \l_@@_crossing_end_factor_int
+            }
+            {\@@_dim_value:n {height} *  1/(\seq_count:N \l_@@_crossing_seq - 1)
+              - \l_@@_nudge_fp * \l_@@_crossing_start_factor_int
+              - \l_@@_nudge_fp * \l_@@_crossing_end_factor_int
+            }
           }
         }
 
@@ -2051,55 +2293,65 @@ and the derived files            README.txt,
 
         {
           \fp_eval:n {
-            (.5 - \@@_value:n {gap} ) / 3 *
+            (.5 - \@@_value:n {gap} * (\seq_count:N \l_@@_crossing_seq - 1) ) / 3 *
             \@@_bezier_tangent:nnnnn
-            {.5 + \@@_value:n {gap} }
+            {.5 + \@@_value:n {gap} * (\seq_count:N \l_@@_crossing_seq - 1) }
             {0}
             {0}
             {
-              (\seq_item:Nn \l_@@_crossing_seq {1}
-              - \seq_item:Nn \l_@@_crossing_seq {2})
+              (\seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpa_int}
+              - \seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpb_int})
               * \@@_dim_value:n {width}
             }
             {
-              (\seq_item:Nn \l_@@_crossing_seq {1}
-              - \seq_item:Nn \l_@@_crossing_seq {2})
+              (\seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpa_int}
+              - \seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpb_int})
               * \@@_dim_value:n {width}
             }
           }
         }
         {
           \fp_eval:n {
-            (.5 - \@@_value:n {gap} ) / 3 *
+            (.5 - \@@_value:n {gap} * (\seq_count:N \l_@@_crossing_seq - 1) ) / 3 *
             \@@_bezier_tangent:nnnnn
-            {.5 + \@@_value:n {gap} }
+            {.5 + \@@_value:n {gap} * (\seq_count:N \l_@@_crossing_seq - 1) }
             {0}
-            {\l_@@_control_fp}
             {
-              \@@_dim_value:n {height} - 2* \l_@@_nudge_fp
-              - \l_@@_control_fp
+              \l_@@_control_fp * 1/(\seq_count:N \l_@@_crossing_seq - 1)
+%              * \l_@@_crossing_start_factor_int
             }
-            {\@@_dim_value:n {height} - 2* \l_@@_nudge_fp}
+            {
+              \@@_dim_value:n {height} *  1/(\seq_count:N \l_@@_crossing_seq - 1)
+              - \l_@@_nudge_fp * \l_@@_crossing_start_factor_int
+              - \l_@@_nudge_fp * \l_@@_crossing_end_factor_int
+              - \l_@@_control_fp * 1/(\seq_count:N \l_@@_crossing_seq - 1)
+%              * \l_@@_crossing_end_factor_int
+            }
+            {\@@_dim_value:n {height} *  1/(\seq_count:N \l_@@_crossing_seq - 1)
+              - \l_@@_nudge_fp * \l_@@_crossing_start_factor_int
+              - \l_@@_nudge_fp * \l_@@_crossing_end_factor_int
+            }
           }
         }
 
         {0}
-        { \fp_eval:n {
-            -\l_@@_control_fp  * (.5 - \@@_value:n {gap} )
-          }
+        {\fp_eval:n {
+            - \l_@@_control_fp  * (.5 - \@@_value:n {gap} * (\seq_count:N \l_@@_crossing_seq - 1) )
+%            * \l_@@_crossing_end_factor_int
+            * 1/(\seq_count:N \l_@@_crossing_seq - 1)}
         }
-
 
         {\fp_eval:n
           {
-            (\seq_item:Nn \l_@@_crossing_seq {1} - 1)
+            (\seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpa_int} - 1)
             * \@@_dim_value:n {width}
           }
         }
         {\fp_eval:n
           {
-            \l_@@_height_fp + \@@_dim_value:n {height}
-            - \l_@@_nudge_fp
+            \l_@@_height_fp
+            + \@@_dim_value:n {height} * (####1 - 1)/(\seq_count:N \l_@@_crossing_seq - 1)
+            - \l_@@_nudge_fp * \l_@@_crossing_end_factor_int
           }
         }
         
@@ -2108,9 +2360,9 @@ and the derived files            README.txt,
 % Now put those new strands back in the prop.
 %    \begin{macrocode}
       \prop_put:NxV \l_@@_strands_prop
-      {\seq_item:Nn \l_@@_crossing_seq {2}} \l_@@_tmpa_tl
+      {\seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpb_int}} \l_@@_tmpa_tl
       \prop_put:NxV \l_@@_strands_prop
-      {\seq_item:Nn \l_@@_crossing_seq {1}} \l_@@_tmpb_tl
+      {\seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpa_int}} \l_@@_tmpb_tl
 %    \end{macrocode}
 % If the strands are more than one apart, the intermediate strands need to be broken as well.
 %    \begin{macrocode}
@@ -2118,18 +2370,18 @@ and the derived files            README.txt,
       {
         \int_max:nn
         {
-          \seq_item:Nn \l_@@_crossing_seq {1}
+          \seq_item:Nn \l_@@_crossing_seq {####1 - 1}
         }
         {
-          \seq_item:Nn \l_@@_crossing_seq {2}
+          \seq_item:Nn \l_@@_crossing_seq {####1}
         }
         -
         \int_min:nn
         {
-          \seq_item:Nn \l_@@_crossing_seq {1}
+          \seq_item:Nn \l_@@_crossing_seq {####1 - 1}
         }
         {
-          \seq_item:Nn \l_@@_crossing_seq {2}
+          \seq_item:Nn \l_@@_crossing_seq {####1}
         }
         > 1
       }
@@ -2138,48 +2390,77 @@ and the derived files            README.txt,
         {
           \int_min:nn
           {
-            \seq_item:Nn \l_@@_crossing_seq {1}
+            \seq_item:Nn \l_@@_crossing_seq {####1 - 1}
           }
           {
-            \seq_item:Nn \l_@@_crossing_seq {2}
+            \seq_item:Nn \l_@@_crossing_seq {####1}
           }
           + 1}
         {1}
         {
           \int_max:nn
           {
-            \seq_item:Nn \l_@@_crossing_seq {1}
+            \seq_item:Nn \l_@@_crossing_seq {####1 - 1}
           }
           {
-            \seq_item:Nn \l_@@_crossing_seq {2}
+            \seq_item:Nn \l_@@_crossing_seq {####1}
           }
           - 1
         }
         {
 
-          \prop_get:NnN \l_@@_strands_prop {####1} \l_@@_tmpa_tl
+          \prop_get:NnN \l_@@_strands_prop {########1} \l_@@_tmpa_tl
           \tl_put_right:Nx \l_@@_tmpa_tl
             {
               \exp_not:N \@@_lineto:nn
-              {\fp_eval:n {(####1 - 1) * \@@_dim_value:n {width} }}
+              {\fp_eval:n {(########1 - 1) * \@@_dim_value:n {width} }}
               {\fp_eval:n
                 {
                   \l_@@_height_fp + \l_@@_nudge_fp
-                  + .5 * \l_@@_control_fp
+                  + .5 * \l_@@_control_fp / (\seq_count:N \l_@@_crossing_seq - 1)
+                  + \@@_dim_value:n {height} * (####1 - 2)/(\seq_count:N \l_@@_crossing_seq - 1)
                 }
               }
               \exp_not:N \@@_moveto:nn
-              {\fp_eval:n {(####1 - 1) * \@@_dim_value:n {width} }}
+              {\fp_eval:n {(########1 - 1) * \@@_dim_value:n {width} }}
               {\fp_eval:n
                 {
-                  \l_@@_height_fp + \@@_dim_value:n {height}
-                  - \l_@@_nudge_fp - .5 * \l_@@_control_fp
+                  \l_@@_height_fp
+                  - \l_@@_nudge_fp - .5 * \l_@@_control_fp / (\seq_count:N \l_@@_crossing_seq - 1)
+                  + \@@_dim_value:n {height} * (####1 - 1)/(\seq_count:N \l_@@_crossing_seq - 1)
                 }
               }
             }
 
-            \prop_put:NnV \l_@@_strands_prop {####1} \l_@@_tmpa_tl
+            \prop_put:NnV \l_@@_strands_prop {########1} \l_@@_tmpa_tl
           }
+      }
+%    \end{macrocode}
+% Reset the current long 
+%    \begin{macrocode}
+      \int_compare:nTF
+      {
+        \seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpa_int}
+        =
+        \l_@@_crossing_long_int
+      }
+      {
+        \int_set:Nn \l_@@_crossing_long_int {\seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpb_int}}
+      }
+      {
+      \int_compare:nT
+      {
+        \seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpb_int}
+        =
+        \l_@@_crossing_long_int
+      }
+      {
+        \int_set:Nn \l_@@_crossing_long_int {\seq_item:Nn \l_@@_crossing_seq {\l_@@_tmpa_int}}
+      }
+      
+      }
+%    \end{macrocode}
+%    \begin{macrocode}
       }
     }
 %    \end{macrocode}
@@ -2239,6 +2520,68 @@ and the derived files            README.txt,
     \prop_get:NnN \l_@@_strands_prop {##1} \l_@@_tmpa_tl
     \tl_use:N \l_@@_tmpa_tl
   }
+%    \end{macrocode}
+% Finally, put a node around the whole braid if it's been named
+%    \begin{macrocode}
+  \tl_if_empty:cF {tikz@fig@name}
+  {
+    \tl_gset:cn {pgf@sh@ns@ \tl_use:c{tikz@fig@name} }{rectangle}
+    \tl_gset:cx {pgf@sh@np@ \tl_use:c{tikz@fig@name} }{%
+      \exp_not:N\def
+      \exp_not:N\southwest
+      {
+        \exp_not:N\pgfqpoint
+        {
+          \fp_to_dim:n
+          {
+            min(0,
+            (\l_@@_strands_int - 1)
+            *
+            (\@@_dim_value:n {width})
+            )
+          }
+        }
+        {
+          \fp_to_dim:n
+          {
+            min(0,
+            \l_@@_length_int * (\@@_dim_value:n {height})
+            + 2 * sign(\@@_dim_value:n {height}) *
+            \@@_dim_value:n {border~ height}
+            )
+          }
+        }
+      }
+      \exp_not:N\def
+      \exp_not:N\northeast
+      {
+        \exp_not:N\pgfqpoint
+        {
+          \fp_to_dim:n
+          {
+            max(0,
+            (\l_@@_strands_int - 1)
+            *
+            (\@@_dim_value:n {width})
+            )
+          }
+        }
+        {
+          \fp_to_dim:n
+          {
+            max(0,
+            \l_@@_length_int * (\@@_dim_value:n {height})
+            + 2 * sign(\@@_dim_value:n {height}) *
+            \@@_dim_value:n {border~ height}
+            )
+          }
+        }
+      }
+    }%
+    \pgfgettransform\l_@@_tmpa_tl
+    \tl_gset:cV {pgf@sh@nt@ \tl_use:c{tikz@fig@name} } \l_@@_tmpa_tl
+    \tl_gset:cV {pgf@sh@pi@ \tl_use:c{tikz@fig@name} } \pgfpictureid
+  }
   \end{scope}
 }
 %    \end{macrocode}
@@ -2257,6 +2600,8 @@ and the derived files            README.txt,
 }
 \cs_new_nopar:Npn \@@_curveto:nnnnnn #1#2#3#4#5#6
 {
+%  -- +(5 pt, 0) -- +(0 pt, 0pt)
+%  -- +(#1 pt, #2 pt) -- (#5 pt + #3 pt, #6 pt + #4 pt) -- (#5 pt, #6 pt)
   .. controls +(#1 pt, #2 pt) and +(#3 pt, #4 pt)
   .. (#5 pt, #6 pt)
 }

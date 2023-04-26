@@ -21,13 +21,17 @@
 \chardef\minimhooksloaded = \catcode`\:
 \catcode`\: = 11
 
-\input minim-alloc
+\directlua{ require('minim-hooks') }
 
 % 1 the pre_shipout callback
 
 \newbox\minim:shipout:box \let\minim:shipout:orig = \shipout
 \def\minim:shipout:do{\minim:shipout:orig\box\minim:shipout:box}
-\directlua{require('minim-hooks')} \let\shipout\minim:shipout
+\protected\def\minim:shipout:new{\directlua{
+    tex.box[\the\minim:shipout:box] = token.scan_list()
+    require('minim-callbacks').call_callback('pre_shipout', \the\minim:shipout:box)
+    token.put_next(token.create('minim:shipout:do'))}}
+\let\shipout = \minim:shipout:new
 
 % 1 invisibly adding to \everypar
 

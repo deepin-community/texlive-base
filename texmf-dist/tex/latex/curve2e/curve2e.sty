@@ -6,12 +6,12 @@
 %%
 %% curve2e.dtx  (with options: `package')
 %% 
-%%   Copyright (C)  2005--2021 Claudio Beccari  all rights reserved.
+%%   Copyright (C)  2005--2023 Claudio Beccari  all rights reserved.
 %%   License information appended
 %% 
 \NeedsTeXFormat{LaTeX2e}[2019/01/01]
 \ProvidesPackage{curve2e}%
-        [2021-01-12 v.2.2.15 Extension package for pict2e]
+        [2023-01-01 v.2.2.22 Extension package for pict2e]
 \IfFileExists{xfp.sty}{%
   \RequirePackage{graphicx,color}
   \RequirePackageWithOptions{pict2e}[2014/01/01]
@@ -28,18 +28,18 @@
     \MessageBreak%
     ***************************************\MessageBreak%
     Version 1.61 of curve2e has been loaded\MessageBreak%
-    instead of the current version\MessageBreak%
+    instead of the current version         \MessageBreak%
     ***************************************\MessageBreak}%
     \endinput
 }
 \ExplSyntaxOn
 \AtBeginDocument{%
 \ProvideExpandableDocumentCommand\fptest{m m m}{%
-   \fp_compare:nTF{#1}{#2}{#3}}
+   \fp_compare:nTF{#1}{#2}{#3}\ignorespaces}
 \ProvideExpandableDocumentCommand\fpdowhile{m m}{%
-   \fp_do_while:nn{#1}{#2}}
+   \fp_do_while:nn{#1}{#2}\ignorespaces}
 \ProvideExpandableDocumentCommand\fpwhiledo{m m}{%
-   \fp_while_do:nn{#1}{#2}}
+   \fp_while_do:nn{#1}{#2}\ignorespaces}
 }
 \ExplSyntaxOff
 
@@ -284,7 +284,6 @@
 %%
 %%
 %%
-%%
 \providecommand\Pbox{}
 \newlength\PbDim
 \RenewDocumentCommand\Pbox{D(){0,0} O{cc} m O{0.5ex} s D<>{0}}{%
@@ -303,13 +302,16 @@
 
 \providecommand\Zbox{}
 \RenewDocumentCommand\Zbox{R(){0,0} O{cc} m O{1}}{%
-\put(#1){\makebox(0,0)[#2]{\fboxrule=0pt\fboxsep=3pt\fbox{$#3$}}\makebox(0,0)[cc]{\circle*{#4}}}\ignorespaces}
+\put(#1){\makebox(0,0)[#2]{\fboxrule=0pt\fboxsep=3pt\fbox{$#3$}}%
+\makebox(0,0)[cc]{\circle*{#4}}}\ignorespaces}
 
 \providecommand\legenda{}
-\RenewDocumentCommand\legenda{ D(){0,0} m}{\put(#1){\setbox3333\hbox{$#2$}%
-   \dimen3333\dimexpr\wd3333*\p@/\unitlength +3\p@\relax
-   \edef\@tempA{\strip@pt\dimen3333}%
-   \framebox(\@tempA,7){\box3333}}\ignorespaces}
+\newbox\legendbox
+\RenewDocumentCommand\legenda{ D(){0,0} m}{\put(#1){%
+   \setbox\legendbox\hbox{$\relax#2\relax$}%
+   \edef\@tempA{\fpeval{(\wd\legendbox + 3\p@)/\unitlength}}%
+   \edef\@tempB{\fpeval{(\ht\legendbox+\dp\legendbox+3\p@)/\unitlength}}%
+   \framebox(\@tempA,\@tempB){\box\legendbox}}\ignorespaces}
 
 
 
@@ -426,7 +428,7 @@ Computations go on, but the results may be meaningless}}{%
   \Numero\@gradi\@tdA
   \SubVect\@pPun from\@Cent to\@V
   \AddVect\@V and\@Cent to\@sPun
-  \Multvect{\@V}{0,-1.3333333to}\@V
+  \Multvect{\@V}{0,-1.3333333}\@V
   \if\Segno-\ScaleVect\@V by-1to\@V\fi
   \AddVect\@pPun and\@V to\@pcPun
   \AddVect\@sPun and\@V to\@scPun
@@ -482,6 +484,7 @@ Computations go on, but the results may be meaningless}}{%
   \@VARC(#1)(#2)%
 \fi
 \endgroup\ignorespaces}%
+\let\VVectorArc\VectorARC
 \def\@VArc(#1)(#2){%
 \ifdim\@tdA>\z@
   \let\Segno+%
@@ -684,7 +687,7 @@ Computations go on, but the results may be meaningless}}{%
     \StartCurveAt#1WithDir{#2}%
     \@ifnextchar\lp@r\@Curve{%
     \PackageWarning{curve2e}{%
-    Curve specifications must contain at least two nodes!\Messagebreak
+    Curve specifications must contain at least two nodes!\MessageBreak
     Please, control your \string\Curve\space specifications\MessageBreak}}}
 \def\@Curve(#1)<#2>{%
     \CurveTo#1WithDir{#2}%
@@ -699,7 +702,7 @@ Computations go on, but the results may be meaningless}}{%
     \@ifnextchar\lp@r\@Qurve{%
     \PackageWarning{curve2e}{%
       Quadratic curve specifications must contain at least
-      two nodes!\Messagebreak
+      two nodes!\MessageBreak
       Please, control your Qurve specifications\MessageBreak}}}%
 
 \def\@Qurve(#1)<#2>{\QurveTo#1WithDir{#2}%

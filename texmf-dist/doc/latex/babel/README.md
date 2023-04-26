@@ -1,4 +1,4 @@
-## Babel 3.63
+## Babel 3.84
 
 This package manages culturally-determined typographical (and other)
 rules, and hyphenation patterns for a wide range of languages. Many
@@ -8,9 +8,9 @@ is a set of ini files for about 250 languages.
 
 The latest stable version is available on <https://ctan.org/pkg/babel>.
 
-Changes in version 3.63 are described in:
+Changes in version 3.84 are described in:
 
-https://latex3.github.io/babel/news/whats-new-in-babel-3.63.html
+https://latex3.github.io/babel/news/whats-new-in-babel-3.84.html
 
 Apart from the manual, you can find information on some aspects of babel at:
 
@@ -19,7 +19,7 @@ https://latex3.github.io/babel/
 The best way to install and/or update it is with the help of package
 managers.
 
-### Reporting Bugs
+### Reporting bugs
 
 If you wish to report a problem or bug in any of these packages please
 use the
@@ -44,18 +44,16 @@ You may also report them to the current maintainer more informally on:
 Bugs related to specific languages are best reported to their
 respective authors.
 
-### Summary of Latest changes
+### Summary of latest changes
 ```
-3.63   2021-07-22
-       * Fixes a severe bug with CJK and XeTeX introduced in 3.62.
-       
-3.62   2021-07-19
-       * No more errors with unknown languages in aux file.
-       * Preliminary support for \AddToHook.
-       * Tentative extension for provide=.
-       * Fixes:
-         - Locale dependent quotes with CJK (#131).
-         - Babel and hyperref prevent changes to the \LaTeX logo (#138).
+3.84  2022-12-26
+      * Automatic selection of encodings with \babelprovide and pdftex.
+      * Fixes:
+        - With 'select.write = omit' the main language wasn’t selected
+          in the aux file.
+        - Incorrect link box in end of line if it is preceded by a
+          non-Arabic character (#207)
+        - New option counters* the pre-expand \thepage. See #26.
 ```
 
 ### Previous changes

@@ -13,7 +13,7 @@ cct_init
    "\tt R1:$\;$resistor(,{,}E)" ljust \
    "\tt addtaps(<-,0.2,-t,0.8,t)" ljust' at R1.end+(0.3,0)
 
- move to R1.end+(2.25,0.1); right_
+ move to R1.end+(2.6,0.1); right_
  R2: ebox(,elen_*0.6,)
        addtaps(type=-;name=Tx,0.2,-t,0.5,-t,0.8,-t)
    "\sl Tx1" at Tx1 rjust

@@ -9,7 +9,8 @@ version. The latest version of this license is in:
 later is part of all distributions of LaTeX version 1999/12/01
 or later.
 
- Version 1.1 2018-02-06
+ Version 1.3 2022-04-10
+
 
 ------------------------------------------------------------
 
@@ -30,5 +31,12 @@ to typeset ladder diagrams, because that package seems to
 lack support for blocks. The tikz-ladder, on the contrary,
 supports all features described in IEC-61131-3, namely,
 blocks (for functions and function blocks), contacts and coils.
+
+------------------------------------------------------------
+
+If you are interest in generating the documentation departing
+from tikz-ladder-doc.tex you are going to need pgfmanual-en-macros
+available at 
+https://mirrors.ctan.org/graphics/pgf/contrib/sa-tikz/doc/macros/pgfmanual-en-macros.tex
 
 ------------------------------------------------------------

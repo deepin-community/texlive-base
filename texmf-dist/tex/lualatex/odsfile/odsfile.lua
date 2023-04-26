@@ -1,16 +1,25 @@
-module(...,package.seeall)
-require "zip"
+-- Package odsfile. Author Michal Hoftich <michal.h21@gmail.com>
+-- This package is subject of LPPL license, version 1.3c
+-- module(...,package.seeall)
+
+local M = {}
+local zip = require "zip"
 local xmlparser = require ("luaxml-mod-xml")
 local handler = require("luaxml-mod-handler")
 
 local namedRanges = {}
 
 function load(filename)
+  -- add support for -reader command line option
+  -- we must open the file and close it immediatelly 
+  local f = io.open(filename, "r")
+  f:close()
   local p = {
     file = zip.open(filename),
     content_file_name = "content.xml",
     loadContent = function(self,filename)
       local treehandler = handler.simpleTreeHandler()
+      -- treehandler.options.noReduce = {["table:table-cell"]=true, ["text:p"]=true}
       local filename = filename or self.content_file_name  
       local xmlfile = self.file:open(filename)
       local text = xmlfile:read("*a")
@@ -29,6 +38,7 @@ function getTable(x,table_name)
   for key, val in pairs(t) do
     if key == "table:table-row" then
       local rows = {}
+      if #val == 0 then val = {val} end
       
       for i = 1, #val do
         local r = val[i]
@@ -111,7 +121,7 @@ function loadNameRanges(root, tblname)
     local a = r["_attr"] or {}
     local range = a["table:cell-range-address"] or ""
     local name = a["table:name"] 
-    if name and range:match("^"..tblname) then
+    if name and range:match("^$?"..tblname) then
       range = range:gsub("^[^%.]*",""):gsub("[%$%.]","")
       print("named range", name, range)
       t[name] = range
@@ -152,6 +162,7 @@ function tableValues(tbl,x1,y1,x2,y2)
 end
 
 function getRange(range)
+  if range == nil then return {nil,nil,nil,nil} end
   local range = namedRanges[range] or range
   local r = range:lower()
   local function getNumber(s)
@@ -164,7 +175,7 @@ function getRange(range)
     return f
   end
   for x1,y1,x2,y2 in r:gmatch("(%a*)(%d*):*(%a*)(%d*)") do
-    return getNumber(x1),tonumber(y1),getNumber(x2),tonumber(y2) 
+    return {getNumber(x1),tonumber(y1),getNumber(x2),tonumber(y2)}
    --print(string.format("%s, %s, %s, %s",getNumber(x1),y1,getNumber(x2),y2))
   end
 end
@@ -202,15 +213,28 @@ function interp(s, tab)
   )
 end
 
+function escape(s)
+  return string.gsub(s, "([%\\]?)([#%%%$&_%{%}%\\|])", function(a,b)
+    if a=="" then 
+      if b == "\\" then
+        return "\\textbackslash"
+      elseif b == "|" then
+        return "\\textbar"
+      else
+        return "\\"..b 
+      end
+    elseif a=="\\" and b=="\\" then
+        return "\\textbackslash\\textbackslash"
+    end
+  end)
+end
+
 get_link = function(val)
   local k = val["text:a"][1]
   local href = val["text:a"]["_attr"]["xlink:href"]
-  return "\\odslink{"..href.."}{"..k.."}"
+  return "\\odslink{"..href.."}{".. escape(k).."}"
 end
 
-function escape(s)
-  return string.gsub(s, "([#%%$&])", "\\%1")
-end
 
 function get_cell(val, delim)
   local val = val or ""
@@ -224,7 +248,7 @@ function get_cell(val, delim)
       return get_cell(val["text:span"], delim)
     elseif val["text:s"] then
       -- return get_cell(val["text:s"], delim)
-      return table.concat(val, " ")
+      return escape(table.concat(val, " "))
     else
       local t = {}
       for _,v in ipairs(val) do
@@ -298,3 +322,29 @@ function updateZip(zipfile, updatefile)
   local command  =  string.format("zip %s %s",zipfile, updatefile)
   print ("Updating an ods file.\n" ..command .."\n Return code: ", os.execute(command))  
 end
+
+M.load= load
+M.loadContent  =    loadContent  
+M.getTable= getTable
+M.getTable0= getTable0
+M.getColumnCount= getColumnCount
+M.loadNameRanges= loadNameRanges
+M.tableValues= tableValues
+M.getRange= getRange
+M.getNumber=  getNumber
+M.table_slice = table_slice 
+M.interp= interp
+M.get_link  =get_link  
+M.escape= escape
+M.get_cell= get_cell
+M.newRow= newRow
+    -- Generic  for inserting cell
+M.addCell  =    addCell  
+M.addString  =    addString  
+M.addFloat  =    addFloat  
+M.findLastRow  =    findLastRow  
+M.insert  =    insert  
+--  for updateing the archive. Depends on external zip utility
+M.updateZip= updateZip
+
+return M

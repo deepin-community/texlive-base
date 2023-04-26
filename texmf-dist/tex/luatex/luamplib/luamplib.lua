@@ -11,8 +11,8 @@
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.21.0",
-  date          = "2021/09/16",
+  version       = "2.23.0",
+  date          = "2022/01/12",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -216,7 +216,14 @@ local function replaceinputmpfile (name,file)
   return newfile
 end
 
-local mpkpse = kpse.new(arg[0], "mpost")
+local mpkpse
+do
+  local exe = 0
+  while arg[exe-1] do
+    exe = exe-1
+  end
+  mpkpse = kpse.new(arg[exe], "mpost")
+end
 
 local special_ftype = {
   pfb = "type1 fonts",
@@ -339,11 +346,18 @@ end
 luamplib.codeinherit = false
 local mplibinstances = {}
 
-local function process (data)
-  local standalone = not luamplib.codeinherit
-  local currfmt = currentformat .. (luamplib.numbersystem or "scaled")
+local function process (data, instancename)
+  local defaultinstancename = currentformat .. (luamplib.numbersystem or "scaled")
     .. tostring(luamplib.textextlabel) .. tostring(luamplib.legacy_verbatimtex)
+  local currfmt = instancename or defaultinstancename
+  if #currfmt == 0 then
+    currfmt = defaultinstancename
+  end
   local mpx = mplibinstances[currfmt]
+  local standalone = false
+  if currfmt == defaultinstancename then
+    standalone = not luamplib.codeinherit
+  end
   if mpx and standalone then
     mpx:finish()
   end
@@ -628,11 +642,16 @@ local function unprotect_expansion (str)
   end
 end
 
-local function process_mplibcode (data)
+luamplib.everymplib    = { [""] = "" }
+luamplib.everyendmplib = { [""] = "" }
+
+local function process_mplibcode (data, instancename)
   legacy_mplibcode_reset()
 
-  local everymplib    = texgettoks'everymplibtoks'    or ''
-  local everyendmplib = texgettoks'everyendmplibtoks' or ''
+  local everymplib    = luamplib.everymplib[instancename] or
+                        luamplib.everymplib[""]
+  local everyendmplib = luamplib.everyendmplib[instancename] or
+                        luamplib.everyendmplib[""]
   data = format("\n%s\n%s\n%s\n",everymplib, data, everyendmplib)
   data = data:gsub("\r","\n")
 
@@ -668,7 +687,7 @@ local function process_mplibcode (data)
     end)
   end
 
-  process(data)
+  process(data, instancename)
 end
 luamplib.process_mplibcode = process_mplibcode
 

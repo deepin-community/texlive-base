@@ -3,7 +3,7 @@
 log_init
 include(ics.m4)
 
-  command "{\sf"
+  ifpostscript(,latexcommand({\sf))
 
 Chips: [
   ic4017
@@ -31,15 +31,16 @@ DIPs: [
   { arrow <- from DIP0.Pin8 up 0.25 right 0.2 ; `"\sl Pin8"' above ljust }
 
   { `"\tt DIP(32,direct=R;bodywid=0.5*scale)"' ljust \
-      at DIP32.sw - (0,10bp__) }
+      at DIP32.sw + (-10bp__,-10bp__) }
   { arrow <- right 0.2 from DIP32.Pin1; `"\sl Pin1"' ljust }
   { spline <- right 0.2 then right 0.1 up 0.1 from DIP32.Pin32
     `"\sl Pin32"' ljust }
 
-  { `"\tt DIP(16,type=Q;pinwid=1bp\_\_)"' at DIP16.sw - (0,10bp__) ljust }
+  { `"\tt DIP(16,type=Q;pinwid=1bp\_\_)"' at DIP16.sw + (0,-10bp__) ljust }
   thicklines_
 
-  ] with .nw at last [].sw+(0,-0.3)
+  ] with .nw at last [].sw+(0,-0.2)
 
-  command "}%"
+  ifpostscript(,latexcommand(}%))
+
 .PE

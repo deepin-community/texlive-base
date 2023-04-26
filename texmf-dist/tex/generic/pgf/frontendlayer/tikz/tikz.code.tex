@@ -153,32 +153,34 @@
 \tikzset{
     dash expand off/.code={%
         \ifcsname tikz@library@decorations@loaded\endcsname\else
-            \tikzerror{You need \string\usetikzlibrary{decorations} for ``dash offexpand''}%
+            \tikzerror{You need \string\usetikzlibrary{decorations} for ``dash expand off''}%
         \fi
         \tikz@addoption{%
             \pgfgetpath\currentpath
             \pgfprocessround{\currentpath}{\currentpath}%
             \pgf@decorate@parsesoftpath{\currentpath}{\currentpath}%
+            % All of \on, \off, \dashphase, \rest, and \onoff are unit-free.
             % Parse \on and \off from the current path
-            \edef\on{\expandafter\pgfutil@firstoftwo\tikz@dashpattern}%
-            \edef\off{\expandafter\pgfutil@secondoftwo\tikz@dashpattern}%
+            \pgfmathsetmacro\on{\expandafter\pgfutil@firstoftwo\tikz@dashpattern}%
+            \pgfmathsetmacro\off{\expandafter\pgfutil@secondoftwo\tikz@dashpattern}%
             % \dashphase = max(\on - \dashphase, 0)
+            \pgfmathsetmacro\tikz@dashphase{\tikz@dashphase}%
             \pgfmathsubtract@{\on}{\tikz@dashphase}%
-            \pgfmathmax@{\pgfmathresult}{0}%
-            \edef\dashphase{\the\dimexpr\pgfmathresult pt\relax}%
-            % \rest = \pgf@decorate@totalpathlength - \on
-            \edef\rest{\expandafter\pgf@sys@tonumber\dimexpr\pgf@decorate@totalpathlength - \on + 2\dimexpr\dashphase\relax\relax}%
+            \pgfmathmax@{\pgfmathresult,0}%
+            \let\dashphase=\pgfmathresult
+            % \rest = \pgf@decorate@totalpathlength - \on + 2\dashphase
+            \edef\rest{\pgf@sys@tonumber\dimexpr\pgf@decorate@totalpathlength - \on pt + 2\dimexpr\dashphase pt\relax\relax}%
             % \onoff = \on + \off
-            \edef\onoff{\expandafter\pgf@sys@tonumber\dimexpr\on+\off\relax}%
+            \edef\onoff{\pgf@sys@tonumber\dimexpr\on pt+\off pt\relax}%
             % \nfullonoff = max(floor(\rest/\onoff), 1)
             \pgfmathdivide@{\rest}{\onoff}%
             \pgfmathfloor@{\pgfmathresult}%
-            \pgfmathmax@{\pgfmathresult}{1}%
+            \pgfmathmax@{\pgfmathresult,1}%
             % \offexpand = max(\rest/\nfullonoff - \on, \off)
             \pgfmathdivide@{\rest}{\pgfmathresult}%
             \pgfmathsubtract@{\pgfmathresult}{\on}%
-            \pgfmathmax@{\pgfmathresult}{\off}%
-            \edef\tikz@marshal{\noexpand\pgfsetdash{{\on}{\pgfmathresult}}{\dashphase}}%
+            \pgfmathmax@{\pgfmathresult,\off}%
+            \edef\tikz@marshal{\noexpand\pgfsetdash{{+\on pt}{+\pgfmathresult pt}}{+\dashphase pt}}%
             \tikz@marshal
         }%
     }
@@ -576,7 +578,7 @@
   scope fading/.default=}%
 \tikzset{fit fading/.is if=tikz@fade@adjust}%
 \tikzset{fading transform/.store in=\tikz@fade@transform}%
-\tikzset{fading angle/.style={fading transform={rotate=#1}}}%
+\tikzset{fading angle/.style={fading transform={rotate={#1}}}}%
 
 \newif\iftikz@fade@adjust%
 \tikz@fade@adjusttrue%
@@ -948,7 +950,8 @@
 \tikzset{
   name/.code={\edef\tikz@fig@name{\tikz@pp@name{#1}}\let\tikz@id@name\tikz@fig@name},%
   name prefix/.initial=,%
-  name suffix/.initial=%
+  name suffix/.initial=,%
+  local bounding box/.style={/pgf/local bounding box/.expanded=\tikz@pp@name{#1}}
 }%
 \def\tikz@pp@name#1{\csname pgfk@/tikz/name prefix\endcsname#1\csname pgfk@/tikz/name suffix\endcsname}%
 
@@ -990,7 +993,6 @@
 
 
 % Pic options
-\newif\iftikz@node@is@pic
 \tikzset{pic text/.store in=\tikzpictext}%
 \let\tikzpictext\relax
 \tikzset{pic text options/.store in=\tikzpictextoptions}%
@@ -1646,7 +1648,7 @@
 % Setting keys
 %
 
-\pgfkeys{/tikz/style/.style=#1}%
+\pgfkeys{/tikz/style/.style={#1}}%
 
 \pgfkeys{/tikz/.unknown/.code=%
   % Is it a pgf key?
@@ -2485,12 +2487,27 @@
 \def\tikz@expand{%
   \advance\tikz@expandcount by -1
   \ifnum\tikz@expandcount<0\relax%
+    \expandafter\pgfutil@firstoftwo
+  \else
+    \expandafter\pgfutil@secondoftwo
+  \fi
+  {%
     \tikzerror{Giving up on this path. Did you forget a semicolon?}%
-    \let\pgfutil@next=\tikz@finish%
-  \else%
-    \let\pgfutil@next=\tikz@@expand
-  \fi%
-  \pgfutil@next}%
+    % since the last token caused an error we should reinsert it and therefore save it
+    \global\let\tikz@expand@last@token=\pgf@let@token
+    \tikz@finish%
+    %
+    % To be combatible with `scopes` lib, which uses a redefined 
+    % \tikz@lib@scope@check to check the next token, the reinsertion is done
+    % here, not at the end of (every) \tikz@finish.
+    %
+    \expandafter\let\expandafter\tikz@expand@last@token@\csname tikz@expand@last@token\endcsname
+    \global\let\tikz@expand@last@token=\relax
+    \tikz@expand@last@token@
+  }{%
+    \tikz@@expand
+  }%
+}
 
 \def\tikz@@expand{%
   \expandafter\tikz@scan@next@command\pgf@let@token}%
@@ -5120,7 +5137,7 @@
 \tikzset{cs/angle/.store in=\tikz@cs@angle}%
 \tikzset{cs/x radius/.store in=\tikz@cs@xradius}%
 \tikzset{cs/y radius/.store in=\tikz@cs@yradius}%
-\tikzset{cs/radius/.style={/tikz/cs/x radius=#1,/tikz/cs/y radius=#1}}%
+\tikzset{cs/radius/.style={/tikz/cs/x radius={#1},/tikz/cs/y radius={#1}}}%
 \tikzset{cs/name/.store in=\tikz@cs@node}%
 \tikzset{cs/anchor/.store in=\tikz@cs@anchor}%
 
@@ -5460,18 +5477,18 @@
   }%
 }%
 \def\tikz@parse@main@intersection#1#2of #3 and #4){%
-  \tikzset{cs/solution=#2}%
+  \tikzset{cs/solution={#2}}%
   \pgfutil@in@{--}{#3}%
   \ifpgfutil@in@%
     \tikz@reparse@line{first}#3\pgf@stop%
   \else%
-    \tikzset{cs/first node=#3}%
+    \tikzset{cs/first node={#3}}%
   \fi%
   \pgfutil@in@{--}{#4}%
   \ifpgfutil@in@%
     \tikz@reparse@line{second}#4\pgf@stop%
   \else%
-    \tikzset{cs/second node=#4}%
+    \tikzset{cs/second node={#4}}%
   \fi%
   \tikz@parse@cs@intersection()% advanced hackery...
   \edef\pgf@marshal{\noexpand#1{\noexpand\pgfqpoint{\the\pgf@x}{\the\pgf@y}}}%

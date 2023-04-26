@@ -5,6 +5,9 @@
 \chardef\minimpdfloaded = \catcode`\:
 \catcode`\: = 11
 
+\input minim-alloc
+\input minim-hooks
+
 % Abbreviations used throughout this document:
 %   se   structure element
 %   mci  marked content item
@@ -18,9 +21,6 @@
 \strictstructuretagging = 0
 
 % 1 the attributes
-
-\input minim-alloc
-\input minim-hooks
 
 % By three attributes do we determine the document structure.
 %
@@ -37,7 +37,8 @@
 %
 %   One for marking the status:
 %   - assignments are generally local
-%   - if set, disables tagging and content marking
+%   - if set, disables tagging and content marking in pre_shipout
+%   - values >10 indicate artifacts
 \newattribute \tagging:current:status \tagging:current:status = \unset
 %
 %   A fourth attribute keeps track of the current language
@@ -53,7 +54,7 @@
 %     disables marking structure elements
 \newif\iftagging:enabled \tagging:enabledtrue
 \protected\def\starttagging{\tagging:enabledtrue
-    \ifnum1=\tagging:current:status
+    \ifnum0<\tagging:current:status
         \tagging:current:status\unset\fi}
 \protected\def\stoptagging{\tagging:enabledfalse
     \ifnum\unset=\tagging:current:status
@@ -62,9 +63,12 @@
 % \markartifact {Layout} {...}
 % \startartifact {Pagination /Subtype/Header} ... \stopartifact
 \long\def\markartifact#1#2{\startartifact{#1}#2\stopartifact}
-\protected\def\startartifact{\begingroup\stoptagging
+\protected\def\startartifact{\begingroup\tagging:enabledfalse
+    \tagging:current:status=\tagging:current:artifact
+    \global\advance\tagging:current:artifact1\relax
     \tagging:mci:incr\tagging:art:markstart}
 \protected\def\stopartifact{\tagging:art:markstop\tagging:mci:incr\endgroup}
+\newcount\tagging:current:artifact \tagging:current:artifact = 11
 
 % \startcontentitem ... \stopcontentitem
 \protected\def\startcontentitem{\iftagging:enabled\tagging:mci:incr\tagging:mci:markstart\fi}
@@ -223,19 +227,35 @@
 \def\tagging:startdisplay\fi\fi\fi#1$${\tagging:makeformula{#1}{$$}}
 \def\tagging:makeformula#1#2{\fi\fi\fi
     \global\advance\tagging:formulanr1\relax
-    \startelement\iftagging:indisplay block\else inline\fi{Formula}%
-    \setalttext{\tagging:formulasource{#1}}%
-    \setactualtext{\tagging:formulasource{#1}}%
-    \ifnum3=\pdfaconformancelevel
-        \embedfile mimetype text/x-tex
-            relation Source desc {Equation source}
-            name {\formulafilename.tex}
-            string {\tagging:formulasource{#1}}\fi
+    \startelement attr Layout Placement \iftagging:indisplay/Block\else/Inline
+        % some html converters ignore Placement attributes
+        attr CSS-2.00 display (inline)\fi{Formula}%
+    \formulasource:set{#1}%
     \scantextokens{#1}#2}
 \def\tagging:formulasource#1{%
     $\iftagging:indisplay$\fi
     \unexpanded{#1}%
     $\iftagging:indisplay$\fi}
+
+% \includeformulasources {none|actualtext|attachment|both}
+\def\includeformulasources#1{%
+    \expandafter\let
+        \expandafter\formulasource:set
+            \csname formulasource:#1\endcsname}
+\def\formulasource:none#1{}
+\def\formulasource:actualtext#1{%
+    \setactualtext{\tagging:formulasource{#1}}}
+\def\formulasource:attachment#1{%
+    \ifnum3=\pdfaconformancelevel
+        \embedfile mimetype text/x-tex
+            relation Source desc {Equation source}
+            name {\formulafilename.tex}
+            string {\tagging:formulasource{#1}}\fi}
+\def\formulasource:both#1{%
+    \formulasource:actualtext{#1}%
+    \formulasource:attachment{#1}}
+\includeformulasources{both}
+
 
 % 1 hyperlinks
 
@@ -265,20 +285,6 @@
 % provided by the lua module:
 %    \setdocumentlanguage {name or code}
 %    \setlanguagecode {name} {code}
-%    \minim:apply:language:code{name} → index
-
-% patch in language codes to \uselanguage
-\ifcsname uselanguage@hook\endcsname
-    \expandafter\let
-        \expandafter\minim:uselanguagehook
-            \lastnamedcs \fi
-\expandafter\edef\csname uselanguage@hook\endcsname#1{%
-    % tagging support
-    \noexpand\tagging:current:language
-        \noexpand\minim:apply:language:code{#1}%
-    % previous definitions
-    \ifdefined\minim:uselanguagehook
-        \noexpand\minim:uselanguagehook{#1}\fi}
 
 % \newnamedlanguage {name} {lhm} {rhm}
 \def\newnamedlanguage#1#2#3{%

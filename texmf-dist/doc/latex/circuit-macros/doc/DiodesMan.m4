@@ -1,7 +1,9 @@
 .PS
-# `Diodes.m4'
+# DiodesMan.m4
 cct_init
+
 movewid = 2pt__
+
 {  {diode ; move ; "`{\tt diode}'" ljust}
    move down 0.2; right_
    {diode(,S) ; move ; "`{\tt diode(,S)}'" ljust}
@@ -14,7 +16,11 @@ movewid = 2pt__
    move down 0.2; right_
    {diode(,B) ; move ; "`{\tt diode(,B)}'" ljust}
    move down 0.2; right_
+   {diode(,b) ; move ; "`{\tt diode(,b)}'" ljust}
+   move down 0.2; right_
    {diode(,G) ; move ; "`{\tt diode(,G)}'" ljust}
+   move down 0.2; right_
+   {diode(,D) ; move ; "`{\tt diode(,D)}'" ljust}
    }
 
    move right_ 2.0
@@ -30,12 +36,16 @@ movewid = 2pt__
    move down 0.2; right_
    {diode(,Sh) ; move ; "`{\tt diode(,Sh)}'" ljust}
    move down 0.2; right_
-   {diode(,D) ; move ; "`{\tt diode(,D)}'" ljust}
+   {diode(,M) ; move ; "`{\tt diode(,M)}'" ljust}
+   move down 0.2; right_
+   {diode(,MK) ; move ; "`{\tt diode(,MK)}'" ljust}
    }
 
-   move right_ 2.0
+   move down_ sourcerad_ right_ 2.0
 {  {diode(,Z,RE) ; move ; "`{\tt diode(,Z,RE)}'" ljust}
-   move down 0.25; right_
+   move down 0.30; right_
+   {diode(,U) ; move ; "`{\tt diode(,U)}'" ljust}
+   move down 0.15; right_
    {diode(,T) ; move ; "`{\tt diode(,T)}'" ljust}
    move down 0.30; right_
    {diode(,P) ; move ; "`{\tt diode(,P)}'" ljust}

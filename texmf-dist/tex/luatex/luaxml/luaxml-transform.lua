@@ -30,6 +30,13 @@ local function match_css(element,csspar)
   local selectors = css:match_querylist(element)
   if #selectors == 0 then return nil end
   -- return function with the highest specificity
+  local last_specificity = selectors[1].specificity
+  -- if multiple selectors have the same specificity, return the last one
+  for i, x in ipairs(selectors) do
+    if x.specificity < last_specificity then
+      return selectors[i-1].func
+    end
+  end
   return selectors[1].func
 end
 
@@ -135,7 +142,7 @@ local function simple_content(s,parameters)
       elseif name:match("^[0-9]+$") then
         local child = get_child_element(element, tonumber(name))
         if child then
-          return process_children(child, parameters)
+          return process_tree(child)
         end
       -- @<CSS selector> returns contents of matched selectors
       else

@@ -1,5 +1,7 @@
 .PS
+# Birds.m4
 gen_init
+
 scale = 50
 linethick = 2*linethick
 

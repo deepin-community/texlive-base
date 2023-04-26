@@ -1,0 +1,990 @@
+\documentclass[
+  load-preamble-,
+  babel-options=english,
+  add-index=true,
+]{cnltx-doc}
+
+\usepackage{pixelart}
+
+\setcnltx{
+  name     = pixelart,
+  title    = \pixelartlogo,
+  version  = v1.0.0,
+  date     = 2022-11-16,
+  info     = A \LaTeX{} package to draw pixel-art pictures ,
+  authors  = Louis Paternault ,
+  email    = spalax(at)gresille(dot)org ,
+  url      = https://framagit.org/spalax/pixelart ,
+  abstract = {%
+    This package defines macros to draw pixel-art pictures using Lua\LaTeX{}.
+  } ,
+  index-setup = { othercode=\footnotesize,level=\section},
+  add-cmds = {
+    pixelart,
+    pixelartheart,
+    pixelartheartbw,
+    pixelartlogo,
+    pixelartlogobw,
+    pixelartname,
+    pixelartnamebw,
+    newpixelartcolors,
+    renewpixelartcolors,
+    setpixelartdefault,
+    setpixelartdebugon,
+    setpixelartdebugoff,
+    tikzpixelart,
+  },
+  add-frame-options = {
+    innerleftmargin=2em
+  }
+}
+
+\usepackage{booktabs}
+\usepackage{csquotes}
+\usepackage{graphicx}
+\usepackage{markdown}
+\usepackage{multicol}
+\usepackage[autolanguage]{numprint}
+\usepackage{siunitx}
+\usepackage{subfigure}
+\usepackage[inline]{enumitem}
+
+\begin{document}
+
+\part{Introduction}
+
+Installation instruction are given in section \ref{sec:install}.
+Documentation about how to use this package (and examples) is given in part \ref{part:usage}. Most of the examples has been gathered in appendix \ref{sec:examples}.
+
+\section{Note to non-Lua\LaTeX{} users}
+
+Unfortunately, package \pkg{pixelart} does not works with \LaTeX{} or Xe\LaTeX. If you cannot or don't want to use Lua\LaTeX{}, you can:
+\begin{itemize}
+  \item use the previous, unmaintained version of \pkg{pixelart}, named \pkg{pixelart0}, and included with this package;
+  \item or, better, use \pkg{pxpic}.
+\end{itemize}
+
+\section{License}
+
+This work may be distributed and/or modified under the conditions of the \LPPL, either version 1.3 of this license or (at your option) any later version.
+
+\section{Installation}
+\label{sec:install}
+
+\subsection{\textsc{Gnu}/Linux Distribution}
+
+If applicable, the easiest way to get \pkg{pixelart} working is by installing it by your distribution package. In Debian (and Ubuntu, and surely other distributions that inherit from Debian) it is packaged in \texttt{texlive-pictures} since version \texttt{2017.20180103-1}. So you can install it by running:
+
+\begin{lstlisting}[language=sh]
+sudo apt install texlive-pictures
+\end{lstlisting}
+
+\subsection{LaTeX distribution}
+
+This package is included both in \TeX{}Live and MiK\TeX{}. It can be installed using their respective package managers.
+
+\subsection{Manual installation}
+
+\begin{itemize}
+\item Download the lastest archive :
+\begin{description}
+\item[Stable version] \url{https://mirrors.ctan.org/graphics/pgf/contrib/pixelart.zip}
+\item[Development version] \url{https://framagit.org/spalax/pixelart/repository/archive.zip?ref=main}
+\end{description}
+\item Unzip the archive.
+\item Move files \texttt{pixelart.sty} and \texttt{pixelart.lua} into a \LaTeX{} path.
+\end{itemize}
+
+\part{Usage}
+\label{part:usage}
+
+\section{Package options}
+
+The package accepts a single option.
+
+\begin{options}
+  \opt{draft} Loading the package with this options is equivalent to using option \option{draft} on every single call of command \cs{pixelart} (or \cs{tikzpixelart}). If your document contains a lot of those commands, using this option can speed up compilation.
+  For instance, on my outdated computer, compilation of this document takes about 11 seconds with this option, and more than 16 seconds without.
+
+  See option \option*{draft} (page \pageref{option:draft}) for more information.
+\end{options}
+
+
+\section{Drawing pictures}
+
+  \begin{figure}
+  \begin{sidebyside}
+    I \pixelart[
+        tikz={
+          red,
+          scale=.05,
+          baseline=.3em,
+        }
+      ]{
+        ..11..11..
+        .11111111.
+        1111111111
+        1111111111
+        1111111111
+        .11111111.
+        ..111111..
+        ...1111...
+        ....11....
+      } \LaTeX
+  \end{sidebyside}
+  \caption{Basic example}
+  \label{fig:basic}
+\end{figure}
+
+\begin{commands}
+  \command{pixelart}[\oarg{options}{\marg{pixels}}]
+  This is the basic command to draw pixel-art. Its mandatory argument is a sequence of pixels, as characters which will be turned into colored squares (using a \env*{tikzpicture}, from Till Tantau's \pkg{TikZ}). Its basic usage is given in figure \ref{fig:basic} (page \pageref{fig:basic}).
+
+  In argument \marg{pixels}, dots \texttt{.} are converted to transparent pixels, spaces and line breaks delimit pixel rows, and any character defines a color, depending on option \option{colors}.
+
+  More information is given in section \ref{sec:pixels}.
+
+  \begin{options}
+    \opt{pixels} The art, as a list of pixels. See section \ref{sec:pixels}.
+
+    \keyval{colors}{options} Pixel colors. See section \ref{sec:colors}.
+
+    \keybool{draft}\label{option:draft} Disable rendering of \cs{pixelart} and \cs{tikzpixelart} commands: on documents containing a lot of thoses commands, this can speed up compilation. The pixel art is replaced by a dummy drawing, which takes the same space as the pixel art it replaces.
+
+    This option can be applied to every single \cs{pixelart} or \cs{tikzpixelart} of the document by using \verb+\usepackage[draft]{pixelart}+.
+
+    See an example in \ref{example:draft}.
+
+    \keyval-{margin}{length} Pixel-art pictures are \emph{enclosed} inside a \pkg*{tikz} \cs*{clip} command. Most of the time, you won't notice it, but when playing with options \option{style} or \option{tikz}, your picture might extend outside usual borders, and part of it might be clipped out. Use the \option*{margin} option to extend the clip area. See example \ref{example:margin}.
+
+    \opt{squares} If set, each pixel is drawn using a separate \cs*{fill} command (more in section \ref{sec:squares}). This option is incompatible with \option{stack} (see section \ref{sec:squaresstack}).
+
+    \opt{stack} If set, \pkg*{pixelart} will try to draw several adjacent pixels of the same color using a single \cs*{fill} command (more in section \ref{sec:stack}). This option is incompatible with \option{squares} (see section \ref{sec:squaresstack}).
+
+    \keyval-{style}{keyword}\Default{pixelart}\label{option:style} Pixels are drawn using \cs*{fill} commands in a \env*{tikzpicture} environment. Those \cs*{fill} commands are applied the \texttt{pixelart} style by default (as in: \verb+\fill[pixelart] (0, 0) rectangle (1, 1);+). You can set another style by using this command. See an example in \ref{example:style}.
+
+    \keyval{tikz}{options}\label{option:tikz} A pixel art is a bunch of \cs*{fill} commands in a \env*{tikzpicture}. Arguments to this option are passed as-is as optional arguments to the \env*{tikzpicture} environment. See examples in \ref{example:tikz}.
+
+    You will probably use this option to make the pixel art smaller (it is, by default, probably bigger than what you want), and to change the baseline. See figure \ref{fig:basic} for an example.
+
+    Note that a \cs*{clip} command, which does not accept arguments, is used to delimit the picture. So you might get an error if your \option*{tikz} option applies to \cs*{clip} commands (for instance, by using \texttt{every path/.style={bla bla bla}}, which would apply to the \cs*{clip} command, and would raise an error). In such cases, you might want to use option \option{style} instead (see page \pageref{option:style}).
+
+  \end{options}
+
+  \command{tikzpixelart}[\oarg{options}\marg{coord}\marg{pixels}]
+  Use this command if you want to draw pixel art pictures \emph{inside} a \env*{tikzpicture} environment.
+
+  The \oarg{options} and \marg{pixels} arguments have the same meaning as the corresponding arguments to the \cs{pixelart} command (excepted for \option{tikz}, which is passed as is as the argument of a \env*{scope} environment).
+  The \marg{coord} is the coordinate of the bottom left corner of the pixel art. It is passed as is in a \pkg*{TikZ} \env*{scope} environment (\verb+\begin{scope}[shift={<coord>}]+), so you can use anything that will be correctly parsed by \pkg*{TikZ}.
+
+  See examples in section \ref{example:tikzpixelart}.
+\end{commands}
+
+\subsection{Pixels}
+\label{sec:pixels}
+
+Pixels are defined as blocks of characters. Dots always represent transparent pixels, and spaces and line breaks always separate pixel rows. Then, other caracters encode different colors, depending on option \option{colors}.
+
+Let us analyse the following example.
+
+\begin{sidebyside}
+  \pixelart[
+    colors=RGB, tikz={scale=.4}
+  ]{
+    {yellow}GB
+    G.R
+    BR{}
+  }
+\end{sidebyside}
+
+\begin{itemize}
+  \item The first row \texttt{\{yellow\}GB} means: one yellow pixel, one green pixel, one blue pixel.
+  \item The second row \texttt{G.R} means: one green pixel, one transparent pixel, one red pixel.
+  \item The last row \texttt{BR\{\}} means: one blue pixel, one red pixel, one pixel using the default \pkg*{TikZ} color (that is, a \cs*{fill} command is used to draw this pixel, without any \option*{color} option, which means the default \pkg*{TikZ} color is used; see option \option{tikz}, page \ref{option:tikz}).
+\end{itemize}
+
+Note that:
+\begin{itemize}
+  \item Line breaks and consecutive spaces are considered as a \emph{single} row separation. That is, the previous example could also have been written as \texttt{\{yellow\}B G.R\hspace{1cm}BR\{\}}.
+  \item New paragraph are not allowed inside a \marg{pixels} argument.
+  \item If rows do not have the same lenght (the same number of pixels), transparent pixels are added at the end of the small rows.
+\end{itemize}
+
+Examples for the previous corner cases are given in section \ref{sec:corner}.
+
+Most of commands are expanded \emph{before} being passed as an argument to \cs*{pixelart}, so it is possible to use commands inside a \cs*{pixelart}\marg{pixels} argument. See section \ref{sec:commands} for an example.
+
+\subsection{Colors}
+\label{sec:colors}
+
+In a \cs{pixelart} command, pixel colors can be defined explicitely, or using keys/values.
+
+\begin{description}
+  \item[Explicit] Any text surrounded by braces is transmitted as-is to the underlying \env*{tikzpicture}. That way, you can use anything you would use with \pkg*{TikZ} (which itself uses \pkg{xcolor}): \texttt{red}, \texttt{red!20}, \texttt{red!20!purple}, any user-defined color, or \texttt{\{\}}, which does not give any \option*{color} argument to the \cs*{fill} command used to draw this pixel, thus using default \pkg*{TikZ} color (see option \option{tikz}, page \pageref{option:tikz}).
+  \item[Key/Value] Any alphanumeric character (\texttt{a} to \texttt{z}, \texttt{A} to \texttt{Z}, \texttt{0} to \texttt{9}) not surrounded by braces is a key, which encodes the corresponding color defined in the \option{colors} argument. For instance, if \option{colors} is given as \texttt{colors=\{R=\{red\},G=\{green\}\}}, then, having \texttt{RG} in the \marg{pixels} argument is equivalent to \texttt{\{red\}\{green\}}.
+
+    Using non-alphanumeric characters as keys of \option{colors} is not supported: it might work, but it is an undefined behaviour.
+  \end{description}
+
+  The following examples illustrates this option.
+
+  \begin{itemize}
+    \item Key/values:
+      \begin{sidebyside}
+  \pixelart[
+    colors={R=red, G=green, B=blue}
+  ]{
+    RG
+    GB
+  }
+      \end{sidebyside}
+    \item Explicit:
+      \begin{sidebyside}
+  \pixelart{
+    {cyan}{magenta}
+    {yellow}{black}
+  }
+      \end{sidebyside}
+    \item Mix:
+      \begin{sidebyside}
+  \pixelart[
+    colors={R=red, G=green, B=blue}
+  ]{
+    RG
+    {yellow}B
+  }
+      \end{sidebyside}
+  \end{itemize}
+
+  If you use the same setting several times, you can define it once for all using \cs{newpixelartcolors}.
+
+\begin{commands}
+  \command{newpixelartcolors}[\marg{name}\marg{key/value}]
+  Once a color set has been defined, to use it, simply use its name as an argument to \option{colors} instead of the whole keys/values. See an example in \ref{example:newpixelartcolors}.
+  \begin{options}
+    \opt*{name} Name of your color set.
+    \opt*{key/value} Your color set, as keys/values.
+  \end{options}
+  \command{renewpixelartcolors}[\marg{name}\marg{key/value}]
+  The previous command will fail if a color set \marg{name} is already defined. This command will always succeed, whether a color set \marg{name} already exists or not.
+\end{commands}
+
+The following key/value settings are predefined (examples are given in \ref{example:predefinedcolors}).
+
+\begin{description}
+  \item[\texttt{explicit} :] No keys/values: pixel colors have to be explicitely defined.
+    \begin{sourcecode}
+      \newpixelartcolors{explicit}{}
+    \end{sourcecode}
+
+  \item[\texttt{RGB} :] Define the primary colors red, green, blue, as well as black and white.
+    \begin{sourcecode}
+      \newpixelartcolors{RGB}{
+        R=red,
+        G=green,
+        B=blue,
+        W=white,
+        K=black
+      }
+    \end{sourcecode}
+
+  \item[\texttt{BW} :] Black and white.
+    \begin{sourcecode}
+      \newpixelartcolors{BW}{
+        0=white,
+        1=black,
+      }
+    \end{sourcecode}
+
+  \item[\texttt{gray} :] Gray scale: \texttt{0} is white, \texttt{9} is black, and digits \texttt{0} to \texttt{9} are a gray scale from white to black.
+    \begin{sourcecode}
+      \newpixelartcolors{gray}{
+        0=white,
+        1=white!89!black,
+        2=white!78!black,
+        3=white!67!black,
+        4=white!56!black,
+        5=white!44!black,
+        6=white!33!black,
+        7=white!22!black,
+        8=white!11!black,
+        9=black,
+      }
+    \end{sourcecode}
+
+  \item[\texttt{mono} :] Monochromatic: any character encodes the default TikZ color (black by default, may be changed with options \option{tikz} or \option{style}).
+      \begin{sourcecode}
+        \newpixelartcolors{mono}{
+          a={},
+          b={},
+          c={},
+          % ...
+          9={},
+        }
+      \end{sourcecode}
+\end{description}
+
+\subsection{More about option \option*{squares}}
+\label{sec:squares}
+
+When using \option{squares}, each pixel is a separate colored square. Thus, artifacts can appear when viewing the document, as illustrated in figure \ref{fig:artifact}.
+
+\begin{figure}
+  \centering
+  \includegraphics{artifacts}
+  \caption{Artifacts appearing with option \option*{squares} : the white lines should not exist.}
+  \label{fig:artifact}
+\end{figure}
+
+To remove those artifacts, you can
+\begin{enumerate*}[label={(\arabic*)}]
+  \item use option \option{stack} instead (see section \ref{sec:stack}), or
+  \item use option \option{overlap}.
+\end{enumerate*}
+
+\begin{options}
+  \keyval-{overlap}{number} Assuming the square width is 1, \marg{number} is the size of the overlap: how much a square overlaps over the next one. With a positive number, the artifact (white line between two pixels) will disappear as the adjacent pixels are merged.
+
+  Note that using a negative value to \option{overlap} is also allowed, and will separate each pixel from its neighbour, giving a the look of a LCD screen.
+
+  See examples in section \ref{example:overlap}.
+\end{options}
+
+\subsection{More about option \option*{stack}}
+\label{sec:stack}
+
+If option \option{stack} is set, \pkg*{pixelart} tries to merge adjacent pixels of the same color, to draw them at once. Thus, it mostly remove the artifacts problem discussed with option \option*{squares} (although it may still occur).
+
+Example in section \ref{example:stacksteps} shows how different color shapes are stacked onto each other to produce the pixel art.
+
+\subsection{Which option: \option*{squares} or \option*{stack}?}
+\label{sec:squaresstack}
+
+Which option should you use: \option*{squares} or \option*{stack}?
+
+To compare the different algorithms, three files have been compiled, each with one big pixel art command (see example \ref{example:benchmark}), with three different algorithms: outdated package \pkg*{pixelart0}, and options \option*{stack} and \option*{squares} of \pkg*{pixelart}. The result can be seen in figure \ref{fig:benchmark} (page \pageref{fig:benchmark}).
+
+Unless you want to use option \option{overlap} of option \option{squares} (see section \ref{sec:squares}), you probably want to use option \option*{stack}:
+\begin{itemize}
+  \item it is faster (see benchmark);
+  \item it produces smaller files (see benchmark);
+  \item it mostly remove artifacts.
+\end{itemize}
+
+Thus, the \option{stack} option is the default one used by \pkg*{pixelart}.
+
+\begin{figure}
+  \centering
+
+  \subtable[File size (\si{kB})]{
+    \begin{tabular}{r*{3}{n{3}{1}}}
+      \toprule
+      &\multicolumn{3}{c}{Drawing}\\
+      & {mono} & {concentric} & {checker} \\
+      \midrule
+      \pkg*{pixelart0} & 243 & & \\
+      \pkg*{pixelart} \option*{stack} & 2.9 & 4.4 & 158 \\
+      \pkg*{pixelart} \option*{squares} & 245 & 263 & 252 \\
+      \bottomrule
+    \end{tabular}
+  }
+  \subtable[Compilation time (seconds)]{
+    \begin{tabular}{r*{3}{n{3}{1}}}
+      \toprule
+      &\multicolumn{3}{c}{Drawing}\\
+      & {mono} & {concentric} & {checker} \\
+      \midrule
+      \pkg*{pixelart0} & 38.7 &  &  \\
+      \pkg*{pixelart} \option*{stack} & 1.0 & 1.0 & 24.4 \\
+      \pkg*{pixelart} \option*{squares} & 19.9 & 28.3 & 27.1 \\
+      \bottomrule
+    \end{tabular}
+  }
+  \caption{Benchmark : \pkg*{pixelart0} vs. \option*{stack} vs \option*{squares}}
+  \label{fig:benchmark}
+\end{figure}
+
+\section{Default options}
+
+You can use the following command to define options once for all.
+
+\begin{commands}
+  \command{setpixelartdefault}[\marg{options}] Any options defined here will affect later \cs*{pixelart} or \cs*{tikzpixelart} commands, unless those options are explicitely set.
+
+  See example in section \ref{example:default}.
+\end{commands}
+
+\section{Logos}
+
+If you want to credit \pkg*{pixelart} in a fancy way, you can use one of those logos. Apart from being gorgeous, they include a transparent text (so that they are searchable and copyable) and they scale with the current font size.
+
+\begin{multicols}{2}
+\begin{commands}
+  \command{pixelartlogo}
+  \pixelartlogo{}
+  Name and heart, in color.
+
+  \command{pixelartheart}
+  \pixelartheart{}
+  Heart only, in color.
+
+  \command{pixelartname}
+  \pixelartname{}
+  Name only, in color.
+
+  \command{pixelartlogobw}
+  \pixelartlogobw{}
+  Name and heart, black and white.
+
+  \command{pixelartheartbw}
+  \pixelartheartbw{}
+  Heart only, black and white
+
+  \command{pixelartnamebw}
+  \pixelartnamebw{}
+  Name only, black and white.
+\end{commands}
+\end{multicols}
+
+\section{Debugging}
+
+What if drawing your pixel art throws an error?
+
+\begin{enumerate}
+  \item Standard output prints one \texttt{\% pixelart 2, file ./foo.tex, input line 19} per \cs*{pixelart} or \cs*{tikzpixelart} command. If compilation failed right after this line, look at the given file: the \cs*{pixelart} command might be wrong.
+  \item If you do not see the problem, set debug mode on.
+
+    \begin{multicols}{2}
+      \begin{commands}
+        \command{setpixelartdebugon} Set debug on.
+        \command{setpixelartdebugoff} Set debug off.
+      \end{commands}
+    \end{multicols}
+
+    Using those commands, the following piece of information will be logged:
+
+    \begin{itemize}
+      \item the parsed options of \cs*{pixelart} and \cs*{tikzpixelart};
+      \item the \marg{pixels} argument of those commands;
+      \item the \pkg*{tikz} commands used to draw the picture;
+      \item and maybe some other stuff I forgot.
+    \end{itemize}
+
+    Note that you can have as many \cs*{setpixelartdebugon} and \cs*{setpixelartdebugoff} commands as you want, even if debug is already on or off.
+
+    A good idea is to copy the \pkg*{tikz} commands that are logged (those are the commands used to draw the pixel art), and paste them in a new file. Try to compile it. Are some of your arguments at fault? Bad value for the \option{tikz} option can produce faulty \pkg*{tikz} code.
+  \item Still no idea why your \cs*{pixelart} command fails? Seek help on your usual places, or report a bug.
+\end{enumerate}
+
+\appendix
+\part{Appendix}
+
+\section{Examples}
+\label{sec:examples}
+
+\subsection{Corner cases of \cs*{pixelart}\marg{pixels} argument}
+\label{sec:corner}
+
+\setpixelartdefault{tikz={scale=.3}}
+\begin{itemize}
+  \item Line breaks and multiple spaces are considered as a \emph{single} row separation.
+\begin{sidebyside}
+  \pixelart{
+    1.1
+    .1.
+    1.1
+  }
+  \pixelart{
+    1.1                 .1.
+    1.1
+  }
+\end{sidebyside}
+\item Multiple line breaks (new paragraphs) are not supported: at best, they do not give the expected result; at worst, compilation will fail.
+\begin{sidebyside}
+  \pixelart{
+    .1
+    1.
+  }
+  \pixelart{
+    .1
+
+    1.
+  }
+\end{sidebyside}
+\item Empty pixels are automatically added at the end of shorter lines.
+  \begin{sidebyside}
+    \pixelart{
+      1
+      .1
+      1.1
+    }
+    \pixelart{
+      1..
+      .1.
+      1.1
+    }
+  \end{sidebyside}
+\end{itemize}
+
+\subsection{Commands inside \cs*{pixelart}\marg{pixels} argument}
+\label{sec:commands}
+
+If we are too lazy to repeat every single pixel to draw a checker board, we can use commands.
+
+\setpixelartdefault{tikz={scale=.2}}
+\begin{enumerate}[label={Example \arabic*:}]
+  \item Each couple of lines is repetead four times.
+
+    \begin{sidebyside}
+      \newcommand{\twolines}{
+        .1.1.1.1 1.1.1.1.%
+      }
+      \pixelart{
+        \twolines
+        \twolines
+        \twolines
+        \twolines
+      }
+    \end{sidebyside}
+
+  \item \cs*{foreach} outside \cs*{pixelart}
+
+    \begin{sidebyside}
+      \gdef\board{}
+      \gdef\line{1}
+      \foreach \j in {1, ..., 3}{
+        \xdef\line{\line.1}
+      }
+      \foreach \i in {1, ..., 4}{
+        \xdef\board{%
+          \board
+          \line.
+          .\line.
+        }
+      }
+      \pixelart{\board}
+    \end{sidebyside}
+
+  \item I do not understand \LaTeX{} enough to explain why, however, \cs*{foreach} inside a \cs*{pixelart} does not work.
+
+    \begin{example}[code-only=true]
+      \pixelart{
+        \foreach \i in {1, ..., 8}{
+          1\foreach \j in {1, ..., 3}{.1}.
+          \foreach \j in {1, ..., 3}{.1}.1
+        }
+      }
+    \end{example}
+\end{enumerate}
+
+\subsection{Define new color sets: \cs*{newpixelartcolors}}
+\label{example:newpixelartcolors}
+
+\setpixelartdefault{tikz={scale=.3}}
+\begin{itemize}
+  \item Colors may be defined in the \option{colors} option
+  \begin{example}
+    \definecolor{purple1}{RGB}{247, 176, 207}
+    \definecolor{purple2}{RGB}{238, 33, 120}
+    \definecolor{purple3}{RGB}{214, 45, 117}
+    \definecolor{purple4}{RGB}{217, 25, 92}
+    \definecolor{purple5}{RGB}{173, 29, 69}
+    \pixelart[colors={
+        1=purple1, 2=purple2, 3=purple3, 4=purple4, 5=purple5,
+    }]{
+      .54.43.
+      4224215
+      3445435
+      .52424.
+      ..434..
+      ...2...
+    }
+  \end{example}
+
+\item Colors may be defined using \cs{newpixelartcolors}
+  \begin{example}
+    \definecolor{purple1}{RGB}{247, 176, 207}
+    \definecolor{purple2}{RGB}{238, 33, 120}
+    \definecolor{purple3}{RGB}{214, 45, 117}
+    \definecolor{purple4}{RGB}{217, 25, 92}
+    \definecolor{purple5}{RGB}{173, 29, 69}
+    \newpixelartcolors{purple}{
+      1=purple1, 2=purple2, 3=purple3, 4=purple4, 5=purple5,
+    }
+    \pixelart[colors=purple]{
+      .54.43.
+      4224215
+      3445435
+      .52424.
+      ..434..
+      ...2...
+    }
+  \end{example}
+\end{itemize}
+
+\subsection{Predefined color sets}
+\label{example:predefinedcolors}
+
+\begin{description}
+  \item[mono]~
+    \begin{sidebyside}
+      \pixelart[colors=mono, tikz={red, scale=.3}]{
+        ..01..23..
+        .456789ab.
+        cdefghijkl
+        mnopqrstuv
+        wxyzABCDEF
+        .GHIJKLMN.
+        ..OPQRST..
+        ...UVWX...
+        ....YZ....
+      }
+    \end{sidebyside}
+  \item[gray]~
+    \begin{sidebyside}
+      \pixelart[colors=gray, tikz={scale=.3}]{
+        987654
+        876543
+        765432
+        654321
+        543210
+        43210.
+      }
+    \end{sidebyside}
+  \item[BW]~
+    \begin{sidebyside}
+      \pixelart[colors=BW, tikz={scale=.3}]{
+        01010101
+        10101010
+        01010101
+        10101010
+        01010101
+        10101010
+        01010101
+        10101010
+      }
+    \end{sidebyside}
+  \item[RGB]~
+    \begin{sidebyside}
+      \pixelart[colors=RGB, tikz={scale=.1}]{
+        .....................KKKKKKK
+        .RRR...GG..BBB..K..K.KWKKKWK
+        .R..R.G..G.B..B.K.K..KWKKKWK
+        .RRR..G....BBB..KK...KWKKKWK
+        .R.R..G.GG.B..B.K.K..KWKWKWK
+        .R..R.G..G.B..B.K..K.KWKWKWK
+        .R..R..GG..BBB..K..K.KKWKWKK
+        .....................KKKKKKK
+      }
+    \end{sidebyside}
+\end{description}
+
+\subsection{Option \option*{draft}}
+\label{example:draft}
+
+\begin{sidebyside}
+  \setpixelartdefault{tikz={scale=.3}}
+  \pixelart[colors=RGB]{
+    ..RR..RR..
+    .RRRRRRRR.
+    RRRRRRRRRR
+    RRRRRRRRRR
+    RRRRRRRRRR
+    .RRRRRRRR.
+    ..RRRRRR..
+    ...RRRR...
+    ....RR....
+  }
+
+  \pixelart[colors=RGB, draft]{
+    ..RR..RR..
+    .RRRRRRRR.
+    RRRRRRRRRR
+    RRRRRRRRRR
+    RRRRRRRRRR
+    .RRRRRRRR.
+    ..RRRRRR..
+    ...RRRR...
+    ....RR....
+  }
+\end{sidebyside}
+
+\subsection{Option \option*{style}}
+\label{example:style}
+
+\setpixelartdefault{colors=mono}
+
+\begin{sidebyside}
+  \pixelart{
+    .1
+    1.
+  }
+\end{sidebyside}
+
+\begin{sidebyside}
+  \pixelart[tikz={pixelart/.style={red}}]{
+    .1
+    1.
+  }
+\end{sidebyside}
+
+\begin{sidebyside}
+  \tikzset{pixelart/.style={blue, draw=orange, very thick, rounded corners=5}}
+  \pixelart{
+    .1
+    1.
+  }
+\end{sidebyside}
+
+\begin{sidebyside}
+  \pixelart[tikz={pixelart/.style={green}}]{
+    .1
+    1.
+  }
+\end{sidebyside}
+
+\begin{sidebyside}
+  \tikzset{myfancystyle/.style={yellow}}
+  \pixelart[style=myfancystyle]{
+    .1
+    1.
+  }
+\end{sidebyside}
+
+A more complex example.
+
+\begin{sidebyside}
+  \tikzset{pixelart/.style={cyan, very thick, draw=black, rounded corners=5}}
+  \pixelart[squares={overlap=-.2}, colors=mono, tikz={scale=.5}, margin=.1]{
+    1..1.1..1
+    1..1....1
+    1111.1..1
+    1..1.1...
+    1..1.1..1
+  }
+\end{sidebyside}
+
+\subsection{Option \option*{tikz}}
+\label{example:tikz}
+
+\begin{sidebyside}
+  \pixelart[stack, colors={Y=yellow, K=black}, tikz={scale=.5, rounded corners=5}]{
+    ..YYYY..
+    .YYYYYY.
+    YYKYYKYY
+    YYYYYYYY
+    YKYYYYKY
+    YYKKKKYY
+    .YYYYYY.
+    ..YYYY..
+  }
+\end{sidebyside}
+
+\subsection{Drawing steps with the \option*{stack} option}
+\label{example:stacksteps}
+
+Here is how an image is built with the \option{stack} option: each of the following steps is a \cs*{fill} command with carefully crafted shape. Those filled area are \enquote{stacked} on each other, to produce the expected result.
+
+Line per line, the algorithm checks if the pixels have been drawn yet. In the following steps, the gray cross marks the first pixel that was not drawn yet, that triggered a new \cs*{fill} command.
+
+\centering
+%\pixelart[stack, colors=RGB]{
+%  BBBBBBBBBBBBB
+%  BRRRBRRRBRRRB
+%  BRBRBRBRBRBBB
+%  BRRRBRRRBRBBB
+%  BRBRBRBRBRBBB
+%  BRBRBRRRBRRRB
+%  BBBBBBBBBBBBB
+%}
+\begin{tabular}{*{3}{c}}
+  \begin{tikzpicture}[scale=0.3]
+    \fill[color=blue] (1, 1) -- (1, 8)  -- (14, 8)  -- (14, 1)  -- cycle ;
+    \draw[very thick, gray] (1.1, 1.1) -- (1.9, 1.9) (1.1, 1.9) -- (1.9, 1.1);
+  \end{tikzpicture}&
+  \begin{tikzpicture}[scale=0.3]
+    \fill[color=blue] (1, 1) -- (1, 8)  -- (14, 8)  -- (14, 1)  -- cycle ;
+    \fill[color=red] (2, 2) -- (2, 7)  -- (5, 7)  -- (5, 2)  -- (4, 2)  -- (4, 4)  -- (3, 4)  -- (3, 2)  -- cycle ;
+    \draw[very thick, gray] (2.1, 2.1) -- (2.9, 2.9) (2.1, 2.9) -- (2.9, 2.1);
+  \end{tikzpicture}&
+  \begin{tikzpicture}[scale=0.3]
+    \fill[color=blue] (1, 1) -- (1, 8)  -- (14, 8)  -- (14, 1)  -- cycle ;
+    \fill[color=red] (2, 2) -- (2, 7)  -- (5, 7)  -- (5, 2)  -- (4, 2)  -- (4, 4)  -- (3, 4)  -- (3, 2)  -- cycle ;
+    \fill[color=red] (6, 2) -- (6, 7)  -- (9, 7)  -- (9, 2)  -- cycle ;
+    \draw[very thick, gray] (6.1, 2.1) -- (6.9, 2.9) (6.1, 2.9) -- (6.9, 2.1);
+  \end{tikzpicture}\\
+  Step 1&Step 2&Step 3\\
+  \midrule
+  \begin{tikzpicture}[scale=0.3]
+    \fill[color=blue] (1, 1) -- (1, 8)  -- (14, 8)  -- (14, 1)  -- cycle ;
+    \fill[color=red] (2, 2) -- (2, 7)  -- (5, 7)  -- (5, 2)  -- (4, 2)  -- (4, 4)  -- (3, 4)  -- (3, 2)  -- cycle ;
+    \fill[color=red] (6, 2) -- (6, 7)  -- (9, 7)  -- (9, 2)  -- cycle ;
+    \fill[color=red] (10, 2) -- (10, 7)  -- (13, 7)  -- (13, 6)  -- (11, 6)  -- (11, 3)  -- (13, 3)  -- (13, 2)  -- cycle ;
+    \draw[very thick, gray] (10.1, 2.1) -- (10.9, 2.9) (10.1, 2.9) -- (10.9, 2.1);
+  \end{tikzpicture}&
+  \begin{tikzpicture}[scale=0.3]
+    \fill[color=blue] (1, 1) -- (1, 8)  -- (14, 8)  -- (14, 1)  -- cycle ;
+    \fill[color=red] (2, 2) -- (2, 7)  -- (5, 7)  -- (5, 2)  -- (4, 2)  -- (4, 4)  -- (3, 4)  -- (3, 2)  -- cycle ;
+    \fill[color=red] (6, 2) -- (6, 7)  -- (9, 7)  -- (9, 2)  -- cycle ;
+    \fill[color=red] (10, 2) -- (10, 7)  -- (13, 7)  -- (13, 6)  -- (11, 6)  -- (11, 3)  -- (13, 3)  -- (13, 2)  -- cycle ;
+    \fill[color=blue] (7, 3) -- (7, 4)  -- (8, 4)  -- (8, 3)  -- cycle ;
+    \draw[very thick, gray] (7.1, 3.1) -- (7.9, 3.9) (7.1, 3.9) -- (7.9, 3.1);
+  \end{tikzpicture}&
+  \begin{tikzpicture}[scale=0.3]
+    \fill[color=blue] (1, 1) -- (1, 8)  -- (14, 8)  -- (14, 1)  -- cycle ;
+    \fill[color=red] (2, 2) -- (2, 7)  -- (5, 7)  -- (5, 2)  -- (4, 2)  -- (4, 4)  -- (3, 4)  -- (3, 2)  -- cycle ;
+    \fill[color=red] (6, 2) -- (6, 7)  -- (9, 7)  -- (9, 2)  -- cycle ;
+    \fill[color=red] (10, 2) -- (10, 7)  -- (13, 7)  -- (13, 6)  -- (11, 6)  -- (11, 3)  -- (13, 3)  -- (13, 2)  -- cycle ;
+    \fill[color=blue] (7, 3) -- (7, 4)  -- (8, 4)  -- (8, 3)  -- cycle ;
+    \fill[color=blue] (3, 5) -- (3, 6)  -- (4, 6)  -- (4, 5)  -- cycle ;
+    \draw[very thick, gray] (3.1, 5.1) -- (3.9, 5.9) (3.1, 5.9) -- (3.9, 5.1);
+  \end{tikzpicture}\\
+  Step 4&Step 5&Step 6\\
+  \begin{tikzpicture}[scale=0.3]
+    \fill[color=blue] (1, 1) -- (1, 8)  -- (14, 8)  -- (14, 1)  -- cycle ;
+    \fill[color=red] (2, 2) -- (2, 7)  -- (5, 7)  -- (5, 2)  -- (4, 2)  -- (4, 4)  -- (3, 4)  -- (3, 2)  -- cycle ;
+    \fill[color=red] (6, 2) -- (6, 7)  -- (9, 7)  -- (9, 2)  -- cycle ;
+    \fill[color=red] (10, 2) -- (10, 7)  -- (13, 7)  -- (13, 6)  -- (11, 6)  -- (11, 3)  -- (13, 3)  -- (13, 2)  -- cycle ;
+    \fill[color=blue] (7, 3) -- (7, 4)  -- (8, 4)  -- (8, 3)  -- cycle ;
+    \fill[color=blue] (3, 5) -- (3, 6)  -- (4, 6)  -- (4, 5)  -- cycle ;
+    \fill[color=blue] (7, 5) -- (7, 6)  -- (8, 6)  -- (8, 5)  -- cycle ;
+    \draw[very thick, gray] (7.1, 5.1) -- (7.9, 5.9) (7.1, 5.9) -- (7.9, 5.1);
+  \end{tikzpicture}\\
+  Step 7\\
+  \bottomrule
+\end{tabular}
+
+\subsection{Option \option*{overlap}}
+\label{example:overlap}
+
+\begin{sidebyside}
+  \setpixelartdefault{tikz={scale=.3}}
+  \newcommand{\three}{
+    .111.
+    11.11
+    ...11
+    ...11
+    ..11.
+    ...11
+    ...11
+    11.11
+    .111.
+  }
+  \pixelart[squares={overlap=.1}]{
+    \three
+  }
+  \pixelart[squares={overlap=0}]{
+    \three
+  }
+  \pixelart[squares={overlap=-.1}]{
+    \three
+  }
+\end{sidebyside}
+
+\subsection{Command \cs*{tikzpixelart}}
+\label{example:tikzpixelart}
+
+\begin{sidebyside}
+  \begin{tikzpicture}
+    \fill[red] (0, 0) circle (1);
+    \tikzpixelart[tikz={color=green}]{(-1, -1)}{
+      1
+      .1
+      1.1
+    }
+  \end{tikzpicture}
+\end{sidebyside}
+
+\subsection{Pictures used for the benchmark}
+\label{example:benchmark}
+
+The benchmark discussed in section \ref{sec:squaresstack} (page \pageref{sec:squaresstack}) uses three files with three big \cs*{pixelart} commands. A small version of those commands is shown below.
+
+\setpixelartdefault{colors=RGB, tikz={scale=.3}}
+\begin{description}
+  \item[mono] Every single pixel of the same color.
+    \begin{sidebyside}
+      \pixelart{
+        KKKKKKKK
+        KKKKKKKK
+        KKKKKKKK
+        KKKKKKKK
+        KKKKKKKK
+        KKKKKKKK
+        KKKKKKKK
+        KKKKKKKK
+      }
+    \end{sidebyside}
+
+  \item[concentric] Cencentric squares, that is, several area with adjacent pixels of the same color.
+    \begin{sidebyside}
+      \pixelart{
+        GGGGGGGG
+        GKKKKKKG
+        GKGGGGKG
+        GKGRRGKG
+        GKGRRGKG
+        GKGGGGKG
+        GKKKKKKG
+        GGGGGGGG
+      }
+    \end{sidebyside}
+
+  \item[checker] A (kind of) checker board, where no two adjacent pixels have the same color.
+    \begin{sidebyside}
+      \pixelart{
+        RGRGRGRG
+        BKBKBKBK
+        RGRGRGRG
+        BKBKBKBK
+        RGRGRGRG
+        BKBKBKBK
+        RGRGRGRG
+        BKBKBKBK
+      }
+    \end{sidebyside}
+\end{description}
+
+\subsection{Default options}
+\label{example:default}
+
+\begin{sidebyside}
+  \setpixelartdefault{colors=mono, tikz={scale=.2, red}}
+
+  From now on, pixel art pictures will be small, and red:
+  \pixelart{1. .1}.
+
+  Excepted this one:
+  \pixelart[
+    tikz={scale=.4, blue}
+  ]{1. .1}.
+
+  Back to normal:
+  \pixelart{1. .1}.
+\end{sidebyside}
+
+\subsection{Option \option*{margin}}
+\label{example:margin}
+
+In the first picture, you can see that part of the orange line has been clipped away. In the second one, with option \option{margin} correctly set, it is not clipped away.
+
+\begin{sidebyside}
+  \setpixelartdefault{squares}
+  \tikzset{pixelart/.style={
+    draw=orange,
+    rounded corners=5,
+    line width=5,
+  }}
+
+  \pixelart{11 11}
+
+  \pixelart[margin=.1]{11 11}
+\end{sidebyside}
+
+\section{Change History}
+
+This is a raw copy of the \href{https://framagit.org/spalax/pixelart/-/blob/main/CHANGELOG.md}{\textsl{CHANGELOG.md}} file that can be found in the git repository of \pkg*{pixelart}.
+
+\markdownInput{CHANGELOG.md}
+
+\end{document}

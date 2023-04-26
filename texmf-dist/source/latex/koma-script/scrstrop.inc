@@ -1,6 +1,6 @@
 % ======================================================================
 % scrstrop.inc
-% Copyright (c) Markus Kohm, 2002-2012
+% Copyright (c) Markus Kohm, 2002-2022
 %
 % This file is part of the LaTeX2e KOMA-Script bundle.
 %
@@ -15,29 +15,12 @@
 %
 % The Current Maintainer and author of this work is Markus Kohm.
 %
-% This work consists of all files listed in manifest.txt.
-% ----------------------------------------------------------------------
-% scrstrop.inc
-% Copyright (c) Markus Kohm, 2002-2012
-%
-% Dieses Werk darf nach den Bedingungen der LaTeX Project Public Lizenz,
-% Version 1.3c, verteilt und/oder veraendert werden.
-% Die neuste Version dieser Lizenz ist
-%   http://www.latex-project.org/lppl.txt
-% und Version 1.3c ist Teil aller Verteilungen von LaTeX
-% Version 2005/12/01 oder spaeter und dieses Werks.
-%
-% Dieses Werk hat den LPPL-Verwaltungs-Status "author-maintained"
-% (allein durch den Autor verwaltet).
-%
-% Der Aktuelle Verwalter und Autor dieses Werkes ist Markus Kohm.
-% 
-% Dieses Werk besteht aus den in manifest.txt aufgefuehrten Dateien.
+% This work consists of all files listed in MANIFEST.md.
 % ======================================================================
-%
 % This file will be included at end of every KOMA-Script 
 % docstrip batch file.
-%
+% ======================================================================
+% $Id: scrstrop.inc 3874 2022-06-05 10:38:02Z kohm $
 
 % ---------- end of docstrip -----------------------------------------
 

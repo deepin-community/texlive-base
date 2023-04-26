@@ -3,7 +3,20 @@
 % ^^A to produce the package file luasseq.sty.
 % ^^A Then LaTeX this file to produce the documentation of the luasseq package.
 % ^^A
-% ^^A (c) 2003-2010 Tilman Bauer. Freely distributable under the LaTeX Project Public License (LPPL)
+% ^^A This work may be distributed and/or modified under the
+% ^^A onditions of the LaTeX Project Public License, either version 1.3
+% ^^A of this license or (at your option) any later version.
+% ^^A The latest version of this license is in
+% ^^A   http://www.latex-project.org/lppl.txt
+% ^^A and version 1.3 or later is part of all distributions of LaTeX
+% ^^A version 2005/12/01 or later.
+%
+% ^^A This work has the LPPL maintenance status `maintained'.
+% 
+% ^^A The Current Maintainer of this work is Tilman Bauer.
+%
+% ^^A This work consists of the files luasseq.dtx, luasseq.ins, and luasseq.lua
+% ^^A and the derived files luasseq.sty and luasseq.pdf
 % ^^A
 % \ifthenelse{0=1}{
 %<*never>
@@ -28,11 +41,13 @@
 % \changes{v1.06}{August 1, 2005}{sseqxstep=0 will now suppress printing of horizontal label; similarly sseqystep=0 and vertical labels}
 % \changes{v2.0a}{July 16, 2007}{Completely recoded the graphics for using pgf instead of xyPic. Many new features. Consult the manual.}
 % \changes{v2.0}{April 9, 2009}{bug fix with arrows leaving the chart}
+% \changes{v2.2}{November 13, 2015}{compatibility fixes; new prefix system}
+% \changes{v2023/01/10}{January 10, 2023}{compatibility fixes for current Lua version; bug fixes}
 % \ifthenelse{0=1}{
 %<*package>
 \NeedsTeXFormat{LaTeX2e}
 
-\ProvidesPackage{luasseq}[2010/11/06 ver 2.1]
+\ProvidesPackage{luasseq}[2023/01/10]
 
 \RequirePackage{ifthen,calc,pifont}
 \RequirePackage{pgf}[2006/01/01]
@@ -57,7 +72,7 @@
 %
 % \title{Typesetting spectral sequences in \LaTeX\ with luasseq.sty}
 % \author{Tilman Bauer\footnote{tilman@alum.mit.edu}}
-% \date{November 6, 2010}
+% \date{January 10, 2023}
 %
 % \MakeShortVerb{\|}
 %
@@ -341,16 +356,19 @@
 % \fi
 %
 % \DescribeMacro{\ssprefix}
-% Often the mechanism provided by |\ssname|/|\ssgoto| is not flexible enough to deal with repeated code. In that case, |\ssprefix{|\meta{prefix}|}| defines a ``multiplier'' for all names that follow; i.e. a |\ssname{|\meta{name}|}| after such a command will really define a name \meta{prefix} \meta{name} (with a space in between, so that the order is irrelevant). However, since |\ssgoto| also observes the prefix, |\ssgoto{|\meta{name}|}| will still work. |\ssprefix| commands can be iterated; the prefices are then concatenated.
+% \DescribeMacro{\ssbeginprefixcontext}
+% \DescribeMacro{\ssendprefixcontext}
+% \DescribeMacro{\ssresetprefix}
+% Often the mechanism provided by |\ssname|/|\ssgoto| is not flexible enough to deal with repeated code. In that case, the prefix system can be used. |sseq| maintains a \emph{current prefix}, which is an unordered list of strings that is added to any name specified in |\ssname| or |\ssgoto|. For instance, if the current prefix is |a b|, then |\ssname{c}| will name the current element |a b c| (the order is irrelevant).
+%
+% To define a prefix, you first start a \emph{prefix context} with the command |\ssbeginprefixcontext|. After that, |\ssprefix{|\meta{name}|}| will add \meta{name} to the current prefix. |\ssprefix| can be issued repeatedly to add to the current prefix. After issuing |\ssendprefixcontext|, the prefix that was in effect at |\ssbeginprefixcontext| will be restored. (If no prefix was defined before, this will be the empty prefix.) |\ssbeginprefixcontext| and |\ssendprefixcontext| can be nested and provide a stack behavior.
+%
+% There is an older behavior that still works for compatibility reasons. In the older system, the commands |\ssbeginprefixcontext| and |\ssendprefixcontext| are not used; instead, |\ssresetprefix| will reset the current prefix to the empty prefix. |\ssresetprefix| does not work in the new prefix system and will emit an error message. The two methods cannot be mixed.
 %
 % \iffalse
 \newcommand{\ssprefix}[1]{\directlua0{sseq_prefix("#1")}}
-% \fi
-%
-% \DescribeMacro{\ssresetprefix}
-% This command resets the prefix defined by (a sequence of) |\ssprefix| to the empty prefix.
-%
-% \iffalse
+\newcommand{\ssbeginprefixcontext}{\directlua0{sseq_begin_prefix_context()}}
+\newcommand{\ssendprefixcontext}{\directlua0{sseq_end_prefix_context()}}
 \newcommand{\ssresetprefix}{\directlua0{sseq_reset_prefix()}}
 % \fi
 %

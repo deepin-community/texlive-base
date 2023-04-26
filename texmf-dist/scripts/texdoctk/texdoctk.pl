@@ -33,21 +33,10 @@ if ($IsWin32) {
 
 eval { require Tk; };
 if ($@) {
-  if ($IsWin32) {
-    $ENV{'RUNSCRIPT_ERROR_MESSAGE'} = "This Perl has no Perl/Tk module; aborting...";
-    my $vbsc = "";
-    $vbsc = `kpsewhich -format texmfscripts tl-errmess.vbs`;
-    if ($vbsc ne '') {
-      $vbsc =~ s!/!\\!g;
-      system("wscript $vbsc");
-      exit(0); # 0: prevent another error message from runscript
-    }
+  if (-x "/usr/bin/xmessage") {
+    `xmessage -center -buttons Quit "The program texdoctk needs the package perl-tk, please install it!"`;
   } else {
-    if (-x "/usr/bin/xmessage") {
-      `xmessage -center -buttons Quit "The program texdoctk needs the package perl-tk, please install it!"`;
-    } else {
-      printf STDERR "The program texdoctk needs the package perl-tk, please install it!\n";
-    }
+    printf STDERR "The program texdoctk needs the package perl-tk, please install it!\n";
   }
   exit(1);
   # that didn't work out, so warn the user and continue with text mode

@@ -1,38 +1,36 @@
 pixelart 🎨 A LaTeX package to draw pixel-art pictures
 ======================================================
 
-[![Sources](https://img.shields.io/badge/sources-pixelart-brightgreen.svg)](http://framagit.org/spalax/pixelart)
-[![CTAN](https://img.shields.io/ctan/v/pixelart.svg)](http://ctan.org/pkg/pixelart)
-[![Documentation](https://img.shields.io/badge/doc-pdf-brightgreen.svg)](http://mirrors.ctan.org/graphics/pixelart/pixelart.pdf)
+![Example](https://framagit.org/spalax/pixelart/-/raw/v1.0.0/pixelart.png)
 
- 
-
-![Example](https://framagit.org/spalax/pixelart/raw/master/logo.png)
-
-It defines commands to convert a stream of bits (as characters `0` and `1`) to a
-black-and-white picture.
-
-- [Usage and installation instruction](http://mirrors.ctan.org/graphics/pixelart/pixelart.pdf).
-- Example: The picture above was produced using the following code.
+- [Usage and installation instruction](http://mirrors.ctan.org/graphics/pgf/contrib/pixelart/pixelart.pdf).
+- Example: The heart of the picture above was produced using the following code.
 
 ```latex
-\bwpixelart[color=red]{
-  0011001100
-  0111111110
-  1111111111
-  1111111111
-  1111111111
-  0111111110
-  0011111100
-  0001111000
-  0000110000
+\pixelart[
+    colors={
+      1=red,
+      2={red!50!black},
+      3={pink},
+      4={pink!50!red},
+    },
+  ]{%
+    ..12..12..
+    .13411112.
+    1341111112
+    1341111112
+    1341111112
+    .11111112.
+    ..111112..
+    ...1112...
+    ....12....
 }
 ```
 
 License
 -------
 
-*Copyright 2018 Louis Paternault*
+*Copyright 2018-2022 Louis Paternault*
 
 This work may be distributed and/or modified under the conditions of the LaTeX
 Project Public License, either version 1.3 of this license or (at your option)

@@ -1,6 +1,110 @@
 <!--- CircuiTikz - Changelog --->
 The major changes among the different CircuiTikZ versions are listed here. See <https://github.com/circuitikz/circuitikz/commits> for a full list of changes.
 
+* Version 1.6.0 (2022-12-10)
+
+    The big change is the refactoring (and enhancement) of the block's code. In addition, double gate MOSes, several fixes all over the map, and quite a lot of anchors were added into the mix.
+
+    - Big change (mostly backward compatible, minus a couple of bug fixes) to the block's code.
+        - Now `vco` can be `box`ed
+        - enabled more short-name geographical anchors
+        - generic blocks can be made rectangular
+        - mid-way lateral anchors for all blocks, as well as up/down
+        - renamed converters anchors (old ones retained for backward compatibility)
+        - new ac/ac blocks, both single- and three-phase
+    - Added double gate MOS transistors (by Romano Giannetti)
+    - Fix deformed shape for legacy `TL` component ([issue on GitHub](https://github.com/circuitikz/circuitikz/issues/664))
+    - Added several anchors on variable components, suggested by [Dr Matthias Jung](https://github.com/circuitikz/circuitikz/issues/663)
+    - Added `genericsplitter` component (by [frankplow](github.com/frankplow))
+    - Fix - reshape `splitter` using `/tripoles/splitter/width` and `/tripoles/splitter/height` rather than `/tripoles/wilkinson/width` and `/tripoles/wilkinson/height`.
+
+* Version 1.5.5 (2022-11-12)
+
+    New features for optoelectronic devices: a new component, arrow styling,
+    and anchors.
+
+    - Added styling of arrows on opto devices, thanks to a suggestion by [Dr Matthias Jung](https://github.com/circuitikz/circuitikz/issues/655)
+    - Added Light-Dependent resistor shape (by Romano)
+    - Added `arrows` anchors to the opto-components
+    - Documentation updates (rotating and flipping for path components)
+
+* Version 1.5.4 (2022-09-09)
+
+    New components and enhancement for old ones in this version.
+
+    - Added jumpers, inspired by a question [on TeX.stackexchange](https://tex.stackexchange.com/questions/652494/drawing-jumper-pinhead-bridge-with-circuitikz)
+    - Added generic double bipoles, inspired by user `@erwinderboer` [on GitHub](https://github.com/circuitikz/circuitikz/issues/641)
+    - Added styling for the transistor bodydiode, suggested by user [Alex Ghilas on TeX.stackexchange](https://tex.stackexchange.com/questions/653348/drawing-mosfet-bodydiode-dashed)
+    - Additions to the manual (how to remove pins on amplifiers)
+
+* Version 1.5.3 (2022-07-02)
+
+    Minor release: fixes to the manual, and a new component (Shockley diodes).
+
+    - Merging changes to fix the language in the manual (thanks to Charles B. Cameron, user `@cameroncb1` on GitHub)
+    - Added Shockley diode (suggested by [@dauph](https://tex.stackexchange.com/questions/646039/creating-a-shockley-diode-in-circuitikz))
+
+* Version 1.5.2 (2022-05-08)
+
+    Adding a couple of new component and a nice feature to transistors and tubes.
+
+    - Added TVS diodes (transorb), suggested by [Anisio Rogerio Braga](https://tex.stackexchange.com/q/642219/38080)
+    - Added proximity switches, suggested by [Anisio Rogerio Braga](https://github.com/circuitikz/circuitikz/issues/631)
+    - Added partially drawn tube and transistor borders, suggested by [Jether Fernandes Reis](https://github.com/circuitikz/circuitikz/issues/602)
+
+* Version 1.5.1 (2022-04-26)
+
+    Bug fix release.
+
+    - Do not load package `regexpatch` by default, thanks to [GitHub user alceu-git](https://github.com/circuitikz/circuitikz/issues/628)
+
+* Version 1.5.0 (2022-04-22)
+
+    In this version, several internal changes have been included in order to streamline and organize better the components and to change the management of color. The changes are pretty deep and subtle, so a bug or unexpected behaviour is always possible. You can use the 1.4.6 rollback point in case of trouble, but be sure to report any bug.
+
+    - Added connectors shapes, and included the BNC into that class; thanks to [Alexander Sauter for suggesting them and helping in the design](https://github.com/circuitikz/circuitikz/issues/611)
+    - Added nullator and norator shapes, suggested by [user atticus-sullivan on GitHub](https://github.com/circuitikz/circuitikz/issues/615)
+    - Added buzzer and reversed buzzer bipoles, suggested by [user Michael.H](https://tex.stackexchange.com/q/640501/38080)
+    - Added "dot" anchors to inductances
+    - Added "boxed only" option for some circular blocks, suggested by [user myzinsky](https://github.com/circuitikz/circuitikz/issues/621)
+    - Added DIN antenna shape, suggested by [user myzinsky](https://github.com/circuitikz/circuitikz/issues/620)
+    - Fixed block/input arrow connection, thanks to [Laurenz Preindl for reporting](https://github.com/circuitikz/circuitikz/issues/613)
+    - Fixed a problem with generic tunable arrows, noticed thanks to [this question on TeX.SX](https://tex.stackexchange.com/q/637182/38080)
+
+    Internal changes:
+
+    - Added a generic drawing function for shapes, which are now drawn always in background
+    - Added a hook system to be able to change component drawing settings per-shape, per-class or globally
+    - All the 250+ shapes are now "protected" by possible external arrow and arced corners parameters
+    - Completely changed the management of the shapes' color, thanks to [GitHub user muzimuzhi](https://github.com/circuitikz/circuitikz/issues/605)
+
+* Version 1.4.6 (2022-02-04)
+
+    A nasty bug fix and some hack to avoid that some global Ti*k*Z option spill into the shapes. To better solve that problem, some risky changes are due, so this release will be also a rollback point for compatibility reasons.
+
+    - Fix bug with legacy transmission lines in `overlay`s ([noticed by Benedikt Wilde](https://github.com/circuitikz/circuitikz/issues/604))
+    - Robustify some shapes: do not let arrows option pass to the inner drawing (see [here](https://tex.stackexchange.com/a/632084/38080) and [here](https://matrix.to/#/!NuxCISwYQJuyWwNsEI:matrix.org/$vQO6luq1F66LJ79dERmaqKI46qMBcjStqYCPi725uZE?via=matrix.org&via=2krueger.de&via=im.f3l.de))
+    - Add warning about global draw options in the manual
+    - Fixes in documentation: hyperlink the index again, cite new recovery point, remove some legacy construct
+    - Added 1.4.6 rollback point
+
+* Version 1.4.5 (2021-12-06)
+
+    Important fix for ConTeXt users, thanks to @TeXnician for reporting.
+
+    - Fixed an incompatibility introduced with subcircuits that made compilation in ConTeXt fail
+    - Added `\ctikzflip[x][y]` utility macros for ConTeXt too
+    - Fixed stray characters in some Ti*k*Z environment
+
+* Version 1.4.4 (2021-10-31)
+
+    Normal maintenance release; minor bugs fixed, a new component and a new option. No Halloween component, sorry...
+
+    - Added a laser diode component ([contributed by André Alves](https://github.com/circuitikz/circuitikz/issues/591))
+    - Add the `override source vif` option and better describe source's voltage positioning in the manual
+    - fix `nobase` option with IGBT family (noticed by [user hinata exc on Stack Eschange](https://tex.stackexchange.com/q/619334/38080))
+    - fix  a problem with [legacy open voltage label position](https://github.com/circuitikz/circuitikz/issues/584)
+
 * Version 1.4.3 (2021-09-06)
 
     Minor release, mainly a single bugfix.

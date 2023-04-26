@@ -1,0 +1,289 @@
+% !TeX spellcheck = en_US
+% !TeX root = tikz-ext-manual.tex
+% Copyright 2022 by Qrrbrbirlbel
+%
+% This file may be distributed and/or modified
+%
+% 1. under the LaTeX Project Public License and/or
+% 2. under the GNU Free Documentation License.
+%
+
+\section{And a little bit more}
+\begin{tikzlibrary}{ext.misc}
+  This library adds miscellaneous utilities to \pgfname math, \pgfname\space or \tikzname.
+  \inspiration{FullArc-Q,ForeachUse-Q}{FullArc-A,ForeachUse-A}
+\end{tikzlibrary}
+
+\subsection{\pgfname math}
+
+\begin{multicols}{2}
+\pgfkeys{/codeexample/every codeexample/.append style={width=3cm}}
+\subsubsection{Postfix operator \texttt{R}}
+
+Similar to |\segments[<num>]| in PSTricks, the postfix operator |R| allows the user
+to use an arbitrary number of segments of a circle to be used instead of an angle.
+
+\begin{key}{/tikz/full arc=\meta{num} (default |{}|)}
+  The number \meta{num} of segments will be set up.
+  Using |full arc| with an empty value disables the segmentation and |1R| equals $1^\circ$.
+  
+  The given value \meta{num} is evaluated when the key is used and doesn't change when
+  \meta{num} contains variables that change.
+\end{key}
+The |R| operator can then be used.
+\begin{math-operator}{R}{postfix}{fullarc}
+  Multiplies \mvar{x} with $\frac{360}{\meta{num}}$.
+\end{math-operator}
+
+\subsubsection{Functions}
+
+\begin{math-function}{strrepeat("\mvar{Text}", \mvar{x})}
+\mathcommand
+  Returns a string with \mvar{Text} repeated \mvar{x} times.
+
+\begin{codeexample}[]
+\pgfmathparse{strrepeat("foo", 5)}
+\pgfmathresult
+\end{codeexample}
+\end{math-function}
+
+\begin{math-function}{isInString("\mvar{String}", "\mvar{Text}")}
+\mathcommand
+  Returns |1| (true) if \mvar{Text} contains \mvar{String},
+  otherwise |0| (false).
+
+\begin{codeexample}[]
+\pgfmathparse{isInString("foo", "bar")}
+\pgfmathresult \ and\ 
+\pgfmathparse{isInString("foo", "foobar")}
+\pgfmathresult
+\end{codeexample}
+\end{math-function}
+
+\begin{math-function}{strcat("\mvar{Text A}", "\mvar{Text B}", …)}
+\mathcommand
+  Returns the concatenation of all given parameters.
+
+\begin{codeexample}[]
+\pgfmathparse{strcat("blue!", int(7*3), "!green")}
+\pgfmathresult
+\end{codeexample}
+\end{math-function}
+
+
+\begin{math-function}{isEmpty("\mvar{Text}")}
+\mathcommand
+  Returns |1| (true) if \mvar{Text} is empty, otherwise |0| (false).
+  %
+\begin{codeexample}[]
+\pgfmathparse{isEmpty("foo")} \pgfmathresult\ and\ 
+\pgfmathparse{isEmpty("")}    \pgfmathresult\ and\ 
+\def\emptyText{}
+\pgfmathparse{isEmpty("\emptyText")} \pgfmathresult
+\end{codeexample}
+\end{math-function}
+
+\begin{math-function}{atanXY(\mvar{x},\mvar{y})}
+\mathcommand
+  Arctangent of $\mvar y\div \mvar x$ in degrees. This also takes into account the quadrant.
+  This is just a argument-swapped version of |atan2|\indexMathFunctionO{atan2} which makes it easier to use
+  the |\p| commands of the |calc|\indexLibraryO{calc} library.
+  %
+\begin{codeexample}[]
+\pgfmathparse{atanXY(3,4)} \pgfmathresult
+\end{codeexample}
+\end{math-function}
+\begin{math-function}{atanYX(\mvar{y},\mvar{x})}
+\mathcommand
+   Arctangent of $y\div x$ in degrees. This also takes into account the quadrant.
+\begin{codeexample}[]
+\pgfmathparse{atanYX(4,3)} \pgfmathresult
+\end{codeexample}
+\end{math-function}
+
+\subsubsection{Functions: using coordinates}
+The following functions can only be used with \pgfname\space and/or \tikzname.
+Since the arguments are usually plain text (and not numbers) one has to wrap
+them in |"|.
+\begin{math-function}{anglebetween("\mvar{p1}", "\mvar{p2}")}\mathcommand
+  Return the angle between the centers of the nodes \mvar{p1} and \mvar{p2}.
+\end{math-function}
+\begin{math-function}{qanglebetween("\mvar{p}")}\mathcommand
+  Return the angle between the origin and the center of the node \mvar{p}.
+\end{math-function}
+\begin{math-function}{distancebetween("\mvar{p1}", "\mvar{p2}")}\mathcommand
+  Return the distance (in pt) between the centers of the nodes \mvar{p1} and \mvar{p2}.
+\end{math-function}
+\begin{math-function}{qdistancebetween("\mvar{p}")}\mathcommand
+  Return the distance (in pt) between the origin and the center of the node \mvar{p}.
+\end{math-function}
+
+\end{multicols}
+
+\begin{codeexample}[width=6cm,preamble=\usetikzlibrary{calc,ext.misc,through}]
+\begin{tikzpicture}
+\path (0,0) coordinate (A) + (0:4) coordinate (B) +(75:4) coordinate (C);
+\draw (A) -- (B) -- (C) -- cycle;
+\foreach \cnt in {1,...,4}{
+  \pgfmathsetmacro\triA{distancebetween("B","C")}
+  \pgfmathsetmacro\triB{distancebetween("C","A")}
+  \pgfmathsetmacro\triC{distancebetween("A","B")}
+  \path (barycentric cs:A=\triA,B=\triB,C=\triC) coordinate (M)
+       node [draw, circle through=($(A)!(M)!(C)$)] (M) {};
+  \draw ($(C)-(A)$) coordinate (vecB)
+      (M.75-90) coordinate (@)
+      (intersection of @--[shift=(vecB)]@ and B--C) coordinate (C) -- 
+      (intersection of @--[shift=(vecB)]@ and B--A) coordinate (A);}
+\end{tikzpicture}
+\end{codeexample}
+
+\subsection{\pgfname for}
+
+Instead of |\foreach \var in {start, start + delta, ..., end}| one can use
+|\foreach \var[use int=start to end step delta]|.
+
+\begin{key}{/pgf/foreach/use int=\meta{start}|to|\meta{end}\opt{|step|\meta{delta}}}
+The values \meta{start}, \meta{end} and \meta{delta} are evaluates by \pgfname math at initialization.
+The part |step |\meta{delta} is optional (\meta{delta} = 1).
+\end{key}
+
+\begin{key}{/pgf/foreach/use float=\meta{start}|to|\meta{end}\opt{|step|\meta{delta}}}
+Same as above, however the results are not truncated.
+\end{key}
+
+%TODO: edges to and edges through
+%\pagebreak
+
+\subsection{\pgfname keys}
+\begin{pgfkeyslibrary}{ext.pgfkeys-plus}
+  This extends \pgfname keys and adds helpful |/utils| keys as well as handlers.
+  This library gets loaded by the |ext.misc| library.%
+  \footnote{\texttt{\string\usepgfkeyslibrary} is an upcoming feature of \pgfname/\tikzname.
+    For now, you need to load \texttt{ext.misc}
+    or manually \texttt{\string\input} the file \texttt{pgfkeyslibraryext.pgfkeys-plus.code.tex}
+    with \texttt{@} being a letter.}
+\end{pgfkeyslibrary}
+
+\begin{multicols}{2}
+\subsubsection{Conditionals}
+
+\begin{key}{/utils/if=\marg{cond}\marg{true}\opt{\marg{false}}}
+  This key checks the conditional \meta{cond} and applies the styles \meta{true}
+  if \meta{cond} is true, otherwise \meta{false}.
+  \meta{cond} can be anything that \pgfname math understands.
+  
+  As a side effect on how \pgfname keys parses argument, the \meta{false} argument is
+  actually optional.
+\end{key}
+
+The following keys use \TeX' macros |\if|, |\ifx|, |\ifnum| and |\ifdim| for faster
+executions.
+
+\begin{key}{/utils/TeX/if=\meta{token A}\meta{token B}\marg{true}\opt{\marg{false}}}
+  This key checks via |\if| if \meta{token A} matches \meta{token B}
+  and applies the styles \meta{true} if it does, otherwise \meta{false}.
+  
+  As a side effect on how \pgfname keys parses argument, the \meta{false} argument is
+  actually optional.
+\end{key}
+
+\begin{key}{/utils/TeX/ifx=\meta{token A}\meta{token B}\marg{true}\opt{\marg{false}}}
+  As above but via |\ifx|.
+\end{key}
+
+\begin{key}{/utils/TeX/ifnum=\marg{num cond}\marg{true}\opt{\marg{false}}}
+  This key checks |\ifnum|\meta{num cond}
+  and applies the styles \meta{true} if true, otherwise \meta{false}.
+  A delimiting |\relax| will be inserted after \meta{num cond}.
+  
+  As a side effect on how \pgfname keys parses arguments, the \meta{false} argument is
+  actually optional.
+\end{key}
+
+\begin{key}{/utils/TeX/ifdim=\meta{dim cond}\meta{true}\opt{\meta{false}}}
+  As above but with |\ifdim|.
+\end{key}
+
+\begin{key}{/utils/TeX/ifempty=\meta{Text}\meta{true}\opt{\meta{false}}}
+  This checks whether \meta{Text} is empty and applies styles \meta{true} if true,
+  otherwise \meta{false}.
+\end{key}
+\begin{key}{/utils/TeX/ifxempty=\meta{Text}\meta{true}\opt{\meta{false}}}
+  This checks whether fully expanded \meta{Text} is empty and applies styles \meta{true} if true,
+  otherwise \meta{false}.
+\end{key}
+
+\subsubsection{Handlers}
+
+While already a lot of values given to keys are evaluated by \pgfname math at some point,
+not all of them are.
+
+\begin{handler}{{.pgfmath}|=|\meta{eval}}
+  This handler evaluates \meta{eval} before it is handed to the key.
+  
+  This handler works almost the same as the |.evaluated|\indexHandlerO{.evaluated}
+  handler but it does its evaluation in a group so that the result will 
+  not overwrite any other results.
+\end{handler}
+
+\begin{handler}{{.pgfmath int}|=|\meta{eval}}
+  As above but truncates the result.
+\end{handler}
+
+\begin{handler}{{.pgfmath wrap}|=|\marg{wrapper}\marg{eval}}
+  This feeds the result of \meta{eval} as |#1| to \meta{wrapper}.
+  
+  In the example below, one could have used the \referenceKeyandIndexO[/pgf/foreach/]{evaluate}
+  key from the |\foreach| loop.
+\begin{codeexample}[width=3.7cm,preamble=\usetikzlibrary{ext.pgfkeys-plus}]
+\tikz\foreach \i in {0,10,...,100}
+\draw[
+  line width=+.25cm,
+  % needs ## because its inside the \foreach body
+  color/.pgfmath wrap={red!##1!blue}{sqrt(\i)*10}
+]
+  (0,\i/40) -- +(right:3);
+\end{codeexample}
+\end{handler}
+
+\begin{handler}{{.pgfmath if}|=|\marg{cond}\marg{true}\opt{\marg{false}}}
+  Evaluates \meta{cond} with \pgfname Math and returns \meta{true} or \meta{false} to the used key respectively.
+\end{handler}
+\begin{handler}{{.if}|=|\meta{token A}\meta{token B}\marg{true}\opt{\marg{false}}}
+  Checks via |\if| if \meta{token A} matches \meta{token B}
+  and applies the value \meta{true} if it does, otherwise \meta{false}.
+\end{handler}
+\begin{handler}{{.ifx}|=|\meta{token A}\meta{token B}\marg{true}\opt{\marg{false}}}
+  As above but via |\ifx|.
+\end{handler}
+\begin{handler}{{.ifnum}|=|\marg{ifnum cond}\marg{true}\opt{\marg{false}}}
+  Checks via |\ifnum| if \meta{ifnum cond}
+  and applies the value \meta{true} if it does, otherwise \meta{false}.
+\end{handler}
+\begin{handler}{{.ifdim}|=|\marg{ifdim cond}\marg{true}\opt{\marg{false}}}
+  As above but via |\ifdim|.
+\end{handler}
+\begin{handler}{{.ifxempty}|=|\marg{Text}\marg{true}\opt{\marg{false}}}
+  Checks whether a fully expanded \meta{Text} is empty
+  and applies the value \meta{true} if it does, otherwise \meta{false}.
+\end{handler}
+\begin{handler}{{.ifempty}|=|\marg{Text}\marg{true}\opt{\marg{false}}}
+  Checks whether \meta{Text} is empty
+  and applies the value \meta{true} if it does, otherwise \meta{false}.
+\end{handler}
+\begin{handler}{{.List}|=|\marg{\meta{e1}, \meta{e2}, \dots, \meta{en}}}
+  This handler evaluates the given list with |\foreach| and concatenates the element and
+  the result is then given to the used key.
+\end{handler}
+\end{multicols}
+\begin{codeexample}[width=6cm,preamble=\usetikzlibrary{fit,ext.misc}]
+\begin{tikzpicture}[nodes={draw, dashed, inner sep=+10pt}]
+  \foreach \point [count=\cnt] in {(0,0), (0,2), (2,0), (2,2), (3,3), (-1,-1)}
+    \node[circle, fill, inner sep=1pt, text=white] (point-\cnt) at \point {\cnt};
+  \node[gray, fit/.List={(point-1),(point-...),(point-4)}] {}; 
+  \node[red,  fit/.List={(point-1),(point-...),(point-5)}] {}; 
+  \node[blue, fit/.List={(point-1),(point-...),(point-6)}] {};
+\end{tikzpicture}
+\end{codeexample}
+
+\endinput

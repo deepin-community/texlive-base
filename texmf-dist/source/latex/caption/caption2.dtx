@@ -2,7 +2,7 @@
 % 
 % This is file `caption2.dtx'.
 % 
-% Copyright (C) 1994-2020 Axel Sommerfeldt (axel.sommerfeldt@f-m.fm)
+% Copyright (C) 1994-2021 Axel Sommerfeldt (axel.sommerfeldt@f-m.fm)
 % 
 % --------------------------------------------------------------------------
 % 
@@ -27,18 +27,16 @@
 %   caption.sty, caption-light.sty, caption2.sty, caption3.sty,
 %   caption-ams-smf.sto, caption-beamer.sto, caption-elsarticle.sto,
 %   caption-koma.sto, caption-memoir.sto, caption-ntg.sto,
-%   caption-thesis.sto, bicaption.sty, ltcaption.sty, subcaption.sty,
-% and the user manuals
-%   caption-deu.tex, caption-eng.tex, caption-rus.tex.
+%   caption-thesis.sto, bicaption.sty, ltcaption.sty, subcaption.sty.
 % 
 % \fi
-% \CheckSum{864}
+%
+% \CheckSum{818}
 %
 % \iffalse
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}[1994/12/01]
-\ProvidesFile{caption2.drv}%
-  [2007/11/28 v2.2 Documentated code of the (obsolete) caption2 package]
+\ProvidesFile{caption2.drv}[2007/11/28 v2.2 Documentated code of the (obsolete) caption2 package]
 \hbadness=9999 \newcount\hbadness \hfuzz=100pt % Make TeX shut up.
 %\errorcontextlines=3
 %
@@ -70,8 +68,15 @@
 % \newcommand*{\purerm}[1]{{\upshape\mdseries\rmfamily #1}}
 % \newcommand*{\puresf}[1]{{\upshape\mdseries\sffamily #1}}
 % \newcommand*{\purett}[1]{{\upshape\mdseries\ttfamily #1}}
-% \let\package\puresf\def\thispackage{\package{caption2}}
+% \let\class\puresf \let\package\puresf
 % \let\env\purett \let\opt\purett
+%
+% \def\thispackage{the \package{caption2} package}
+% \def\Thispackage{The \package{caption2} package}
+%
+% \newcommand*\csmarg[1]{\texttt{\char`\{#1\char`\}}}
+% \newcommand*\csoarg[1]{\texttt{\char`\[#1\char`\]}}
+% \newcommand*\version[2][]{v$#2$}
 %
 % \GetFileInfo{caption2.drv}
 % \let\docdate\filedate
@@ -180,6 +185,7 @@
 % \DoNotIndex{\hangindent,\hbox,\hfil,\hsize,\hskip,\hspace,\hss}
 % \DoNotIndex{\if,\ifcase,\ifdim,\ifnum,\ifodd,\ifvoid,\ifvmode}
 % \DoNotIndex{\ifx,\ignorespaces,\itshape}
+% \DoNotIndex{\kernel@ifnextchar}
 % \DoNotIndex{\Large,\large,\leavevmode,\leftmargini,\leftskip,\let,\linewidth}
 % \DoNotIndex{\llap,\long,\m@ne,\margin,\mdseries,\message}
 % \DoNotIndex{\newcommand,\newdimen,\newlength,\newline,\newif,\newsavebox}
@@ -209,46 +215,51 @@
 %
 % \subsection{Identificaton}
 %
+% We need at least \LaTeX2e\ version 1994/12/01.
 %    \begin{macrocode}
 \NeedsTeXFormat{LaTeX2e}[1994/12/01]
-\ProvidesPackage{caption2}[2020/09/28 v2.2f Customising captions (AR)]
 %    \end{macrocode}
 %
-% \changes{v2.2b}{2007/06/15}{Made obsolete warning even more annoying}
+% Bypass the release declarations in case the \LaTeX\ kernel doesn’t know how to deal with them
+% (as suggested by \url{https://www.latex-project.org/publications/2018-FMi-TUB-tb122mitt-version-rollback.pdf}).
 %    \begin{macrocode}
-\PackageWarning{caption2}{%
-  ****************************************************\MessageBreak
-  THIS PACKAGE IS OBSOLETE:\MessageBreak
-  This package attempts to provide an `caption2'\MessageBreak
-  package v2.0/2.1 author environment so that OLD\MessageBreak
-  documents can be successfully processed. It should\MessageBreak
-  NOT be used for NEW documents! New documents should\MessageBreak
-  use the regular `caption' package v3.x instead.\MessageBreak
-  ****************************************************\@gobbletwo}%
+\providecommand\DeclareRelease[3]{}
+\providecommand\DeclareCurrentRelease[2]{}
+%    \end{macrocode}
+%
+% Declare all supported releases.
+%    \begin{macrocode}
+\DeclareRelease{v2.0}{1995-10-09}{caption2_1995-10-09.sty}
+\DeclareRelease{v2.1}{2002-08-03}{caption2_2005-10-03.sty}
+\DeclareCurrentRelease{v2.2}{2007-04-09} % 1st version using caption3
+%    \end{macrocode}
+%
+% Identify the current version of the package.
+%    \begin{macrocode}
+\ProvidesPackage{caption2}[2021/01/20 v2.2i Customising captions (AR)]
+%\PackageWarning{caption2}{THIS PACKAGE IS OBSOLETE, PLEASE USE caption INSTEAD}
 %    \end{macrocode}
 %
 % \subsection{Loading the caption3 kernel}
 %
 %    \begin{macrocode}
-\RequirePackage{caption3}[2020/09/28] % needs v2.2a or newer
-%    \end{macrocode}
-% We undefine user commands offered by \package{caption} but not by \package{caption2}
-% since they should not be used together with \package{caption2}.
-%    \begin{macrocode}
-\let\captionsetup\@undefined
-\let\clearcaptionsetup\@undefined
-\let\showcaptionsetup\@undefined
-\let\DeclareCaptionType\@undefined
-\let\DeclareCaptionSubType\@undefined
+\RequirePackage{caption3}[2007/03/04]
 %    \end{macrocode}
 %
 % \begin{macro}{\captiontwo@Error}
 % \changes{v2.2f}{2020/09/28}{This macro added}
+% \changes{v2.2g}{2020/12/25}{Fallback definition of \cs{caption@@eh} added}
 %   |\captiontwo@Error|\marg{message}\\
 %   issues an error message (with code line indication).
 %    \begin{macrocode}
 \newcommand*\captiontwo@Error[2][]{%
   \PackageError{caption2}{#2}{#1\caption@@eh{caption2}}}
+%    \end{macrocode}
+%    \begin{macrocode}
+\providecommand*\caption@@eh[1]{%
+  If you do not understand this error, please take a closer look\MessageBreak
+  at the documentation of the `#1' package, especially the\MessageBreak
+  section about errors.\MessageBreak\@ehc}
 %    \end{macrocode}
 % \end{macro}
 %
@@ -280,7 +291,17 @@
 % \end{macro}
 % \end{macro}
 %
+% \begin{macro}{\captionwidth}
+% \changes{v2.2h}{2021/01/19}{Re-added since the \package{caption3} kernel uses \cs{caption@width} now}
+%    \begin{macrocode}
+\@ifundefined{captionwidth}
+  {\let\captionwidth\caption@width}
+  {}
+%    \end{macrocode}
+% \end{macro}
+%
 % \begin{macro}{\ifcaptionwidth}
+% \changes{v2.2}{2007/04/06}{New implementation, based on \cs{captionwidth}}
 % Either \cs{captionmargin} (with specifies an extra margin) or \cs{captionwidth}
 % (with specifies an explicit width) can be set, therefore we need the flag \cs{ifcaptionwidth}
 % to determine with parameter we should pay attention to.
@@ -291,19 +312,22 @@
 %
 % \begin{macro}{\captionindent}
 % \changes{v2.2b}{2007/08/12}{Re-added since the \package{caption3} kernel uses \cs{caption@indent} now}
+% \changes{v2.2g}{2020/12/25}{Will only be defined if it is not defined yet}
 % \cs{captionindent} will be used in caption style \texttt{indent} and specifies the indention
-% after the first line.
+% after the first line. (In \package{caption3} \version{1.1} \cs{captionindent} was renamed to
+% \cs{caption@indent} to improve compatibility to the AMS \& SMF document classes.)
 %    \begin{macrocode}
-\let\captionindent\caption@indent
+\@ifundefined{captionindent}
+  {\let\captionindent\caption@indent}
+  {}
 %    \end{macrocode}
 % \end{macro}
 %
-% \changes{v2.1}{2002/02/20}{New ifs \cs{ifcaptionlabel} and \cs{ifignoreLTcapwidth}}
-%
 % \begin{macro}{\ifcaptionlabel}
+% \changes{v2.1}{2002/02/20}{New switch \cs{ifcaptionlabel}}
 % If \cs{ifcaptionlabel} is not set the caption label should be suppressed;
 % we need this flag to support the \cs{caption*} command.
-% \changes{v2.2}{2007/04/06}{New definition, based on \cs{ifcaption@star}}
+% \changes{v2.2}{2007/04/06}{New implementation, based on \cs{ifcaption@star}}
 %    \begin{macrocode}
 \def\ifcaptionlabel{%
   \ifcaption@star
@@ -331,10 +355,28 @@
 % \end{macro}
 %
 % \begin{macro}{\ifignoreLTcapwidth}
+% \changes{v2.1}{2002/02/20}{New switch \cs{ifignoreLTcapwidth}}
 % If \cs{ifignoreLTcapwidth} is set we ignore the \cs{LTcapwidth} of \textsf{longtable}.
 %    \begin{macrocode}
 \newif\ifignoreLTcapwidth
 %    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\setcaptionmargin}
+% \changes{v2.2h}{2021/01/19}{Re-added since the \package{caption3} kernel does not define it anymore}
+% \begin{macro}{\setcaptionwidth}
+% \changes{v2.2h}{2021/01/19}{Re-added since the \package{caption3} kernel does not define it anymore}
+% User-friendly commands to set the caption margin resp.\ width.
+% Note that they additionally set the \cs{ifcaptionwidth} flag.
+%    \begin{macrocode}
+\providecommand*\setcaptionmargin{%
+  \setlength\captionwidth\z@
+  \setlength\captionmargin}
+\providecommand*\setcaptionwidth{%
+  \setlength\captionmargin\z@
+  \setlength\captionwidth}
+%    \end{macrocode}
+% \end{macro}
 % \end{macro}
 %
 % \begin{macro}{\normalcaptionparams}
@@ -667,6 +709,7 @@
 % of the package given in parameter \#1, a value of 0 will deactivate it.
 %    \begin{macrocode}
 \newcommand*\caption@setpackage[1]{\@namedef{caption@pkt@#1}}
+\@onlypreamble\caption@setpackage
 %    \end{macrocode}
 % \end{macro}
 %
@@ -692,7 +735,8 @@
 % \begin{macro}{all}
 % These options will enable or suppress the support of all the above packages.
 %    \begin{macrocode}
-\DeclareOption{none}{\caption@twozerofalse
+\DeclareOption{none}{%
+  \caption@twozerofalse
   \caption@setpackage{float}{0}\caption@setpackage{longtable}{0}%
   \caption@setpackage{subfigure}{0}}
 \DeclareOption{all}{\ExecuteOptions{float,longtable,subfigure}}
@@ -718,13 +762,6 @@
 % and use the setting of \cs{setcaptionmargin} or \cs{setcaptionwidth} instead.
 %    \begin{macrocode}
 \DeclareOption{ignoreLTcapwidth}{\ignoreLTcapwidthtrue}
-%    \end{macrocode}
-% \end{macro}
-%
-% \begin{macro}{debug}
-% This option will put additional debug information in the log file.
-%    \begin{macrocode}
-\DeclareOption{debug}{\caption@setup{debug}}
 %    \end{macrocode}
 % \end{macro}
 %
@@ -767,9 +804,9 @@
 % (like \textsf{ucthesis}), so we do it here if not already done.
 % \changes{v2.1}{2002/02/19}{\cs{abovecaptionskip} and \cs{belowcaptionskip} will be defined if neccessary}
 %    \begin{macrocode}
-\caption@ifundefined\abovecaptionskip{%
+\@ifundefined{abovecaptionskip}{%
   \newlength\abovecaptionskip\setlength\abovecaptionskip{10\p@}}{}
-\caption@ifundefined\belowcaptionskip{%
+\@ifundefined{belowcaptionskip}{%
   \newlength\belowcaptionskip\setlength\belowcaptionskip{0\p@}}{}
 %    \end{macrocode}
 % \end{macro}
@@ -783,7 +820,7 @@
 % These values are only set and used within the caption code itself.
 % \cs{captionlinewidth} will be set to the given vertical space for the caption,
 % normally this is \cs{linewidth}. (This value was called \cs{realcaptionwidth}
-% within \thispackage\ \mbox{2.0}, so we will offer this, too.)
+% within \thispackage\ \version{2.0}, so we will offer this, too.)
 %
 % \cs{captionlabel} and \cs{captiontext} will be set to the caption label
 % resp.\ the caption text.
@@ -845,7 +882,7 @@
 % If we are we call the appropriate caption definition.
 %    \begin{macrocode}
 \newcommand*\usecaptionstyle[1]{%
-  \caption@ifundefined\captiontext{%
+  \@ifundefined{captiontext}{%
     \captiontwo@Error
       [The usage of \protect#1 is only
        allowed inside code declared with\MessageBreak \protect\defcaptionstyle,
@@ -861,7 +898,7 @@
 % \end{macro}
 %
 % \begin{macro}{\@makecaption}
-% This is the heart of the \thispackage\ package -- the redefinition of the
+% This is the heart of the \thispackage{} -- the redefinition of the
 % core caption code. It was taken from the \LaTeXe\ standard classes and modified.
 % It's very easy -- apart from using \cs{abovecaptionskip} and \cs{belowcaptionskip}
 % we just set \cs{captionlinewidth}, \cs{captionlabel} and \cs{captiontext}
@@ -882,45 +919,41 @@
 % \subsection{Support of other packages}
 %
 % \begin{macro}{\caption@ifpackage}
-% This macro will execute the code needed to support the package
-% named within argument \#1. The parameter \#2 is the command
-% which shows if the package is loaded -- it is defined, it is
-% already loaded, otherwise not. The parameter \#3 contains code
-% which will be executed if no support is required -- this is for
-% cleanup purposes. The final parameter \#4 contains the code itself.
+% This macro will execute the code needed to support the package named within
+% argument \#1.
+% The parameter \#2 contains code which will be executed if the package is loaded.
+% The parameter \#3 contains code which will be executed if no support is
+% required -- this is for cleanup purposes.
 % \changes{v2.1c}{2004/05/09}{Compatibility warning removed}
+% \changes{v2.2i}{2021/01/20}{Interface and code revised (uses \cs{@ifpackageloaded} now)}
 %    \begin{macrocode}
-\newcommand*\caption@ifpackage[3]{%
-  \if1\@nameuse{caption@pkt@#1}%
-    \@ifundefined{#2}%
-      {\let\next\AtBeginDocument}%
-      {\let\next\@firstofone}%
-  \else\ifcaption@twozero
-    \@ifundefined{#2}%
-      {#3\let\next\@gobble}%
-      {\let\next\@firstofone}%
+\newcommand\caption@ifpackage[3]{%
+  \ifcaption@twozero
+    \let\next\@firstofone
+  \else\if1\@nameuse{caption@pkt@#1}%
+    \def\next{\@ifpackageloaded{#1}\@firstofone\AtBeginDocument}%
   \else
-    #3\let\next\@gobble
+    \PackageInfo{caption2}{#1 package is disabled}%
+    #3%
+    \let\next\@gobble
   \fi\fi
-  \expandafter\let\csname caption@pkt@#1\endcsname\undefined
-  \caption@ifdebug{%
-    \ifx\next\@gobble\PackageInfo{caption2}{#1 => gobble}%
-    \else\ifx\next\@firstofone\PackageInfo{caption2}{#1 => firstofone}%
-    \else\ifx\next\AtBeginDocument\PackageInfo{caption2}{#1 => AtBeginDocument}%
-    \fi\fi\fi}{}%
-  \next}
+  \@nameundef{caption@pkt@#1}%
+%    \end{macrocode}
+%    \begin{macrocode}
+  \next{%
+    \@ifpackageloaded{#1}{%
+      \PackageInfo{caption2}{#1 package is loaded}%
+      #2}{%
+      \PackageInfo{caption2}{#1 package is not loaded}%
+      #3}}}
+\@onlypreamble\caption@ifpackage
 %    \end{macrocode}
 % \end{macro}
 %
 % \subsubsection{Support of the float package}
 %
 %    \begin{macrocode}
-\caption@ifpackage{float}{floatc@plain}{}{%
-  \ifx\floatc@plain\relax
-    \PackageWarning{caption2}{%
-      Option `float' was set but there is no float package loaded}
-  \else
-    \PackageInfo{caption2}{float package v1.2 (or newer) detected}
+\caption@ifpackage{float}{%
 %    \end{macrocode}
 %
 % \begin{macro}{\caption@floatc}
@@ -936,15 +969,15 @@
 %
 % \changes{v2.1b}{2004/03/19}{\cs{realcaptionwidth}$=$\cs{hsize} was missing here}
 %    \begin{macrocode}
-    \newcommand\caption@floatc[3]{%
-      \ifx\captionlabelfont\@empty
-        \let\captionlabelfont\@fs@cfont
-      \fi
-      \captionlinewidth\hsize
-      \realcaptionwidth\hsize
-      \def\captionlabel{#2}%
-      \def\captiontext{#3}%
-      \usecaptionstyle{#1}}
+  \newcommand\caption@floatc[3]{%
+    \ifx\captionlabelfont\@empty
+      \let\captionlabelfont\@fs@cfont
+    \fi
+    \captionlinewidth\hsize
+    \realcaptionwidth\hsize
+    \def\captionlabel{#2}%
+    \def\captiontext{#3}%
+    \usecaptionstyle{#1}}%
 %    \end{macrocode}
 % \end{macro}
 %
@@ -954,7 +987,7 @@
 % \texttt{plain} and \texttt{boxed} float types will use the actual
 % caption style set by the user.
 %    \begin{macrocode}
-    \renewcommand*\floatc@plain{\caption@floatc{\caption@style}}
+  \renewcommand*\floatc@plain{\caption@floatc{\caption@style}}%
 %    \end{macrocode}
 % \end{macro}
 %
@@ -968,17 +1001,17 @@
 % Then we redefine \cs{floatc@ruled} so the caption style `ruled' will
 % be used.
 %    \begin{macrocode}
-    \ifcaption@ruled
-      \dummycaptionstyle{ruled}{\onelinecaptionsfalse\setcaptionmargin{\z@}}%
-    \else
-      \newcaptionstyle{ruled}{%
-        \ifcaptionlabel
-          {\@fs@cfont\captionlabel}\space%
-        \fi\captiontext\par}%
-    \fi
+  \ifcaption@ruled
+    \dummycaptionstyle{ruled}{\onelinecaptionsfalse\setcaptionmargin{\z@}}%
+  \else
+    \newcaptionstyle{ruled}{%
+      \ifcaptionlabel
+        {\@fs@cfont\captionlabel}\space%
+      \fi\captiontext\par}%
+  \fi
 %    \end{macrocode}
 %    \begin{macrocode}
-    \renewcommand*\floatc@ruled{\caption@floatc{ruled}}
+  \renewcommand*\floatc@ruled{\caption@floatc{ruled}}%
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1005,37 +1038,33 @@
 % group again so the original \cs{@fs@capt} is happy with closing the group.
 %
 %    \begin{macrocode}
-    \renewcommand*\caption@of[2]{\def\@captype{#2}%
-      \@ifundefined{fst@#2}{}{%
-        \@nameuse{fst@#2}%
-        \caption@ifundefined\@float@setevery{}{\@float@setevery{#2}}%
-        \let\caption@fs@capt\@fs@capt
-        \let\@fs@capt\caption@of@float}%
-      #1}
+  \renewcommand*\caption@of[2]{%
+    \def\@captype{#2}%
+    \@ifundefined{fst@#2}{}{%
+      \@nameuse{fst@#2}%
+      \@ifundefined{@float@setevery}{}{\@float@setevery{#2}}%
+      \let\caption@fs@capt\@fs@capt
+      \let\@fs@capt\caption@of@float}%
+    #1}%
 %    \end{macrocode}
 %
 %    \begin{macrocode}
-    \newcommand\caption@of@float[2]{\egroup
-      \vskip\abovecaptionskip
-      \normalsize\caption@fs@capt{#1}{#2}%
-      \vskip\belowcaptionskip
-      \bgroup}%
+  \newcommand\caption@of@float[2]{\egroup
+    \vskip\abovecaptionskip
+    \normalsize\caption@fs@capt{#1}{#2}%
+    \vskip\belowcaptionskip
+    \bgroup}%
 %    \end{macrocode}
 % \end{macro}
 %
 %    \begin{macrocode}
-  \fi}
+}{}
 %    \end{macrocode}
 %
 % \subsubsection{Support of the longtable package}
 %
 %    \begin{macrocode}
-\caption@ifpackage{longtable}{LT@makecaption}{}{%
-  \ifx\LT@makecaption\relax
-    \PackageWarning{caption2}{%
-      Option `longtable' was set but there is no longtable package loaded}
-  \else
-    \PackageInfo{caption2}{longtable package v3.15 (or newer) detected}
+\caption@ifpackage{longtable}{%
 %    \end{macrocode}
 %
 % \begin{macro}{\LT@makecaption}
@@ -1058,28 +1087,28 @@
 % (Remember: |#1| is |\@gobble| in star form of |\caption|,
 % and |\@firstofone| otherwise.)
 %    \begin{macrocode}
-    \dummycaptionstyle{longtable}{}
+  \dummycaptionstyle{longtable}{}%
 %    \end{macrocode}
 %    \begin{macrocode}
-    \renewcommand\LT@makecaption[3]{%
-      \LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\hsize{%
-        \ifignoreLTcapwidth
-        \else
-          \setcaptionwidth\LTcapwidth
-        \fi
-        \captionlinewidth\hsize
-        \realcaptionwidth\hsize
-        \captionlabelfalse#1\captionlabeltrue
-        \def\captionlabel{#2}%
-        \def\captiontext{#3}%
-        \usecaptionstyle{longtable}%
-        \endgraf\vskip\baselineskip}%
-      \hss}}}
+  \renewcommand\LT@makecaption[3]{%
+    \LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\hsize{%
+      \ifignoreLTcapwidth
+      \else
+        \setcaptionwidth\LTcapwidth
+      \fi
+      \captionlinewidth\hsize
+      \realcaptionwidth\hsize
+      \captionlabelfalse#1\captionlabeltrue
+      \def\captionlabel{#2}%
+      \def\captiontext{#3}%
+      \usecaptionstyle{longtable}%
+      \endgraf\vskip\baselineskip}%
+    \hss}}}%
 %    \end{macrocode}
 % \end{macro}
 %
 %    \begin{macrocode}
-  \fi}
+}{}
 %    \end{macrocode}
 %
 % \subsubsection{Support of the subfigure package}
@@ -1091,13 +1120,8 @@
 %
 % \begin{macro}{\setsubcapstyle}
 % This sets the subcaptionstyle to a appropriate value.
-%
-% If \cs{ifsubcapraggedright} is undefined (it was introduced
-% into v2.1 of the \textsf{subfigure} package) we define it first.
 %    \begin{macrocode}
 \newcommand*\setsubcapstyle{%
-  \caption@ifundefined\subcapraggedrightfalse{%
-    \newif\ifsubcapraggedright}{}%
   \ifsubcaphang
     \ifsubcapcenter
       \subcapstyle{hang+center}%
@@ -1117,6 +1141,13 @@
   \else
     \subcapstyle{normal}%
   \fi\fi\fi\fi}
+%    \end{macrocode}
+% If \cs{ifsubcapraggedright} is undefined (it was introduced
+% in \version{2.1} of the \textsf{subfigure} package) we define it first.
+%    \begin{macrocode}
+\AtBeginDocument{%
+  \@ifundefined{subcapraggedrightfalse}{%
+    \newif\ifsubcapraggedright}{}}
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1188,15 +1219,7 @@
 % the helper macros in the garbage can.
 %
 %    \begin{macrocode}
-\caption@ifpackage{subfigure}{@makesubfigurecaption}{%
-  \let\setsubcapstyle\undefined
-  \let\caption@makesubcaption\undefined}{%
-  \ifx\@makesubfigurecaption\relax
-    \PackageWarning{caption2}{%
-      Option `subfigure' was set but there is no subfigure package loaded}
-    \let\setsubcapstyle\undefined
-    \let\caption@makesubcaption\undefined
-  \else
+\caption@ifpackage{subfigure}{%
 %    \end{macrocode}
 %
 % Some stuff has changed from version 2.0 to 2.1 of the
@@ -1205,15 +1228,15 @@
 % otherwise we assume v2.1 or newer.
 %
 %    \begin{macrocode}
-    \ifx\subcapfont\undefined
-      \PackageInfo{caption2}{subfigure package v2.0 detected}
+  \ifx\subcapfont\@undefined
+    \PackageInfo{caption2}{subfigure package v2.0 detected}%
 %    \end{macrocode}
 %
 % \begin{macro}{\subcapfont}
 % We define \cs{subcapfont} here so we can use it later
 % in common code for \textsf{subfigure} v2.0 and v2.1 (or newer).
 %    \begin{macrocode}
-      \let\subcapfont\@empty
+    \let\subcapfont\@empty
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1227,13 +1250,13 @@
 % Note: \cs{subfigcapmargin} is a command in v2.0 of \textsf{subfigure}.
 % So we make \cs{subfigcapwidth} a command, too.
 %    \begin{macrocode}
-      \newcommand*\subfigcapwidth{\z@}
-      \newcommand*\setsubcapmargin{%
-        \subfigcapwidthfalse
-        \renewcommand*\subfigcapmargin}
-      \newcommand*\setsubcapwidth{%
-        \subfigcapwidthtrue
-        \renewcommand*\subfigcapwidth}
+    \newcommand*\subfigcapwidth{\z@}%
+    \newcommand*\setsubcapmargin{%
+      \subfigcapwidthfalse
+      \renewcommand*\subfigcapmargin}%
+    \newcommand*\setsubcapwidth{%
+      \subfigcapwidthtrue
+      \renewcommand*\subfigcapwidth}%
 %    \end{macrocode}
 % \end{macro}
 % \end{macro}
@@ -1242,20 +1265,20 @@
 % \begin{macro}{\subcaplabelsep}
 % Analogous to \cs{captionlabelsep} we define \cs{subcaplabelsep}.
 %    \begin{macrocode}
-      \newcommand*\subcaplabelsep{\space}
+    \newcommand*\subcaplabelsep{\space}%
 %    \end{macrocode}
 % \end{macro}
 %
 % \begin{macro}{\caption@subfig@hss}
 % This will be uses within the caption code itself.
 %    \begin{macrocode}
-      \let\caption@subfig@hss\hfil
+    \let\caption@subfig@hss\hfil
 %    \end{macrocode}
 % \end{macro}
 %
 %    \begin{macrocode}
-    \else
-      \PackageInfo{caption2}{subfigure package v2.1 (or newer) detected}
+  \else
+    \PackageInfo{caption2}{subfigure package v2.1 (or newer) detected}%
 %    \end{macrocode}
 %
 % \begin{macro}{\subfigcapwidth}
@@ -1268,13 +1291,13 @@
 % Note: \cs{subfigcapmargin} is a length in v2.1 of \textsf{subfigure}.
 % So we make \cs{subfigcapwidth} a length, too.
 %    \begin{macrocode}
-      \newdimen\subfigcapwidth
-      \newcommand*\setsubcapmargin{%
-        \subfigcapwidthfalse
-        \setlength\subfigcapmargin}
-      \newcommand*\setsubcapwidth{%
-        \subfigcapwidthtrue
-        \setlength\subfigcapwidth}
+    \newdimen\subfigcapwidth
+    \newcommand*\setsubcapmargin{%
+      \subfigcapwidthfalse
+      \setlength\subfigcapmargin}%
+    \newcommand*\setsubcapwidth{%
+      \subfigcapwidthtrue
+      \setlength\subfigcapwidth}%
 %    \end{macrocode}
 % \end{macro}
 % \end{macro}
@@ -1283,19 +1306,19 @@
 % \begin{macro}{\subcaplabelsep}
 % Analogous to \cs{captionlabelsep} we define \cs{subcaplabelsep}.
 %    \begin{macrocode}
-      \newcommand*\subcaplabelsep{\hskip\subfiglabelskip}
+    \newcommand*\subcaplabelsep{\hskip\subfiglabelskip}%
 %    \end{macrocode}
 % \end{macro}
 %
 % \begin{macro}{\caption@subfig@hss}
 % This will be uses within the caption code itself.
 %    \begin{macrocode}
-      \let\caption@subfig@hss\hss
+    \let\caption@subfig@hss\hss
 %    \end{macrocode}
 %
 % \end{macro}
 %    \begin{macrocode}
-    \fi
+  \fi
 %    \end{macrocode}
 %
 % Here starts the common code for \textsf{subfigure} v2.0 and v2.1.
@@ -1306,9 +1329,9 @@
 % Analogous to \cs{ifcaptionwidth}, \cs{captionindent} \& \cs{captionlabeldelim}
 % we define \cs{ifsubfigcapwidth}, \cs{subcapindent} \& \cs{subcaplabeldelim}
 %    \begin{macrocode}
-    \newif\ifsubfigcapwidth
-    \newdimen\subcapindent
-    \newcommand*\subcaplabeldelim{}
+  \newif\ifsubfigcapwidth
+  \newdimen\subcapindent
+  \newcommand*\subcaplabeldelim{}%
 %    \end{macrocode}
 % \end{macro}
 % \end{macro}
@@ -1319,13 +1342,13 @@
 % Analogous to \cs{captionstyle} we define \cs{subcapstyle}
 % and set it (via \cs{setsubcapstyle}) to a appropriate value.
 %    \begin{macrocode}
-    \newcommand*\subcapstyle[1]{%
-      \expandafter\ifx\csname caption@@#1\endcsname\relax
-        \captiontwo@Error{Undefined caption style `#1'}%
-      \else
-        \def\caption@substyle{#1}%
-      \fi}
-    \setsubcapstyle
+  \newcommand*\subcapstyle[1]{%
+    \expandafter\ifx\csname caption@@#1\endcsname\relax
+      \captiontwo@Error{Undefined caption style `#1'}%
+    \else
+      \def\caption@substyle{#1}%
+    \fi}%
+  \setsubcapstyle
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1338,8 +1361,8 @@
 % to be just the plain label and nothing else.
 %
 %    \begin{macrocode}
-    \renewcommand*\@thesubfigure{\thesubfigure}
-    \renewcommand*\@thesubtable{\thesubtable}
+  \renewcommand*\@thesubfigure{\thesubfigure}%
+  \renewcommand*\@thesubtable{\thesubtable}%
 %    \end{macrocode}
 % \end{macro}
 % \end{macro}
@@ -1348,20 +1371,17 @@
 % \begin{macro}{\@makesubtablecaption}
 % Now we are ready to redefine \cs{@makesubfigurecaption}.
 %    \begin{macrocode}
-    \let\@makesubfigurecaption\caption@makesubcaption
-    \let\@makesubtablecaption\caption@makesubcaption
+  \let\@makesubfigurecaption\caption@makesubcaption
+  \let\@makesubtablecaption\caption@makesubcaption
 %    \end{macrocode}
 % \end{macro}
 % \end{macro}
 %
 %    \begin{macrocode}
-  \fi}
-%    \end{macrocode}
-%
-% That's all folks!
-%
-%    \begin{macrocode}
-\let\caption@ifpackage\undefined
+}{%
+  \let\setsubcapstyle\@undefined
+  \let\caption@makesubcaption\@undefined
+}
 %    \end{macrocode}
 %
 % \iffalse

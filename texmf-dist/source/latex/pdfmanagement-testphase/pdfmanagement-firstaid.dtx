@@ -2,7 +2,7 @@
 %
 %% File: pdfmanagement-firstaid.dtx
 %
-% Copyright (C) 2018-2021 The LaTeX Project
+% Copyright (C) 2018-2022 The LaTeX Project
 %
 % It may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -23,13 +23,9 @@
 % for those people who are interested.
 %
 %<*driver>
-\RequirePackage{pdfmanagement-testphase}
-\DeclareDocumentMetadata{pdfstandard=A-2b}
-\makeatletter
-\declare@file@substitution{doc.sty}{doc-v3beta.sty}
-\makeatother
+\DocumentMetadata{pdfstandard=A-2b}
 \documentclass[full]{l3doc}
-\usepackage{array,booktabs,hyperxmp}
+\usepackage{array,booktabs}
 \hypersetup{pdfauthor=The LaTeX Project,pdftitle=pdfmanagement-firstaid
   (LaTeX PDF management testphase bundle)}
 \begin{document}
@@ -51,7 +47,7 @@
 %    }^^A
 % }
 %
-% \date{Version 0.95i, released 2021-08-28}
+% \date{Version 0.95t, released 2022-11-03}
 %
 % \maketitle
 % \begin{documentation}
@@ -63,15 +59,15 @@
 % This code should disappear when packages adapt to the central interfaces.
 %
 % The package contains an number of sections for various packages. Every
-% section can be disabled in (the first) \cs{DeclareDocumentMetadata} with
-% |firstaidoff={name1,name2,...}|.
+% section can be disabled in (the first) \cs{DocumentMetadata} with
+% |debug={firstaidoff={name1,name2,...},...}|.
 %    \begin{macrocode}
 %<*package>
-\ProvidesExplPackage{pdfmanagement-firstaid}{2021-08-28}{0.95i}
+\ProvidesExplPackage{pdfmanagement-firstaid}{2022-11-03}{0.95t}
   {LaTeX PDF management testphase bundle / firstaid-patches}
 
 %<@@=pdfmanagement>
-\clist_map_inline:nn {pgf,transparent,hyperxmp,pdflscape,xcolor,color,beamer,output}
+\clist_map_inline:nn {pgf,transparent,xmp,pdflscape,xcolor,color,beamer,output,colorspace,fontspec}
   {
     \bool_new:c       { g_@@_firstaid_#1_bool }
     \bool_gset_true:c { g_@@_firstaid_#1_bool }
@@ -85,26 +81,81 @@
   }
 \msg_new:nnn  { pdfmanagement } { firstaid }
               { loading~pdfmanagement~firstaid~code~for~#1 }
+\msg_new:nnn  { pdfmanagement } { firstaid-changed }
+              { package~#1~has~changed.~Check~if~patch~is~still~valid! }
+\msg_new:nnn  { pdfmanagement } { firstaid-disabled }
+              { The~loading~of~package~#1~is~disabled.\\
+                It~is~not~compatible~with~the~PDF~management. }
+\msg_new:nnn  { pdfmanagement } { firstaid-too-old }
+              { Package~#1~is~too~old~and~not~compatible.\\
+                Get~at~least~version~#2.}
+
+%    \end{macrocode}
+% \subsection{Fontspec}
+% When using luaLaTeX opacity is broken (issue \#30) as
+% fontspec/luaotfload doesn't use the pdfmanagement but write to ExtGState directly
+% To repair this some new lua code is needed. This also
+% improves the color parsing and allows to use cmyk and spot colors as font colors.
+% It is also needed to use a patch version of \texttt{fontspec-luatex.sty} to
+% slightly change the way how the Opacity and Color key are handled.
+% The patch is only executed if luaotfload is new enough.
+%    \begin{macrocode}
+\sys_if_engine_luatex:T
+   {
+     \lua_now:n
+       {
+        if~not~luaotfload.set_transparent_colorstack~
+        then~
+          tex.print("\\bool_gset_false:N\\g_@@_firstaid_fontspec_bool")~
+        end
+       }
+     \bool_if:NT \g_@@_firstaid_fontspec_bool
+       {
+            \msg_info:nnn{pdfmanagement}{firstaid}{fontspec}
+            \file_if_exist:nT { luaotfload-l3color-tmp.lua }
+              {
+                \lua_load_module:n { luaotfload-l3color-tmp.lua }
+              }
+
+         \declare@file@substitution{fontspec-luatex.sty}{fontspec-luatex-tmp-ltx.sty}
+         \AddToHook{package/fontspec/after}
+          {
+            \str_if_eq:vnF{ver@fontspec.sty}{2022/01/15~v2.8a~Font~selection~for~XeLaTeX~and~LuaLaTeX}
+             {\msg_warn:nnn{pdfmanagement}{firstaid-changed}{fontspec}}
+          }
+       }
+   }
 %    \end{macrocode}
 % \subsection{Output routine}
-% This load as few patches for the LaTeX output routine commands. They add
-% hooks for the interruption of links and for paragraph tagging.
+% The patches for the LaTeX output routine commands for the tagging
+% of the header/footer, the suppressing of links
+% and the patch to multicol for the para tagging
+% by default, but must be requested with the key \texttt{testphase=new-or-1}.
+% But until latex-lab has been updated we must ensure that they are loaded with
+% the various phases.
 %    \begin{macrocode}
 \bool_if:NT \g_@@_firstaid_output_bool
   {
-    \RequirePackage{output-patches-tmp-ltx}
+%    \end{macrocode}
+% This catches also phase-II and tagpdf.
+%    \begin{macrocode}
+    \file_if_exist:nF {new-or-1-latex-lab-testphase.ltx}
+      { 
+        \AddToHook{package/latex-lab-testphase-new-or/after}
+          {\RequirePackage{output-patches-tmp-ltx}}
+%    \end{macrocode}
+% This is for phase-I
+%    \begin{macrocode}
+        \AddToHook{package/tagpdf/after}
+          {\RequirePackage{output-patches-tmp-ltx}}
+      }    
   }
 %    \end{macrocode}
 
 % \subsection{\pkg{beamer}}
-% \pkg{beamer} makes use of the now unsupported syntax |linkbordercolor={.5 .5 .5}|.
-% To avoid an error we define this color as a name.
-%    \begin{macrocode}
-\bool_if:NT \g_@@_firstaid_beamer_bool
-  {
-    \color_set:nnn{.5~.5~.5}{rgb}{0.5,0.5,0.5}
-  }
-%    \end{macrocode}
+% \pkg{beamer} made use of the now unsupported syntax |linkbordercolor={.5 .5 .5}|.
+% This has been changed so the patch has been removed.
+% 
 % \subsection{\pkg{color}}
 %
 %  \pkg{color} is not incompatible, but the new \pkg{hyperref} driver makes use of
@@ -137,8 +188,11 @@
 %    \begin{macrocode}
 \bool_if:NT \g_@@_firstaid_xcolor_bool
   {
-    \AddToHook{package/after/xcolor}
-       {\RequirePackage{xcolor-patches-tmp-ltx}\XC@@@@names}
+    \AddToHook
+       {
+         package/xcolor/after
+       }
+       {\RequirePackage{xcolor-patches-tmp-ltx}}
   }
 %    \end{macrocode}
 % \subsection{\pkg{pgf}}
@@ -170,7 +224,10 @@
 \bool_if:NT \g_@@_firstaid_pgf_bool
   {
     \msg_info:nnn{pdfmanagement }{firstaid}{pgf}
-    \AddToHook{file/after/pgfrcs.sty}
+    \AddToHook
+      {
+        file/pgfrcs.sty/after
+      }
       {
         \cs_set_eq:NN
           \@@_pgfori_pgfutil@setuppdfresources
@@ -253,29 +310,56 @@
 
 %    \end{macrocode}
 % \subsection{\pkg{transparent}}
-% We simply replace by the new version.
+% We check if the new version is used and issue a warning otherwise
 %    \begin{macrocode}
 \bool_if:NT \g_@@_firstaid_transparent_bool
  {
-   \declare@file@substitution{transparent.sty}{transparent-ltx.sty}
+  \AddToHook{package/transparent/after}
+    {
+     \@ifpackagelater{transparent}{2022-10-27}{}
+       {
+         \msg_warning:nnnn{pdfmanagement}{firstaid-too-old}
+         {transparent}
+         {1.5~from~2022-10-27}
+       }
+    }
  }
 %    \end{macrocode}
 % \subsection{\pkg{pdflscape}}
-% We simply replace by the new version.
+% We check if the new version is used and issue a warning otherwise
 %    \begin{macrocode}
 \bool_if:NT \g_@@_firstaid_pdflscape_bool
  {
-   \declare@file@substitution{pdflscape.sty}{pdflscape-ltx.sty}
+  \AddToHook{package/pdflscape/after}
+    {
+     \@ifpackagelater{pdflscape}{2022-10-27}{}
+       {
+         \msg_warning:nnnn{pdfmanagement}{firstaid-too-old}
+         {pdflscape}
+         {0.13~from~2022-10-27}
+       }
+    }
  }
 %    \end{macrocode}
-% \subsection{hyperxmp}
-% We add some code at the end of hyperxmp.sty.
+%
+% \subsection{xmp}
+% This handles the new xmp code.
 %    \begin{macrocode}
-\bool_if:NT \g_@@_firstaid_hyperxmp_bool
+\bool_if:NT \g_@@_firstaid_xmp_bool
  {
-    \AddToHook
-      {file/after/hyperxmp.sty}
-      {\RequirePackage{hyperxmp-patches-tmp-ltx}}
+   \disable@package@load{hyperxmp}{\msg_warning:nnn{pdfmanagement}{firstaid-disabled}{hyperxmp}}
+   \disable@package@load{pdfx}    {\msg_warning:nnn{pdfmanagement}{firstaid-disabled}{pdfx}}
+   \AddToHook{package/doclicense/after}
+    {
+      \AtBeginDocument
+        {
+          \hypersetup
+            {
+              pdfcopyright  = {\doclicenseLongTextForHyperref},
+              pdflicenseurl = {\doclicenseURL},
+            }
+        }
+    }
  }
 %</package>
 %    \end{macrocode}
@@ -286,48 +370,14 @@
 % as colorspace uses temporary macros whose contents is lost.
 %    \begin{macrocode}
 %<*package>
-%<@@=pdf>
-% this must be earlier, to avoid problems with luatex which has two pageresources
-% lua/tex
-\hook_gput_code:nnn {begindocument} {pdf}
-  {
-    \tl_if_exist:NT \spc@op
+\bool_if:NT \g_@@_firstaid_colorspace_bool
+ {
+    \AddToHook
       {
-        \def\spc@Pageresources#1{}
+       package/colorspace/after
       }
-
-  }
-
-\hook_gput_code:nnn {begindocument/end} {pdf}
-  {
-    \tl_if_exist:NT \spc@op
-      {
-        \@@_backend_object_new:nn  {__spc_extgstate_op_false}{dict}
-        \@@_backend_object_write:nn
-          {__spc_extgstate_op_false}
-          {/Type /ExtGState~/op~false~/OP~false}
-        \pdfmanagement_add:nnn
-          {Page/Resources/ExtGState}
-          {SPCko}
-          {\@@_backend_object_ref:n {__spc_extgstate_op_false}}
-        \@@_backend_object_new:nn  {__spc_extgstate_op_true0}{dict}
-        \@@_backend_object_write:nn
-          {__spc_extgstate_op_true0}
-          {/Type /ExtGState~/op~true~/OP~true~/OPM~0}%
-        \pdfmanagement_add:nnn
-          {Page/Resources/ExtGState}
-          {SPCmz}
-          {\@@_backend_object_ref:n {__spc_extgstate_op_true0}}
-        \@@_backend_object_new:nn  {__spc_extgstate_op_true1}{dict}
-        \@@_backend_object_write:nn
-          {__spc_extgstate_op_true1}
-          {/Type /ExtGState~/op~true~/OP~true~/OPM~1}%
-         \pdfmanagement_add:nnn
-          {Page/Resources/ExtGState}
-          {SPCop}
-          {\@@_backend_object_ref:n {__spc_extgstate_op_true1}}
-      }
-  }
+      {\RequirePackage{colorspace-patches-tmp-ltx}}
+ }
 %</package>
 %    \end{macrocode}%
 % \end{documentation}

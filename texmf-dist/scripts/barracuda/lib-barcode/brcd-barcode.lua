@@ -1,13 +1,8 @@
-
 -- Barcode Abstract Class
--- Copyright (C) 2020 Roberto Giacomelli
+-- Copyright (C) 2019-2022 Roberto Giacomelli
 -- Please see LICENSE.TXT for any legal information about present software
 
-local Barcode = {
-    _VERSION     = "Barcode v0.0.9",
-    _NAME        = "Barcode",
-    _DESCRIPTION = "Barcode abstract class",
-}
+local Barcode = {_classname = "Barcode"}
 Barcode.__index = Barcode
 
 -- barcode_type/submodule name
@@ -16,6 +11,7 @@ Barcode._available_enc = {-- keys must be lowercase
     code128 = "lib-barcode.brcd-code128", -- Code128
     ean     = "lib-barcode.brcd-ean",     -- EAN family (ISBN, EAN8, etc)
     i2of5   = "lib-barcode.brcd-i2of5",   -- Interleaved 2 of 5
+    upc     = "lib-barcode.brcd-upc",     -- UPC
 }
 Barcode._builder_instances = {} -- encoder builder instances repository
 Barcode._encoder_instances = {} -- encoder instances repository
@@ -24,6 +20,7 @@ Barcode._encoder_instances = {} -- encoder instances repository
 Barcode._super_par_order = {
     "ax",
     "ay",
+    "debug_bbox",
 }
 Barcode._super_par_def = {}
 local pardef = Barcode._super_par_def
@@ -36,7 +33,7 @@ pardef.ax = {
     default = 0.0,
     unit = "sp", -- scaled point
     isReserved = false,
-    fncheck = function (self, ax, _) --> boolean, err
+    fncheck = function (_self, ax, _) --> boolean, err
         if ax >= 0.0 and ax <= 1.0 then return true, nil end
         return false, "[OutOfRange] 'ax' out of [0, 1] interval"
     end,
@@ -46,13 +43,34 @@ pardef.ay = {
     default = 0.0,
     unit = "sp", -- scaled point
     isReserved = false,
-    fncheck = function (self, ay, _) --> boolean, err
+    fncheck = function (_self, ay, _) --> boolean, err
         if ay >= 0.0 and ay <= 1.0 then return true, nil end
         return false, "[OutOfRange] 'ay' out of [0, 1] interval"
     end,
 }
 
--- Barcode.bbox_to_quietzone -- under assessment
+-- debug only purpose
+-- enable/disable bounding box drawing of symbols
+Barcode.debug_bbox = "none"
+pardef.debug_bbox = {
+    default    = "none",
+    isReserved = false,
+    enum = {
+        none = true, -- do nothing
+        symb = true, -- draw bbox of the symbol
+        qz = true, -- draw a bbox at quietzone border
+        qzsymb = true, -- draw quietzone and symbol bboxes
+    },
+    fncheck    = function (self, e, _) --> boolean, err
+        if type(e) ~= "string" then return false, "[TypeError] not a string" end
+        local keys = self.enum
+        if keys[e] == true then
+            return true, nil
+        else
+            return false, "[Err] enumeration value '"..e.."' not found"
+        end
+    end,
+}
 
 -- Barcode methods
 
@@ -221,7 +239,7 @@ function Barcode:new_encoder(treename, opt) --> object, err
     -- argument checking
     local family, variant, enc_name, err = parse_treename(treename)
     if err then
-        return err
+        return nil, err
     end
     local av_enc = self._available_enc
     local mod_path = av_enc[family]
@@ -254,7 +272,7 @@ function Barcode:new_encoder(treename, opt) --> object, err
     else
         return nil, "[ArgErr] provided 'opt' is not a table"
     end
-    local enc = {} -- the new encoder
+    local enc = {_classname = "Encoder"} -- the new encoder
     enc.__index = enc
     enc._variant = variant
     setmetatable(enc, {
@@ -292,13 +310,14 @@ function Barcode:new_encoder(treename, opt) --> object, err
         end
     end
     if enc._config then -- this must be called after the parameter definition
-        enc:_config()
+        local ok, e = enc:_config()
+        if not ok then return nil, e end
     end
     return enc, nil
 end
 
 -- retrive an encoder object already created
--- 'trename' is the special identifier of the encoder
+-- 'treename' is the special identifier of the encoder
 function Barcode:enc_by_name(treename) --> <encoder object>, <err>
     -- argument checking
     local _family, _variant, _enc_name, err = parse_treename(treename)
@@ -316,25 +335,36 @@ end
 -- base methods common to all the encoders
 
 -- for numeric only simbology
-function Barcode:_check_char(c) --> elem, err
+-- elem_code : encoded char
+-- elem_text : human readable char
+-- err : error description
+function Barcode:_check_char(c, parse_state) --> elem_code, elem_text, err
     if type(c) ~= "string" or #c ~= 1 then
-        return nil, "[InternalErr] invalid char"
+        return nil, nil, "[InternalErr] invalid char"
+    end
+    local process_char = self._process_char
+    if process_char then
+        return process_char(self, c, parse_state)
     end
     local n = string.byte(c) - 48
     if n < 0 or n > 9 then
-        return nil, "[ArgErr] found a not digit char"
+        return nil, nil, "[ArgErr] found a not digit char"
     end
-    return n, nil
+    return n, nil, nil
 end
 --
-function Barcode:_check_digit(n) --> elem, err
+function Barcode:_check_digit(n, parse_state) --> elem_code, elem_text, err
     if type(n) ~= "number" then
-        return nil, "[ArgErr] not a number"
+        return nil, nil, "[ArgErr: n] not a number"
+    end
+    local process_digit = self._process_digit
+    if process_digit then
+        return process_digit(self, n, parse_state)
     end
     if n < 0 or n > 9 then
-        return nil, "[ArgErr] not a digit"
+        return nil, nil, "[ArgErr: n] not a digit"
     end
-    return n, nil
+    return n, nil, nil
 end
 
 -- not empty string --> Barcode object
@@ -345,22 +375,33 @@ function Barcode:from_string(symb, opt) --> object, err
     if #symb == 0 then
         return nil, "[ArgErr] 'symb' is an empty string"
     end
-    local chars = {}
-    local len = 0
-    local parse_state = {}
+    local chars_code = {}
+    local chars_text
+    local parse_state
+    if self._init_parse_state then
+        parse_state = self:_init_parse_state()
+    else
+        parse_state = {}
+    end
     for c in string.gmatch(symb, ".") do
-        local elem, err = self:_check_char(c, parse_state)
+        local elem_code, elem_text, err = self:_check_char(c, parse_state)
         if err then
             return nil, err
-        elseif elem then
-            chars[#chars+1] = elem
-            len = len + 1
+        else
+            if elem_code then
+                chars_code[#chars_code + 1] = elem_code
+            end
+            if elem_text then
+                chars_text = chars_text or {}
+                chars_text[#chars_text + 1] = elem_text
+            end
         end
     end
     -- build the barcode object
     local o = {
-        _code_data = chars, -- array of chars
-        _code_len = len, -- symbol lenght
+        _classname = "BarcodeSymbol",
+        _code_data = chars_code, -- array of chars
+        _code_text = chars_text,
     }
     setmetatable(o, self)
     if opt ~= nil then
@@ -394,42 +435,58 @@ function Barcode:from_uint(n, opt) --> object, err
     if opt ~= nil and type(opt) ~= "table" then
         return nil, "[ArgErr] 'opt' is not a table"
     end
-    local digits = {}
-    local parse_state = {}
-    local i = 0
+    local digits_code = {}
+    local digits_text
+    local parse_state
+    if self._init_parse_state then
+        parse_state = self:_init_parse_state()
+    else
+        parse_state = {}
+    end
     if n == 0 then
-        local elem, err = self:_check_digit(0, parse_state)
+        local elem_code, elem_text, err = self:_check_digit(0, parse_state)
         if err then
             return nil, err
         end
-        if elem then
-            digits[1] = elem
-            i = 1
+        if elem_code then
+            digits_code[1] = elem_code
+        end
+        if elem_text then
+            digits_text = {elem_text}
         end
     else
         while n > 0 do
             local d = n % 10
-            local elem, err = self:_check_digit(d, parse_state)
+            local elem_code, elem_text, err = self:_check_digit(d, parse_state)
             if err then
                 return nil, err
             end
-            if elem then
-                i = i + 1
-                digits[i] = elem
+            if elem_code then
+                digits_code[#digits_code + 1] = elem_code
+            end
+            if elem_text then
+                digits_text = digits_text or {}
+                digits_text[#digits_text + 1] = elem_text
             end
             n = (n - d) / 10
         end
-        for k = 1, i/2  do -- reverse the array
-            local d = digits[k]
-            local h = i - k + 1
-            digits[k] = digits[h]
-            digits[h] = d
+        local rev_array = function (a)
+            local len = #a
+            for k = 1, len/2 do -- reverse the array
+                local h = len - k + 1
+                a[k], a[h] = a[h], a[k]
+            end
+        end
+        rev_array(digits_code)
+        if digits_text then
+            rev_array(digits_text)
         end
     end
     -- build the barcode object
     local o = {
-        _code_data = digits, -- array of digits
-        _code_len = i, -- symbol lenght
+        _classname = "BarcodeSymbol",
+        _code_data = digits_code, -- array of digits
+        _code_text = digits_text, -- array of human readable information
     }
     setmetatable(o, self)
     if opt ~= nil then
@@ -447,6 +504,26 @@ function Barcode:from_uint(n, opt) --> object, err
         if not ok then return nil, e end
     end
     return o, nil
+end
+
+-- recursive general Barcode costructor
+function Barcode:new(code) --> object, err
+    local t = type(code)
+    if t == "string" then
+        return self:from_string(code)
+    elseif t == "number" then
+        return self:from_uint(code)
+    elseif t == "table" then
+        local res = {}
+        for _, c in ipairs(code) do
+            local b, err = self:new(c)
+            if err then return nil, err end
+            res[#res + 1] = b
+        end
+        return res, nil
+    else
+        return nil, "[ArgErr] unsuitable type '"..t.."' for the input code"
+    end
 end
 
 -- check a parameter set
@@ -532,13 +609,13 @@ function Barcode:info() --> table
         description = self._DESCRIPTION,
         param       = {},
     }
-    local tpar   = info.param
+    local tpar = info.param
     for _, pdef in self:param_ord_iter() do
-        local id   = pdef.pname
+        local id = pdef.pname
         local def = pdef.pdef
         tpar[#tpar + 1] = {
             name       = id,
-            descr      = nil, -- TODO:
+            descr      = def.descr,
             value      = self[id],
             isReserved = def.isReserved,
             unit       = def.unit,
@@ -547,12 +624,32 @@ function Barcode:info() --> table
     return info
 end
 
--- return the code being represented as a string
--- or nil if the method is called from Barcode abstract class
-function Barcode:get_code() --> string|nil
-    local code = self._code_data
-    if code then
-        return table.concat(code)
+-- return internal code representation
+function Barcode:get_code() --> array
+    if self._classname == "BarcodeSymbol" then
+        local code = self._code_data
+        local res = {}
+        for _, c in ipairs(code) do
+            res[#res + 1] = c
+        end
+        return res
+    else
+         error("[Err: OOP] 'BarcodeSymbol' only method")
+    end
+end
+
+-- human readable interpretation hri or nil
+function Barcode:get_hri() --> array|nil
+    if self._classname == "BarcodeSymbol" then
+        local code = self._code_text
+        if code == nil then return nil end
+        local res = {}
+        for _, c in ipairs(code) do
+            res[#res + 1] = c
+        end
+        return res
+    else
+         error("[Err: OOP] 'BarcodeSymbol' only method")
     end
 end
 
@@ -562,8 +659,8 @@ function Barcode:get_param(id) --> value, err
     if type(id) ~= "string" then
         return nil, "[ArgErr] 'id' must be a string"
     end
-    local pardef = self._par_def
-    if not pardef[id] then
+    local par_def = self._par_def
+    if not par_def[id] then
         return nil, "[Err] Parameter '"..id.."' doesn't exist"
     end
     local res = assert(self[id], "[InternalErr] parameter value unreachable")
@@ -620,6 +717,76 @@ function Barcode:set_param(arg1, arg2) --> boolean, err
         self[p] = v
     end
     return true, nil
+end
+
+-- canvas is a gaCanvas object
+-- tx, ty is an optional point to place symbol local origin on the canvas plane
+function Barcode:draw(canvas, tx, ty) --> canvas, err
+    local nclass = self._classname
+    if nclass == "Barcode" then
+        error("[ErrOOP:Barcode] method 'draw' must be called only on a Symbol object")
+    end
+    if nclass == "Encoder" then
+        error("[ErrOOP:Encoder] method 'draw' must be called only on a Symbol object")
+    end
+    assert(nclass == "BarcodeSymbol")
+    if canvas._classname ~= "gaCanvas" then
+        return nil, "[ErrOOP:canvas] object 'gaCanvas' expected"
+    end
+    local ga_fn = assert(
+        self._append_ga,
+        "[InternalErr] unimplemented '_append_ga' method"
+    )
+    local bb_info = ga_fn(self, canvas, tx or 0, ty or 0)
+    local dbg_bbox = self.debug_bbox
+    if dbg_bbox == "none" then
+        -- do nothing
+    else
+        -- dashed style: phase = 3bp, dash pattern = 6bp 3bp
+        local bp = canvas.bp
+        local W = bp/10 -- 0.1bp
+        local w = W/2
+        assert(canvas:encode_linewidth(W))
+        assert(canvas:encode_dash_pattern(3*bp, 6*bp, 3*bp))
+        local x1, y1, x2, y2 = bb_info[1], bb_info[2], bb_info[3], bb_info[4]
+        if dbg_bbox == "symb" then
+            assert(canvas:encode_rect(x1 + w, y1 + w, x2 - w, y2 - w))
+        elseif dbg_bbox == "qz" then
+            local q1, q2, q3, q4 = bb_info[5], bb_info[6], bb_info[7], bb_info[8]
+            x1 = x1 - (q1 or 0) + w
+            y1 = y1 - (q2 or 0) + w
+            x2 = x2 + (q3 or 0) - w
+            y2 = y2 + (q4 or 0) - w
+            assert(canvas:encode_rect(x1, y1, x2, y2))
+        elseif dbg_bbox == "qzsymb" then
+            local q1, q2, q3, q4 = bb_info[5], bb_info[6], bb_info[7], bb_info[8]
+            x1 = x1 + w
+            y1 = y1 + w
+            x2 = x2 - w
+            y2 = y2 - w
+            if q1 then
+                assert(canvas:encode_vline(y1, y2, x1))
+                x1 = x1 - q1
+            end
+            if q3 then
+                assert(canvas:encode_vline(y1, y2, x2))
+                x2 = x2 + q3
+            end 
+            if q2 then
+                assert(canvas:encode_hline(x1, x2, y1))
+                y1 = y1 - q2
+            end
+            if q4 then
+                assert(canvas:encode_hline(x1, x2, y2))
+                y2 = y2 + q4
+            end
+            assert(canvas:encode_rect(x1, y1, x2, y2))
+        else
+            error("[InternalErr:debug_bbox] unrecognized enum value")
+        end
+        assert(canvas:encode_reset_pattern())
+    end
+    return canvas
 end
 
 return Barcode

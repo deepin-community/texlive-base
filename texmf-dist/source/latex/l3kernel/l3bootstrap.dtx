@@ -2,7 +2,7 @@
 %
 %% File: l3bootstrap.dtx
 %
-% Copyright (C) 2011-2021 The LaTeX Project
+% Copyright (C) 2011-2023 The LaTeX Project
 %
 % It may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -43,7 +43,7 @@
 %    }^^A
 % }
 %
-% \date{Released 2021-08-27}
+% \date{Released 2023-01-16}
 %
 % \maketitle
 %
@@ -189,18 +189,16 @@
 %    \end{macrocode}
 %   For \LuaTeX{} we make sure the basic support is loaded:
 %   this is only necessary in plain.
-%
-%   Additionally we just ensure that \TeX{} has seen the csnames \cs{prg_return_true:}
-%   and \cs{prg_return_false:} before the Lua code builds these tokens.
 %    \begin{macrocode}
     \begingroup\expandafter\expandafter\expandafter\endgroup
     \expandafter\ifx\csname newcatcodetable\endcsname\relax
       \input{ltluatex}%
     \fi
-    \begingroup\edef\ignored{%
-      \expandafter\noexpand\csname prg_return_true:\endcsname
-      \expandafter\noexpand\csname prg_return_false:\endcsname
-    }\endgroup
+    \begingroup\expandafter\expandafter\expandafter\endgroup
+    \expandafter\ifx\csname newluabytecode\endcsname\relax
+    \else
+      \newluabytecode\@expl@luadata@bytecode
+    \fi
     \directlua{require("expl3")}%
 %    \end{macrocode}
 %   As the user might be making a custom format, no assumption is made about
@@ -236,47 +234,42 @@
   \def\ShortText{Required primitives not found}%
   \def\LongText%
     {%
-      LaTeX3 requires the e-TeX primitives and additional functionality as
-      described in the README file.
+      The L3 programming layer requires the e-TeX primitives and additional
+      \LineBreak functionality as described in the README file.
       \LineBreak
       These are available in the engines\LineBreak
-      - pdfTeX v1.40\LineBreak
+      - pdfTeX v1.40.0\LineBreak
       - XeTeX v0.99992\LineBreak
       - LuaTeX v1.10\LineBreak
       - e-(u)pTeX mid-2012\LineBreak
+      - Prote (2021)\LineBreak
       or later.\LineBreak
       \LineBreak
     }%
   \ifnum0%
-    \expandafter\ifx\csname pdfstrcmp\endcsname\relax
+    \expandafter\ifx\csname expanded\endcsname\relax
+      \expandafter\ifx\csname pdfstrcmp\endcsname\relax\else 1\fi
     \else
-      \expandafter\ifx\csname pdftexversion\endcsname\relax
-        \expandafter\ifx\csname Ucharcat\endcsname\relax
-          \expandafter\ifx\csname kanjiskip\endcsname\relax
-          \else
-            1%
-          \fi
-        \else
-          1%
-        \fi
+      \expandafter\ifx\csname luatexversion\endcsname\relax
+        1%
       \else
-        \ifnum\pdftexversion<140 \else 1\fi
+        \ifnum\luatexversion<110 \else 1\fi
       \fi
-    \fi
-    \expandafter\ifx\csname directlua\endcsname\relax
-    \else
-      \ifnum\luatexversion<110 \else 1\fi
     \fi
     =0 %
       \newlinechar`\^^J %
       \def\LineBreak{\noexpand\MessageBreak}%
       \expandafter\ifx\csname PackageError\endcsname\relax
         \def\LineBreak{^^J}%
-        \def\PackageError#1#2#3%
-          {%
-            \errhelp{#3}%
-            \errmessage{#1 Error: #2}%
-          }%
+        \begingroup
+          \lccode`\~=`\ \lccode`\}=`\ %
+          \lccode`\T=`\T\lccode`\H=`\H%
+          \catcode`\ =11 %
+\lowercase{\endgroup\def\PackageError#1#2#3{%
+\begingroup\errorcontextlines-1\immediate\write0{}\errhelp{#3}\def%
+\                                                   {#1 Error: #2.^^J^^J
+Type  H <return>  for immediate help}\def~{\errmessage{%
+\                                                   }}~\endgroup}}%
       \fi
       \edef\next
         {%

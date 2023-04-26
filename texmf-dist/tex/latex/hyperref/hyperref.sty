@@ -5,18 +5,19 @@
 %% The original source files were:
 %%
 %% hyperref.dtx  (with options: `package')
+%% hyperref-linktarget.dtx  (with options: `package,package-include')
+%% hyperref.dtx  (with options: `packageEnd')
 %% 
-%% File: hyperref.dtx
 %% Copyright
 %% 1995-2001 Sebastian Rahtz, with portions written by David Carlisle and Heiko Oberdiek,
 %% 2001-2015 Heiko Oberdiek.
 %% 2016-2019 Oberdiek Package Support Group
-%% 2019-2021 LaTeX Project
+%% 2019-2022 LaTeX Project
 %%      https://github.com/latex3/hyperref/issues
-%%
+%% 
 %% This file is part of the `Hyperref Bundle'.
 %% -------------------------------------------
-%%
+%% 
 %% This work may be distributed and/or modified under the
 %% conditions of the LaTeX Project Public License, either version 1.3
 %% of this license or (at your option) any later version.
@@ -24,17 +25,18 @@
 %%   http://www.latex-project.org/lppl.txt
 %% and version 1.3 or later is part of all distributions of LaTeX
 %% version 2005/12/01 or later.
-%%
+%% 
 %% This work has the LPPL maintenance status `maintained'.
-%%
+%% 
 %% The Current Maintainer of this work is the LaTeX Project.
-%%
+%% 
 %% The list of all files belonging to the `Hyperref Bundle' is
 %% given in the file `manifest.txt'.
-%%
-\NeedsTeXFormat{LaTeX2e}[1995/12/01]
+%% 
+%% File: hyperref.dtx
+\NeedsTeXFormat{LaTeX2e}[2020/10/01]
 \ProvidesPackage{hyperref}
-  [2021-06-07 v7.00m %
+  [2022-11-13 v7.00u %
   Hypertext links for LaTeX]
 \begingroup
   \@makeother\`%
@@ -103,6 +105,7 @@
   }%
 \endgroup
 \Hy@SetCatcodes
+\ifx\ExplSyntaxOn\undefined \RequirePackage{expl3}\fi
 \RequirePackage{ltxcmds}[2010/11/12]
 \RequirePackage{iftex}[2019/10/24]
 \RequirePackage{pdftexcmds}[2018/09/10]
@@ -114,6 +117,7 @@
 \RequirePackage{hycolor}
 \RequirePackage{letltxmacro}[2008/06/13]
 \RequirePackage{auxhook}[2009/12/14]
+\RequirePackage{nameref}[2012/07/28]
 \def\Hy@Error{\@PackageError{hyperref}}
 \def\Hy@Warning{\@PackageWarning{hyperref}}
 \def\Hy@WarningNoLine{\@PackageWarningNoLine{hyperref}}
@@ -311,7 +315,6 @@
 \Hy@texhtfalse
 \Hy@psdextrafalse
 \Hy@pdftoolbartrue
-\Hy@typexmlfalse
 \Hy@unicodetrue
 \ifx\kanjiskip\@undefined
 \else
@@ -338,47 +341,17 @@
 \long\def\Hy@ReturnAfterElseFiFiEnd#1\else#2\Hy@ReturnEnd{\fi\fi#1}
 \def\Hy@safe@activestrue{\csname @safe@activestrue\endcsname}
 \def\Hy@safe@activesfalse{\csname @safe@activesfalse\endcsname}
-\begingroup\expandafter\expandafter\expandafter\endgroup
-\expandafter\ifx\csname dimexpr\endcsname\relax
-  \def\hypercalcbpdef#1#2{%
-    \begingroup
-      \toks@{}%
-      \HyCal@scan#2\hypercalcbp\@nil
-    \expandafter\endgroup
-    \expandafter\def\expandafter#1\expandafter{\the\toks@}%
-  }%
-  \def\HyCal@scan#1\hypercalcbp#2\@nil{%
-    \toks@\expandafter{\the\toks@ #1}%
-    \ifx\\#2\\%
-    \else
-      \ltx@ReturnAfterFi{%
-        \HyCal@do#2\@nil
-      }%
-    \fi
-  }%
-  \def\HyCal@do#1#2\@nil{%
-    \@ifpackageloaded{calc}{}{%
-      \Hy@Warning{%
-        For calculations \string\hypercalcbp\space needs\MessageBreak
-        package calc or e-TeX%
-      }%
-    }%
-    \setlength{\dimen@}{#1}%
-    \setlength{\dimen@}{0.99626401\dimen@}%
-    \edef\x{%
-      \toks@{%
-        \the\toks@
-        \strip@pt\dimen@
-      }%
-    }\x
-    \HyCal@scan#2\@nil
-  }%
-\else
   \def\hypercalcbp#1{%
     \strip@pt\dimexpr 0.99626401\dimexpr(#1)\relax\relax
   }%
   \def\hypercalcbpdef{\def}%
-\fi
+\ExplSyntaxOn
+\@ifundefined{text_uppercase:n}{}
+ {
+   \def\MakeUppercaseUnsupportedInPdfStrings#1{\use:e {\text_uppercase:n {#1}}}
+   \def\MakeLowercaseUnsupportedInPdfStrings#1{\use:e {\text_lowercase:n {#1}}}
+ }
+\ExplSyntaxOff
 \def\pdfstringdef#1#2{%
   \begingroup
     \escapechar`\\%
@@ -492,11 +465,9 @@
       \let\bbl@info\@gobble
       \csname HyPsd@babel@\language@group\endcsname
     }%
-    \HyPsd@SpanishPatch
     \let\@safe@activestrue\relax
     \let\@safe@activesfalse\relax
     \let\cyr\relax
-    \let\es@roman\@Roman
     \let\glqq\textglqq
     \let\grqq\textgrqq
     \let\glq\textglq
@@ -797,12 +768,6 @@
     \ltx@GlobalAppendToMacro\pdfstringdefPreHook{#1}%
   \endgroup
 }
-\let\HyPsd@pdfstringdefDisableCommands\pdfstringdefDisableCommands
-\AtBeginDocument{%
-  \@ifundefined{pdfstringdefDisableCommands}{%
-    \let\pdfstringdefDisableCommands\HyPsd@pdfstringdefDisableCommands
-  }{}%
-}
 \def\pdfstringdefWarn#1{%
    \expandafter\noexpand\csname<>-\string#1\endcsname
 }
@@ -816,7 +781,6 @@
   }%
 \x
 \newif\ifHy@next
-\input{hyperref-langpatches.def}
 \RequirePackage{intcalc}[2007/09/27]
 \def\HyPsd@CJKhook{%
   \ltx@ifpackageloaded{CJK}{%
@@ -1808,14 +1772,21 @@
     \@backslashchar 000#1%
   }%
 \fi
-\begingroup\expandafter\expandafter\expandafter\endgroup
-\expandafter\ifx\csname numexpr\endcsname\relax
-  \let\HyPsd@UTFviii\relax
+\ifcsname UTFviii@loop\endcsname
+ \def\HyPsd@expand@utfvii{%
+    \count@"C2
+    \@tempcnta"F5
+    \def\UTFviii@tmp{\expandafter\def\expandafter~\expandafter{~}}%
+    \UTFviii@loop
+  }
 \else
+ \def\HyPsd@expand@utfvii{}
+\fi
   \begingroup
     \lccode`\~=`^^f4\relax
   \lowercase{\endgroup
     \def\HyPsd@UTFviii{%
+      \HyPsd@expand@utfvii
       \let\UTFviii@two@octets\HyPsd@UTFviii@two
       \let\UTFviii@three@octets\HyPsd@UTFviii@three
       \let\UTFviii@four@octets\HyPsd@UTFviii@four
@@ -1949,7 +1920,6 @@
     \number\numexpr#1-8*\number\dimexpr.125\dimexpr#1sp%
     \relax\relax\relax
   }%
-\fi
 \def\HyPsd@utf@viii@undeferr#1#2#3#4#5#6{%
   \ifx\@gobble#1%
   \else
@@ -2069,9 +2039,6 @@
 \@namedef{HyPsd@ding@214}{\textleftrightarrow}%
 \@namedef{HyPsd@ding@215}{\textupdownarrow}%
 \@namedef{HyPsd@ding@240}{\HyPsd@UnicodeReplacementCharacter}
-\@ifclassloaded{memoir}{%
-  \Hy@AtEndOfPackage{\RequirePackage{memhfixc}}%
-}{}
 \@ifpackageloaded{subfigure}{%
   \ltx@IfUndefined{sub@label}{%
     \Hy@hypertexnamesfalse
@@ -2099,10 +2066,6 @@
         \endgroup
       \fi
       \@esphack
-    }%
-    \@ifpackagelater{subfigure}{2002/03/26}{}{%
-      \providecommand*{\toclevel@subfigure}{1}%
-      \providecommand*{\toclevel@subtable}{1}%
     }%
   }%
 }{}
@@ -2213,6 +2176,25 @@
   family=Hyp,%
   prefix=HyOpt%
 }
+\ExplSyntaxOn
+\@ifundefined{AddToDocumentProperties}
+  {
+   \prop_new:N \g__hyp_documentproperties_prop
+   \NewDocumentCommand\AddToDocumentProperties{O{\@currname}mm}
+    {
+      \exp_args:NNx
+      \prop_gput:Nnn \g__hyp_documentproperties_prop
+        {
+          \tl_if_blank:eTF {#1}{top-level/}{#1/} #2
+        }
+        { #3}
+    }
+   \NewExpandableDocumentCommand\GetDocumentProperties{m}
+     {
+       \prop_item:Nn \g__hyp_documentproperties_prop {#1}
+     }
+  }{}
+\ExplSyntaxOff
 \def\IfHyperBooleanExists#1{%
   \ltx@ifundefined{Hy@#1false}\ltx@secondoftwo{%
     \ltx@ifundefined{KV@Hyp@#1@default}\ltx@secondoftwo\ltx@firstoftwo
@@ -2387,9 +2369,6 @@
 \define@key{Hyp}{verbose}[true]{%
   \Hy@boolkey{verbose}{#1}%
 }
-\define@key{Hyp}{typexml}[true]{%
-  \Hy@boolkey{typexml}{#1}%
-}
 \define@key{Hyp}{raiselinks}[true]{%
   \Hy@boolkey{raiselinks}{#1}%
 }
@@ -2412,6 +2391,9 @@
   \let\Hy@setbreaklinks\@gobble
 }
 \define@key{Hyp}{localanchorname}[true]{%
+  \Hy@WarningNoLine{%
+        Option `localanchorname' is deprecated%
+      }%
   \Hy@boolkey{localanchorname}{#1}%
 }
 \define@key{Hyp}{pageanchor}[true]{%
@@ -2739,8 +2721,8 @@
   }%
 }
 \DeclareVoidOption{latex2html}{%
-  \HyOpt@CheckDvi{latex2html}{%
-    \Hy@AtBeginDocument{\@@latextohtmlX}%
+  \Hy@Warning{Option `latex2html` is obsolete. \MessageBreak
+   A current html.sty will do all necessary (re)definitions%
   }%
 }
 \DeclareVoidOption{ps2pdf}{%
@@ -3251,14 +3233,6 @@
 \def\toclevel@subparagraph{5}
 \def\toclevel@figure{0}
 \def\toclevel@table{0}
-\@ifpackageloaded{listings}{%
-  \providecommand*\theHlstlisting{\thelstlisting}%
-  \providecommand*\toclevel@lstlisting{0}%
-}{}
-\@ifpackageloaded{listing}{%
-  \providecommand*\theHlisting{\thelisting}%
-  \providecommand*\toclevel@listing{0}%
-}{}
 \define@key{Hyp}{bookmarks}[true]{%
   \Hy@boolkey{bookmarks}{#1}%
 }
@@ -3555,21 +3529,25 @@
   \endgroup
 }
 \define@key{Hyp}{pdftitle}{%
+  \AddToDocumentProperties[hyperref]{pdftitle}{#1}%
   \HyXeTeX@CheckUnicode
   \HyPsd@PrerenderUnicode{#1}%
   \pdfstringdef\@pdftitle{#1}%
 }
 \define@key{Hyp}{pdfauthor}{%
+  \AddToDocumentProperties[hyperref]{pdfauthor}{#1}%
   \HyXeTeX@CheckUnicode
   \HyPsd@PrerenderUnicode{#1}%
   \pdfstringdef\@pdfauthor{#1}%
 }
 \define@key{Hyp}{pdfproducer}{%
+  \AddToDocumentProperties[hyperref]{pdfproducer}{#1}%
   \HyXeTeX@CheckUnicode
   \HyPsd@PrerenderUnicode{#1}%
   \pdfstringdef\@pdfproducer{#1}%
 }
 \define@key{Hyp}{pdfcreator}{%
+  \AddToDocumentProperties[hyperref]{pdfcreator}{#1}%
   \HyXeTeX@CheckUnicode
   \HyPsd@PrerenderUnicode{#1}%
   \pdfstringdef\@pdfcreator{#1}%
@@ -3592,11 +3570,13 @@
   \endgroup
 }
 \define@key{Hyp}{pdfsubject}{%
+  \AddToDocumentProperties[hyperref]{pdfsubject}{#1}%
   \HyXeTeX@CheckUnicode
   \HyPsd@PrerenderUnicode{#1}%
   \pdfstringdef\@pdfsubject{#1}%
 }
 \define@key{Hyp}{pdfkeywords}{%
+  \AddToDocumentProperties[hyperref]{pdfkeywords}{#1}%
   \HyXeTeX@CheckUnicode
   \HyPsd@PrerenderUnicode{#1}%
   \pdfstringdef\@pdfkeywords{#1}%
@@ -3743,16 +3723,9 @@
     \def\@pdfviewparams{ #2}%
   \fi
 }
-\begingroup\expandafter\expandafter\expandafter\endgroup
-\expandafter\ifx\csname numexpr\endcsname\relax
-  \def\Hy@number#1{%
-    \expandafter\@firstofone\expandafter{\number#1}%
+\def\Hy@number#1{%
+  \the\numexpr#1\relax
   }%
-\else
-  \def\Hy@number#1{%
-    \the\numexpr#1\relax
-  }%
-\fi
 \define@key{Hyp}{pdfstartpage}{%
   \ifx\\#1\\%
     \let\@pdfstartpage\ltx@empty
@@ -3764,7 +3737,7 @@
   \ifx\\#1\\%
     \let\@pdfstartview\ltx@empty
   \else
-    \hypercalcbpdef\@pdfstartview{/#1}%
+    \def\@pdfstartview{/#1}%
   \fi
 }
 \def\HyPat@NonNegativeReal/{%
@@ -3774,8 +3747,7 @@
   \ifx\\#1\\%
     \def\@pdfremotestartview{/Fit}%
   \else
-    \hypercalcbpdef\@pdfremotestartview{#1}%
-    \edef\@pdfremotestartview{\@pdfremotestartview}%
+    \edef\@pdfremotestartview{#1}%
     \Hy@Match\@pdfremotestartview{}{%
       ^(XYZ(%
             ()| %
@@ -4006,7 +3978,7 @@
 \def\HyperDestNameFilter#1{#1}
 \Hy@AtBeginDocument{%
   \begingroup
-    \edef\x{\@ifundefined{stockheight}\paperheight\stockheight}%
+    \edef\x{\ifdim\stockheight>\z@ \stockheight\else\paperheight\fi}%
     \dimen@=\x\relax
     \ifdim\dimen@>\z@
     \else
@@ -4104,8 +4076,6 @@
     \def\Acrobatmenu#1#2{\leavevmode#2\Hy@xspace@end}%
     \let\PDF@SetupDoc\@empty
     \let\PDF@FinishDoc\@empty
-    \let\@fifthoffive\@secondoftwo
-    \let\@secondoffive\@secondoftwo
     \let\ReadBookmarks\relax
     \let\WriteBookmarks\relax
     \Hy@WarningNoLine{Draft mode on}%
@@ -4211,13 +4181,6 @@
 \else
   \Hy@Info{Backreferencing OFF}%
 \fi
-\ifHy@typexml
-  \Hy@AtEndOfPackage{%
-    \RequirePackage{color}%
-    \RequirePackage{nameref}[2012/07/28]%
-  }%
-\fi
-\Hy@DisableOption{typexml}
 \ifHy@implicit
   \Hy@InfoNoLine{Implicit mode ON; LaTeX internals redefined}%
 \else
@@ -4244,6 +4207,8 @@
   }%
 \fi
 \Hy@DisableOption{implicit}
+\@ifundefined{stockwidth}{\newdimen\stockwidth}{}
+\@ifundefined{stockheight}{\newdimen\stockheight}{}
 \Hy@AtEndOfPackage{%
   \@ifpackageloaded{tex4ht}{%
     \def\Hy@driver{htex4ht}%
@@ -4515,12 +4480,9 @@
   \ifHy@colorlinks
     \def\@pdfborder{0 0 0}%
     \let\@pdfborderstyle\@empty
-    \ifHy@typexml
-    \else
-      \Hy@CatcodeWrapper{%
-        \RequirePackage{color}%
-      }%
-    \fi
+    \Hy@CatcodeWrapper{%
+      \RequirePackage{color}%
+     }%
     \def\Hy@colorlink#1{%
       \begingroup
       \HyColor@UseColor#1%
@@ -4541,49 +4503,31 @@
   \Hy@DisableOption{colorlinks}%
   \Hy@DisableOption{frenchlinks}%
   \ifHy@texht
-    \long\def\@firstoffive#1#2#3#4#5{#1}%
-    \long\def\@secondoffive#1#2#3#4#5{#2}%
-    \long\def\@thirdoffive#1#2#3#4#5{#3}%
-    \long\def\@fourthoffive#1#2#3#4#5{#4}%
-    \long\def\@fifthoffive#1#2#3#4#5{#5}%
-    \providecommand*\@safe@activestrue{}%
-    \providecommand*\@safe@activesfalse{}%
-    \def\T@ref#1{%
-      \Hy@safe@activestrue
-      \expandafter\@setref\csname r@#1\endcsname\@firstoffive{#1}%
-      \Hy@safe@activesfalse
-    }%
-    \def\T@pageref#1{%
-      \Hy@safe@activestrue
-      \expandafter\@setref\csname r@#1\endcsname\@secondoffive{#1}%
-      \Hy@safe@activesfalse
-    }%
   \else
-    \ifHy@typexml
-    \else
-      \Hy@CatcodeWrapper{%
-        \RequirePackage{nameref}[2012/07/28]%
+    \ifHy@implicit
+      \let \T@Ref\HyRef@Ref
+      \def\@refstar#1{%
+        \NR@ref@showkeys{#1}%
+        \HyRef@StarSetRef{#1}\@firstoffive
+      }
+      \def\@pagerefstar#1{%
+        \NR@ref@showkeys{#1}%
+        \HyRef@StarSetRef{#1}\@secondoffive
+      }
+      \def\@namerefstar#1{%
+        \NR@ref@showkeys{#1}%
+        \HyRef@StarSetRef{#1}\@thirdoffive
+      }
+      \def\@Refstar#1{%
+        \NR@ref@showkeys{#1}%
+        \HyRef@StarSetRef{#1}\HyRef@MakeUppercaseFirstOfFive
       }%
-    \fi
+     \else
+     \fi
   \fi
-  \DeclareRobustCommand\ref{%
-    \@ifstar\@refstar\T@ref
-  }%
-  \DeclareRobustCommand\pageref{%
-    \@ifstar\@pagerefstar\T@pageref
-  }%
-    \DeclareRobustCommand*{\nameref}{%
-      \@ifstar\@namerefstar\T@nameref
-    }%
- \ifHy@implicit
- \else
-   \let \@pagerefstar\T@pageref
-   \let \@refstar\T@ref
-   \let \@namerefstar\T@nameref
- \fi
 }
 \Hy@AtBeginDocument{%
-  \ifHy@texht
+  \ifx\ReadBookmarks\relax
   \else
     \Hy@CatcodeWrapper\ReadBookmarks
   \fi
@@ -4884,6 +4828,44 @@
     \expandafter\hyper@@anchor\expandafter{\Hy@AnchorName}{\relax}#4%
   \fi
 }
+\ExplSyntaxOn
+\cs_new:Npn \hyperget #1 #2
+  {
+    \use:c { __hyp_get_#1:n } { #2}
+  }
+
+\cs_new:Npn \__hyp_get_anchor:n  #1
+  {
+    \HyperDestNameFilter
+     {
+       \cs_if_exist:cTF {r@#1}
+        {
+          \tl_item:cn {r@#1}{4}
+        }
+        {
+          Doc-Start
+        }
+     }
+  }
+\cs_new:Npn \__hyp_get_pageanchor:n  #1
+  {
+    \HyperDestNameFilter
+     {
+       \cs_if_exist:cTF {r@#1}
+        {
+          page. \tl_item:cn {r@#1}{2}
+        }
+        {
+          Doc-Start
+        }
+     }
+  }
+\cs_new:Npn \__hyp_get_currentanchor:n  #1
+  {
+    \HyperDestNameFilter { \@currentHref }
+  }
+\ExplSyntaxOff
+
 \newdimen\XeTeXLinkMargin
 \setlength{\XeTeXLinkMargin}{2pt}
 \ifxetex
@@ -5181,24 +5163,10 @@
   \let\HyperDestRename\ltx@gobbletwo
 \fi
 \Hy@DisableOption{destlabel}
-\AddLineBeginAux{%
-  \string\providecommand\string\hyper@newdestlabel[2]{}%
-}
-\let\htmladdimg\hyperimage
-\def\htmladdnormallink#1#2{\href{#2}{#1}}
-\def\htmladdnormallinkfoot#1#2{\href{#2}{#1}\footnote{#2}}
-\def\htmlref#1#2{% anchor text, label
-  \label@hyperref[{#2}]{#1}%
-}
-\def\@@latextohtmlX{%
-  \let\hhyperref\hyperref
-  \def\hyperref##1##2##3##4{% anchor text for HTML
-                     % text to print before label in print
-                     % label
-                     % post-label text in print
-    ##2\ref{##4}##3%
-  }%
-}
+\AddToHook{include/before}
+ {\immediate\write\@partaux{\string\providecommand\string\hyper@newdestlabel[2]{}}}
+\AddToHook{begindocument}
+ {\immediate\write\@mainaux{\string\providecommand\string\hyper@newdestlabel[2]{}}}
 \RequirePackage{bitset}
 \def\HyField@NewFlag#1#2{%
   \lowercase{\HyField@NewOption{#2}}%
@@ -5802,35 +5770,18 @@
   \afterassignment\Hy@defaultbpAux
   \dimen@=#2bp\relax{#1}{#2}%
 }
-\begingroup\expandafter\expandafter\expandafter\endgroup
-\expandafter\ifx\csname dimexpr\endcsname\relax
-  \def\Hy@defaultbpAux#1\relax#2#3{%
-    \ifx!#1!%
-      \endgroup
-      \def#2{#3}%
-    \else
-      \dimen@=.99626\dimen@
-      \edef\x{\endgroup
-        \def\noexpand#2{%
-          \strip@pt\dimen@
-        }%
-      }\x
-    \fi
-  }%
-\else
-  \def\Hy@defaultbpAux#1\relax#2#3{%
-    \ifx!#1!%
-      \endgroup
-      \def#2{#3}%
-    \else
-      \edef\x{\endgroup
-        \def\noexpand#2{%
-          \strip@pt\dimexpr\dimen@*800/803\relax
-        }%
-      }\x
-    \fi
-  }%
-\fi
+\def\Hy@defaultbpAux#1\relax#2#3{%
+  \ifx!#1!%
+    \endgroup
+    \def#2{#3}%
+  \else
+    \edef\x{\endgroup
+      \def\noexpand#2{%
+        \strip@pt\dimexpr\dimen@*800/803\relax
+      }%
+    }\x
+  \fi
+}%
 \define@key{Field}{borderstyle}{%
   \let\Hy@temp\Fld@borderstyle
   \def\Fld@borderstyle{#1}%
@@ -6142,14 +6093,15 @@
   \Hy@pdfstringfalse
 }
 
-\LetLtxMacro\NoHy@OrgRef\ref
-\DeclareRobustCommand*{\ref}{%
+\@ifundefined{@kernel@ref}
+ {\LetLtxMacro\NoHy@OrgRef\ref
+  \DeclareRobustCommand*{\ref}{%
   \@ifstar\NoHy@OrgRef\NoHy@OrgRef
-}
-\LetLtxMacro\NoHy@OrgPageRef\pageref
-\DeclareRobustCommand*{\pageref}{%
+  }
+  \LetLtxMacro\NoHy@OrgPageRef\pageref
+  \DeclareRobustCommand*{\pageref}{%
   \@ifstar\NoHy@OrgPageRef\NoHy@OrgPageRef
-}
+ }}{}
 \def\NoHyper{%
   \def\hyper@link@[##1]##2##3##4{##4\Hy@xspace@end}%
   \def\hyper@@anchor##1##2{##2\Hy@xspace@end}%
@@ -6182,21 +6134,11 @@
 }
 \Hy@AtBeginDocument{%
   \if@filesw
-    \ifHy@typexml
-      \immediate\closeout\@mainaux
-      \immediate\openout\@mainaux\jobname.aux\relax
-      \immediate\write\@auxout{<relaxxml>\relax}%
-    \fi
     \immediate\write\@auxout{%
       \string\providecommand\string\HyperFirstAtBeginDocument{%
         \string\AtBeginDocument}^^J%
       \string\HyperFirstAtBeginDocument{%
         \string\ifx\string\hyper@anchor\string\@undefined^^J%
-          \string\global\string\let\string\oldcontentsline\string\contentsline^^J%
-          \string\gdef\string\contentsline%
-            \string#1\string#2\string#3\string#4{%
-            \string\oldcontentsline%
-              {\string#1}{\string#2}{\string#3}}^^J%
           \string\global\string\let\string\oldnewlabel\string\newlabel^^J%
           \string\gdef\string\newlabel\string#1\string#2{%
              \string\newlabelxx{\string#1}\string#2}^^J%
@@ -6205,7 +6147,6 @@
              \string\oldnewlabel{\string#1}{{\string#2}{\string#3}}}^^J%
           \string\AtEndDocument{%
             \string\ifx\string\hyper@anchor\string\@undefined^^J%
-              \string\let\string\contentsline\string\oldcontentsline^^J%
               \string\let\string\newlabel\string\oldnewlabel^^J%
             \string\fi%
           }^^J%
@@ -6217,22 +6158,6 @@
   \fi
   \let\HyperFirstAtBeginDocument\ltx@firstofone
   \ifx\hyper@last\@undefined
-    \def\@starttoc#1{%
-      \begingroup
-        \makeatletter
-        \ltx@ifpackageloaded{parskip}{\parskip\z@}{}%
-        \IfFileExists{\jobname.#1}{%
-          \Hy@WarningNoLine{%
-            old #1 file detected, not used; run LaTeX again%
-          }%
-        }{}%
-        \if@filesw
-          \expandafter\newwrite\csname tf@#1\endcsname
-          \immediate\openout\csname tf@#1\endcsname \jobname.#1\relax
-        \fi
-        \@nobreakfalse
-      \endgroup
-    }%
     \def\newlabel#1#2{\@newl@bel r{#1}{#2{}{}{}{}}}%
   \fi
 }
@@ -6500,6 +6425,120 @@
   \g@addto@macro\Hy@EveryPageHook{\HyPL@EveryPage}%
 \fi
 \Hy@DisableOption{pdfpagelabels}
+%% File: hyperref-linktarget.dtx
+\ExplSyntaxOn
+\bool_new:N \l__hyp_target_create_bool
+\bool_set_true:N \l__hyp_target_create_bool
+\hook_new:n {makelinktarget}
+\cs_new_protected:Npn \__hyp_target_raise:n #1
+ {
+   \mode_if_vertical:TF
+    { #1 }
+    {
+     \Hy@SaveSpaceFactor
+     \penalty\@M
+     \smash
+      {
+       \box_move_up:nn
+        { \normalbaselineskip }
+        {
+         \hbox:n
+          {
+           \Hy@RestoreSpaceFactor
+           #1
+           \Hy@SaveSpaceFactor
+          }
+        }
+      }
+     \Hy@RestoreSpaceFactor
+    }
+ }
+\ProvideDocumentCommand\LinkTargetOn{}{}
+\ProvideDocumentCommand\LinkTargetOff{}{}
+\ProvideDocumentCommand\MakeLinkTarget{sO{}m}{}
+\ProvideDocumentCommand\NextLinkTarget{m}{}
+\RenewDocumentCommand\LinkTargetOn {}
+ {
+   \bool_set_true:N \l__hyp_target_create_bool
+ }
+
+\RenewDocumentCommand\LinkTargetOff {}
+ {
+   \bool_set_false:N \l__hyp_target_create_bool
+ }
+\RenewDocumentCommand\MakeLinkTarget {s O{} m}
+  {
+    \bool_if:NT \l__hyp_target_create_bool
+      {
+        \group_begin:
+        \hook_use:n { makelinktarget }
+        \IfBooleanTF  {#1}
+          {
+            \__hyp_target_manual:nn {#2}{#3}
+          }
+          {
+            \__hyp_target_counter:nn {#2}{#3}
+          }
+        \group_end:
+      }
+  }
+\cs_new_protected:Npn  \__hyp_target_manual:nn #1 #2 %#1 prefix, #2 name
+  {
+    \tl_gset:Nx \@currentHref {#2}
+    \hook_use:n {__hyp/target/setname}
+    \@onelevel@sanitize\@currentHref
+    \__hyp_target_raise:n {\hyper@anchorstart{\@currentHref}\hyper@anchorend}
+  }
+\cs_new_protected:Npn \__hyp_target_counter:nn #1 #2  %#1 prefix, #2 counter or empty
+  {
+    \tl_if_blank:nTF {#2}
+      {
+        \__hyp_target_counter_anon:n {#1}
+      }
+      {
+        \__hyp_target_counter_doc:nn {#1}{#2}
+      }
+  }
+
+\cs_new_protected:Npn \__hyp_target_counter_anon:n #1
+  {
+    \int_gincr:N\Hy@linkcounter
+    \tl_gset:Nx \@currentHref
+      {\tl_if_blank:nTF{#1}{page}{#1}*.\int_use:N\Hy@linkcounter}
+    \hook_use:n {__hyp/target/setname}
+    \@onelevel@sanitize\@currentHref
+    \__hyp_target_raise:n {\hyper@anchorstart{\@currentHref}\hyper@anchorend}
+  }
+
+\cs_new_protected:Npn \__hyp_target_counter_doc:nn #1 #2
+  {
+    \bool_lazy_and:nnTF { \cs_if_free_p:c {c@#2} } { \cs_if_free_p:c {theH#2} }
+      {
+        \PackageWarning {hyperref}{Counter~'#2'~or~the~representation~'\string\theH#2`\MessageBreak
+        don't~exist.~No~target~created.}{}
+      }
+      {
+        \tl_gset:Nx \@currentHref {\tl_if_blank:nTF{#1}{#2}{#1}.\use:c{theH#2}}
+        \hook_use:n {__hyp/target/setname}
+        \@onelevel@sanitize\@currentHref
+        \__hyp_target_raise:n {\hyper@anchorstart{\@currentHref}\hyper@anchorend}
+      }
+  }
+\RenewDocumentCommand\NextLinkTarget {m}
+  {
+    \hook_gput_next_code:nn {__hyp/target/setname}
+      {
+        \tl_gset:Nx \@currentHref {#1}
+      }
+  }
+
+\NewDocumentCommand\SetLinkTargetFilter {m}
+  {
+    \cs_set:Npn \HyperDestNameFilter ##1 {#1}
+  }
+\@onlypreamble \SetLinkTargetFilter
+\ExplSyntaxOff
+%% File: hyperref.dtx
 \ifx\MaybeStopEarly\relax
 \else
   \Hy@stoppedearlytrue
@@ -6522,6 +6561,7 @@
 \Hy@CounterExists{section}{%
   \providecommand\theHequation{\theHsection.\arabic{equation}}%
 }
+\providecommand\theHequation{\arabic{equation}}%
 \Hy@CounterExists{part}{%
   \providecommand\theHpart{\arabic{part}}%
 }
@@ -6560,31 +6600,32 @@
 }{}
 \let\H@refstepcounter\refstepcounter
 \edef\name@of@eq{equation}%
-\edef\name@of@slide{slide}%
 \newif\if@hyper@item
 \newif\if@skiphyperref
 \@hyper@itemfalse
 \@skiphyperreffalse
+\ExplSyntaxOn
 \def\refstepcounter#1{%
-  \ifHy@pdfstring
-  \else
+  \legacy_if:nF {Hy@pdfstring}
+   {
     \H@refstepcounter{#1}%
-    \edef\This@name{#1}%
-    \ifx\This@name\name@of@slide
-    \else
-      \if@skiphyperref
-      \else
-        \if@hyper@item
-          \stepcounter{Item}%
-          \hyper@refstepcounter{Item}%
-          \@hyper@itemfalse
-        \else
-          \hyper@refstepcounter{#1}%
-        \fi
-      \fi
-    \fi
-  \fi
+    \bool_lazy_and:nnT
+      { \l__hyp_target_create_bool }
+      { ! \legacy_if_p:n{@skiphyperref} }
+      {
+        \legacy_if:nTF {@hyper@item}
+          {
+            \stepcounter{Item}%
+            \hyper@refstepcounter{Item}%
+            \@hyper@itemfalse
+          }
+          {
+            \hyper@refstepcounter{#1}%
+          }
+      }
+   }
 }
+\ExplSyntaxOff
 \let\Hy@saved@refstepcounter\refstepcounter
 \@ifpackageloaded{amsmath}{}{\newif\ifmeasuring@\measuring@false}
 \def\hyper@refstepcounter#1{%
@@ -6696,6 +6737,11 @@
     \@ctrerr
   \fi
 }
+\NewHook{__hyp/target/setname }
+\define@key{Hyp}{next-anchor}{%
+    \AddToHookNext{__hyp/target/setname}%
+       {\Hy@MakeCurrentHref{#1}}%
+   }
 \def\hyper@makecurrent#1{%
   \begingroup
     \Hy@safe@activestrue
@@ -6741,6 +6787,7 @@
   \else
     \global\let\@currentHref\HyperGlobalCurrentHref
   \fi
+  \UseHook{__hyp/target/setname}%
 }
 \def\Hy@MakeCurrentHref#1{%
   \edef\HyperLocalCurrentHref{#1}%
@@ -6753,63 +6800,11 @@
     \global\let\@currentHref\HyperGlobalCurrentHref
   \fi
 }
-\def\Hy@MakeCurrentHrefAuto#1{%
-  \Hy@GlobalStepCount\Hy@linkcounter
-  \Hy@MakeCurrentHref{#1.\the\Hy@linkcounter}%
-}
+   \def\Hy@MakeCurrentHrefAuto#1{%
+   \Hy@GlobalStepCount\Hy@linkcounter
+   \Hy@MakeCurrentHref{#1.\the\Hy@linkcounter}%
+   \UseHook{__hyp/target/setname}}
 \def\@currentHlabel{\@currentHref}
-\Hy@AtBeginDocument{%
-  \@ifclassloaded{revtex4}{%
-    \@namedef{ver@lastpage.sty}{1994/06/25}%
-  }{}%
-  \@ifpackageloaded{lastpage}{%
-    \ifHy@pageanchor
-    \else
-      \Hy@WarningNoLine{%
-        The \string\pageref{LastPage} link doesn't work\MessageBreak
-        with disabled option `pageanchor'%
-      }%
-    \fi
-    \def\lastpage@putlabel{%
-      \addtocounter{page}{-1}%
-      \if@filesw
-        \begingroup
-          \let\@number\@firstofone
-          \ifHy@pageanchor
-            \ifHy@hypertexnames
-              \ifHy@plainpages
-                \def\Hy@temp{\arabic{page}}%
-              \else
-                \Hy@unicodefalse
-                \pdfstringdef\Hy@temp{\thepage}%
-              \fi
-            \else
-              \def\Hy@temp{\the\Hy@pagecounter}%
-            \fi
-          \fi
-          \immediate\write\@auxout{%
-            \string\newlabel
-              {LastPage}{{}{\thepage}{}{%
-                \ifHy@pageanchor page.\Hy@temp\fi}{}}%
-          }%
-        \endgroup
-      \fi
-      \addtocounter{page}{1}%
-    }%
-    \@ifclassloaded{revtex4}{%
-      \begingroup
-        \toks@\expandafter{\lastpage@putlabel}%
-        \edef\x{\endgroup
-          \def\noexpand\lastpage@putlabel{%
-            \noexpand\stepcounter{page}%
-            \the\toks@
-            \noexpand\addtocounter{page}\noexpand\m@ne
-          }%
-        }%
-      \x
-    }{}%
-  }{}%
-}
 \def\hypergetref#1{\getrefbykeydefault{#1}{}{??}}
 \def\hypergetpageref#1{\getrefbykeydefault{#1}{page}{0}}
 \@ifpackageloaded{titlesec}{%
@@ -6845,30 +6840,21 @@
     \let\Hy@raisedlink\ttl@b
   }%
 }{}
-\@ifpackageloaded{titletoc}{%
-  \def\ttl@gobblecontents#1#2#3#4{\ignorespaces}%
-}{}
-\AtBeginDocument{%
-\def\Hy@varioref@undefined{{??}{??}{}{}{}}
-\@ifpackageloaded{varioref}{%
-  \def\vref@pagenum#1#2{%
-    \@ifundefined{r@#2}{%
-      \expandafter\let\csname r@#2\endcsname\Hy@varioref@undefined
-    }{}%
-    \edef#1{\getpagerefnumber{#2}}%
-  }%
-}{}
-\def\Hy@varioref@refstepcounter#1{%
-  \stepcounter{#1}%
-  \protected@edef\@currentlabel{%
-    \csname p@#1\expandafter\endcsname\csname the#1\endcsname
-  }%
-}
-  \ifx\refstepcounter\Hy@varioref@refstepcounter
-    \let\H@refstepcounter\refstepcounter
-    \let\refstepcounter\Hy@saved@refstepcounter
-  \fi
-}
+\@ifl@t@r\fmtversion{2021-11-15}
+ {}%
+ {
+   \AtBeginDocument{%
+   \def\Hy@varioref@undefined{{??}{??}{}{}{}}
+   \@ifpackageloaded{varioref}{%
+     \def\vref@pagenum#1#2{%
+       \@ifundefined{r@#2}{%
+         \expandafter\let\csname r@#2\endcsname\Hy@varioref@undefined
+       }{}%
+       \edef#1{\getpagerefnumber{#2}}%
+     }%
+   }{}
+   }
+ }
 \@ifpackageloaded{longtable}{%
   \begingroup
     \def\y{\LT@array}%
@@ -7162,6 +7148,7 @@
 }%
 }%
 }
+\@ifundefined{hyper@nopatch@footnote}{%
 \ifHy@hyperfootnotes
   \newcounter{Hfootnote}%
   \let\H@@footnotetext\@footnotetext
@@ -7309,7 +7296,8 @@
       \floatingpenalty \@MM
       \hsize\columnwidth
       \@parboxrestore
-      \edef\@currentlabel{\csname p@footnote\endcsname\@thefnmark}%
+      \def\@currentcounter{footnote}%
+      \protected@edef\@currentlabel{\csname p@footnote\endcsname\@thefnmark}%
       \@makefntext{}%
       \rule{\z@}{\footnotesep}%
       \bgroup
@@ -7362,13 +7350,14 @@
     \fi
   }%
   \def\realfootnote{%
-    \@ifnextchar[\@xfootnote{%
-      \stepcounter{\@mpfn}%
+    \@ifnextchar[\@xfootnote%]
+     {\stepcounter{\@mpfn}%
       \protected@xdef\@thefnmark{\thempfn}%
       \H@@footnotemark\H@@footnotetext
     }%
   }%
 \fi
+}{}
 \Hy@DisableOption{hyperfootnotes}
 \def\caption{%
   \ifx\@captype\@undefined
@@ -7530,66 +7519,6 @@
       \endgroup
     \fi
     \ignorespaces
-  }%
-}{}
-\@ifclassloaded{revtex}{%
-  \Hy@Info{*** compatibility with revtex **** }%
-  \def\revtex@checking#1#2{%
-    \expandafter\let\expandafter\T@temp\csname b@#1\endcsname
-    \expandafter\def\csname b@#1\endcsname{#2}%
-    \@SetMaxRnhefLabel{#1}%
-    \expandafter\let\csname b@#1\endcsname\T@temp
-  }%
-  \@ifundefined{@CITE}{\def\@CITE{\@cite}}{}%
-  \providecommand*{\@extra@b@citeb}{}%
-  \def\@CITEX[#1]#2{%
-    \let\@citea\@empty
-    \leavevmode
-    \unskip
-    $^{%
-      \scriptstyle
-      \@CITE{%
-        \@for\@citeb:=#2\do{%
-          \@citea
-          \def\@citea{,\penalty\@m\ }%
-          \edef\@citeb{\expandafter\@firstofone\@citeb}%
-          \if@filesw
-            \immediate\write\@auxout{\string\citation{\@citeb}}%
-          \fi
-          \@ifundefined{b@\@citeb\extra@b@citeb}{%
-            \mbox{\reset@font\bfseries ?}%
-            \G@refundefinedtrue
-            \@latex@warning{%
-              Citation `\@citeb' on page \thepage \space undefined%
-            }%
-          }{%
-            {\csname b@\@citeb\@extra@b@citeb\endcsname}%
-          }%
-        }%
-      }{#1}%
-    }$%
-  }%
-  \def\@citex[#1]#2{%
-    \let\@citea\@empty
-    \@cite{%
-      \@for\@citeb:=#2\do{%
-        \@citea
-        \def\@citea{,\penalty\@m\ }%
-        \edef\@citeb{\expandafter\@firstofone\@citeb}%
-        \if@filesw
-          \immediate\write\@auxout{\string\citation{\@citeb}}%
-        \fi
-        \@ifundefined{b@\@citeb\@extra@b@citeb}{%
-          \mbox{\reset@font\bfseries ?}%
-          \G@refundefinedtrue
-          \@latex@warning{%
-            Citation `\@citeb' on page \thepage \space undefined%
-          }%
-        }{%
-          \hbox{\csname b@\@citeb\@extra@b@citeb\endcsname}%
-        }%
-      }%
-    }{#1}%
   }%
 }{}
 \@ifpackageloaded{harvard}{%
@@ -7844,6 +7773,9 @@
     }%
   \endgroup
 }
+\protected\def\Hy@toclinkstart{\hyper@linkstart{link}{\Hy@tocdestname}}
+\protected\def\Hy@toclinkend{\hyper@linkend}
+
 \def\contentsline#1#2#3#4{%
   \begingroup
     \Hy@safe@activestrue
@@ -7857,7 +7789,7 @@
       \csname l@#1\endcsname{#2}{#3}%
     \or % section
       \csname l@#1\endcsname{%
-        \hyper@linkstart{link}{\Hy@tocdestname}{#2}\hyper@linkend
+        \Hy@toclinkstart{#2}\Hy@toclinkend
       }{#3}%
     \or % page
       \def\Hy@temp{#3}%
@@ -7865,20 +7797,20 @@
         \csname l@#1\endcsname{#2}{#3}%
       \else
         \csname l@#1\endcsname{{#2}}{%
-          \hyper@linkstart{link}{\Hy@tocdestname}{#3}\hyper@linkend
+          \Hy@toclinkstart{#3}\Hy@toclinkend
         }%
       \fi
     \else % all
       \def\Hy@temp{#3}%
       \ifx\Hy@temp\ltx@empty
         \csname l@#1\endcsname{%
-          \hyper@linkstart{link}{\Hy@tocdestname}{#2}\hyper@linkend
+          \Hy@toclinkstart{#2}\Hy@toclinkend
         }{}%
       \else
         \csname l@#1\endcsname{%
-          \hyper@linkstart{link}{\Hy@tocdestname}{#2}\hyper@linkend
+          \Hy@toclinkstart{#2}\Hy@toclinkend
         }{%
-          \hyper@linkstart{link}{\Hy@tocdestname}{#3}\hyper@linkend
+          \Hy@toclinkstart{#3}\Hy@toclinkend
         }%
       \fi
     \fi
@@ -7939,27 +7871,19 @@
   }%
 }
 \@ifpackageloaded{amsmath}{%
-  \@ifpackagelater{amsmath}{1999/12/14}{%
-    \renewcommand*{\numberwithin}[3][\arabic]{%
-      \@ifundefined{c@#2}{\@nocounterr{#2}}{%
-        \@ifundefined{c@#3}{\@nocnterr{#3}}{%
-          \HyOrg@addtoreset{#2}{#3}%
-          \@xp\xdef\csname the#2\endcsname{%
-            \@xp\@nx\csname the#3\endcsname .\@nx#1{#2}%
-          }%
-          \@xp\xdef\csname theH#2\endcsname{%
-            \@xp\@nx
-            \csname the\@ifundefined{theH#3}{}H#3\endcsname
-            .\@nx#1{#2}%
-          }%
+  \renewcommand*{\numberwithin}[3][\arabic]{%
+    \@ifundefined{c@#2}{\@nocounterr{#2}}{%
+      \@ifundefined{c@#3}{\@nocnterr{#3}}{%
+        \HyOrg@addtoreset{#2}{#3}%
+        \@xp\xdef\csname the#2\endcsname{%
+          \@xp\@nx\csname the#3\endcsname .\@nx#1{#2}%
+        }%
+        \@xp\xdef\csname theH#2\endcsname{%
+          \@xp\@nx
+          \csname the\@ifundefined{theH#3}{}H#3\endcsname
+          .\@nx#1{#2}%
         }%
       }%
-    }%
-  }{%
-    \Hy@WarningNoLine{%
-      \string\numberwithin\space of package `amsmath' %
-      only fixed\MessageBreak
-      for version 2000/06/06 v2.12 or newer%
     }%
   }%
 }{}
@@ -8147,200 +8071,6 @@
     }%
   \fi
 }
-\@ifclassloaded{foils}{%
-  \providecommand*\ext@table{lot}%
-  \providecommand*\ext@figure{lof}%
-}{}
-\@ifclassloaded{seminar}{%
-  \Hy@seminarslidestrue
-  \providecommand\theHslide{\arabic{slide}}%
-}{%
-  \Hy@seminarslidesfalse
-}
-\@ifpackageloaded{slidesec}{%
-  \providecommand\theHslidesection   {\arabic{slidesection}}%
-  \providecommand\theHslidesubsection{%
-    \theHslidesection.\arabic{slidesubsection}%
-  }%
-  \def\slide@heading[#1]#2{%
-    \H@refstepcounter{slidesection}%
-    \@addtoreset{slidesubsection}{slidesection}%
-    \addtocontents{los}{%
-      \protect\l@slide{\the\c@slidesection}{\ignorespaces#1}%
-        {\@SCTR}{slideheading.\theslidesection}%
-    }%
-    \def\Hy@tempa{#2}%
-    \ifx\Hy@tempa\@empty
-    \else
-      {%
-        \edef\@currentlabel{%
-          \csname p@slidesection\endcsname\theslidesection
-        }%
-        \makeslideheading{#2}%
-      }%
-    \fi
-    \gdef\theslideheading{#1}%
-    \gdef\theslidesubheading{}%
-    \ifHy@bookmarksnumbered
-      \def\Hy@slidetitle{\theslidesection\space #1}%
-    \else
-      \def\Hy@slidetitle{#1}%
-    \fi
-    \ifHy@hypertexnames
-       \ifHy@naturalnames
-         \hyper@@anchor{slideheading.\theslidesection}{\relax}%
-         \Hy@writebookmark
-           {\theslidesection}%
-           {\Hy@slidetitle}%
-           {slideheading.\theslidesection}%
-           {1}%
-           {toc}%
-       \else
-         \hyper@@anchor{slideheading.\theHslidesection}{\relax}%
-         \Hy@writebookmark
-           {\theslidesection}%
-           {\Hy@slidetitle}%
-           {slideheading.\theHslidesection}%
-           {1}%
-           {toc}%
-       \fi
-    \else
-      \Hy@GlobalStepCount\Hy@linkcounter
-      \hyper@@anchor{slideheading.\the\Hy@linkcounter}{\relax}%
-      \Hy@writebookmark
-        {\theslidesection}%
-        {\Hy@slidetitle}%
-        {slideheading.\the\Hy@linkcounter}%
-        {1}%
-        {toc}%
-    \fi
-  }%
-  \def\slide@subheading[#1]#2{%
-    \H@refstepcounter{slidesubsection}%
-    \addtocontents{los}{%
-      \protect\l@subslide{\the\c@slidesubsection}{\ignorespaces#1}%
-        {\@SCTR}{slideheading.\theslidesubsection}%
-    }%
-    \def\Hy@tempa{#2}%
-    \ifx\Hy@tempa\@empty
-    \else
-      {%
-        \edef\@currentlabel{%
-          \csname p@slidesubsection\endcsname\theslidesubsection
-        }%
-        \makeslidesubheading{#2}%
-      }%
-    \fi
-    \gdef\theslidesubheading{#1}%
-    \ifHy@bookmarksnumbered
-      \def\Hy@slidetitle{\theslidesubsection\space #1}%
-    \else
-      \def\Hy@slidetitle{#1}%
-    \fi
-    \ifHy@hypertexnames
-      \ifHy@naturalnames
-        \hyper@@anchor{slideheading.\theslidesubsection}{\relax}%
-        \Hy@writebookmark
-          {\theslidesubsection}%
-          {\Hy@slidetitle}%
-          {slideheading.\theslidesubsection}%
-          {2}%
-          {toc}%
-      \else
-        \hyper@@anchor{slideheading.\theHslidesubsection}{\relax}%
-        \Hy@writebookmark
-          {\theslidesubsection}%
-          {\Hy@slidetitle}%
-          {slideheading.\theHslidesubsection}%
-          {2}%
-          {toc}%
-      \fi
-    \else
-      \Hy@GlobalStepCount\Hy@linkcounter
-      \hyper@@anchor{slideheading.\the\Hy@linkcounter}{\relax}%
-      \Hy@writebookmark
-        {\theslidesubsection}%
-        {\Hy@slidetitle}%
-        {slideheading.\the\Hy@linkcounter}%
-        {1}%
-        {toc}%
-    \fi
-  }%
-  \providecommand*{\listslidename}{List of Slides}%
-  \def\listofslides{%
-    \section*{%
-      \listslidename
-      \@mkboth{%
-        \expandafter\MakeUppercase\listslidename
-      }{%
-        \expandafter\MakeUppercase\listslidename
-      }%
-    }%
-    \def\l@slide##1##2##3##4{%
-      \slide@undottedcline{%
-        \slidenumberline{##3}{\hyperlink{##4}{##2}}%
-      }{}%
-    }%
-    \let\l@subslide\l@slide
-    \@startlos
-  }%
-  \def\slide@contents{%
-    \def\l@slide##1##2##3##4{%
-      \slide@cline{\slidenumberline{##3}{\hyperlink{##4}{##2}}}{##3}%
-    }%
-    \let\l@subslide\@gobblefour
-    \@startlos
-  }%
-  \def\Slide@contents{%
-    \def\l@slide##1##2##3##4{%
-      \ifcase\lslide@flag
-        \message{##1 ** \the\c@slidesection}%
-        \ifnum##1>\c@slidesection
-          \def\lslide@flag{1}%
-          {%
-            \large
-            \slide@cline{%
-              \slidenumberline{$\Rightarrow\bullet$}%
-                {\hyperlink{##4}{##2}}%
-            }{##3}%
-          }%
-        \else
-          {%
-            \large
-            \slide@cline{%
-              \slidenumberline{$\surd\;\bullet$}%
-                {\hyperlink{##4}{##2}}%
-            }{##3}%
-          }%
-        \fi
-      \or
-        \def\lslide@flag{2}%
-        {%
-          \large
-          \slide@cline{%
-            \slidenumberline{$\bullet$}%
-              {\hyperlink{##4}{##2}}%
-          }{##3}%
-        }%
-      \or
-        {%
-          \large
-          \slide@cline{%
-            \slidenumberline{$\bullet$}%
-             {\hyperlink{##4}{##2}}%
-          }{##3}%
-        }%
-      \fi
-    }%
-    \def\l@subslide##1##2##3##4{%
-      \ifnum\lslide@flag=1 %
-        \@undottedtocline{2}{3.8em}{3.2em}{\hyperlink{##4}{##2}}{}%
-      \fi
-    }%
-    \def\lslide@flag{0}%
-    \@startlos
-  }%
-}{}
 \ifHy@texht
   \expandafter\endinput
 \fi
@@ -8353,7 +8083,7 @@
       Reference `#3' on page \thepage \space undefined%
     }%
   \else
-    \expandafter\Hy@setref@link#1\@empty\@empty\@nil{#2}%
+    \expandafter\Hy@setref@link#1\@empty\@empty\@empty\@nil{#2}%
   \fi
 }
 \def\Hy@setref@link#1#2#3#4#5#6\@nil#7{%
@@ -8406,22 +8136,19 @@
 \def\@namerefstar#1{%
   \HyRef@StarSetRef{#1}\@thirdoffive
 }
-
+\def\@Refstar#1{%
+  \HyRef@StarSetRef{#1}\HyRef@MakeUppercaseFirstOfFive
+}%
+\def\HyRef@MakeUppercaseFirstOfFive#1#2#3#4#5{%
+  \MakeUppercase#1%
+}%
+\def\HyRef@Ref#1{%
+  \hyperref[{#1}]{\Ref*{#1}}%
+}%
 \Hy@AtBeginDocument{%
   \@ifpackageloaded{varioref}{%
-    \def\@Refstar#1{%
-      \HyRef@StarSetRef{#1}\HyRef@MakeUppercaseFirstOfFive
-    }%
-    \def\HyRef@MakeUppercaseFirstOfFive#1#2#3#4#5{%
-      \MakeUppercase#1%
-    }%
-    \DeclareRobustCommand*{\Ref}{%
-      \@ifstar\@Refstar\HyRef@Ref
-    }%
-    \def\HyRef@Ref#1{%
-      \hyperref[{#1}]{\Ref*{#1}}%
-    }%
-  \ifdefined\vp@gerefstar
+  \@ifundefined{hyper@nopatch@varioref}
+   {
    \renewcommand\Vref@star[2][]{%
      \begingroup
        \let\T@pageref\@pagerefstar
@@ -8454,29 +8181,9 @@
         \vpageref[#1]{#2}%
        \endgroup
     }%
- \else
-   \def\Vr@f#1{%
-     \leavevmode\unskip\vref@space
-     \hyperref[{#1}]{%
-       \Ref*{#1}%
-       \let\vref@space\nobreakspace
-       \@vpageref[\unskip]{#1}%
-     }%
-   }%
-   \def\vr@f#1{%
-     \leavevmode\unskip\vref@space
-     \begingroup
-       \let\T@pageref\@pagerefstar
-       \hyperref[{#1}]{%
-         \ref*{#1}%
-         \vpageref[\unskip]{#1}%
-       }%
-     \endgroup
-   }%
- \fi
+   }{}%
   }{}%
 }
-
 \DeclareRobustCommand*{\autopageref}{%
   \@ifstar{%
     \HyRef@autopagerefname\pageref*%
@@ -8496,10 +8203,9 @@
     \pageautorefname\nobreakspace
   }%
 }
-\DeclareRobustCommand*{\autoref}{%
-  \leavevmode
-  \@ifstar{\HyRef@autoref\@gobbletwo}{\HyRef@autoref\hyper@@link}%
-}
+\NewDocumentCommand\autoref{s}
+   {\leavevmode
+    \IfBooleanTF{#1}{\HyRef@autoref\@gobbletwo}{\HyRef@autoref\hyper@@link}}
 \def\HyRef@autoref#1#2{%
   \begingroup
     \Hy@safe@activestrue
@@ -8577,9 +8283,7 @@
 \def\HyRef@currentHtag{}
 \let\HyRef@ShowKeysRef\@gobble
 \def\HyRef@ShowKeysInit{%
-  \begingroup\expandafter\expandafter\expandafter\endgroup
-  \expandafter\ifx\csname SK@@label\endcsname\relax
-  \else
+  \ifcsname SK@@label\endcsname
     \ifx\SK@ref\@empty
     \else
       \def\HyRef@ShowKeysRef{%
@@ -8588,15 +8292,7 @@
     \fi
   \fi
 }
-\@ifpackageloaded{showkeys}{%
-  \HyRef@ShowKeysInit
-}{%
-  \Hy@AtBeginDocument{%
-    \@ifpackageloaded{showkeys}{%
-      \HyRef@ShowKeysInit
-    }{}%
-  }%
-}
+\AddToHook{package/showkeys/after}{\HyRef@ShowKeysInit}
 \providecommand*\AMSautorefname{\equationautorefname}
 \providecommand*\Hfootnoteautorefname{\footnoteautorefname}
 \providecommand*\Itemautorefname{\itemautorefname}

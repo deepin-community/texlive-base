@@ -97,3 +97,9 @@
 \amoongussGhostBodyII[opt]{BodyColor}#n
 \amoongussGhostII[opt]{BodyColor}{EyeColor}{PokeballColor}{PokeballColor}{NoseColor}#n
 % ======================
+
+% ======================
+\amongUsEyesIII[opt]{EyeColor}#n
+\amongUsBodyIII[opt]{BodyColor}#n
+\amongUsIII[opt]{EyeColor}{BodyColor}#n
+% ======================

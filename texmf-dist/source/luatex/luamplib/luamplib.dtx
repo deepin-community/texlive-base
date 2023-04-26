@@ -1,6 +1,6 @@
 % \iffalse meta-comment -- by the way, this file contains UTF-8
 %
-% Copyright (C) 2008-2021 by Hans Hagen, Taco Hoekwater, Elie Roux,
+% Copyright (C) 2008-2022 by Hans Hagen, Taco Hoekwater, Elie Roux,
 % Manuel Pégourié-Gonnard, Philipp Gesang and Kim Dohyun.
 % Currently maintained by the LuaLaTeX development team.
 % Support: <lualatex-dev@tug.org>
@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2021/09/16 v2.21.0 Interface for using the mplib library]%
+  [2022/01/12 v2.23.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2021/09/16 v2.21.0}
+% \date{2022/01/12 v2.23.0}
 %
 % \maketitle
 %
@@ -269,9 +269,9 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \paragraph{\cs{everymplib}, \cs{everyendmplib}}
 %   Since v2.3, new macros \cs{everymplib} and \cs{everyendmplib} redefine
-%   token lists \cs{everymplibtoks} and \cs{everyendmplibtoks} respectively,
+%   the lua table containing MetaPost code
 %   which will
-%   be automatically inserted at the beginning and ending of each mplib code.
+%   be automatically inserted at the beginning and ending of each |mplibcode|.
 %   \begin{verbatim}
 %     \everymplib{ beginfig(0); }
 %     \everyendmplib{ endfig; }
@@ -353,6 +353,39 @@ See source file '\inFileName' for licencing and contact information.
 %   each code chunks being treated as an independent instance, and never
 %   affected by previous code chunks.
 %
+% \paragraph{Separate instances for \LaTeX{} environment}
+%   v2.22 has added the support for several named MetaPost instances
+%   in \LaTeX{} |mplibcode| environment.
+%   Syntax is like so:
+%   \begin{verbatim}
+%   \begin{mplibcode}[instanceName]
+%     % some mp code
+%   \end{mplibcode}
+%   \end{verbatim}
+%   Behaviour is as follows.
+%   \begin{itemize}
+%   \item  All the variables and functions are shared
+%     only among all the environments belonging to the same instance.
+%   \item  |\mplibcodeinherit| only affects environments
+%     with no instance name set (since if a name is set,
+%     the code is intended to be reused at some point).
+%   \item  |btex ... etex| labels still exist separately and
+%     require |\mplibglobaltextext|.
+%   \item  When an instance names is set,
+%     respective |\currentmpinstancename| is set.
+%   \end{itemize}
+%   In parellel with this functionality, v2.23 and after supports
+%   optional argument of instance name for \cs{everymplib} and
+%   \cs{everyendmplib}, affecting only those |mplibcode| environments
+%   of the same name.
+%   Unnamed \cs{everymplib} affects not only those instances with no name,
+%   but also those with name but with no corresponding \cs{everymplib}.
+%   Syntax is:
+%   \begin{verbatim}
+%     \everymplib[instanceName]{...}
+%     \everyendmplib[instanceName]{...}
+%   \end{verbatim}
+%
 % \paragraph{\cs{mplibglobaltextext}}
 %   To inherit |btex ... etex| labels as well as metapost variables,
 %   it is necessary to declare \cs{mplibglobaltextext\{enable\}} in advance.
@@ -413,8 +446,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.21.0",
-  date          = "2021/09/16",
+  version       = "2.23.0",
+  date          = "2022/01/12",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -669,8 +702,16 @@ end
 %    As the finder function for MPLib, use the |kpse| library and
 %    make it behave like as if MetaPost was used. And replace it with
 %    cache files if needed.
+%    See also \#74, \#97.
 %    \begin{macrocode}
-local mpkpse = kpse.new(arg[0], "mpost")
+local mpkpse
+do
+  local exe = 0
+  while arg[exe-1] do
+    exe = exe-1
+  end
+  mpkpse = kpse.new(arg[exe], "mpost")
+end
 
 local special_ftype = {
   pfb = "type1 fonts",
@@ -838,7 +879,7 @@ end
 luamplib.codeinherit = false
 local mplibinstances = {}
 
-local function process (data)
+local function process (data, instancename)
 %    \end{macrocode}
 %
 %    The workaround of issue \#70 seems to be unnecessary, as we use
@@ -849,10 +890,17 @@ local function process (data)
 %    end
 %    \end{verbatim}
 %    \begin{macrocode}
-  local standalone = not luamplib.codeinherit
-  local currfmt = currentformat .. (luamplib.numbersystem or "scaled")
+  local defaultinstancename = currentformat .. (luamplib.numbersystem or "scaled")
     .. tostring(luamplib.textextlabel) .. tostring(luamplib.legacy_verbatimtex)
+  local currfmt = instancename or defaultinstancename
+  if #currfmt == 0 then
+    currfmt = defaultinstancename
+  end
   local mpx = mplibinstances[currfmt]
+  local standalone = false
+  if currfmt == defaultinstancename then
+    standalone = not luamplib.codeinherit
+  end
   if mpx and standalone then
     mpx:finish()
   end
@@ -1221,15 +1269,20 @@ local function unprotect_expansion (str)
   end
 end
 
-local function process_mplibcode (data)
+luamplib.everymplib    = { [""] = "" }
+luamplib.everyendmplib = { [""] = "" }
+
+local function process_mplibcode (data, instancename)
 %    \end{macrocode}
 %
 %    This is needed for legacy behavior regarding |verbatimtex|
 %    \begin{macrocode}
   legacy_mplibcode_reset()
 
-  local everymplib    = texgettoks'everymplibtoks'    or ''
-  local everyendmplib = texgettoks'everyendmplibtoks' or ''
+  local everymplib    = luamplib.everymplib[instancename] or
+                        luamplib.everymplib[""]
+  local everyendmplib = luamplib.everyendmplib[instancename] or
+                        luamplib.everyendmplib[""]
   data = format("\n%s\n%s\n%s\n",everymplib, data, everyendmplib)
   data = data:gsub("\r","\n")
 
@@ -1275,7 +1328,7 @@ local function process_mplibcode (data)
     end)
   end
 
-  process(data)
+  process(data, instancename)
 end
 luamplib.process_mplibcode = process_mplibcode
 
@@ -2003,7 +2056,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2021/09/16 v2.21.0 mplib package for LuaTeX]
+    [2022/01/12 v2.23.0 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
@@ -2087,7 +2140,7 @@ luamplib.colorconverter = colorconverter
 }
 \long\def\mplibdocode#1\endmplibcode{%
   \endgroup
-  \directlua{luamplib.process_mplibcode([===[\unexpanded{#1}]===])}%
+  \directlua{luamplib.process_mplibcode([===[\unexpanded{#1}]===],"")}%
   \endgroup
 }
 \else
@@ -2095,7 +2148,8 @@ luamplib.colorconverter = colorconverter
 %
 %    The \LaTeX-specific part: a new environment.
 %    \begin{macrocode}
-\newenvironment{mplibcode}{%
+\newenvironment{mplibcode}[1][]{%
+  \global\def\currentmpinstancename{#1}%
   \mplibtmptoks{}\ltxdomplibcode
 }{}
 \def\ltxdomplibcode{%
@@ -2109,7 +2163,7 @@ luamplib.colorconverter = colorconverter
   \mplibtmptoks\expandafter{\the\mplibtmptoks#1}%
   \def\mplibtemp@a{#2}%
   \ifx\mplib@mplibcode\mplibtemp@a
-    \directlua{luamplib.process_mplibcode([===[\the\mplibtmptoks]===])}%
+    \directlua{luamplib.process_mplibcode([===[\the\mplibtmptoks]===],"\currentmpinstancename")}%
     \end{mplibcode}%
   \else
     \mplibtmptoks\expandafter{\the\mplibtmptoks\end{#2}}%
@@ -2148,30 +2202,47 @@ luamplib.colorconverter = colorconverter
 \newtoks\mplibtmptoks
 %    \end{macrocode}
 %
-%    \cs{everymplib} \& \cs{everyendmplib}: macros redefining
-%    \cs{everymplibtoks} \& \cs{everyendmplibtoks} respectively
+%    \cs{everymplib} \& \cs{everyendmplib}: macros resetting
+%    |luamplib.every(end)mplib| tables
 %
 %    \begin{macrocode}
-\newtoks\everymplibtoks
-\newtoks\everyendmplibtoks
 \protected\def\everymplib{%
   \begingroup
   \mplibsetupcatcodes
   \mplibdoeverymplib
-}
-\long\def\mplibdoeverymplib#1{%
-  \endgroup
-  \everymplibtoks{#1}%
 }
 \protected\def\everyendmplib{%
   \begingroup
   \mplibsetupcatcodes
   \mplibdoeveryendmplib
 }
-\long\def\mplibdoeveryendmplib#1{%
-  \endgroup
-  \everyendmplibtoks{#1}%
-}
+\ifcsname ver@luamplib.sty\endcsname
+  \newcommand\mplibdoeverymplib[2][]{%
+    \endgroup
+    \directlua{
+      luamplib.everymplib["#1"] = [===[\unexpanded{#2}]===]
+    }%
+  }
+  \newcommand\mplibdoeveryendmplib[2][]{%
+    \endgroup
+    \directlua{
+      luamplib.everyendmplib["#1"] = [===[\unexpanded{#2}]===]
+    }%
+  }
+\else
+  \long\def\mplibdoeverymplib#1{%
+    \endgroup
+    \directlua{
+      luamplib.everymplib[""] = [===[\unexpanded{#1}]===]
+    }%
+  }
+  \long\def\mplibdoeveryendmplib#1{%
+    \endgroup
+    \directlua{
+      luamplib.everyendmplib[""] = [===[\unexpanded{#1}]===]
+    }%
+  }
+\fi
 %    \end{macrocode}
 %
 %    Allow \TeX\ dimen/color macros. Now |runscript| does the job,

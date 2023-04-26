@@ -1,4 +1,6 @@
-\ProvidesFile{gloss-hebrew.ldf}[polyglossia: module for hebrew]
+% Language definition file (part of polyglossia v1.59 -- 2022/11/29)
+%
+\ProvidesFile{gloss-hebrew.ldf}[polyglossia: module for Hebrew]
 
 \RequireBidi
 \RequirePackage{hebrewcal}
@@ -19,38 +21,39 @@
 % BCP-47 compliant aliases
 \setlanguagealias*{hebrew}{he}
 
+% hebrewcal options
+\define@key{hebrew}{marcheshvan}[true]{\setkeys{hebrewcal}{marcheshvan=#1}}
+\define@key{hebrew}{transliteration}[alt]{\setkeys{hebrewcal}{transliteration=#1}}
+\define@key{hebrew}{fullyear}[true]{\setkeys{hebrewcal}{fullyear=#1}}
+
 \newif\if@calendar@hebrew
-\def\tmp@hebrew{hebrew}
-\define@key{hebrew}{calendar}[gregorian]{%
-	\message{Setting \string\if@calendar@hebrew}
-	\def\@tmpa{#1}%
-	\ifx\@tmpa\tmp@hebrew%
-    \@calendar@hebrewtrue%
-	\else%
-    \@calendar@hebrewfalse%
-	\fi}
-
-\newif\if@xpg@hebrew@marcheshvan
-\@xpg@hebrew@marcheshvanfalse
-
-\define@boolkey{hebrew}[@xpg@hebrew@]{marcheshvan}[true]{}
-
-% hebrewcal.sty also defines the boolean key fullyear (default=false)
+\define@choicekey*+{hebrew}{calendar}[\xpg@val\xpg@nr]{hebrew,gregorian}[gregorian]{%
+   \ifcase\xpg@nr\relax
+      % hebrew:
+      \@calendar@hebrewtrue%
+   \or
+      % gregorian:
+      \@calendar@hebrewfalse%
+   \fi
+   \xpg@info{Option: Hebrew, calendar=\xpg@val}%
+}{\xpg@warning{Unknown Hebrew calendar `#1'}}
 
 \newif\if@hebrew@numerals
-\def\tmp@hebrew{hebrew}
-\define@key{hebrew}{numerals}[arabic]{%
-	\def\@tmpa{#1}%
-	\ifx\@tmpa\tmp@hebrew%
-	  \@hebrew@numeralstrue%
-	\else%
-    \@hebrew@numeralsfalse%
-	\fi}
+\define@choicekey*+{hebrew}{numerals}[\xpg@val\xpg@nr]{hebrew,arabic}[arabic]{%
+   \ifcase\xpg@nr\relax
+      % hebrew:
+      \@hebrew@numeralstrue%
+   \or
+      % arabic:
+      \@hebrew@numeralsfalse%
+   \fi
+   \xpg@info{Option: Hebrew, numerals=\xpg@val}%
+}{\xpg@warning{Unknown Hebrew numerals value `#1'}}
 
 \setkeys{hebrew}{numerals}
 
 % Register default options
-\xpg@initialize@gloss@options{hebrew}{numerals=arabic,calendar=gregorian,marcheshvan=false}
+\xpg@initialize@gloss@options{hebrew}{numerals=arabic,calendar=gregorian,marcheshvan=false,fullyear=false}
 
 \def\captionshebrew{%
   \def\prefacename{מבוא}%
@@ -84,7 +87,8 @@
       \hebrewnumber\day%
       \space ב\hebrewgregmonth{\month}\space%
       \hebrewnumber\year%
-     \fi}%
+     \fi%
+  }%
 }
 
 \def\hebrewgregmonth#1{\ifcase#1%

@@ -1,6 +1,6 @@
 # Oberdiek bundle
 
-Version: 2020-09-02
+Version: 2023-01-10
 
 This file describes the directory
   CTAN:macros/latex/contrib/oberdiek/
@@ -11,7 +11,7 @@ It contains several packages:
 
 ## Copyright (C)
 * 2007, 2009-2011  Heiko Oberdiek
-* 2016-2020        Oberdiek Package Support Group
+* 2016-2023        Oberdiek Package Support Group
 
 ## License
 LATEX Project Public License, version 1.3c or later.
@@ -49,14 +49,10 @@ Other files in the CTAN directory:
 * holtxdoc: extra documentation macros;
 * hypbmsec: bookmarks in sectioning commands;
 * hypcap: anjusting anchors of captions;
-* hypdoc: hyper-references in the LaTeX standard doc package;
 * hypgotoe: experimental package for links to embedded files;
 * hyphsubst: substitute hyphenation patterns;
 * ifdraft: switch for option draft;
 * iflang: provides expandable checks for the current language;
-* pagegrid: prints a page grid in the background;
-* pdfcolfoot: using pdfTeX’s color stack for footnotes;
-* pdfcol: macros for setting and maintaining new color stacks;
 * pdfcolparallel: fixes colour problems in package parallel;
 * pdfcolparcolumns: fixes colour problems in package parcolumns;
 * pdfcrypt: setting PDF encryption;

@@ -2,7 +2,7 @@
 %
 %% File: l3pdfpdffield-radiobutton.dtx
 %
-% Copyright (C) 2021 The LaTeX Project
+% Copyright (C) 2021-2022 The LaTeX Project
 %
 % It may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -23,11 +23,7 @@
 % for those people who are interested.
 %
 %<*driver>
-\RequirePackage{pdfmanagement-testphase}
-\DeclareDocumentMetadata{}
-\makeatletter
-\declare@file@substitution{doc.sty}{doc-v3beta.sty}
-\makeatother
+\DocumentMetadata{}
 \documentclass[full]{l3doc}
 \usepackage{array,booktabs}
 \usepackage{l3pdffield-testphase,bearwear,tikzlings,tikzducks}
@@ -87,7 +83,7 @@
 %    }^^A
 % }
 %
-% \date{Version 0.95i, released 2021-08-28}
+% \date{Version 0.95t, released 2022-11-03}
 %
 % \maketitle
 % \begin{documentation}
@@ -107,6 +103,16 @@
 % \pdffield_radio:n{name=A,value=Bär}&
 % \pdffield_radio:n{name=A,value=Sieglinde}&
 % \pdffield_radio:n{name=A,value=Duck}
+% \end{tabular}
+% \par not in unison: \par
+%
+% \begin{tabular}{ccc}
+% \pdffield_radio:n{inunison=false,name=C,value=Bär,appearance=pdffield/bear,width=\box_wd:N\l_pdffield_bear_box,height=\box_ht:N\l_pdffield_bear_box}&
+% \pdffield_radio:n{name=C,value=Sieglinde,default,appearance=pdffield/hippo,width=\box_wd:N\l_pdffield_hippo_box,height=\box_ht:N\l_pdffield_hippo_box}&
+% \pdffield_radio:n{name=C,value=Duck,appearance=pdffield/duck,width=\box_wd:N\l_pdffield_duck_box,height=\box_ht:N\l_pdffield_duck_box}\\[1ex]
+% \pdffield_radio:n{name=C,value=Bär}&
+% \pdffield_radio:n{name=C,value=Sieglinde}&
+% \pdffield_radio:n{name=C,value=Duck}
 % \end{tabular}
 % \ExplSyntaxOff
 % \end{center}
@@ -243,7 +249,6 @@
 %   {
 %     group   = A,         % required, can also be given as name=A or T=A
 %     value   = button1,   % required,  on-state of this button
-%     default = button4    % default of the group,
 %                          % if not given choice (button1) is used
 %                          % should refer to an existing button!
 %                          % It will set the V and the DV key
@@ -253,6 +258,7 @@
 %   {
 %     group   = A,        % required, can also be given as name=A or T=A
 %     value   = button2   % required,  export value of this button
+%     default             % this button is default of the group,
 %   }
 % \pdffield_radio:n
 %   {
@@ -267,12 +273,19 @@
 % \end{verbatim}
 %
 %
-% If two radio field annotations use the same |value| they are selected and
-% unselected together, like checkboxes with the same |/Yes| state. This can be used
-% to build radio groups which works \enquote{in unison}. The flag |RadiosInUnison|
+% If two radio field annotations use the same |value| this value can be mapped either
+% to the same index or to two different indices in the \texttt{/Opt} array.
+% In the first case they are selected and unselected together (\enquote{in unison}),
+% like checkboxes with the same |/Yes| state. The key |inunison| below allows to switch
+% between the two cases. The flag |RadiosInUnison|
 % is neither needed for this (but doesn't harm either) nor
-% does it change the behaviour, at least again not in the PDF viewers I tried.
+% does it change the behaviour, at least again not in the PDF viewers I tried,
+% nevertheless the key will set it accordingly just in case. The two examples at
+% the begin of the document show the two variants.
 %
+%
+% The button with the key |default| will be selected at the start (together with the
+% buttons with the same value). If no default is set this is the first button.
 %
 % \bigskip
 % \subsection{Commands}
@@ -353,16 +366,28 @@
 %
 %  \begin{function}{default}
 %  \begin{syntax}
-%   |default| = \meta{string}
+%   |default|
 %  \end{syntax}
 %  With this key you set the button which is checked when the PDF is opened.
-%  The key must be used in the command of the first button. If it is missing
-%  the value of the first button is used as default.
-%  \meta{string} should be identical to a |value| of one of the buttons of the group.
-%  This is not checked, buttons can be created on various pages, so it would
-%  require a label/ref system to keep track of the names.
+%  The key must be used in the command of the button which should be the default.
+%  If it is missing the first button is used as default.
+%  A label-ref system is used to get the right numbers, so normally two compilations
+%  are needed if the first button is not the default
 %  \end{function}
-
+%
+%  \begin{function}{inunison}
+%  \begin{syntax}
+%   |inunison| = |true|\verb+|+|false|
+%  \end{syntax}
+%  As described above this handle the \enquote{inunison} behaviour.
+%  If set to true (the default)
+%  buttons with the same value will be selected and unselected together.
+%  The keys sets or unsets also the flag |RadiosInUnison| accordingly
+%  (but it is unknown  if it has any effect). The key should be set on the first
+%  field. Normally it should be unneeded to use the key:
+%  to avoid the unison effect it makes more sense to use different values.
+%  \end{function}
+%
 % \begin{function}{fieldID}
 %  \begin{syntax}
 %   |fieldID| = \meta{field ID}\\
@@ -490,13 +515,13 @@
 % ,\pdf_name_from_unicode_e:n
 % ,\pdf_object_if_exist:nTF
 % ,\pdf_object_if_exist:nF
-% ,\pdf_object_new:nn
+% ,\pdf_object_new:n
 % ,\pdf_object_ref:n
 % ,\pdf_object_ref_last:
 % ,\pdf_object_unnamed_write:nn
 % ,\pdf_object_unnamed_write:nx
-% ,\pdf_object_write:nx
-% ,\pdf_object_write:nn
+% ,\pdf_object_write:nnx
+% ,\pdf_object_write:nnn
 % ,\pdf_string_from_unicode:nnN
 % ,\pdfannot_box_ref_last:
 % ,\pdfannot_dict_put:nnn
@@ -563,7 +588,7 @@
 % \begin{variable}
 %  {
 %      \l_@@_radio_value_tl
-%     ,\l_@@_radio_default_tl
+%     ,\l_@@_radio_default_bool
 %     ,\l_@@_radio_value_num_int
 %     ,\l_@@_radio_appearance_code_tl
 %  }
@@ -572,9 +597,11 @@
 % so the code is stored and executed later.
 %    \begin{macrocode}
 \tl_new:N  \l_@@_radio_value_tl
-\tl_new:N  \l_@@_radio_default_tl
+\bool_new:N  \l_@@_radio_default_bool
 \int_new:N \l_@@_radio_value_num_int
 \tl_new:N  \l_@@_radio_appearance_code_tl
+\bool_new:N \l_@@_radio_unison_bool % if true use same name (e.g. /1) for same value
+\bool_set_true:N \l_@@_radio_unison_bool
 %    \end{macrocode}
 % \end{variable}
 %
@@ -641,6 +668,17 @@
 % \end{macro}
 %
 %\subsection{Creating the field}
+% We need to retrieve the index of the default through a
+% label, so we need an ref attribute:
+%
+%    \begin{macrocode}
+\ref_attribute_gset:nnnn {pdfradioindex}{0}{now}
+  {
+    \int_use:N\l_@@_radio_value_num_int
+  }
+\cs_generate_variant:Nn \ref_label:nn {V}
+\cs_generate_variant:Nn \ref_value:nn {V}
+%    \end{macrocode}
 % A field should be created if the name doesn't exist yet
 %  \begin{macro}{\@@_radio_field:n}
 %    \begin{macrocode}
@@ -652,30 +690,35 @@
 % We need an object and a seq for the Opt array.
 % The object is written at the end of the document.
 %    \begin{macrocode}
-        \pdf_object_new:nn {@@/field/@@/radio-Opt/#1}{array}
+        \pdf_object_new:n {@@/field/@@/radio-Opt/#1}
         \pdfdict_put:nnx { l_@@/field }{Opt} { \pdf_object_ref:n {@@/field/@@/radio-Opt/#1} }
         \seq_new:c { g_@@_radio_opt_#1_seq }
         \hook_gput_code:nnn {shipout/lastpage}{pdffield/radio}
           {
-            \pdf_object_write:nx
-              {@@/field/@@/radio-Opt/#1}
+            \pdf_object_write:nnx
+              {@@/field/@@/radio-Opt/#1} { array }
               {\seq_use:cn {g_@@_radio_opt_#1_seq}{~}}
           }
 %    \end{macrocode}
-% The default value is always the first in the array.
-% If a default has been set, it is added to the left
-% of the seq.
+% The default value is retrieved through a label:
 %    \begin{macrocode}
-        \tl_if_eq:NnF \l_@@_radio_default_tl{()}
-         {
-           \seq_gput_left:cV { g_@@_radio_opt_#1_seq }\l_@@_radio_default_tl
-         }
-        \pdfdict_put:nnx { l_@@/field }{V}  { /0 }
-        \pdfdict_put:nnx { l_@@/field }{DV} { /0 }
+        \pdfdict_put:nnx { l_@@/field }{V}  { /\ref_value:nn{#1}{pdfradioindex} }
+        \pdfdict_put:nnx { l_@@/field }{DV} { /\ref_value:nn{#1}{pdfradioindex} }
 %    \end{macrocode}
 % now we create the field and set it as parent for the following annotation.
 %    \begin{macrocode}
         \@@_field:n { @@/radio/#1 }
+%    \end{macrocode}
+% If the inunison bool has been set to false we need to pass this to the
+% kids.
+%    \begin{macrocode}
+    \bool_if:NF \l_@@_radio_unison_bool
+      {
+        \cs_new:cpn {g_@@_radio_unison_state_#1_tl}
+         {
+           \bool_set_false:N \l_@@_radio_unison_bool
+         }
+      }
       }
     \keys_set:nn {pdffield}{parent=@@/radio/#1}
   }
@@ -700,12 +743,14 @@
 % Setting up the defaults.
 %   \begin{macrocode}
     \tl_set:Nn\l_@@_radio_appearance_code_tl{}
+    \bool_set_false:N\l_@@_radio_default_bool
     \keys_set:nn {pdffield}
       {
          fieldID=
         ,name=radio
         ,width  = \normalbaselineskip
         ,height = \normalbaselineskip
+        ,inunison
         ,@@/preset/radiobutton
         ,#1
         ,unsetFf={Pushbutton}
@@ -721,20 +766,26 @@
         \tl_put_left:Nn \l_@@_fieldID_tl {@@/radio/}
       }
 %    \end{macrocode}
+% If unison has been set for the field pass it on:
+%    \begin{macrocode}
+   \cs_if_exist_use:c {g_@@_radio_unison_state_ \l_@@_fieldID_tl _tl}
+%    \end{macrocode}
 % Now we build the field
 %    \begin{macrocode}
     \@@_radio_field:V\l_@@_fieldID_tl
 %    \end{macrocode}
+% Put the value into the seq
+%    \begin{macrocode}
+    \seq_gput_right:cV { g_@@_radio_opt_ \l_@@_fieldID_tl _seq }\l_@@_radio_value_tl
+%    \end{macrocode}
 %  Retrieve the number for the label
 %    \begin{macrocode}
-    \seq_if_in:cVF { g_@@_radio_opt_ \l_@@_fieldID_tl _seq }\l_@@_radio_value_tl
+  \bool_if:NTF \l_@@_radio_unison_bool
+    {
+     \int_zero:N \l_@@_radio_value_num_int
+     \exp_args:Nc
+     \seq_map_inline:Nn { g_@@_radio_opt_ \l_@@_fieldID_tl _seq }
       {
-        \seq_gput_right:cV { g_@@_radio_opt_ \l_@@_fieldID_tl _seq }\l_@@_radio_value_tl
-      }
-    \int_zero:N \l_@@_radio_value_num_int
-    \exp_args:Nc
-    \seq_map_inline:Nn { g_@@_radio_opt_ \l_@@_fieldID_tl _seq }
-     {
        \str_if_eq:nVTF { ##1 } \l_@@_radio_value_tl
         {
           \seq_map_break:
@@ -742,12 +793,26 @@
         {
           \int_incr:N \l_@@_radio_value_num_int
         }
+      }
      }
+     {
+       \int_set:Nn \l_@@_radio_value_num_int
+         {\seq_count:c { g_@@_radio_opt_ \l_@@_fieldID_tl _seq } -1 }
+     }
+     \bool_if:NT\l_@@_radio_default_bool
+      {
+        \exp_args:Ne
+        \ref_label:nn{\l_@@_fieldID_tl}{pdfradioindex}
+      }
+
 %    \end{macrocode}
 % Annotations with the default value are set to on, the rest to off
 %    \begin{macrocode}
-   \int_compare:nNnTF { \l_@@_radio_value_num_int } = 0
-     { \pdfannot_dict_put:nnx {widget}{AS}{/0} }
+   \int_compare:nNnTF { \l_@@_radio_value_num_int } =
+       {
+         \ref_value:Vn\l_@@_fieldID_tl{pdfradioindex}
+       }
+     { \pdfannot_dict_put:nnx {widget}{AS}{/\ref_value:Vn\l_@@_fieldID_tl{pdfradioindex}} }
      { \pdfannot_dict_put:nnx {widget}{AS}{/Off} }
 %    \end{macrocode}
 % Now we set the appearances, if no key has been use we take the default.
@@ -777,11 +842,12 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_radio_value_handler:n #1
   {
-    \pdf_string_from_unicode:nnN {utf8/string}{#1}\l_@@_radio_value_tl
+    \pdf_string_from_unicode:nnN {utf16/string}{#1}\l_@@_radio_value_tl
   }
 \cs_new_protected:Npn \@@_radio_default_handler:n #1
   {
-    \pdf_string_from_unicode:nnN {utf8/string}{#1}\l_@@_radio_default_tl
+    %\pdf_string_from_unicode:nnN {utf8/string}{#1}\l_@@_radio_default_tl
+    \bool_set_true:N \l_@@_radio_default_bool
   }
 %    \end{macrocode}
 % \end{macro}
@@ -795,6 +861,25 @@
 %    \end{macrocode}
 % \end{macro}
 %
+% \begin{macro}{inunison}
+%    \begin{macrocode}
+\keys_define:nn { pdffield }
+ {
+    inunison .choice:
+   ,inunison / true .code:n =
+     {
+       \bool_set_true:N  \l_@@_radio_unison_bool
+       \bitset_set_true:Nn \l_@@_Ff_bitset {RadiosInUnison}
+     }
+   ,inunison / false .code:n =
+     {
+       \bool_set_false:N  \l_@@_radio_unison_bool
+       \bitset_set_false:Nn \l_@@_Ff_bitset {RadiosInUnison}
+     }
+   ,inunison .default:n = {true}
+ }
+%    \end{macrocode}
+% \end{macro}
 % \begin{macro}{\@@_radio_appearance_handler:nnn}
 % The handler for the appearances stores only the code
 % as it must be executed rather late.

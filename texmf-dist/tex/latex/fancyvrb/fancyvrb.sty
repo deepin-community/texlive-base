@@ -2,7 +2,7 @@
 %% This is file `fancyvrb.sty',
 %%
 %% COPYRIGHT 1992-1999, by Timothy Van Zandt <tvz@zandtwerk.kellogg.nwu.edu>
-%%               -2021, by Herbert Voss <hvoss@tug.org>
+%%           2000-2023 ... , by Herbert Voss <hvoss@tug.org>
 %%
 %% This package may be distributed under the terms of the LaTeX Project Public
 %% License, as described in lppl.txt in the base LaTeX distribution.
@@ -13,9 +13,9 @@
 %%   verbatim environments and commands and extensive documentation.
 %%
 \NeedsTeXFormat{LaTeX2e}
-\def\fileversion{3.8}
-\def\filedate{2021/08/12}
-\ProvidesPackage{fancyvrb}[2021/08/12 v3.8 verbatim text (tvz,hv)]
+\def\fileversion{4.5a}
+\def\filedate{2023/01/19}
+\ProvidesPackage{fancyvrb}[\filedate\space \fileversion\space verbatim text (tvz,hv)]
 %\message{Style option: `fancyvrb' v\fileversion \space  <\filedate> (tvz)}
 \csname fancyvrb@loaded\endcsname
 \let\fancyvrb@loaded\endinput
@@ -48,6 +48,7 @@
   \floatingpenalty \@MM
   \hsize\columnwidth
   \@parboxrestore
+  \def\@currentcounter{footnote}%
   \edef\@currentlabel{\csname p@footnote\endcsname\@thefnmark}%
   \@makefntext{}%
   \rule{\z@}{\footnotesep}%
@@ -167,6 +168,9 @@
 \def\KV@FV@firstline@default{%
   \let\FancyVerbStartNum\z@
   \let\FancyVerbStartString\relax}
+%
+\def\FancyVerbStopNum{1}
+%
 \define@key{FV}{lastline}{%
   \afterassignment\FV@ParseStop\@tempcnta=0#1\relax\@nil{#1}}
 \def\FV@ParseStop#1\relax\@nil#2{%
@@ -176,9 +180,15 @@
   \else
     \edef\FancyVerbStopString{#2}%
   \fi}
+%\def\KV@FV@lastline@default{%
+%  \let\FancyVerbStopNum\z@
+%  \let\FancyVerbStopString\relax}
 \def\KV@FV@lastline@default{%
-  \let\FancyVerbStopNum\z@
-  \let\FancyVerbStopString\relax}
+  \let\FancyVerbStopNum\m@ne
+  \let\FancyVerbStopString\relax
+}
+\KV@FV@firstline@default
+\KV@FV@lastline@default
 \fvset{firstline,lastline}
 \newcount\FV@CodeLineNo
 \def\FV@PreProcessLine{%
@@ -220,7 +230,7 @@
 %% SR modification end
 \def\FV@DefineFindStop{%
   \ifx\FancyVerbStopString\relax
-    \ifnum\FancyVerbStopNum<\@ne
+    \ifnum\FancyVerbStopNum<\z@
       \let\FV@FindStartStop\FV@@PreProcessLine
     \else
       \let\FV@FindStartStop\FV@FindStopNum
@@ -522,11 +532,12 @@
 \catcode`\^^I=\active
 \gdef\FV@DefineWhiteSpace{\def {\FV@Space}\def^^I{\FV@Tab}}%
 \endgroup
+\define@key{FV}{fileext}[.tex]{\def\FancyVerbFileExtension{#1}}
 \define@key{FV}{defineactive}[]{\def\FancyVerbDefineActive{#1\relax}}
 \define@key{FV}{defineactive*}{%
   \expandafter\def\expandafter\FancyVerbDefineActive\expandafter{%
     \FancyVerbDefineActive#1\relax}}
-\fvset{defineactive}
+\fvset{defineactive,fileext=.tex}
 \define@booleankey{FV}{showspaces}%
   {\def\FV@Space{{\FancyVerbSpace}}}%
   {\def\FV@Space{\ }}  
@@ -729,9 +740,11 @@
         \penalty\interlinepenalty}%
       \box\@tempboxa
     \else
-      \ifx\FV@ProcessLine\FV@ListProcessLine@i
-        \FV@Error{Empty verbatim environment}{}%
-        \FV@ProcessLine{}%
+      \ifnum\FancyVerbStopNum>\@ne
+        \ifx\FV@ProcessLine\FV@ListProcessLine@i
+          \FV@Error{Empty verbatim environment}{}%
+          \FV@ProcessLine{}%
+        \fi
       \fi
     \fi
   \fi}
@@ -814,7 +827,8 @@
 %% DG/SR modification end
   \penalty\@M
   \FV@SingleFrameSep
-  \penalty\@M}
+  \penalty\@M
+}
 %% DG/SR modification begin - May. 19, 1998
 \define@key{FV}{label}{%
   \def\@tempa{#1}%
@@ -852,25 +866,18 @@
   \def\FV@LabelPositionTopLine{\@ne}%
   \def\FV@LabelPositionBottomLine{\@ne}}
 \fvset{labelposition=topline}
-%% DG/SR modification end
-%% DG/SR modification begin - May. 19, 1998
-%% \def\FV@SingleFrameLine{%
 \def\FV@SingleFrameLine#1{%
-%% DG/SR modification end
   \hbox to\z@{%
     \kern\leftmargin
-%% DG/SR modification begin - Jun. 22, 1998
-    \ifnum#1=\z@
+    \ifnum#1=\z@%   top line?
       \let\FV@Label\FV@LabelBegin
     \else
       \let\FV@Label\FV@LabelEnd
     \fi
     \ifx\FV@Label\relax
-%% DG/SR modification end
       \FancyVerbRuleColor{\vrule \@width\linewidth \@height\FV@FrameRule}%
-%% DG/SR modification begin - Jun. 22, 1998
     \else
-      \ifnum#1=\z@
+      \ifnum#1=\z@% top line
         \setbox\z@\hbox{\strut\enspace\FV@LabelBegin\enspace\strut}%
       \else
         \setbox\z@\hbox{\strut\enspace\FV@LabelEnd\enspace\strut}%
@@ -894,35 +901,29 @@
         \fi
       \fi
     \fi
-%% DG/SR modification end
     \hss}}
-%% DG/SR modification begin - May. 19, 1998
 \def\FV@FrameLineWithLabel{%
   \ht\z@\@tempdimb\dp\z@\@tempdimb%
   \FancyVerbRuleColor{%
     \vrule \@width\@tempdimc \@height\FV@FrameRule
     \raise\@tempdimb\box\z@
     \vrule \@width\@tempdimc \@height\FV@FrameRule}}
-%% DG/SR modification end
 \def\FV@BeginListFrame@Lines{%
   \begingroup
     \lineskip\z@skip
-%% DG modification begin - June 18, 1997 (effect of \baselineskip too earlier)
-%%    \baselineskip\z@skip
-%%    \FV@SingleFrameLine
-%% DG/SR modification begin - May. 19, 1998
-%%    \FV@SingleFrameLine
     \FV@SingleFrameLine{\z@}%
-%% DG/SR modification end
-    \kern-0.5\baselineskip\relax
+%    \kern-0.5\baselineskip\relax       %% 20220604 (hv)
+    \nointerlineskip			%% added 20220604 (hv)
     \baselineskip\z@skip
-%% DG modification end
     \kern\FV@FrameSep\relax
+    \penalty\@M% prevent a pagebreak _after_ the line 20220602 (hv)
   \endgroup}%
 \def\FV@EndListFrame@Lines{%
   \begingroup
     \baselineskip\z@skip
     \kern\FV@FrameSep\relax
+    \nointerlineskip			%% added 20220604 (hv)
+    \penalty\@M% prevent a pagebreak _before_ the line 20220602 (hv)
     \FV@SingleFrameLine{\@ne}%
   \endgroup}
 \def\FV@SingleFrameSep{%

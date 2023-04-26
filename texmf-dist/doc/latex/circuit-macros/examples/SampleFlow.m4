@@ -25,7 +25,7 @@ linethick = 1.2
   {"Sample" ljust indent "Checking" ljust } 
   connect
  B3: rbox offset
-  {"Dimensionality" ljust indent "Sample Check" ljust } 
+  {"Dimensionality" ljust at last box.w "Sample Check" ljust } 
   connect
  B4: rbox offset
   {"Sample" ljust indent "Synthesis" ljust "Techniques" ljust } 

@@ -1,6 +1,6 @@
 %% This is file `tikzlibrarycircuits.plc.ladder.code.tex'
-%% Version: 1.1
-%% Version date: 2018-02-06
+%% Version: 1.3
+%% Version date: 2022-04-10
 %% 
 %% 
 %% Copyright (C) 2018 by Luis Paulo Laus, laus@utfpr.edu.br
@@ -26,14 +26,30 @@
 %% 1.0: 10 January 2018:  Original Version
 %% 1.1: 06 February 2018: Macro file renamed to proper TikZ library file name.
 %%                        Parent library changed from `circuit.ee' to `circuits'.
-%%                        Bug fixes: added \pgfusepathqstroke where is was missing,
+%%                        Bug fixes: added \pgfusepathqstroke where it was missing,
 %%                        block anchors reworked.
+%% 1.2: 05 December 2020: Bugfix: corrected block height when the symbol is empty ({}).
+%% 1.3: 10 April 2022: new macro for typesetting power rails, fix the annoying bug that prints
+%%                       `Missing character....'
 
 \usetikzlibrary{circuits}
 %
-% Setting up an ladder
+% Length and macros
+%
+\makeatletter
+\newlength{\ladderskip}
+\def\ladderrungsep@{0.2}
+\def\ladderrungend#1{\pgftransformyshift{-#1\ladderskip-\ladderrungsep@\ladderskip}}% mark the end of a rung, #1 is the number of rows
+\def\ladderpowerrails{{% draws power rails
+  \draw let \p1=(laddertopright) in%
+    (0,\y1+0.7\ladderskip) -- (0,0.8\ladderskip)%
+    (\x1,\y1+0.7\ladderskip) -- (\x1,0.8\ladderskip);}}
+
+%
+% Setting up a ladder
 %
 \tikzset{
+  ladderrungsep/.store in=\ladderrungsep@,
   circuit plc ladder/.style={
     circuit,
     inputs/.style={block ladder inputs={##1}},
@@ -43,11 +59,12 @@
     clksize/.style={block ladder clksize={##1}},
     symbol/.style={ladder symbol={##1}},
     symbol color/.style={ladder symbol color={##1}},
+    x=5\tikzcircuitssizeunit,
+    y=5\tikzcircuitssizeunit,
+    execute at begin picture={\ladderskip=\pgf@yy\coordinate (laddertopright) at (0,0);}, % sets \ladderskip and defines a point for power rails
     every circuit plc ladder/.try
   }
 }       
-
-\makeatletter
 
 \newif\ifpgfnormallyclosednegated%
 \pgfkeys{
@@ -122,33 +139,35 @@
   \advance\pgf@y.5\dp\pgfnodeparttextbox
 
   %
-  % Adjust the height for the number of inputs and for the width and height of the ladder block  symbol.
+  % Adjust the height for the number of inputs and the width and height of the ladder block symbol.
   %
   \c@pgf@counta\pgf@lib@sh@ladder@numinputs
   \pgfmathsetlength\pgf@yb{\pgfkeysvalueof{/pgf/block ladder input sep}}
   \edef\inputsep{\the\pgf@yb}
   \addtosavedmacro\inputsep
-  \pgf@ya\pgf@yb
   \advance\c@pgf@counta-1\relax
   \multiply\pgf@yb\c@pgf@counta
    \c@pgf@counta\pgf@lib@sh@ladder@numoutputs
   \pgfmathsetlength\pgf@yc{\pgfkeysvalueof{/pgf/block ladder output sep}}
   \edef\outputsep{\the\pgf@yc}
   \addtosavedmacro\outputsep
-  \pgf@ya\pgf@yc
   \advance\c@pgf@counta-1\relax
   \multiply\pgf@yc\c@pgf@counta
   \ifdim\pgf@yb<\pgf@yc% the highest between inputs and outputs
     \pgf@yb\pgf@yc
   \fi
   % now the symbol width and height
-  \setbox\pgf@hbox\hbox{{$\mathrm{\pgfkeysvalueof{/pgf/ladder symbol}}$}}% add braces as color-aftergroup-fix TT (error when contains \_)
-%  \setbox\pgf@hbox\hbox{{$\ensuremath{\mathrm{\pgfkeysvalueof{/pgf/ladder symbol}}$}}}% add braces as color-aftergroup-fix TT
-%  \setbox\pgf@hbox\hbox{{$\mathrm{TESTE}$}}% add braces as color-aftergroup-fix TT
+  \begingroup% keep font setting local
+    \pgfutil@selectfont% restore font
+    \global\setbox\pgf@hbox\hbox{{\pgfkeysvalueof{/pgf/ladder symbol}}}% add braces as color-aftergroup-fix TT
+  \endgroup%
 % \typeout{Test \the\wd\pgf@hbox  \the\ht\pgf@hbox  \the\dp\pgf@hbox}
   \pgf@xc.5\wd\pgf@hbox
   \pgf@yc\ht\pgf@hbox
   \advance\pgf@yc\dp\pgf@hbox
+  \ifdim\pgf@yc=0pt
+    \advance\pgf@yb4pt
+  \fi
   \advance\pgf@yc1pt
   \advance\pgf@yb0.5\pgf@yc
   \advance\pgf@yc2pt
@@ -156,7 +175,6 @@
   \addtosavedmacro\symbolypos
   \advance\pgf@yc0.5\pgf@yc
   \advance\pgf@yc\pgf@yb
-  \advance\pgf@yc0pt
   \pgf@yc.5\pgf@yc
   \ifdim\pgf@x<\pgf@xc
     \pgf@x\pgf@xc
@@ -330,7 +348,7 @@
 				\else%
 					\expandafter\color\expandafter{\pgf@lib@sh@temp}%
 				\fi%
-				{\pgfkeysvalueof{/pgf/ladder symbol}}%
+				\pgfkeysvalueof{/pgf/ladder symbol}%
 			}%
 			% Draw inputs.
 			%
@@ -531,6 +549,7 @@
     \pgftext{\pgfkeysvalueof{/pgf/ladder symbol}}
   }
 }
+
 \makeatother
 
 \tikzset{

@@ -4,7 +4,7 @@ cct_init
 
                                # Set small text size
   iflatex(`textoffset = 1bp__; ifpsfrag(`textht = 9bp__',
-          `latexcommand({\scriptsize)') ')
+          `latexcommand({\scriptsize)')')
 
   linewid = 0.4                # Reduce element sizes
 

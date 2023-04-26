@@ -4,7 +4,7 @@ The `microtype` package
 
 **Subliminal refinements towards typographical perfection**
 
-  (v2.8c -- 2021/03/14)
+  (v3.0f -- 2022/06/23)
 
 
 Overview
@@ -17,7 +17,7 @@ furthermore the adjustment of interword spacing and additional kerning, as
 well as hyphenatable letterspacing (tracking) and the possibility to disable
 all or selected ligatures.
 
-These features may be applied to customisable sets of fonts, and all 
+These features may be applied to customisable sets of fonts, and all
 micro-typographic aspects of the fonts can be configured in a straight-forward
 and flexible way. Settings for various fonts are provided.
 
@@ -33,7 +33,8 @@ The alternative package `letterspace`, which also works with plain TeX,
 provides the user commands for letterspacing only, omitting support for all
 other extensions.
 
-The documentation can be found in `microtype.pdf`.
+The documentation can be found in `microtype.pdf` (User manual) and
+`microtype-code.pdf` (Implementation).
 
 
 Installation
@@ -42,18 +43,22 @@ Installation
 To install the package, use one of the following methods
 (in decreasing order of simplicity):
 
-- Use the package manager of your TeX system 
+- Use the package manager of your TeX system
   (TeXLive: `tlmgr install microtype`;
    MiKTeX: MiKTeX Package Manager).
- 
-- Download `microtype.tds.zip` from CTAN, 
-  extract it in the root of one of your TDS trees, 
+
+- Download `microtype.tds.zip` from CTAN,
+  extract it in the root of one of your TDS trees,
   and update the filename database.
 
 - Get the source (`microtype.zip`) from CTAN and extract it,
   run `latex` on `microtype.ins` to generate the package and configuration files,
   and move all generated files into a directory where LaTeX will find them,
   e.g., `TEXMF/tex/latex/microtype/`.
+
+- To use the latest development version, clone the github repository at
+  `https://github.com/schlcht/microtype` and run `make`
+  (or just `latex microtype.ins` to generate the run files).
 
 
 License
@@ -62,18 +67,19 @@ License
 This work may be distributed and/or modified under the conditions of the
 LaTeX Project Public License, either version 1.3c of this license or (at
 your option) any later version. The latest version of this license is in:
-http://www.latex-project.org/lppl.txt, and version 1.3c or later is part
+https://www.latex-project.org/lppl.txt, and version 1.3c or later is part
 of all distributions of LaTeX version 2005/12/01 or later.
 
-This work has the LPPL maintenance status 'author-maintained'.
+This work has the LPPL maintenance status 'maintained'.
 
-This work consists of the files `microtype.dtx` and `microtype.ins` and the
-derived files `microtype.sty`, `microtype-pdftex.def`, `microtype-luatex.def`,
-`microtype-xetex.def`, `microtype.lua` and `letterspace.sty`.
+This work consists of the files `microtype.dtx`, `microtype-utf.dtx` and
+`microtype.ins` and the derived files `microtype.sty`, `microtype-pdftex.def`,
+`microtype-luatex.def`, `microtype-xetex.def`, `microtype.lua`, `letterspace.sty`
+and `microtype-show.sty`.
 
 Modified versions of the configuration files (`*.cfg`) may be distributed
 provided that: (1) the original copyright statement is not removed, and
 (2) the identification string is changed.
 
 ------------------------------------------------------
-Copyright (c) 2004--2021  R Schlicht `<w.m.l@gmx.net>`
+Copyright (c) 2004--2022  R Schlicht `<w.m.l@gmx.net>`

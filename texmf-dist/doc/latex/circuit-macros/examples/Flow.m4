@@ -64,7 +64,7 @@ Repeatuntil: Frepeatuntil("$n \geq 5$",,,Fbox("Task"),
 
   "\sl .N" at Repeatuntil.N rjust above; "\sl .S" at Repeatuntil.S rjust below
   "\sl .E" at Repeatuntil.E ljust; "\sl .W" at Repeatuntil.W rjust
-  "\tt F{}repeatuntil" below at Repeatuntil.se +(-0.0,0.2)
+  "\tt F{}repeatuntil" below at Repeatuntil.se +(-0.0,0.1)
 
 Ifthenelse: Fifthenelse("$A<B$",,,
      Fbox("False"),

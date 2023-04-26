@@ -6,6 +6,7 @@
     \expandafter\endinput\fi
 
 \input minim
+%\decompressedpdf
 
 \pdfalevel 3a
 \overfullrule = 0pt
@@ -15,7 +16,6 @@
 \pdfvariable horigin 0pt
 \pdfvariable vorigin 0pt
 \frenchspacing
-\raggedbottom
 
 \uselanguage{ukenglish}
 \hyphenation {
@@ -38,26 +38,26 @@
 % 1 fonts
 
 \input luaotfload.sty
-\font\tenrm {Latin Modern Roman:script=latn;protrusion=default} at 10pt
-\font\tenbf {Latin Modern Roman/B:script=latn} at 10pt
-\font\tenit {Latin Modern Roman/I:script=latn} at 10pt
-\font\tentt {Latin Modern Mono:script=latn;+smcp} at 10pt
-\font\title {Latin Modern Roman/B:script=latn} at 12pt
-\font\Title {Latin Modern Roman/B:script=latn} at 16pt
+\font\tenrm {Latin Modern Roman:script=latn;protrusion=default;} at 10pt
+\font\tenbf {Latin Modern Roman/B:script=latn;} at 10pt
+\font\tenit {Latin Modern Roman/I:script=latn;} at 10pt
+\font\tentt {Latin Modern Mono:script=latn;+smcp;} at 10pt
+\font\title {Latin Modern Roman/B:script=latn;} at 12pt
+\font\Title {Latin Modern Roman/B:script=latn;} at 16pt
 
-\font\tenmath   {Latin Modern Math:mode=base;script=math;ssty=0} at 10pt
-\font\tenmaths  {Latin Modern Math:mode=base;script=math;ssty=1} at  7pt
-\font\tenmathss {Latin Modern Math:mode=base;script=math;ssty=2} at  5pt
-\textfont         0 = \tenmath
-\scriptfont       0 = \tenmaths
-\scriptscriptfont 0 = \tenmathss
-
-\font\altmath   {Tex Gyre Pagella Math:mode=base;script=math;ssty=0} at 10pt
-\font\altmaths  {Tex Gyre Pagella Math:mode=base;script=math;ssty=1} at  7pt
-\font\altmathss {Tex Gyre Pagella Math:mode=base;script=math;ssty=2} at  5pt
+\font\altmath   {Tex Gyre Pagella Math:mode=base;script=math;ssty=0;} at 10pt
+\font\altmaths  {Tex Gyre Pagella Math:mode=base;script=math;ssty=1;} at  7pt
+\font\altmathss {Tex Gyre Pagella Math:mode=base;script=math;ssty=2;} at  5pt
 \textfont         1 = \altmath
 \scriptfont       1 = \altmaths
 \scriptscriptfont 1 = \altmathss
+
+\font\tenmath   {Latin Modern Math:mode=base;script=math;ssty=0;} at 10pt
+\font\tenmaths  {Latin Modern Math:mode=base;script=math;ssty=1;} at  7pt
+\font\tenmathss {Latin Modern Math:mode=base;script=math;ssty=2;} at  5pt
+\textfont         0 = \tenmath
+\scriptfont       0 = \tenmaths
+\scriptscriptfont 0 = \tenmathss
 
 \expandglyphsinfont \tenrm 40 25 5
 \protrudechars=2 \adjustspacing=2
@@ -67,21 +67,31 @@
 
 % 1 code typesetting
 
-\def\red#1{\quitvmode\pdfextension
-    literal{0.75 0 0 rg}{#1}\pdfextension literal{0 g}}
+\chardef\thecolourstack = \pdffeedback colorstackinit page {0 g 0 G}
+\def\pushcolour#1{\pdfextension colorstack \thecolourstack push {#1}}
+\def\popcolour{\pdfextension colorstack \thecolourstack pop\relax}
+\def\red#1{\pushcolour{0.75 0 0 rg}{#1}\popcolour}
 
 \def\emph#1{{\tenit #1\/}}
+
+\newattributeclass Code
+    attr Layout Placement /Block
+    attr CSS-2.00 display (block)
 
 \def\breakablespace{\penalty0~}
 \catcode`\⟦=\active
 \def⟦{\quitvmode\begingroup\catcode`\∥=0\relax
     \markparagraphsfalse
     \def\do##1{\catcode`##1=12}\dospecials
-    \catcode`\ =\active
-    \letcharcode`\ =\breakablespace\obeylines
-    \parskip0pt\tentt
+    \catcode`\%=\active \letcharcode`\%=\verbatimcomment
+    \catcode`\ =\active \letcharcode`\ =\breakablespace
+    \def\par{\ifhmode\tentt\endgraf\else\vskip\baselineskip\fi}%
+    \everypar{\stopelement{Code}%
+        \startelement class Code {Code}}%
+    \parskip0pt\tentt \obeylines
     \nextif*{\verbatim\ignore}{\expandafter\ignore\verbatim}}
 \def\verbatim#1⟧{\red{\markelement{Code}{#1}}\endgroup}
+\def\verbatimcomment{\tenit\Uchar`\%}
 
 % 1 the minim symbol
 
@@ -109,7 +119,6 @@ endfig;}
 \setbox\notehead=\hbox{\markartifact{Layout}{\box\notehead}}
 \closemetapostinstance \mnmMP
 
-%
 % 1 document structure
 
 % page artifacts
@@ -134,9 +143,9 @@ endfig;}
     \ensurestopelement{Section}%
     \startelement{Chapter}%
     \outline open {#1}%
-    \nextpartag{H}\red{\Title#1\hfill\copy\notehead}%
     \addtotoc{\chapter{#1}{\lastdestinationname}}%
-    \bigskip}
+    \nextpartag{H}\quitvmode
+    \red{\Title#1\hfill\copy\notehead}\bigskip\nobreak}
 
 % \section Title \par
 \addstructuretype Sect Section
@@ -144,8 +153,8 @@ endfig;}
     \bigskip\penalty-50\relax
     \startelement{Section}%
     \outline closed {#1}%
-    \nextpartag{H}\quitvmode
     \addtotoc{\section{#1}{\lastdestinationname}}%
+    \nextpartag{H}\quitvmode
     \red{\title#1}%
     \par\nobreak}
 
@@ -199,7 +208,6 @@ obtained at
 \stopformulatagging$$\hbox
 {\hyperlink url {https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12}%
 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12\endlink}$$\startformulatagging}
-
 
 % for identifying which file we are typesetting
 \edef\thejobname{\expandafter\scantextokens\expandafter{\jobname}}

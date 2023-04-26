@@ -15,7 +15,7 @@
 %
 % The Current Maintainer and author of this work is Markus Kohm.
 %
-% This work consists of all files listed in manifest.txt.
+% This work consists of all files listed in MANIFEST.md.
 % ----------------------------------------------------------------------
 % scrguide.gst
 % Copyright (c) Markus Kohm, 2002-2012
@@ -32,7 +32,7 @@
 %
 % Der Aktuelle Verwalter und Autor dieses Werkes ist Markus Kohm.
 % 
-% Dieses Werk besteht aus den in manifest.txt aufgefuehrten Dateien.
+% Dieses Werk besteht aus den in MANIFEST.md aufgefuehrten Dateien.
 % ======================================================================
 % MakeIndex style for change log generation based on `scrguide.ist'.
 %

@@ -20,15 +20,13 @@
 %% 
 %% File: output-patches.dtx (C) Copyright 2020-2021 Frank Mittelbach
 \ProvidesPackage{output-patches-tmp-ltx}
-        [2021-08-20 v0.95 Temporary patches of output commands]
+        [2022-10-29 v0.96 Temporary output patches for tagging and better link support]
 \RequirePackage{etoolbox}
-\newcommand\@kernel@before@head{}
-\newcommand\@kernel@before@foot{}
-\newcommand\@kernel@after@head{}
-\newcommand\@kernel@after@foot{}
-\newcommand\@kernel@before@footins{}
-\newcommand\@kernel@before@cclv{}
-\newcommand\@mult@ptagging@hook{}
+\providecommand\@kernel@before@head{}
+\providecommand\@kernel@before@foot{}
+\providecommand\@kernel@after@head{}
+\providecommand\@kernel@after@foot{}
+\providecommand\@mult@ptagging@hook{}% multicol
 
 \patchcmd\@outputpage
  {\vfil\color@hbox\normalcolor\hb@xt@\textwidth{\@thehead}\color@endbox}
@@ -39,16 +37,23 @@
  {\color@hbox\normalcolor\hb@xt@\textwidth{\@thefoot}\color@endbox}
  {\@kernel@before@foot\color@hbox\normalcolor\hb@xt@\textwidth{\@thefoot}\color@endbox\@kernel@after@foot}
  {\typeout{Patching footer in \string\@outputpage}}{\PATCHerror }
+\@ifpackageloaded{latex-lab-testphase-new-or}
+   {}
+   {
+    \providecommand\@kernel@before@footins{}
+    \providecommand\@kernel@before@cclv{}
 
-\patchcmd\@makecol
-    {\vskip\skip\footins}
-    {\vskip\skip\footins\@kernel@before@footins}
-  {\typeout{Patching \string\@makecol\space for tagging}}{\PATCHerror }
+    \patchcmd\@makecol
+      {\vskip\skip\footins}
+      {\vskip\skip\footins\@kernel@before@footins}
+      {\typeout{Patching \string\@makecol\space for tagging}}{\PATCHerror }
 
 
-\pretocmd\@makecol{\@kernel@before@cclv}
-  {\typeout{Patching \string\@makecol\space for tagging}}{\PATCHerror }
-\AddToHook{package/after/multicol}{% multicol needs later loading
+    \pretocmd\@makecol{\@kernel@before@cclv}
+     {\typeout{Patching \string\@makecol\space for tagging}}{\PATCHerror }
+   }
+\AddToHook{package/multicol/after}
+    {% multicol needs later loading
   \patchcmd\page@sofar
       {\setbox\z@\hbox{p}\global\dimen\tw@\dp\z@}%
       {%
@@ -63,6 +68,7 @@
 \def\@kernel@after@head {\pdfannot_link_on:}
 \def\@kernel@after@foot {\pdfannot_link_on:}
 \ExplSyntaxOff
+
 %% 
 %%
 %% End of file `output-patches-tmp-ltx.sty'.

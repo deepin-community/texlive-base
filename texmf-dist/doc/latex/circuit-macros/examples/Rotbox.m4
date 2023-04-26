@@ -5,7 +5,8 @@ gen_init
   Point_(-10)
   rotbox(boxwid/2,,thick 2)
   Point_(30)
-  rotbox(,,shaded "green" outlined "blue",r=0.1) at last []+vec_(boxwid,0)
+  rotbox(,,shaded "yellow" outlined "blue" thick 3,r=0.1) \
+    at last []+vec_(boxwid,0)
   "r=0.1" at last []
   move to last [].ne
   Point_(0)

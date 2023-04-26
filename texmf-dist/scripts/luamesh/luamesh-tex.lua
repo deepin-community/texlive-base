@@ -4,7 +4,7 @@
 --       AUTHOR:  Maxime Chupin
 -----------------------------------------------------------------------
 -- trace Voronoi with MP
-function traceVoronoiMP(listPoints, triangulation,listVoronoi, points, tri,styleD,styleV)
+function traceVoronoiMP(listPoints, triangulation,listVoronoi, points, tri,styleD,styleV,thickness,thicknessVoronoi)
    if(styleD == "dashed") then
       sDelaunay = "dashed evenly"
    else
@@ -31,16 +31,21 @@ function traceVoronoiMP(listPoints, triangulation,listVoronoi, points, tri,style
          PointJ = listPoints[triangulation[i][2]]
          PointK = listPoints[triangulation[i][3]]
          if(triangulation[i].type == "bbox") then
-            output = output .. "draw (".. PointI.x ..",".. PointI.y ..")*u--("..PointJ.x..",".. PointJ.y ..")*u--("..PointK.x..",".. PointK.y ..")*u--cycle "..sDelaunay.." withcolor \\luameshmpcolorBbox;"
+            output = output .. "draw (".. PointI.x ..",".. PointI.y
+               ..")*u--("..PointJ.x..",".. PointJ.y
+               ..")*u--("..PointK.x..",".. PointK.y ..")*u--cycle"..sDelaunay.." withcolor \\luameshmpcolorBbox withpen pencircle scaled "..thickness..";"
          else
-            output = output .. "draw (".. PointI.x ..",".. PointI.y ..")*u--("..PointJ.x..",".. PointJ.y ..")*u--("..PointK.x..",".. PointK.y ..")*u--cycle "..sDelaunay.." withcolor \\luameshmpcolor;"
+            output = output .. "draw (".. PointI.x ..",".. PointI.y
+               ..")*u--("..PointJ.x..",".. PointJ.y
+               ..")*u--("..PointK.x..",".. PointK.y ..")*u--cycle"..sDelaunay.." withcolor \\luameshmpcolor withpen pencircle scaled "..thickness..";"
          end
       end
    end
    for i=1,#listVoronoi do
       PointI = listCircumC[listVoronoi[i][1]]
       PointJ = listCircumC[listVoronoi[i][2]]
-      output = output .. "draw (".. PointI.x ..",".. PointI.y ..")*u--("..PointJ.x..",".. PointJ.y ..")*u "..sVoronoi.." withcolor \\luameshmpcolorVoronoi;"
+      output = output .. "draw (".. PointI.x ..",".. PointI.y
+         ..")*u--("..PointJ.x..",".. PointJ.y ..")*u "..sVoronoi.." withcolor \\luameshmpcolorVoronoi withpen pencircle scaled "..thicknessVoronoi..";"
    end
    if(points=="points") then
       j=1
@@ -75,7 +80,7 @@ end
 
 
 -- trace Voronoi with TikZ
-function traceVoronoiTikZ(listPoints, triangulation,listVoronoi, points, tri,color,colorBbox,colorVoronoi,styleD,styleV)
+function traceVoronoiTikZ(listPoints, triangulation,listVoronoi, points, tri,color,colorBbox,colorVoronoi,styleD,styleV,thickness,thicknessVoronoi)
    if(styleD == "dashed") then
       sDelaunay = ",dashed"
    else
@@ -100,16 +105,16 @@ function traceVoronoiTikZ(listPoints, triangulation,listVoronoi, points, tri,col
          PointJ = listPoints[triangulation[i][2]]
          PointK = listPoints[triangulation[i][3]]
          if(triangulation[i].type == "bbox") then
-            output = output .. "\\draw[color="..colorBbox..sDelaunay.."] (".. PointI.x ..",".. PointI.y ..")--("..PointJ.x..",".. PointJ.y ..")--("..PointK.x..",".. PointK.y ..")--cycle;"
+            output = output .. "\\draw[color="..colorBbox..sDelaunay..",line width="..thickness..",rounded corners=0.4pt] (".. PointI.x ..",".. PointI.y ..")--("..PointJ.x..",".. PointJ.y ..")--("..PointK.x..",".. PointK.y ..")--cycle;"
          else
-            output = output .. "\\draw[color="..color..sDelaunay.."] (".. PointI.x ..",".. PointI.y ..")--("..PointJ.x..",".. PointJ.y ..")--("..PointK.x..",".. PointK.y ..")--cycle;"
+            output = output .. "\\draw[color="..color..sDelaunay..",line width="..thickness..",rounded corners=0.4pt] (".. PointI.x ..",".. PointI.y ..")--("..PointJ.x..",".. PointJ.y ..")--("..PointK.x..",".. PointK.y ..")--cycle;"
          end
       end
    end
    for i=1,#listVoronoi do
       PointI = listCircumC[listVoronoi[i][1]]
       PointJ = listCircumC[listVoronoi[i][2]]
-      output = output .. "\\draw[color="..colorVoronoi..sVoronoi.."] (".. PointI.x ..",".. PointI.y ..")--("..PointJ.x..",".. PointJ.y ..");"
+      output = output .. "\\draw[color="..colorVoronoi..sVoronoi..",line width="..thicknessVoronoi..",rounded corners=0.4pt] (".. PointI.x ..",".. PointI.y ..")--("..PointJ.x..",".. PointJ.y ..");"
    end
    if(points=="points") then
       j=1
@@ -144,43 +149,43 @@ end
 
 
 -- buildVoronoi with MP
-function buildVoronoiMPBW(chaine,mode,points,bbox,scale,tri,styleD,styleV)
+function buildVoronoiMPBW(chaine,mode,points,bbox,scale,tri,styleD,styleV,thickness,thicknessVoronoi)
    local listPoints = buildList(chaine, mode)
    local triangulation = BowyerWatson(listPoints,bbox)
    local listVoronoi = buildVoronoi(listPoints, triangulation)
-   output = traceVoronoiMP(listPoints,triangulation,listVoronoi,points,tri,styleD,styleV)
-   output = "\\leavevmode\\begin{mplibcode}beginfig(0);u:="..scale.. ";" .. output .."endfig;\\end{mplibcode}"
+   output = traceVoronoiMP(listPoints,triangulation,listVoronoi,points,tri,styleD,styleV,thickness,thicknessVoronoi)
+   output = "\\leavevmode\\begin{mplibcode}[luamesh]beginfig(0);u:="..scale.. ";" .. output .."endfig;\\end{mplibcode}"
    tex.sprint(output)
 end
 
 
 -- buildVoronoi with TikZ
-function buildVoronoiTikZBW(chaine,mode,points,bbox,scale,tri,color,colorBbox,colorVoronoi,styleD,styleV)
+function buildVoronoiTikZBW(chaine,mode,points,bbox,scale,tri,color,colorBbox,colorVoronoi,styleD,styleV,thickness,thicknessVoronoi)
    local listPoints = buildList(chaine, mode)
    local triangulation = BowyerWatson(listPoints,bbox)
    local listVoronoi = buildVoronoi(listPoints, triangulation)
-   output = traceVoronoiTikZ(listPoints,triangulation,listVoronoi,points,tri,color,colorBbox,colorVoronoi,styleD,styleV)
+   output = traceVoronoiTikZ(listPoints,triangulation,listVoronoi,points,tri,color,colorBbox,colorVoronoi,styleD,styleV,thickness,thicknessVoronoi)
    output = "\\noindent\\begin{tikzpicture}[x=" .. scale .. ",y=" .. scale .."]" .. output .."\\end{tikzpicture}"   tex.sprint(output)
 end
 
 
 -- buildVoronoi with MP
-function buildVoronoiMPBWinc(chaine,beginning, ending,mode,points,bbox,scale,tri,styleD,styleV)
+function buildVoronoiMPBWinc(chaine,beginning, ending,mode,points,bbox,scale,tri,styleD,styleV,thickness,thicknessVoronoi)
    local listPoints = buildList(chaine, mode)
    local triangulation = BowyerWatson(listPoints,bbox)
    local listVoronoi = buildVoronoi(listPoints, triangulation)
-   output = traceVoronoiMP(listPoints,triangulation,listVoronoi,points,tri,styleD,styleV)
-   output = "\\leavevmode\\begin{mplibcode}u:="..scale..";"..beginning .. output .. ending .. "\\end{mplibcode}"
+   output = traceVoronoiMP(listPoints,triangulation,listVoronoi,points,tri,styleD,styleV,thickness,thicknessVoronoi)
+   output = "\\leavevmode\\begin{mplibcode}[luamesh]u:="..scale..";"..beginning .. output .. ending .. "\\end{mplibcode}"
    tex.sprint(output)
 end
 
 
 -- buildVoronoi with TikZ
-function buildVoronoiTikZBWinc(chaine,beginning, ending,mode,points,bbox,scale,tri,color,colorBbox,colorVoronoi)
+function buildVoronoiTikZBWinc(chaine,beginning, ending,mode,points,bbox,scale,tri,color,colorBbox,colorVoronoi,styleD,styleV,thickness,thicknessVoronoi)
    local listPoints = buildList(chaine, mode,styleD,styleV)
    local triangulation = BowyerWatson(listPoints,bbox)
    local listVoronoi = buildVoronoi(listPoints, triangulation)
-   output = traceVoronoiTikZ(listPoints,triangulation,listVoronoi,points,tri,color,colorBbox,colorVoronoi,styleD,styleV)
+   output = traceVoronoiTikZ(listPoints,triangulation,listVoronoi,points,tri,color,colorBbox,colorVoronoi,styleD,styleV,thickness,thicknessVoronoi)
    output = "\\noindent\\begin{tikzpicture}[x=" .. scale .. ",y=" .. scale .."]" ..beginning.. output..ending .."\\end{tikzpicture}"
    tex.sprint(output)
 end
@@ -188,7 +193,7 @@ end
 
 
 -- trace a triangulation with TikZ
-function traceMeshTikZ(listPoints, triangulation,points,color,colorBbox)
+function traceMeshTikZ(listPoints, triangulation,points,color,colorBbox,thickness)
    output = ""
    for i=1,#listPoints do
       output = output .. "\\coordinate (MeshPoints".. i .. ") at  (" .. listPoints[i].x .. "," .. listPoints[i].y .. ");"
@@ -198,19 +203,19 @@ function traceMeshTikZ(listPoints, triangulation,points,color,colorBbox)
       PointJ = listPoints[triangulation[i][2]]
       PointK = listPoints[triangulation[i][3]]
       if(triangulation[i].type == "bbox") then
-         output = output .. "\\draw[color="..colorBbox.."] (".. PointI.x ..",".. PointI.y ..")--("..PointJ.x..",".. PointJ.y ..")--("..PointK.x..",".. PointK.y ..")--cycle;"
+         output = output .. "\\draw[color="..colorBbox..",line width="..thickness..",rounded corners=0.4pt] (".. PointI.x ..",".. PointI.y ..")--("..PointJ.x..",".. PointJ.y ..")--("..PointK.x..",".. PointK.y ..")--cycle;"
       else
-         output = output .. "\\draw[color="..color.."] (".. PointI.x ..",".. PointI.y ..")--("..PointJ.x..",".. PointJ.y ..")--("..PointK.x..",".. PointK.y ..")--cycle;"
+         output = output .. "\\draw[color="..color..",line width="..thickness..",rounded corners=0.4pt] (".. PointI.x ..",".. PointI.y ..")--("..PointJ.x..",".. PointJ.y ..")--("..PointK.x..",".. PointK.y ..")--cycle;"
       end
    end
    if(points=="points") then
       j=1
       for i=1,#listPoints do
          if(listPoints[i].type == "bbox") then
-            output = output .. "\\draw[color="..colorBbox.."] (" .. listPoints[i].x ..",".. listPoints[i].y .. ") node {$\\bullet$} node[anchor=north east] {$\\MeshPoint^*_{" .. j .. "}$};"
+            output = output .. "\\draw[color="..colorBbox..",line width="..thickness..",rounded corners=0.4pt] (" .. listPoints[i].x ..",".. listPoints[i].y .. ") node {$\\bullet$} node[anchor=north east] {$\\MeshPoint^*_{" .. j .. "}$};"
             j=j+1
          else
-            output = output .. "\\draw[color="..color.."] (" .. listPoints[i].x ..",".. listPoints[i].y .. ") node {$\\bullet$} node[anchor=north east] {$\\MeshPoint_{" .. i .. "}$};"
+            output = output .. "\\draw[color="..color..",line width="..thickness..",rounded corners=0.4pt] (" .. listPoints[i].x ..",".. listPoints[i].y .. ") node {$\\bullet$} node[anchor=north east] {$\\MeshPoint_{" .. i .. "}$};"
          end
       end
    end
@@ -230,7 +235,7 @@ end
 
 
 -- trace a triangulation with MP
-function traceMeshMP(listPoints, triangulation,points)
+function traceMeshMP(listPoints, triangulation,points,thickness)
    output = "";
    output = output .. " pair MeshPoints[];"
    for i=1,#listPoints do
@@ -241,9 +246,13 @@ function traceMeshMP(listPoints, triangulation,points)
       PointJ = listPoints[triangulation[i][2]]
       PointK = listPoints[triangulation[i][3]]
       if(triangulation[i].type == "bbox") then
-         output = output .. "draw (".. PointI.x ..",".. PointI.y ..")*u--("..PointJ.x..",".. PointJ.y ..")*u--("..PointK.x..",".. PointK.y ..")*u--cycle withcolor \\luameshmpcolorBbox;"
+         output = output .. "draw (".. PointI.x ..",".. PointI.y
+            ..")*u--("..PointJ.x..",".. PointJ.y
+            ..")*u--("..PointK.x..",".. PointK.y ..")*u--cycle withcolor \\luameshmpcolorBbox withpen pencircle scaled "..thickness..";"
       else
-         output = output .. "draw (".. PointI.x ..",".. PointI.y ..")*u--("..PointJ.x..",".. PointJ.y ..")*u--("..PointK.x..",".. PointK.y ..")*u--cycle withcolor \\luameshmpcolor;"
+         output = output .. "draw (".. PointI.x ..",".. PointI.y
+            ..")*u--("..PointJ.x..",".. PointJ.y
+            ..")*u--("..PointK.x..",".. PointK.y ..")*u--cycle withcolor \\luameshmpcolor withpen pencircle scaled "..thickness..";"
       end
    end
    if(points=="points") then
@@ -273,37 +282,37 @@ end
 
 
 -- buildMesh with MP
-function buildMeshMPBW(chaine,mode,points,bbox,scale)
+function buildMeshMPBW(chaine,mode,points,bbox,scale,thickness)
    local listPoints = buildList(chaine, mode)
    local triangulation = BowyerWatson(listPoints,bbox)
-   output = traceMeshMP(listPoints, triangulation,points)
-   output = "\\leavevmode\\begin{mplibcode}beginfig(0);u:="..scale.. ";" .. output .."endfig;\\end{mplibcode}"
+   output = traceMeshMP(listPoints, triangulation,points,thickness)
+   output = "\\leavevmode\\begin{mplibcode}[luamesh]beginfig(0);u:="..scale.. ";" .. output .."endfig;\\end{mplibcode}"
    tex.sprint(output)
 end
 
 -- buildMesh with MP include code
-function buildMeshMPBWinc(chaine,beginning, ending,mode,points,bbox,scale)
+function buildMeshMPBWinc(chaine,beginning, ending,mode,points,bbox,scale,thickness)
    local listPoints = buildList(chaine, mode)
    local triangulation = BowyerWatson(listPoints,bbox)
-   output = traceMeshMP(listPoints, triangulation,points)
-   output = "\\leavevmode\\begin{mplibcode}u:="..scale..";"..beginning .. output .. ending .. "\\end{mplibcode}"
+   output = traceMeshMP(listPoints, triangulation,points,thickness)
+   output = "\\leavevmode\\begin{mplibcode}[luamesh]u:="..scale..";"..beginning .. output .. ending .. "\\end{mplibcode}"
    tex.sprint(output)
 end
 
 -- buildMesh with TikZ
-function buildMeshTikZBW(chaine,mode,points,bbox,scale,color,colorBbox)
+function buildMeshTikZBW(chaine,mode,points,bbox,scale,color,colorBbox,thickness)
    local listPoints = buildList(chaine, mode)
    local triangulation = BowyerWatson(listPoints,bbox)
-   output = traceMeshTikZ(listPoints, triangulation,points,color,colorBbox)
+   output = traceMeshTikZ(listPoints, triangulation,points,color,colorBbox,thickness)
    output = "\\noindent\\begin{tikzpicture}[x=" .. scale .. ",y=" .. scale .."]" .. output .."\\end{tikzpicture}"
    tex.sprint(output)
 end
 
 -- buildMesh with TikZ
-function buildMeshTikZBWinc(chaine,beginning, ending,mode,points,bbox,scale,color,colorBbox)
+function buildMeshTikZBWinc(chaine,beginning, ending,mode,points,bbox,scale,color,colorBbox,thickness)
    local listPoints = buildList(chaine, mode)
    local triangulation = BowyerWatson(listPoints,bbox)
-   output = traceMeshTikZ(listPoints, triangulation,points,color,colorBbox)
+   output = traceMeshTikZ(listPoints, triangulation,points,color,colorBbox,thickness)
    output = "\\noindent\\begin{tikzpicture}[x=" .. scale .. ",y=" .. scale .."]" ..beginning.. output..ending .."\\end{tikzpicture}"
    tex.sprint(output)
 end
@@ -373,7 +382,7 @@ function printPointsMP(chaine,mode,points,bbox,scale)
       listPoints = buildBoundingBox(listPoints)
    end
    output = tracePointsMP(listPoints,points)
-   output = "\\leavevmode\\begin{mplibcode}beginfig(0);u:="..scale.. ";" .. output .."endfig;\\end{mplibcode}"
+   output = "\\leavevmode\\begin{mplibcode}[luamesh]beginfig(0);u:="..scale.. ";" .. output .."endfig;\\end{mplibcode}"
    tex.sprint(output)
 end
 
@@ -385,7 +394,7 @@ function printPointsMPinc(chaine,beginning, ending, mode,points,bbox,scale)
       listPoints = buildBoundingBox(listPoints)
    end
    output = tracePointsMP(listPoints,points)
-   output = "\\leavevmode\\begin{mplibcode}u:="..scale..";"..beginning .. output .. ending .. "\\end{mplibcode}"
+   output = "\\leavevmode\\begin{mplibcode}[luamesh]u:="..scale..";"..beginning .. output .. ending .. "\\end{mplibcode}"
    tex.sprint(output)
 end
 
@@ -422,7 +431,8 @@ end
 
 
 --
-function TeXaddOnePointTikZ(listPoints,P,step,bbox,color,colorBack, colorNew, colorCircle,colorBbox)
+function TeXaddOnePointTikZ(listPoints,P,step,bbox,color,colorBack, colorNew,
+                            colorCircle,colorBbox,thickness,thicknessCircle,thicknessAdd)
    output = ""
    -- build the triangulation
    local triangulation = BowyerWatson(listPoints,bbox)
@@ -437,9 +447,9 @@ function TeXaddOnePointTikZ(listPoints,P,step,bbox,color,colorBack, colorNew, co
          PointJ = listPoints[triangulation[i][2]]
          PointK = listPoints[triangulation[i][3]]
          if(triangulation[i].type == "bbox") then
-            output = output .. "\\draw[color="..colorBbox.."] (".. PointI.x ..",".. PointI.y ..")--("..PointJ.x..",".. PointJ.y ..")--("..PointK.x..",".. PointK.y ..")--cycle;"
+            output = output .. "\\draw[color="..colorBbox..",line width="..thickness.."] (".. PointI.x ..",".. PointI.y ..")--("..PointJ.x..",".. PointJ.y ..")--("..PointK.x..",".. PointK.y ..")--cycle;"
          else
-            output = output .. "\\draw[color="..color.."] (".. PointI.x ..",".. PointI.y ..")--("..PointJ.x..",".. PointJ.y ..")--("..PointK.x..",".. PointK.y ..")--cycle;"
+            output = output .. "\\draw[color="..color..",line width="..thickness.."] (".. PointI.x ..",".. PointI.y ..")--("..PointJ.x..",".. PointJ.y ..")--("..PointK.x..",".. PointK.y ..")--cycle;"
          end
       end
       -- draw and fill the bad triangle
@@ -447,7 +457,7 @@ function TeXaddOnePointTikZ(listPoints,P,step,bbox,color,colorBack, colorNew, co
          PointI = listPoints[triangulation[badTriangles[i]][1]]
          PointJ = listPoints[triangulation[badTriangles[i]][2]]
          PointK = listPoints[triangulation[badTriangles[i]][3]]
-         output = output .. "\\draw[fill="..colorBack.."] (".. PointI.x ..",".. PointI.y ..")--("..PointJ.x..",".. PointJ.y ..")--("..PointK.x..",".. PointK.y ..")--cycle;"
+         output = output .. "\\draw[fill="..colorBack..",line width="..thickness.."] (".. PointI.x ..",".. PointI.y ..")--("..PointJ.x..",".. PointJ.y ..")--("..PointK.x..",".. PointK.y ..")--cycle;"
       end
       -- draw the circoncircle
       for i=1,#badTriangles do
@@ -455,7 +465,7 @@ function TeXaddOnePointTikZ(listPoints,P,step,bbox,color,colorBack, colorNew, co
          PointJ = listPoints[triangulation[badTriangles[i]][2]]
          PointK = listPoints[triangulation[badTriangles[i]][3]]
          center, radius = circoncircle(PointI, PointJ, PointK)
-         output = output .. "\\draw[dashed, color="..colorCircle.."] ("..center.x .. "," .. center.y .. ") circle ("..radius ..");"
+         output = output .. "\\draw[dashed, color="..colorCircle..",line width="..thicknessCircle.."] ("..center.x .. "," .. center.y .. ") circle ("..radius ..");"
       end
       -- mark the points
       j=1
@@ -482,9 +492,9 @@ function TeXaddOnePointTikZ(listPoints,P,step,bbox,color,colorBack, colorNew, co
          PointJ = listPoints[triangulation[i][2]]
          PointK = listPoints[triangulation[i][3]]
          if(triangulation[i].type == "bbox") then
-            output = output .. "\\draw[color="..colorBbox.."] (".. PointI.x ..",".. PointI.y ..")--("..PointJ.x..",".. PointJ.y ..")--("..PointK.x..",".. PointK.y ..")--cycle;"
+            output = output .. "\\draw[color="..colorBbox..",line width="..thickness.."] (".. PointI.x ..",".. PointI.y ..")--("..PointJ.x..",".. PointJ.y ..")--("..PointK.x..",".. PointK.y ..")--cycle;"
          else
-            output = output .. "\\draw[color="..color.."] (".. PointI.x ..",".. PointI.y ..")--("..PointJ.x..",".. PointJ.y ..")--("..PointK.x..",".. PointK.y ..")--cycle;"
+            output = output .. "\\draw[color="..color..",line width="..thickness.."] (".. PointI.x ..",".. PointI.y ..")--("..PointJ.x..",".. PointJ.y ..")--("..PointK.x..",".. PointK.y ..")--cycle;"
          end
       end
       -- fill and draw the cavity
@@ -493,7 +503,7 @@ function TeXaddOnePointTikZ(listPoints,P,step,bbox,color,colorBack, colorNew, co
          PointI = listPoints[polyNew[i]]
          path = path .. "(".. PointI.x ..",".. PointI.y ..")--"
       end
-      output = output .. "\\draw[color="..colorNew..",fill ="..colorBack..", thick] " .. path .. "cycle;"
+      output = output .. "\\draw[color="..colorNew..",fill ="..colorBack..",line width="..thicknessAdd.."] " .. path .. "cycle;"
       -- mark the points of the mesh
       j=1
       for i=1,#listPoints do
@@ -519,9 +529,9 @@ function TeXaddOnePointTikZ(listPoints,P,step,bbox,color,colorBack, colorNew, co
          PointJ = listPoints[triangulation[i][2]]
          PointK = listPoints[triangulation[i][3]]
          if(triangulation[i].type == "bbox") then
-            output = output .. "\\draw[color="..colorBbox.."] (".. PointI.x ..",".. PointI.y ..")--("..PointJ.x..",".. PointJ.y ..")--("..PointK.x..",".. PointK.y ..")--cycle;"
+            output = output .. "\\draw[color="..colorBbox..",line width="..thickness.."] (".. PointI.x ..",".. PointI.y ..")--("..PointJ.x..",".. PointJ.y ..")--("..PointK.x..",".. PointK.y ..")--cycle;"
          else
-            output = output .. "\\draw[color="..color.."] (".. PointI.x ..",".. PointI.y ..")--("..PointJ.x..",".. PointJ.y ..")--("..PointK.x..",".. PointK.y ..")--cycle;"
+            output = output .. "\\draw[color="..color..",line width="..thickness.."] (".. PointI.x ..",".. PointI.y ..")--("..PointJ.x..",".. PointJ.y ..")--("..PointK.x..",".. PointK.y ..")--cycle;"
          end
       end
       -- fill and draw the cavity
@@ -530,12 +540,12 @@ function TeXaddOnePointTikZ(listPoints,P,step,bbox,color,colorBack, colorNew, co
          PointI = listPoints[polyNew[i]]
          path = path .. "(".. PointI.x ..",".. PointI.y ..")--"
       end
-      output = output .. "\\draw[color="..colorNew..",fill ="..colorBack..", thick] " .. path .. "cycle;"
+      output = output .. "\\draw[color="..colorNew..",fill ="..colorBack..",line width="..1.1*thickWithoutPT.."pt] " .. path .. "cycle;"
       -- draw the new triangles composed by the edges of the polygon and the added point
       for i=1,#polygon do
-         output = output .. "\\draw[color=TeXCluaMeshNewTikZ, thick]".."(".. listPoints[polygon[i][1]].x .. "," .. listPoints[polygon[i][1]].y .. ") -- (" .. listPoints[polygon[i][2]].x .. "," .. listPoints[polygon[i][2]].y ..");"
-         output = output .. "\\draw[color="..colorNew..", thick]".."(".. listPoints[polygon[i][1]].x .. "," .. listPoints[polygon[i][1]].y .. ") -- (" .. P.x .. "," .. P.y ..");"
-         output = output .. "\\draw[color="..colorNew..", thick]".."(".. listPoints[polygon[i][2]].x .. "," .. listPoints[polygon[i][2]].y .. ") -- (" .. P.x .. "," .. P.y ..");"
+         output = output .. "\\draw[color=TeXCluaMeshNewTikZ,line width="..thicknessAdd.."]".."(".. listPoints[polygon[i][1]].x .. "," .. listPoints[polygon[i][1]].y .. ") -- (" .. listPoints[polygon[i][2]].x .. "," .. listPoints[polygon[i][2]].y ..");"
+         output = output .. "\\draw[color="..colorNew..",line width="..thicknessAdd.."]".."(".. listPoints[polygon[i][1]].x .. "," .. listPoints[polygon[i][1]].y .. ") -- (" .. P.x .. "," .. P.y ..");"
+         output = output .. "\\draw[color="..colorNew..",line width="..thicknessAdd.."]".."(".. listPoints[polygon[i][2]].x .. "," .. listPoints[polygon[i][2]].y .. ") -- (" .. P.x .. "," .. P.y ..");"
       end
       -- mark points
       j=1
@@ -553,7 +563,7 @@ function TeXaddOnePointTikZ(listPoints,P,step,bbox,color,colorBack, colorNew, co
    return output
 end
 
-function TeXaddOnePointMPBW(listPoints,P,step,bbox)
+function TeXaddOnePointMPBW(listPoints,P,step,bbox,thickness,thicknessCircle,thicknessAdd)
    output = "";
    output = output .. "pair MeshPoints[];"
    -- build the triangulation
@@ -571,9 +581,9 @@ function TeXaddOnePointMPBW(listPoints,P,step,bbox)
          PointJ = listPoints[triangulation[i][2]]
          PointK = listPoints[triangulation[i][3]]
          if(triangulation[i].type == "bbox") then
-            output = output .. "draw (".. PointI.x ..",".. PointI.y ..")*u--("..PointJ.x..",".. PointJ.y ..")*u--("..PointK.x..",".. PointK.y ..")*u--cycle withcolor \\luameshmpcolorBbox;"
+            output = output .. "draw (".. PointI.x ..",".. PointI.y ..")*u--("..PointJ.x..",".. PointJ.y ..")*u--("..PointK.x..",".. PointK.y ..")*u--cycle withcolor \\luameshmpcolorBbox  withpen pencircle scaled"..thickness..";"
          else
-            output = output .. "draw (".. PointI.x ..",".. PointI.y ..")*u--("..PointJ.x..",".. PointJ.y ..")*u--("..PointK.x..",".. PointK.y ..")*u--cycle withcolor \\luameshmpcolor;"
+            output = output .. "draw (".. PointI.x ..",".. PointI.y ..")*u--("..PointJ.x..",".. PointJ.y ..")*u--("..PointK.x..",".. PointK.y ..")*u--cycle withcolor \\luameshmpcolor  withpen pencircle scaled"..thickness..";"
          end
       end
       -- draw and fill the bad triangle
@@ -581,8 +591,8 @@ function TeXaddOnePointMPBW(listPoints,P,step,bbox)
          PointI = listPoints[triangulation[badTriangles[i]][1]]
          PointJ = listPoints[triangulation[badTriangles[i]][2]]
          PointK = listPoints[triangulation[badTriangles[i]][3]]
-         output = output .. "draw (".. PointI.x ..",".. PointI.y ..")*u--("..PointJ.x..",".. PointJ.y ..")*u--("..PointK.x..",".. PointK.y ..")*u--cycle withcolor \\luameshmpcolor;"
          output = output .. "fill (".. PointI.x ..",".. PointI.y ..")*u--("..PointJ.x..",".. PointJ.y ..")*u--("..PointK.x..",".. PointK.y ..")*u--cycle withcolor \\luameshmpcolorBack;"
+         output = output .. "draw (".. PointI.x ..",".. PointI.y ..")*u--("..PointJ.x..",".. PointJ.y ..")*u--("..PointK.x..",".. PointK.y ..")*u--cycle withcolor \\luameshmpcolor  withpen pencircle scaled"..thickness..";"
       end
       -- draw the circoncircle
       for i=1,#badTriangles do
@@ -590,7 +600,7 @@ function TeXaddOnePointMPBW(listPoints,P,step,bbox)
          PointJ = listPoints[triangulation[badTriangles[i]][2]]
          PointK = listPoints[triangulation[badTriangles[i]][3]]
          center, radius = circoncircle(PointI, PointJ, PointK)
-         output = output .. "draw fullcircle scaled ("..radius .."*2u) shifted ("..center.x .. "*u," .. center.y .. "*u) dashed evenly withcolor \\luameshmpcolorCircle;"
+         output = output .. "draw fullcircle scaled ("..radius .."*2u) shifted ("..center.x .. "*u," .. center.y .. "*u) dashed evenly withcolor \\luameshmpcolorCircle  withpen pencircle scaled"..thicknessCircle..";"
       end
       -- mark the points
       j=1
@@ -617,9 +627,9 @@ function TeXaddOnePointMPBW(listPoints,P,step,bbox)
          PointJ = listPoints[triangulation[i][2]]
          PointK = listPoints[triangulation[i][3]]
          if(triangulation[i].type == "bbox") then
-            output = output .. "draw (".. PointI.x ..",".. PointI.y ..")*u--("..PointJ.x..",".. PointJ.y ..")*u--("..PointK.x..",".. PointK.y ..")*u--cycle withcolor \\luameshmpcolorBbox;"
+            output = output .. "draw (".. PointI.x ..",".. PointI.y..")*u--("..PointJ.x..",".. PointJ.y ..")*u--("..PointK.x..",".. PointK.y..")*u--cycle withcolor \\luameshmpcolorBbox withpen pencircle scaled"..thickness..";"
          else
-            output = output .. "draw (".. PointI.x ..",".. PointI.y ..")*u--("..PointJ.x..",".. PointJ.y ..")*u--("..PointK.x..",".. PointK.y ..")*u--cycle withcolor \\luameshmpcolor;"
+            output = output .. "draw (".. PointI.x ..",".. PointI.y..")*u--("..PointJ.x..",".. PointJ.y ..")*u--("..PointK.x..",".. PointK.y ..")*u--cycle withcolor \\luameshmpcolor withpen pencircle scaled"..thickness..";"
          end
       end
       -- fill and draw the cavity
@@ -629,7 +639,7 @@ function TeXaddOnePointMPBW(listPoints,P,step,bbox)
          path = path .. "(".. PointI.x ..",".. PointI.y ..")*u--"
       end
       output = output .. "fill " .. path .. "cycle withcolor \\luameshmpcolorBack;"
-      output = output .. "draw " .. path .. "cycle withcolor \\luameshmpcolorNew  withpen pencircle scaled 1pt;"
+      output = output .. "draw " .. path .. "cycle withcolor \\luameshmpcolorNew  withpen pencircle scaled"..thicknessAdd..";"
       -- mark the points of the mesh
       j=1
       for i=1,#listPoints do
@@ -655,9 +665,9 @@ function TeXaddOnePointMPBW(listPoints,P,step,bbox)
          PointJ = listPoints[triangulation[i][2]]
          PointK = listPoints[triangulation[i][3]]
          if(triangulation[i].type == "bbox") then
-            output = output .. "draw (".. PointI.x ..",".. PointI.y ..")*u--("..PointJ.x..",".. PointJ.y ..")*u--("..PointK.x..",".. PointK.y ..")*u--cycle withcolor \\luameshmpcolorBbox;"
+            output = output .. "draw (".. PointI.x ..",".. PointI.y ..")*u--("..PointJ.x..",".. PointJ.y ..")*u--("..PointK.x..",".. PointK.y ..")*u--cycle withcolor \\luameshmpcolorBbox withpen pencircle scaled"..thickness..";"
          else
-            output = output .. "draw (".. PointI.x ..",".. PointI.y ..")*u--("..PointJ.x..",".. PointJ.y ..")*u--("..PointK.x..",".. PointK.y ..")*u--cycle withcolor \\luameshmpcolor;"
+            output = output .. "draw (".. PointI.x ..",".. PointI.y ..")*u--("..PointJ.x..",".. PointJ.y ..")*u--("..PointK.x..",".. PointK.y ..")*u--cycle withcolor \\luameshmpcolor withpen pencircle scaled"..thickness..";"
          end
       end
       -- fill  the cavity
@@ -669,9 +679,9 @@ function TeXaddOnePointMPBW(listPoints,P,step,bbox)
       output = output .. "fill " .. path .. "cycle withcolor \\luameshmpcolorBack;"
       -- draw the new triangles composed by the edges of the polygon and the added point
       for i=1,#polygon do
-         output = output .. "draw".."(".. listPoints[polygon[i][1]].x .. "," .. listPoints[polygon[i][1]].y .. ")*u -- (" .. listPoints[polygon[i][2]].x .. "," .. listPoints[polygon[i][2]].y ..")*u withcolor \\luameshmpcolorNew  withpen pencircle scaled 1pt;"
-         output = output .. "draw".."(".. listPoints[polygon[i][1]].x .. "," .. listPoints[polygon[i][1]].y .. ")*u -- (" .. P.x .. "," .. P.y ..")*u withcolor \\luameshmpcolorNew withpen pencircle scaled 1pt;"
-         output = output .. "draw".."(".. listPoints[polygon[i][2]].x .. "," .. listPoints[polygon[i][2]].y .. ")*u -- (" .. P.x .. "," .. P.y ..")*u withcolor \\luameshmpcolorNew withpen pencircle scaled 1pt;"
+         output = output .. "draw".."(".. listPoints[polygon[i][1]].x .. "," .. listPoints[polygon[i][1]].y .. ")*u -- (" .. listPoints[polygon[i][2]].x .. "," .. listPoints[polygon[i][2]].y ..")*u withcolor \\luameshmpcolorNew withpen pencircle scaled"..thicknessAdd..";"
+         output = output .. "draw".."(".. listPoints[polygon[i][1]].x .. "," .. listPoints[polygon[i][1]].y .. ")*u -- (" .. P.x .. "," .. P.y ..")*u withcolor \\luameshmpcolorNew withpen pencircle scaled"..thicknessAdd..";"
+         output = output .. "draw".."(".. listPoints[polygon[i][2]].x .. "," .. listPoints[polygon[i][2]].y .. ")*u -- (" .. P.x .. "," .. P.y ..")*u withcolor \\luameshmpcolorNew withpen pencircle scaled"..thicknessAdd..";"
       end
       -- mark points
       j=1
@@ -690,7 +700,8 @@ function TeXaddOnePointMPBW(listPoints,P,step,bbox)
 end
 
 
-function TeXOnePointTikZBW(chaine,point,step,scale,mode,bbox,color,colorBack,colorNew,colorCircle,colorBbox)
+function
+   TeXOnePointTikZBW(chaine,point,step,scale,mode,bbox,color,colorBack,colorNew,colorCircle,colorBbox,thickness,thicknessCircle,thicknessAdd)
    local listPoints = {}
    if(mode=="int") then
       Sx,Sy=string.match(point,"%((.+),(.+)%)")
@@ -700,12 +711,12 @@ function TeXOnePointTikZBW(chaine,point,step,scale,mode,bbox,color,colorBack,col
       -- point is a number
       P, listPoints = buildListExt(chaine,tonumber(point))
    end
-   output = TeXaddOnePointTikZ(listPoints,P,step,bbox,color,colorBack,colorNew,colorCircle,colorBbox)
+   output = TeXaddOnePointTikZ(listPoints,P,step,bbox,color,colorBack,colorNew,colorCircle,colorBbox,thickness,thicknessCircle,thicknessAdd)
    output = "\\noindent\\begin{tikzpicture}[x="..scale..",y="..scale.."]".. output .. "\\end{tikzpicture}"
    tex.sprint(output)
 end
 
-function TeXOnePointTikZBWinc(chaine,point,beginning, ending,step,scale,mode,bbox,color,colorBack,colorNew,colorCircle,colorBbox)
+function TeXOnePointTikZBWinc(chaine,point,beginning, ending,step,scale,mode,bbox,color,colorBack,colorNew,colorCircle,colorBbox,thickness,thicknessCircle,thicknessAdd)
    local listPoints = {}
    if(mode=="int") then
       Sx,Sy=string.match(point,"%((.+),(.+)%)")
@@ -715,12 +726,12 @@ function TeXOnePointTikZBWinc(chaine,point,beginning, ending,step,scale,mode,bbo
       -- point is a number
       P, listPoints = buildListExt(chaine,tonumber(point))
    end
-   output = TeXaddOnePointTikZ(listPoints,P,step,bbox,color,colorBack,colorNew,colorCircle,colorBbox)
+   output = TeXaddOnePointTikZ(listPoints,P,step,bbox,color,colorBack,colorNew,colorCircle,colorBbox,thickness,thicknessCircle,thicknessAdd)
    output = "\\noindent\\begin{tikzpicture}[x="..scale..",y="..scale.."]".. beginning..output ..ending.. "\\end{tikzpicture}"
    tex.sprint(output)
 end
 
-function TeXOnePointMPBW(chaine,point,step,scale,mode,bbox)
+function TeXOnePointMPBW(chaine,point,step,scale,mode,bbox,thickness,thicknessCircle,thicknessAdd)
    local listPoints = {}
    if(mode=="int") then
       Sx,Sy=string.match(point,"%((.+),(.+)%)")
@@ -730,12 +741,12 @@ function TeXOnePointMPBW(chaine,point,step,scale,mode,bbox)
       -- point is a number
       P, listPoints = buildListExt(chaine,tonumber(point))
    end
-   output = TeXaddOnePointMPBW(listPoints,P,step,bbox)
-   output = "\\leavevmode\\begin{mplibcode}beginfig(0);u:="..scale..";".. output .. "endfig;\\end{mplibcode}"
+   output = TeXaddOnePointMPBW(listPoints,P,step,bbox,thickness,thicknessCircle,thicknessAdd)
+   output = "\\leavevmode\\begin{mplibcode}[luamesh]beginfig(0);u:="..scale..";".. output .. "endfig;\\end{mplibcode}"
    tex.sprint(output)
 end
 
-function TeXOnePointMPBWinc(chaine,point,beginning,ending,step,scale,mode,bbox)
+function TeXOnePointMPBWinc(chaine,point,beginning,ending,step,scale,mode,bbox,thickness,thicknessCircle,thicknessAdd)
    local listPoints = {}
    if(mode=="int") then
       Sx,Sy=string.match(point,"%((.+),(.+)%)")
@@ -745,79 +756,79 @@ function TeXOnePointMPBWinc(chaine,point,beginning,ending,step,scale,mode,bbox)
       -- point is a number
       P, listPoints = buildListExt(chaine,tonumber(point))
    end
-   output = TeXaddOnePointMPBW(listPoints,P,step,bbox)
-   output = "\\begin{mplibcode}u:="..scale..";"..beginning .. output .. ending .. "\\end{mplibcode}"
+   output = TeXaddOnePointMPBW(listPoints,P,step,bbox,thickness,thicknessCircle,thicknessAdd)
+   output = "\\begin{mplibcode}[luamesh]u:="..scale..";"..beginning .. output .. ending .. "\\end{mplibcode}"
    tex.sprint(output)
 end
 
 
-function drawGmshMP(file,points,scale)
+function drawGmshMP(file,points,scale,thickness)
    local listPoints,triangulation = readGmsh(file)
-   output = traceMeshMP(listPoints,triangulation,points)
-   output = "\\leavevmode\\begin{mplibcode}beginfig(0);u:="..scale.. ";" .. output .."endfig;\\end{mplibcode}"
+   output = traceMeshMP(listPoints,triangulation,points,thickness)
+   output = "\\leavevmode\\begin{mplibcode}[luamesh]beginfig(0);u:="..scale.. ";" .. output .."endfig;\\end{mplibcode}"
    tex.sprint(output)
 end
 
-function drawGmshMPinc(file,beginning,ending,points,scale)
+function drawGmshMPinc(file,beginning,ending,points,scale,thickness)
    local listPoints,triangulation = readGmsh(file)
-   output = traceMeshMP(listPoints,triangulation,points)
-   output = "\\leavevmode\\begin{mplibcode}u:="..scale..";"..beginning .. output .. ending .. "\\end{mplibcode}"
+   output = traceMeshMP(listPoints,triangulation,points,thickness)
+   output = "\\leavevmode\\begin{mplibcode}[luamesh]u:="..scale..";"..beginning .. output .. ending .. "\\end{mplibcode}"
    tex.sprint(output)
 end
 
 
 
 --
-function drawGmshTikZ(file,points,scale,color)
+function drawGmshTikZ(file,points,scale,color,thickness)
    local listPoints,triangulation = readGmsh(file)
-   output = traceMeshTikZ(listPoints, triangulation,points,color,colorBbox)
+   output = traceMeshTikZ(listPoints, triangulation,points,color,colorBbox,thickness)
    output = "\\noindent\\begin{tikzpicture}[x=" .. scale .. ",y=" .. scale .."]" .. output .."\\end{tikzpicture}"
    tex.sprint(output)
 end
 
 --
-function drawGmshTikZinc(file,beginning, ending,points,scale,color)
+function drawGmshTikZinc(file,beginning, ending,points,scale,color,thickness)
    local listPoints,triangulation = readGmsh(file)
-   output = traceMeshTikZ(listPoints, triangulation,points,color,colorBbox)
+   output = traceMeshTikZ(listPoints, triangulation,points,color,colorBbox,thickness)
    output = "\\noindent\\begin{tikzpicture}[x=" .. scale .. ",y=" .. scale .."]" ..beginning.. output..ending .."\\end{tikzpicture}"
    tex.sprint(output)
 end
 
 
 -- buildVoronoi with MP
-function gmshVoronoiMP(file,points,scale,tri,styleD,styleV)
+function gmshVoronoiMP(file,points,scale,tri,styleD,styleV,thickness,thicknessVoronoi)
    local listPoints,triangulation = readGmsh(file)
    local listVoronoi = buildVoronoi(listPoints, triangulation)
-   output = traceVoronoiMP(listPoints,triangulation,listVoronoi,points,tri,styleD,styleV)
-   output = "\\leavevmode\\begin{mplibcode}beginfig(0);u:="..scale.. ";" .. output .."endfig;\\end{mplibcode}"
+   output = traceVoronoiMP(listPoints,triangulation,listVoronoi,points,tri,styleD,styleV,thickness,thicknessVoronoi)
+   output = "\\leavevmode\\begin{mplibcode}[luamesh]beginfig(0);u:="..scale.. ";" .. output .."endfig;\\end{mplibcode}"
    tex.sprint(output)
 end
 
 
 -- buildVoronoi with TikZ
-function gmshVoronoiTikZ(file,points,scale,tri,color,colorVoronoi,styleD,styleV)
+function gmshVoronoiTikZ(file,points,scale,tri,color,colorVoronoi,styleD,styleV,thickness,thicknessVoronoi)
    local listPoints,triangulation = readGmsh(file)
    local listVoronoi = buildVoronoi(listPoints, triangulation)
-   output = traceVoronoiTikZ(listPoints,triangulation,listVoronoi,points,tri,color,colorBbox,colorVoronoi,styleD,styleV)
+   output = traceVoronoiTikZ(listPoints,triangulation,listVoronoi,points,tri,color,colorBbox,colorVoronoi,styleD,styleV,thickness,thicknessVoronoi)
    output = "\\noindent\\begin{tikzpicture}[x=" .. scale .. ",y=" .. scale .."]" .. output .."\\end{tikzpicture}"   tex.sprint(output)
 end
 
 
 -- buildVoronoi with MP
-function gmshVoronoiMPinc(file,beginning, ending,points,scale,tri,styleD,styleV)
+function gmshVoronoiMPinc(file,beginning, ending,points,scale,tri,styleD,styleV,thickness,thicknessVoronoi)
    local listPoints,triangulation = readGmsh(file)
    local listVoronoi = buildVoronoi(listPoints, triangulation)
-   output = traceVoronoiMP(listPoints,triangulation,listVoronoi,points,tri,styleD,styleV)
-   output = "\\leavevmode\\begin{mplibcode}u:="..scale..";"..beginning .. output .. ending .. "\\end{mplibcode}"
+   output = traceVoronoiMP(listPoints,triangulation,listVoronoi,points,tri,styleD,styleV,thickness,thicknessVoronoi)
+   output = "\\leavevmode\\begin{mplibcode}[luamesh]u:="..scale..";"..beginning .. output .. ending .. "\\end{mplibcode}"
    tex.sprint(output)
 end
 
 
 -- buildVoronoi with TikZ
-function gmshVoronoiTikZinc(file,beginning, ending,points,scale,tri,color,colorVoronoi,styleD,styleV)
+function gmshVoronoiTikZinc(file,beginning, ending,points,scale,tri,color,colorVoronoi,styleD,styleV,thickness,thicknessVoronoi)
    local listPoints,triangulation = readGmsh(file)
    local listVoronoi = buildVoronoi(listPoints, triangulation)
-   output = traceVoronoiTikZ(listPoints,triangulation,listVoronoi,points,tri,color,colorBbox,colorVoronoi,styleD,styleV)
+   output = traceVoronoiTikZ(listPoints,triangulation,listVoronoi,points,tri,color,colorBbox,colorVoronoi,styleD,styleV,thickness,thicknessVoronoi)
    output = "\\noindent\\begin{tikzpicture}[x=" .. scale .. ",y=" .. scale .."]" ..beginning.. output..ending .."\\end{tikzpicture}"
    tex.sprint(output)
 end
@@ -852,12 +863,12 @@ function  tracePolygonMP(polygon,points)
 end
 
 
-function  tracePolygonTikZ(polygon,points, colorPoly)
+function  tracePolygonTikZ(polygon,points, colorPoly,polygonThickness)
    output = "";
    for i=1,#polygon do
       output = output .. "\\coordinate (polygon".. i .. ") at  (" .. polygon[i].x .. "," .. polygon[i].y .. ");"
    end
-   output = output .. "\\draw[color=".. colorPoly .. ", thick]"
+   output = output .. "\\draw[color=".. colorPoly .. ", ,line width="..polygonThickness.."]"
    for i=1,#polygon do
       output = output .. "(" .. polygon[i].x .. "," .. polygon[i].y .. ") -- "
    end
@@ -878,7 +889,7 @@ end
 
 
 function drawMeshPolygonMP(chaine,mode,h,step,
-                             points,scale,random)
+                             points,scale,random,thickness,polygonThickness)
    local polygon = buildList(chaine, mode)
    polygon = addPointsPolygon(polygon,h)
    local grid = buildGrid(polygon,h,random)
@@ -900,48 +911,48 @@ function drawMeshPolygonMP(chaine,mode,h,step,
    if(step=="mesh") then
       -- polygon + mesh
       triangulation = BowyerWatson(listPoints,"none") -- no bbox
-      output = traceMeshMP(listPoints,triangulation,points)
+      output = traceMeshMP(listPoints,triangulation,points,thickness)
       output = output .. tracePolygonMP(polygon,points)
    end
 
-   output = "\\leavevmode\\begin{mplibcode}beginfig(0);u:="..scale.. ";" .. output .."endfig;\\end{mplibcode}"
+   output = "\\leavevmode\\begin{mplibcode}[luamesh]beginfig(0);u:="..scale.. ";" .. output .."endfig;\\end{mplibcode}"
    tex.sprint(output)
 end
 
 
 
 function drawMeshPolygonTikZ(chaine,mode,h,step,
-                             points,scale,color,colorPoly,random)
+                             points,scale,color,colorPoly,random,thickness,polygonThickness)
    local polygon = buildList(chaine, mode)
    polygon = addPointsPolygon(polygon,h)
    local grid = buildGrid(polygon,h,random)
    local listPoints = addGridPoints(polygon,grid,h)
    if(step=="polygon") then
       -- the polygon
-      output = tracePolygonTikZ(polygon,points,colorPoly)
+      output = tracePolygonTikZ(polygon,points,colorPoly,polygonThickness)
    end
    if(step=="grid") then
       -- polygon + grid
       output = tracePointsTikZ(grid,points,color,"none") -- none for colorBbox
-      output = output .. tracePolygonTikZ(polygon,points,colorPoly)
+      output = output .. tracePolygonTikZ(polygon,points,colorPoly,polygonThickness)
    end
    if(step=="points") then
       -- polygon + only grid points inside the polygon
       output = tracePointsTikZ(listPoints,points,color,"none")
-      output = output .. tracePolygonTikZ(polygon,points,colorPoly)
+      output = output .. tracePolygonTikZ(polygon,points,colorPoly,polygonThickness)
    end
    if(step=="mesh") then
       -- polygon + mesh
       triangulation = BowyerWatson(listPoints,"none") -- no bbox
-      output = traceMeshTikZ(listPoints,triangulation,points,color,"none")
-      output = output .. tracePolygonTikZ(polygon,points,colorPoly)
+      output = traceMeshTikZ(listPoints,triangulation,points,color,"none",thickness)
+      output = output .. tracePolygonTikZ(polygon,points,colorPoly,polygonThickness)
    end
    output = "\\noindent\\begin{tikzpicture}[x=" .. scale .. ",y=" .. scale .."]" .. output .."\\end{tikzpicture}"
    tex.sprint(output)
 end
 
 function drawMeshPolygonMPinc(chaine,beginning,ending,mode,h,step,
-                             points,scale,random)
+                             points,scale,random,thickness,polygonThickness)
    local polygon = buildList(chaine, mode)
    polygon = addPointsPolygon(polygon,h)
    local grid = buildGrid(polygon,h,random)
@@ -963,17 +974,17 @@ function drawMeshPolygonMPinc(chaine,beginning,ending,mode,h,step,
    if(step=="mesh") then
       -- polygon + mesh
       triangulation = BowyerWatson(listPoints,"none") -- no bbox
-      output = traceMeshMP(listPoints,triangulation,points)
+      output = traceMeshMP(listPoints,triangulation,points,thickness)
       output = output .. tracePolygonMP(polygon,points)
    end
-   output = "\\begin{mplibcode}u:="..scale..";"..beginning .. output .. ending .. "\\end{mplibcode}"
+   output = "\\begin{mplibcode}[luamesh]u:="..scale..";"..beginning .. output .. ending .. "\\end{mplibcode}"
    tex.sprint(output)
 end
 
 
 
 function drawMeshPolygonTikZinc(chaine,beginning,ending,mode,h,step,
-                             points,scale,color,colorPoly,random)
+                             points,scale,color,colorPoly,random,thickness,polygonThickness)
    local polygon = buildList(chaine, mode)
    polygon = addPointsPolygon(polygon,h)
    local grid = buildGrid(polygon,h,random)
@@ -995,7 +1006,7 @@ function drawMeshPolygonTikZinc(chaine,beginning,ending,mode,h,step,
    if(step=="mesh") then
       -- polygon + mesh
       triangulation = BowyerWatson(listPoints,"none") -- no bbox
-      output = traceMeshTikZ(listPoints,triangulation,points,color,"none")
+      output = traceMeshTikZ(listPoints,triangulation,points,color,"none",thickness)
       output = output .. tracePolygonTikZ(polygon,points,colorPoly)
    end
    output = "\\noindent\\begin{tikzpicture}[x="..scale..",y="..scale.."]".. beginning..output ..ending.. "\\end{tikzpicture}"

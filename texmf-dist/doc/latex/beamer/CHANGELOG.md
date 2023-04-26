@@ -8,6 +8,76 @@ a major and minor version only.
 
 ## [Unreleased]
 
+## [v3.68]
+
+### Changed
+
+- simplified non-text links for navigation symbols and framezoom
+
+### Fixed
+- fixed height of non-text links to prevent overlaps in vertically stacked miniframes (see #780)
+- avoid problem with non-black black (see #772 and #659)
+
+## [v3.67]
+
+### Changed
+- beamer sets \@currentlabelname itself and no longer relies on nameref patches.
+
+### Fixed
+- slide transitions if the new pdfmanagement is used
+- name of transition replace in pdf is R not Replace
+
+## [v3.66]
+
+### Fixed
+
+- fixed edge case in numbering of hidden and unnumbered frames (see #756) 
+- fixed regression of class options not being passed to packages like xcolor (see #759)
+
+## [v3.65]
+
+### Added
+
+- adding new `onlytextwidth` class option to use this key for all `columns` environments by default (see #731)
+- adding new stretchable frame option `s` (see #696)
+- adding user-accessible commands for `\beamersidebarwidth` and `\beamerheadheight` (see #537)
+- allow custom values for `aspectratio` option (see #549)
+
+### Fixed
+
+- using `gray` colormodel for the delcarartion of fadings (workaround for #718)
+- fixed bullet colour of alerted items for custom item colour (see #735)
+- workaround to make miniframes clickable in xelatex (see #332)
+- added missing encoding value to multimedia sound macro (see #607)
+- imporoved problem with shadow of blocks without title (see #647)
+- reduced artefacts in poppler based viewers for shadow blocks (see #647)
+- workaround to make `\framezoom` clickable in xelatex (see #619)
+- exclude invisible frames from being counted (see #592)
+- fixed cut off miniframes for 8pt and 9pt (see #752)
+
+## [v3.64]
+
+### Added
+
+- new continuation count template "singleframecheck" which will only show the continuation count if a break actually occurs (see #423)
+- new templated for lined note pages (#704)
+
+### Changed
+
+- added `aspectratio=2013` class option setting the frames' aspect ratio to 20:13 (see #497)
+- Remove redefinition of `\addtocontents` (see #698)
+- patched macros from the `pdfpages` package to automaticlly remove the frame background for the included pages
+- transparent shadows for smoothbars outer theme (see #717)
+- transparent shadows for smoothtree outer theme (see #720) 
+- added new beamer option "show only slides with notes", the old class option "notes=onlyslideswithnotes" now gives an obsolete warning like all the other note options (see #724)
+- make footnotetext and footnoterule adapt to the current column with (see #713)
+- using `mathversion{sf}` for the kpfonts package (fix #711)
+
+### Fixed
+
+- solved font-dependant problem with shadow boxes (partial fix for #647)
+- adding hook rule for polyglossia to compensate for the different execution order of the new hook system (see #706) 
+
 ## [v3.63]
 
 ### Changed
@@ -142,7 +212,12 @@ a major and minor version only.
 - Support for `noxcolor` with `beamerarticle` (see #483)
 - Treatment of mixed overlay/alert specifications
 
-[Unreleased]: https://github.com/josephwright/beamer/compare/v3.63...HEAD
+[Unreleased]: https://github.com/josephwright/beamer/compare/v3.68...HEAD
+[v3.68]: https://github.com/josephwright/beamer/compare/v3.67...v3.68
+[v3.67]: https://github.com/josephwright/beamer/compare/v3.66...v3.67
+[v3.66]: https://github.com/josephwright/beamer/compare/v3.65...v3.66
+[v3.65]: https://github.com/josephwright/beamer/compare/v3.64...v3.65
+[v3.64]: https://github.com/josephwright/beamer/compare/v3.63...v3.64
 [v3.63]: https://github.com/josephwright/beamer/compare/v3.62...v3.63
 [v3.62]: https://github.com/josephwright/beamer/compare/v3.61...v3.62
 [v3.61]: https://github.com/josephwright/beamer/compare/v3.60...v3.61

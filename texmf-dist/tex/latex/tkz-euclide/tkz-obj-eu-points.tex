@@ -1,5 +1,5 @@
-% tkz-obj-eu-points.tex
-% Copyright 2020  Alain Matthes
+ % tkz-obj-eu-points.tex
+% Copyright 2022  Alain Matthes
 % This work may be distributed and/or modified under the
 % conditions of the LaTeX Project Public License, either version 1.3
 % of this license or (at your option) any later version.
@@ -7,491 +7,167 @@
 %   http://www.latex-project.org/lppl.txt
 % and version 1.3 or later is part of all distributions of LaTeX
 % version 2005/12/01 or later.
-%
-% This work has the LPPL maintenance status “maintained”.
-% 
+% This work has the LPPL maintenance status “maintained”. 
 % The Current Maintainer of this work is Alain Matthes.
-%  utf8 encoding
-\def\fileversion{3.06c}
-\def\filedate{2020/03/18} 
-\typeout{2020/03/18 3.06c  tkz-obj-eu-points.tex} 
-\makeatletter  
-%add ExCenter
-%<--------------------------------------------------------------------------–>
-%                   Specific points
-%<--------------------------------------------------------------------------–>
-%                              barycentre
-%<--------------------------------------------------------------------------–>
-\def\tkzDefBarycentricPoint(#1){%
-\begingroup
- \path[coordinate]  (barycentric cs:#1) coordinate (tkzPointResult); 
-\endgroup
-}
-\let\tkzDefBCPoint\tkzDefBarycentricPoint
 
-\def\tkzDefCentroid(#1){% 
-\begingroup
-   \xdef\tkz@arg{}
-	 \foreach \X in {#1}
-        {%
-		  \ifx\tkzutil@empty\tkz@arg%
-		   \xdef\tkz@arg{\X=1}
-        \else
-         \xdef\tkz@arg{\tkz@arg,\X=1}
-        \fi
-		  }		  
-   \path[coordinate] (barycentric cs:\tkz@arg) coordinate (tkzPointResult);
-\endgroup
+\def\fileversion{4.25c}
+\def\filedate{2022/09/23} 
+\typeout{2022/09/23 4.25c  tkz-obj-eu-points.tex} 
+\makeatletter
+%<--------------------------------------------------------------------------->
+%                             init def point 
+%<--------------------------------------------------------------------------->
+%                            tkzDefPoint
+%<--------------------------------------------------------------------------->
+%                     macros complémentaires  pour def point
+%<--------------------------------------------------------------------------->
+\def\tkz@parsecoordinate#1{%
+\tkz@getseparator#1,\@nil
+\iftkz@polar 
+   \tkz@getfrompolar#1\@nil
+\else
+   \tkz@getfromcart#1\@nil
+\fi
 }
+\def\tkz@getseparator#1,#2\@nil{%
+\ifx\tkzempty#2\tkzempty%
+   \tkz@polartrue
+\else
+   \tkz@polarfalse
+\fi
+}      
+\def\tkz@getfrompolar#1:#2\@nil{%
+\edef\tkz@a{\fpeval{#1}}
+\edef\tkz@r{\fpeval{#2}}
+\xdef\tkz@polarrad{\tkz@r}
+\xdef\tkz@polarangle{\tkz@a}
+} 
+\def\tkz@getfromcart#1,#2\@nil{%
+\edef\tkz@x{\fpeval{#1}}
+\edef\tkz@y{\fpeval{#2}}
+\xdef\tkz@absc{\tkz@x}
+\xdef\tkz@ord{\tkz@y}
+}
+%<--------------------------------------------------------------------------->
+%           options pour point definition
+%<--------------------------------------------------------------------------->
+\pgfkeys{/tkzPt/.cd,  
+         polar/.is if       = tkz@pt@polar,
+         polar/.default     = true,
+         polar              = false  
+}
+%<--------------------------------------------------------------------------->
+%        tkz@ptStar  
+%<--------------------------------------------------------------------------->
+\def\tkz@ptStar[#1](#2,#3)#{%
+\pgfkeys{/tkzPt/.cd, polar     = false} 
+\pgfqkeys{/tkzPt}{#1}  
+\iftkz@pt@polar%
+  \edef\tkz@x{\fpeval{#3*cosd(#2)}}
+  \edef\tkz@y{\fpeval{#3*sind(#2)}}
+\else
+  \edef\tkz@x{\fpeval{#2}}
+  \edef\tkz@y{\fpeval{#3}}
+\fi
+\edef\tkzpt@xa{\fpeval{(\tkz@x-\tkz@init@xorigine)/\tkz@init@xstep}}
+\edef\tkzpt@ya{\fpeval{(\tkz@y-\tkz@init@yorigine)/\tkz@init@ystep}}
+\tkz@node
+}
+%<--------------------------------------------------------------------------->
+% la macro defpoint les coordonnées cartésiennes ou polaires sont  traitées
+% afin de pouvoir être adaptées avec les unités choisies
+%<--------------------------------------------------------------------------->
+\def\tkzDefPoint{\pgfutil@ifnextchar[{\tkz@DefPoint}{\tkz@DefPoint[]}}
 
-%<--------------------------------------------------------------------------–>
-%                      milieu  de deux points
-%<--------------------------------------------------------------------------–>
-% possible   \coordinate (#3) at ($(#1)!0.5!(#2)$);
-%<--------------------------------------------------------------------------–>
-% \def\tkzDefMidPoint(#1,#2){%
-% \begingroup
-%  \path (#1) -- (#2) coordinate[pos=.5](tkzPointResult);
-% \endgroup
-% }
-\def\tkzDefMidPoint(#1,#2){%
-\begingroup
-   \pgf@process{\pgfpointanchor{#1}{center}}%
-   \tkz@ax\pgf@x%
-   \tkz@ay\pgf@y%
-   \pgf@process{\pgfpointanchor{#2}{center}}%
-   \tkz@bx\pgf@x%
-   \tkz@by\pgf@y%
-   \advance\tkz@bx by\tkz@ax\relax%
-   \advance\tkz@by by\tkz@ay\relax%
-   \divide\tkz@bx by2\relax%
-   \divide\tkz@by by2\relax
-   \pgfcoordinate{tkzPointResult}{\pgfqpoint{\tkz@bx}{\tkz@by}}
-\endgroup
+\def\tkz@DefPoint[#1](#2)#{% 
+\tkz@parsecoordinate{#2}
+\iftkz@polar
+   \tkz@ptStar[polar](\tkz@polarangle,\tkz@polarrad){tkz@coord@temp}
+\else  
+    \tkz@ptStar[](#2){tkz@coord@temp}
+\fi
+\tkz@DefPointEnd[#1]
+}% 
+\def\tkz@DefPointEnd[#1]#2{\coordinate[#1] (#2) at (tkz@coord@temp);}
+%<--------------------------------------------------------------------------->
+%                            tkzDefPoints
+%<--------------------------------------------------------------------------->
+\def\tkzDefPoints{\pgfutil@ifnextchar[{\tkz@DefPoints}{\tkz@DefPoints[]}}
+\def\tkz@DefPoints[#1]#2{%
+  \begingroup
+  \def\tkz@parenthesis@for@err{(}%
+  \def\tkz@maybe@parenthesis{#2}%
+  \ifx\tkz@maybe@parenthesis\tkz@parenthesis@for@err
+    \PackageError{tkz-base}{Syntax error  use {} instead of ()}{You need to use {} instead of ()}%
+    \expandafter\@firstoftwo
+  \else
+    \expandafter\@secondoftwo
+  \fi
+  {\tkz@absorb@bad@arg}% 
+  {\foreach \ptx/\pty/\name in {#2}{\tkzDefPoint[#1](\ptx,\pty){\name}}%
+   \endgroup}%
 }
-\def\tkz@DefMidPoint(#1,#2,#3,#4){%
-\begingroup
-   \tkz@ax#1%
-   \tkz@ay#2%
-   \tkz@bx#3%
-   \tkz@by#4%
-   \advance\tkz@bx by\tkz@ax\relax%
-   \advance\tkz@by by\tkz@ay\relax%
-   \divide\tkz@bx by2\relax%
-   \divide\tkz@by by2\relax
-   \pgfcoordinate{tkzPointResult}{\pgfqpoint{\tkz@bx}{\tkz@by}}
-\endgroup
+\def\tkz@absorb@bad@arg#1){\endgroup}
+%<--------------------------------------------------------------------------->
+\def\tkz@node#1{ \pgfinterruptboundingbox
+\path[coordinate](\tkzpt@xa,\tkzpt@ya) coordinate(#1);
+ \endpgfinterruptboundingbox}  
+% \def\tkz@drawnode#1{\path[coordinate](\tkzpt@xa,\tkzpt@ya) coordinate(#1);
+%              \tkz@DrawPt{#1}
+%              }
+% 
+%<--------------------------------------------------------------------------->
+\def\tkzRenamePoint(#1)#2{\coordinate (#2) at (#1);}
+\def\tkz@RenamePointEnd[#1]#2{\coordinate[#1] (#2) at (\tkz@ax,\tkz@ay);}
+\def\tkzGetPoint#1{\coordinate  (#1) at (tkzPointResult);} 
+\def\tkzGetPoints#1#2{\coordinate  (#1) at (tkzFirstPointResult);
+                      \coordinate  (#2) at (tkzSecondPointResult);}
+\def\tkzGetFirstPoint#1{\coordinate  (#1) at (tkzFirstPointResult);}
+\def\tkzGetSecondPoint#1{\coordinate  (#1) at (tkzSecondPointResult);}
+\def\tkzGetThirdPoint#1{\coordinate  (#1) at (tkzThirdPointResult);}
+\def\tkzDefShiftPointCoord[#1](#2)#3{%
+                \begin{scope}[shift={(#1)}]
+                     \coordinate  (#3) at (#2);
+                \end{scope}
+                           }%
+%<--------------------------------------------------------------------------–>
+%<--------------------------------------------------------------------------–>
+%<--------------------------------------------------------------------------–>
+                            
+%<--------------------------------------------------------------------------->
+%            tkzDefShiftPoint
+%<--------------------------------------------------------------------------->
+\def\tkzDefShiftPoint[#1](#2)#3{%
+   \tkz@@extractxy{#1}
+   \tkz@ax\pgf@x %
+   \tkz@ay\pgf@y %   
+\begin{scope}[shift={(\tkz@ax,\tkz@ay)}]
+   \coordinate  (#3) at (#2);
+\end{scope}
 }
-%<--------------------------------------------------------------------------–> 
-%                    Internal Similitude center
-%  Two circles have two similitude centers namely the internal center of similitude Si and the external similitude center Se.
-%<--------------------------------------------------------------------------–>
-\def\tkzDefIntSimilitudeCenter(#1,#2)(#3,#4){%
+%<--------------------------------------------------------------------------->
+%                    Coordonnées d'un point 
+%    result in #2x et #2y    #1 est le point et on récupère ses coordonnées
+% usage soit A un point \tkzGetPointCoord(A){V} alors \Vx = xA et \Vy = yA
+% en cm 
+% tkzGetPointCoord avec [#1] cm ou bien pt ?? todo
+%<--------------------------------------------------------------------------->
+\def\tkzGetPointCoord(#1)#2{%
 \begingroup
-   \path[coordinate](barycentric cs:#1=#4,#3=#2)coordinate (tkzPointResult);
+   \pgfextractx{\pgf@x}{\pgfpointanchor{#1}{center}}
+   \pgfmathparse{\pgf@sys@tonumber{\pgf@x}/28.45274}
+   \global\let\tkzresultx\pgfmathresult
+   \global\expandafter\edef\csname #2x\endcsname{\tkzresultx}% 
+   \pgfextracty{\pgf@y}{\pgfpointanchor{#1}{center}}
+   \pgfmathparse{\pgf@sys@tonumber{\pgf@y}/28.45274}
+   \global\let\tkzresulty\pgfmathresult
+   \global\expandafter\edef\csname #2y\endcsname{\tkzresulty}
 \endgroup
+}  
+\def\tkz@@extractxy#1{%
+\pgfextractx{\pgf@x}{\pgfpointanchor{#1}{center}}
+\pgfextracty{\pgf@y}{\pgfpointanchor{#1}{center}} 
 }
-\let\tkzIntSimilitudeCenter\tkzDefIntSimilitudeCenter
-%<--------------------------------------------------------------------------–> 
-%                    External Similitude center
-%<--------------------------------------------------------------------------–>
-\def\tkzDefExtSimilitudeCenter(#1,#2)(#3,#4){%
-\begingroup
-   \path[coordinate](barycentric cs:#1=-#4,#3=#2) coordinate(tkzPointResult);
-\endgroup
-} 
-\let\tkzExtSimilitudeCenter\tkzDefExtSimilitudeCenter
-%<--------------------------------------------------------------------------–> 
-%                    triangle center
-%<--------------------------------------------------------------------------–>
-
-\def\tkz@numtc{0}
-\pgfkeys{/tkzDefTriangleCenter/.cd,
-   ortho/.code        = \def\tkz@numtc{0},
-   centroid/.code     = \def\tkz@numtc{1},
-   median/.code       = \def\tkz@numtc{1},
-   circum/.code       = \def\tkz@numtc{2},
-   in/.code           = \def\tkz@numtc{3},
-   ex/.code           = \def\tkz@numtc{4},
-   euler/.code        = \def\tkz@numtc{5},
-   symmedian/.code    = \def\tkz@numtc{6},
-   lemoine/.code      = \def\tkz@numtc{6},
-   grebe/.code        = \def\tkz@numtc{6},
-   spieker/.code      = \def\tkz@numtc{7},
-   gergonne/.code     = \def\tkz@numtc{8},
-   nagel/.code        = \def\tkz@numtc{9}, 
-   mittenpunkt/.code  = \def\tkz@numtc{10}, 
-   feuerbach/.code    = \def\tkz@numtc{11},
-   circum       
-}     
-\def\tkzDefTriangleCenter{\pgfutil@ifnextchar[{\tkz@DefTriangleCenter}{\tkz@DefTriangleCenter[]}}
-\def\tkz@DefTriangleCenter[#1](#2){% 
-\begingroup  
-\pgfqkeys{/tkzDefTriangleCenter}{#1}  
-\ifcase\tkz@numtc%
-  \tkzOrthoCenter(#2)
-  \or% 1 
-  \tkzCentroid(#2)  
-  \or% 2
-  \tkzCircumCenter(#2) 
-  \or% 3
-  \tkzInCenter(#2) 
-  \or% 4
-  \tkzExCenter(#2) 
-  \or% 5
-  \tkzEulerCenter(#2)
-  \or% 6
-  \tkzSymmedianCenter(#2) 
-  \or% 7
-  \tkzSpiekerCenter(#2) 
-  \or% 8
-  \tkzGergonneCenter(#2) 
-  \or%9
-  \tkzNagelCenter(#2)
-  \or%10
-  \tkzMittenpunktCenter(#2) 
-  \or%11
-  \tkzFeuerbachCenter(#2) 
-    \fi    
-\endgroup
-}
-%<--------------------------------------------------------------------------–> 
-%                    OrthoCenter
-%<--------------------------------------------------------------------------–>
-\def\tkzOrthoCenter(#1,#2,#3){%  H orthocentre
-\begingroup
-  \pgfinterruptboundingbox 
-   \tkzUProjection(#1,#2)(#3)
-   \pgfnodealias{ort@pta}{tkzPointResult}
-   \tkzUProjection(#1,#3)(#2)
-   \pgfnodealias{ort@ptb}{tkzPointResult}
-   \tkzInterLL(#2,ort@ptb)(#3,ort@pta)
-   \endpgfinterruptboundingbox 
-\endgroup
-}
-\let\tkzDefOrthoCenter\tkzOrthoCenter
-%<--------------------------------------------------------------------------–>
-%                      GravityCenter modif 3.03
-%<--------------------------------------------------------------------------–>
-\def\tkzCentroid(#1,#2,#3){%
-\begingroup 
-   \pgf@process{\pgfpointanchor{#1}{center}}%
-   \tkz@ax\pgf@x%
-   \tkz@ay\pgf@y%
-   \pgf@process{\pgfpointanchor{#2}{center}}%
-   \tkz@bx\pgf@x%
-   \tkz@by\pgf@y%
-   \pgf@process{\pgfpointanchor{#3}{center}}%
-   \tkz@cx\pgf@x%
-   \tkz@cy\pgf@y%
-   \advance\tkz@cx by\tkz@ax\relax%
-   \advance\tkz@cy by\tkz@ay\relax%
-   \advance\tkz@cx by\tkz@bx\relax%
-   \advance\tkz@cy by\tkz@by\relax%
-   \divide\tkz@cx by3\relax%
-   \divide\tkz@cy by3\relax
-   \pgfinterruptboundingbox 
-   \pgfcoordinate{tkzPointResult}{\pgfqpoint{\tkz@cx}{\tkz@cy}}
-   \endpgfinterruptboundingbox   
-\endgroup
-}
-\let\tkzBaryCenter\tkzCentroid
-
-%<--------------------------------------------------------------------------–>
-%                      CircumCenter
-%<--------------------------------------------------------------------------–>
-\def\tkzCircumCenter(#1,#2,#3){%
-\begingroup
-\pgfinterruptboundingbox 
- \tkzDefMediatorLine(#1,#2)
- \pgf@process{\pgfpointanchor{tkzFirstPointResult}{center}}%
- \tkz@ax\pgf@x%
- \tkz@ay\pgf@y%
- \pgf@process{\pgfpointanchor{tkzSecondPointResult}{center}}%
- \tkz@bx\pgf@x%
- \tkz@by\pgf@y%
- \tkzDefMediatorLine(#1,#3)
- \pgf@process{\pgfpointanchor{tkzFirstPointResult}{center}}%
- \tkz@cx\pgf@x%
- \tkz@cy\pgf@y%
- \pgf@process{\pgfpointanchor{tkzSecondPointResult}{center}}%
- \tkz@dx\pgf@x%
- \tkz@dy\pgf@y%
- \tkzInterLLxy(\tkz@ax,\tkz@ay,\tkz@bx,\tkz@by)(\tkz@cx,\tkz@cy,\tkz@dx,\tkz@dy)%
-\endpgfinterruptboundingbox
-\endgroup
-} 
-\let\tkzDefCircumCenter\tkzCircumCenter
-%<--------------------------------------------------------------------------–>
-%                     InCenter
-%<--------------------------------------------------------------------------–>
-\def\tkzInCenter(#1,#2,#3){%
-\begingroup
-\pgfinterruptboundingbox 
-   \tkzDefBisectorLine(#3,#1,#2)
-   \pgf@process{\pgfpointanchor{tkzPointResult}{center}}%
-   \tkz@bx\pgf@x%
-   \tkz@by\pgf@y%
-   \tkzDefBisectorLine(#3,#2,#1) 
-   \pgf@process{\pgfpointanchor{tkzPointResult}{center}}%
-   \tkz@dx\pgf@x%
-   \tkz@dy\pgf@y%
-   \pgf@process{\pgfpointanchor{#1}{center}}%
-   \tkz@ax\pgf@x%
-   \tkz@ay\pgf@y%
-   \pgf@process{\pgfpointanchor{#2}{center}}%
-   \tkz@cx\pgf@x%
-   \tkz@cy\pgf@y%
-   \tkzInterLLxy(\tkz@ax,\tkz@ay,\tkz@bx,\tkz@by)%
-               (\tkz@cx,\tkz@cy,\tkz@dx,\tkz@dy)%
-	\endpgfinterruptboundingbox
-\endgroup
-} 
-\let\tkzDefInCenter\tkzInCenter
-%<--------------------------------------------------------------------------–>
-%                     ExCenter
-%<--------------------------------------------------------------------------–>
-\def\tkzExCenter(#1,#2,#3){%
-\begingroup
-\pgfinterruptboundingbox 
-   \tkzDefBisectorOutLine(#2,#1,#3)
-   \pgf@process{\pgfpointanchor{tkzPointResult}{center}}%
-   \tkz@bx\pgf@x%
-   \tkz@by\pgf@y%
-    \tkzDefBisectorOutLine(#2,#3,#1) 
-   \pgf@process{\pgfpointanchor{tkzPointResult}{center}}%
-   \tkz@dx\pgf@x%
-   \tkz@dy\pgf@y%
-   \pgf@process{\pgfpointanchor{#1}{center}}%
-   \tkz@ax\pgf@x%
-   \tkz@ay\pgf@y%
-   \pgf@process{\pgfpointanchor{#3}{center}}%
-   \tkz@cx\pgf@x%
-   \tkz@cy\pgf@y%
-   \tkzInterLLxy(\tkz@ax,\tkz@ay,\tkz@bx,\tkz@by)%
-             (\tkz@cx,\tkz@cy,\tkz@dx,\tkz@dy)%
-	\endpgfinterruptboundingbox
-\endgroup
-} 
-\let\tkzDefExCenter\tkzExCenter
-%<--------------------------------------------------------------------------–>
-%                     EulerCenter neuf points
-%<--------------------------------------------------------------------------–>
-\def\tkzEulerCenter(#1,#2,#3){% 
-% mileu de orthocentre et centre cercle circonscrit
-% passe par les midpoints par les pieds des hauteurs
-\begingroup
-\pgfinterruptboundingbox 
-   \tkzDefMidPoint(#1,#2)
-   \pgfnodealias{eu@mic}{tkzPointResult}
-   \tkzDefMidPoint(#1,#3)
-   \pgfnodealias{eu@mib}{tkzPointResult}
-   \tkzDefMidPoint(#2,#3)
-   \pgfnodealias{eu@mia}{tkzPointResult}
-   \tkzCircumCenter(eu@mia,eu@mib,eu@mic)
-\endpgfinterruptboundingbox
-\endgroup
-}
-\let\tkzNinePointCenter\tkzEulerCenter
-\let\tkzDefEulerCenter\tkzEulerCenter
-%<--------------------------------------------------------------------------–>
-%Symmedian center Lemoine point Grebe point K
-%<--------------------------------------------------------------------------–>
-\def\tkzSymmedianCenter(#1,#2,#3){%
-\begingroup
-\pgfinterruptboundingbox    
-  \tkzDefMidPoint(#2,#3)
-  \pgfnodealias{eu@mic}{tkzPointResult}
-  \tkzDefMidPoint(#1,#3)
-  \pgfnodealias{eu@mib}{tkzPointResult}
-  \tkzUProjection(#2,#3)(#1)
-  \pgfnodealias{ort@pta}{tkzPointResult}
-	\tkzDefMidPoint(#1,ort@pta)
-  \pgfnodealias{eu@mid}{tkzPointResult}
-  \tkzUProjection(#1,#3)(#2)
-  \pgfnodealias{ort@ptb}{tkzPointResult}
-	\tkzDefMidPoint(#2,ort@ptb)
-  \pgfnodealias{eu@mie}{tkzPointResult}
-  \tkzInterLL(eu@mic,eu@mid)(eu@mib,eu@mie)
-\endpgfinterruptboundingbox
-\endgroup
-}
-\let\tkzLemoinePoint\tkzSymmedianCenter
-\let\tkzGrebePoint\tkzSymmedianCenter
-\let\tkzDefLemoinePoint\tkzLemoinePoint
-%<--------------------------------------------------------------------------–> 
-%                   Spieker center
-%<--------------------------------------------------------------------------–>
-\def\tkzSpiekerCenter(#1,#2,#3){%
-\begingroup
-% we need to get the midpoints
-\pgfcoordinate{tkz@m3}{%
-    \pgfpointscale{0.5}{%
-   \pgfpointadd{\pgfpointanchor{#1}{center}}%
-               {\pgfpointanchor{#2}{center}}}}%
-\pgfcoordinate{tkz@m2}{%
-    \pgfpointscale{0.5}{%
-   \pgfpointadd{\pgfpointanchor{#1}{center}}%
-               {\pgfpointanchor{#3}{center}}}}%
-\pgfcoordinate{tkz@m1}{%
-   \pgfpointscale{0.5}{%
-   \pgfpointadd{\pgfpointanchor{#2}{center}}%
-               {\pgfpointanchor{#3}{center}}}}%
-\tkzInCenter(tkz@m1,tkz@m2,tkz@m3)
-\endgroup
-} 
-\let\tkzDefSpiekerCenter\tkzSpiekerCenter 
-%<--------------------------------------------------------------------------–> 
-%                    Gergonne center Ge
-%<--------------------------------------------------------------------------–>
-\def\tkzGergonneCenter(#1,#2,#3){%  
-\begingroup
-\pgfinterruptboundingbox 
-   \tkzInCenter(#1,#2,#3)
-   \pgfnodealias{tkz@ptin}{tkzPointResult}
-   \tkzUProjection(#2,#3)(tkz@ptin)
-   \pgfnodealias{tkz@oca}{tkzPointResult}
-   \tkzUProjection(#1,#3)(tkz@ptin)
-   \pgfnodealias{tkz@ocb}{tkzPointResult}
-   \tkzInterLL(#1,tkz@oca)(#2,tkz@ocb)
-\endpgfinterruptboundingbox
-\endgroup
-}
-\let\tkzDefGergonneCenter\tkzGergonneCenter 
-%<--------------------------------------------------------------------------–> 
-%                    Nagel center Na
-%<--------------------------------------------------------------------------–>
-%  INa = 3 IG. Nagel point % correction 02/02/20
-\def\tkzNagelCenter(#1,#2,#3){%  
-\begingroup
-\pgfinterruptboundingbox 
-  \tkzDefExcentralTriangle(#1,#2,#3){tkz@a,tkz@b,tkz@c}
-  \tkzUProjection(#2,#3)(tkz@a)
-  \pgfnodealias{tkz@tgta}{tkzPointResult}
-  \tkzUProjection(#1,#2)(tkz@c)
-  \pgfnodealias{tkz@tgtc}{tkzPointResult}
-  \tkzInterLL(#1,tkz@tgta)(#3,tkz@tgtc)
-\endpgfinterruptboundingbox
-\endgroup
-}
-\let\tkzDefNagelCenter\tkzNagelCenter 
-%<--------------------------------------------------------------------------–>
-%  Mittenpunkt
-%<--------------------------------------------------------------------------–>
-\def\tkzMittenpunktCenter(#1,#2,#3){%  
-\begingroup
-\pgfinterruptboundingbox 
- \tkzExCenter(#2,#3,#1)
- \pgfnodealias{tkz@a}{tkzPointResult}
- \tkzExCenter(#3,#1,#2)
- \pgfnodealias{tkz@b}{tkzPointResult}
- \pgfcoordinate{tkz@ma}{%
- \pgfpointscale{0.5}{%
- \pgfpointadd{\pgfpointanchor{#1}{center}}{\pgfpointanchor{#2}{center}}}}%
- \pgfcoordinate{tkz@mb}{%
- \pgfpointscale{0.5}{%
- \pgfpointadd{\pgfpointanchor{#2}{center}}{\pgfpointanchor{#3}{center}}}}%
- \tkzInterLL(tkz@a,tkz@ma)(tkz@b,tkz@mb)
- \endpgfinterruptboundingbox
-\endgroup
-}
-\let\tkzDefMittenpunktCenter\tkzMittenpunktCenter 
-\let\tkzDefMiddlespoint\tkzMittenpunktCenter     
-%<--------------------------------------------------------------------------–> 
-%                   Feuerbach point
-%<--------------------------------------------------------------------------–>
-\def\tkzFeuerbachCenter(#1,#2,#3){%  
-\begingroup
-\pgfinterruptboundingbox 
- \tkzEulerCenter(#1,#2,#3)
- \pgfnodealias{tkz@euler}{tkzPointResult}
- \tkzInCenter(#1,#2,#3) 
- \pgfnodealias{tkz@in}{tkzPointResult}
- \tkzUProjection(#2,#3)(tkzPointResult)
- \tkzInterLC(tkz@in,tkz@euler)(tkz@in,tkzPointResult)\tkzGetFirstPoint{tkz@fe}
- \tkzRenamePoint(tkz@fe){tkzPointResult}
- \endpgfinterruptboundingbox  
-\endgroup
-}
-\let\tkzDefFeuerbachCenter\tkzFeuerbachCenter 
-%<--------------------------------------------------------------------------–>
-%                     Orthogonal center
-%<--------------------------------------------------------------------------–>
-\def\tkzOrthogonalCenter(#1,#2){%
-\begingroup
-\pgfinterruptboundingbox 
- \tkz@VecK[\tkz@koeff/(1+\tkz@koeff)](#1,#2)
- \pgfnodealias{tkzFirstPointResult}{tkzPointResult}
- \tkz@VecK[\tkz@koeff/(\tkz@koeff-1)](#1,#2)
- \pgfnodealias{tkzSecondPointResult}{tkzPointResult}
-   \tkzDefMidPoint(tkzFirstPointResult,tkzSecondPointResult) 
-\endpgfinterruptboundingbox 
-\endgroup
-}
-%<--------------------------------------------------------------------------–>
-%                  End Triangle center
-%<--------------------------------------------------------------------------–>
-%<--------------------------------------------------------------------------–>
-%                  Projection  center of excircles
-%<--------------------------------------------------------------------------–>
-\def\tkzDefProjExcenter{\pgfutil@ifnextchar[{%
-    \tkz@DefProjExcenter}{%
-    \tkz@DefProjExcenter[]}
-    }
-\def\tkz@DefProjExcenter[#1](#2,#3,#4)(#5)#6{
-\begingroup  
-  \SetUpPTTR{#1}
-   \foreach \name  [count=\i] in {#5} {%
-      \global\expandafter\edef\csname tkz@pt\i\endcsname{\name}
-        }
-   \foreach \name  [count=\i] in {#6} {%
-      \global\expandafter\edef\csname tkz@ppt\i\endcsname{\name}
-        }
-\tkzDefPointBy[projection=onto #3--#4 ](\tkz@pttr@name \csname tkz@pt1\endcsname) 
-\pgfnodealias{\csname tkz@ppt1\endcsname\csname tkz@pt1\endcsname}{tkzPointResult}
-\tkzDefPointBy[projection=onto #3--#4 ](\tkz@pttr@name \csname tkz@pt2\endcsname) 
-\pgfnodealias{\csname tkz@ppt1\endcsname\csname tkz@pt2\endcsname}{tkzPointResult}
-\tkzDefPointBy[projection=onto #3--#4 ](\tkz@pttr@name \csname tkz@pt3\endcsname) 
-\pgfnodealias{\csname tkz@ppt1\endcsname\csname tkz@pt3\endcsname}{tkzPointResult}
-\tkzDefPointBy[projection=onto #2--#4 ](\tkz@pttr@name \csname tkz@pt1\endcsname) 
-\pgfnodealias{\csname tkz@ppt2\endcsname\csname tkz@pt1\endcsname}{tkzPointResult}
-\tkzDefPointBy[projection=onto #2--#4 ](\tkz@pttr@name \csname tkz@pt2\endcsname) 
-\pgfnodealias{\csname tkz@ppt2\endcsname\csname tkz@pt2\endcsname}{tkzPointResult}
-\tkzDefPointBy[projection=onto #2--#4 ](\tkz@pttr@name \csname tkz@pt3\endcsname) 
-\pgfnodealias{\csname tkz@ppt2\endcsname\csname tkz@pt3\endcsname}{tkzPointResult}
-\tkzDefPointBy[projection=onto #3--#2 ](\tkz@pttr@name \csname tkz@pt1\endcsname) 
-\pgfnodealias{\csname tkz@ppt3\endcsname\csname tkz@pt1\endcsname}{tkzPointResult}
-\tkzDefPointBy[projection=onto #3--#2 ](\tkz@pttr@name \csname tkz@pt2\endcsname) 
-\pgfnodealias{\csname tkz@ppt3\endcsname\csname tkz@pt2\endcsname}{tkzPointResult}
-\tkzDefPointBy[projection=onto #3--#2 ](\tkz@pttr@name \csname tkz@pt3\endcsname) 
-\pgfnodealias{\csname tkz@ppt3\endcsname\csname tkz@pt3\endcsname}{tkzPointResult}
-\endgroup 
-} 
-%<--------------------------------------------------------------------------–>
-%              Point on circle
-%<--------------------------------------------------------------------------–>
-\pgfkeys{/tkzptcircle/.cd,
-          angle/.store in     = \tkz@angle,
-          angle               = 0 ,
-          center/.store  in   =  \tkz@center,
-          radius/.store in    = \tkz@radius
-}
-\def\tkzDefPointOnCircle{\pgfutil@ifnextchar[{\tkz@DefPointOnCircle}{\tkz@DefPointOnCircle[]}}     
-\def\tkz@DefPointOnCircle[#1]{%
-\begingroup 
-\pgfqkeys{/tkzptcircle}{#1}
-\path (\tkz@center) --++(\tkz@angle:\tkz@radius) coordinate(tkzPointResult);
-\endgroup
-} 
-%<--------------------------------------------------------------------------–>
-%              Point on line
-%<--------------------------------------------------------------------------–>
-\def\tkzDefPointOnLine{\pgfutil@ifnextchar[{\tkz@DefPointOnLine}{\tkz@DefPointOnLine[]}}     
-\def\tkz@DefPointOnLine[#1](#2,#3){%
-\begingroup 
-\path (#2) to [#1] coordinate (tkzPointResult)  (#3);
-\endgroup
-} 
- 
+\let\tkzGetPointxy\tkzGetPointCoord
 \makeatother  
 \endinput

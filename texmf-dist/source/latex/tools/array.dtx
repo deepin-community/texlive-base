@@ -1,6 +1,6 @@
 % \iffalse meta-comment
 %
-% Copyright (C) 1993-2021
+% Copyright (C) 1993-2022
 %
 % The LaTeX Project and any individual authors listed elsewhere
 % in this file.
@@ -33,7 +33,7 @@
 %<+package>\DeclareCurrentRelease{}{2020-10-01}
 %<+package>
 %<+package>\ProvidesPackage{array}
-%<+package>         [2021/04/20 v2.5e Tabular extension package (FMi)]
+%<+package>         [2022/09/04 v2.5g Tabular extension package (FMi)]
 %
 % \fi
 %
@@ -753,7 +753,7 @@
 %
 % \changes{v2.2b}{1994/02/04}{Removed interactive prompt}
 %
-% \StopEventually{
+% \MaybeStop{
 %
 %
 % \begin{thebibliography}{1}
@@ -773,7 +773,7 @@
 %       Addison-Wesley, Reading, Massachusetts, 1986.
 % \end{thebibliography}
 %
-% }   ^^A  end of \StopEventually
+% }   ^^A  end of \MaybeStop
 %
 %
 %
@@ -890,8 +890,8 @@
 %       c   & 0  & 0 \\
 %       l   & 0  & 1 \\
 %       r   & 0  & 2 \\
-%       p-arg    & 0  & 3 \\
-%       t-arg    & 0  & 4 \\
+%       m-arg    & 0  & 3 \\
+%       p-arg    & 0  & 4 \\
 %       b-arg    & 0  & 5 \\
 %       |   & 1  & 0 \\
 %       !-arg    & 1  & 1 \\
@@ -907,8 +907,8 @@
 %       @   & 7  & --- \\
 %       <   & 8  & --- \\
 %       >   & 9  & --- \\
-%       p   & 10 & 3 \\
-%       t   & 10 & 4 \\
+%       m   & 10 & 3 \\
+%       p   & 10 & 4 \\
 %       b   & 10 & 5
 %    \end{tabular}
 % \end{center}
@@ -927,12 +927,12 @@
 %    \textsf{token} is stored in the
 %    \textsf{count} register =\@lastchclass=.
 %    All of the mentioned registers are already allocated in
-%    \texttt{latex.tex},
+%    the \LaTeX{} format,
 %    which is the reason why the following three lines of code are
 %    commented out.
 %    Later throughout the text I will not mention it again explicitly
 %    whenever I use a =%= sign. These parts are already defined in
-%    \texttt{latex.tex}.
+%    the \LaTeX{} format.
 %    \begin{macrocode}
 % \newcount \@chclass
 % \newcount \@chnum
@@ -1727,14 +1727,20 @@
 %
 %    For that reason the new implementation does the centering
 %    manually: First we check the height of the cell and if that is
-%    less or equal to =\ht\@arstrutbox= we assume that this is a
+%    less or equal to =\ht\strutbox= we assume that this is a
 %    single line cell. In that case  we don't do any vertical maneuvre
 %    and simply output the box, i.e., make it behave like a single
 %    line p-cell.
+%
+%    We use the height of \cs{strutbox} not \cs{@arstrutbox} in the comparison,
+%    because \cs{box}\cs{ar@mcellbox} does not have any strut
+%    incorporated and if \cs{arraystretch} is made very
+%    small the test would otherwise incorrectly assume a multi-line cell.
 % \changes{v2.4f}{2017/11/04}{Managing m-cells without \cs{vcenter}}
+% \changes{v2.5g}{2022/09/04}{Test against \cs{strutbox} height (gh/766)}
 %    \begin{macrocode}
 \def\ar@align@mcell{%
-  \ifdim \ht\ar@mcellbox > \ht\@arstrutbox
+  \ifdim \ht\ar@mcellbox > \ht\strutbox
 %    \end{macrocode}
 %    Otherwise we realign vertically by lowering the box. The question
 %    is how much do we need to move down? If there is any
@@ -2489,9 +2495,11 @@
 % \begin{macro}{\endtabular*}
 %    To end a \textsf{tabular} or \textsf{tabular$*$} environment we
 %    call up =\endarray=, close the math mode and then the surrounding
-%    =\hbox=.
+%    =\hbox=. This math mode around the tabular should not be surrounded by
+%    any =\mathsurround= so we cancel that with =\m@th=.
+% \changes{v2.5f}{2021/07/12}{Cancel any outside \cs{mathsurround} (gh/614)}
 %    \begin{macrocode}
-\def\endtabular{\endarray $\egroup}
+\def\endtabular{\endarray\m@th $\egroup}
 \expandafter\let\csname endtabular*\endcsname=\endtabular
 %    \end{macrocode}
 % \end{macro}

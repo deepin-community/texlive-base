@@ -4,11 +4,11 @@ divert(-1)
 
 # Size parameters
 define(`tubediam',`dimen_')
-define(`tubethick',`2')
+define(`tubethick',`2')     # thick line thickness
 define(`tubepindiam',`tubediam*3/8')
 define(`tubeplatelen',`tubediam/2')
 define(`tubegridlen',`tubediam*7/12')
-define(`tubcathlen',`tubeplatelen-tubethick bp__')
+define(`tubecathlen',`tubeplatelen-tubethick bp__')
 define(`tubedotthick',`1.2')
 define(`tubedotdiam',`tubediam/6')
 define(`tgap',`tubediam*3/20')
@@ -125,7 +125,7 @@ define(`tubegrid',`dashline(ifelse(`$1',,`right tubegridlen',`$1'),
 
                             `tubecathode(length,R)'
 define(`tubecathode',`[
-  box invis wid ifelse(`$1',,tubcathlen,`$1') ht tubeplatelen/6
+  box invis wid ifelse(`$1',,tubecathlen,`$1') ht tubeplatelen/6
   ifinstr(`$2',R,
    `line thick tubethick from last box.nw to last box.sw \
       then to last box.se then to last box.ne',

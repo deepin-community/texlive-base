@@ -1,10 +1,19 @@
-\documentclass{article}
-\usepackage{libertinus-otf}
-\setmonofont[Scale=MatchLowercase,FakeStretch=0.9]{AnonymousPro-Regular.ttf}
+\listfiles
+\documentclass[twoside]{article}
+\usepackage[TT={Scale=MatchLowercase,FakeStretch=0.88}]{lucida-otf}
+\setmonofont[Scale=MatchLowercase,FakeStretch=0.85]{DejaVu Sans Mono}
 \newif\ifChangeBar \ChangeBarfalse
 \usepackage{fancyvrb}
 \usepackage{fancyvrb-ex}
+\usepackage{fancyhdr}
+
+\pagestyle{fancy}
+
+\fancyhead[RE,LO]{}
+\fancyhead[RO]{\leftmark}
+
 \usepackage{xurl}
+
 \usepackage[colorlinks,linktocpage]{hyperref}
 \parskip=3pt plus 1pt minus 1pt
 %
@@ -55,7 +64,7 @@
 %        {\footnotesize \url{tvz@Princeton.EDU}}\\[5mm]
         {Packaging and documentation by}\\
         {\footnotesize Denis Girou (CNRS/IDRIS -- France),}\\[-2mm]
-        {\footnotesize Sebastian Rahtz (Elsevier -- GB)}\\[-2mm]
+        {\footnotesize Sebastian Rahtz\dagger\ (Elsevier -- GB)}\\[-2mm]
         {\footnotesize and}\\[-2mm]
         {\footnotesize Herbert Voß\ (FU Berlin -- DE)}
         }
@@ -80,6 +89,7 @@ Report bugs to \url{hvoss@tug.org}
 \vfill
 Thanks to 
 Claudio Beccari,
+Karl Berry,
 Jean-François Burnol, 
 Philippe Esperet, %\url{esperet@marie.polytechnique.fr}, 
 Michael Friendly, %\url{friendly@hotspur.psych.yorku.ca}, 
@@ -216,9 +226,9 @@ case...
 
 \begin{SideBySideExample}
   \begin{Verbatim}[commentchar=\%]
-    First line. % First line
-    Second.
-    Third line. % Third line lost...
+  First line. % First line
+  Second.
+  Third line. % Third line lost...
   \end{Verbatim}
 \end{SideBySideExample}
 
@@ -251,13 +261,22 @@ case...
   \item[formatcom (command)]: command to execute before printing verbatim
   text
   (\emph{Default: empty}).
+  \item[formatcom* (command)]: add definition to an existing one
 \end{optlist}
 
 \begin{SideBySideExample}
-  \begin{Verbatim}[formatcom=\color{red}]
-    First verbatim line.
-    Second verbatim line.
-  \end{Verbatim}
+\begin{Verbatim}[formatcom=\color{red}]
+First verbatim line.
+Second verbatim line.
+\end{Verbatim}
+\end{SideBySideExample}
+
+\begin{SideBySideExample}
+\fvset{formatcom=\color{red}}
+\begin{Verbatim}[formatcom*=\itshape]
+First verbatim line.
+Second verbatim line.
+\end{Verbatim}
 \end{SideBySideExample}
 
 \subsubsection{Changing individual line formatting}
@@ -672,7 +691,21 @@ numbering, and the counter used is \texttt{FancyVerbLine}:
 \begin{optlist}
   \item[firstline (integer)]: first line to print
   (\emph{Default: empty} \Dash all lines from the first are printed).
+  \item[lastline (integer)]: last line to print
+  (\emph{Default: empty} \Dash all lines until the last one are printed).
 \end{optlist}
+
+
+\begin{SideBySideExample}
+  \begin{Verbatim}[gobble=2,firstline,lastline,
+         numbers=left,numbersep=2pt]
+    First verbatim line.
+    Second verbatim line.
+    Third verbatim line.
+  \end{Verbatim}
+\end{SideBySideExample}
+
+
 
 \begin{SideBySideExample}
   \begin{Verbatim}[gobble=2,firstline=2,
@@ -683,10 +716,6 @@ numbering, and the counter used is \texttt{FancyVerbLine}:
   \end{Verbatim}
 \end{SideBySideExample}
 
-\begin{optlist}
-  \item[lastline (integer)]: last line to print
-  (\emph{Default: empty} \Dash all lines until the last one are printed).
-\end{optlist}
 
 \begin{SideBySideExample}
   \begin{Verbatim}[gobble=2,lastline=1,
@@ -720,6 +749,18 @@ bit klunky.  Initially you must define the strings with
 
 \noindent To redefine the strings, you must use \cs{renewcommand*}.
 
+With the setting \texttt{lastline=} or \texttt{lastline=0} nothing will be printed.
+
+\begin{SideBySideExample}[gobble=2]
+  foo
+  \begin{Verbatim}[frame=none,lastline=]
+    First verbatim line.
+    Second verbatim line.
+    Third verbatim line.
+  \end{Verbatim}
+  bar
+\end{SideBySideExample}
+
 \subsubsection{Spaces and tab characters}
 
 \begin{optlist}
@@ -730,7 +771,7 @@ bit klunky.  Initially you must define the strings with
 
 \begin{SideBySideExample}[gobble=0]
 \begin{Verbatim}[showspaces=true]
-    Verbatim line.
+  Verbatim line.
 \end{Verbatim}
 \end{SideBySideExample}
 
@@ -778,6 +819,38 @@ interpreted (using tabs is in fact a rather old-fashioned style of coding):
   \end{Verbatim}
 \end{SideBySideExample}
 
+
+\subsubsection{Vertical space before and after}
+
+\begin{optlist}
+  \item[vspace (dimension)]: value to give to the usual
+   vertical list space .
+  (\emph{Default: \cs{topsep}} \Dash its current value just before the verbatim
+  command).
+\end{optlist}
+
+\begin{SideBySideExample}
+  A line before Verbatim
+  \begin{Verbatim}[frame=lines,label=foo]
+    First verbatim line.
+    Second verbatim line.
+  \end{Verbatim}
+  A line after Verbatim
+\end{SideBySideExample}
+
+\begin{SideBySideExample}
+  A line before Verbatim
+  \begin{Verbatim}[frame=lines,label=foo,
+                   vspace=0pt]
+    First verbatim line.
+    Second verbatim line.
+  \end{Verbatim}
+  A line after Verbatim
+\end{SideBySideExample}
+
+
+
+
 \subsubsection{Escape characters for inserting commands}
 
 \begin{optlist}
@@ -802,6 +875,15 @@ interpreted (using tabs is in fact a rather old-fashioned style of coding):
   \end{Verbatim}
 \end{SideBySideExample}
 
+
+Escaping of ] is needed to prevent ]] at the end which is not allowed. ALternatively
+you can write \verb|commandchars={+[]}| or \verb|commandchars=+{[}{]}|. Escaping is needed
+for all active characters. Pay attention that you do not use characters which are used
+in the code of \texttt{fancyvrb} itself, e.g. \verb|<>|
+
+
+
+
 \ifChangeBar\begin{changebar}\fi
   Using this way, it is also possible to put labels to be able, later, to
 make reference to some lines of the verbatim environments:
@@ -818,6 +900,7 @@ make reference to some lines of the verbatim environments:
   line~\ref{vrb:Important}, it is...
 \end{SideBySideExample}
 \ifChangeBar\end{changebar}\fi
+
 
 \subsubsection{Margins}
 
@@ -891,20 +974,38 @@ make reference to some lines of the verbatim environments:
 \begin{optlist}
   \item[codes (macro)]: to specify \emph{catcode} changes (\emph{Default:
   empty}).
+  \item[codes* (macro)]: add to an existing definition.
 \end{optlist}
 
   For instance, this allows us to include formatted mathematics in verbatim
 text:
 
-{\fvset{fontsize=\small}
+{\fvset{fontsize=\small}%
 \begin{SideBySideExample}
-  Z\fvset{fontsize=\normalsize}
-  \begin{Verbatim}[commandchars=\\\{\},
+\begin{Verbatim}[commandchars=\\\{\},
          codes={\catcode`$=3\catcode`^=7}]
     x=1/sqrt(z**2) ! $\frac{1}{\sqrt{z^2}}$
-  \end{Verbatim}
+\end{Verbatim}
 \end{SideBySideExample}
 }  %$
+
+
+With \verb|codes*| we can add code to an already existing definition of \Verb|codes|:
+
+{\fvset{fontsize=\small}%
+\begin{SideBySideExample}
+\fvset{codes={\catcode`$=3\catcode`^=7}}
+\begin{Verbatim}[commandchars=\\\{\},
+   % _add_ to codes
+   codes*={\color{blue}}]
+x=1/sqrt(z**2) ! $\frac{1}{\sqrt{z^2}}$
+\end{Verbatim}
+\end{SideBySideExample}
+}  %$
+
+
+
+
 
 
 \subsubsection{Active characters}
@@ -913,6 +1014,7 @@ text:
   \item[defineactive (macro)]: to define the effect of \emph{active}
   characters
   (\emph{Default: empty}).
+  \item[defineactive* (macro)]: add the definition to an existing one.
 \end{optlist}
 
   This allows us to do some devious tricks: see the example in Section

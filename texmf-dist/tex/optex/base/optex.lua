@@ -2,11 +2,14 @@
 
 -- The basic lua functions and declarations used in \OpTeX/ are here
 
+local fmt = string.format
+
 -- \medskip\secc General^^M
 --
 -- Define namespace where some \OpTeX/ functions will be added.
 
-optex = optex or {}
+local optex = _ENV.optex or {}
+_ENV.optex = optex
 
 -- Error function used by following functions for critical errors.
 local function err(message)
@@ -15,12 +18,14 @@ end
 --
 -- For a `\chardef`'d, `\countdef`'d, etc., csname return corresponding register
 -- number. The responsibility of providing a `\XXdef`'d name is on the caller.
-function registernumber(name)
+local function registernumber(name)
     return token.create(name).index
 end
+_ENV.registernumber = registernumber
+optex.registernumber = registernumber
 --
 -- MD5 hash of given file.
-function mdfive(file)
+function optex.mdfive(file)
     local fh = io.open(file, "rb")
     if fh then
         local data = fh:read("*a")
@@ -30,7 +35,8 @@ function mdfive(file)
 end
 --
 -- \medskip\secc[lua-alloc] Allocators^^M
-alloc = alloc or {}
+local alloc = _ENV.alloc or {}
+_ENV.alloc = alloc
 --
 -- An attribute allocator in Lua that cooperates with normal \OpTeX/ allocator.
 local attributes = {}
@@ -49,18 +55,17 @@ end
 -- Allocator for Lua functions ("pseudoprimitives"). It passes variadic
 -- arguments (\"`...`") like `"global"` to `token.set_lua`.
 local function_table = lua.get_functions_table()
-local luafnalloc = 0
-function define_lua_command(csname, fn, ...)
-    luafnalloc = luafnalloc + 1
+local function define_lua_command(csname, fn, ...)
+    local luafnalloc = #function_table + 1
     token.set_lua(csname, luafnalloc, ...) -- WARNING: needs LuaTeX 1.08 (2019) or newer
     function_table[luafnalloc] = fn
 end
---
--- `provides_module` is needed by older version of luaotfload
-provides_module = function() end
+_ENV.define_lua_command = define_lua_command
+optex.define_lua_command = define_lua_command
 --
 -- \medskip\secc[callbacks] Callbacks^^M
-callback = callback or {}
+local callback = _ENV.callback or {}
+_ENV.callback = callback
 --
 -- Save `callback.register` function for internal use.
 local callback_register = callback.register
@@ -387,17 +392,18 @@ end)
 --
 -- Compatibility with \LaTeX/ through luatexbase namespace. Needed for
 -- luaotfload.
-luatexbase = {
+_ENV.luatexbase = {
     registernumber = registernumber,
     attributes = attributes,
-    provides_module = provides_module,
+    -- `provides_module` is needed by older version of luaotfload
+    provides_module = function() end,
     new_attribute = alloc.new_attribute,
     callback_descriptions = callback.callback_descriptions,
     create_callback = callback.create_callback,
     add_to_callback = callback.add_to_callback,
     remove_from_callback = callback.remove_from_callback,
     call_callback = callback.call_callback,
-    callbacktypes = {}
+    callbacktypes = {},
 }
 --
 -- `\tracingmacros` callback registered.
@@ -411,20 +417,92 @@ callback.add_to_callback("input_level_string", function(n)
         return ""
     end
 end, "_tracingmacros")
+-- \medskip\secc[lua-pdf-resources] Management of PDF page resources^^M
 --
--- \medskip\secc[lua-colors] Handling of colors using attributes^^M
+-- Traditionally, pdf\TeX/ allowed managing PDF page resources (graphics
+-- states, patterns, shadings, etc.) using a single toks register,
+-- `\pdfpageresources`. This is insufficient due to the expected PDF object
+-- structer and also because many \"packages" want to add page resources and
+-- thus fight for the access to that register. We add a finer alternative,
+-- which allows adding different kinds of resources to a global page resources
+-- dictionary. Note that some resource types (fonts and XObjects) are already
+-- managed by \LuaTeX/ and shouldn't be added!
+--
+-- XObject forms can also use resources, but there are several ways to make
+-- \LuaTeX/ reference resources from forms. It is hence left up to the user to
+-- insert page resources managed by us, if they need them. For that, use
+-- `pdf.get_page_resources()`, or the below \TeX/ alternative for that.
+--
+local pdfdict_mt = {
+    __tostring = function(dict)
+        local out = {"<<"}
+        for k, v in pairs(dict) do
+            out[#out+1] = fmt("/%s %s", tostring(k), tostring(v))
+        end
+        out[#out+1] = ">>"
+        return table.concat(out, "\n")
+    end,
+}
+local function pdf_dict(t)
+    return setmetatable(t or {}, pdfdict_mt)
+end
+optex.pdf_dict = pdf_dict
+--
+local resource_dict_objects = {}
+local page_resources = {}
+function pdf.add_page_resource(type, name, value)
+    local resources = page_resources[type]
+    if not resources then
+        local obj = pdf.reserveobj()
+        pdf.setpageresources(fmt("%s /%s %d 0 R", pdf.get_page_resources(), type, obj))
+        resource_dict_objects[type] = obj
+        resources = pdf_dict()
+        page_resources[type] = resources
+    end
+    page_resources[type][name] = value
+end
+function pdf.get_page_resources()
+    return pdf.getpageresources() or ""
+end
+--
+-- New \"pseudo" primitives are introduced.
+-- \`\_addpageresource``{<type>}{<PDF name>}{<PDF dict>}` adds more reources
+-- of given resource <type> to our data structure.
+-- \`\_pageresources` expands to the saved <type>s and object numbers.
+define_lua_command("_addpageresource", function()
+    pdf.add_page_resource(token.scan_string(), token.scan_string(), token.scan_string())
+end)
+define_lua_command("_pageresources", function()
+    tex.print(pdf.get_page_resources())
+end)
+--
+-- We write the objects with resources to the PDF file in the `finish_pdffile`
+-- callback.
+callback.add_to_callback("finish_pdffile", function()
+    for type, dict in pairs(page_resources) do
+        local obj = resource_dict_objects[type]
+        pdf.immediateobj(obj, tostring(dict))
+    end
+end)
+--
+-- \medskip\secc[lua-colors] Handling of colors and transparency using attributes^^M
 --
 -- Because \LuaTeX/ doesn't do anything with attributes, we have to add meaning
 -- to them. We do this by intercepting \TeX/ just before it ships out a page and
 -- inject PDF literals according to attributes.
 --
 local node_id = node.id
+local node_subtype = node.subtype
 local glyph_id = node_id("glyph")
 local rule_id = node_id("rule")
 local glue_id = node_id("glue")
 local hlist_id = node_id("hlist")
 local vlist_id = node_id("vlist")
 local disc_id = node_id("disc")
+local whatsit_id = node_id("whatsit")
+local pdfliteral_id = node_subtype("pdf_literal")
+local pdfsave_id = node_subtype("pdf_save")
+local pdfrestore_id = node_subtype("pdf_restore")
 local token_getmacro = token.get_macro
 
 local direct = node.direct
@@ -442,10 +520,10 @@ local insertbefore = direct.insert_before
 local copy = direct.copy
 local traverse = direct.traverse
 local one_bp = tex.sp("1bp")
-local string_format = string.format
 --
 -- The attribute for coloring is allocated in `colors.opm`
 local color_attribute = registernumber("_colorattr")
+local transp_attribute = registernumber("_transpattr")
 --
 -- Now we define function which creates whatsit nodes with PDF literals. We do
 -- this by creating a base literal, which we then copy and customize.
@@ -459,16 +537,17 @@ local function pdfliteral(str)
 end
 optex.directpdfliteral = pdfliteral
 --
--- The function {\Red`colorize`}`(head, current, current_stroke)` goes through
--- a node list and injects PDF literals according to attributes.
+-- The function {\Red`colorize`}`(head, current, current_stroke, current_tr)`
+-- goes through a node list and injects PDF literals according to attributes.
 -- Its arguments are the head of the list to be colored and the current color
--- for fills and strokes. It is a recursive function – nested
+-- for fills and strokes and the current trasparency attribute.
+-- It is a recursive function – nested
 -- horizontal and vertical lists are handled in the same way. Only the
 -- attributes of “content” nodes (glyphs, rules, etc.) matter. Users drawing
 -- with PDF literals have to set color themselves.
 --
--- Whatsit node with color setting PDF literal is injected only when a
--- different color is needed. Our injection does not care about boxing levels,
+-- Whatsit node with color setting PDF literal is injected only when a different
+-- color or transparency is needed. Our injection does not care about boxing levels,
 -- but this isn't a problem, since PDF literal whatsits just instruct the
 -- `\shipout` related procedures to emit the literal.
 --
@@ -494,21 +573,13 @@ optex.directpdfliteral = pdfliteral
 -- We use the `node.direct` way of working with nodes. This is less safe, and
 -- certainly not idiomatic Lua, but faster and codewise more close to the way
 -- \TeX/ works with nodes.
-local function is_color_needed(head, n, id, subtype) -- returns non-stroke, stroke color needed
+local function is_color_needed(head, n, id, subtype) -- returns fill, stroke color needed
     if id == glyph_id then
         return true, false
     elseif id == glue_id then
         n = getleader(n)
         if n then
-            id = getid(n)
-            if id == hlist_id or id == vlist_id then
-                -- leaders with hlist/vlist get single color
-                return true, false
-            else -- rule
-                -- stretchy leaders with rules are tricky,
-                -- just set both colors for safety
-                return true, true
-            end
+            return true, true
         end
     elseif id == rule_id then
         local width, height, depth = getwhd(n)
@@ -517,49 +588,64 @@ local function is_color_needed(head, n, id, subtype) -- returns non-stroke, stro
             return true, true
         end
         return true, false
+    elseif id == whatsit_id and (subtype == pdfliteral_id
+                or subtype == pdfsave_id
+                or subtype == pdfrestore_id) then
+        return true, true
     end
     return false, false
 end
 
-local function colorize(head, current, current_stroke)
+local function colorize(head, current, current_stroke, current_tr)
     for n, id, subtype in traverse(head) do
         if id == hlist_id or id == vlist_id then
             -- nested list, just recurse
             local list = getlist(n)
-            list, current, current_stroke = colorize(list, current, current_stroke)
+            list, current, current_stroke, current_tr =
+               colorize(list, current, current_stroke, current_tr)
             setlist(n, list)
         elseif id == disc_id then
             -- at this point only no-break (replace) list is of any interest
             local replace = getfield(n, "replace")
             if replace then
-                replace, current, current_stroke = colorize(replace, current, current_stroke)
+                replace, current, current_stroke, current_tr =
+                    colorize(replace, current, current_stroke, current_tr)
                 setfield(n, "replace", replace)
             end
         else
-            local nonstroke_needed, stroke_needed = is_color_needed(head, n, id, subtype)
+            local fill_needed, stroke_needed = is_color_needed(head, n, id, subtype)
             local new = getattribute(n, color_attribute) or 0
-            local newcolor = nil
-            if current ~= new and nonstroke_needed then
-                newcolor = token_getmacro("_color:"..new)
+            local newtr = getattribute(n, transp_attribute) or 0
+            local newliteral = nil
+            if current ~= new and fill_needed then
+                newliteral = token_getmacro("_color:"..new)
                 current = new
             end
             if current_stroke ~= new and stroke_needed then
                 local stroke_color = token_getmacro("_color-s:"..current)
                 if stroke_color then
-                    if newcolor then
-                        newcolor = string_format("%s %s", newcolor, stroke_color)
+                    if newliteral then
+                        newliteral = fmt("%s %s", newliteral, stroke_color)
                     else
-                        newcolor = stroke_color
+                        newliteral = stroke_color
                     end
                     current_stroke = new
                 end
             end
-            if newcolor then
-                head = insertbefore(head, n, pdfliteral(newcolor))
+            if newtr ~= current_tr and fill_needed then -- (fill_ or stroke_needed) = fill_neded
+                if newliteral ~= nil then
+                    newliteral = fmt("%s /tr%d gs", newliteral, newtr)
+                else
+                    newliteral = fmt("/tr%d gs", newtr)
+                end
+                current_tr = newtr
+            end
+            if newliteral then
+                head = insertbefore(head, n, pdfliteral(newliteral))
             end
         end
     end
-    return head, current, current_stroke
+    return head, current, current_stroke, current_tr
 end
 --
 -- Colorization should be run just before shipout. We use our custom callback
@@ -569,36 +655,71 @@ callback.add_to_callback("pre_shipout_filter", function(list)
     -- By setting initial color to -1 we force initial setting of color on
     -- every page. This is useful for transparently supporting other default
     -- colors than black (although it has a price for each normal document).
-    local list = colorize(todirect(list), -1, -1)
+    local list = colorize(todirect(list), -1, -1, 0)
     return tonode(list)
 end, "_colors")
 --
--- We also hook into `luaotfload`'s handling of color. Instead of the default
--- behavior (inserting colorstack whatsits) we set our own attribute. The hook
--- has to be registered {\em after} `luaotfload` is loaded.
-function optex_hook_into_luaotfload()
-    if not luaotfload.set_colorhandler then
-        return -- old luaotfload, colored fonts will be broken
+-- We also hook into `luaotfload`'s handling of color and transparency. Instead
+-- of the default behavior (inserting colorstack whatsits) we set our own
+-- attribute. On top of that, we take care of transparency resources ourselves.
+--
+-- The hook has to be registered {\em after} `luaotfload` is loaded.
+local setattribute = direct.set_attribute
+local token_setmacro = token.set_macro
+local color_count = registernumber("_colorcnt")
+local tex_getcount, tex_setcount = tex.getcount, tex.setcount
+--
+local function set_node_color(n, color) -- "1 0 0 rg" or "0 g", etc.
+    local attr = tonumber(token_getmacro("_color::"..color))
+    if not attr then
+        attr = tex_getcount(color_count)
+        tex_setcount(color_count, attr + 1)
+        local strattr = tostring(attr)
+        token_setmacro("_color::"..color, strattr)
+        token_setmacro("_color:"..strattr, color)
+        token_setmacro("_color-s:"..strattr, string.upper(color))
     end
-    local setattribute = direct.set_attribute
-    local token_setmacro = token.set_macro
-    local color_count = registernumber("_colorcnt")
-    local tex_getcount, tex_setcount = tex.getcount, tex.setcount
-    luaotfload.set_colorhandler(function(head, n, rgbcolor) -- rgbcolor = "1 0 0 rg"
-        local attr = tonumber(token_getmacro("_color::"..rgbcolor))
-        if not attr then
-            attr = tex_getcount(color_count)
-            tex_setcount(color_count, attr + 1)
-            local strattr = tostring(attr)
-            token_setmacro("_color::"..rgbcolor, strattr)
-            token_setmacro("_color:"..strattr, rgbcolor)
-            -- no stroke color set
-        end
-        setattribute(n, color_attribute, attr)
+    setattribute(todirect(n), color_attribute, attr)
+end
+optex.set_node_color = set_node_color
+--
+function optex.hook_into_luaotfload()
+    -- color support for luaotfload v3.13+, otherwise broken
+    pcall(luaotfload.set_colorhandler, function(head, n, rgbcolor) -- rgbcolor = "1 0 0 rg"
+        set_node_color(n, rgbcolor)
         return head, n
+    end)
+
+    -- transparency support for luaotfload v3.22+, otherwise broken
+    pcall(function()
+        luatexbase.add_to_callback("luaotfload.parse_transparent", function(input) -- from "00" to "FF"
+            -- in luaotfload: 0 = transparent, 255 = opaque
+            -- in optex:      0 = opaque,      255 = transparent
+            local alpha = tonumber(input, 16)
+            if not alpha then
+                tex.error("Invalid transparency specification passed to font")
+                return nil
+            elseif alpha == 255 then
+                return nil -- this allows luaotfload to skip calling us for opaque style
+            end
+            local transp = 255 - alpha
+            local transpv = fmt("%.3f", alpha / 255)
+            pdf.add_page_resource("ExtGState", fmt("tr%d", transp), pdf_dict{ca = transpv, CA = transpv})
+            pdf.add_page_resource("ExtGState", "tr0", pdf_dict{ca = 1, CA = 1})
+            return transp -- will be passed to the below function
+        end, "optex")
+
+        luaotfload.set_transparenthandler(function(head, n, transp)
+            setattribute(n, transp_attribute, transp)
+            return head, n
+        end)
     end)
 end
 
    -- History:
+   -- 2022-08-25 expose some useful functions in `optex` namespace
+   -- 2022-08-24 luaotfload transparency with attributes added
+   -- 2022-03-07 transparency in the colorize() function, current_tr added
+   -- 2022-03-05 resources management added
    -- 2021-07-16 support for colors via attributes added
    -- 2020-11-11 optex.lua released

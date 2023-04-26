@@ -2,7 +2,7 @@
 local M = {}
 
 local alloc     = require ('minim-alloc')
-local callbacks = require ('minim-callbacks')
+local cb = require ('minim-callbacks')
 
 alloc.remember('minim-math')
 
@@ -312,7 +312,7 @@ local transformcodes = alloc.saved_table ('math:transformcodes')
 
 -- set a character as transformable
 local function set_transform (num, char)
-    c = alloc.new_count ('math transform '..char)
+    local c = alloc.new_count ('math transform '..char)
     transformcodes[num] = c
     tex.setcount ('global', c, num)
 end
@@ -403,7 +403,7 @@ local function inspect_noads (h,d,n)
     return true
 end
 
-callbacks.register ('mlist_to_mlist', inspect_noads)
+cb.register ('mlist_to_mlist', inspect_noads)
 
 --1 Reading the math character table
 

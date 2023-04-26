@@ -1,5 +1,5 @@
 % tkz-obj-eu-lines.tex
-% Copyright 2020  Alain Matthes
+% Copyright 2022  Alain Matthes
 % This work may be distributed and/or modified under the
 % conditions of the LaTeX Project Public License, either version 1.3
 % of this license or (at your option) any later version.
@@ -7,31 +7,32 @@
 %   http://www.latex-project.org/lppl.txt
 % and version 1.3 or later is part of all distributions of LaTeX
 % version 2005/12/01 or later.
-%
 % This work has the LPPL maintenance status “maintained”.
-% 
 % The Current Maintainer of this work is Alain Matthes.
 
-%  utf8 encoding
-\def\fileversion{3.06c}
-\def\filedate{2020/03/18} 
-\typeout{2020/03/18 3.06c tkz-obj-eu-lines.tex}   
+\def\fileversion{4.25c}
+\def\filedate{2022/09/23} 
+\typeout{2022/09/23 4.25c tkz-obj-eu-lines.tex}   
 \makeatletter
 %<--------------------------------------------------------------------------–>
 %                          les lignes
 %<--------------------------------------------------------------------------–>
-\def\tkz@numl{0}
-\pgfkeys{/tkzDefLine/.cd,
-  mediator/.code           =  \def\tkz@numl{0},
-  perpendicular/.code args =  {through #1} {\def\tkz@numl{1}%
+\def\tkz@numline{0}
+\pgfkeys{/tkzdefline/.cd,
+  mediator/.code           =  \def\tkz@numline{0},
+  perpendicular/.code args =  {through #1} {\def\tkz@numline{1}%
                                             \def\tkz@through{#1}},
-  orthogonal/.code args    =  {through #1} {\def\tkz@numl{1}%
+  orthogonal/.code args    =  {through #1} {\def\tkz@numline{1}%
                                             \def\tkz@through{#1}}, 
-  parallel/.code args      =  {through #1}{\def\tkz@numl{2}%
+  parallel/.code args      =  {through #1}{\def\tkz@numline{2}%
                                            \def\tkz@through{#1}},   
-  bisector/.code           =  \def\tkz@numl{3},
-  bisector out/.code       =  \def\tkz@numl{4},
-  symmedian/.code          =  \def\tkz@numl{5},
+  bisector/.code           =  \def\tkz@numline{3},
+  bisector out/.code       =  \def\tkz@numline{4},
+  symmedian/.code          =  \def\tkz@numline{5},
+  altitude/.code           =  \def\tkz@numline{6},
+  euler/.code              =  \def\tkz@numline{7},
+  tangent from/.code       =  \def\tkz@numline{8} \def\tkz@ptfrom{#1},
+  tangent at/.code         =  \def\tkz@numline{9} \def\tkz@ptat{#1},
   K/.code                  =  \def\tkz@koeff{#1},
   K                        =  1,
   normed/.is if            =  tkz@line@normed,
@@ -39,17 +40,16 @@
   normed                   =  false,
   mediator
 } 
-
 \def\tkzDefLine{\pgfutil@ifnextchar[{\tkz@DefLine}{\tkz@DefLine[]}}
 \def\tkz@DefLine[#1](#2){% 
 \begingroup
-\pgfkeys{/tkzDefLine/.cd,K=1}  
-\pgfqkeys{/tkzDefLine}{#1}  
-\ifcase\tkz@numl%
+%\pgfkeys{/tkzdefline/.cd,K=1}  
+\pgfqkeys{/tkzdefline}{#1}  
+\ifcase\tkz@numline%
  % first case 0
  \tkzDefMediatorLine(#2)  
   \or% 1
-  \tkzDefOrthLine[\tkz@koeff](#2)(\tkz@through)  
+  \tkzDefOrthLine[\tkz@koeff](#2)
   \or% 2
    \tkzDefLineLL(#2)
   \or% 3
@@ -58,6 +58,14 @@
   \tkzDefBisectorOutLine(#2)
   \or% 5
   \tkzDefSymmedianLine(#2)
+    \or% 6
+  \tkzDefAltitudeLine(#2)
+  \or% 7
+   \tkzDefEulerLine(#2)
+   \or% 8
+   \tkzTgtFromP(#2)(\tkz@ptfrom)
+ \or% 9
+   \tkzTgtAt(#2)(\tkz@ptat)
   \fi    
 \endgroup
 }
@@ -74,7 +82,7 @@
    \pgfinterruptboundingbox 
    \path[coordinate](\tkz@through)--++(\tkz@koeff\pgf@xa,\tkz@koeff\pgf@ya)%
          coordinate (tkzPointResult);
-	 \endpgfinterruptboundingbox
+   \endpgfinterruptboundingbox
    \iftkz@line@normed
       \tkzVecKNorm(\tkz@through,tkzPointResult)
    \fi
@@ -90,9 +98,9 @@
   \pgfnodealias{tkz@OLtmp}{tkzPointResult}
   \tkz@VecKCoLinear[\tkz@koeff](#2,tkz@OLtmp,\tkz@through)
   \iftkz@line@normed
-	  \pgfinterruptboundingbox 
+    \pgfinterruptboundingbox 
        \tkzVecKNorm(\tkz@through,tkzPointResult)
-		\endpgfinterruptboundingbox 
+    \endpgfinterruptboundingbox 
   \fi
 \endgroup}% 
 %<--------------------------------------------------------------------------–>
@@ -105,7 +113,7 @@
 \begingroup
    \tkzDefEquilateral(#2,#3) 
    \pgfnodealias{tkzFirstPointResult}{tkzPointResult}
-	 \tkzDefEquilateral(#3,#2)
+   \tkzDefEquilateral(#3,#2)
    \pgfnodealias{tkzSecondPointResult}{tkzPointResult} 
    \ifx\tkz@koeff=1 %
    \else
@@ -119,12 +127,12 @@
    \iftkz@line@normed 
       \tkzDefMidPoint(#2,#3)
       \pgfnodealias{tkz@mid}{tkzPointResult}
-      \pgfinterruptboundingbox
+     % \pgfinterruptboundingbox
          \tkzVecKNorm[\tkz@koeff](tkz@mid,tkzFirstPointResult)
          \pgfnodealias{tkzFirstPointResult}{tkzPointResult}
          \tkzVecKNorm[\tkz@koeff](tkz@mid,tkzSecondPointResult)
          \pgfnodealias{tkzSecondPointResult}{tkzPointResult}
-      \endpgfinterruptboundingbox
+    %  \endpgfinterruptboundingbox
    \fi
 \endgroup}
 % autre possibilité
@@ -134,10 +142,11 @@
 %<--------------------------------------------------------------------------–>
 \def\tkzDefBisectorLine(#1,#2,#3){% 
 \begingroup
-	\pgfinterruptboundingbox 
+  \pgfinterruptboundingbox 
   \tkzDuplicateSegment(#2,#1)(#2,#3)
   \pgfnodealias{bi@tmp}{tkzPointResult}  
-  \tkzDefEquilateral(bi@tmp,#1)
+  \tkzDefMidPoint(bi@tmp,#1)
+%  \tkzDefEquilateral(bi@tmp,#1)
   \ifx\tkz@koeff=1 %
   \else
     \tkzVecK[\tkz@koeff](#2,tkzPointResult)
@@ -145,7 +154,7 @@
   \iftkz@line@normed
      \tkzVecKNorm[\tkz@koeff](#2,tkzPointResult)
     \fi
-		\endpgfinterruptboundingbox 
+    \endpgfinterruptboundingbox 
 \endgroup
 }
 %<--------------------------------------------------------------------------–>
@@ -153,7 +162,7 @@
 %<--------------------------------------------------------------------------–>
 \def\tkzDefBisectorOutLine(#1,#2,#3){% 
 \begingroup
-	 \pgfinterruptboundingbox 
+   \pgfinterruptboundingbox 
    \tkzDuplicateLength(#2,#1)(#2,#3)
    \pgfnodealias{out@tmp}{tkzPointResult}
    \tkzDefMidPoint(#1,out@tmp) 
@@ -166,7 +175,7 @@
    \iftkz@line@normed
      \tkzVecKNorm[\tkz@koeff](#2,tkzPointResult)
     \fi
-				  \endpgfinterruptboundingbox 
+          \endpgfinterruptboundingbox 
 \endgroup
 } 
 %<--------------------------------------------------------------------------–>
@@ -178,7 +187,7 @@
   \pgfnodealias{sym@pt1}{tkzPointResult}
   \tkzDefMidPoint(#1,#3)
   \pgfnodealias{sym@pt2}{tkzPointResult}
-	\tkzUSymOrth(#2,sym@pt1)(sym@pt2)
+  \tkzUSymOrth(#2,sym@pt1)(sym@pt2)
    \ifx\tkz@koeff=1 %
    \else
      \tkzVecK[\tkz@koeff](#2,tkzPointResult)
@@ -188,43 +197,82 @@
   \fi
 \endgroup
 }
-%<-------------------------------------------------------------------------–> 
+%<--------------------------------------------------------------------------–>
+%              Altitude Line
+%<--------------------------------------------------------------------------–>
+\def\tkzDefAltitudeLine(#1,#2,#3){%
+\begingroup
+   \pgfinterruptboundingbox
+   \tkzUProjection(#1,#3)(#2)
+   \pgfnodealias{ort@pta}{tkzPointResult}
+   \endpgfinterruptboundingbox  
+\endgroup
+}
+%<--------------------------------------------------------------------------–>
+%              Euler Line
+%<--------------------------------------------------------------------------–>
+\def\tkzDefEulerLine(#1,#2,#3){%
+\begingroup
+  \pgfinterruptboundingbox
+  \tkzOrthoCenter(#1,#2,#3)  
+  \pgfnodealias{euler@pt1}{tkzPointResult}
+   \tkzEulerCenter(#1,#2,#3)  
+   \pgfnodealias{euler@pt2}{tkzPointResult}
+   \pgfnodealias{tkzSecondPointResult}{euler@pt2}
+   \pgfnodealias{tkzFirstPointResult}{euler@pt1}
+   \endpgfinterruptboundingbox  
+\endgroup
+}
 %<--------------------------------------------------------------------------–>
 %    tangente à cercle passant par un point donné
 %<--------------------------------------------------------------------------–>
-\def\tkzTgtFromPR(#1,#2)(#3){%
-    \begingroup
-    \tkzDefMidPoint(#1,#3) 
-    \tkzCalcLength(tkzPointResult,#1)
-    \tkzInterCCR(#1,#2)(tkzPointResult,\tkzLengthResult pt){%
-    tkzFirstPointResult}{%
-    tkzSecondPointResult}%
-    \endgroup
-}
-
-\def\tkzTgtFromP(#1,#2)(#3){%
-    \begingroup
-    \tkzDefMidPoint(#1,#3) 
-    \tkzCalcLength(#1,#2)
-    \tkzGetLength{tkz@radone}%
-    \tkzCalcLength(tkzPointResult,#1)
-    \tkzGetLength{tkz@radtwo}%
-    \tkzInterCCR(#1,\tkz@radone pt)(tkzPointResult,\tkz@radtwo pt){%
-    tkzFirstPointResult}{%
-    tkzSecondPointResult}%
-    \endgroup
-}     
+   
 \def\tkzTgtAt(#1)(#2){%
 \begingroup
      \tkz@VecKOrthNorm[-1](#2,#1)  
  \endgroup
-} %<--------------------------------------------------------------------------–> %<--------------------------------------------------------------------------–>
+}
+%<-------------------------------------------------------------------------–> 
+\def\tkzTgtFromP(#1,#2)(#3){%
+\begingroup
+    \tkz@@CalcLengthcm(#1,#2){tkz@radone}
+    \tkzDefMidPoint(#1,#3) 
+    \tkz@@CalcLengthcm(tkzPointResult,#1){tkz@radtwo}
+    \tkzInterCCR(#1,\tkz@radone)(tkzPointResult,\tkz@radtwo){%
+    tkzFirstPointResult}{tkzSecondPointResult}%
+    \tkzFindAngle(#3,tkzFirstPointResult,#1)   \tkzGetAngle{tkz@an}
+    \ifdim\tkz@an pt<180 pt\relax%
+    \else
+    \pgfnodealias{tkzPointTmp}{tkzSecondPointResult}
+    \pgfnodealias{tkzSecondPointResult}{tkzFirstPointResult}
+    \pgfnodealias{tkzFirstPointResult}{tkzPointTmp}
+    \fi
+\endgroup
+} 
+%<-------------------------------------------------------------------------–>  
+\def\tkzTgtFromPR(#1,#2)(#3){%
+\begingroup
+    \tkzDefMidPoint(#1,#3)
+    \tkz@@CalcLengthcm(tkzPointResult,#1){tkzLengthResult}
+    \tkzInterCCR(#1,#2)(tkzPointResult,\tkzLengthResult){%
+    tkzFirstPointResult}{%
+    tkzSecondPointResult}%
+    \tkzFindAngle(#3,tkzFirstPointResult,#1)   \tkzGetAngle{tkz@an}
+    \ifdim\tkz@an pt<180 pt\relax%
+    \else
+    \pgfnodealias{tkzPointTmp}{tkzSecondPointResult}
+    \pgfnodealias{tkzSecondPointResult}{tkzFirstPointResult}
+    \pgfnodealias{tkzFirstPointResult}{tkzPointTmp}
+    \fi
+\endgroup
+}
+%<--------------------------------------------------------------------------–>
 \def\tkz@numtang{0}
 \pgfkeys{/tkz@tang/.cd,
-	at/.code          = {\def\tkz@numtang{0}\def\tkz@ptat{#1}},
-	from/.code        = {\def\tkz@numtang{1}\def\tkz@ptfrom{#1}},
-	from with R/.code = {\def\tkz@numtang{2}\def\tkz@ptfrom{#1}}
-	}
+  at/.code          = {\def\tkz@numtang{0}\def\tkz@ptat{#1}},
+  from/.code        = {\def\tkz@numtang{1}\def\tkz@ptfrom{#1}},
+  from with R/.code = {\def\tkz@numtang{2}\def\tkz@ptfrom{#1}}
+  }
 %<--------------------------------------------------------------------------–>
 \def\tkzDefTangent{\pgfutil@ifnextchar[{\tkz@Tangent}{\tkz@Tangent[]}}
 

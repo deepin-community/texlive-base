@@ -1,6 +1,5 @@
 .PS
 #Euro.m4
-include(pstricks.m4)
 gen_init
 divert(-1)
                                `euro_simple([height])

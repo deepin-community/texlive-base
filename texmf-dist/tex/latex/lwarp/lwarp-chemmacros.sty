@@ -6,7 +6,7 @@
 %%
 %% lwarp.dtx  (with options: `chemmacros')
 %% This is a generated file.
-%% Copyright 2016-2020 Brian Dunn
+%% Copyright 2016-2022 Brian Dunn
 %% 
 %% This work may be distributed and/or modified under the
 %% conditions of the LaTeX Project Public License, either version 1.3
@@ -16,14 +16,22 @@
 %% and version 1.3 or later is part of all distributions of LaTeX
 %% version 2005/12/01 or later.
 
-\LWR@ProvidesPackagePass{chemmacros}[2017/08/28]
+\LWR@ProvidesPackagePass{chemmacros}[2022/02/13]
 \ExplSyntaxOn
-
-\newcommand{\@ifchemmacrosmoduleloaded}[1]{%
-\@ifl@aded{\c__chemmacros_module_extension_tl}{\c__chemmacros_module_prefix_tl.#1}%
-}
-
-\ExplSyntaxOff
+\prg_set_conditional:Npnn \chemmacros_if_package_loaded:n #1 {p,T,F,TF}
+  {
+    \cs_if_exist:cTF {ver@#1.sty}
+      { \prg_return_true: }
+      {
+        \cs_if_exist:cTF {ver@lwarp-#1.sty}
+            { \prg_return_true: }
+            { \prg_return_false: }
+      }
+  }
+\hook_gput_code:nnn {begindocument/end} {chemmacros}
+  {
+      \bool_set_false:N \l__chemmacros_hyperref_bool
+  }
 \DeclareDocumentEnvironment{polymerdelims}{}
 {\begin{lateximage}[-chemmacros- polymer]}
 {\end{lateximage}}
@@ -31,9 +39,8 @@
 \DeclareDocumentEnvironment{redoxreaction}{m m}
 {\begin{lateximage}[-chemmacros- redoxreaction]}
 {\end{lateximage}}
-\ExplSyntaxOn
 \AtBeginDocument{
-\@ifchemmacrosmoduleloaded{acid-base}{
+\chemmacros_module_if_loaded:nTF{{acid-base}}{
 \PackageInfo{lwarp}{Patching~chemmacros~module~acid-base}
 
 \cs_gset_protected:Npn \chemmacros_p:n #1
@@ -41,9 +48,14 @@
     \begingroup
     \boolfalse{mathjax}
     \LWR@subsingledollar*{
-        \textbackslash{}p\{\LWR@HTMLsanitize{#1}\}
+        \textbackslash{}%
+        p%
+        \{%
+            \LWR@HTMLsanitizedetokenized{\detokenize{#1}}%
+        \}
     }{
-        chemmacrosp\protect\LWR@HTMLsanitize{\detokenize\expandafter{#1}}%
+        chemmacrosp%
+        \protect\LWR@HTMLsanitizedetokenized{\detokenize\expandafter{#1}}%
     }{
     \group_begin:
       \mbox
@@ -60,7 +72,7 @@
     \begingroup
     \boolfalse{mathjax}
     \LWR@subsingledollar*{\textbackslash{}pH}{chemmacros}{
-        \chemmacros_p:n { \chemmacros_chemformula:n {H} }
+        \chemmacros_p:n { \chemmacros_formula:n {H} }
     }
     \endgroup
 }
@@ -69,7 +81,7 @@
     \begingroup
     \boolfalse{mathjax}
     \LWR@subsingledollar*{\textbackslash{}pOH}{chemmacros}{
-        \chemmacros_p:n { \chemmacros_chemformula:n {OH} }
+        \chemmacros_p:n { \chemmacros_formula:n {OH} }
     }
     \endgroup
 }
@@ -132,10 +144,10 @@
     \endgroup
 }
 
-}{}% \@ifchemmacrosmoduleloaded
+}{}% module loaded
 }% AtBeginDocument
 \AtBeginDocument{
-\@ifchemmacrosmoduleloaded{charges}{
+\chemmacros_module_if_loaded:nTF{{charges}}{
 \PackageInfo{lwarp}{Patching~chemmacros~module~charges}
 
 \cs_gset_protected:Npn \fplus  {
@@ -153,33 +165,31 @@
     \endgroup
 }
 
-}{}% \@ifchemmacrosmoduleloaded
+}{}% Module loaded.
 }% AtBeginDocument
 \AtBeginDocument{
-\@ifchemmacrosmoduleloaded{nomenclature}{
+\chemmacros_module_if_loaded:nTF{{nomenclature}}{
 \PackageInfo{lwarp}{Patching~chemmacros~module~nomenclature}
 
 \cs_gset_protected:Npn \chemmacros_charge:n #1
   {
     \ifnumcomp{\value{LWR@lateximagedepth}}{>}{0}
-    {\chemmacros_chemformula:n { {}^{#1} }}
+    {\chemmacros_formula:n { {}^{#1} }}
     {
         \ifmmode
-            {\chemmacros_chemformula:n { {}^{#1} }}
+            {\chemmacros_formula:n { {}^{#1} }}
         \else
             { \textsuperscript{\ensuremath{#1}} }
         \fi
     }
   }
 
-\LetLtxMacro\LWR@chemmacros@origchemprime\chemprime
 
-\protected\def\chemprime { \HTMLunicode{2032} }
-
-\appto\LWR@restoreorigformatting{%
-\LetLtxMacro\chemprime\LWR@chemmacros@origchemprime%
+\hook_gput_code:nnn {begindocument/end} {chemmacros}
+{
+\protected\def\LWR@HTML@chemprime { \HTMLunicode{2032} }
+\LWR@formatted{chemprime}
 }
-\ChemCompatibilityFrom{5.8}
 \cs_gset_protected:Npn \__chemmacros_cip:n #1
   {
     \tl_set:Nn \l__chemmacros_tmpa_tl {#1}
@@ -196,7 +206,6 @@
         }}% lwarp
     }
   }
-\EndChemCompatibility
 \RenewDocumentCommand \Sconf { O{S} } {
 \begin{lateximage}[\textbackslash{}Sconf{[}#1{]}]*
     \chemmacros_sconf:n {#1}
@@ -216,9 +225,7 @@
         \chemmacros_coordination_symbol:nnnn
         { \l__chemmacros_coord_use_hyphen_bool }
         {
-            \chemmacros_if_compatibility:nnTF {>} {5.7}
             { \c_true_bool }
-            { \c_false_bool }
         }
         { \chemeta }
         {#1}
@@ -234,9 +241,7 @@
         \chemmacros_coordination_symbol:nnnn
         { \l__chemmacros_coord_use_hyphen_bool }
         {
-            \chemmacros_if_compatibility:nnTF {>} {5.7}
             { \c_true_bool }
-            { \c_false_bool }
         }
         { \chemkappa }
         {#1}
@@ -257,10 +262,10 @@
     }
     \endgroup
   }
-}{}% \@ifchemmacrosmoduleloaded
+}{}% Module loaded.
 }% AtBeginDocument
 \AtBeginDocument{
-\@ifchemmacrosmoduleloaded{particles}{
+\chemmacros_module_if_loaded:nTF{{particles}}{
 \PackageInfo{lwarp}{Patching~chemmacros~module~particles}
 
 \cs_gset_protected:Npn \chemmacros_declare_nucleophile:Nn #1#2
@@ -270,11 +275,10 @@
         \bool_if:NTF \l__chemmacros_nucleophile_elpair_bool
           {
             \chemmacros_elpair:n { #2 }
-            \chemmacros_if_compatibility:nnT {>=} {5.3}
               { \skip_horizontal:N \l__chemmacros_nucleophile_dim }
-            \chemmacros_chemformula:n { {}^{-} }
+            \chemmacros_formula:n { {}^{-} }
           }
-          { \chemmacros_chemformula:n { #2^{-} } }
+          { \chemmacros_formula:n { #2^{-} } }
       }
     \DeclareDocumentCommand #1 {o}
       {%
@@ -291,10 +295,10 @@
 \RenewChemNucleophile \Nuc {Nu}
 \RenewChemNucleophile \ba  {ba}
 
-}{}% \@ifchemmacrosmoduleloaded
+}{}% Module loaded.
 }% AtBeginDocument
 \AtBeginDocument{
-\@ifchemmacrosmoduleloaded{phases}{
+\chemmacros_module_if_loaded:nTF{{phases}}{
 \PackageInfo{lwarp}{Patching~chemmacros~module~phases}
 
 \cs_undefine:N \chemmacros_phase:n
@@ -317,10 +321,10 @@
       }
   }
 
-}{}% \@ifchemmacrosmoduleloaded
+}{}% Module loaded.
 }% AtBeginDocument
 \AtBeginDocument{
-\@ifchemmacrosmoduleloaded{mechanisms}{
+\chemmacros_module_if_loaded:nTF{{mechanisms}}{
 \PackageInfo{lwarp}{Patching~chemmacros~module~mechanisms}
 
 \chemmacros_define_keys:nn {textmechanisms}
@@ -432,10 +436,10 @@
   }%
 }
 
-}{}% \@ifchemmacrosmoduleloaded
+}{}% Module loaded.
 }% AtBeginDocument
 \AtBeginDocument{
-\@ifchemmacrosmoduleloaded{newman}{
+\chemmacros_module_if_loaded:nTF{{newman}}{
 \PackageInfo{lwarp}{Patching~chemmacros~module~newman}
 
 \RenewDocumentCommand \newman {od()m}%
@@ -452,10 +456,10 @@
     \end{lateximage}
   }%
 
-}{}% \@ifchemmacrosmoduleloaded
+}{}% Module loaded.
 }% AtBeginDocument
 \AtBeginDocument{
-\@ifchemmacrosmoduleloaded{orbital}{
+\chemmacros_module_if_loaded:nTF{{orbital}}{
 \PackageInfo{lwarp}{Patching~chemmacros~module~orbital}
 
 \RenewDocumentCommand \orbital {om}
@@ -463,7 +467,10 @@
     \IfValueTF{#1}
     {
         \begin{lateximage}[%
-            \textbackslash{}orbital{[}\LWR@HTMLsanitize{#1}{]}\{#2\}%
+            \textbackslash{}%
+            orbital{[}%
+            \LWR@HTMLsanitizedetokenized{\detokenize{#1}}%
+            {]}\{#2\}%
         ]*[][margin-left: 1em ; margin-right: 1em]
     }
     {
@@ -480,15 +487,16 @@
     \end{lateximage}
   }
 
-}{}% \@ifchemmacrosmoduleloaded
+}{}% Module loaded.
 }% AtBeginDocument
 \AtBeginDocument{
-\@ifchemmacrosmoduleloaded{reactions}{
+\chemmacros_module_if_loaded:nTF{{reactions}}{
 \PackageInfo{lwarp}{Patching~chemmacros~module~reactions}
 
-\cs_gset_protected:Npn \chemmacros_declare_reaction_env:nnnn #1#2#3#4
+\cs_gset_protected:Npn \__chemmacros_declare_reaction_env:nnnn #1#2#3#4
   {
-    \exp_args:Nnx \DeclareDocumentEnvironment {#1} { O{} \prg_replicate:nn {#3+0} {m} }
+    \exp_args:Nnx \DeclareDocumentEnvironment {#1}
+      { \int_compare:nT { #3+0 = 0 } {!} O{} \prg_replicate:nn {#3+0} {m} }
       {
         \boolfalse{mathjax}%                        lwarp
         \ifdefvoid{\LWR@ThisAltText}{%              lwarp
@@ -496,13 +504,15 @@
         }{}%                                        lwarp
         \chemmacros_add_reaction_description:n {##1}
         \__chemmacros_begin_reaction:
-        \chemmacros_reaction_read:nnw {#2} {#4}
+        \__chemmacros_reaction_read:nnw {#2} {#4}
       }
       {
         \__chemmacros_end_reaction:
         \gdef\LWR@ThisAltText{}%                    lwarp
+        \ignorespacesafterend
       }
   }
+
 \cs_generate_variant:Nn \chemmacros_declare_reaction_env:nnnn {nnnV}
 
 \RenewChemReaction {reaction}   {equation}
@@ -510,10 +520,170 @@
 \RenewChemReaction {reactions}  {align}
 \RenewChemReaction {reactions*} {align*}
 
-}{}% \@ifchemmacrosmoduleloaded
+}{}% Module loaded.
 }% AtBeginDocument
+\StartDefiningTabulars%     lwarp
+
+\RenewDocumentCommand \printreactants {s}
+  {
+    \group_begin:
+      \chemmacros_set_keys:nn {reactants} { switch = false }
+      \int_step_variable:nNn
+        { \seq_count:N \g_chemnum_initiated_compounds_seq }
+        \l__chemmacros_reactants_tmpa_tl
+        {
+          \seq_put_right:Nx
+            \l__chemmacros_reactants_tmpa_seq
+            {
+              \chemnum_cmpd:nnne { \c_false_bool } { \c_true_bool } {}
+                {
+                  \seq_item:NV
+                    \g_chemnum_initiated_compounds_seq
+                    \l__chemmacros_reactants_tmpa_tl
+                }
+              &
+              \bool_if:nT {#1}
+                {
+                  \seq_item:NV
+                    \g_chemnum_initiated_compounds_seq
+                    \l__chemmacros_reactants_tmpa_tl
+                  &
+                }
+              % TODO: expl3-command ??
+              \solvent
+                {
+                  \seq_item:NV
+                    \g_chemnum_initiated_compounds_seq
+                    \l__chemmacros_reactants_tmpa_tl
+                }
+              \tabularnewline
+            }
+          \tl_set:Nx
+            \l__chemmacros_reactants_tmpb_tl
+            {
+              \seq_item:NV
+                \g_chemnum_initiated_compounds_seq
+                \l__chemmacros_reactants_tmpa_tl
+            }
+          \chemmacros_reactants_list_subreactant:Vn
+            \l__chemmacros_reactants_tmpb_tl
+            {#1}
+        }
+      % TODO: longtable ?
+      %       table customizable?
+      % first draft of two styles
+      \par
+      \noindent
+      \bool_if:NTF \l__chemmacros_reactants_printreactants_style_bool
+        {
+          \str_case:Vn \l__chemmacros_reactants_printreactants_style_str
+            {
+              {xltabular}
+              {
+                \chemmacros_if_package_loaded:nTF {xltabular}
+                  {
+                    \bool_if:nTF {#1}
+                      {
+                        \begin {xltabular}
+                          { \textwidth }
+                          { @{}ll>{\raggedright\arraybackslash}X@{} }
+                      }
+                      {
+                        \begin {xltabular}
+                          { \textwidth }
+                          { @{}l>{\raggedright\arraybackslash}X@{} }
+                      }
+                    \seq_use:Nn \l__chemmacros_reactants_tmpa_seq { }
+                    \end{xltabular}
+                  }
+                  {
+                    \msg_expandable_error:nnnn
+                      {chemmacros}
+                      {package-not-loaded}
+                      { \printreactants }
+                      {xltabular}
+                  }
+              }
+              {longtable}
+              {
+                \chemmacros_if_package_loaded:nTF {longtable}
+                  {
+                    \bool_if:nTF {#1}
+                      {
+                        \begin {longtable}[l]
+                          { @{}ll>{\raggedright\arraybackslash}p{0.6\textwidth}@{} }
+                      }
+                      {
+                        \begin {longtable}[l]
+                        { @{}l>{\raggedright\arraybackslash}p{0.9\textwidth}@{} }
+                      }
+                    \seq_use:Nn \l__chemmacros_reactants_tmpa_seq { }
+                    \end{longtable}
+                  }
+                  {
+                    \msg_expandable_error:nnnn
+                      {chemmacros}
+                      {package-not-loaded}
+                      { \printreactants }
+                      {longtable}
+                  }
+              }
+            }
+    }
+        {
+            \msg_warning:nn {chemmacros} {missing-printreactants-style}
+        }
+    \group_end:
+  }
+
+\cs_gset_protected:Npn \chemmacros_reactants_list_subreactant:nn #1#2
+  {
+    \chemnum_if_subcompounds:nT {#1}
+      {
+        \int_step_variable:nNn
+          { \chemnum_count_subcompounds:n {#1} }
+          \l__chemmacros_reactants_tmpa_tl
+          {
+            \seq_put_right:Nx
+            \l__chemmacros_reactants_tmpa_seq
+              {
+                \chemnum_cmpd:nnne { \c_false_bool } { \c_true_bool } {}
+                  {
+                    \exp_not:n {#1}
+                    \exp_not:V \l_chemnum_compound_separator_tl
+                    \chemnum_get_subcompound:nV
+                      {#1}
+                      \l__chemmacros_reactants_tmpa_tl
+                  }
+                &
+                \bool_if:nT {#2}
+                  {
+                    #1
+                    \l_chemnum_compound_separator_tl
+                    \chemnum_get_subcompound:nV
+                      {#1}
+                      \l__chemmacros_reactants_tmpa_tl
+                    &
+                  }
+                % TODO: expl3-command ??
+                \solvent
+                  {
+                    #1
+                    \l_chemnum_compound_separator_tl
+                    \chemnum_get_subcompound:nV
+                      {#1}
+                      \l__chemmacros_reactants_tmpa_tl
+                  }
+                \tabularnewline
+              }
+          }
+      }
+  }
+\cs_generate_variant:Nn \chemmacros_reactants_list_subreactant:nn {V}
+
+\StopDefiningTabulars%      lwarp
 \AtBeginDocument{
-\@ifchemmacrosmoduleloaded{redox}{
+\chemmacros_module_if_loaded:nTF{{redox}}{
 \PackageInfo{lwarp}{Patching~chemmacros~module~redox}
 
 \NewDocumentCommand \LWR@chemmacros@ox { s m >{\SplitArgument{1}{,}}m }
@@ -530,18 +700,26 @@
     \IfBooleanTF {#1}
       {
         \LWR@subsingledollar*{% yes hash
-            \textbackslash{}ox*\{\LWR@HTMLsanitize{#3}\}% alt
+            \textbackslash{}%
+            ox*%
+            \{%
+                \LWR@HTMLsanitizedetokenized{\detokenize{#3}}%
+            \}% alt
         }{%
-            star \protect\LWR@HTMLsanitize{\detokenize\expandafter{#2}}%
+            star \protect\LWR@HTMLsanitizedetokenized{\detokenize\expandafter{#2}}%
         }{%
             \LWR@chemmacros@ox* {#2} {#3}% contents
         }%
       }
       {
         \LWR@subsingledollar*{% yes hash
-            \textbackslash{}ox*\{\LWR@HTMLsanitize{#3}\}% alt
+            \textbackslash{}%
+            ox%
+            \{%
+                \LWR@HTMLsanitizedetokenized{\detokenize{#3}}%
+            \}% alt
         }{%
-            \protect\LWR@HTMLsanitize{\detokenize\expandafter{#2}}%
+            \protect\LWR@HTMLsanitizedetokenized{\detokenize\expandafter{#2}}%
         }{%
             \LWR@chemmacros@ox {#2} {#3}% contents
         }%
@@ -549,10 +727,10 @@
     \endgroup
   }
 
-}{}% \@ifchemmacrosmoduleloaded
+}{}% Module loaded.
 }% AtBeginDocument
 \AtBeginDocument{
-\@ifchemmacrosmoduleloaded{scheme}{
+\chemmacros_module_if_loaded:nTF{{scheme}}{
 \PackageInfo{lwarp}{Patching~chemmacros~module~scheme}
 
 \ifdefstring{\schemename}{los}{
@@ -561,30 +739,12 @@ name = \chemmacros_translate:n {scheme-name}
 }
 }{}
 
-}{}% \@ifchemmacrosmoduleloaded
+}{}% Module loaded.
 }% AtBeginDocument
 \AtBeginDocument{
-\@ifchemmacrosmoduleloaded{spectroscopy}{
+\chemmacros_module_if_loaded:nTF{{spectroscopy}}{
 \PackageInfo{lwarp}{Patching~chemmacros~module~spectroscopy}
 
-\ChemCompatibilityTo{5.8}
-\cs_gset_protected:Npn \__chemmacros_nmr_base:nn #1#2
-  {
-    \tl_if_blank:VF \g__chemmacros_nmr_element_coupled_tl
-      {
-        \tl_put_left:Nn \g__chemmacros_nmr_element_coupled_tl { \{ }
-        \tl_put_right:Nn \g__chemmacros_nmr_element_coupled_tl { \} }
-      }
-    \tl_put_left:Nn \g__chemmacros_nmr_element_coupled_tl {#2}
-    \textsuperscript{#1}
-    \bool_if:NTF \l__chemmacros_nmr_parse_bool
-      { \chemformula_ch:nV {} \g__chemmacros_nmr_element_coupled_tl }
-      { \chemmacros_chemformula:V \g__chemmacros_nmr_element_coupled_tl }
-    \tl_use:N \l__chemmacros_nmr_element_method_connector_tl
-    \tl_use:N \l__chemmacros_nmr_method_tl
-  }
-\EndChemCompatibility
-\ChemCompatibilityFrom{5.8}
 \cs_gset_protected:Npn \__chemmacros_nmr_base:nn #1#2
   {
     \group_begin:
@@ -600,17 +760,16 @@ name = \chemmacros_translate:n {scheme-name}
         {
           \bool_if:NTF \l__chemmacros_nmr_parse_bool
             { \chemformula_ch:nV {} \g__chemmacros_nmr_element_coupled_tl }
-            { \chemmacros_chemformula:V \g__chemmacros_nmr_element_coupled_tl }
+            { \chemmacros_formula:V \g__chemmacros_nmr_element_coupled_tl }
         }
       \tl_use:N \l__chemmacros_nmr_element_method_connector_tl
       \tl_use:N \l__chemmacros_nmr_method_tl
     \group_end:
   }
-\EndChemCompatibility
 
 \cs_gset_protected:Npn \chemmacros_nmr_position:n #1
   {
-    \chemmacros_chemformula:x
+    \chemmacros_formula:x
       {
         \exp_not:V \g__chemmacros_nmr_element_tl
         \bool_if:NF \l__chemmacros_nmr_position_side_bool
@@ -642,7 +801,7 @@ name = \chemmacros_translate:n {scheme-name}
             \textsubscript% lwarp
               {
                 \l__chemmacros_nmr_coupling_nuclei_pre_tl
-                \chemmacros_chemformula:n {#2}
+                \chemmacros_formula:n {#2}
                 \l__chemmacros_nmr_coupling_nuclei_post_tl
               }
           }
@@ -651,7 +810,7 @@ name = \chemmacros_translate:n {scheme-name}
         \tl_set:Nn \l__chemmacros_nmr_coupling_nuclei_tl
           {
             \l__chemmacros_nmr_coupling_nuclei_pre_tl
-            \chemmacros_chemformula:n {#2}
+            \chemmacros_formula:n {#2}
             \l__chemmacros_nmr_coupling_nuclei_post_tl
           }
       }
@@ -707,7 +866,7 @@ name = \chemmacros_translate:n {scheme-name}
                 \bool_if:NT \l__chemmacros_nmr_comma_bool
                     { , ~ }
                 \bool_if:NT \l__chemmacros_nmr_solvent_bool
-                    { \chemmacros_chemformula:n {#4} }
+                    { \chemmacros_formula:n {#4} }
                 \bool_if:NT \l__chemmacros_nmr_delimiters_bool
                     { ) }
                 \tl_if_blank:nT {#1} {:~}
@@ -773,19 +932,26 @@ name = \chemmacros_translate:n {scheme-name}
     \IfBooleanF {#1} { \bool_if:NT \l__chemmacros_nmr_use_equal_bool { ~ = } }
   }
 
-}{}% \@ifchemmacrosmoduleloaded
+}{}% Module loaded.
 }% AtBeginDocument
 \AtBeginDocument{
-\@ifchemmacrosmoduleloaded{thermodynamics}{
+\chemmacros_module_if_loaded:nTF{{thermodynamics}}{
 \PackageInfo{lwarp}{Patching~chemmacros~module~thermodynamics}
 
-\cs_gset_protected:Npn \chemmacros_state:nn #1#2
+\cs_gset_protected:Npn \chemmacros_state:nnnnnn #1#2#3#4#5#6
   {
     \group_begin:
-      \boolfalse{mathjax}
-      \chemmacros_set_keys:nn {thermodynamics} {#1}
+      \chemmacros_set_keys:ne {thermodynamics}
+        {
+          \exp_not:n {#1} ,
+          \tl_if_novalue:nF {#2} { subscript-left = \exp_not:n {#2} , }
+          \tl_if_novalue:nF {#3} { superscript-left = \exp_not:n {#3} , }
+          \tl_if_novalue:nF {#5} { subscript-right = \exp_not:n {#5} , }
+          \tl_if_novalue:nF {#6} { superscript-right = \exp_not:n {#6} }
+        }
         \LWR@subsingledollar*{% yes hashing
-            \textbackslash{}state\{\LWR@HTMLsanitize{#2}\}% alt
+            \textbackslash{}state%
+            \{\LWR@HTMLsanitizedetokenized{\detokenize{#4}}\}% alt
         }{%
             chemmacros_state% add'l hashing
             #1% options
@@ -795,31 +961,32 @@ name = \chemmacros_translate:n {scheme-name}
             RSB \tl_use:N \l__chemmacros_state_sb_right_tl
         }
         {
-         \LWR@origensuredmath{
-          \chemmacros_text:V \l__chemmacros_state_pre_tl
-          \c_math_superscript_token
-            { \chemmacros_text:V \l__chemmacros_state_sp_left_tl }
-          \tl_if_empty:NTF \l__chemmacros_state_sb_left_tl
-          {}
-          {
-            \c_math_subscript_token
-            { \chemmacros_text:V \l__chemmacros_state_sb_left_tl }
-          }
-          #2
-          \c_math_superscript_token
-            { \chemmacros_text:V \l__chemmacros_state_sp_right_tl }
-          \tl_if_empty:NTF \l__chemmacros_state_sb_right_tl
-          {}
-          {
-            \c_math_subscript_token
-            { \chemmacros_text:V \l__chemmacros_state_sb_right_tl }
-          }
-          \chemmacros_text:V \l__chemmacros_state_post_tl
-         }
+            \LWR@origensuredmath
+                {
+                \chemmacros_text:V \l__chemmacros_state_pre_tl
+                \c_math_superscript_token
+                    { \chemmacros_text:V \l__chemmacros_state_sp_left_tl }
+                \tl_if_empty:NTF \l__chemmacros_state_sb_left_tl
+                {}
+                {
+                    \c_math_subscript_token
+                        { \chemmacros_text:V \l__chemmacros_state_sb_left_tl }
+                }
+                #4
+                \c_math_superscript_token
+                    { \chemmacros_text:V \l__chemmacros_state_sp_right_tl }
+                \tl_if_empty:NTF \l__chemmacros_state_sb_right_tl
+                {}
+                {
+                    \c_math_subscript_token
+                    { \chemmacros_text:V \l__chemmacros_state_sb_right_tl }
+                }
+                \chemmacros_text:V \l__chemmacros_state_post_tl
+                }
         }
     \group_end:
   }
-\cs_generate_variant:Nn \chemmacros_state:nn { nV }
+\cs_generate_variant:Nn \chemmacros_state:nnnnnn { nVVVVV }
 
 \cs_gset_protected:Npn \chemmacros_declare_state:Nn #1#2
   {
@@ -843,17 +1010,23 @@ name = \chemmacros_translate:n {scheme-name}
     \DeclareDocumentCommand #1 { sO{}D(){}m }
       {
         \group_begin:
-          \chemmacros_set_keys:xn
+          \chemmacros_set_keys:en
             {thermodynamics/\chemmacros_remove_backslash:N #1}
             {#2}
           \tl_if_blank:nF {##3}
             {
-              \chemmacros_set_keys:nx {thermodynamics}
+              \chemmacros_set_keys:ne {thermodynamics}
                 { subscript-\l__chemmacros_state_sb_pos_tl = \exp_not:n {##3} }
             }
-              \chemmacros_state:nV {##2} \l__chemmacros_state_symbol_tl
+              \chemmacros_state:nVVVVV
+                {##2}
+                \c_novalue_tl
+                \c_novalue_tl
+                \l__chemmacros_state_symbol_tl
+                \c_novalue_tl
+                \c_novalue_tl
               \chemmacros_set_keys_groups:nnn {thermodynamics} {variables} {##2}
-              \IfBooleanF {##1} {  = ~ \SI {##4} { \l__chemmacros_state_unit_tl } }
+              \IfBooleanF {##1} { = \qty {##4} { \l__chemmacros_state_unit_tl } }
         \group_end:
       }
   }
@@ -861,9 +1034,10 @@ name = \chemmacros_translate:n {scheme-name}
 \RenewChemState \entropy  { symbol = S , unit = \joule\per\kelvin\per\mole , pre = }
 \RenewChemState \gibbs    { symbol = G , unit = \kilo\joule\per\mole }
 
-}{}% \@ifchemmacrosmoduleloaded
+}{}% Module loaded.
 }% AtBeginDocument
 \ExplSyntaxOff
+
 
 \endinput
 %%

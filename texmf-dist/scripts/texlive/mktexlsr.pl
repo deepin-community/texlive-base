@@ -83,11 +83,11 @@ BEGIN {
 }
 
 # for future inclusion in TeX Live svn:
-my $svnid = '$Id: mktexlsr.pl 38001 2015-07-30 01:25:25Z preining $';
-my $lastchdate = '$Date: 2015-07-30 03:25:25 +0200 (Thu, 30 Jul 2015) $';
+my $svnid = '$Id: mktexlsr.pl 62699 2022-03-14 09:53:53Z siepo $';
+my $lastchdate = '$Date: 2022-03-14 10:53:53 +0100 (Mon, 14 Mar 2022) $';
 $lastchdate =~ s/^\$Date:\s*//;
 $lastchdate =~ s/ \(.*$//;
-my $svnrev = '$Revision: 38001 $';
+my $svnrev = '$Revision: 62699 $';
 $svnrev =~ s/^\$Revision:\s*//;
 $svnrev =~ s/\s*\$$//;
 my $version = "revision $svnrev ($lastchdate)";
@@ -102,7 +102,7 @@ my $opt_verbose = (-t STDIN); # test whether connected to a terminal
 my $opt_version = 0;
 my $opt_output;
 my $opt_sort = 0;   # for debugging sort output
-my $opt_follow = 1; # follow links - check whether they are dirs or not
+my $opt_follow = win32() ? 0 : 1; # follow links - check whether they are dirs or not
 
 (my $prg = basename($0)) =~ s/\.pl$//;
 

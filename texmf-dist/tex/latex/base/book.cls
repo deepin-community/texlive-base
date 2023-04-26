@@ -13,7 +13,7 @@
 %% (but please observe conditions on bug reports sent to that address!)
 %% 
 %% 
-%% Copyright (C) 1993-2021
+%% Copyright (C) 1993-2022
 %% The LaTeX Project and any individual authors listed elsewhere
 %% in this file.
 %% 
@@ -43,7 +43,7 @@
 %% extension .ins) which are part of the distribution.
 \NeedsTeXFormat{LaTeX2e}[1995/12/01]
 \ProvidesClass{book}
-              [2021/02/12 v1.4n
+              [2022/07/02 v1.4n
  Standard LaTeX document class]
 \newcommand\@ptsize{}
 \newif\if@restonecol

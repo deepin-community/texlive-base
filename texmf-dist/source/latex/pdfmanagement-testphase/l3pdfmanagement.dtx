@@ -2,7 +2,7 @@
 %
 %% File: l3pdfmanagement.dtx
 %
-% Copyright (C) 2018-2021 The LaTeX Project
+% Copyright (C) 2018-2022 The LaTeX Project
 %
 % It may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -23,14 +23,10 @@
 % for those people who are interested.
 %
 %<*driver>
-\RequirePackage{pdfmanagement-testphase}
-\DeclareDocumentMetadata{pdfstandard=A-2b}
-\makeatletter
-\declare@file@substitution{doc.sty}{doc-v3beta.sty}
-\makeatother
+\DocumentMetadata{pdfstandard=A-2b}
 \documentclass[full]{l3doc}
 \usepackage{tabularx}
-\usepackage{array,booktabs,hyperxmp}
+\usepackage{array,booktabs}
 \hypersetup{pdfauthor=The LaTeX Project,pdftitle=l3pdfmanagement (LaTeX PDF management testphase bundle)}
 
 \providecommand\potentialclash{\noindent\llap{\dbend\ }}
@@ -61,7 +57,7 @@
 %    }^^A
 % }
 %
-% \date{Version 0.95i, released 2021-08-28}
+% \date{Version 0.95t, released 2022-11-03}
 %
 % \maketitle
 % \begin{documentation}
@@ -363,6 +359,20 @@
 %   Values added to \texttt{ThisPage} can not be removed. It is not possible to
 %   show the content of this dictionary with \cs{pdfmanagement_show:n}.
 % \end{function}
+%
+% \paragraph{Changing the \texttt{/MediaBox}}: It is possible to change
+% the \texttt{/MediaBox} of one or more pages by setting it for the \texttt{Page}
+% or \texttt{ThisPage} path (using \texttt{Pages} doesn't work, the engines
+% overwrite this)---this works even with dvips and allows to create
+% pages of different sizes. But you must be careful with the values.
+% If you set e.g. with pdflatex \cs{pdfpageheight} to 300bp you get a mediabox of
+% |0 0 595 300|, but pdflatex measure from the top and will also move
+% the reference point up, so effectivly
+% you get the \emph{upper} third of the page. If you set the \texttt{/MediaBox}
+% to |0 0 595 300| with \cs{pdfmanagement_add:nnn} you get the \emph{lower} third.
+% In general it is better to use only the primitive commands to avoid confusing
+% results.
+%
 % \subsubsection{\enquote{Page/Resources}: ExtGState, ColorSpace, Shading, Pattern}
 % \begin{NOTE}{UF}
 % Only for pdf/luatex and xdvipdfmx backend- and pdf-code is needed to add values
@@ -527,8 +537,8 @@
 % The value is an object reference. It is sensible to declare the object
 % first. E.g.
 %  \begin{verbatim}
-%  \pdf_object_new:nn   {module/intent}{dict}
-%  \pdf_object_write:nn {module/intent}{...}
+%  \pdf_object_new:n     {module/intent}
+%  \pdf_object_write:nnn {module/intent}{dict}{...}
 %  \pdfmanagement_add:nnx  {Catalog} {OutputIntents}{\pdf_object_ref:n {module/intent}}
 %  \end{verbatim}
 %
@@ -622,7 +632,7 @@
 %<@@=pdfmanagement>
 %<*header>
 %
-\ProvidesExplPackage{l3pdfmanagement}{2021-08-28}{0.95i}
+\ProvidesExplPackage{l3pdfmanagement}{2022-11-03}{0.95t}
   {Management of core PDF dictionaries (LaTeX PDF management testphase bundle)}
 %</header>
 %    \end{macrocode}
@@ -674,7 +684,7 @@
 % \begin{variable}{\g_@@_active_bool}
 % This boolean will control the activation of the management code.
 % It is used in the hooks, and in some backend files.
-% % \cs{DeclareDocumentMetadata} should set it to true
+% % \cs{DocumentMetadata} should set it to true
 %    \begin{macrocode}
 \bool_new:N \g_@@_active_bool
 %    \end{macrocode}
@@ -1268,9 +1278,9 @@
     \prop_if_empty:cF
      { \__kernel_pdfdict_name:n { g__pdf_Core/Catalog/AA } }
      {
-       \__pdf_backend_object_new:nn  { @@/Catalog/AA } { dict }
-       \__pdf_backend_object_write:nx
-            { @@/Catalog/AA }
+       \pdf_object_new:n  { @@/Catalog/AA }
+       \pdf_object_write:nnx
+            { @@/Catalog/AA }{ dict }
             { \pdfdict_use:n { g__pdf_Core/Catalog/AA } }
        \exp_args:Nnx
          \__pdf_backend_catalog_gput:nn
@@ -1298,9 +1308,9 @@
   {
     \seq_if_empty:cF { g_@@_/Catalog/AcroForm/Fields_seq }
       {
-        \__pdf_backend_object_new:nn  { @@/Catalog/AcroForm/Fields } { array }
-        \__pdf_backend_object_write:nx
-            { @@/Catalog/AcroForm/Fields }
+        \pdf_object_new:n  { @@/Catalog/AcroForm/Fields }
+        \pdf_object_write:nnx
+            { @@/Catalog/AcroForm/Fields } { array }
             { \seq_use:cn { g_@@_/Catalog/AcroForm/Fields_seq } {~} }
         \exp_args:Nnnx
           \prop_gput:cnn %we have to use \prop here to avoid the handler ...
@@ -1310,10 +1320,9 @@
       }
     \seq_if_empty:cF { g_@@_/Catalog/AcroForm/CO_seq }
       {
-        \__pdf_backend_object_new:nn  { @@/Catalog/AcroForm/CO } { array }
-        \exp_args:Nnx
-          \__pdf_backend_object_write:nn
-            { @@/Catalog/AcroForm/CO }
+        \pdf_object_new:n  { @@/Catalog/AcroForm/CO }
+        \pdf_object_write:nnx
+            { @@/Catalog/AcroForm/CO } { array }
             { \seq_use:cn { g_@@_/Catalog/AcroForm/CO_seq } {~} }
         \exp_args:Nnnx
           \prop_gput:cnn %we have to use \prop here to avoid the handler ...
@@ -1323,10 +1332,9 @@
       }
      \prop_if_empty:cF { \__kernel_pdfdict_name:n { g__pdf_Core/Catalog/AcroForm/DR/Font}}
        {
-         \__pdf_backend_object_new:nn { @@/Catalog/AcroForm/DR/Font } {dict}
-         \exp_args:Nnx
-           \__pdf_backend_object_write:nn
-             { @@/Catalog/AcroForm/DR/Font }
+         \pdf_object_new:n { @@/Catalog/AcroForm/DR/Font }
+         \pdf_object_write:nnx
+             { @@/Catalog/AcroForm/DR/Font } { dict }
              { \pdfdict_use:n { g__pdf_Core/Catalog/AcroForm/DR/Font } }
          \exp_args:Nnnx
            \prop_gput:cnn %we have to use \prop here to avoid the handler ...
@@ -1336,10 +1344,9 @@
        }
      \prop_if_empty:cF { \__kernel_pdfdict_name:n { g__pdf_Core/Catalog/AcroForm/DR}}
        {
-         \__pdf_backend_object_new:nn { @@/Catalog/AcroForm/DR } {dict}
-         \exp_args:Nnx
-           \__pdf_backend_object_write:nn
-             { @@/Catalog/AcroForm/DR }
+         \pdf_object_new:n { @@/Catalog/AcroForm/DR }
+         \pdf_object_write:nnx
+             { @@/Catalog/AcroForm/DR } { dict }
              { \pdfdict_use:n { g__pdf_Core/Catalog/AcroForm/DR } }
          \exp_args:Nnnx
            \prop_gput:cnn %we have to use \prop here to avoid the handler ...
@@ -1349,10 +1356,9 @@
        }
      \prop_if_empty:cF { \__kernel_pdfdict_name:n { g__pdf_Core/Catalog/AcroForm} }
        {
-         \__pdf_backend_object_new:nn { @@/Catalog/AcroForm } {dict}
-         \exp_args:Nnx
-           \__pdf_backend_object_write:nn
-             { @@/Catalog/AcroForm }
+         \pdf_object_new:n { @@/Catalog/AcroForm }
+         \pdf_object_write:nnx
+             { @@/Catalog/AcroForm } { dict }
              { \pdfdict_use:n { g__pdf_Core/Catalog/AcroForm } }
          \exp_args:Nnnx
            \@@_handler_gput:nnn
@@ -1374,10 +1380,9 @@
     \seq_if_empty:cF
      { g_@@_/Catalog/AF_seq }
      {
-       \__pdf_backend_object_new:nn  { @@/Catalog/AF } { array }
-       \exp_args:Nnx
-         \__pdf_backend_object_write:nn
-            { @@/Catalog/AF }
+       \pdf_object_new:n  { @@/Catalog/AF }
+       \pdf_object_write:nnx
+            { @@/Catalog/AF } { array }
             { \seq_use:cn { g_@@_/Catalog/AF_seq } {~} }
        \exp_args:Nnx
          \__pdf_backend_catalog_gput:nn
@@ -1398,11 +1403,10 @@
     \prop_if_empty:cF
      { \__kernel_pdfdict_name:n { g__pdf_Core/Catalog/MarkInfo } }
      {
-       \__pdf_backend_object_new:nn  { @@/Catalog/MarkInfo } { dict }
-       \exp_args:Nnx
-         \__pdf_backend_object_write:nn
-            { @@/Catalog/MarkInfo }
-            { \pdfdict_use:n { g__pdf_Core/Catalog/MarkInfo } }
+       \pdf_object_new:n  { @@/Catalog/MarkInfo }
+       \pdf_object_write:nnx
+          { @@/Catalog/MarkInfo } { dict }
+          { \pdfdict_use:n { g__pdf_Core/Catalog/MarkInfo } }
        \exp_args:Nnx
          \__pdf_backend_catalog_gput:nn
            {MarkInfo}
@@ -1439,11 +1443,10 @@
       >
       { 0 }
       {
-        \__pdf_backend_object_new:nn  { @@/Catalog/OCProperties } { dict }
+        \pdf_object_new:n  { @@/Catalog/OCProperties }
         \seq_gpop_left:cN { g_@@_/Catalog/OCProperties/Configs_seq} \l_@@_tmpa_tl
-        \exp_args:Nnx
-          \__pdf_backend_object_write:nn {@@/Catalog/OCProperties}
-            {
+        \pdf_object_write:nnx {@@/Catalog/OCProperties} {dict}
+           {
               /OCGs~[ \seq_use:cn { g_@@_/Catalog/OCProperties/OCGs_seq } {~} ]
               /D~\l_@@_tmpa_tl~
               \seq_if_empty:cF { g_@@_/Catalog/OCProperties/Configs_seq }
@@ -1451,7 +1454,7 @@
                   /Configs~
                   [ \seq_use:cn { g_@@_/Catalog/OCProperties/Configs_seq} {~} ]
                 }
-            }
+           }
         \exp_args:Nnx
           \__pdf_backend_catalog_gput:nn
             { OCProperties }
@@ -1470,10 +1473,9 @@
     \seq_if_empty:cF
      { g_@@_/Catalog/OutputIntents_seq }
      {
-       \__pdf_backend_object_new:nn  { @@/Catalog/OutputIntents } { array }
-       \exp_args:Nnx
-         \__pdf_backend_object_write:nn
-            { @@/Catalog/OutputIntents }
+       \pdf_object_new:n  { @@/Catalog/OutputIntents }
+       \pdf_object_write:nnx
+            { @@/Catalog/OutputIntents } { array }
             { \seq_use:cn { g_@@_/Catalog/OutputIntents_seq } {~} }
        \exp_args:Nnx
          \__pdf_backend_catalog_gput:nn
@@ -1495,10 +1497,9 @@
     \seq_if_empty:cF
      { g_@@_/Catalog/Requirements_seq }
      {
-       \__pdf_backend_object_new:nn  { @@/Catalog/Requirements } { array }
-       \exp_args:Nnx
-         \__pdf_backend_object_write:nn
-            { @@/Catalog/Requirements }
+       \pdf_object_new:n  { @@/Catalog/Requirements }
+       \pdf_object_write:nnx
+            { @@/Catalog/Requirements } { array }
             { \seq_use:cn { g_@@_/Catalog/Requirements_seq } {~} }
        \exp_args:Nnx
          \__pdf_backend_catalog_gput:nn
@@ -1520,10 +1521,9 @@
     \prop_if_empty:cF
      { \__kernel_pdfdict_name:n { g__pdf_Core/Catalog/ViewerPreferences } }
      {
-       \__pdf_backend_object_new:nn  { @@/Catalog/ViewerPreferences } { dict }
-       \exp_args:Nnx
-         \__pdf_backend_object_write:nn
-            { @@/Catalog/ViewerPreferences }
+       \pdf_object_new:n  { @@/Catalog/ViewerPreferences }
+       \pdf_object_write:nnx
+            { @@/Catalog/ViewerPreferences } { dict }
             { \pdfdict_use:n { g__pdf_Core/Catalog/ViewerPreferences } }
        \exp_args:Nnx
          \__pdf_backend_catalog_gput:nn
@@ -1563,7 +1563,7 @@
  }
 %    \end{macrocode}
 % \end{macro}
-% \begin{macro}{ Handler}
+% \begin{macro}{ \@@_handler/Catalog/Names/EmbeddedFiles_gput:n }
 % EmbeddedFiles is an array and needs a special handler to add values.
 %    \begin{macrocode}
 \pdfdict_new:n { g__pdf_Core/Catalog/Names }

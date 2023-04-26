@@ -3,6 +3,7 @@
 sinclude(Circuit_macros.dim)
 s_init(ConfigA)
 gen_init
+
   "{\tt .pic}" above
   arrow <-
   M4: shadebox(box wid boxht "{\tt m4}")

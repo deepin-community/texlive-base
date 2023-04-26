@@ -20,7 +20,7 @@
 %
 % 
 % \fi
-% \CheckSum{609}
+% \CheckSum{610}
 %
 % \def\dtxfile{\texttt{mempatch.dtx}}
 % \def\fileversion{v1.0} \def\filedate{2003/10/04}
@@ -309,6 +309,10 @@
 %% With thanks to Heiko Oberdiek, if you use hyperref dated 2006/11/15
 %% or later, memhfixc will be automatically loaded after hyperref.
 %%
+%% With the new hooking system from 2020+ memhfixc is automatically
+%% added after loading hyperref with the memoir class
+%%
+%% Version 1.20  2022/11/17
 %% Version 1.19  2021/06/16
 %% Version 1.18  2019/10/24
 %% Version 1.17  2013/05/30
@@ -334,7 +338,7 @@
 % 
 %
 %    \begin{macrocode}
-\ProvidesPackage{memhfixc}[2021/06/16 v1.19 nameref/hyperref package fixes for memoir class]
+\ProvidesPackage{memhfixc}[2022/11/17 v1.20 nameref/hyperref package fixes for memoir class]
 %    \end{macrocode}
 %
 % \begin{macro}{\M@hfixcfinish}
@@ -821,40 +825,42 @@
 % \end{macro}
 %
 % \changes{v1.16}{2013/05/14}{Added fix for \cs{@starttoc}}
-% \begin{macro}{\@starttoc}
-% In memoir we altered \cs{@starttoc} such that \cs{tableofcontents}
-% could be used multiple times. \Lpack{hyperref} resets this. So here
-% is our reset of that reset.
+% \changes{v1.20}{2022/11/17}{Patch removed, by 2022 hyperref no longer change \cs{@starttoc}}
+% ^^A \begin{macro}{\@starttoc}
+% ^^A In memoir we altered \cs{@starttoc} such that \cs{tableofcontents}
+% ^^A could be used multiple times. \Lpack{hyperref} resets this. So here
+% ^^A is our reset of that reset.
 %    \begin{macrocode}
-\Hy@AtBeginDocument{%
-  \ifx\hyper@last\@undefined
-    \def\@starttoc#1{%
-      \begingroup\makeatletter
-        \IfFileExists{\jobname.#1}{%
-          \Hy@WarningNoLine{%
-            old #1 file detected, not used; run LaTeX again%
-          }%
-        }{}%
-        \if@filesw
+ % patch removed as per 2022 hyperref does not touch \@starttoc
+ % \Hy@AtBeginDocument{%
+ %   \ifx\hyper@last\@undefined
+ %    \def\@starttoc#1{%
+ %      \begingroup\makeatletter
+ %        \IfFileExists{\jobname.#1}{%
+ %          \Hy@WarningNoLine{%
+ %            old #1 file detected, not used; run LaTeX again%
+ %          }%
+ %        }{}%
+ %        \if@filesw
 %    \end{macrocode}
-% We rewrite this part to match our definition. The rest is a copy
-% from \texttt{hyperref.sty}.
+% ^^A We rewrite this part to match our definition. The rest is a copy
+% ^^A from \texttt{hyperref.sty}.
 %    \begin{macrocode}
-        \AtEndDocument{%
-          \expandafter\ifx\csname tf@#1\endcsname\relax
-            \expandafter\newwrite\csname tf@#1\endcsname
-            \immediate\openout \csname tf@#1\endcsname \jobname.#1\relax
-          \fi
-        }
-        \fi
-        \@nobreakfalse
-      \endgroup
-    }%
-  \fi
-}
+ %        \AtEndDocument{%
+ %          \expandafter\ifx\csname tf@#1\endcsname\relax
+ %            \expandafter\newwrite\csname tf@#1\endcsname
+ %            \immediate\openout \csname tf@#1\endcsname \jobname.#1\relax
+ %          \fi
+ %        }
+ %        \fi
+ %        \@nobreakfalse
+ %     \endgroup
+ %    }%
+ %  \fi
+ % }
 
 %    \end{macrocode}
-% \end{macro}
+% ^^A  \end{macro}
 %
 % \changes{v3.6k}{2013/05/16}{Added hyperref support for page notes}
 % In order to enable hyperlinks for page notes, we need a few extra

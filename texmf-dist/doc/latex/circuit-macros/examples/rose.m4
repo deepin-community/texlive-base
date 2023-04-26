@@ -1,11 +1,13 @@
 .PS
 # rose.m4
 gen_init
-ifelse(rgbstring(1,1,1),"",
+ifelse(
+ifpstricks(T)`'ifmpost(T)`'ifpostscript(T)`'ifpdf(T)`'ifpgf(T)`'ifsvg(T),,
 `This diagram is for PSTricks, postscript, PDF, MetaPost, or SVG',
 `
 
-scale = 1.2
+scale = 1.25
+Rose: [
 define(`gold_',`1,0.84,0')
 
 define(`rose',`point_(`$2'); CC: (vec_(`$1',0)); rrad = `$3'
@@ -125,6 +127,41 @@ C: (0,0)
   tmp = (distance(CQ,C) - linethick*3/2 spt_)*sqrt(2)
   box wid tmp ht tmp at C
   ] with .sw at 1,1
+
+] # Rose
+
+Halftone: [
+#.PS
+# SpiralHalftoneSVG.m4
+# https://tex.stackexchange.com/questions/584455/how-to-draw-this-spiral-made-of-circles-in-latex
+# gen_init
+
+  r = 133/255; g = 196/255; b = 100/255
+  skale = 2/3*scale
+  skale = 2.49/4.25
+
+  holerad = 1*skale
+  outerrad = 4.25*skale
+  { circle thick 0.8 rad outerrad+2bp__ at Here outlined rgbstring(r,g,b) }
+
+  define grcirc {circle diam $1 colored rgbstring(r,g,b)}
+
+  npts = 200
+  outercdiam = (outerrad/npts)*twopi_
+  angoffset = -5*pi_/4
+  da = twopi_/npts*10/3
+  radc = outerrad
+  for x = 0 to 1 do {
+    cdiam = outercdiam*radc/outerrad
+    for i=0 to npts-1 do { ang = i/npts*twopi_
+      grcirc(cdiam*abs(ang-pi_)/pi_) at rect_(radc,ang+angoffset) }
+    angoffset += da
+    radc -= cdiam*2/3
+    if radc < holerad then { x = 1 } else { x = 0 }
+    }
+  
+#.PE
+  ] with .sw at Rose.se+(0.2,0)
 
 ')
 .PE

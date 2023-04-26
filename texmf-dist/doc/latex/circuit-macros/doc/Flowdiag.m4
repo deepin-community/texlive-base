@@ -1,5 +1,7 @@
 .PS
 # `Flowdiag.m4'
+gen_init
+
 define(`shadellipse',`{ellipse $1 fill invis
   define(`m4h',`1.0 pt__')dnl
   ellipse invis fill 0.5 wid last ellipse .wid+linethick pt__ \

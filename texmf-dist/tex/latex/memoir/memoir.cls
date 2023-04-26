@@ -28,8 +28,9 @@
 %% 
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{memoir}%
-  [2021/06/16 v3.7p configurable book, report, article document class]
-\newcommand\memversion{v3.7p, 2021/06/16}
+  [2022/11/17 v3.7.19 configurable book, report, article document class]
+\newcommand\memversion{v3.7.19, 2022/11/17}
+\RequirePackage{etoolbox}
 \newcommand*{\@ptsize}{}
 \newcommand*{\@memptsize}{}
 \newlength{\onelineskip}
@@ -138,16 +139,16 @@
 \@onlypreamble\DisemulatePackage
 
 \IfFormatAtLeastTF{2020/10/01}{
-  \newcommand\AtBeginFile[2]{\def\temp{\AddToHook{file/before/#1}{#2}}\temp}
-  \newcommand\AtEndFile[2]{\def\temp{\AddToHook{file/after/#1}{#2}}\temp}
+  \newcommand\AtBeginFile[2]{\def\temp{\AddToHook{file/#1/before}{#2}}\temp}
+  \newcommand\AtEndFile[2]{\def\temp{\AddToHook{file/#1/after}{#2}}\temp}
 
-  \newcommand\AtBeginPackage[2]{\def\temp{\AddToHook{package/before/#1}{#2}}\temp}
-  \newcommand\AtEndPackage[2]{\def\temp{\AddToHook{package/after/#1}{#2}}\temp}
+  \newcommand\AtBeginPackage[2]{\def\temp{\AddToHook{package/#1/before}{#2}}\temp}
+  \newcommand\AtEndPackage[2]{\def\temp{\AddToHook{package/#1/after}{#2}}\temp}
   \newcommand{\RequireAtEndPackage}[2]{%
     \@ifpackageloaded{#1}{#2}{\AtEndPackage{#1}{#2}}}
 
-  \newcommand\AtBeginClass[2]{\def\temp{\AddToHook{class/before/#1}{#2}}\temp}
-  \newcommand\AtEndClass[2]{\def\temp{\AddToHook{class/after/#1}{#2}}\temp}
+  \newcommand\AtBeginClass[2]{\def\temp{\AddToHook{class/#1/before}{#2}}\temp}
+  \newcommand\AtEndClass[2]{\def\temp{\AddToHook{class/#1/after}{#2}}\temp}
   \newcommand{\RequireAtEndClass}[2]{%
     \@ifclassloaded{#1}{#2}{\AtEndClass{#1}{#2}}}
 
@@ -405,8 +406,8 @@
 \newcommand*{\memRTLmainraggedright}{\raggedright}
 \newcommand*{\memRTLmainraggedleft}{\raggedleft}
 
-\newlength{\stockheight}
-\newlength{\stockwidth}
+\@ifundefined{stockwidth}{\newdimen{\stockheight}}{}
+\@ifundefined{stockwidth}{\newdimen{\stockwidth}}{}
 \newlength{\trimtop}
 \newlength{\trimedge}
 
@@ -2744,8 +2745,8 @@
     \@memback@floats
   \fi}
 
-\newcommand*{\theHbook}{\arabic{book}}
-\newcommand*{\toclevel@book}{-2}
+\def\theHbook{\arabic{book}}
+\def\toclevel@book{-2}
 
 \newcommand*{\book}{%
   \@setupbook
@@ -4994,7 +4995,7 @@
 
 \newcounter{verse}
 \setcounter{verse}{0}
-\newcommand{\theHpoemline}{\theverse.\thepoemline}
+\def\theHpoemline{\theverse.\thepoemline}
 
 \newenvironment{verse}[1][\linewidth]{%
   \refstepcounter{verse}%
@@ -5666,7 +5667,7 @@
     \@firstampfalse
     \global\@curtab\@ne
   \else
-    \@addtopreamble{&}
+    \@addtopreamble{&}%
     \global\advance\@curtab\@ne
   \fi}
 \let\@addamp\m@m@addamp
@@ -8072,13 +8073,13 @@
 \newcommand*{\l@chapter}[2]{%
   \l@chapapp{#1}{#2}{\cftchaptername}}
 
-\newcommand*{\toclevel@chapter}{0}
+\def\toclevel@chapter{0}
 
 \newcommand*{\cftappendixname}{}
 
 \newcommand*{\l@appendix}[2]{%
   \l@chapapp{#1}{#2}{\cftappendixname}}
-\newcommand{\toclevel@appendix}{0}
+\def\toclevel@appendix{0}
 
 \newcommand*\chapternumberlinehook[1]{}
 \newcommand{\chapternumberline}[1]{%
@@ -8317,8 +8318,8 @@
      Type \space <return> and I'll continue.}%
   \fi}
 
-\newcommand*{\toclevel@none}{-10}
-\newcommand*{\toclevel@all}{50}
+\def\toclevel@none{-10}
+\def\toclevel@all{50}
 
 \DeclareRobustCommand{\changetocdepth}[1]{\setcounter{tocdepth}{#1}}
 
@@ -9894,8 +9895,11 @@
   \let\mp@footgroupv@r\@mppara@footgroupv@r
   {\foottextfont
    \dimen0=\baselineskip
-   \multiply\dimen0 by 1024
-   \divide\dimen0 by \hsize \multiply\dimen0 by \footfudgefiddle
+   %\multiply\dimen0 by 1024
+   \multiply\dimen0 by 256
+   \divide\dimen0   by \hsize
+   \multiply\dimen0 by 4
+   \multiply\dimen0 by \footfudgefiddle
    \xdef\footfudgefactor{\expandafter\strip@pt\dimen0 }}}
 
 \newcommand{\@parafootnotetext}[1]{\insert\footinsv@r{
@@ -9947,8 +9951,11 @@
   \expandafter\count\csname footins#1\endcsname=1000\relax
   {\@nameuse{foottextfont#1}%
    \dimen0=\baselineskip
-   \multiply\dimen0 by 1024
-   \divide\dimen0 by \hsize \multiply\dimen0 by 64
+   %\multiply\dimen0 by 1024
+   \multiply\dimen0 by 256
+   \divide\dimen0   by \hsize
+   \multiply\dimen0 by 4
+   \multiply\dimen0 by \footfudgefiddle
    \xdef\footfudgefactor{\expandafter\strip@pt\dimen0 }}}
 
 \newcommand{\m@make@parafootnotetext}[1]{%
@@ -10097,6 +10104,7 @@
 \gdef\@doclearpage{\mem@doclearpage}
 
 \newcommand*{\m@m@makecolfloats}{%
+  \let\@elt\relax%
   \xdef\@freelist{\@freelist\@midlist}%
   \global\let\@midlist\@empty
   \@combinefloats}
@@ -10347,6 +10355,20 @@
   \m@m@makecoltext
   \global \maxdepth \@maxdepth}
 
+\IfFormatAtLeastTF{2021-06-01}{
+  % adding to "hook" in footmisc
+  \AddToHook{cmd/@makecol@appendblocks/after}{\m@mdoextrafeet\m@mopsidefoot\m@mopsidebar}
+}{
+  \AtBeginDocument{
+    \@ifpackagelater{footmisc}{2011/06/07}{
+      \@memerror{You seem to have manually updated both memoir and^^J
+        footmisc on an older LaTeX kernel. Memoir is not compatible with
+      footmisc^^J version 2022/02/14 v6.0b on LaTeX kernels from before
+      2021/06/01. Please^^J update your LaTeX installation instead of
+      manually updating classes^^J or packages}{Update your LaTeX installation}
+    }{}
+  }
+}
 \gdef\mem@makecolbf{%
   \m@m@makecolintro
   \setbox\@outputbox \box\@cclv
@@ -12198,7 +12220,7 @@
 \@ifl@t@r\fmtversion{2020-10-01}{
   % nothing to do with newer kernel
 }{%
-\newcommand{\medspace}{\kern .22222em }
+\providecommand{\medspace}{\kern .22222em }
 \DeclareRobustCommand{\:}{%
   \relax\ifmmode\mskip\medmuskip\else\medspace\fi}
 \DeclareRobustCommand{\!}{%
@@ -13157,6 +13179,7 @@
 
 \AtBeginPackage{float}{\let\newfloat\relax}
 
+\AtEndPackage{hyperref}{\RequirePackage{memhfixc}}
 \ifartopt
 \pagestyle{plain}
 \else

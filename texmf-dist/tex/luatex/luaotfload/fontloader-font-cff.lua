@@ -572,6 +572,11 @@ do
         stack[top] = -(byte(b0)-251)*256 - byte(b1) - 108
     end
 
+ -- local p_float = P("\255") * C(1) * C(1) * C(1) * C(1) / function(b0,b1,b2,b3)
+ --     top = top + 1
+ --     stack[top] = 0
+ -- end
+
     local p_short = P("\28") * C(1) * C(1) / function(b1,b2)
         -- -32768 .. +32767 : b1<<8 | b2
         top = top + 1
@@ -607,6 +612,7 @@ do
       + p_nibbles
       + p_single
       + p_double
+   -- + p_float
       + p_unsupported
     )^1
 
@@ -701,6 +707,7 @@ do
     local y            = 0
     local width        = false
     local lsb          = 0
+local result = { }
     local r            = 0
     local stems        = 0
     local globalbias   = 0
@@ -728,8 +735,13 @@ do
     local seacs        = { }
     local procidx      = nil
 
-    local function showstate(where)
-        report("%w%-10s : [%s] n=%i",depth*2,where,concat(stack," ",1,top),top)
+    local function showstate(where,i,n)
+        if i then
+            local j = i + n - 1
+            report("%w%-10s : [%s] step",depth*2+2,where,concat(stack," ",i,j <= top and j or top))
+        else
+            report("%w%-10s : [%s] n=%i",depth*2,where,concat(stack," ",1,top),top)
+        end
     end
 
     local function showvalue(where,value,showstack)
@@ -866,9 +878,9 @@ do
         end
     end
 
-    local function xycurveto(x1,y1,x2,y2,x3,y3) -- called local so no blend here
+    local function xycurveto(x1,y1,x2,y2,x3,y3,i,n) -- called local so no blend here
         if trace_charstrings then
-            showstate("curveto")
+            showstate("curveto",i,n)
         end
         if keepcurve then
             r = r + 1
@@ -1012,6 +1024,16 @@ do
         if trace_charstrings then
             showstate("rrcurveto")
         end
+if top == 6 then
+    local ax = x  + stack[1] -- dxa
+    local ay = y  + stack[2] -- dya
+    local bx = ax + stack[3] -- dxb
+    local by = ay + stack[4] -- dyb
+    x = bx + stack[5]        -- dxc
+    y = by + stack[6]        -- dyc
+    xycurveto(ax,ay,bx,by,x,y,1,6)
+else
+-- print("rr",top==6,top)
         for i=1,top,6 do
             local ax = x  + stack[i]   -- dxa
             local ay = y  + stack[i+1] -- dya
@@ -1019,8 +1041,9 @@ do
             local by = ay + stack[i+3] -- dyb
             x = bx + stack[i+4]        -- dxc
             y = by + stack[i+5]        -- dyc
-            xycurveto(ax,ay,bx,by,x,y)
+            xycurveto(ax,ay,bx,by,x,y,i,6)
         end
+end
         top = 0
     end
 
@@ -1033,6 +1056,15 @@ do
             y = y + stack[1]           -- dy1
             s = 2
         end
+if top == 4 then
+            local ax = x + stack[1]  -- dxa
+            local ay = y
+            local bx = ax + stack[2] -- dxb
+            local by = ay + stack[3] -- dyb
+            x = bx + stack[4]        -- dxc
+            y = by
+            xycurveto(ax,ay,bx,by,x,y,1,4)
+else
         for i=s,top,4 do
             local ax = x + stack[i]    -- dxa
             local ay = y
@@ -1040,8 +1072,9 @@ do
             local by = ay + stack[i+2] -- dyb
             x = bx + stack[i+3]        -- dxc
             y = by
-            xycurveto(ax,ay,bx,by,x,y)
+            xycurveto(ax,ay,bx,by,x,y,i,4)
         end
+end
         top = 0
     end
 
@@ -1055,6 +1088,16 @@ do
             d = stack[1]               -- dx1
             s = 2
         end
+if top == 4 then
+    local ax = x + d
+    local ay = y + stack[1]  -- dya
+    local bx = ax + stack[2] -- dxb
+    local by = ay + stack[3] -- dyb
+    x = bx
+    y = by + stack[4]        -- dyc
+    xycurveto(ax,ay,bx,by,x,y,1,4)
+    d = 0
+else
         for i=s,top,4 do
             local ax = x + d
             local ay = y + stack[i]    -- dya
@@ -1062,9 +1105,10 @@ do
             local by = ay + stack[i+2] -- dyb
             x = bx
             y = by + stack[i+3]        -- dyc
-            xycurveto(ax,ay,bx,by,x,y)
+            xycurveto(ax,ay,bx,by,x,y,i,4)
             d = 0
         end
+end
         top = 0
     end
 
@@ -1073,6 +1117,33 @@ do
         if last then
             top = top - 1
         end
+if top == 4 then
+        local ax, ay, bx, by
+        if swap then
+            ax = x  + stack[1]
+            ay = y
+            bx = ax + stack[2]
+            by = ay + stack[3]
+            y  = by + stack[4]
+            if last then
+                x = bx + last
+            else
+                x = bx
+            end
+        else
+            ax = x
+            ay = y  + stack[1]
+            bx = ax + stack[2]
+            by = ay + stack[3]
+            x  = bx + stack[4]
+            if last then
+                y = by + last
+            else
+                y = by
+            end
+        end
+        xycurveto(ax,ay,bx,by,x,y,1 ,4)
+else
         for i=1,top,4 do
             local ax, ay, bx, by
             if swap then
@@ -1100,8 +1171,9 @@ do
                 end
                 swap = true
             end
-            xycurveto(ax,ay,bx,by,x,y)
+            xycurveto(ax,ay,bx,by,x,y,i,4)
         end
+end
         top = 0
     end
 
@@ -1130,7 +1202,7 @@ do
             local by = ay + stack[i+3] -- dyb
             x = bx + stack[i+4] -- dxc
             y = by + stack[i+5] -- dyc
-            xycurveto(ax,ay,bx,by,x,y)
+            xycurveto(ax,ay,bx,by,x,y,i,6)
         end
         x = x + stack[top-1] -- dxc
         y = y + stack[top]   -- dyc
@@ -1825,13 +1897,13 @@ do
                     stack[top] = -t*256 + 64148 - tab[i+1]
                     i = i + 2
                 else
-                    -- a 16.16 float
-                    local n = 0x100 * tab[i+1] + tab[i+2]
-                    if n >= 0x8000 then
-                        stack[top] = n - 0x10000 + (0x100 * tab[i+3] + tab[i+4])/0xFFFF
-                    else
-                        stack[top] = n           + (0x100 * tab[i+3] + tab[i+4])/0xFFFF
+                    -- a 16.16 float (used for italic but pretty unreliable)
+                    local n1 = 0x100 * tab[i+1] + tab[i+2]
+                    local n2 = 0x100 * tab[i+3] + tab[i+4]
+                    if n1 >= 0x8000 then
+                        n1 = n1 - 0x10000
                     end
+                    stack[top] = n1 + n2/0xFFFF
                     i = i + 5
                 end
             elseif t == 28 then
@@ -1924,7 +1996,8 @@ do
                 -- cff 1: (when cff2 strip them)
                 elseif t == 1 or t == 3 or t == 18 or operation == 23 then
                     p_getstem() -- at the start
-                    if true then
+                    if version == "cff" then
+--                     if true then
                         if top > 0 then
                             for i=1,top do
                                 r = r + 1 ; result[r] = encode[stack[i]]
@@ -1939,6 +2012,7 @@ do
                 -- cff 1: (when cff2 strip them)
                 elseif t == 19 or t == 20 then
                     local s = p_getmask() or 0 -- after the stems
+--                     if version == "cff" then
                     if true then
                         if top > 0 then
                             for i=1,top do
@@ -1962,7 +2036,8 @@ do
                     i = i + 1
                 elseif t == 13 then
                     hsbw()
-                    if version == "cff" then
+--                     if version == "cff" then
+                    if true then
                         -- we do a moveto over lsb
                         r = r + 1 ; result[r] = encode[lsb]
                         r = r + 1 ; result[r] = chars[22]
@@ -2122,7 +2197,6 @@ do
         end
 
         process(tab)
-
         if hack then
             return x, y
         end
@@ -2145,6 +2219,7 @@ do
             r = r + 1
             result[r] = c_endchar
             local stream = concat(result)
+result = nil
          -- if trace_charstrings then
          --     report("vdata: %s",stream)
          -- end
@@ -2171,6 +2246,7 @@ do
                 name        = charset and charset[index] or nil,
              -- sidebearing = 0,
             }
+result = nil
         else
             glyphs[index] = {
                 boundingbox = boundingbox,
@@ -2520,7 +2596,7 @@ local function readfdselect(f,fontdata,data,glyphs,doshapes,version,streams)
             end
         end
     else
-        -- unsupported format
+        report("unsupported fd index format %i",format)
     end
     -- hm, always
     if maxindex >= 0 then
@@ -2528,21 +2604,30 @@ local function readfdselect(f,fontdata,data,glyphs,doshapes,version,streams)
         if cidarray then
             setposition(f,header.offset+cidarray)
             local dictionaries = readlengths(f,version == "cff2")
-            for i=1,#dictionaries do
-                dictionaries[i] = readstring(f,dictionaries[i])
+            if #dictionaries > 0 then
+                for i=1,#dictionaries do
+                    dictionaries[i] = readstring(f,dictionaries[i])
+                end
+                parsedictionaries(data,dictionaries)
+                cid.dictionaries = dictionaries
+                readcidprivates(f,data)
+                for i=1,#dictionaries do
+                    readlocals(f,data,dictionaries[i],version)
+                end
+                startparsing(fontdata,data,streams)
+                for i=1,#charstrings do
+                    local dictionary = dictionaries[fdindex[i]+1]
+                    if dictionary then
+                        parsecharstring(fontdata,data,dictionary,charstrings[i],glyphs,i,doshapes,version,streams)
+                    else
+                     -- report("no dictionary for %a : %a => %a",version,i,fdindex[i]+1)
+                    end
+                 -- charstrings[i] = false
+                end
+                stopparsing(fontdata,data)
+            else
+                report("no cid dictionaries")
             end
-            parsedictionaries(data,dictionaries)
-            cid.dictionaries = dictionaries
-            readcidprivates(f,data)
-            for i=1,#dictionaries do
-                readlocals(f,data,dictionaries[i],version)
-            end
-            startparsing(fontdata,data,streams)
-            for i=1,#charstrings do
-                parsecharstring(fontdata,data,dictionaries[fdindex[i]+1],charstrings[i],glyphs,i,doshapes,version,streams)
---                 charstrings[i] = nil
-            end
-            stopparsing(fontdata,data)
         else
             report("no cid array")
         end

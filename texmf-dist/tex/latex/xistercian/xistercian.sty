@@ -29,12 +29,14 @@
 %% and the derived files           xistercian.pdf
 %%                                 xistercian.sty
 %% 
+\ProvidesPackage{xistercian}[2021-12-20 v1.2 Cistercian numerals in LaTeX]
 \RequirePackage{pgf,expkv-opt}
 \newcommand*\xister@th{.1ex}
 \newcommand*\xister@tv{.18ex}
 \newcommand*\xister@tdu{.1ex}
 \newcommand*\xister@tdd{.18ex}
-\newcommand*\xister@x{.4em}
+\newcommand*\xister@ts{}
+\newcommand*\xister@x{.5em}
 \newcommand*\xister@y{1.55ex}
 \newcommand*\xister@bx{1.2}
 \newcommand*\xister@by{}
@@ -42,11 +44,16 @@
 \newcommand*\xister@font{\normalfont}
 \newcommand*\xister@five@dot{.09ex}
 \newcommand*\xister@five@dash{}
+\newcommand*\xister@six@dot{.09ex}
+\newcommand*\xister@six@dash{}
 \newcommand*\xister@share@div{/6}
 \newcommand*\xister@share@mul{}
 \newif\ifxister@dbg@
 \newif\ifxister@five@triangle@\xister@five@triangle@true
 \newif\ifxister@five@dot@
+\newif\ifxister@six@dot@
+\newif\ifxister@six@stroke@\xister@six@stroke@true
+\newif\ifxister@nine@triangle@
 \newdimen\xister@X
 \newdimen\xister@Y
 \newdimen\xister@XY@share
@@ -54,8 +61,11 @@
 \newdimen\xister@Tv
 \newdimen\xister@Tdu
 \newdimen\xister@Tdd
+\newdimen\xister@Ts
 \newdimen\xister@TMPA
 \newdimen\xister@TMPB
+\newdimen\xister@Five@dot
+\newdimen\xister@Six@dot
 \ExplSyntaxOn
 \int_step_inline:nn {9}
   {
@@ -162,7 +172,7 @@
           }%
       }%
   }
-\expandafter\xister@tmp\csname\string\color@.\endcsname{color}
+\expandafter\xister@tmp\csname\@backslashchar color@.\endcsname{color}
 \xister@tmp\f@encoding{encoding}
 \xister@tmp\f@family  {family}
 \xister@tmp\f@series  {series}
@@ -177,21 +187,27 @@
   }
 \xister@tmp{wd}{width}{\edef\xister@x{\unexpanded{#1}}\xister@dbg@dim{#1}}
 \xister@tmp{ht}{height}{\edef\xister@y{\unexpanded{#1}}\xister@dbg@dim{#1}}
+\xister@tmp{bx}{bound-x}{\edef\xister@bx{\unexpanded{#1}}\xister@dbg@float{#1}}
+\xister@tmp{by}{bound-y}{\edef\xister@by{\unexpanded{#1}}\xister@dbg@float{#1}}
+\xister@tmp{bs}{baseline}{\edef\xister@bs{\unexpanded{#1}}\xister@dbg@float{#1}}
 \xister@tmp{sv}{stroke-v}{\edef\xister@tv{\unexpanded{#1}}\xister@dbg@dim{#1}}
 \xister@tmp{sh}{stroke-h}{\edef\xister@th{\unexpanded{#1}}\xister@dbg@dim{#1}}
 \xister@tmp{sdu}{stroke-du}
   {\edef\xister@tdu{\unexpanded{#1}}\xister@dbg@dim{#1}}
 \xister@tmp{sdd}{stroke-dd}
   {\edef\xister@tdd{\unexpanded{#1}}\xister@dbg@dim{#1}}
-\xister@tmp{bx}{bound-x}{\edef\xister@bx{\unexpanded{#1}}\xister@dbg@float{#1}}
-\xister@tmp{by}{bound-y}{\edef\xister@by{\unexpanded{#1}}\xister@dbg@float{#1}}
-\xister@tmp{bs}{baseline}{\edef\xister@bs{\unexpanded{#1}}\xister@dbg@float{#1}}
+\xister@tmp{ss}{stroke-s}
+  {%
+    \edef\xister@ts{\unexpanded{#1}}%
+    \unless\ifx\xister@ts\@empty\xister@dbg@dim{#1}\fi
+  }
 \xister@tmp{s}{strokes}
   {%
     \edef\xister@tv{\unexpanded{#1}}%
     \let\xister@th\xister@tv
     \let\xister@tdu\xister@tv
     \let\xister@tdd\xister@tv
+    \let\xister@ts\xister@tv
     \xister@dbg@dim{#1}%
   }
 \xister@tmp{f}{font}{\edef\xister@font{\unexpanded{#1}}}
@@ -249,16 +265,50 @@
 \ekvlet{xister}{5}\xister@five@set
 \ekvlet{xister}{alternate-5}\xister@five@set
 \let\xister@five@set\xister@undefined
+\protected\long\ekvdef{xister/6}{dot}
+  {%
+    \xister@six@stroke@false
+    \xister@six@dot@true
+    \edef\xister@six@dot{\unexpanded{#1}}%
+    \xister@dbg@dim{#1}%
+  }
+\protected\long\ekvdef{xister/6}{dash}
+  {%
+    \xister@six@stroke@false
+    \xister@six@dot@false
+    \edef\xister@six@dash{\unexpanded{#1}}%
+    \xister@dbg@float{#1}%
+  }
+\protected\ekvdefNoVal{xister/6}{stroke}{\xister@six@stroke@true}
+\protected\ekvdefNoVal{xister/6}{dot}
+  {%
+    \xister@six@stroke@false
+    \xister@six@dot@true
+  }
+\protected\ekvdefNoVal{xister/6}{dash}
+  {%
+    \xister@six@stroke@false
+    \xister@six@dot@false
+  }
+\protected\ekvsetdef\xister@six@set{xister/6}
+\ekvlet{xister}{6}\xister@six@set
+\ekvlet{xister}{alternate-6}\xister@six@set
+\let\xister@six@set\xister@undefined
+\protected\ekvdefNoVal{xister/9}{rectangle}{\xister@nine@triangle@false}
+\protected\ekvdefNoVal{xister/9}{triangle}{\xister@nine@triangle@true}
+\protected\ekvsetdef\xister@nine@set{xister/9}
+\ekvlet{xister}{9}\xister@nine@set
+\ekvlet{xister}{alternate-9}\xister@nine@set
 \protected\ekvdefNoVal{xister}{horizontal}
   {%
     \let\xister@build\xister@build@horizontal
-    \def\xister@x{.62em}%
-    \def\xister@y{1ex}%
+    \def\xister@x{.775em}%
+    \def\xister@y{1.13ex}%
   }
 \protected\ekvdefNoVal{xister}{vertical}
   {%
     \let\xister@build\xister@build@vertical
-    \def\xister@x{.4em}%
+    \def\xister@x{.5em}%
     \def\xister@y{1.55ex}%
   }
 \protected\ekvdefNoVal{xister}{debug}
@@ -297,11 +347,17 @@
 \ekvdefNoVal{xister}{debug}
   {\PackageError{xister}{`debug' is only available as a load time option}{}}
 \protected\ekvsetdef\cisterciansetup{xister}
-\protected\long\def\cistercianstyle#1#2%
+\protected\def\cistercianstyle
   {%
-    \ekvifdefinedNoVal{xister}{#1}%
-      {\PackageError{xistercian}{Key `#1' already defined}{}}%
-      {\protected\ekvdefNoVal{xister}{#1}{\cisterciansetup{#2}}}%
+    \@ifstar
+      {\xister@style\ekvifdefined{\long\ekvdef}}%
+      {\xister@style\ekvifdefinedNoVal\ekvdefNoVal}%
+  }
+\protected\long\def\xister@style#1#2#3#4%
+  {%
+    #1{xister}{#3}%
+      {\PackageError{xistercian}{Key `#3' already defined}{}}%
+      {\protected#2{xister}{#3}{\cisterciansetup{#4}}}%
   }
 \newcommand\cistercian[1]{\expandafter\@cistercian\csname c@#1\endcsname}
 \newcommand\@cistercian[1]{\expandafter\cisterciannum\expandafter{\the#1}}
@@ -324,20 +380,18 @@
 \def\xister@gobbletoat#1@{}
 \def\xister@gobbletozero#10{}
 \def\xister@gobblecopy0\rlap#1{}
-\def\xister@done#1\xister@symbols@{}
-\def\xister@count#1{\xister@gobbletoat#1\xister@count@done @+1\xister@count}
-\def\xister@count@done @+1\xister@count{\relax @}
+\def\xister@done#1\xister@symbols{}
 \let\xister@texorpdf\@firstoftwo
-\AddToHook{package/after/hyperref}
+\AddToHook{package/hyperref/after}
   {%
     \ifdefined\texorpdfstring
-      \let\xister@texorpdf\texorpdfstring
+      \def\xister@texorpdf{\texorpdfstring}%
     \fi
   }
 \AddToHook{begindocument/before}
   {%
     \ifdefined\texorpdfstring
-      \let\xister@texorpdf\texorpdfstring
+      \def\xister@texorpdf{\texorpdfstring}%
     \fi
   }
 \def\xister@a#1%
@@ -348,12 +402,31 @@
     \else\expandafter\xister@b\expandafter#1\fi
   }
 \def\xister@b#1@%
-  {\expandafter\xister@c\the\numexpr\xister@count#1@#1@@@@}
-\def\xister@c#1@%
-  {\csname xister@symbols@\romannumeral\numexpr#1-4*((#1-2)/4)\relax\endcsname}
-\def\xister@symbols@#1%
   {%
-    \protected\def\xister@symbols@##1##2##3##4%
+    \if\relax\detokenize{#1}\relax
+      \expandafter\xister@gobbletozero\the\numexpr\relax
+      \xister@symbols0000@@@@%
+      \expandafter\@gobbletwo
+    \fi
+    \@firstofone{\xister@c#1@@@@@@@@\relax#1@@@@}%
+  }
+\def\xister@c#1#2#3#4#5#6#7#8%
+  {%
+    \xister@gobbletoat
+      #1\xister@d{}%
+      #2\xister@d{000}%
+      #3\xister@d{00}%
+      #4\xister@d0%
+      #5\xister@d{}%
+      #6\xister@d{000}%
+      #7\xister@d{00}%
+      #8\xister@d0%
+      @\xister@c
+  }
+\def\xister@d#1#2@\xister@c#3\relax{\xister@symbols#1}
+\def\xister@symbols#1%
+  {%
+    \protected\def\xister@symbols##1##2##3##4%
       {%
         \xister@gobbletoat##1\xister@done @%
         \xister@gobbletozero##1\xister@gobblecopy0%
@@ -365,24 +438,21 @@
         \xister@gobbletozero##4\xister@gobblecopy0%
           \rlap{\copy\csname xister@digitbox@##4\endcsname}%
         \copy#1%
-        \xister@symbols@
+        \xister@symbols
       }%
   }
-\expandafter\xister@symbols@\csname xister@digitbox@0\endcsname
-\def\xister@symbols@i{\xister@symbols@000}
-\def\xister@symbols@ii{\xister@symbols@00}
-\def\xister@symbols@iii{\xister@symbols@0}
+\expandafter\xister@symbols\csname xister@digitbox@0\endcsname
 \newcommand*\xister@clip@v[1]
   {%
     \pgfpathrectanglecorners
-      {\pgfpoint{\dimexpr\ifdim\xister@X<\z@-\fi\xister@Tv\relax}{#1}}%
+      {\pgfpoint{\dimexpr\ifdim\xister@X<\z@-\fi\xister@Ts\relax}{#1}}%
       {\pgfpoint\xister@X\xister@Y}%
     \pgfusepath{clip}%
   }
 \newcommand*\xister@clip@h[1]
   {%
     \pgfpathrectanglecorners
-      {\pgfpoint{#1}{-\dimexpr\ifdim\xister@Y<\z@-\fi\xister@Th\relax}}%
+      {\pgfpoint{#1}{-\dimexpr\ifdim\xister@Y<\z@-\fi\xister@Ts\relax}}%
       {\pgfpoint{-\xister@X}\xister@Y}%
     \pgfusepath{clip}%
   }
@@ -405,7 +475,7 @@
       }%
     \xister@drawdigit{3#1}%
       {%
-        \xister@TMPB=#3\dimexpr\xister@Tv-\xister@Tdd\relax
+        \xister@TMPB=#3\dimexpr\xister@Ts-\xister@Tdd\relax
         \xister@clip@v\xister@XY@share
         \pgfsetlinewidth{2\xister@Tdd}%
         \pgfpathmoveto{\pgfpoint\xister@TMPB\xister@XY@share}%
@@ -415,7 +485,7 @@
     \xister@drawdigit{4#1}%
       {%
         \xister@clip@v\z@
-        \xister@TMPB=#3\dimexpr\xister@Tv-\xister@Tdu\relax
+        \xister@TMPB=#3\dimexpr\xister@Ts-\xister@Tdu\relax
         \pgfsetlinewidth{2\xister@Tdu}%
         \pgfpathmoveto{\pgfpoint\xister@TMPB\xister@Y}%
         \pgfpathlineto{\pgfpoint\xister@TMPB\xister@XY@share}%
@@ -426,7 +496,7 @@
         \ifxister@five@triangle@
           \xister@clip@v\z@
           \xister@TMPB=%
-            #3\dimexpr\xister@Tv-\xister@Tdu\relax
+            #3\dimexpr\xister@Ts-\xister@Tdu\relax
           \pgfsetlinewidth{2\xister@Tdu}%
           \pgfpathmoveto{\pgfpoint\xister@TMPB\xister@Y}%
           \pgfpathlineto{\pgfpoint\xister@TMPB\xister@XY@share}%
@@ -438,9 +508,9 @@
           \pgfpathlineto{\pgfpoint\xister@X\xister@TMPA}%
         \else\ifxister@five@dot@
           \pgfpathcircle
-            {\pgfpoint{\dimexpr\xister@X-#3\xister@five@dot\relax}%
-                      {\dimexpr\xister@Y-#2\xister@five@dot\relax}}%
-            {\xister@five@dot}%
+            {\pgfpoint{\dimexpr\xister@X-#3\xister@Five@dot\relax}%
+                      {\dimexpr\xister@Y-#2\xister@Five@dot\relax}}%
+            {\xister@Five@dot}%
           \pgfusepath{fill}%
         \else
           \xister@TMPB=\dimexpr\xister@X-#3\xister@Tv\relax
@@ -471,12 +541,60 @@
         \rlap{\copy\csname xister@digitbox@2#1\endcsname}%
         \copy\csname xister@digitbox@6#1\endcsname
       }%
-    \xister@superimpose{9#1}%
-      {%
-        \rlap{\copy\csname xister@digitbox@1#1\endcsname}%
-        \rlap{\copy\csname xister@digitbox@2#1\endcsname}%
-        \copy\csname xister@digitbox@6#1\endcsname
-      }%
+    \ifxister@nine@triangle@
+      \xister@drawdigit{9#1}%
+        {%
+          \xister@TMPA=.5\dimexpr\xister@XY@share+\xister@Y\relax
+          \xister@TMPB=#3\dimexpr\xister@Ts-\xister@Tdd\relax
+          \xister@clip@v\z@
+          \pgfsetlinewidth{2\xister@Tdd}%
+          \pgfpathmoveto{\pgfpoint\xister@TMPB\xister@XY@share}%
+          \pgfpathlineto{\pgfpoint\xister@TMPB\xister@Y}%
+          \pgfpathlineto{\pgfpoint\xister@X\xister@TMPA}%
+          \pgfusepath{stroke}%
+          \xister@TMPB=#3\dimexpr\xister@Ts-\xister@Tdu\relax
+          \pgfsetlinewidth{2\xister@Tdu}%
+          \pgfpathmoveto{\pgfpoint\xister@TMPB\xister@Y}%
+          \pgfpathlineto{\pgfpoint\xister@TMPB\xister@XY@share}%
+          \pgfpathlineto{\pgfpoint\xister@X\xister@TMPA}%
+        }%
+    \else
+      \xister@superimpose{9#1}%
+        {%
+          \rlap{\copy\csname xister@digitbox@1#1\endcsname}%
+          \rlap{\copy\csname xister@digitbox@2#1\endcsname}%
+          \copy\csname xister@digitbox@6#1\endcsname
+        }%
+    \fi
+    \unless\ifxister@six@stroke@
+      \xister@drawdigit{6#1}%
+        {%
+          \ifxister@six@dot@
+            \xister@TMPA=\dimexpr\xister@X-#3\xister@Six@dot\relax
+            \pgfpathcircle
+              {\pgfpoint\xister@TMPA
+                        {\dimexpr\xister@Y-#2\xister@Six@dot\relax}}%
+              {\xister@Six@dot}%
+            \pgfpathcircle
+              {\pgfpoint\xister@TMPA
+                        {\dimexpr\xister@XY@share+#2\xister@Six@dot\relax}}%
+              {\xister@Six@dot}%
+            \pgfusepath{fill}%
+          \else
+            \xister@TMPB=\dimexpr\xister@X-#3\xister@Tv\relax
+            \xister@TMPA=2\dimexpr#2\xister@six@dash\xister@Tv\relax
+            \pgfsetlinewidth{2\xister@Tv}%
+            \pgfpathmoveto{\pgfpoint\xister@TMPB\xister@Y}%
+            \pgfpathlineto
+              {\pgfpoint\xister@TMPB
+                        {\dimexpr\xister@Y-\xister@TMPA\relax}}%
+            \pgfpathmoveto{\pgfpoint\xister@TMPB\xister@XY@share}%
+            \pgfpathlineto
+              {\pgfpoint\xister@TMPB
+                        {\dimexpr\xister@XY@share+\xister@TMPA\relax}}%
+          \fi
+        }%
+    \fi
   }
 \newcommand\xister@drawdigits@horizontal[3]
   {%
@@ -484,20 +602,20 @@
     \xister@drawdigit{1#1}%
       {%
         \pgfsetlinewidth{2\xister@Tv}%
-        \xister@TMPA=-\dimexpr\xister@X-#3\xister@Tv\relax
+        \xister@TMPA=\dimexpr#3\xister@Tv-\xister@X\relax
         \pgfpathmoveto{\pgfpoint\xister@TMPA\z@}%
         \pgfpathlineto{\pgfpoint\xister@TMPA\xister@Y}%
       }%
     \xister@drawdigit{2#1}%
       {%
         \pgfsetlinewidth{2\xister@Tv}%
-        \xister@TMPA=-\dimexpr#3\xister@Tv-\xister@XY@share\relax
+        \xister@TMPA=\dimexpr\xister@XY@share-#3\xister@Tv\relax
         \pgfpathmoveto{\pgfpoint\xister@TMPA\z@}%
         \pgfpathlineto{\pgfpoint\xister@TMPA\xister@Y}%
       }%
     \xister@drawdigit{3#1}%
       {%
-        \xister@TMPB=#2\dimexpr\xister@Th-\xister@Tdu\relax
+        \xister@TMPB=#2\dimexpr\xister@Ts-\xister@Tdu\relax
         \xister@clip@h\xister@XY@share
         \pgfsetlinewidth{2\xister@Tdu}%
         \pgfpathmoveto{\pgfpoint\xister@XY@share\xister@TMPB}%
@@ -507,7 +625,7 @@
     \xister@drawdigit{4#1}%
       {%
         \xister@clip@h\z@
-        \xister@TMPB=#2\dimexpr\xister@Th-\xister@Tdd\relax
+        \xister@TMPB=#2\dimexpr\xister@Ts-\xister@Tdd\relax
         \pgfsetlinewidth{2\xister@Tdd}%
         \pgfpathmoveto{\pgfpoint\xister@X\xister@TMPB}%
         \pgfpathlineto{\pgfpoint\xister@XY@share\xister@TMPB}%
@@ -517,21 +635,21 @@
       {%
         \ifxister@five@triangle@
           \xister@clip@h\z@
-          \xister@TMPB=#2\dimexpr\xister@Th-\xister@Tdd\relax
+          \xister@TMPB=#2\dimexpr\xister@Ts-\xister@Tdd\relax
           \pgfsetlinewidth{2\xister@Tdd}%
           \pgfpathmoveto{\pgfpoint{-\xister@X}\xister@TMPB}%
           \pgfpathlineto{\pgfpoint\xister@XY@share\xister@TMPB}%
           \pgfpathlineto{\pgfpoint{-\xister@X}\xister@Y}%
           \pgfusepath{stroke,clip}%
           \pgfsetlinewidth{2\xister@Tv}%
-          \xister@TMPA=-\dimexpr\xister@X-#3\xister@Tv\relax
+          \xister@TMPA=\dimexpr#3\xister@Tv-\xister@X\relax
           \pgfpathmoveto{\pgfpoint\xister@TMPA\z@}%
           \pgfpathlineto{\pgfpoint\xister@TMPA\xister@Y}%
         \else\ifxister@five@dot@
           \pgfpathcircle
-            {\pgfpoint{-\dimexpr\xister@X-#3\xister@five@dot\relax}%
-                      {\dimexpr\xister@Y-#2\xister@five@dot\relax}}%
-            {\xister@five@dot}%
+            {\pgfpoint{\dimexpr#3\xister@Five@dot-\xister@X\relax}%
+                      {\dimexpr\xister@Y-#2\xister@Five@dot\relax}}%
+            {\xister@Five@dot}%
           \pgfusepath{fill}%
         \else
           \pgfsetlinewidth{2\xister@Th}%
@@ -540,7 +658,7 @@
           \pgfpathlineto
             {%
               \pgfpoint
-                {-\dimexpr\xister@X-#3\xister@five@dash\xister@Th*2\relax}%
+                {\dimexpr#3\xister@five@dash\xister@Th*2-\xister@X\relax}%
                 \xister@TMPB
             }%
         \fi\fi
@@ -562,12 +680,60 @@
         \rlap{\copy\csname xister@digitbox@2#1\endcsname}%
         \copy\csname xister@digitbox@6#1\endcsname
       }%
-    \xister@superimpose{9#1}%
-      {%
-        \rlap{\copy\csname xister@digitbox@1#1\endcsname}%
-        \rlap{\copy\csname xister@digitbox@2#1\endcsname}%
-        \copy\csname xister@digitbox@6#1\endcsname
-      }%
+    \ifxister@nine@triangle@
+      \xister@drawdigit{9#1}%
+        {%
+          \xister@TMPA=.5\dimexpr\xister@XY@share-\xister@X\relax
+          \xister@TMPB=#2\dimexpr\xister@Ts-\xister@Tdu\relax
+          \xister@clip@h\z@
+          \pgfsetlinewidth{2\xister@Tdu}%
+          \pgfpathmoveto{\pgfpoint\xister@XY@share\xister@TMPB}%
+          \pgfpathlineto{\pgfpoint{-\xister@X}\xister@TMPB}%
+          \pgfpathlineto{\pgfpoint\xister@TMPA\xister@Y}%
+          \pgfusepath{stroke}%
+          \xister@TMPB=#2\dimexpr\xister@Ts-\xister@Tdd\relax
+          \pgfsetlinewidth{2\xister@Tdd}%
+          \pgfpathmoveto{\pgfpoint\xister@X\xister@TMPB}%
+          \pgfpathlineto{\pgfpoint\xister@XY@share\xister@TMPB}%
+          \pgfpathlineto{\pgfpoint\xister@TMPA\xister@Y}%
+        }%
+    \else
+      \xister@superimpose{9#1}%
+        {%
+          \rlap{\copy\csname xister@digitbox@1#1\endcsname}%
+          \rlap{\copy\csname xister@digitbox@2#1\endcsname}%
+          \copy\csname xister@digitbox@6#1\endcsname
+        }%
+    \fi
+    \unless\ifxister@six@stroke@
+      \xister@drawdigit{6#1}%
+        {%
+          \ifxister@six@dot@
+            \xister@TMPA=\dimexpr\xister@Y-#2\xister@Six@dot\relax
+            \pgfpathcircle
+              {\pgfpoint{\dimexpr#3\xister@Six@dot-\xister@X\relax}%
+                        \xister@TMPA}%
+              {\xister@Six@dot}%
+            \pgfpathcircle
+              {\pgfpoint{\dimexpr\xister@XY@share-#3\xister@Six@dot\relax}%
+                        \xister@TMPA}%
+              {\xister@Six@dot}%
+            \pgfusepath{fill}%
+          \else
+            \pgfsetlinewidth{2\xister@Th}%
+            \xister@TMPB=\dimexpr\xister@Y-#2\xister@Th\relax
+            \xister@TMPA=2\dimexpr#3\xister@six@dash\xister@Th\relax
+            \pgfpathmoveto{\pgfpoint{-\xister@X}\xister@TMPB}%
+            \pgfpathlineto
+              {\pgfpoint{\dimexpr\xister@TMPA-\xister@X\relax}%
+                        \xister@TMPB}%
+            \pgfpathmoveto{\pgfpoint\xister@XY@share\xister@TMPB}%
+            \pgfpathlineto
+              {\pgfpoint{\dimexpr\xister@XY@share-\xister@TMPA\relax}%
+                        \xister@TMPB}%
+          \fi
+        }%
+    \fi
   }
 \newcommand\xister@drawdigit[2]
   {%
@@ -588,7 +754,7 @@
   {%
     \xister@drawdigit{0}%
       {%
-        \pgfsetlinewidth{2\xister@Tv}%
+        \pgfsetlinewidth{2\xister@Ts}%
         \pgfpathmoveto{\pgfpoint\z@{-\xister@Y}}%
         \pgfpathlineto{\pgfpoint\z@\xister@Y}%
       }%
@@ -597,7 +763,7 @@
   {%
     \xister@drawdigit{0}%
       {%
-        \pgfsetlinewidth{2\xister@Th}%
+        \pgfsetlinewidth{2\xister@Ts}%
         \pgfpathmoveto{\pgfpoint{-\xister@X}\z@}%
         \pgfpathlineto{\pgfpoint\xister@X\z@}%
       }%
@@ -617,6 +783,14 @@
           \xister@Tv=\the\dimexpr.5\dimexpr\xister@tv\relax\relax
           \xister@Tdu=\the\dimexpr.5\dimexpr\xister@tdu\relax\relax
           \xister@Tdd=\the\dimexpr.5\dimexpr\xister@tdd\relax\relax
+          \xister@Five@dot=\the\dimexpr\xister@five@dot\relax
+          \xister@Six@dot=\the\dimexpr\xister@six@dot\relax
+          \ifx\xister@ts\@empty
+            \xister@Ts=%
+              \ifx\xister@build\xister@build@h\xister@Th\else\xister@Tv\fi
+          \else
+            \xister@Ts=\the\dimexpr.5\dimexpr\xister@ts\relax\relax
+          \fi
         }%
     \xister@tmp
   }

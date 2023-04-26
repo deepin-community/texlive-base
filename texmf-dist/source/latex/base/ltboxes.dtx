@@ -1,6 +1,6 @@
 % \iffalse meta-comment
 %
-% Copyright (C) 1993-2021
+% Copyright (C) 1993-2022
 % The LaTeX Project and any individual authors listed elsewhere
 % in this file.
 %
@@ -33,7 +33,7 @@
 %<*driver>
 % \fi
 \ProvidesFile{ltboxes.dtx}
-             [2021/02/10 v1.4b LaTeX Kernel (Box Commands)]
+             [2022/09/07 v1.4d LaTeX Kernel (Box Commands)]
 % \iffalse
 \documentclass{ltxdoc}
 \GetFileInfo{ltboxes.dtx}
@@ -212,7 +212,7 @@
 % \meta{height} \& \meta{depth} = actual height and depth of box in new
 % position.
 %
-% \StopEventually{}
+% \MaybeStop{}
 %
 % \changes{v0.1e}{1994/03/02}{Remove need for drv file}
 % \changes{v0.1e}{1994/03/02}{Add 2ekernel module}
@@ -987,7 +987,7 @@
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{\parboxrestore}
+% \begin{macro}{\@parboxrestore}
 % Restore various paragraph parameters, and also |\\|.
 %    \begin{macrocode}
 \def\@parboxrestore{\@arrayparboxrestore\let\\\@normalcr}
@@ -1003,6 +1003,16 @@
 \@minipagefalse
 %    \end{macrocode}
 % \end{macro}
+%
+%  \begin{macro}{\if@in@minipage@env}
+%    
+% \changes{v1.4d}{2022/09/07}
+%         {Check for nested minipages and warn (gh/168)}
+%    \begin{macrocode}
+\newif\if@in@minipage@env
+%    \end{macrocode}
+%  \end{macro}
+%
 %
 % \begin{macro}{\minipage}
 % \changes{v0.1a}{1993/12/03}
@@ -1060,6 +1070,28 @@
     \color@begingroup
       \hsize\@tempdima
       \textwidth\hsize \columnwidth\hsize
+%    \end{macrocode}
+%    We check for nested minipages inside the box so that there is
+%    always a group resetting the switch even if the code does not use
+%    \cs{begin} to start the minipage.
+% \changes{v1.4d}{2022/09/07}
+%         {Check for nested minipages and warn (gh/168)}
+%    \begin{macrocode}
+      \if@in@minipage@env
+%    \end{macrocode}
+%    We only issue a warning if the outer minipage contained footnotes
+%    because that is the problematical case.
+%    \begin{macrocode}
+        \ifvoid\@mpfootins\else
+          \@latex@warning{Nested minipage:
+            footnotes may be misplaced}%
+        \fi
+      \else
+        \@in@minipage@envtrue
+      \fi
+%    \end{macrocode}
+%
+%    \begin{macrocode}
       \@parboxrestore
       \def\@mpfn{mpfootnote}\def\thempfn{\thempfootnote}\c@mpfootnote\z@
       \let\@footnotetext\@mpfootnotetext
@@ -1137,10 +1169,12 @@
 %     {Color groups restored here.}
 % \changes{v1.4b}{2021/02/10}
 %         {Explicitly run \cs{par} in support for paragraph tagging}
+% \changes{v1.4c}{2021/10/14}
+%         {Explicitly set \cs{@currentcounter} (gh/687)}
 %    \begin{macrocode}
 %</2ekernel>
 %<*2ekernel|latexrelease>
-%<latexrelease>\IncludeInRelease{2021/06/01}%
+%<latexrelease>\IncludeInRelease{2021/11/15}%
 %<latexrelease>                 {\@mpfootnotetext}{footnotetext tagging}%
 \long\def\@mpfootnotetext#1{%
   \global\setbox\@mpfootins\vbox{%
@@ -1148,6 +1182,7 @@
     \reset@font\footnotesize
     \hsize\columnwidth
     \@parboxrestore
+    \def\@currentcounter{mpfootnote}%
     \protected@edef\@currentlabel
          {\csname p@mpfootnote\endcsname\@thefnmark}%
     \color@begingroup
@@ -1156,6 +1191,24 @@
     \par
     \color@endgroup}}
 %</2ekernel|latexrelease>
+%<latexrelease>\EndIncludeInRelease
+%    \end{macrocode}
+%    \begin{macrocode}
+%<latexrelease>\IncludeInRelease{2021/06/01}%
+%<latexrelease>                 {\@mpfootnotetext}{footnotetext tagging}%
+%<latexrelease>\long\def\@mpfootnotetext#1{%
+%<latexrelease>  \global\setbox\@mpfootins\vbox{%
+%<latexrelease>    \unvbox\@mpfootins
+%<latexrelease>    \reset@font\footnotesize
+%<latexrelease>    \hsize\columnwidth
+%<latexrelease>    \@parboxrestore
+%<latexrelease>    \protected@edef\@currentlabel
+%<latexrelease>         {\csname p@mpfootnote\endcsname\@thefnmark}%
+%<latexrelease>    \color@begingroup
+%<latexrelease>      \@makefntext{%
+%<latexrelease>        \rule\z@\footnotesep\ignorespaces#1\@finalstrut\strutbox}%
+%<latexrelease>    \par
+%<latexrelease>    \color@endgroup}}
 %<latexrelease>\EndIncludeInRelease
 %    \end{macrocode}
 %

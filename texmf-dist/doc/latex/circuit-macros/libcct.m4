@@ -1,7 +1,7 @@
 divert(-1)
   libcct.m4
 
-* Circuit_macros Version 9.6, copyright (c) 2021 J. D. Aplevich under      *
+* Circuit_macros Version 10.1, copyright (c) 2022 J. D. Aplevich under     *
 * the LaTeX Project Public Licence in file Licence.txt. The files of       *
 * this distribution may be redistributed or modified provided that this    *
 * copyright notice is included and provided that modifications are clearly *
@@ -33,6 +33,7 @@ TWO-TERMINAL ELEMENTS are constructed as follows, with variations:
 
    # The invisible body block:
    {[box invis ht_ m4v wid_ m4h ] at rvec_(rp_len/2,0)}
+   # Some elements omit this block but draw the visible lines within a block.
 
    # The final invisible line:
    line to rvec_(rp_len,0) invis
@@ -53,6 +54,14 @@ NON-TWO-TERMINAL ELEMENTS are usually constructed within a block:
    as if they were boxes.
 
 ==============================================================================
+
+DEBUGGING: The statement
+     print "`$0'($@)" ;
+   inserted into a macro will display the macro name and current arguments
+   provided the arguments do not contain double quotes. Similarly, the
+   m4 macro m4msg( text ) will display the text during m4 processing.
+
+==============================================================================
 CUSTOMIZATIONS:
 
    The non-two-terminal circuit elements enclosed in [] blocks allow
@@ -67,14 +76,6 @@ CUSTOMIZATIONS:
    argument (which may be null) is expanded.
 
 ==============================================================================
-
-DEBUGGING: The statement
-     print "`$0'($@)" ;
-   inserted into a macro will display the macro name and current arguments
-   Similarly, the m4 macro m4msg( text ) will display the text during m4
-   processing.
-
-==============================================================================
  This file redefines default arrow dimensions and the dotrad_ macro.
 =============================================================================='
 
@@ -82,6 +83,7 @@ DEBUGGING: The statement
                                  Arg2 chars:
                                   [d]F or blank: flat plates; d=hatched fill
                                   [d]C = polarized, curved plate; d=variable
+                                  CP = constant phase
                                   E = polarized rectangular plates
                                   K = filled rectangular plates
                                   M = rectangular plates
@@ -110,6 +112,16 @@ define(`capacitor',
       {line from rvec_(0,-m4cht/2) \
           to rvec_(0,m4cht/2)}
       line to rvec_(rp_len/2-m4cwd/2,0) ')
+  sc_draw(`dna_',CP,
+   `define(`m4cht',`ifelse(`$4',,`dimen_/3',`($4)')')dnl
+    define(`m4cwd',`ifelse(`$5',,`m4cht*0.8',`($5)')')dnl
+    line to rvec_(rp_len/2,0)
+    {line from rvec_(-m4cwd/2,m4cht/2) to Here \
+       then to rvec_(-m4cwd/2,-m4cht/2) }
+    {line from rvec_(0,m4cht/2) to rvec_(m4cwd/2,0) \
+       then to rvec_(0,-m4cht/2) }
+    line from rvec_(m4cwd/2,0) to rvec_(rp_len/2,0)
+   ')
   sc_draw(`dna_',C,
    `define(`m4cht',`ifelse(`$4',,`dimen_/4',`($4)')')dnl
     define(`m4cwd',`ifelse(`$5',,`m4cht*0.4',`($5)')')dnl
@@ -117,7 +129,7 @@ define(`capacitor',
      line to rvec_(rp_len/2-m4cwd/2,0)
      {line from rvec_(0,-m4cht/2) \
           to rvec_(0,m4cht/2)}
-     {arc cw ifelse(m4a,d,-> wid lthick*4 ht lthick*4) \
+     {arc cw ifelse(m4a,d,-> wid lthick*4 ht lthick*5) \
         from rvec_(m4cwd,-m4cht/2) \
           to rvec_(m4cwd,m4cht/2) \
         with .c at rvec_(m4cwd+sqrt((m4cr)^2-(m4cht/2)^2),0) }
@@ -194,30 +206,35 @@ define(`capacitor',
 
                                 `resistor( linespec, cycles, chars, cycle wid)
                                  cycles: default 3
-                                 chars : E=ebox
-                                         ES=ebox with slash
-                                         Q=offset
-                                         H=squared
-                                         N=IEEE (default)
-                                         B=not burnable
-                                         V=varistor variant
-                                         R=to right of drawing direction
+                                 chars : AC: complex element
+                                         E: ebox
+                                         ES: ebox with slash
+                                         Q: offset
+                                         H: squared
+                                         N: IEEE (default)
+                                         B: not burnable
+                                         V: varistor variant
+                                         R: to right of drawing direction
                                  arg4: cycle width (default dimen_/6)'
 define(`resistor',
 `define(`m4h',`ifelse(`$4',,`dimen_/6',`($4)')/4')dnl
  ifinstr(
- `$2',E,
+ `$2',E,  # This is obsolete but kept for now
    `ebox(`$1',shift(shift($@)))',
  `$3',ES,
-   `ebox(`$1',shift(shift(shift($@))))
-    {line from last line.c+vec_(m4wd*0.3,m4ht/2) \
-            to last line.c+vec_(-m4wd*0.3,-m4ht/2)}
+   `ebox(`$1')
+    {line from last line.c+vec_( m4lgth*0.3, m4wdth/2) \
+            to last line.c+vec_(-m4lgth*0.3,-m4wdth/2)}
     line invis from 2nd last line.start to 2nd last line.end',
  `$3',E,
-   `ebox(`$1',shift(shift(shift($@))))',
+   `ebox(`$1')',
  `$3',V,
    `M4_varistor($@)',
- `define(`dna_',ifelse(`$3',,N,`$3',R,N,`$3'))dnl
+ `$3',AC,
+   `ebox(`$1')
+    { ACsymbol(at last [],m4h*3.5,m4h*2,R)
+      [] wid 2nd last [].wid ht 2nd last [].ht at 2nd last [] }',
+ `define(`dna_',ifelse(`$3',,N,`$3',R,N,`$3')`')dnl
   eleminit_(`$1')
   sc_draw(`dna_',N,
    `define(`m4n',`ifelse(`$2',,6,`eval(2*($2))')')dnl  Default resistor:
@@ -360,10 +377,11 @@ define(`FTcap',`[ define(`FTctyp',`ifelse(`$1',,A,`$1')')dnl
                           Name1, Name2, ... if specified
                           ahead = blank or one of . - <- -> <-> '
 define(`addtaps',`
-ifelse(`$2',,`undefine(`m4tap_x')popdef(`m4type')popdef(`m4name')',
+ifelse(`$2',,`undefine(`m4tap_x')popdef(`m4type',`m4name')',
  `ifdef(`m4tap_x',`define(`m4tap_x',incr(m4tap_x))',
   `define(`m4tap_x',1) M4tap_w: last [].w_; M4tap_e: last [].e_
-   setkey_(`$1',type,`$1',N)setkey_(`$1',name,Tap,N)dnl
+   pushkeys_(`$1',type::N; name:Tap:N)dnl
+   ifelse(m4type,,`ifinstr(`$1',=,,`define(`m4type',`$1')')')dnl
    M4tap_xy: (last [].wid_,last [].ht_)')
   {define(`m4tapl',`ifelse(`$3',,`dimen_/3',`$3')')dnl
   move to (`$2' between M4tap_w and M4tap_e) + vec_(0,sign(m4tapl)*M4tap_xy.y/2)
@@ -432,6 +450,7 @@ define(`rarrow',`define(`m4h',`min(lin_leng(last line),linewid)/2')dnl
                                 `inductor( linespec, W|L, cycles, M|P|K[n],
                                    loop wid )
                                  W=wide arcs (default narrow); L=looped arcs
+                                 arg3= integer (number of loops)
                                  arg4= M[n]=metal core
                                        P[n]=(ferrite) powder core (dashed lines)
                                        K[n]=long-dashed core lines
@@ -441,59 +460,55 @@ define(`rarrow',`define(`m4h',`min(lin_leng(last line),linewid)/2')dnl
 define(`inductor',`eleminit_(`$1')
  define(`m4hlw',`ifelse(`$5',,`dimen_/10',`($5)/2')')dnl half loop wid
  define(`m4n',`ifelse(`$3',,4,`$3')')dnl
- ifelse(`$2',W, `define(`m4wd',((2*m4n-2)*m4c2t+2)*m4hlw)',
+ ifelse(`$2',W, `define(`m4wd',((2*m4n-2)*m4c2t+2*m4ct)*m4hlw)',
         `$2',L, `define(`m4wd',(m4n+1)*m4hlw)',
-    `define(`m4ht',`ifelse(`$2',,`dimen_/16',`$2')')define(`m4wd',m4n*m4ht*2)')
+    `define(`m4ht',`ifelse(`$5',,`dimen_/16',(`$5')/2)')dnl half other loop wid
+     define(`m4wd',m4n*m4ht*2)')dnl
  { line to rvec_((rp_len-m4wd)/2,0)
-   ifelse(`$2',W,`m4Ibody', `$2',L,`m4Lbody', `m4ibody') with .S at Here
-   line from last [].E to last [].E+vec_((rp_len-m4wd)/2,0) }
- ifelse(ifinstr(`$4',M,T,`$4',P,T,`$4',K,T),T,
-  `define(`m4nL',ifelse(len(`$4'),1,2,substr(`$4',1)))dnl
-   define(`m4hs',`(dimen_/24+(m4nL-1)*dimen_/16)')dnl
-   m4m_core(rvec_(rp_len/2,0), m4wd, m4ht+dimen_/24, dimen_/16,
-     ifinstr( `$4',P,`dashed m4wd/(2*m4n+1)',
-              `$4',K,`dashed m4wd/(2*m4n+1)*3'), m4nL)
-   {[box invis ht_ m4ht+m4hs+m4dp wid_ m4wd] \
-     at rvec_(rp_len/2,(m4ht+m4hs-m4dp)/2)}')
- line to rvec_(rp_len,0) invis ')
-                                `Wide loop inductor body'
-define(`m4Ibody',`define(`m4ht',`(1+m4st)*m4hlw')dnl
- define(`m4dp',`(m4s2t-m4st)*m4hlw')dnl
-   [S: Here; round
-    arc cw from Here to rvec_(vscal_(m4hlw,m4ct+m4c2t,m4st-m4s2t)) \
-       with .c at rvec_(vscal_(m4hlw,m4ct,m4st)); round
-    for m4i=3 to m4n do { arc cw from Here to rvec_(vscal_(m4hlw,2*m4c2t,0)) \
-       with .c at rvec_(vscal_(m4hlw,m4c2t,m4s2t)); round }
-    arc cw from Here to rvec_(vscal_(m4hlw,m4ct+m4c2t,m4s2t-m4st)) \
-       with .c at rvec_(vscal_(m4hlw,m4c2t,m4s2t)); round
-    E: Here] ')
-define(`m4ct',`Cos(25)')define(`m4st',`Sin(25)')
-define(`m4c2t',`Cos(50)')define(`m4s2t',`Sin(50)')
-                                `Looped inductor body'
-define(`m4Lbody',`define(`m4ht',`m4hlw*10/8')define(`m4dp',`m4hlw/2')dnl
- [ S: Here; round
-   spline ifdpic(0.55) \
-        to rvec_(0,m4ht) for_(1,m4n,1,`\
-    then to rvec_((m4x+0.3)*m4hlw, m4ht) \
-    then to rvec_((m4x+0.3)*m4hlw,-m4dp) \
-    then to rvec_((m4x-0.3)*m4hlw,-m4dp) \
-    then to rvec_((m4x-0.3)*m4hlw, m4ht) \')\
-    then to rvec_(m4wd,m4ht) \
-    then to rvec_(m4wd,0); round; E: Here ] ')
-                                `Narrow inductor body'
-define(`m4ibody',`define(`m4dp',0)dnl
- ifelse(ifpstricks(T)`'ifmpost(T)`'ifpgf(T)`'ifsvg(T),T,
-  `define(`m4y')',`undefine(`m4y')')dnl
-   [ S: Here; ifdef(`m4y',`{line to rvec_(0,-hlth)};')
-     for m4i=1 to m4n do {
-       arc cw from Here to rvec_(m4ht*2,0) with .c at rvec_(m4ht,0)
-       ifdef(`m4y',`{line to rvec_(0,-hlth)}') }; E: Here ] ')
+   {M4coil: [ S: Here;
+    ifelse(`$2',W,`define(`m4ht',`(1+m4st)*m4hlw')dnl
+      define(`m4dp',`(m4s2t-m4st)*m4hlw') round
+      arc cw from Here to rvec_(vscal_(m4hlw,m4ct+m4c2t,m4st-m4s2t)) \
+         with .c at rvec_(vscal_(m4hlw,m4ct,m4st)); round
+      for m4i=3 to m4n do { arc cw from Here to rvec_(vscal_(m4hlw,2*m4c2t,0)) \
+         with .c at rvec_(vscal_(m4hlw,m4c2t,m4s2t)); round }
+      arc cw from Here to rvec_(vscal_(m4hlw,m4ct+m4c2t,m4s2t-m4st)) \
+         with .c at rvec_(vscal_(m4hlw,m4c2t,m4s2t)); round ',
+    `$2',L,`define(`m4ht',`m4hlw*10/8')define(`m4dp',`m4hlw/2')dnl
+      round; spline ifdpic(0.55) to rvec_(0,m4ht) \
+      for_(1,m4n,1,`\
+       then to rvec_((m4x+0.3)*m4hlw, m4ht) \
+       then to rvec_((m4x+0.3)*m4hlw,-m4dp) \
+       then to rvec_((m4x-0.3)*m4hlw,-m4dp) \
+       then to rvec_((m4x-0.3)*m4hlw, m4ht) \')\
+       then to rvec_(m4wd,m4ht) \
+       then to rvec_(m4wd,0); round ',
+    `define(`m4dp',0)dnl
+      ifelse(ifpstricks(T)`'ifmpost(T)`'ifpgf(T)`'ifsvg(T),T,
+        `define(`m4y')',`undefine(`m4y')')dnl
+      ifdef(`m4y',`{line to rvec_(0,-hlth)};')
+      for m4i=1 to m4n do {
+        arc cw from Here to rvec_(m4ht*2,0) with .c at rvec_(m4ht,0)
+        ifdef(`m4y',`{line to rvec_(0,-hlth)}') } ') ] with .S at Here }
+    ifelse(ifinstr(`$4',M,T,`$4',P,T,`$4',K,T),T,
+     `define(`m4nL',ifelse(len(`$4'),1,2,substr(`$4',1)))dnl
+      define(`m4hs',`(dimen_/24+(m4nL-1)*dimen_/16)')dnl
+      { m4m_core(M4coil.S+vec_(m4wd/2,0), m4wd, m4ht+dimen_/24, dimen_/16,
+        ifinstr( `$4',P,`dashed m4wd/(2*m4n+1)',
+                 `$4',K,`dashed m4wd/(2*m4n+1)*3'), m4nL)
+      [ box invis wid M4coil.wid ht M4coil.ht at M4coil
+        M: move from M4Core`'m4nL.start to M4Core`'m4nL.end ] \
+        with .M.c at M4Core`'m4nL.c }')
+   line from rvec_(m4wd,0) to rvec_((rp_len+m4wd)/2,0) }
+   line to rvec_(rp_len,0) invis ')
                                `m4m_core(bottom center, length, ht offset,
                                  separation, linetype, nlines)
                                  nlines=lines for the metal core'
 define(`m4m_core',`for_(1,`$6',1,`{M4Core`'m4x: line \
    from `$1'+vec_(-(`$2')/2,`$3'+(`$4')*(m4x-1)) \
      to `$1'+vec_( (`$2')/2,`$3'+(`$4')*(m4x-1)) `$5''})')
+define(`m4ct',`Cos(25)')define(`m4st',`Sin(25)')
+define(`m4c2t',`Cos(50)')define(`m4s2t',`Sin(50)')
 
                                 `transformer( linespec, L|R, np,
                                   [A|M[n]|P[n]|K[n]][W|L][D1|D2|D12|D21], ns )
@@ -508,8 +523,8 @@ define(`m4m_core',`for_(1,`$6',1,`{M4Core`'m4x: line \
                                  D1: phase dots at P1 and S1 ends; D2: dots
                                  at P2 and S2 ends; D12: dots at P1 and S2
                                  ends; D21: dots at P2 and S1 ends'
-define(`transformer', `[ P1: Here define(`m4drt',m4dir)
- define(`m4WL',`ifinstr(`$4',W,W,`ifinstr(`$4',L,L)')')dnl
+define(`transformer', `[ P1: Here define(`m4drt',m4_dir_)
+ define(`m4WL',`ifinstr(`$4',W,W,`$4',L,L)')dnl
  define(`m4np',`ifelse(`$3',,4,(`$3'))')dnl
  define(`m4ns',`ifelse(`$5',,4,(`$5'))')dnl
  ifelse(`$1',,`mvw = max(\
@@ -563,28 +578,47 @@ define(`delay',`eleminit_(`$1')
  { [box invis ht_ m4ht wid_ m4wd ] at rvec_(rp_len/2,0)}
  line to rvec_(rp_len,0) invis ')
 
-                                `crystal xtal( linespec )'
-define(`xtal',`eleminit_(`$1')
- define(`m4ht',`dimen_/4')define(`m4wd',`m4ht*2/3')define(`m4cs',`m4ht/3')dnl
+                                `xtal( linespec, keys ) (2-terminal crystal)
+                                 keys:
+                                   type=N (default) or R (round);
+                                 type N keys:
+                                   lgth=expr; (body length)
+                                   wdth=expr; (body width)
+                                   bxwd=expr; (body inner box width)
+                                   box= box attributes; (shaded ...) 
+                                 type R keys:
+                                   outerdiam=expr;
+                                   innerdiam=expr;
+                                   outer= outer circle attributes; (dotted ...)
+                                   inner= inner circle attributes; (shaded ...)'
+define(`xtal',`eleminit_(`$1') pushkey_(`$2',type,N,N)
+ ifelse(m4type,R,`pushkeys_(`$2',`outerdiam:dimen_/3; innerdiam:m4outerdiam*0.4;
+     outer::N; inner::N') define(`m4wd',m4outerdiam) ',
+  `pushkeys_(`$2',`wdth:dimen_/4; lgth:m4wdth*2/3; bxwd:m4lgth/2; box::N;')dnl
+   define(`m4wd',m4lgth) ')
  { line to rvec_(rp_len/2-m4wd/2,0)
-   {line from rvec_(0,-m4ht/3) \
-          to rvec_(0,m4ht/3)}
-   { move to rvec_(m4wd/2-m4cs/2,0)
-     line to rvec_(0,m4ht/2) \
-       then to rvec_(m4cs,m4ht/2) \
-       then to rvec_(m4cs,-m4ht/2) \
-       then to rvec_(0,-m4ht/2) \
-       then to Here }
-   move to rvec_(m4wd,0)
-   {line from rvec_(0,-m4ht/3) \
-          to rvec_(0,m4ht/3)}
-   line to rvec_(rp_len/2-m4wd/2,0) }
- {[box invis ht_ m4ht wid_ m4wd ] at rvec_(rp_len/2,0)}
+   {[ Orig: Here; ifelse(m4type,R,
+    `{circle diam m4outerdiam at rvec_(m4outerdiam/2,0) m4outer}
+     {circle diam m4innerdiam at rvec_(m4outerdiam/2,0) m4inner}
+     popdef(`m4type',`m4outerdiam',`m4innerdiam',`m4outer',`m4inner') ',
+    `{line from rvec_(0,-m4wdth/3) \
+            to rvec_(0,m4wdth/3)}
+     { move to rvec_(m4lgth/2-m4bxwd/2,0)
+       line to rvec_(0,m4wdth/2) \
+         then to rvec_(m4bxwd,m4wdth/2) \
+         then to rvec_(m4bxwd,-m4wdth/2) \
+         then to rvec_(0,-m4wdth/2) \
+         then to Here m4box }
+     move to rvec_(m4lgth,0)
+     {line from rvec_(0,-m4wdth/3) \
+            to rvec_(0,m4wdth/3)}
+     popdef(`m4type',`m4wdth',`m4lgth',`m4bxwd',`m4box')') ] with .Orig at Here}
+   line from rvec_(m4wd,0) to rvec_(rp_len/2+m4wd/2,0) }
  line to rvec_(rp_len,0) invis ')
 
                   `source( linespec,
                      V|v|I|i|AC|B|F|G|H|Q|L|N|P|R|S[C[r]|E[r]]]|T|X|U|other,
-                     diameter, R, fill)
+                     diameter, R, attributes,body name)
                      V = voltage source; v = alternate voltage source;
                      I = current source; i = alternate current source;
                      AC = AC source; B = bulb; F = fluorescent; G =
@@ -594,14 +628,15 @@ define(`xtal',`eleminit_(`$1')
                      arc; T = triangle; U = square-wave; X = interior X;
                      other = custom interior label or waveform;
                      arg 4: R = reversed polarity; 
-                     arg 5 modifies the circle with e.g., color or fill'
+                     arg 5 modifies the circle with e.g., color or fill
+                     arg 6 names the body [] block'
 define(`source',`ifelse(`$4',R,
  `reversed(`source',`$1',`$2',`$3',,shift(shift(shift(shift($@)))))',
  `eleminit_(`$1')
  define(`m4h',ifelse(`$3',,`sourcerad_',`($3)/2'))dnl
  ifelse(
- `$2',G,`m4_sourceGQ($@)',
- `$2',Q,`m4_sourceGQ($@)',
+ `$2',G,`m4_sourceGQ(`$6',$@)',
+ `$2',Q,`m4_sourceGQ(`$6',$@)',
  `{ line to rvec_(rp_len/2-m4h,0)
     move to rvec_(m4h,0)
   { Src_C: circle rad m4h `$5' at Here }
@@ -696,24 +731,24 @@ define(`source',`ifelse(`$4',R,
   `{$2}' )
   line from rvec_(m4h,0) \
           to rvec_(rp_len/2,0)}
-  { [box invis ht_ m4h*2 wid_ m4h*2] at rvec_(rp_len/2,0) } ')
+  {ifelse(`$6',,,`$6':)[box invis ht_ m4h*2 wid_ m4h*2] at rvec_(rp_len/2,0)}')
   line to rvec_(rp_len,0) invis ')')
                     `Internal to source macro:'
 define(`m4_sourceGQ',
- `m4sv = m4h*2/3
-  m4sh = sqrt((m4h)^2-m4sv^2)
+ `m4sh = m4h*3/4
+  m4sv = sqrt((m4h)^2-m4sh^2)
   { line to rvec_(rp_len/2-(m4h+m4sh),0)
-   {Body:[ Cx: rvec_(m4h,0)
-     ifelse(`$5',,,`{circle invis rad m4h `$5' with .c at Cx}')
+   {ifelse(`$1',,,`$1':)[ Cx: rvec_(m4h,0)
+     ifelse(`$6',,,
+      `{circle invis rad m4h `$6' with .c at Cx}
+       {circle invis rad m4h `$6' with .c at Cx+vec_(m4sh*2,0)}')
      L: Cx+vec_(m4sh, m4sv) 
      R: Cx+vec_(m4sh,-m4sv)
-     M1: Cx+vec_(-(m4h-m4sh)*3/5,0)
-     ifelse(`$5',,,
-      `{circle invis rad m4h `$5' with .c at Cx+vec_(m4sh*2,0)}')
+     M1: Cx-vec_(m4h/6,0)
      C1: circle rad m4h with .c at Cx
-     C2: ifelse(`$2',G,`circle rad m4h',`arc rad m4h from R to L') \
+     C2: ifelse(`$3',G,`circle rad m4h',`arc rad m4h from R to L') \
        with .c at C1 +vec_(m4sh*2,0)
-     M2: C2+vec_((m4h-m4sh)*3/5,0)
+     M2: C2+vec_(m4h/6,0)
      ] at rvec_(m4h+m4sh,0)}
    line from rvec_((m4h+m4sh)*2,0) \
            to rvec_(rp_len/2+(m4h+m4sh),0) } ')
@@ -827,17 +862,31 @@ define(`battery',`ifelse(`$3',R,
   {[box invis ht_ m4ht wid_ m4wd] at rvec_(rp_len/2,0)}
   line to rvec_(rp_len,0) invis ')')
 
-                                `ebox(linespec, length, ht, greyvalue)
-                                 Box element; length and ht are relative to
+                                `ebox(linespec, length, ht, greyvalue,
+                                   box attributes)
+                                 Length and ht (of the elemet) are relative to
                                  the direction of linespec'
+                                Alternative:
+                                `ebox(linespec, keys)
+                                 keys:
+                                   lgth=expr; wdth=expr;
+                                   text="centered text";
+                                   box=box attributes, e.g. shaded "green"'
 define(`ebox',`eleminit_(`$1')
-   define(`m4wd',ifelse(`$2',,`dimen_/2',`($2)'))dnl
-   define(`m4ht',ifelse(`$3',,`dimen_/5',`($3)'))dnl
-   {line to rvec_(max(0,rp_len/2-m4wd/2),0)
-    ifelse(`$4',,`lbox(m4wd,m4ht)',`m4fshade(`$4',lbox(m4wd,m4ht))')
-    line to rvec_(max(0,rp_len/2-m4wd/2),0)}
-  {[box invis ht_ m4ht wid_ m4wd] at rvec_(rp_len/2,0)}
-   line to rvec_(rp_len,0) invis ')
+ {ifinstr(`$2',=,
+   `pushkeys_(`$2',`lgth:dimen_/2; wdth:dimen_/5; text::N; box::N;')
+    line to rvec_(max(0,rp_len/2-m4lgth/2),0); M4ebC: rvec_(m4lgth/2,0)
+    lbox(m4lgth,m4wdth,m4box)
+    ifelse(m4text,,,`{m4text at M4ebC};')',
+   `define(`m4lgth',`ifelse(`$2',,dimen_/2,`$2')')dnl
+    define(`m4wdth',`ifelse(`$3',,dimen_/5,`$3')')dnl
+    line to rvec_(max(0,rp_len/2-m4lgth/2),0)
+    ifelse(`$4',,`lbox(m4lgth,m4wdth,`$5')',
+                 `m4fshade(`$4',lbox(m4lgth,m4wdth,`$5'))')')
+  line to rvec_(max(0,rp_len/2-m4lgth/2),0)}
+ {[ box invis ht_ m4wdth wid_ m4lgth ] at rvec_(rp_len/2,0)}
+  ifinstr(`$2',=,`popdef(`m4lgth',`m4wdth',`m4text',`m4box')')dnl
+  line to rvec_(rp_len,0) invis ')
 
                                 `fuse( linespec, chars, wid, ht )
                                  chars dA|B|C|D|S|SB|HB|HC or dA (=D)'
@@ -912,33 +961,30 @@ define(`arrester',
   ifelse(m4rdna,,`define(`m4rdna',G)')dnl
   define(`m4rL',ifinstr(`$2',L,-))dnl
   define(`m4rR',ifinstr(`$2',R,-))dnl
-
   define(`m4aht',`m4Rightstr(`$3',arrowht*2/3)')dnl
   define(`m4awd',`m4Rightstr(`$3',arrowwid*4/3)')dnl
-
   define(`m4wd',
    `ifinstr(m4rdna,C,`m4Leftstr(`$3',dimen_/3)',
     m4rdna,F,`m4Leftstr(`$3',dimen_/3)',
     m4rdna,s,`m4Leftstr(`$3',dimen_/4)',
     m4rdna,E,`m4Leftstr(`$3',dimen_*5/8)',
     `m4Leftstr(`$3',dimen_/2)')')dnl
-
   define(`m4ht',
    `ifinstr(Loopover_(`Z',`ifinstr(m4rdna,Z,T)',C,A,s),T,
       `m4Leftstr(`$4',dimen_/4)',
     ifinstr(m4rdna,F,T),T,`m4Leftstr(`$4',dimen_/3)',
     `m4Leftstr(`$4',dimen_/5)')')dnl
-
   ifinstr(`$2',D,
    `[ define(`m4LL',m4rL)dnl
       ifinstr(m4rdna,S,
        `R: arrester(ifelse(`$1',,`to rvec_(dimen_,0)'),m4rdna,shift(shift($@)))
-        Gb: line from R.c+vec_(0,m4LL m4ht/2) to R.c+vec_(0,m4LL (-m4ht*3/2)) ',
+        Gb: line from R.c+vec_(0,m4LL m4ht/2) to R.c+vec_(0,m4LL (-m4ht*3/2))
+        A: R.start; B: R.end; C: R.c; G: Here ',
       m4rdna,E,
        `R: arrester(ifelse(`$1',,`to rvec_(dimen_,0)'),m4rdna,shift(shift($@)))
-        Gb: line from R.c+vec_(0,m4LL m4wd/8) to R.c+vec_(0,m4LL (-m4wd*3/4)) ')
-      A: R.start; B: R.end; C: R.c; G: Here ]',
-
+        Gb: line from R.c+vec_(0,m4LL m4wd/8) to R.c+vec_(0,m4LL (-m4wd*3/4))
+        A: R.start; B: R.end; C: R.c; G: Here ',
+      `M4ErrorMsg(`D argument of Arrester() applies to types S, E only!') ') ]',
    `eleminit_(`$1',elen_)
     {line to rvec_(max(0,rp_len/2-m4wd/2),0)
     {[ Orig: Here
@@ -993,8 +1039,7 @@ define(`arrester',
       dot(at rvec_(m4wd*6/8,m4wd/4),dotrad_*2/3) ')
       ] with .Orig at Here }
     line from rvec_(m4wd,0) to rvec_(max(0,rp_len/2+m4wd/2),0) }
-    line invis to rvec_(rp_len,0)')
-  ')
+    line invis to rvec_(rp_len,0)') ')
 
                                 `memristor( linespec, wid, ht )'
 define(`memristor',`eleminit_(`$1')
@@ -1073,9 +1118,10 @@ eleminit_(`$1')
    { [ circle rad dimen_/5 ] at rvec_(rp_len/2,m4ng`'dimen_/3.2) }
    line invis to rvec_(rp_len,0) ')
 
-                                `cbreaker( linespec, L|R, D|Th|TS )
+                                `cbreaker( linespec, L|R, D|Th|TS, body name )
                                  circuit breaker to left or right of linespec,
-                                 D=with dots; Th=thermal; TS=squared thermal'
+                                 D=with dots; Th=thermal; TS=squared thermal
+                                 Default body bounding box name is Br'
 define(`cbreaker',`ifinstr(`$3',T,
    `tbreaker($@)',
    `mbreaker($@)')')
@@ -1099,7 +1145,7 @@ define(`tbreaker',`eleminit_(`$1') define(`m4ho',0)
     arc cw to rvec_(-m4h/4,0)+vec_(Rect_(m4h/4,105)) with .c at rvec_(-m4h/4,0)}
    line to rvec_(m4j,0)
  ') }
- {[box invis ht_ m4v wid_ m4h ] at rvec_(rp_len/2,ifelse(`$2',R,-)m4ho) }
+ {ifelse(`$4',,Br,`$4'):[box invis ht_ m4v wid_ m4h ] at rvec_(rp_len/2,ifelse(`$2',R,-)m4ho) }
   line to rvec_(rp_len,0) invis ')
 
 define(`mbreaker',`eleminit_(`$1') define(`m4R',`ifelse(`$2',R,-)')
@@ -1114,8 +1160,8 @@ define(`mbreaker',`eleminit_(`$1') define(`m4R',`ifelse(`$2',R,-)')
   {line from rvec_(m4h,0) \
           to rvec_(m4h+max(0,rp_len/2-m4h/2),0)
    ifelse(`$3',D,`dot(at last line.start,,1)') }
-  [box invis ht_ m4ht ifelse(`$3',D,`+2*dotrad_') wid_ m4h+dimen_/16] \
-    at rvec_(m4h/2,m4R`'(m4ht/2)) }
+  ifelse(`$4',,Br,`$4'): [box invis ht_ m4ht ifelse(`$3',D,`+2*dotrad_') \
+    wid_ m4h+dimen_/16] at rvec_(m4h/2,m4R`'(m4ht/2)) }
   line to rvec_(rp_len,0) invis ')
 
                                 `gap( linespec,fill,A )
@@ -1262,7 +1308,7 @@ define(`antenna',`[ T: Here
    `$5'; resetdir_ ] with .T ifelse(`$1',,`at Here',`$1')
  move to last [].T')
 
-                                `switch( linespec,L|R,[O|C][D],L|B|D )
+                                `switch( linespec,L|R,[O|C][D],L|B|D,attribs )
                                  Wrapper for bswitch, lswitch, dswitch
                                  R=right orientation (default L=left)
                                  if arg4=blank or L:
@@ -1273,15 +1319,16 @@ define(`antenna',`[ T: Here
                                    A=arrowhead on switch blade;
                                    O=opening arrow; C=closing arrow
                                  if arg4=B (button switch): arg3 = O|C
-                                   O=normally open; C=normally closed
-                                 if arg4=D: arg3 = same as for dswitch'
+                                   O=normally open; C=normally closed;
+                                 if arg4=D: arg3 = same as for dswitch and
+                                 arg5 is arg4 of dswitch GC or GX'
 define(`switch',`ifelse(
  `$4',, `lswitch(`$1',`$2',`$3')',
  `$4',L,`lswitch(`$1',`$2',`$3')',
  `$4',B,`bswitch(`$1',`$2',`$3')',
  `$4',D,`define(`m4qna_',`$3')dnl
   define(`m4rna_',W`'ifinstr(`$2',C,dBK,B)`'m4qna_)dnl
-  dswitch(`$1',`$2',m4rna_)')')
+  dswitch(`$1',`$2',m4rna_,`$5')')')
 
                                 `bswitch( linespec,L|R,chars ) pushbutton switch
                                  R=right orientation (default L=left)
@@ -1345,18 +1392,17 @@ define(`lswitch',`eleminit_(`$1') dnl
  arrowht = m4t1 ; arrowwid = m4t2;  ifelse(`$4',,,`{`$4'}')
  line to rvec_(rp_len,0) invis ')
 
-                                `dswitch(linespec,R,W[ud]B[K] chars)
+                                `dswitch(linespec,R,W[ud]B chars,text)
                                  Comprehensive IEEE-IEC single-pole switch:
                                  arg2=R: orient to the right of drawing dir
+                                 arg 4 is text for GC and GX options
                                  arg 3:
                                    blank means WB by default
-                                   W=baseline
-                                   B=contact blade
+                                   B=contact blade open
+                                   Bc=contact blade closed
                                    Bm= mirror blade
                                    Bo=contact blade more widely open
                                    dB=contact blade to the right of direction
-                                   K=vertical closing contact line
-                                     use WdBK for a normally-closed switch
                                    Cb = circuit breaker function (IEC S00219)
                                    Co = contactor function (IEC S00218)
                                    C = external operating mechanism
@@ -1367,10 +1413,15 @@ define(`lswitch',`eleminit_(`$1') dnl
                                    EL = early close (or late open)
                                    LE = late close (or early open)
                                    F = fused
+                                   GC = disk control mechanism, attribs:
+                                    diam=expr;circle=circle attribs; text=char;
+                                   GX = box control mechanism, attribs:
+                                    lgth=expr;wdth=expr;box=box attr; text=char;
                                    H = time delay closing
                                    uH = time delay opening
                                    HH = time delay opening and closing
-                                   K = vertical closing contact
+                                   K=vertical closing contact line
+                                     use WdBK for a normally-closed switch
                                    L = limit
                                    M = maintained (latched)
                                    MM = momentary contact on make
@@ -1384,172 +1435,178 @@ define(`lswitch',`eleminit_(`$1') dnl
                                    Sd = Switch-disconnector
                                    Th = thermal control linkage
                                    Tr = tripping
+                                   W = baseline with gap
                                    Y = pull switch
                                    Z = turn switch'
 define(`dswitch',`eleminit_(`$1')
-define(`dna_',ifelse(`$3',,WB,`$3'))dnl
+define(`dna_',ifelse(`$3',,WB,`$3')`')dnl
 define(`m4R',`ifelse(`$2',R,-)')define(`m4sc',`dimen_/24')dnl
- tr_xy_init(last line.c,m4sc,m4R)
- M4T: M4_xyO; M4B: M4T
- { line to tr_xy(-4,0)
-   line from tr_xy(4,0) \
-        to 2nd last line.end
+ M4CC: last line.c
+ sc_draw(`dna_',W,
+  `{ line from M4CC+vec_( 4*m4sc,0) to last line.end }
+   { line to   M4CC+vec_(-4*m4sc,0) }')
+ {[ tr_xy_init(,m4sc,m4R)
+  T: M4_xyO; B: T
   sc_draw(`dna_',Bm,
    `define(`m4c',ifelse(m4a,d,-))dnl
-    M4B: line from tr_xy(-4,0) \
+    B: line from tr_xy(-4,0) \
           to tr_xy(5.0,m4c`'4.5)
-    line invis from M4B.start to M4B.end chop 0 chop -m4_xyU*5/4
-    m4fshade(0,circle rad m4_xyU*5/4 at last line .end)
-    M4Q: 2 between M4_xyO and M4B.c')
+    line invis from B.start to B.end chop 0 chop -m4_xyU*5/4
+    m4fshade(0,circle rad m4_xyU*5/4 at last line .end)')
   sc_draw(`dna_',Bo,
    `define(`m4c',ifelse(m4a,d,-))dnl
-    M4B: line from tr_xy(-4,0) \
-          to tr_xy(4,m4c`'13/sqrt(3))
-    M4Q: 2 between M4_xyO and M4B.c')
+    B: line from tr_xy(-4,0) \
+          to tr_xy(4,m4c`'13/sqrt(3))')
+  sc_draw(`dna_',Bc,
+   `B: line from tr_xy(-4,0) \
+          to tr_xy( 4,0)')
   sc_draw(`dna_',B,
    `define(`m4c',ifelse(m4a,d,-))dnl
-    M4B: line from tr_xy(-4,0) \
-          to tr_xy(5.0,m4c`'4.5)
-    M4Q: 2 between M4_xyO and M4B.c')
+    B: line from tr_xy(-4,0) \
+          to tr_xy(5.0,m4c`'4.5)')
   sc_draw(`dna_',Cb,
    `line from tr_xy(2,-2) to tr_xy(6, 2)
-    line from tr_xy(2, 2) to tr_xy(6,-2)
-    M4Q: tr_xy(0,-2) ')
+    line from tr_xy(2, 2) to tr_xy(6,-2)')
   sc_draw(`dna_',Co,`ifelse(m4R,-,
-   `M4Arc: arc ifelse(m4c,-,,c)cw from tr_xy(4,0) \
+   `arc ifelse(m4c,-,,c)cw from tr_xy(4,0) \
           to tr_xy(8,0) with .c at tr_xy(6,0)',
-   `M4Arc: arc ifelse(m4c,-,c)cw from tr_xy(4,0) \
+   `arc ifelse(m4c,-,c)cw from tr_xy(4,0) \
           to tr_xy(8,0) with .c at tr_xy(6,0)') ')
+  sc_draw(`dna_',GC,
+   `pushkeys_(`$4',`diam:12*m4sc;circle::N;text::N')dnl
+    line from B.c to B.c+ta_xy(0,4)
+    GC: circle diam m4diam m4circle dnl
+      ifelse(m4text,,,`m4lstring(m4text,"m4text")') \
+      at Here+ta_xy(0,m4diam/2/(m4sc)) popdef(`m4diam',`m4circle',`m4text')')
+  sc_draw(`dna_',GX,
+   `pushkeys_(`$4',`lgth:10*m4sc;wdth:10*m4sc;box::N;text::N')dnl
+    line from B.c to B.c+ta_xy(0,4)
+    GX: rotbox(m4lgth,m4wdth,ifelse(m4box,,,type=m4box)) \
+      at Here+ta_xy(0,m4lgth/2/(m4sc))
+    ifelse(m4text,,,`m4lstring(m4text,"m4text") at GX.C') dnl
+    popdef(`m4lgth',`m4wdth',`m4box',`m4text')')
+  sc_draw(`dna_',C,
+   `T: B.c+ta_xy(0,ifelse(m4a,d,-)12)
+    C: line dashed from B.c to T ')
+  sc_draw(`dna_',DI,
+   `DI: line from tr_xy(4,2) to tr_xy(4,-2)')
+  sc_draw(`dna_',D,
+   `ifelse(m4a,u,,`dot(at tr_xy(-4,0),,1)')
+    ifelse(m4a,d,,`dot(at tr_xy(4,0),,1)')')
+  sc_draw(`dna_',EL,
+   `EL: line from 0.99 along_(B) to B.end \
+      then to B.end + ta_xy(vperp(B,m4c`'2.5,R))')
+  sc_draw(`dna_',LE,
+   `LE: line from 0.99 along_(B) \
+        to B.end \
+      then to B.end + ta_xy(vperp(B,m4c`'2.5))')
+  sc_draw(`dna_',K,
+   `K: line from tr_xy(4,0) \
+          to tr_xy(4,m4c`'5)')
+  sc_draw(`dna_',F,
+   `DT: 1/8 along_(B); DQ: 5/8 along_(B)
+    F: line from DT to DT + ta_xy(neg_(m4c)1/2,1) \
+      then to DQ + ta_xy(neg_(m4c)1/2,1) \
+      then to DQ + ta_xy(m4c`'1/2,-1) \
+      then to DT + ta_xy(m4c`'1/2,-1) \
+      then to DT ')
+  sc_draw(`dna_',L,
+   `DT: 11/16 along_(B) define(`m4e',ifelse(m4a,d,-))
+    line from 5/16 along_(B) \
+      to DT + ta_xy(neg_(m4e)1,ifelse(m4c,m4e,,-)2) \
+      then to DT')
+  sc_draw(`dna_',Sd,
+   `dot(at tr_xy(4,0),m4_xyU*3/2,1)
+    line from tr_xy(4,2)+vec_(m4_xyU*3/2,0) \
+      to tr_xy(4,-2)+vec_(m4_xyU*3/2,0)')
+  sc_draw(`dna_',Th,
+   `define(`m4t',ifelse(m4a,d,-))dnl
+    T: B.c+ta_xy(0,m4t`'12)
+    line from B.c to B.c+ta_xy(0,m4t`'4.5) \
+       then to B.c+ta_xy(3,m4t`'4.5) \
+       then to B.c+ta_xy(3,m4t`'7.5) \
+       then to B.c+ta_xy(0,m4t`'7.5) \
+       then to T ')
+  sc_draw(`dna_',Tr,
+   `m4angtmp = rp_ang; point_(lin_ang(B))
+    DT1: 0.4 along_(B); DT2: 0.65 along_(B)
+    m4dTr = distance(DT1,DT2)
+    move to DT1+vec_(0,m4c`'m4dTr/2)
+    m4fshade(0,lbox(m4dTr,m4dTr))
+    point_(m4angtmp) ')
+  sc_draw(`dna_',PrM,
+   `T: Proxim(dimen_/3) at B.c+ta_xy(0,ifelse(m4a,d,-)8)
+    line dashed dimen_/16 from B.c to T chop 0 chop dimen_/6
+    Magn(dimen_/3,dimen_/6) at T+vec_(0,ifelse(m4a,d,-)dimen_/4)')
   sc_draw(`dna_',MMR,
    `line from tr_xy(6,1.16) \
           to tr_xy(4,0) \
        then to tr_xy(6,-1.16)')
   sc_draw(`dna_',MM,
-   `line from tr_xy(5,0) \
+   `MM: line from tr_xy(5,0) \
           to tr_xy(4,0) \
        then to tr_xy(6,1.16)')
   sc_draw(`dna_',MR,
-   `line from tr_xy(5,0) \
+   `MR: line from tr_xy(5,0) \
           to tr_xy(4,0) \
        then to tr_xy(6,-1.16)')
-  sc_draw(`dna_',DI,
-   `line from tr_xy(4,2) to tr_xy(4,-2)
-    M4Q: tr_xy(0,-2) ')
-  sc_draw(`dna_',D,
-   `ifelse(m4a,u,,`dot(at tr_xy(-4,0),,1)')
-    ifelse(m4a,d,,`dot(at tr_xy(4,0),,1)')')
-  sc_draw(`dna_',EL,
-   `line from 0.99 along_(M4B) \
-        to M4B.end \
-      then to M4B.end + ta_xy(vperp(M4B,m4c`'2.5,R))')
-  sc_draw(`dna_',LE,
-   `line from 0.99 along_(M4B) \
-        to M4B.end \
-      then to M4B.end + ta_xy(vperp(M4B,m4c`'2.5))')
-  sc_draw(`dna_',K,
-   `line from tr_xy(4,0) \
-          to tr_xy(4,m4c`'5)')
-  sc_draw(`dna_',F,
-   `M4dT: 1/8 along_(M4B); M4dQ: 5/8 along_(M4B)
-    line from M4dT to M4dT + ta_xy(neg_(m4c)1/2,1) \
-      then to M4dQ + ta_xy(neg_(m4c)1/2,1) \
-      then to M4dQ + ta_xy(m4c`'1/2,-1) \
-      then to M4dT + ta_xy(m4c`'1/2,-1) \
-      then to M4dT ')
-  sc_draw(`dna_',L,
-   `M4dT: 11/16 along_(M4B) define(`m4e',ifelse(m4a,d,-))
-    line from 5/16 along_(M4B) \
-      to M4dT + ta_xy(neg_(m4e)1,ifelse(m4c,m4e,,-)2) \
-      then to M4dT')
-  sc_draw(`dna_',Sd,
-   `dot(at tr_xy(4,0),m4_xyU*3/2,1)
-    line from tr_xy(4,2)+vec_(m4_xyU*3/2,0) \
-      to tr_xy(4,-2)+vec_(m4_xyU*3/2,0)
-    M4Q: tr_xy(0,-2) ')
-  sc_draw(`dna_',Th,
-   `define(`m4t',ifelse(m4a,d,-))dnl
-    M4T: M4B.c+ta_xy(0,m4t`'12)
-    line from M4B.c to M4B.c+ta_xy(0,m4t`'4.5) \
-       then to M4B.c+ta_xy(3,m4t`'4.5) \
-       then to M4B.c+ta_xy(3,m4t`'7.5) \
-       then to M4B.c+ta_xy(0,m4t`'7.5) \
-       then to M4T ')
-  sc_draw(`dna_',Tr,
-   `m4angtmp = rp_ang; point_(lin_ang(M4B))
-    M4dT1: 0.4 along_(M4B); M4dT2: 0.65 along_(M4B)
-    m4dTr = distance(M4dT1,M4dT2)
-    move to M4dT1+vec_(0,m4c`'m4dTr/2)
-    m4fshade(0,lbox(m4dTr,m4dTr))
-    point_(m4angtmp) ')
-  sc_draw(`dna_',PrM,
-   `M4T: Proxim(dimen_/3) at M4B.c+ta_xy(0,ifelse(m4a,d,-)8)
-    line dashed dimen_/16 from M4B.c to M4T chop 0 chop dimen_/6
-    Magn(dimen_/3,dimen_/6) at M4T+vec_(0,ifelse(m4a,d,-)dimen_/4)')
   sc_draw(`dna_',M,
    `define(`m4t',ifelse(m4a,d,-))dnl
-    M4T: M4B.c+ta_xy(0,m4t`'12)
-    line dashed 1.5*m4sc from M4B.c to M4B.c+ta_xy(0,m4t`'4.5)
-    line to M4B.c+ta_xy(-3,m4t`'6) \
-       then to M4B.c+ta_xy(0,m4t`'7.5)
-    line dashed 1.5*m4sc to M4T ')
-  sc_draw(`dna_',C,
-   `M4T: M4B.c+ta_xy(0,ifelse(m4a,d,-)12)
-    line dashed from M4B.c to M4T ')
+    T: B.c+ta_xy(0,m4t`'12)
+    line dashed 1.5*m4sc from B.c to B.c+ta_xy(0,m4t`'4.5)
+    line to B.c+ta_xy(-3,m4t`'6) \
+       then to B.c+ta_xy(0,m4t`'7.5)
+    line dashed 1.5*m4sc to T ')
   sc_draw(`dna_',O,
-   `line from M4T + ta_xy(-2.5,0) \
-        to M4T + ta_xy(2.5,0) ')
+   `line from T + ta_xy(-2.5,0) \
+        to T + ta_xy(2.5,0) ')
   sc_draw(`dna_',PrT,
-   `M4T: Proxim(dimen_/3) at M4B.c+ta_xy(0,ifelse(m4a,d,-)8)
-    line dashed dimen_/16 from M4B.c to M4T chop 0 chop dimen_/6
-    line to rvec_(dimen_/4,0) with .c at M4T+vec_(0,ifelse(m4a,d,-)dimen_/6)')
+   `T: Proxim(dimen_/3) at B.c+ta_xy(0,ifelse(m4a,d,-)8)
+    line dashed dimen_/16 from B.c to T chop 0 chop dimen_/6
+    line to rvec_(dimen_/4,0) with .c at T+vec_(0,ifelse(m4a,d,-)dimen_/6)')
   sc_draw(`dna_',Pr,
-   `M4T: Proxim(dimen_/3) at M4B.c+ta_xy(0,ifelse(m4a,d,-)8)
-    line dashed dimen_/16 from M4B.c to M4T chop 0 chop dimen_/6 ')
+   `T: Proxim(dimen_/3) at B.c+ta_xy(0,ifelse(m4a,d,-)8)
+    line dashed dimen_/16 from B.c to T chop 0 chop dimen_/6 ')
   sc_draw(`dna_',P,
-   `line from M4T + ta_xy(-2.5,-2.5) \
-        to M4T + ta_xy(-2.5,0) \
-      then to M4T + ta_xy(2.5,0) \
-      then to M4T + ta_xy(2.5,-2.5) ')
+   `line from T + ta_xy(-2.5,-2.5) \
+           to T + ta_xy(-2.5,0) \
+      then to T + ta_xy(2.5,0) \
+      then to T + ta_xy(2.5,-2.5) ')
   sc_draw(`dna_',Y,
-   `line from M4T + ta_xy(-2.5,2.5) \
-        to M4T + ta_xy(-2.5,0) \
-      then to M4T + ta_xy(2.5,0) \
-      then to M4T + ta_xy(2.5,2.5) ')
+   `line from T + ta_xy(-2.5,2.5) \
+           to T + ta_xy(-2.5,0) \
+      then to T + ta_xy(2.5,0) \
+      then to T + ta_xy(2.5,2.5) ')
   sc_draw(`dna_',Z,
-   `line from M4T + ta_xy(-2.5,-2.5) \
-        to M4T + ta_xy(-2.5,0) \
-      then to M4T + ta_xy(2.5,0) \
-      then to M4T + ta_xy(2.5,2.5) ')
+   `line from T + ta_xy(-2.5,-2.5) \
+           to T + ta_xy(-2.5,0) \
+      then to T + ta_xy(2.5,0) \
+      then to T + ta_xy(2.5,2.5) ')
   sc_draw(`dna_',R,
    `define(`m4t',ifelse(m4a,d,-))dnl
-    M4dT: 5/12 along_(M4B); M4dQ: 7/12 along_(M4B)
-    line from M4dT to M4dT + ta_xy(0,m4t`'12)
-    line from M4dQ to M4dQ + ta_xy(0,m4t`'(neg_(m4c)sqrt(3)/2+12))
-    M4T: 1/2 between Here and 2nd last line.end ')
+    DT: 5/12 along_(B); DQ: 7/12 along_(B)
+    line from DT to DT + ta_xy(0,m4t`'12)
+    line from DQ to DQ + ta_xy(0,m4t`'(neg_(m4c)sqrt(3)/2+12))
+    T: 1/2 between Here and 2nd last line.end ')
   sc_draw(`dna_',HH,
    `arc ifelse(m4R,-,c)cw \
-      from M4T+ta_xy(3,3/2) \
-        to M4T+ta_xy(-3,3/2) with .c at M4T+ta_xy(0,4.0)
+      from T+ta_xy(3,3/2) \
+        to T+ta_xy(-3,3/2) with .c at T+ta_xy(0,4.0)
     arc ifelse(m4R,,c)cw \
-      from M4T+ta_xy(3,-3/2) \
-        to M4T+ta_xy(-3,-3/2) \
-      with .c at M4T+ta_xy(0,-4.0) ')
+      from T+ta_xy(3,-3/2) \
+        to T+ta_xy(-3,-3/2) \
+      with .c at T+ta_xy(0,-4.0) ')
   sc_draw(`dna_',H,
    `define(`m4t',ifelse(m4a,d,-))dnl
     arc ifelse(m4t,m4R,,c)cw \
-      from M4T+ta_xy(3,m4t`'3/2) \
-        to M4T+ta_xy(-3,m4t`'3/2) \
-      with .c at M4T + ta_xy(0,m4t`'4.0) ')
+      from T+ta_xy(3,m4t`'3/2) \
+        to T+ta_xy(-3,m4t`'3/2) \
+      with .c at T + ta_xy(0,m4t`'4.0) ')
   sc_draw(`dna_',E,
-   `line from M4T + ta_xy(-2.5,0) \
-        to M4T + ta_xy(2.5,0)
-    arc ifelse(m4R,-,,c)cw to last line.start with .c at M4T + ta_xy(0,-1.5) ')
-    M4dQ: M4Q - (M4_xyO.x,M4_xyO.y)
-  M4dT: M4T - (M4_xyO.x,M4_xyO.y)
-  if M4dQ.x*M4dT.x + M4dQ.y*M4dT.y > 0 then { M4Q: M4_xyO }
-  [ box invis ht_ distance(M4T,M4Q) wid_ 8*m4sc ] \
-      with .c at 0.5 between M4T and M4Q
- }
+   `line from T + ta_xy(-2.5,0) \
+        to T + ta_xy(2.5,0)
+    arc ifelse(m4R,-,,c)cw to last line.start with .c at T + ta_xy(0,-1.5) ')
+  ] with .M4_xyO at M4CC }
  line to rvec_(rp_len,0) invis ')
 
                                 `amp( linespec,size )
@@ -1584,30 +1641,33 @@ define(`integrator',`eleminit_(`$1')
                                    drawn as a []:
                                    defined positions:
                                      W, N, E, S, Out, E1, E2, In1, In2
+                                   size: expr (default lgth equals wdth)
+                                     or wdth=expr; lgth=expr;
                                    chars:
                                      P: power connections V1,V2
                                      R: labels at In1,In2 swapped
                                      T: truncated point '
 define(`opamp',
-`[define(`m4v',`ifelse(`$4',,`dimen_',`($4)')')define(`m4h',`m4v')dnl
+`[ ifinstr(`$4',=,`pushkeys_(`$4',wdth:dimen_;lgth:m4wdth)',`pushdef(`m4wdth',
+    `ifelse(`$4',,`dimen_',`($4)')')pushdef(`m4lgth',m4wdth)')dnl
 define(`dna_',`$5')dnl
-  eleminit_(`$1',max(elen_-m4h/4,m4h))
+  eleminit_(`$1',max(elen_-m4lgth/4,m4lgth))
  W: Here
- N: vec_(0,m4v/2)
- S: vec_(0,-m4v/2)
- E: vec_(m4h,0)
- C: vec_(m4h/2,0)
+ N: vec_(0,m4wdth/2)
+ S: vec_(0,-m4wdth/2)
+ E: vec_(m4lgth,0)
+ C: vec_(m4lgth/2,0)
  { sc_draw(`dna_',T,
     `line to N then to 0.75 between N and E \
        then to 0.75 between S and E then to S then to W
      line from 0.75 between W and E to E',
     `line to N then to E then to S then to W; move to E')
-   if rp_len > m4h then { line to rvec_(rp_len-m4h,0) }
+   if rp_len > m4lgth then { line to rvec_(rp_len-m4lgth,0) }
  Out: Here }
- NE: vec_(m4h/2,m4v/4); E1: NE
- SE: vec_(m4h/2,-m4v/4); E2: SE
- In1: vec_(0,m4v/4)
- In2: vec_(0,-m4v/4)
+ NE: vec_(m4lgth/2,m4wdth/4); E1: NE
+ SE: vec_(m4lgth/2,-m4wdth/4); E2: SE
+ In1: vec_(0,m4wdth/4)
+ In2: vec_(0,-m4wdth/4)
    { move to In`'ifinstr(dna_,R,2,1)
      ifelse(`$2',,"ifsvg(-,`{\scriptsize$-$}')" \
        at rvec_(4pt__,0) ifsvg(+(0,textht/10)),m4lstring(`$2',"`$2'"))}
@@ -1615,9 +1675,9 @@ define(`dna_',`$5')dnl
      ifelse(`$3',,"ifsvg(+,`{\scriptsize$+$}')" \
        at rvec_(4pt__,0) ifsvg(+(0,textht/10)),m4lstring(`$3',"`$3'"))}
  sc_draw(`dna_',P,
-   `{line from E1 to (vec_(m4h/2,m4v/4+m4v/8));    V1: Here}
-    {line from E2 to (vec_(m4h/2,-(m4v/4+m4v/8))); V2: Here}')
- `$6' ] ')
+   `{line from E1 to (vec_(m4lgth/2,m4wdth/4+m4wdth/8));    V1: Here}
+    {line from E2 to (vec_(m4lgth/2,-(m4wdth/4+m4wdth/8))); V2: Here}')
+ `$6' popdef(`m4lgth',`m4wdth')] ')
 
                                 `dac(width,height,nIn,nN,nOut,nS)'
 define(`dac',`[
@@ -1668,37 +1728,48 @@ SW: rvec_(adc_ht/2,-adc_ht/2)
   `$7']')
 
                                `diode(linespec,
-                                 B|CR|D|F|G|L|LE[R]|P[R]|S|Sh|T|V|v|w|Z|chars,
+                               B|b|CR|D|F|G|L|LE[R]|P[R]|S|Sh|T|U|V|v|w|Z|chars,
                                  [R][E])
                                  Adding K to arg2 draws open arrowheads
+                                 Adding M draws a mid-arrowhead crossbar
                                  Arg 3: R=reversed polarity, E=enclosure'
 define(`diode',
-`define(`m4dtype',`$3')sc_draw(`m4dtype',R,
- `reversed(`diode',`$1',`$2',m4dtype,shift(shift(shift($@))))',
- `eleminit_(`$1')dnl
-  define(`dma_',`$2') ifelse(dma_,K,,
-   `sc_draw(`dma_',K,`define(`m4ahd')',`define(`m4ahd',f)')')dnl
-  ifelse(dma_,, `m4gen_d(LACR,m4ahd)',
-         dma_,B,`m4gen_d(uLAZQuR,m4ahd)define(`m4dh',2*m4dh)',
-         dma_,CR,`m4gen_d(LACRrb,m4ahd)',
-         dma_,D,`m4gen_d(LuAHdQR,m4ahd)define(`m4dv',2*m4dv)',
-         dma_,F,`m4gen_d(LFR,m4ahd)',
-         dma_,G,`m4gen_d(uLAQuR,m4ahd)define(`m4dh',2*m4dh)',
-         dma_,K,`m4gen_d(LACR)',
-         dma_,L,`m4gen_d(LAcCR)',
-         dma_,LE,`m4gen_d(LuEACR,m4ahd)',
-         dma_,LER,`m4gen_d(LdEACR,m4ahd)',
-         dma_,P,`m4gen_d(LuPACR,m4ahd)',
-         dma_,PR,`m4gen_d(LdPACR,m4ahd)',
-         dma_,S,`m4gen_d(LASR,m4ahd)',
-         dma_,Sh,`m4gen_d(LFcCR,)',
-         dma_,T,`m4gen_d(LATR,m4ahd)',
-         dma_,V,`m4gen_d(LACXdR,m4ahd)',
-         dma_,v,`m4gen_d(LACvdR,m4ahd)',
-         dma_,w,`m4gen_d(LAdvXdR,m4ahd)',
-         dma_,Z,`m4gen_d(LAZR,m4ahd)',
-         `m4gen_d(patsubst(dma_,f),xtract(dma_,f,R,E))')
-  sc_draw(`m4dtype',E,`define(`m4dh',`dimen_*0.7')define(`m4dv',`m4dh')dnl
+`ifinstr(`$3',R,
+ `reversed(`diode',`$1',`$2',patsubst(`$3',R),shift(shift(shift($@))))',
+ `define(`dma_',`$2')dnl
+  define(`m4ahd',ifinstr(dma_,K,,f))dnl
+  ifinstr(dma_,M,`define(`m4ahd',m4ahd`'M)')dnl
+  define(`dma_',patsubst(dma_,`K\|M'))dnl
+  define(`m4cts',`ifelse(
+    dma_,,LACR,
+    dma_,B,uLAZQuR,
+    dma_,b,uLAzQuR,
+    dma_,CR,LACRrb,
+    dma_,D,LuAHdQR,
+    dma_,F,LFR,
+    dma_,G,uLAQuR,
+    dma_,LER,LdEACR,
+    dma_,LE,LuEACR,
+    dma_,L,LAcCR,
+    dma_,P,LuPACR,
+    dma_,PR,LdPACR,
+    dma_,Sh,LFcCR,
+    dma_,S,LASR,
+    dma_,T,LATR,
+    dma_,U,LA`'ifinstr(`$3',R,d,u)`'CR,
+    dma_,V,LACXdR,
+    dma_,v,LACvdR,
+    dma_,w,LAdvXdR,
+    dma_,Z,LAZR,
+    dma_)')
+  ifelse(dma_,B,`define(`m4dh',2*m4dh)',
+    dma_,D,`define(`m4dv',2*m4dv)',
+    dma_,G,`define(`m4dh',2*m4dh)',
+    dma_,Sh,`define(`m4ahd')',
+    dma_,L,`define(`m4ahd',xtract(m4ahd,M))')
+  eleminit_(`$1')
+  m4gen_d(m4cts,m4ahd)
+  ifinstr(`$3',E,`define(`m4dh',`dimen_*0.7')define(`m4dv',`m4dh')dnl
     { Diode_Env: circle diam m4dh at rvec_(rp_len/2,0) }')
   define(`m4dm',
    `ifelse(dma_,S,`m4dv/4',
@@ -1708,36 +1779,40 @@ define(`diode',
                   0)')dnl
  { [ box invis ht_ m4dv+linethick pt__*sqrt(3) wid_ m4dh+linethick pt__ + m4dm
      ] at rvec_(rp_len/2+m4dm/2,0) }
- line invis to rvec_(rp_len,0)')')
-
-                               `m4gen_d(chars,[f][R][E]):
-                                *This is an internal macro, subject to change*
-                                *General: [u|d] for shift, R for orientation*
-                                [u|d]A[c] arrowhead shifted up, down, or 0
-                                [u|d]F[c] arrowhead open-sided (Shockley)
-                                [u|d]B bar (gate) at arrowhead centre
-                                [u|d]BB long bar (gate) at arrowhead centre
-                                C vertical bar at right of arrowhead
-                                [u|d]E em_arrows out
-                                [u|d]F half arrowhead shifted
-                                G gate for scr(,B), label G
-                                rb current regulator bars
-                                H double-length vertical bars
-                                [u]L  left stem, uL = shortened
-                                N thyristor gate at anode, label Ga
-                                [u|d]P em_arrows
-                                [u|d]Q[c] shifted left arrowhead [centerline]
-                                [u]R  right stem, uR = shortened
-                                S S-shape vertical bar
-                                T T-diode vertical bar
-                                W Thyristor gate from cathode, label G
-                                X varicap diode-capacitor
-                                [u|d]v varicap diode-capacitor curved plate
-                                Y bilateral core
-                                Z zener bar
-                               arg 2: f= fill the arrowhead
-                                      R=right orientation
-                                      E=envelope flag '
+ line invis to rvec_(rp_len,0)
+')')
+                               `m4gen_d(chars,[f][R][M][E]):
+                                 *This is an internal macro, subject to change*
+                                 *General: [u|d] for shift, R for orientation*
+                                 [u|d]A[c] arrowhead shifted up, down, or 0
+                                 [u|d]F[c] arrowhead open-sided (Shockley)
+                                 [u|d]B bar (gate) at arrowhead centre
+                                 [u|d]BB long bar (gate) at arrowhead centre
+                                 [u|d]C vertical bar at right of arrowhead
+                                    u: with limiter bar on left; d on right
+                                 [u|d]E em_arrows out
+                                 [u|d]F half arrowhead shifted
+                                 G gate for scr(,B), label G
+                                 rb current regulator bars
+                                 H double-length vertical bars
+                                 [u]L  left stem, uL = shortened
+                                 M mid-arrow crossbar
+                                 N thyristor gate at anode, label Ga
+                                 [u|d]P em_arrows
+                                 [u|d]Q[c] shifted left arrowhead [centerline]
+                                 [u]R  right stem, uR = shortened
+                                 S S-shape vertical bar
+                                 T T-diode vertical bar
+                                 W Thyristor gate from cathode, label G
+                                 X varicap diode-capacitor
+                                 [u|d]v varicap diode-capacitor curved plate
+                                 Y bilateral core
+                                 Z zener bar
+                                 z zener bar outlined
+                                arg 2: f= fill the arrowhead
+                                       M=arrowhead crossbar
+                                       R=right orientation
+                                       E=envelope flag '
 define(`m4gen_d',`{dnl
   define(`m4dv',`dimen_/6')define(`m4dh',sqrt(3)*m4dv/2)dnl
   define(`ddna_',`ifelse(`$1',,`LACR',`$1')')dnl
@@ -1786,6 +1861,8 @@ define(`m4gen_d',`{dnl
         then to rvec_(0,m4dn)')
     { ifinstr(ddf_,f,`m4fshade(m4fill,m4dFline)',`m4dFline')}
     ifdef(`m4Ac',`{line from rvec_(0,m4dn) to rvec_(m4dh,m4dn)}')
+    ifinstr(`$2',M,`{line from rvec_(m4dh/2,m4dn+m4dv/2) \
+                               to rvec_(m4dh/2,m4dn-m4dv/2)}')
     move to rvec_(m4dh,0) ')
   sc_draw(`ddna_',B,dnl            Perp bar at arrowhead centre
    `{ifelse(m4a,u,dnl              from arrow edge or across the centre line
@@ -1801,8 +1878,10 @@ define(`m4gen_d',`{dnl
       G: Gm.c')
      ifelse(m4a,,,G: last line.end) }')
   sc_draw(`ddna_',C,dnl            Vertical bar
-   `{line from rvec_(0,-m4dv/2-m4dy) \
-            to rvec_(0, m4dv/2+m4dy)}')
+   `{ line from ifelse(m4a,d,`rvec_(m4dh/2,-m4dv/2-m4dy-m4dh/2) to')dnl
+     rvec_(0,-m4dv/2-m4dy) \
+       to rvec_(0, m4dv/2+m4dy) ifelse(m4a,u,
+      `to rvec_(m4dh/2, m4dv/2+m4dy+m4dh/2)') }')
   m4gen_d2($@)dnl
   m4gen_d3($@)dnl
 }') dnl              macro split to keep within m4 buffer size
@@ -1860,6 +1939,13 @@ define(`m4gen_d',`{dnl
             to rvec_(0,-m4dv/2-m4dy) \
        then to rvec_(0, m4dv/2+m4dy) \
        then to rvec_(m4dv/4,m4dv/2+m4dy)}')
+  sc_draw(`ddna_',z,dnl            Outlined zener bar
+   `{line from rvec_(-m4dv/4,-m4dv/2-m4dy-lthick*2) \
+            to rvec_( lthick*0.7,-m4dv/2-m4dy) \
+       then to rvec_( lthick*0.7, m4dv/2+m4dy+lthick) }
+    {line from rvec_( m4dv/4, m4dv/2+m4dy+lthick*2) \
+            to rvec_(-lthick*0.7, m4dv/2+m4dy) \
+       then to rvec_(-lthick*0.7,-m4dv/2-m4dy-lthick) }')
   ifinstr(ddna_,Q,dnl              left arrowhead
    `sc_draw(`ddna_',Qc,`define(`m4Qc')')sc_draw(`ddna_',Q,`undefine(`m4Qc')')dnl
     define(`m4dn',`ifelse(m4a,u,m4dv/2,m4a,d,-m4dv/2,0)')dnl
@@ -1891,41 +1977,56 @@ define(`m4gen_d',`{dnl
    `line from 0.5 between M4_s and M4_e to M4_e \
       chop m4dh ifelse(m4a,,/2,m4a,d,/2+m4dv/4) chop 0')
   ')dnl
-
-                                `em_arrows( type,degrees,length)
-                                 type=[N|I|E][D]  N=nonionizing, I=ionizing,
-                                 E=simple; D=dot on arrow stem
-                                 degrees = absolute arrow direction'
-define(`em_arrows',`[ define(`m4dnm_',`ifelse($1,,N,$1)')dnl
+                                `em_arrows( type|keys,angle,length )
+                                 type=N|I|E [D|T]
+                                   N=nonionizing, I=ionizing, E=simple;
+                                   D=dot on arrow stem; T=anchor tail
+                                 keys: type=chars as above;
+                                       lgth=expr;
+                                       sep=expr; arrow separation
+                                       angle=degrees; absolute direction'
+define(`em_arrows',`[
+  pushkeys_(`$1',`type:m4nul:N; angle:ifelse(`$2',,135,`($2)')*dtor_')dnl
+  ifelse(m4type,m4nul,
+   `popdef(`m4type')pushdef(`m4type',`ifelse(`$1',,N,`$1')')')dnl
   arrowhead = em_arrowhead
-  define(`m4_len',
-   `ifelse(`$3',,`dimen_*ifinstr(`$1',E,0.25,0.46)',`($3)')')
-  ang = ifelse(`$2',,135,`($2)')*dtor_
-  sc_draw(`m4dnm_',N,
-   `{ A1: arrow m4c_l to rrot_(m4_len,0,ang) wid em_arrowwid ht em_arrowht }
-    move to rrot_(0,-em_arrowwid*9/8,ang)
-    { A2: arrow m4c_l to rrot_(m4_len,0,ang) wid em_arrowwid ht em_arrowht } ')
-  sc_draw(`m4dnm_',I,`m4_rad_arr(A1)
-    move to rrot_(0,-em_arrowwid*9/8,ang); m4_rad_arr(A2)')
-  sc_draw(`m4dnm_',E,
-   `{ A1: line to rrot_(m4_len,0,ang) \
-        then to rrot_(m4_len-dimen_/18,dimen_/18,ang) }
-    move to rrot_(0,-dimen_/8,ang)
-    { A2: line to rrot_(m4_len,0,ang) \
-        then to rrot_(m4_len-dimen_/18,dimen_/18,ang) }')
-  sc_draw(`m4dnm_',D,`dot(at A1.start); dot(at A2.start)')
+  sc_draw(`m4type',N,
+  `pushkeys_(`$1',lgth:ifelse(`$3',,dimen_*0.46,`$3'); sep:em_arrowwid*9/8)dnl
+   { A1: arrow m4c_l to rrot_(m4lgth,0,m4angle) wid em_arrowwid ht em_arrowht}
+   move to rrot_(0,-m4sep,m4angle)
+   { A2: arrow m4c_l to rrot_(m4lgth,0,m4angle) wid em_arrowwid ht em_arrowht}')
+  sc_draw(`m4type',I,
+  `pushkeys_(`$1',lgth:ifelse(`$3',,dimen_*0.46,`$3'); sep:em_arrowwid*9/8)dnl
+   m4em_serp(A1)
+   move to rrot_(0,-m4sep,m4angle); m4em_serp(A2)')
+  sc_draw(`m4type',E,
+  `pushkeys_(`$1',lgth:ifelse(`$3',,dimen_*0.25,`$3'); sep:dimen_/8)dnl
+   { A1: line to rrot_(m4lgth,0,m4angle) \
+       then to rrot_(m4lgth-dimen_/18,dimen_/18,m4angle) }
+   move to rrot_(0,-m4sep,m4angle)
+   { A2: line to rrot_(m4lgth,0,m4angle) \
+       then to rrot_(m4lgth-dimen_/18,dimen_/18,m4angle) }')
+  sc_draw(`m4type',D,`dot(at A1.start); dot(at A2.start)')
+  sc_draw(`m4type',T,`m4em_anchor(A1.start); m4em_anchor(A2.start)')
   Tail: 0.5 between A1.start and A2.start
   Head: 0.5 between A1.end and A2.end
-  `$4']')
-define(`m4_rad_arr',`{{`$1': line invis to rrot_(m4_len,0,ang)}
-  for_(1,3,1,
-   `arc ifelse(m4x,2,c)cw to rrot_(dimen_/10,0,ang) \
-      with .c at rrot_(dimen_/20,0,ang)')
+  `$4' popdef(`m4typ',`m4type',`m4angle',`m4lgth',`m4sep') ]')
+define(`m4em_serp',`{{`$1': line invis to rrot_(m4lgth,0,m4angle)}
+  for i=1 to (m4lgth-em_arrowht*3/4)/(em_arrowwid) do {
+    if i%2 then {define m4cw {cw}} else {define m4cw {ccw}}
+    arc m4cw to rrot_(em_arrowwid,0,m4angle) \
+      with .c at rrot_((em_arrowwid)/2,0,m4angle) }; round
     arrow m4c_l to `$1'.end wid em_arrowwid ht em_arrowht*3/4 }')
+define(`m4em_anchor',`{ move to `$1'
+  {arc cw to rrot_(0,em_arrowwid/2,m4angle) \
+     with .c at rrot_(0,em_arrowwid/4,m4angle)}
+  {arc to rrot_(0,-arrowwid/2,m4angle) \
+     with .c at rrot_(0,-arrowwid/4,m4angle)}}')
 
                                 `thyristor(linespec,
                                    [SCR|SCS|SUS|SBS|IEC][chars])
                                  Composite element in [ ] block
+                                 (To place as two-terminal, see thyristor_t()).
                                    SCR: silicon controlled rectifier (default)
                                    SCS: silicon controlled switch
                                    SUS: silicon unilateral switch
@@ -1946,7 +2047,7 @@ define(`thyristor',
  `define(`m4tharg',ifelse(`$2',,SCR,`$2')) dnl                        default
   define(`m4thtype',xtract(m4tharg,SCR,SCS,SUS,SBS,IEC))dnl
   ifelse(m4thtype,,`define(`m4thtype',xtract(m4tharg,B))')dnl
-  define(`m4thx',`patsubst(m4tharg,m4thtype)')dnl        delete the type code
+  define(`m4thx',`patsubst(m4tharg,m4thtype)')dnl       delete the type code
   sc_draw(`m4thx',R,`define(`m4thf',R)',`define(`m4thf')')dnl     orientation
   sc_draw(`m4thx',E,`define(`m4thf',m4thf`'E)')dnl                   envelope
   define(`m4thAc',xtract(m4thx,F,A))define(`m4thAc',patsubst(m4thAc,F,Fc))dnl
@@ -1980,22 +2081,30 @@ define(`thyristor',
        `m4gen_d( LG'xtract(m4thx,G)`uA`'m4thAc`'HdQ`'m4thAc`'R,m4thf)')')
       ifinstr(m4thf,E,`Env: circle diam m4thyd with .c at rvec_(rp_len/2,0)')
      `$3']')')')
+                                `thyristor_t(linespec, thyristor chars], label)
+                                 A wrapper to place thyristor(linespec,...)
+                                 as a two-terminal element with arg3
+                                 as label of the [] block (see also scr())'
+define(`thyristor_t',`eleminit_(`$1')
+  M4_thyS: last line.start; M4_thyE: last line.end
+  ifelse(`$3',,,`$3:') thyristor(from M4_thyS to M4_thyE,`$2',`$4') \
+    with .A at M4_thyS; line invis from M4_thyS to M4_thyE')
 
                                 `scr(linespec, [R][E], label) and similar
                                  Place thyristor as a two-term element with
                                  arg 3 as label of the [] block'
 define(`scr',`eleminit_(`$1'); M4_scrS: last line.start; M4_scrE: last line.end
   ifelse(`$3',,,`$3:') thyristor(from M4_scrS to M4_scrE,SCR`'`$2',`$4') \
-    with .A at M4_scrS')
-define(`scs',`eleminit_(`$1'); M4_scrS: last line.start; M4_scrE: last line.end
-  ifelse(`$3',,,`$3:') thyristor(from M4_scrS to M4_scrE,SCS`'`$2'`',`$4') \
-    with .A at M4_scrS')
-define(`sus',`eleminit_(`$1'); M4_scrS: last line.start; M4_scrE: last line.end
-  ifelse(`$3',,,`$3:') thyristor(from M4_scrS to M4_scrE,SUS`'`$2'`',`$4') \
-    with .A at M4_scrS')
-define(`sbs',`eleminit_(`$1'); M4_scrS: last line.start; M4_scrE: last line.end
-  ifelse(`$3',,,`$3:') thyristor(from M4_scrS to M4_scrE,SBS`'`$2'`',`$4') \
-    with .A at M4_scrS')
+    with .A at M4_scrS; line invis from M4_scrS to M4_scrE')
+define(`scs',`eleminit_(`$1'); M4_scsS: last line.start; M4_scsE: last line.end
+  ifelse(`$3',,,`$3:') thyristor(from M4_scsS to M4_scsE,SCS`'`$2',`$4') \
+    with .A at M4_scsS; line invis from M4_scsS to M4_scsE')
+define(`sus',`eleminit_(`$1'); M4_susS: last line.start; M4_susE: last line.end
+  ifelse(`$3',,,`$3:') thyristor(from M4_susS to M4_susE,SUS`'`$2',`$4') \
+    with .A at M4_susS; line invis from M4_susS to M4_susE')
+define(`sbs',`eleminit_(`$1'); M4_sbsS: last line.start; M4_sbsE: last line.end
+  ifelse(`$3',,,`$3:') thyristor(from M4_sbsS to M4_sbsE,SBS`'`$2',`$4') \
+    with .A at M4_sbsS; line invis from M4_sbsS to M4_sbsE')
 
                                 `tgate( linespec, [B][R|L] ) Transmission gate
                                  B= box form
@@ -2006,7 +2115,7 @@ define(`tgate',`[ eleminit_(`$1') define(`m4tgm',ifinstr(`$2',L,-))
  C: last line.center
   ifinstr(`$2',B,
    `ebox(from A to B)
- Gb: C+vec_(0,m4tgm`'m4ht/2)
+ Gb: C+vec_(0,m4tgm`'m4wdth/2)
     L1: line from 2 between Gb and C to 4 between Gb and C',
    `m4gen_d(uLAQuR)
     Circle: circle thick max(4pt__,linethick/2) rad m4dh/4 \
@@ -2047,11 +2156,10 @@ define(`ptrans',`[ eleminit_(`$1') define(`m4ptm',ifinstr(`$2',L,-))
 define(`tline',`eleminit_(`$1')
    define(`m4v',`ifelse(`$2',,`dimen_/6',`($2)')')dnl
    define(`m4h',`ifelse(`$3',,`dimen_*2/3',min(rp_len-m4v/2,`$3'))')dnl
-   {[box invis ht_ m4v wid_ m4h+m4v/2] at last line.c}
    {line from last line.c+vec_(m4h/2+m4v/4,0) \
         to last line.end}
    {line to 2nd last line.c+vec_(-m4h/2,0); round
-    ifdpic(
+   [ifdpic(
     `line from rvec_(0,-m4v/2) \
           to rvec_(m4h,-m4v/2)
      spline 0.5523 to rvec_(m4v/4,0) \
@@ -2075,8 +2183,8 @@ define(`tline',`eleminit_(`$1')
        then to Here \
        then to rvec_(-m4v/2,0) \
        then to rvec_(-m4v/2,-m4v)\
-       then to rvec_(0,-m4v)') }
-   line to 5th last line.end invis ')
+       then to rvec_(0,-m4v)')] with .c at rvec_(m4h/2,0) }
+   line to 3rd last line.end invis ')
 
 define(`m4_U',`dimen_/10')      `Semiconductor grid size'
 define(`m4_Aht',`m4_U*10/6')    `Semiconductor arrowhead ht and wd'
@@ -2354,7 +2462,7 @@ define(`Fe_fet',`mosfet(`$1',`$2',ifelse(`$3',,SDFT,`$3'),,
                                  arg 4: envelope'
 define(`mosfet',
  `define(`m4R',`ifelse(`$2',R,-)')dnl               right orientation flag
-  define(`dna_',`ifelse(`$3',,DSEdMuBQ,`$3')')dnl
+  define(`dna_',`ifelse(`$3',,DSEdMuBQ,`$3')@')dnl
   define(`m4s',ifinstr(dna_,Z,2.5,3.5))dnl          size parameter
   define(`m4hs',2.5)define(`m4hhx',m4hs*sqrt(3))dnl hex side len
   define(`m4K',ifinstr(dna_,K,K))dnl
@@ -2615,7 +2723,7 @@ define(`parallel_',
  define(`m4br',0) define(`m4parsep',`m4sepdefault')dnl
  stackdo_(`m4parS',
   `define(`m4pel',m4parS)
-   setkey_(m4pel,Sep,m4parsep)dnl
+   pushkey_(m4pel,Sep,m4parsep)dnl
    ifelse(m4br,0,`define(`m4parsep',m4Sep)')dnl
    ifinstr(m4pel,Sep=,`define(`m4pel',substr(m4pel,eval(index(m4pel,;)+1)))')
    E`'eval(m4br+1): [
@@ -2714,8 +2822,8 @@ define(`reversed',`eleminit_(`$2')
 
                                 `resized(factor,`macro name in quotes',args)
                                  multiply element body size by factor'
-define(`resized',`define(`m4resiztmp',dimen_)define(`dimen_',(dimen_)*(`$1'))dnl
-  $2(shift(shift($@))) define(`dimen_',m4resiztmp)')
+define(`resized',`pushdef(`dimen_',(dimen_)*(`$1'))dnl
+  $2(shift(shift($@))) popdef(`dimen_')')
 
                                 `variable(`element', type, [+|-]angle,
                                    length, at position)
@@ -2730,7 +2838,7 @@ define(`resized',`define(`m4resiztmp',dimen_)define(`dimen_',(dimen_)*(`$1'))dnl
                                  drawing angle. If arg5 is blank the symbol
                                  is placed over the last []'
 define(`variable',`$1
- {[ define(`dna_',ifelse($2,,A,$2))define(`m4sgn',regexp(`$3',^ *[+-]))dnl
+ {[ define(`dna_',ifelse($2,,A,$2)`')define(`m4sgn',regexp(`$3',^ *[+-]))dnl
    ang = ifelse(m4sgn,-1,,rp_ang*rtod_) ifelse(`$3',,45,`$3')
    define(`m4a2',`ifelse(m4sgn,0,rp_ang-pi_/2,0)') dnl
    define(`m4a3',`ifelse(m4sgn,0,rp_ang,pi_/2)') dnl
@@ -2755,24 +2863,26 @@ define(`variable',`$1
      line up dimen_*0.06 then right dimen_*0.12 then up dimen_*0.06')
    `$6'] with .C ifelse(`$5',,at last [].c,`$5') } ')
 
-                                `Line hopping over named lines,
+                                `Line hopping over named ordered lines,
                                  diverting left or right:
-                                crossover(linespec,L|R,line_name,line_name,...)'
-define(`hoprad_',`dimen_/12')
-define(`crossover',`eleminit_(`$1')dnl
-  M4_Tmp: last line.end
-  m4_xover_(shift($@))dnl
-  line to M4_Tmp')
-define(`m4_xover_',
- `define(`m4_lt2',`ifelse(ifpstricks(T)`'ifmpost(T)`'ifpgf(T)`'ifsvg(T),T,
+                                crossover(linespec,
+                                  [L|R][:line attributes],
+                                  line_name,line_name,...)
+                                attributes are outlined "color" dotted ...
+                                #define(`hoprad_',`dimen_/12')'
+define(`crossover',`eleminit_(`$1')
+  define(`m4attribs',ifinstr(`$2',:,`patsubst(`$2',^.*:)'))dnl
+  define(`m4divert',`patsubst(`$2',:.*)')dnl
+  define(`m4_lt2',`ifelse(ifpstricks(T)`'ifmpost(T)`'ifpgf(T)`'ifsvg(T),T,
    `hlth',0)')dnl
-  ifelse(`$2',,,
-   `line to intersect_(last line.start,M4_Tmp,`$2'.start,`$2'.end)\
+  M4Start: last line.start; M4End: last line.end
+  Loopover_(`M4',`line m4attribs to intersect_(M4Start,M4End,M4.start,M4.end) \
       chop 0 chop hoprad_-m4_lt2
     ifelse(`m4_lt2',0,,`move to rvec_(-m4_lt2,0)')
-    arc ifelse(`$1',R,c)cw to rvec_(2*hoprad_,0) with .c at rvec_(hoprad_,0)
-    ifelse(`m4_lt2',0,,`move to rvec_(-m4_lt2,0)')
-    m4_xover_(`$1',shift(shift($@)))')')
+    arc m4attribs ifelse(m4divert,R,c)cw to rvec_(2*hoprad_,0) \
+      with .c at rvec_(hoprad_,0)
+    ifelse(`m4_lt2',0,,`move to rvec_(-m4_lt2,0)')', shift(shift($@)))
+  line m4attribs to M4End ')
 
                                 `NPDT(npoles,chars) Double throw switch
                                  chars:
@@ -2849,7 +2959,8 @@ define(`contacts',`[
                                  Arg 2 deprecated, kept for compatibility
                                  chars:
                                   O|C= normally open, normally closed (default)
-                                  I= open circles for contacts
+                                  I= open dots for contacts
+                                  X= filled dots
                                   P= three position
                                   R= right orientation (default left)
                                   T= T contacts
@@ -2857,12 +2968,13 @@ define(`contacts',`[
 define(`contact',`[ dnl
   define(`m4pm',`ifelse(ifinstr(`$1',R,R,`$2',R,R),R,-)')dnl
   define(`m4dr',`dotrad_')define(`m4TL',dimen_/12)dnl
-  P: dot(,m4dr,1)
+  define(`m4fll',`ifinstr(`$1',X,,1)')dnl
+  P: dot(,m4dr,m4fll)
   T: P+vec_(dimen_/2-dimen_/12,0)
   ifinstr(`$1',P,`ifinstr(
   `$1',I,
-   `{C: dot(at T+vec_(0,m4pm`'(dimen_/8+m4dr*2+lthick/2)),m4dr,1)}
-    {O: dot(at T-vec_(0,m4pm`'(dimen_/8+m4dr*2+lthick/2)),m4dr,1)}
+   `{C: dot(at T+vec_(0,m4pm`'(dimen_/8+m4dr*2+lthick/2)),m4dr,m4fll)}
+    {O: dot(at T-vec_(0,m4pm`'(dimen_/8+m4dr*2+lthick/2)),m4dr,m4fll)}
     A: line from P to ifinstr(
      `$1',O,`(LCtangent(P,O,dotrad_+lthick/2)) chop m4dr chop -m4dr',
      `$1',C,`(LCtangent(P,C,dotrad_+lthick/2,R)) chop m4dr chop -m4dr',
@@ -2904,7 +3016,7 @@ define(`contact',`[ dnl
     `move to T
      ifinstr(
      `$1',I,
-      `{ C: dot(at rvec_(0,m4pm`'(m4dr+lthick/2)),m4dr,1) }
+      `{ C: dot(at rvec_(0,m4pm`'(m4dr+lthick/2)),m4dr,m4fll) }
        ifinstr(m4CO,O,,`O: Here')',
      `$1',U,
       `{C: T+vec_(m4TL*2,m4pm`'(dimen_/6))
@@ -2923,7 +3035,7 @@ define(`contact',`[ dnl
     `move to T+vec_(0,-(m4pm`'dimen_/8))
      ifinstr(
      `$1',I,
-      `{O: dot(at rvec_(0,m4pm`'(-m4dr*2)),m4dr,1) }
+      `{O: dot(at rvec_(0,m4pm`'(-m4dr*2)),m4dr,m4fll) }
        ifinstr(m4CO,C,,`C: T ')',
      `$1',U,
       `{O: T+vec_(m4TL*2,m4pm`'(-dimen_/6))
@@ -2940,7 +3052,6 @@ define(`contact',`[ dnl
        ifinstr(m4CO,C,,`C: T+vec_(dimen_/5,0)') ') ')
     ')
  `$3'] ')
-
 
                             `relaycoil( chars, wid, ht, U|D|L|R|degrees )
                              chars: (see IEC 60617 S00305 - S00319)
@@ -3311,7 +3422,7 @@ define(`m4portpins',`for_(1,m4n,1,
                            Gyrator two-port wrapper for nport
                            e.g. gyrator(ht boxwid invis,,0,N)'
 define(`gyrator',
- `define(`m4dna_',ifelse(xtract(`$4',V)`'xtract(`$4',H),,H`$4',`$4'))dnl
+ `define(`m4dna_',ifelse(xtract(`$4',V)`'xtract(`$4',H),,H`$4',`$4')`')dnl
   sc_draw(`m4dna_',H,
    `nport(ifelse(`$1',,wid boxht,`$1'),1,,1,,`$2',`$3',`$4',
       line from (Box,W1a)+(-Box.wid/2,0) \
@@ -3370,61 +3481,80 @@ define(`norator',`eleminit_(`$1')
   {[box invis ht_ m4ht wid_ m4wd] at rvec_(rp_len/2,0)}
    line to rvec_(rp_len,0) invis ')
 
-                        `ACsymbol(at position, len, ht, [A]U|D|L|R|degrees)
+                        `ACsymbol(at position, len, ht, [n:][A]U|D|L|R|degrees)
                           Arg4: drawing direction (default: current direction)
                           Arg4 contains A: use arcs instead of sinusoid
-                          A convenience for drawing a 1-cycle sinusoid,
+                          A convenience for drawing a stack of n 1-cycle
+                          sinusoids (default 1)
                           e.g.  source; ACsymbol(at last [])'
 define(`ACsymbol',`[ Origin: Here
- define(`m4range',`ifelse(`$2',,(dimen_/3),`($2)')')dnl
- define(`m4ACd',patsubst(`$4',A))dnl
+ pushdef(`m4range',`ifelse(`$2',,(dimen_/3),`($2)')')dnl
+ pushdef(`m4ACd',`patsubst(ifinstr(`$4',:,`patsubst(`$4',.*:)',`$4'),A)')dnl
  setdir_(ifelse(m4ACd,,`ifdef(`m4a_',rp_ang*rtod_,0)',m4ACd))
  Start: rvec_(-m4range/2,0)
  End:   rvec_( m4range/2,0)
- define(`m4amp',`ifelse(`$3',,`m4range/3',`($3)/2')')
- ifinstr(ifgpic(A)`$4',A,
-  `{ arc ccw to Start with .c at rvec_(-m4range/4,-max(m4range/4-m4amp,0)) }
-   { arc ccw to   End with .c at rvec_( m4range/4, max(m4range/4-m4amp,0)) }',
-  `{ sinusoid(m4amp,twopi_/m4range,pi_/2,-m4range/2,m4range/2) \
-     with .Origin at Origin } ')
- `$5'; resetdir_ ] with .Origin ifelse(`$1',,`at Here',`$1')')
+ pushdef(`m4n',`ifinstr(`$4',:,`eval(patsubst(`$4',:.*))',1)')dnl
+ pushdef(`m4amp',`ifelse(`$3',,`m4range/6',`($3)/2')')dnl
+ for_(1,m4n,1,`move to Origin+vec_(0,((m4n+1)/2-m4x)*m4range/3)
+   ifinstr(ifgpic(A,`$4'),A,
+    `{ arc ccw to rvec_(-m4range/2,0) \
+       with .c at rvec_(-m4range/4,-max(m4range/4-m4amp,0)) }
+     { arc ccw to rvec_( m4range/2,0) \
+       with .c at rvec_( m4range/4, max(m4range/4-m4amp,0)) }',
+    `{ sinusoid(m4amp,twopi_/m4range,pi_/2,-m4range/2,m4range/2) \
+       with .Origin at Here } ')')
+ `$5'; resetdir_ popdef(`m4amp',`m4n',`m4ACd',`m4range')] \
+   with .Origin ifelse(`$1',,`at Here',`$1')')
 
                         `Deltasymbol(at position, keys, U|D|L|R|degrees)
                           keys: size=expr;
-                          Arg4: drawing direction (default: Up)'
+                                type=C|O (default C for Closed, O means open);
+                          Arg3: drawing direction (default: Up)
+                          An O (not 0) in arg3 draws an open symbol'
 define(`Deltasymbol',`[ sq3 = sqrt(3)
- setkey_(`$2',size,dimen_/10)dnl
+ pushkeys_(`$2',size:dimen_/10; type:C:N )dnl
  setdir_(`$3',U)
- line from vec_(vscal_(m4size,-sq3,0)) to \
-   vec_(vscal_(m4size,-sq3,1)) then to Here \
-   then to vec_(vscal_(m4size,-sq3,-1)) \
-   then to vec_(vscal_(m4size,-sq3,0))
- `$4'; resetdir_ ] ifelse(`$1',,`at Here',`$1')')
+ ifinstr(m4type,C,
+  `line from vec_(vscal_(m4size,-sq3,0)) to \
+     vec_(vscal_(m4size,-sq3,1)) then to Here \
+     then to vec_(vscal_(m4size,-sq3,-1)) \
+     then to vec_(vscal_(m4size,-sq3,0))',
+  `line from vec_(vscal_(m4size,-sq3/2,-1/2)) \
+     to vec_(vscal_(m4size,-sq3,-1)) \
+     then to vec_(vscal_(m4size,-sq3,1)) \
+     then to vec_(vscal_(m4size,-sq3/2,1/2)) ')
+ C: vec_(vscal_(m4size,-(sq3+1/sq3)/2,0)); N: C
+ `$4'; resetdir_ popdef(`m4size',`m4type') ] ifelse(`$1',,`at Here',`$1')')
 
                         `Ysymbol(at position, keys, U|D|L|R|degrees)
-                          keys: size=expr; type=G (grounded);
-                          Arg4: drawing direction (default: Up)'
+                          keys: size=expr; type=G[L] (grounded,
+                            L puts the ground on the left);
+                          Arg3: drawing direction (default: Up)'
 define(`Ysymbol',`[ sq3 = sqrt(3)
- setkeys_(`$2',`size:dimen_/10:; type::N')dnl
+ pushkeys_(`$2',`size:dimen_/10:; type::N')dnl
  setdir_(`$3',U)
- C: Here
+ C: Here; N: C
  line from vec_(vscal_(m4size,-2/sq3,0)) to C
  { line from vec_(vscal_(m4size,1/sq3,1)) to C \
      then to vec_(vscal_(m4size,1/sq3,-1)) }
- ifelse(m4type,,,`line right_ m4size*3/2; corner
+ ifelse(m4type,,,`line ifinstr(m4type,L,left_,right_) m4size*3/2; corner
    pushdef(`dimen_',m4size*4) ground popdef(`dimen_') ')
- `$4'; resetdir_ ] ifelse(`$1',,`at Here',`$1')')
+ `$4'; resetdir_ popdef(`m4size',`m4type') ] ifelse(`$1',,`at Here',`$1')')
+                        `Wyesymbol(at position, keys, U|D|L|R|degrees)
+                         Synonym for Ysymbol'
+define(`Wyesymbol',`Ysymbol($@)')
 
                         `DCsymbol(at position, len, ht, U|D|L|R|degrees)
                           Arg4: drawing direction (default: current direction)'
 define(`DCsymbol',`[
- define(`m4wid',`ifelse(`$2',,(dimen_/3),`($2)')')dnl
- define(`m4ht',`ifelse(`$3',,`(m4wid/5)',`($3)')')
+ pushdef(`m4wid',`ifelse(`$2',,(dimen_/3),`($2)')')dnl
+ pushdef(`m4ht',`ifelse(`$3',,`(m4wid/5)',`($3)')')
  setdir_(ifelse(`$4',,`ifdef(`m4a_',rp_ang*rtod_,0)',`$4'))
  Origin: rvec_(m4wid/2, m4ht/2)
  {line to rvec_(m4wid,0)}
  dashline(from rvec_(0, m4ht) to rvec_(m4wid, m4ht),,m4wid/4,m4wid/8) 
- `$5'; resetdir_ ] with .Origin ifelse(`$1',,`at Here',`$1')')
+ `$5'; resetdir_ popdef(`m4ht',`m4wid') ] \
+   with .Origin ifelse(`$1',,`at Here',`$1')')
 
                     `n-terminal box
                      nterm(box specs; other commands,
@@ -3577,6 +3707,7 @@ define(`earphone',`[ setdir_($1,R)
     In2: Here
     In3: rvec_(0,-m4h/8)')
   `$4'; resetdir_ ]')
+
                                `Signal-flow graph macros: labeled node,
                                 directed labeled chopped straight line,
                                 directed labeled chopped arc, and a self
@@ -3649,8 +3780,8 @@ define(`sfgarc',`eleminit_(`$1',sfg_wid)
    `arc m4c_l patsubst(patsubst(`$1',.*<-,<-),->.*$,->) ifelse(`$4',ccw,ccw,cw)\
       from Cintersect(Start,sfg_rad,C,arcrd,ifelse(`$4',ccw,R)) \
       to Cintersect(C,arcrd,End,sfg_rad,ifelse(`$4',ccw,R)) with .c at C')
-  ifelse(`$2',,,`{move to M; "iflatex(`$ `$2'$',` $2')" ifelse(`$3',,
-   `sfgabove',`$3')}')
+  ifelse(`$2',,,`move to M; "iflatex(`$ `$2'$',` $2')" ifelse(`$3',,
+   `sfgabove',`$3')')
   ] with .Start at last line.start
   move to last line.end
   ')
@@ -3670,7 +3801,7 @@ define(`sfgself',`[ Origin: Here
     ifelse(`$7',,`{ arrow m4c_l from rvec_(0,ifelse(`$5',cw,,-)sfg_aht/2) \
            to rvec_(0,ifelse(`$5',cw,-)sfg_aht/2) ht sfg_aht wid sfg_awid }')
     ifelse(`$3',,,
-     `"iflatex(`$ `$3'$',` $3')" ifelse(`$4',,`sfgabove',`$4')') }
+     `{"iflatex(`$ `$3'$',` $3')" ifelse(`$4',,`sfgabove',`$4')}') }
   m4sfgselfcurve(,
       ifelse(`$5',ccw,`ifinstr(`$7',->,<-)',`ifinstr(`$7',<-,<-)'))
   resetdir_ ] with .Origin ifelse(`$1',,at Here,`$1')
@@ -3688,8 +3819,7 @@ define(`m4sfgselfcurve',`spline `$2' m4c_l from rvec_(Rect_(sfg_rad,`$1'30)) \
                       overwritten with the background color (default
                       white).  Arg 1 contains R for right-handed winding.
                       Arg 4 must be an integer.
-                      Arg 6 must be compatible with the postprocessor.
-                      Requires a recent version of dpic or gpic'
+                      Arg 6 must be compatible with the postprocessor.'
 define(`winding',`[ define(`m4rt',`ifinstr(`$1',R,-)')
   d = ifelse(`$2',,`dimen_',`$2')
   p = ifelse(`$3',,d/4,`$3')
@@ -3728,8 +3858,8 @@ define(`winding',`[ define(`m4rt',`ifinstr(`$1',R,-)')
 define(`tstrip',`[ setdir_(`$1')
   define(`m4n',`ifelse(`$2',,4,`eval($2)')')dnl
   ifelse(eval(m4n<1),1,`define(`m4n',1)')dnl
-  setkey_(`$3',ht,dimen_/2)dnl
-  setkey_(`$3',wid,m4n*m4ht*0.6)dnl
+  pushkey_(`$3',ht,dimen_/2)dnl
+  pushkey_(`$3',wid,m4n*m4ht*0.6)dnl
   {Box: [shade(1,lbox(m4wid,m4ht))] }
   bw = m4wid/(m4n)
   ifinstr(`$3',O,,`for i=1 to m4n-1 do {
@@ -3737,7 +3867,7 @@ define(`tstrip',`[ setdir_(`$1')
   for_(1,m4n,1,`{T`'m4x: ifinstr(`$3',I,`rvec_((m4x-0.5)*bw,0)',
    `dot(at rvec_((m4x-0.5)*bw,0),,ifinstr(`$3',D,0,1))')
     {L`'m4x: T`'m4x+vec_(0,m4ht/2)}; {R`'m4x: T`'m4x+vec_(0,-m4ht/2)} }')
-  `$4' popdef(`m4ht')popdef(`m4ht')
+  `$4' popdef(`m4wid',`m4ht')
   resetdir_ ]')
 
                      `jack(U|D|L|R|degrees, chars)
@@ -3848,17 +3978,18 @@ define(`SQUID',
                                 tweaked, and the cct_init macro modified.'
 
                                 Size and style parameters:
-define(`dimen_',`linewid')           Default element body size unit
+define(`dimen_',`linewid')           `Default element body size unit'
 
-define(`sourcerad_',`(0.25*dimen_)') Source element default radius
-define(`csdim_',`(0.3*dimen_)')      Controlled Source width/2
-define(`elen_',`(1.5*dimen_)')       Default element length
-define(`delay_rad_',`(0.35*dimen_)') Delay elements
-define(`dotrad_',`(0.04*dimen_)')    Redefine dot size for circuits
-define(`m4fill',0)                 Default fill for diode, fuse, ...
-define(`em_arrowwid',`(dimen_/9)')  `em_arrows arrowhead width'
-define(`em_arrowht',`(dimen_/7)')   `em_arrows arrowhead ht'
-define(`em_arrowhead',1)            `em_arrows arrowhead style'
+define(`sourcerad_',`(0.25*dimen_)') `Source element default radius'
+define(`csdim_',`(0.3*dimen_)')      `Controlled Source width/2'
+define(`elen_',`(1.5*dimen_)')       `Default element length'
+define(`delay_rad_',`(0.35*dimen_)') `Delay elements'
+define(`dotrad_',`(0.04*dimen_)')    `Redefine dot size for circuits'
+define(`m4fill',0)                   `Default fill for diode, fuse, ...'
+define(`em_arrowwid',`(dimen_/9)')   `em_arrows arrowhead width'
+define(`em_arrowht',`(dimen_/7)')    `em_arrows arrowhead ht'
+define(`em_arrowhead',1)             `em_arrows arrowhead style'
+define(`hoprad_',`dimen_/12')        `arc radius for crossover macro'
 
 right_
 divert(0)dnl

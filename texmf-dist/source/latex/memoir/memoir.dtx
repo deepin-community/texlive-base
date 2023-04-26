@@ -20,7 +20,7 @@
 % This work consists of the files listed in the README file.
 % 
 % \fi
-% \CheckSum{31013}
+% \CheckSum{31045}
 %
 % \changes{v0.1}{2001/05/20}{First public alpha release}
 % \changes{v0.2}{2001/06/03}{First beta release}
@@ -127,6 +127,9 @@
 % to ensure backwards compatability} 
 % \changes{v3.7o}{2021/03/23}{Maintenance and a provide for the kernel}
 % \changes{v3.7p}{2021/06/16}{Small adjustments of memoir vs memhfixc}
+% \changes{v3.7q}{2022/02/20}{Maintenance}
+% \changes{v3.7r}{2022/07/29}{Maintenance}
+% \changes{v3.7.19}{2022/11/17}{Maintenance}
 % 
 % \def\dtxfile{memoir.dtx}
 %
@@ -191,6 +194,9 @@
 % \def\fileversion{v3.7n}          \def\filedate{2020/10/04} 
 % \def\fileversion{v3.7o}          \def\filedate{2021/03/23} 
 % \def\fileversion{v3.7p}          \def\filedate{2021/06/16} 
+% \def\fileversion{v3.7q}          \def\filedate{2022/02/20} 
+% \def\fileversion{v3.7r}          \def\filedate{2022/07/29} 
+% \def\fileversion{v3.7.19}          \def\filedate{2022/11/17} 
 % \title{The LaTeX \Lpack{memoir} class for configurable book 
 %        typesetting: Source code\thanks{This
 %        file (\texttt{\dtxfile}) has version number \fileversion, last revised
@@ -421,35 +427,35 @@
 %    Announce the name, option files and version for LaTeX2e files:
 %    \begin{macrocode}
 %<class>\ProvidesClass{memoir}%
-%<class>  [2021/06/16 v3.7p configurable book, report, article document class]
+%<class>  [2022/11/17 v3.7.19 configurable book, report, article document class]
 %    \end{macrocode}
 %  In the manual it is useful to know the current version.
 %    \begin{macrocode}
-%<class>\newcommand\memversion{v3.7p, 2021/06/16}
+%<class>\newcommand\memversion{v3.7.19, 2022/11/17}
 %<9pt>\ProvidesFile{mem9.clo}%
-%<9pt>              [2008/01/30 v0.4 memoir class 9pt size option]
+%<9pt>              [2022/07/29 v0.5 memoir class 9pt size option]
 %<10pt>\ProvidesFile{mem10.clo}%
-%<10pt>             [2008/01/30 v0.3 memoir class 10pt size option]
+%<10pt>             [2022/07/29 v0.5 memoir class 10pt size option]
 %<11pt>\ProvidesFile{mem11.clo}%
-%<11pt>             [2008/01/30 v0.3 memoir class 11pt size option]
+%<11pt>             [2022/07/29 v0.5 memoir class 11pt size option]
 %<12pt>\ProvidesFile{mem12.clo}%
-%<12pt>             [2010/10/19 v0.4b memoir class 12pt size option]
+%<12pt>             [2022/07/29 v0.5 memoir class 12pt size option]
 %<14pt>\ProvidesFile{mem14.clo}%
-%<14pt>             [2008/01/30 v0.4 memoir class 14pt size option]
+%<14pt>             [2022/07/29 v0.5 memoir class 14pt size option]
 %<17pt>\ProvidesFile{mem17.clo}%
-%<17pt>             [2008/01/30 v0.3 memoir class 17pt size option]
+%<17pt>             [2022/07/29 v0.5 memoir class 17pt size option]
 %<20pt>\ProvidesFile{mem20.clo}%
-%<20pt>             [2008/01/31 v0.1 memoir class 20pt size option]
+%<20pt>             [2022/07/29 v0.5 memoir class 20pt size option]
 %<25pt>\ProvidesFile{mem25.clo}%
-%<25pt>             [2008/01/31 v0.1 memoir class 25pt size option]
+%<25pt>             [2022/07/29 v0.5 memoir class 25pt size option]
 %<30pt>\ProvidesFile{mem30.clo}%
-%<30pt>             [2008/01/31 v0.1 memoir class 30pt size option]
+%<30pt>             [2022/07/29 v0.5 memoir class 30pt size option]
 %<36pt>\ProvidesFile{mem36.clo}%
-%<36pt>             [2008/01/31 v0.1 memoir class 36pt size option]
+%<36pt>             [2022/07/29 v0.5 memoir class 36pt size option]
 %<48pt>\ProvidesFile{mem48.clo}%
-%<48pt>             [2008/01/31 v0.1 memoir class 48pt size option]
+%<48pt>             [2022/07/29 v0.5 memoir class 48pt size option]
 %<60pt>\ProvidesFile{mem60.clo}%
-%<60pt>             [2008/01/31 v0.1 memoir class 60pt size option]
+%<60pt>             [2022/07/29 v0.5 memoir class 60pt size option]
 %    \end{macrocode}
 %
 %
@@ -457,6 +463,13 @@
 %
 %    \begin{macrocode}
 %<*class>
+%    \end{macrocode}
+%
+% (2022/02/20): In order to be able to use a patching approach instead
+% of overwriting kernel macros, we will now require the
+% \Lpack{etoolbox} package.
+%    \begin{macrocode}
+\RequirePackage{etoolbox}      
 %    \end{macrocode}
 %
 % Note (2001/08/03): Old versions of the \Lpack{amsmath} package did odd
@@ -941,9 +954,11 @@
 % We add a \cs{temp} trick suggested by David Carlisle as the old code
 % required \#\ doubling and the new does not. To be backwards
 % compatible we force required \#\ doubling.
+% \changes{v3.7q}{2022/01/07}{The LaTeX team reversed the order of the
+% hook name}
 %    \begin{macrocode}
-  \newcommand\AtBeginFile[2]{\def\temp{\AddToHook{file/before/#1}{#2}}\temp}
-  \newcommand\AtEndFile[2]{\def\temp{\AddToHook{file/after/#1}{#2}}\temp}
+  \newcommand\AtBeginFile[2]{\def\temp{\AddToHook{file/#1/before}{#2}}\temp}
+  \newcommand\AtEndFile[2]{\def\temp{\AddToHook{file/#1/after}{#2}}\temp}
   
 %    \end{macrocode}
 % \end{macro}
@@ -963,9 +978,11 @@
 % We add a \cs{temp} trick suggested by David Carlisle as the old code
 % required \#\ doubling and the new does not. To be backwards
 % compatible we force required \#\ doubling.
+% \changes{v3.7q}{2022/01/07}{The LaTeX team reversed the order of the
+% hook name}
 %    \begin{macrocode}
-  \newcommand\AtBeginPackage[2]{\def\temp{\AddToHook{package/before/#1}{#2}}\temp}
-  \newcommand\AtEndPackage[2]{\def\temp{\AddToHook{package/after/#1}{#2}}\temp}
+  \newcommand\AtBeginPackage[2]{\def\temp{\AddToHook{package/#1/before}{#2}}\temp}
+  \newcommand\AtEndPackage[2]{\def\temp{\AddToHook{package/#1/after}{#2}}\temp}
   \newcommand{\RequireAtEndPackage}[2]{%
     \@ifpackageloaded{#1}{#2}{\AtEndPackage{#1}{#2}}}
   
@@ -985,9 +1002,11 @@
 % We add a \cs{temp} trick suggested by David Carlisle as the old code
 % required \#\ doubling and the new does not. To be backwards
 % compatible we force required \#\ doubling.
+% \changes{v3.7q}{2022/01/07}{The LaTeX team reversed the order of the
+% hook name}
 % \begin{macrocode}
-  \newcommand\AtBeginClass[2]{\def\temp{\AddToHook{class/before/#1}{#2}}\temp}
-  \newcommand\AtEndClass[2]{\def\temp{\AddToHook{class/after/#1}{#2}}\temp}
+  \newcommand\AtBeginClass[2]{\def\temp{\AddToHook{class/#1/before}{#2}}\temp}
+  \newcommand\AtEndClass[2]{\def\temp{\AddToHook{class/#1/after}{#2}}\temp}
   \newcommand{\RequireAtEndClass}[2]{%
     \@ifclassloaded{#1}{#2}{\AtEndClass{#1}{#2}}}
   
@@ -1906,9 +1925,11 @@
 % same as the physical sheet. In other words the \cs{paper...} and \cs{stock...}
 % sizes are the same and the trims are zero. This class assumes that this
 % is the normal case.
+% \changes{v3.7.19}{2022/10/28}{\cs{stockheight} and \cs{stockwidth}
+% may now be defined in the kernel, so we test for that}
 %    \begin{macrocode}
-\newlength{\stockheight}
-\newlength{\stockwidth}
+\@ifundefined{stockwidth}{\newdimen{\stockheight}}{}
+\@ifundefined{stockwidth}{\newdimen{\stockwidth}}{}
 \newlength{\trimtop}
 \newlength{\trimedge}
 
@@ -2986,6 +3007,13 @@
 %    \begin{macrocode}
 \normalsize
 %    \end{macrocode}
+% \changes{v3.7r}{2022/07/26}{Make \cs{normalsize} robust in the same
+% manner as in \file{size10.clo}}
+%    \begin{macrocode}
+\ifx\MakeRobust\@undefined \else
+    \MakeRobust\normalsize
+\fi
+%    \end{macrocode}
 % \end{macro}
 % \end{macro}
 %
@@ -2998,8 +3026,9 @@
 % and \cs{parsep} to 1/2\cs{topsep}.
 % \changes{v1.61}{2004/03/12}{Added missing percent signs to some uses of
 %                             \cs{@setfontsize}}
+% \changes{v3.7r}{2022/07/26}{Make robust}
 %    \begin{macrocode}
-\newcommand{\small}{%
+\DeclareRobustCommand{\small}{%
 %<*9pt>
     \@setfontsize\small\@viiipt{9.5}%
     \abovedisplayskip 6\p@ \@plus 2\p@ \@minus 4\p@
@@ -3139,8 +3168,9 @@
 %
 % \begin{macro}{\footnotesize}
 %    This code is similar to that for \cs{small}.
+% \changes{v3.7r}{2022/07/26}{Make robust}
 %    \begin{macrocode}
-\newcommand{\footnotesize}{%
+\DeclareRobustCommand{\footnotesize}{%
 %<*9pt>
     \@setfontsize\footnotesize\@viipt{8}%
     \abovedisplayskip 6\p@ \@plus 2\p@ \@minus 4\p@
@@ -3296,75 +3326,76 @@
 % \changes{v1.2}{2002/07/27}{Added \cs{miniscule} and \cs{HUGE} font sizes}
 % \changes{v1.2}{2002/07/27}{Twiddled some font sizes to get regular steps}
 % \changes{v1.2a}{2002/08/27}{Fixed 12pt scriptsize bug}
+% \changes{v3.7r}{2022/07/26}{Make robust}
 %    \begin{macrocode}
 %<*9pt>
 \ifextrafontsizes
-  \newcommand*{\miniscule}{\@setfontsize\miniscule\@ivpt{5}}
+  \DeclareRobustCommand{\miniscule}{\@setfontsize\miniscule\@ivpt{5}}
 \else
-  \newcommand*{\miniscule}{\@setfontsize\miniscule\@vpt{6}}
+  \DeclareRobustCommand{\miniscule}{\@setfontsize\miniscule\@vpt{6}}
 \fi
-\newcommand*{\tiny}{\@setfontsize\tiny\@vpt{6}}
-\newcommand*{\scriptsize}{\@setfontsize\scriptsize\@vipt{7}}
-\newcommand*{\large}{\@setfontsize\large\@xpt{12}}
-\newcommand*{\Large}{\@setfontsize\Large\@xipt{13.6}}
-\newcommand*{\LARGE}{\@setfontsize\LARGE\@xiipt{14.5}}
-\newcommand*{\huge}{\@setfontsize\huge\@xivpt{18}}
-\newcommand*{\Huge}{\@setfontsize\Huge\@xviipt{22}}
-\newcommand*{\HUGE}{\@setfontsize\HUGE\@xxpt{25}}
+\DeclareRobustCommand{\tiny}{\@setfontsize\tiny\@vpt{6}}
+\DeclareRobustCommand{\scriptsize}{\@setfontsize\scriptsize\@vipt{7}}
+\DeclareRobustCommand{\large}{\@setfontsize\large\@xpt{12}}
+\DeclareRobustCommand{\Large}{\@setfontsize\Large\@xipt{13.6}}
+\DeclareRobustCommand{\LARGE}{\@setfontsize\LARGE\@xiipt{14.5}}
+\DeclareRobustCommand{\huge}{\@setfontsize\huge\@xivpt{18}}
+\DeclareRobustCommand{\Huge}{\@setfontsize\Huge\@xviipt{22}}
+\DeclareRobustCommand{\HUGE}{\@setfontsize\HUGE\@xxpt{25}}
 %</9pt>
 %<*10pt>
-\newcommand*{\miniscule}{\@setfontsize\miniscule\@vpt{6}}
-\newcommand*{\tiny}{\@setfontsize\tiny\@vipt{7}}
-\newcommand*{\scriptsize}{\@setfontsize\scriptsize\@viipt{8}}
-\newcommand*{\large}{\@setfontsize\large\@xipt{13.6}}
-\newcommand*{\Large}{\@setfontsize\Large\@xiipt{14.5}}
-\newcommand*{\LARGE}{\@setfontsize\LARGE\@xivpt{18}}
-\newcommand*{\huge}{\@setfontsize\huge\@xviipt{22}}
-\newcommand*{\Huge}{\@setfontsize\Huge\@xxpt{25}}
-\newcommand*{\HUGE}{\@setfontsize\HUGE\@xxvpt{30}}
+\DeclareRobustCommand{\miniscule}{\@setfontsize\miniscule\@vpt{6}}
+\DeclareRobustCommand{\tiny}{\@setfontsize\tiny\@vipt{7}}
+\DeclareRobustCommand{\scriptsize}{\@setfontsize\scriptsize\@viipt{8}}
+\DeclareRobustCommand{\large}{\@setfontsize\large\@xipt{13.6}}
+\DeclareRobustCommand{\Large}{\@setfontsize\Large\@xiipt{14.5}}
+\DeclareRobustCommand{\LARGE}{\@setfontsize\LARGE\@xivpt{18}}
+\DeclareRobustCommand{\huge}{\@setfontsize\huge\@xviipt{22}}
+\DeclareRobustCommand{\Huge}{\@setfontsize\Huge\@xxpt{25}}
+\DeclareRobustCommand{\HUGE}{\@setfontsize\HUGE\@xxvpt{30}}
 %</10pt>
 %<*11pt>
-\newcommand*{\miniscule}{\@setfontsize\miniscule\@vipt{7}}
-\newcommand*{\tiny}{\@setfontsize\tiny\@viipt{8}}
-\newcommand*{\scriptsize}{\@setfontsize\scriptsize\@viiipt{9.5}}
-\newcommand*{\large}{\@setfontsize\large\@xiipt{14.5}}
-\newcommand*{\Large}{\@setfontsize\Large\@xivpt{18}}
-\newcommand*{\LARGE}{\@setfontsize\LARGE\@xviipt{22}}
-\newcommand*{\huge}{\@setfontsize\huge\@xxpt{25}}
-\newcommand*{\Huge}{\@setfontsize\Huge\@xxvpt{30}}
+\DeclareRobustCommand{\miniscule}{\@setfontsize\miniscule\@vipt{7}}
+\DeclareRobustCommand{\tiny}{\@setfontsize\tiny\@viipt{8}}
+\DeclareRobustCommand{\scriptsize}{\@setfontsize\scriptsize\@viiipt{9.5}}
+\DeclareRobustCommand{\large}{\@setfontsize\large\@xiipt{14.5}}
+\DeclareRobustCommand{\Large}{\@setfontsize\Large\@xivpt{18}}
+\DeclareRobustCommand{\LARGE}{\@setfontsize\LARGE\@xviipt{22}}
+\DeclareRobustCommand{\huge}{\@setfontsize\huge\@xxpt{25}}
+\DeclareRobustCommand{\Huge}{\@setfontsize\Huge\@xxvpt{30}}
 \ifextrafontsizes
-  \newcommand*{\HUGE}{\@setfontsize\HUGE\@xxxpt{37}}
+  \DeclareRobustCommand{\HUGE}{\@setfontsize\HUGE\@xxxpt{37}}
 \else
   \let\HUGE=\Huge
 \fi
 %</11pt>
 %<*12pt>
-\newcommand*{\miniscule}{\@setfontsize\miniscule\@viipt{8}}
-\newcommand*{\tiny}{\@setfontsize\tiny\@viiipt{9.5}}
-\newcommand*{\scriptsize}{\@setfontsize\scriptsize\@ixpt\@xpt}
-\newcommand*{\large}{\@setfontsize\large\@xivpt{18}}
-\newcommand*{\Large}{\@setfontsize\Large\@xviipt{22}}
-\newcommand*{\LARGE}{\@setfontsize\LARGE\@xxpt{25}}
-\newcommand*{\huge}{\@setfontsize\huge\@xxvpt{30}}
+\DeclareRobustCommand{\miniscule}{\@setfontsize\miniscule\@viipt{8}}
+\DeclareRobustCommand{\tiny}{\@setfontsize\tiny\@viiipt{9.5}}
+\DeclareRobustCommand{\scriptsize}{\@setfontsize\scriptsize\@ixpt\@xpt}
+\DeclareRobustCommand{\large}{\@setfontsize\large\@xivpt{18}}
+\DeclareRobustCommand{\Large}{\@setfontsize\Large\@xviipt{22}}
+\DeclareRobustCommand{\LARGE}{\@setfontsize\LARGE\@xxpt{25}}
+\DeclareRobustCommand{\huge}{\@setfontsize\huge\@xxvpt{30}}
 \ifextrafontsizes
-  \newcommand*{\Huge}{\@setfontsize\Huge\@xxxpt{37}}
-  \newcommand*{\HUGE}{\@setfontsize\HUGE\@xxxvipt{45}}
+  \DeclareRobustCommand{\Huge}{\@setfontsize\Huge\@xxxpt{37}}
+  \DeclareRobustCommand{\HUGE}{\@setfontsize\HUGE\@xxxvipt{45}}
 \else
   \let\Huge=\huge
   \let\HUGE=\huge
 \fi
 %</12pt>
 %<*14pt>
-\newcommand*{\miniscule}{\@setfontsize\miniscule\@viiipt{9.5}}
-\newcommand*{\tiny}{\@setfontsize\tiny\@ixpt{10}}
-\newcommand*{\scriptsize}{\@setfontsize\scriptsize\@xpt{12}}
-\newcommand*{\large}{\@setfontsize\large\@xviipt{22}}
-\newcommand*{\Large}{\@setfontsize\Large\@xxpt{25}}
-\newcommand*{\LARGE}{\@setfontsize\LARGE\@xxvpt{30}}
+\DeclareRobustCommand{\miniscule}{\@setfontsize\miniscule\@viiipt{9.5}}
+\DeclareRobustCommand{\tiny}{\@setfontsize\tiny\@ixpt{10}}
+\DeclareRobustCommand{\scriptsize}{\@setfontsize\scriptsize\@xpt{12}}
+\DeclareRobustCommand{\large}{\@setfontsize\large\@xviipt{22}}
+\DeclareRobustCommand{\Large}{\@setfontsize\Large\@xxpt{25}}
+\DeclareRobustCommand{\LARGE}{\@setfontsize\LARGE\@xxvpt{30}}
 \ifextrafontsizes
-  \newcommand*{\huge}{\@setfontsize\Huge\@xxxpt{37}}
-  \newcommand*{\Huge}{\@setfontsize\Huge\@xxxvipt{45}}
-  \newcommand*{\HUGE}{\@setfontsize\HUGE\@xlviiipt{60}}
+  \DeclareRobustCommand{\huge}{\@setfontsize\Huge\@xxxpt{37}}
+  \DeclareRobustCommand{\Huge}{\@setfontsize\Huge\@xxxvipt{45}}
+  \DeclareRobustCommand{\HUGE}{\@setfontsize\HUGE\@xlviiipt{60}}
 \else
   \let\huge=\LARGE
   \let\Huge=\LARGE
@@ -3372,16 +3403,16 @@
 \fi
 %</14pt>
 %<*17pt>
-\newcommand*{\miniscule}{\@setfontsize\miniscule\@ixpt{10}}
-\newcommand*{\tiny}{\@setfontsize\tiny\@xpt{12}}
-\newcommand*{\scriptsize}{\@setfontsize\scriptsize\@xipt{13.6}}
-\newcommand*{\large}{\@setfontsize\large\@xxpt{25}}
-\newcommand*{\Large}{\@setfontsize\Large\@xxvpt{30}}
+\DeclareRobustCommand{\miniscule}{\@setfontsize\miniscule\@ixpt{10}}
+\DeclareRobustCommand{\tiny}{\@setfontsize\tiny\@xpt{12}}
+\DeclareRobustCommand{\scriptsize}{\@setfontsize\scriptsize\@xipt{13.6}}
+\DeclareRobustCommand{\large}{\@setfontsize\large\@xxpt{25}}
+\DeclareRobustCommand{\Large}{\@setfontsize\Large\@xxvpt{30}}
 \ifextrafontsizes
-  \newcommand*{\LARGE}{\@setfontsize\LARGE\@xxxpt{37}}
-  \newcommand*{\huge}{\@setfontsize\huge\@xxxvipt{45}}
-  \newcommand*{\Huge}{\@setfontsize\Huge\@xlviiipt{60}}
-  \newcommand*{\HUGE}{\@setfontsize\HUGE\@lxpt{72}}
+  \DeclareRobustCommand{\LARGE}{\@setfontsize\LARGE\@xxxpt{37}}
+  \DeclareRobustCommand{\huge}{\@setfontsize\huge\@xxxvipt{45}}
+  \DeclareRobustCommand{\Huge}{\@setfontsize\Huge\@xlviiipt{60}}
+  \DeclareRobustCommand{\HUGE}{\@setfontsize\HUGE\@lxpt{72}}
 \else
   \let\LARGE=\Large
   \let\huge=\Large
@@ -3390,70 +3421,70 @@
 \fi
 %</17pt>
 %<*20pt>
-\newcommand*{\miniscule}{\@setfontsize\miniscule\@xpt{12}}
-\newcommand*{\tiny}{\@setfontsize\tiny\@xipt{13.6}}
-\newcommand*{\scriptsize}{\@setfontsize\scriptsize\@xiipt{14.5}}
-\newcommand*{\large}{\@setfontsize\large\@xxvpt{30}}
-\newcommand*{\Large}{\@setfontsize\Large\@xxxpt{37}}
-\newcommand*{\LARGE}{\@setfontsize\LARGE\@xxxvipt{45}}
-\newcommand*{\huge}{\@setfontsize\huge\@xlviiipt{60}}
-\newcommand*{\Huge}{\@setfontsize\Huge\@lxpt{72}}
-\newcommand*{\HUGE}{\@setfontsize\HUGE\@lxxiipt{86}}
+\DeclareRobustCommand{\miniscule}{\@setfontsize\miniscule\@xpt{12}}
+\DeclareRobustCommand{\tiny}{\@setfontsize\tiny\@xipt{13.6}}
+\DeclareRobustCommand{\scriptsize}{\@setfontsize\scriptsize\@xiipt{14.5}}
+\DeclareRobustCommand{\large}{\@setfontsize\large\@xxvpt{30}}
+\DeclareRobustCommand{\Large}{\@setfontsize\Large\@xxxpt{37}}
+\DeclareRobustCommand{\LARGE}{\@setfontsize\LARGE\@xxxvipt{45}}
+\DeclareRobustCommand{\huge}{\@setfontsize\huge\@xlviiipt{60}}
+\DeclareRobustCommand{\Huge}{\@setfontsize\Huge\@lxpt{72}}
+\DeclareRobustCommand{\HUGE}{\@setfontsize\HUGE\@lxxiipt{86}}
 %</20pt>
 %<*25pt>
-\newcommand*{\miniscule}{\@setfontsize\miniscule\@xipt{13.6}}
-\newcommand*{\tiny}{\@setfontsize\tiny\@xiipt{14.5}}
-\newcommand*{\scriptsize}{\@setfontsize\scriptsize\@xivpt{17.5}}
-\newcommand*{\large}{\@setfontsize\large\@xxxpt{37}}
-\newcommand*{\Large}{\@setfontsize\Large\@xxxvipt{45}}
-\newcommand*{\LARGE}{\@setfontsize\LARGE\@xlviiipt{60}}
-\newcommand*{\huge}{\@setfontsize\huge\@lxpt{72}}
-\newcommand*{\Huge}{\@setfontsize\Huge\@lxxiipt{86}}
-\newcommand*{\HUGE}{\@setfontsize\HUGE\@lxxxivpt{100}}
+\DeclareRobustCommand{\miniscule}{\@setfontsize\miniscule\@xipt{13.6}}
+\DeclareRobustCommand{\tiny}{\@setfontsize\tiny\@xiipt{14.5}}
+\DeclareRobustCommand{\scriptsize}{\@setfontsize\scriptsize\@xivpt{17.5}}
+\DeclareRobustCommand{\large}{\@setfontsize\large\@xxxpt{37}}
+\DeclareRobustCommand{\Large}{\@setfontsize\Large\@xxxvipt{45}}
+\DeclareRobustCommand{\LARGE}{\@setfontsize\LARGE\@xlviiipt{60}}
+\DeclareRobustCommand{\huge}{\@setfontsize\huge\@lxpt{72}}
+\DeclareRobustCommand{\Huge}{\@setfontsize\Huge\@lxxiipt{86}}
+\DeclareRobustCommand{\HUGE}{\@setfontsize\HUGE\@lxxxivpt{100}}
 %</25pt>
 %<*30pt>
-\newcommand*{\miniscule}{\@setfontsize\miniscule\@xiipt{14.5}}
-\newcommand*{\tiny}{\@setfontsize\tiny\@xivpt{17.5}}
-\newcommand*{\scriptsize}{\@setfontsize\scriptsize\@xviipt{22}}
-\newcommand*{\large}{\@setfontsize\large\@xxxvipt{45}}
-\newcommand*{\Large}{\@setfontsize\Large\@xlviiipt{60}}
-\newcommand*{\LARGE}{\@setfontsize\LARGE\@lxpt{72}}
-\newcommand*{\huge}{\@setfontsize\huge\@lxxiipt{86}}
-\newcommand*{\Huge}{\@setfontsize\Huge\@lxxxivpt{100}}
-\newcommand*{\HUGE}{\@setfontsize\HUGE\@xcvipt{116}}
+\DeclareRobustCommand{\miniscule}{\@setfontsize\miniscule\@xiipt{14.5}}
+\DeclareRobustCommand{\tiny}{\@setfontsize\tiny\@xivpt{17.5}}
+\DeclareRobustCommand{\scriptsize}{\@setfontsize\scriptsize\@xviipt{22}}
+\DeclareRobustCommand{\large}{\@setfontsize\large\@xxxvipt{45}}
+\DeclareRobustCommand{\Large}{\@setfontsize\Large\@xlviiipt{60}}
+\DeclareRobustCommand{\LARGE}{\@setfontsize\LARGE\@lxpt{72}}
+\DeclareRobustCommand{\huge}{\@setfontsize\huge\@lxxiipt{86}}
+\DeclareRobustCommand{\Huge}{\@setfontsize\Huge\@lxxxivpt{100}}
+\DeclareRobustCommand{\HUGE}{\@setfontsize\HUGE\@xcvipt{116}}
 %</30pt>
 %<*36pt>
-\newcommand*{\miniscule}{\@setfontsize\miniscule\@xivpt{17.5}}
-\newcommand*{\tiny}{\@setfontsize\tiny\@xviipt{22}}
-\newcommand*{\scriptsize}{\@setfontsize\scriptsize\@xxpt{25}}
-\newcommand*{\large}{\@setfontsize\large\@xlviiipt{60}}
-\newcommand*{\Large}{\@setfontsize\Large\@lxpt{72}}
-\newcommand*{\LARGE}{\@setfontsize\LARGE\@lxxiipt{86}}
-\newcommand*{\huge}{\@setfontsize\huge\@lxxxivpt{100}}
-\newcommand*{\Huge}{\@setfontsize\Huge\@xcvipt{116}}
-\newcommand*{\HUGE}{\@setfontsize\HUGE\@cviiipt{132}}
+\DeclareRobustCommand{\miniscule}{\@setfontsize\miniscule\@xivpt{17.5}}
+\DeclareRobustCommand{\tiny}{\@setfontsize\tiny\@xviipt{22}}
+\DeclareRobustCommand{\scriptsize}{\@setfontsize\scriptsize\@xxpt{25}}
+\DeclareRobustCommand{\large}{\@setfontsize\large\@xlviiipt{60}}
+\DeclareRobustCommand{\Large}{\@setfontsize\Large\@lxpt{72}}
+\DeclareRobustCommand{\LARGE}{\@setfontsize\LARGE\@lxxiipt{86}}
+\DeclareRobustCommand{\huge}{\@setfontsize\huge\@lxxxivpt{100}}
+\DeclareRobustCommand{\Huge}{\@setfontsize\Huge\@xcvipt{116}}
+\DeclareRobustCommand{\HUGE}{\@setfontsize\HUGE\@cviiipt{132}}
 %</36pt>
 %<*48pt>
-\newcommand*{\miniscule}{\@setfontsize\miniscule\@xviipt{22}}
-\newcommand*{\tiny}{\@setfontsize\tiny\@xxpt{25}}
-\newcommand*{\scriptsize}{\@setfontsize\scriptsize\@xxvpt{30}}
-\newcommand*{\large}{\@setfontsize\large\@lxpt{72}}
-\newcommand*{\Large}{\@setfontsize\Large\@lxxiipt{86}}
-\newcommand*{\LARGE}{\@setfontsize\LARGE\@lxxxivpt{100}}
-\newcommand*{\huge}{\@setfontsize\huge\@xcvipt{116}}
-\newcommand*{\Huge}{\@setfontsize\Huge\@cviiipt{132}}
-\newcommand*{\HUGE}{\@setfontsize\HUGE\@cxxpt{144}}
+\DeclareRobustCommand{\miniscule}{\@setfontsize\miniscule\@xviipt{22}}
+\DeclareRobustCommand{\tiny}{\@setfontsize\tiny\@xxpt{25}}
+\DeclareRobustCommand{\scriptsize}{\@setfontsize\scriptsize\@xxvpt{30}}
+\DeclareRobustCommand{\large}{\@setfontsize\large\@lxpt{72}}
+\DeclareRobustCommand{\Large}{\@setfontsize\Large\@lxxiipt{86}}
+\DeclareRobustCommand{\LARGE}{\@setfontsize\LARGE\@lxxxivpt{100}}
+\DeclareRobustCommand{\huge}{\@setfontsize\huge\@xcvipt{116}}
+\DeclareRobustCommand{\Huge}{\@setfontsize\Huge\@cviiipt{132}}
+\DeclareRobustCommand{\HUGE}{\@setfontsize\HUGE\@cxxpt{144}}
 %</48pt>
 %<*60pt>
-\newcommand*{\miniscule}{\@setfontsize\miniscule\@xxpt{25}}
-\newcommand*{\tiny}{\@setfontsize\tiny\@xxvpt{30}}
-\newcommand*{\scriptsize}{\@setfontsize\scriptsize\@xxxpt{37}}
-\newcommand*{\large}{\@setfontsize\large\@lxxiipt{86}}
-\newcommand*{\Large}{\@setfontsize\Large\@lxxxivpt{100}}
-\newcommand*{\LARGE}{\@setfontsize\LARGE\@xcvipt{116}}
-\newcommand*{\huge}{\@setfontsize\huge\@cviiipt{132}}
-\newcommand*{\Huge}{\@setfontsize\Huge\@cxxpt{144}}
-\newcommand*{\HUGE}{\@setfontsize\HUGE\@cxxxiipt{162}}
+\DeclareRobustCommand{\miniscule}{\@setfontsize\miniscule\@xxpt{25}}
+\DeclareRobustCommand{\tiny}{\@setfontsize\tiny\@xxvpt{30}}
+\DeclareRobustCommand{\scriptsize}{\@setfontsize\scriptsize\@xxxpt{37}}
+\DeclareRobustCommand{\large}{\@setfontsize\large\@lxxiipt{86}}
+\DeclareRobustCommand{\Large}{\@setfontsize\Large\@lxxxivpt{100}}
+\DeclareRobustCommand{\LARGE}{\@setfontsize\LARGE\@xcvipt{116}}
+\DeclareRobustCommand{\huge}{\@setfontsize\huge\@cviiipt{132}}
+\DeclareRobustCommand{\Huge}{\@setfontsize\Huge\@cxxpt{144}}
+\DeclareRobustCommand{\HUGE}{\@setfontsize\HUGE\@cxxxiipt{162}}
 %</60pt>
 %    \end{macrocode}
 % \end{macro}
@@ -5551,7 +5582,7 @@
 %
 % \begin{macro}{\medievalpage}
 % This implements Jan Tschichold's reconstruction of the page and textblock
-% layout used by medieval scribes and the early printers~\cite{}.
+% layout used by medieval scribes and the early printers.
 % The spine, top, edge and bottom margins are in the ratios 2:3:4:6.
 %
 % \cs{medievalpage}\oarg{num} positions the typeblock on the page with the
@@ -8890,9 +8921,11 @@
 % \begin{macro}{\theHbook}
 % \begin{macro}{\toclevel@book}
 % These are needed if the \Lpack{hyperref} is used.
+% \changes{v3.7.19}{2022/10/25}{Changing \cs{theH...} definitions to
+% \cs{def} for better compability with future hyperref}
 %    \begin{macrocode}
-\newcommand*{\theHbook}{\arabic{book}}
-\newcommand*{\toclevel@book}{-2}
+\def\theHbook{\arabic{book}}
+\def\toclevel@book{-2}
 
 %    \end{macrocode}
 % \end{macro}
@@ -14265,10 +14298,12 @@
 % lines of a poem. See the thread \textit{PDFTEX/Hyperef hates memoir verse
 % environment?} on \ctt{} October 2002.
 % \changes{v1.3}{2002/11/14}{Added verse counter and \cs{theHpoemline}}
+% \changes{v3.7.19}{2022/10/25}{Changing \cs{theH...} definitions to
+% \cs{def} for better compability with future hyperref}
 %    \begin{macrocode}
 \newcounter{verse}
 \setcounter{verse}{0}
-\newcommand{\theHpoemline}{\theverse.\thepoemline}
+\def\theHpoemline{\theverse.\thepoemline}
 
 %    \end{macrocode}
 % \end{macro}
@@ -17244,6 +17279,7 @@
 % \cs{m@m@addamp} is the revised definition.
 % \end{PW}
 %
+% \changes{v3.7r}{2022/06/20}{Fixed sporious spaces}
 %    \begin{macrocode}
 \newif \@iffirstamp
 \let\m@mold@addamp\@addamp
@@ -17252,7 +17288,7 @@
     \@firstampfalse
     \global\@curtab\@ne
   \else
-    \@addtopreamble{&}
+    \@addtopreamble{&}% 
     \global\advance\@curtab\@ne  
   \fi}
 \let\@addamp\m@m@addamp
@@ -23656,6 +23692,8 @@
 % \begin{macro}{\toclevel@part}
 % Needed if the \Lpack{hyperref} package is used.
 % \changes{v1.61803}{2008/01/30}{Added \cs{toclevel@part} (mempatch v4.9)}
+% \changes{v3.7.19}{2022/10/25}{Changing \cs{toclevel@part} definition to
+% \cs{def} for better compability with future hyperref}
 %    \begin{macrocode}
 \newcommand*{\toclevel@part}{-1}
 
@@ -23816,8 +23854,10 @@
 % \begin{macro}{\toclevel@chapter}
 % Needed if the \Lpack{hyperref} package is used.
 % \changes{v1.61803}{2008/01/30}{Added \cs{toclevel@chapter} (mempatch v4.9)}
+% \changes{v3.7.19}{2022/10/25}{Changing \cs{toclevel@chapter} definitions to
+% \cs{def} for better compability with future hyperref}
 %    \begin{macrocode}
-\newcommand*{\toclevel@chapter}{0}
+\def\toclevel@chapter{0}
 
 %    \end{macrocode}
 % \end{macro}
@@ -23838,10 +23878,12 @@
 % \begin{macro}{\toclevel@appendix}
 % Similar to \cs{l@chapter} but for an appendix.
 % \changes{v1.618}{2005/09/03}{Added \cs{l@apendix} (mempatch v3.12)}
+% \changes{v3.7.19}{2022/10/25}{Changing \cs{toclevel@appendix} definitions to
+% \cs{def} for better compability with future hyperref}
 %    \begin{macrocode}
 \newcommand*{\l@appendix}[2]{%
   \l@chapapp{#1}{#2}{\cftappendixname}}
-\newcommand{\toclevel@appendix}{0}
+\def\toclevel@appendix{0}
 
 %    \end{macrocode}
 % \end{macro}
@@ -24414,9 +24456,11 @@
 % as `division levels'.
 % \changes{v1.61803}{2008/01/30}{Added \cs{toclevel@none} and \cs{toclevel@all}
 %         (mempatch v4.4)}
+% \changes{v3.7.19}{2022/10/25}{Changing \cs{toclevel@...} definitions to
+% \cs{def} for better compability with future hyperref}
 %    \begin{macrocode}
-\newcommand*{\toclevel@none}{-10}
-\newcommand*{\toclevel@all}{50}
+\def\toclevel@none{-10}
+\def\toclevel@all{50}
 
 %    \end{macrocode}
 % \end{macro}
@@ -28411,8 +28455,18 @@
   \let\mp@footgroupv@r\@mppara@footgroupv@r
   {\foottextfont
    \dimen0=\baselineskip
-   \multiply\dimen0 by 1024
-   \divide\dimen0 by \hsize \multiply\dimen0 by \footfudgefiddle
+%    \end{macrocode}
+% Multiplying \cs{dimen0} by 1024 can lead to arithmetic overflow if
+% \cs{baselineskip} is too large, for example under
+% \cs{DoubleSpacing}. Instead we only multiply by 256 and then
+% multiply again by 4 after the division by \cs{hsize}.
+% \changes{v3.7r}{2022/07/28}{Changed calculation}
+%    \begin{macrocode}
+   %\multiply\dimen0 by 1024
+   \multiply\dimen0 by 256
+   \divide\dimen0   by \hsize
+   \multiply\dimen0 by 4
+   \multiply\dimen0 by \footfudgefiddle
    \xdef\footfudgefactor{\expandafter\strip@pt\dimen0 }}}
 
 %    \end{macrocode}
@@ -28494,8 +28548,18 @@
   \expandafter\count\csname footins#1\endcsname=1000\relax
   {\@nameuse{foottextfont#1}%
    \dimen0=\baselineskip
-   \multiply\dimen0 by 1024
-   \divide\dimen0 by \hsize \multiply\dimen0 by 64
+%    \end{macrocode}
+% Similar issue with arithmetic overflow as mentioned with \cs{paragraphfootnotes}.
+% \changes{v3.7r}{2022/07/28}{Changed calculation}
+%    \begin{macrocode}
+   %\multiply\dimen0 by 1024
+   \multiply\dimen0 by 256
+   \divide\dimen0   by \hsize
+   \multiply\dimen0 by 4
+%    \end{macrocode}
+% \changes{v3.7r}{2022/07/28}{Changed 64 to \cs{footfudgefiddle}}
+%    \begin{macrocode}
+   \multiply\dimen0 by \footfudgefiddle
    \xdef\footfudgefactor{\expandafter\strip@pt\dimen0 }}}
 
 %    \end{macrocode}
@@ -28742,8 +28806,10 @@
 % \begin{macro}{\m@m@makecolfloats}
 % \begin{macro}{\m@m@makecoltext}
 % These two macros contain code common to versions of \cs{@makecol}
+% \changes{v3.7q}{2022/02/20}{Added the \cs{@elt} line from the kernel}
 %    \begin{macrocode}
 \newcommand*{\m@m@makecolfloats}{%
+  \let\@elt\relax%
   \xdef\@freelist{\@freelist\@midlist}%
   \global\let\@midlist\@empty
   \@combinefloats}
@@ -28884,7 +28950,7 @@
 % \begin{macro}{\mem@makecoldblf}
 % A version of \cs{@makecol} which is a placeholder to fix the doublefloat
 % problem. 
-%
+% TODO: remove this code it is not used
 %    \begin{macrocode}
 \gdef\mem@makecoldblf{%
   \m@m@makecolintro
@@ -29280,6 +29346,29 @@
   \m@m@makecoltext
   \global \maxdepth \@maxdepth}
 
+%    \end{macrocode}
+%
+% If the \Lpack{footmisc} package is loaded all of our additions of
+% extra footnotes, side footnotes, sidebar are lost. So we add them to
+% their collection macro. This is especially important when
+% \Lpack{footmisc} \emph{and} \Lpack{reledmac} are loaded with
+% memoir. To play nice, we use the command hooks introduced in june 2021.
+% \changes{v3.7q}{2022/02/17}{Added this fix for \Lpack{footmisc}}
+%    \begin{macrocode}
+\IfFormatAtLeastTF{2021-06-01}{
+  % adding to "hook" in footmisc
+  \AddToHook{cmd/@makecol@appendblocks/after}{\m@mdoextrafeet\m@mopsidefoot\m@mopsidebar}
+}{
+  \AtBeginDocument{
+    \@ifpackagelater{footmisc}{2011/06/07}{
+      \@memerror{You seem to have manually updated both memoir and^^J
+        footmisc on an older LaTeX kernel. Memoir is not compatible with
+      footmisc^^J version 2022/02/14 v6.0b on LaTeX kernels from before
+      2021/06/01. Please^^J update your LaTeX installation instead of
+      manually updating classes^^J or packages}{Update your LaTeX installation}
+    }{}
+  }
+}
 %    \end{macrocode}
 %
 % \changes{v1.618033988b}{2010/02/17}{a bf was missing in \cs{m@mopfootnotebf}}
@@ -34625,8 +34714,9 @@
 % \begin{macro}{\medspace}
 % \begin{macro}{\:}
 % Medium space \verb?\: (\medspace) = 4/18 em?
+% \changes{v3.7q}{2022/02/17}{use \cs{providecommand} on \cs{medspace}}
 %    \begin{macrocode}    
-\newcommand{\medspace}{\kern .22222em }
+\providecommand{\medspace}{\kern .22222em }
 \DeclareRobustCommand{\:}{%
   \relax\ifmmode\mskip\medmuskip\else\medspace\fi}
 %    \end{macrocode}
@@ -36631,7 +36721,14 @@
 %    \end{macrocode}
 %
 %
+% \subsection{Interaction with the \Lpack{hyperref} package}
 %
+% Ulrike Fischer has ask that the \Lpack{memhfixc} autoload is moved
+% from \Lpack{hyperref} to \Lpack{memoir}.
+% \changes{v3.7q}{2022/02/20}{Added autoloading}
+%    \begin{macrocode}
+\AtEndPackage{hyperref}{\RequirePackage{memhfixc}}      
+%    \end{macrocode}
 %
 % \subsection{Default page style}
 %    We use the page style \pstyle{headings} by

@@ -1,0 +1,1691 @@
+%!TEX root = tzplot-doc.tex
+%\begin{document}
+
+%%%%%=====CNONTINUED============
+%%%%%%==========================
+%%%\part{Points, Lines, and Curves}
+%%%%%%==========================
+%%%\label{p:linesandcurves}
+
+
+%%==================================
+\chapter{Connecting Points}
+\label{c:tzto}
+
+%%%------------------------------------------------------------
+\section{\protect\cmd{\tzto}: Two points}
+\label{s:tzto}
+
+\icmd{\tzto} connects two points with a straight or curved line, using \Tikz's |to| operation.
+So |\tzto| is more general than |\tzline|, which only connects points only with a straight line.
+
+\begin{tzdef}
+% syntax: minimum
+\tzto(<coor>)(<coor>)
+% syntax: medium
+\tzto[<opt>](<coor>){<text>}[<node opt>](<coor>){<text>}[<node opt>]
+% syntax: full
+\tzto[<opt>]<shift coor>"<path name>"
+     (<coor>){<text>}[<node opt>]
+     (<coor>){<text>}[<node opt>]<code.append>
+% defaults
+  []<>""(<m>){}[above](<m>){}[]<>
+\end{tzdef}
+
+
+\begin{tztikz}
+\tzto[dashed](1,1)(3,2) % works like:
+  \draw [dashed] (1,1) to (3,2);
+\end{tztikz}
+
+
+\paragraph{Line styles}
+You can control line styles with the first optional argument |[<opt>]|.
+
+\begin{tzcode}{.3}
+% \tzto
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzto[blue,thick](0,1)(3,3)
+\tzto[out=0](0,0)(4,2)
+\tzto[bend right,dashed](2,0)(4,1)
+\settzmidarrow{o}[very thick,red]
+\tzarc(2,2)(180:45:1cm)
+\end{tikzpicture}
+\end{tzcode}
+
+\paragraph{Adding text}
+
+You can add text \xem{next to the line} (|[midway,above]|, by default) by specifying the options |{<text>}| and |[<node opt>]| \xem{in-between} the two coordinates.
+
+\begin{tztikz}
+\tzto[->,bend right](1,1){A}[near start](3,2) % works like:
+  \draw [->,bend right] (1,1) to node [near start] {A} (3,2);
+
+\tzto[->,bend right](1,1){A}[near start](3,2){B}[right] % works like:
+  \draw [->,bend right] (1,1) to node [near start] {A} 
+                        (3,2)    node [right]      {B};
+\end{tztikz}
+
+
+You can also add text \xem{at or around} the last coordinate by the options |{<text>}| and |[<node opt>]| \xem{immediately after} the last coordinate.
+
+\begin{tzcode}{.3}
+% \tzto: adding text
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzto[blue,thick,->](0,1){line}[sloped](3,3)
+\tzto[out=0](0,0){curve}[pos=.8](4,2){line B}[r]
+\tzto[bend right,dashed](2,0)(4,1){line C}[red,r]
+\end{tikzpicture}
+\end{tzcode}
+
+\paragraph{Shift}
+You can move the line by specifying the option |<shift coor>| before the first coordinate or immediately before the option |"<path name>"| if it exists.
+(The \xem{empty} shift option |<>| is \xem{not allowed}.)
+
+\begin{tzcode}{.3}
+% \tzto: shift
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzto[blue,thick,->]<0,1>(0,1){line}[sloped](3,3)
+\tzto[out=0]<1,1>(0,0){curve}[pos=.8](4,2){line B}[r]
+\tzto[bend right,dashed]<-1,0>(2,0)(4,1){line C}[red,r]
+\end{tikzpicture}
+\end{tzcode}
+
+\paragraph{Naming paths: Intersections}
+You can name the path of |\tzto| by specifying the option |"<path name>"| immediately before the first coordinate.
+
+\begin{tzcode}{.3}
+% \tzto: name path
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzto[bend right=45,blue,thick,->]"curveA"(1,3)(4,0)
+\tzto[out=0]"curveB"(0,0)(4,2){line B}[r]
+% intersection point
+\tzXpoint*{curveA}{curveB}
+\end{tikzpicture}
+\end{tzcode}
+
+\paragraph{Extending the path}
+You can extend the path of |\tzto| by writing \Tikz\ code in the last optional argument |<code.append>|.
+
+\begin{tzcode}{.3}
+% \tzto: extending path
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzto[bend right=45,blue,thick,->](1,3)(4,0)
+  <--([turn]0:1cm) node [b] {extended}>
+\tzto[out=0](0,0)(4,2)
+  <--([turn]0:1cm) node [r] {extended}>
+\end{tikzpicture}
+\end{tzcode}
+
+You can also use \icmd{\tztoAtBegin} and \icmd{\tztoAtEnd} to extend a path of |\tzto| at the beginning and at the end, respectively.
+Specifying |<code.append>| extends the path after |\tztoAtEnd|.
+
+\begin{tzcode}{.3}
+% \tzto: extending path
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tztoAtBegin{(0,2) to [bend left]}
+\tztoAtEnd{--([turn]0:1cm) node [b] {extended}}
+\tzto[bend right=45,blue,thick,->](1,3)(4,0)
+\tztoAtEnd{--([turn]0:1cm) node [r] {extended}}
+\tzto[out=0](0,0)(4,2)
+\end{tikzpicture}
+\end{tzcode}
+
+
+%%------------------------------------------------------------
+\section{\protect\cmd{\tzto+}: Relative coordinates}
+\label{s:tzto+}
+
+The \iisw{plus version} \icmd{\tzto+} uses the second coordinate relative to the first coordinate.
+
+\xem{Everything else is the same as in} |\tzto|.
+
+\begin{tztikz}
+\tzto+(1,1)(3,2) % works like:
+  \draw (1,1) to ++(3,2);
+\end{tztikz}
+
+\begin{tzcode}{.3}
+% \tzto+
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzto+[blue,thick,->](0,1){line}[sloped](3,2)
+\tzto+[out=0](0,0){curve}[pos=.8](4,2){line B}[r]
+\tzto+[bend right,dashed](2,0)(2,1){line C}[red,r]
+\end{tikzpicture}
+\end{tzcode}
+
+\begin{tzcode}{.3}
+% \tzto+
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzto+[bend right=45,blue,thick,->](1,3)(3,-3)
+  <--([turn]0:1cm) node [b] {extended}>
+\tzto+[out=0](0,0)(4,2)
+  <--([turn]0:1cm) node [r] {extended}>
+\end{tikzpicture}
+\end{tzcode}
+
+
+\begin{tzcode}{.3}
+% \tzto: extending path
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tztoAtBegin{(0,2) to [bend left]}
+\tztoAtEnd{--([turn]0:1cm) node [b] {extended}}
+\tzto+[bend right=45,blue,thick,->](1,3)(3,-3)
+\tztoAtEnd{--([turn]0:1cm) node [r] {extended}}
+\tzto+[out=0](0,0)(4,2)
+\end{tikzpicture}
+\end{tzcode}
+
+
+
+
+%%------------------------------------------------------------
+\section{\protect\cmd{\tztos}: Multiple points: Semicolon version}
+\label{s:tztos}
+
+\icmd{\tztos} takes an arbitrary number of coordinates as arguments to connect them by the \Tikz's |to| operation. |\tztos| is much more flexible than |\tzlines|. Since this is a \xem{semicolon version}, you need to enter a \xem{semicolon} to indicate when the coordinate iteration ends.
+
+\begin{tzdef}
+% syntax
+\tztos[<opt>]<shift coor>"<path name>"
+      (<coor1>)[<to opt>]{<text>}[<node opt>]..repeated..()[]{}[] ; <code.append>
+% defaults
+  []<>""(<m>)[]{}[]..repeated..()[]{}[];<>
+\end{tzdef}
+
+The quadruple |(<coor>)[<to opt>]{<text>}[<node opt>]| is 
+the whole repeating pattern.
+Here, |[<to opt>]| is for the options of \Tikz's |to| operation such as |[bend right]|, |[bend left]|, |[bend left=<angle>]|, |[out=<angle>,in=<angle>]| and so on.
+
+\begin{tztikz}
+\tztos(0,0)(1,2)(3,1); % works like:
+  \draw (0,0) to (1,2) to (3,1);
+\end{tztikz}
+
+\begin{tztikz}
+\tztos[blue]  (0,0)    [bend right] (1,2)    [out=-60,in=45] (3,1); % works like:
+  \draw[blue] (0,0) to [bend right] (1,2) to [out=-60,in=45] (3,1);
+\end{tztikz}
+
+\paragraph{How to connect coordinates}
+You can use the options of \Tikz's |to| operation to connect the coordinates with different types of curves.
+
+\begin{tzcode}{.3}
+% \tztos
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tztos[blue,<->](0,1)(1,2)(3,1)(4,3);
+\tztos[red,thick]
+      (0,0)[bend right]
+      (1,1)
+      (2,1)[out=-135,in=45]
+      (3,0);
+\end{tikzpicture}
+\end{tzcode}
+
+\begin{tzcode}{.3}
+% \tztos
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzcoors*(0,0)(A)(1,2)(B){B}[b](3,3)(C)(4,2)(D);
+\tztos(A)[out=80,in=180]
+      (B)[out=0,in=180]
+      (C)[out=0,in=180]
+      (D){End!}[r];
+\end{tikzpicture}
+\end{tzcode}
+
+\paragraph{Adding text}
+You can add text next to lines or curves by specifying the options |{<text>}| and |[<node opt>]| \xem{in-between} coordinates or \xem{after} the option |[<to opt>]|, if it exists.
+You can also add text at or around the last coordinate by the last options |{<text>}| and |[<node opt>]|.
+
+\begin{tzcode}{.3}
+% \tztos: adding text
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tztos(0,1)[bend right]{A}
+      (1,2)            {Ben}[red,sloped,a]
+      (3,1)[bend right]{Cate}[sloped,near end]
+      (4,3)            {Name}[draw,blue,a] ;
+\end{tikzpicture}
+\end{tzcode}
+
+\paragraph{Shift}
+You can move the line or curve of |\tztos|
+using the option |<shift coor>| before the first coordinate or immediately before the option |"<path name">|, if any.
+(The empty shift option |<>| is not allowed.)
+
+\begin{tzcode}{.3}
+% \tztos: shift
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzdot(0,0)
+\tztos[blue,<->](0,1)(1,2)(3,1)(4,3);
+\tztos[red,thick]
+  <1,1>(0,0)[bend right]
+       (1,1)
+       (2,1)[out=-135,in=45]
+       (3,0);
+\end{tikzpicture}
+\end{tzcode}
+
+
+
+\paragraph{Naming paths: intersections}
+You can name the path of |\tztos| by specifying |"<path name>"| immediately before the first mandatory coordinate.
+
+\begin{tzcode}{.3}
+% \tztos: name path, intersection points
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzdot(0,0)
+\tztos[blue,<->]"AA"(0,1)(1,2)(3,1)(4,3);
+\tztos[red,thick]
+  <1,1>"BB"(0,0)[bend right]
+       (1,1)
+       (2,1)[out=-135,in=45]
+       (3,0);
+% intersection points
+\tzXpoint*{AA}{BB}(X)
+\tzdot(X-2)(4pt)
+\end{tikzpicture}
+\end{tzcode}
+
+
+\paragraph{Extending paths}
+You can extend the path of |\tztos| from the last coordinate,
+by writing \Tikz\ code in the last (after the semicolon) optional argument |<code.append>|.
+
+\begin{tzcode}{.3}
+% \tztos
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tztos[blue](0,1)(1,2)(3,1)(4,3);<--cycle>
+\tztos[red,thick]
+      (0,0)[bend right]
+      (1,1)
+      (2,1)[out=-135,in=45]
+      (3,0); < to ([turn]0:1.5cm) >
+\end{tikzpicture}
+\end{tzcode}
+
+You can also use \icmd{\tztosAtBegin} and \icmd{\tztosAtEnd} to extend a path of |\tztos| at the beginning and at the end, respectively.
+Specifying the option |<code.append>| extends the path after |\tztosAtEnd|.
+
+\begin{tzcode}{.3}
+% \tztos
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tztos[blue](0,1)(1,2)(3,1)(4,3);<--cycle>
+\tztosAtBegin{ (1,3) -| }
+\tztosAtEnd{ to ([turn]0:1.5cm) }
+\tztos[red,thick]
+      (0,0)[bend right]
+      (1,1)
+      (2,1)[out=-135,in=45]
+      (3,0); 
+\end{tikzpicture}
+\end{tzcode}
+
+%%------------------------------------------------------------
+\section{\protect\cmd{\tztos+}: Relative coordinates: Semicolon version}
+\label{s:tztos+}
+
+The \iisw{plus version} \icmd{\tztos+} takes each coordinate (except the first coordinate) relative (with |++|) to the previous coordinate.
+
+\xem{Everything else is the same as in} |\tztos|.
+
+\begin{tzcode}{.3}
+% \tztos+
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tztos+[blue](0,1)(1,1)(2,-1)(1,2);<--cycle>
+\tztos+[red,thick]
+      (0,0)[bend right]
+      (1,1)
+      (1,0)[out=-135,in=45]
+      (1,-1); < to ([turn]0:1.5cm) >
+\end{tikzpicture}
+\end{tzcode}
+
+
+
+\section{\protect\cmd{\tzlink}: Two points}
+\label{s:tzlink}
+
+\icmd{\tzlink} is a \xem{generalized version} of |\tzline|.
+You can decide the style that links two coordinates.
+
+The default link style is |to|, which can be changed with the \xem{second} optional argument |[<code1>]| \xem{between two coordinates} like, for example, \verb+(<coor1>)[-|](<coor2>)+.
+Another way is to use the \xem{first} curly brace option |{<link style>}|.
+You can also change it by \icmd{\settzlinkstyle} like, for example, \verb+\settzlinkstyle{-|}+, which is effective until the end of the |tikzpicture| environment. 
+
+\begin{tzdef}
+% syntax: minimum
+\tzlink(<coor1>)(<coor2>)                % default: to
+% syntax: medium
+\tzlink[<opt>](<coor1>)[<code1>](coor2>) % change link style by [<code1>]
+% syntax: full
+\tzlink{<link style>}[<opt>]<shift coor>"<path name>"
+       (<coor1>)[<code1>]{<text1>}[<node opt1>]<code2> 
+       (<coor2>){<text2>}[<node opt2>]<code.append>
+% remark:
+  - {<link style>}: % default: to
+  - [<code1>]: --, -|, to, edge, etc. (optionally more appropriate tikz code)
+  - <code2>: + or ++                  (possibly with other tikz code)
+  - {<text1>}: node text next to line
+  - {<text2>}: node text at the last coordinate
+% defaults
+ {to}[]<>""(<m>)[]{}[above]<>(<m>){}[]<>
+\end{tzdef}
+
+\begin{tztikz}
+\tzlink(1,0)(3,1) % works like:
+  \draw (1,0) to (3,1);
+\end{tztikz}
+
+\begin{tztikz}
+\tzlink(1,0)[-|]<++>(3,1) % works like:
+  \draw (1,0) -| ++ (3,1);
+\end{tztikz}
+
+
+\paragraph{Link styles} You can change the link style (|to| by default) using the optional argument |[<code1>]| \xem{immediately after} the first coordinate.
+
+\begin{tzcode}{.3}
+% \tzlink: to (default link style)
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzlink[->](0,0)(1,0)
+\tzlink[->,bend right](0,2)(3,0)
+\tzlink[->](1,2)[-|](4,1)
+\end{tikzpicture}
+\end{tzcode}
+
+You can also use \icmd{\settzlinkstyle} to change the link style. Its effect is valid until the end of the |tikzpicture| environment, unless changed again.
+
+\begin{tzcode}{.3}
+% \settzlinkstyle
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\settzlinkstyle{to[bend left]}  %%
+\tzlink[->](0,0)(1,0)
+\tzlink[->](0,2)[--](3,0)       % local change
+\tzlink[->](1,2)(4,1)
+\end{tikzpicture}
+\end{tzcode}
+
+The \iisw{plus version} \icmd{\tzlink+} uses the second coordinate relative (with |++|, by default) to the first one.
+Everything else is the same as in |\tzlink|.
+
+         
+\begin{tztikz}
+\tzlink (1,0)[to[bend right]]{A}[a]<++>(3,1) % or
+\tzlink+(1,0)[to[bend right]]{A}[a]    (3,1) % works like:
+  \draw (1,0) to[bend right] node [above] {A} ++ (3,1);
+\end{tztikz}
+
+
+\begin{tzcode}{.3}
+% \tzlink(+): various link styles
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzlink[->,blue,out=90,in=180](0,2)(3,0)
+\tzlink+[->,dashed,blue](1,2)[to[bend left]](3,-1)
+\tzlink[->](0,0)[..controls (1,1) and (3,0)..](4,2)
+\tzlink+[red,thick](1,0)[edge[bend left]](2,3)
+\end{tikzpicture}
+\end{tzcode}
+
+\paragraph{Adding text}
+
+You can add text next to the line or curve of |\tzlink| by specifying the option |{<text1>}| followed by the optional argument |[<node opt1>]| \xem{between} two coordinates (or after the option |[<code1>]| if it exists).
+
+You can name the line or curve of |\tzlink| by specifying the optional arguments |{<text2>}| and |[<node opt2>]| \xem{after} the second coordinate. The option |[<node opt2>]| is often for the position of node text at or around the second coordinate.
+
+\begin{tzcode}{.3}
+% \tzlink
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzlink[->](1,3){line A}(4,3)
+\tzlink[blue](0,3){line B}[sloped](3,0){E}[r]
+\tzlink[->,red](1,0){Start}[at start,l](4,2){Line C}[r]
+\end{tikzpicture}
+\end{tzcode}
+
+\begin{tzcode}{.3}
+% \tzlink(+)
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzlink[->](0,0){A}(1,0)
+\tzlink+[bend right](0,2){curve}[sloped](3,-2){End}[r]
+\tzlink[->,auto](1,2)[-|]{B}(4,1){Goal!}[b,draw,blue]
+\end{tikzpicture}
+\end{tzcode}
+
+
+\paragraph{Shift}
+You can move the line or curve by specifying the option |<shift coor>|  \xem{before} the first coordinate (or ever before the option |"<path name>"| if it exists).
+
+\begin{tzcode}{.3}
+% \tzlink(+): shift
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzlink+[bend right](0,2)(3,-2){A}[r]
+\tzlink+[bend right]<.5,.5>(0,2)(3,-2){A-shifted}[r]
+\tzlink[->](1,2)[-|](4,1)
+\tzlink[->,dashed]<-.2,.3>(1,2)[-|](4,1)
+\end{tikzpicture}
+\end{tzcode}
+
+\paragraph{Naming paths: Intersections}
+You can name the path of |\tzlink| by specifying the quote option |"<path name>"| \xem{immediately before} the first coordinate.
+You can use the path names of two paths to find an intersection point.
+
+\begin{tzcode}{.3}
+% \tzlink(+): path name: intersection
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzlink[blue]"BB"(0,3){line B}[sloped](3,0)
+\tzlink+[->,red,bend right]"CC"(1,0)(3,2){Line C}[r]
+\tzXpoint{BB}{CC}(E) % instersection
+\tzdot*(E){E}[a]
+\end{tikzpicture}
+\end{tzcode}
+
+
+\paragraph{Extending paths}
+You can extend the path of |\tzlink| by specifying \Tikz\ code in the last optional argument |<code.append>|.
+You can also use the macros \icmd{\tzlinkAtBegin} and \icmd{\tzlinkAtEnd} to extend the path at the beginning and at the end, respectively.
+Specifying the option |<code.append>| extends the path after |\tzlinkAtEnd|.
+
+\begin{tzcode}{.3}
+% \tzlink(+): path name: intersection
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzlinkAtBegin{(1,1) to[bend left]}
+\tzlinkAtEnd{arc (180:90:1cm) node [r,draw] {BB}}
+\tzlink[blue]"BB"(0,3){line B}[sloped](3,0)
+\tzlink+[->,red,bend right]"CC"(1,0)(3,2){Line C}[r]
+  < -| ++(-1,1) node [a] {End!} >
+\tzXpoint{BB}{CC}(E)
+\tzdot*(E){E}[a]
+\end{tikzpicture}
+\end{tzcode}
+
+
+%%------------------------------------------------------------
+\section{\protect\cmd{\tzlinks}: All in one: Semicolon versions}
+\label{s:tzlinks}
+
+\subsection{\protect\cmd{\tzlinks}: Standard version}
+\label{ss:tzlinks}
+
+The macro \icmd{\tzlinks} is a \iisw{semicolon version} of |\tzlink|. |\tzlinks| accepts any number of coordinates to connect them with connected line segments or curves.
+You can change how two adjacent points are connected.
+|\tzlinks| is quite \xem{flexible} that you can think of it as a \xem{generalized version} of |\tzlines|.
+
+
+\begin{tzdef}
+% syntax: minimum
+\tzlinks (<coor>)(<coor>) ..repeated.. (<coor>) ;
+% syntax: full
+\tzlinks{<path style>}[<opt>]<shift coor>"<path name>"
+        (<coor>)[<code1>]{<text>}[<node opt>]<code2>
+        ..repeated.. ()[]{}[]<> ; {<fill opacity>} <code.append>
+% remark:
+  - <code1> must be link style, such as --, to, -|, etc.
+           (possibly followed by other code)
+  - <code2> is especially for + or ++
+           (possibly with other code)
+  - repetition MUST be ended by ; (semicolon)
+  - full repeating pattern is ()[]{}[]<>..repeated..()[]{}[]<>
+  - {<fill opacity>} works only in \tzlinks*
+% defaults: \tzlinks, \tzlinks*, \tzlinks+, \tzlinks*+
+  {to}[]<>"" (<m>)[]{}[]<>   ..repeated.. ()[]{}[]<> ; {  }<>
+ *{to}[fill=black!50,fill opacity=.3,text opacity=1]
+        <>"" (<m>)[]{}[]<>   ..repeated.. ()[]{}[]<> ; {.3}<>
+ +{to}[]<>"" (<m>)[]{}[]<++> ..repeated.. ()[]{}[]<> ; {  }<>
+\end{tzdef}
+
+\paragraph{How to change link styles}
+There are three ways of changing link styles:
+\begin{itemize}\firmlist
+\item The fist curly brace option |{<link style>}| controls the link style of connecting any two coordinates.
+\item The second bracket option |[<code1>]| (locally) changes the link style of two adjacent coordinates. |[<code1>]| (locally) overrides |{<link style>}|.
+\item The effect of the macro |\settzlinkstyle| remains until the end of |tikzpicture| environment, unless changed again.
+\end{itemize}
+
+\begin{tztikz}
+% standard version
+\tzlinks(1,1)(2,2)(3,1)(4,3); % works like:
+  \draw (1,1) to (2,2) to (3,1) to (4,3);
+\end{tztikz}
+
+\begin{tzcode}{.3}
+% \tzlinks
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzlinks(0,1)(1,2)(3,1)(4,3);
+\end{tikzpicture}
+\end{tzcode}
+
+The default path style is |to|, which can be by \icmd{\settzlinkstyle}.
+The effect remains valid until the end of |tikzpicture| environment unless changed again.
+
+\begin{tzcode}{.3}
+% \tzlinks: \settzlinkstyle
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\settzlinkstyle{to[bend right]} %%
+\tzlinks[dashed](0,1)(1,2)[-|](3,1)(4,3);
+\tzlinks[blue]
+      (0,0)
+      (1,1)
+      (2,1)[to[out=-135,in=45]]
+      (3,0);
+\end{tikzpicture}
+\end{tzcode}
+
+
+\begin{tzcode}{.3}
+% \tzlinks: various link styles
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzlinks[->](1,2)[-|]
+            (0,0)[..controls (1,2) and (2,0)..]
+            (3,1)[to[bend left]]<++>
+            (1,2);
+\end{tikzpicture}
+\end{tzcode}
+
+
+\begin{tzcode}{.3}
+% \tzlinks: various link styles
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzlinks[->](1,1)<++>
+            (1,1)[[rounded corners=10pt]--]
+            (0,3)
+            (0,0)[[sharp corners]--]
+            (4,0)<++>
+            (-1,2);
+\end{tikzpicture}
+\end{tzcode}
+
+
+\begin{tzcode}{.3}
+% \tzlinks: edge
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzlinks(0,1)(1,2)[edge[dashed]]<(3,1)>(3,1)(4,3);
+\end{tikzpicture}
+\end{tzcode}
+
+\remark
+In \Tikz, |edge| is not part of the main path.
+So you need to be careful when you move the path or find intersection points.
+
+
+
+\subsection{\protect\cmd{\tzlinks+}, \protect\cmd{\tzlinks*}, \protect\cmd{\tzlinks*+}: Variants}
+\label{ss:tzlinks-variants}
+
+The \iisw{plus version} \icmd{\tzlinks+} treats a coordinate as relative (with |++| by default) to the previous coordinate, except the first coordinate.
+
+\begin{tztikz}
+% plus (+) version
+\tzlinks+(1,1)(2,2){--}(3,1)(4,3); % works like:
+  \draw (1,1) to ++(2,2) -- ++(3,1) to ++(4,3);
+\end{tztikz}
+
+\begin{tzcode}{.3}
+% \tzlinks+
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzlinks+(0,1)(1,1)[to[bend right]](2,-1)(1,2);
+\end{tikzpicture}
+\end{tzcode}
+
+The \xem{starred version} \icmd{\tzlinks*} is to fill the closed area formed by |\tzlinks| with color or pattern. The related default value is  |[fill=black!50, fill opacity=.3, text opacity=1]|.
+In fact, |\tzlinks*[draw=none]| is (almost) the same as |\tzpath*| (See Section \ref{s:tzpath*} on page \pageref{s:tzpath*} for more details).
+
+\begin{tztikz}
+% starred (*) version
+\tzlinks*(1,1)(2,2)(3,1)(4,3); % works like:
+  \draw [fill=black!50,fill opacity=.3,text opacity=1] 
+        (1,1) to (2,2) to (3,1) to (4,3);
+\end{tztikz}
+
+\icmd{\tzlinks*+} is the plus version of |\tzlinks*|.
+
+\begin{tzcode}{.3}
+% \tzlinks*+
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzlinks*+[thick](0,1)(1,1)[to[bend right]](2,-1)(1,2);
+\end{tikzpicture}
+\end{tzcode}
+
+\begin{tzcode}{.3}
+% \tzlinks: fill, fill opacity
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzline[red,very thick](0,3)(4,0)
+\tzlinks[fill](0,0)(3,1)(2,3)(0,2); % default opacity=1
+\tzlinks[fill=green,fill opacity=.5]
+  <1,-1>(0,0)(3,1)(2,3)(0,2);
+\end{tikzpicture}
+\end{tzcode}
+
+You can also change the fill opacity by specifying the \xem{last} curly brace optional argument |{<fill opacity>}|, \xem{after the semicolon} (or before the option |<code.append>| it it exists).
+
+\begin{tzcode}{.3}
+% \tzlinks*
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\settzfillcolor{green}
+\tzline[red,very thick](0,3)(4,0)
+\tzlinks*[blue](0,0)(3,1)(2,3)(0,2);{1}
+\tzlinks*%[green]
+  <1,-1>(0,0)(3,1)(2,3)(0,2); {.5} %%
+\end{tikzpicture}
+\end{tzcode}
+
+You can also use the macros |\settzfillcolor| and |\settzfillopacity| to change the defaults.
+The effect remains valid until the end of the |tikzpicture| environment, unless changed again.
+
+%%------------------------------------------------------------
+\subsection{Putting text, shift, intersections, and extending paths}
+\label{ss:tzlinks-add}
+
+
+\paragraph{Adding text}
+You can add text next to connected line segment or around the last coordinate by specifying options |{<text>}[<node option>]|.
+
+\begin{tztikz}
+\tzlinks+[dashed]"AA"(1,1){A}(2,2)[--]{B}[a]<+>(3,1){C}[b]; % works like
+  \draw [dashed,name path=AA] 
+        (1,1) to node         {A} 
+      ++(2,2) -- node [above] {B}  
+       +(3,1) to node [below] {C} ;
+\end{tztikz}
+
+
+\begin{tzcode}{.3}
+% \tzlinks: adding text
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzlinks[blue](0,0){Ace}
+              (1,1){Beth}[sloped,a]
+              (3,0){C}   [near start]
+              (4,2){End!}[draw,a=3pt];
+\end{tikzpicture}
+\end{tzcode}
+
+\begin{tzcode}{.3}
+% \tzlinks: adding text
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzlinks[->](1,1){start}[sloped,b]<++>
+    (1,1)[[rounded corners=10pt]--]{K}[at end,a]
+    (0,3){Rounded}[scale=0.7,font=\scshape,at end,ar]
+    (0,0)[[sharp corners]--]
+    (4,0)<++>
+    (-1,2){End!}[draw,blue,a=3pt];
+\end{tikzpicture}
+\end{tzcode}
+
+\begin{tzcode}{.3}
+% \tzlinks: edge
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzlinks(0,1){start}[at start,b]
+  (1,2)[edge[dashed,bend right]]{Go!}[sloped,b]<(3,1)>
+  (3,1)
+  (4,3){End\\here!}[align=center,r,draw,red] ;
+\end{tikzpicture}
+\end{tzcode}
+
+\remark Note that |edge| is not part of the main path.
+
+\paragraph{Shift}
+You can move the path of |\tzlinks| with the option |<shift coor>|.
+An \xem{empty} option |<>| is \xem{not allowed}.
+
+
+\begin{tzcode}{.3}
+% \tzlinks:
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzlinks<.5,-1>(0,1){start}[at start,b] % shift
+  (1,2)[to[dashed,bend right]]{Go!}[sloped,b]
+  (3,1)
+  (4,3){End\\here!}[align=center,r,draw,red] ;
+\end{tikzpicture}
+\end{tzcode}
+
+
+\paragraph{Naming paths: intersections}
+You can name the path of |\tzlinks| \xem{immediately befor} the first coordinate and use it to find intersection points.
+
+\begin{tzcode}{.3}
+% \tzlinks: edge
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzlinks"AA"(0,1){start}[at start,b]
+  (1,2)[edge[dashed,bend right]]{Go!}[sloped,b]<(3,1)>
+  (3,1)
+  (4,3){End\\here!}[align=center,r,draw,red] ;
+\tzhXpointat{AA}{1.5}(A) % horizontal intersections
+\tzdots*(A){\texttt{(A)}}(A-2){\texttt{(A-2)}}[0];
+\end{tikzpicture}
+\end{tzcode}
+
+In the previous example, since |edge| is not part of the main path of |\tzlinks|,
+the second horizontal intersection point |(A-2)| is not on the |edge| curve.
+
+\paragraph{Extending paths}
+
+You can extend the path of |\tzlinks| by writing \Tikz\ code in the last (after the semicolon) optional argument |<code.append>|.
+So |<--cycle>| closes the path with a straight line.
+
+\begin{tzcode}{.3}
+% \tzlinks* <code.append>
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzlinks*[blue](0,1)(1,2)[-|](3,1)(4,3); 
+             < to [bend right=60] (0,1) -- cycle >
+\tzlinks*[fill=red]
+      (0,0)[to[bend right]]
+      (1,1)
+      (2,1)[to[out=-135,in=45]]
+      (3,0); % not closed
+\end{tikzpicture}
+\end{tzcode}
+
+You can also use \icmd{\tzlinksAtBegin} and \icmd{\tzlinksAtEnd} to extend the path of |\tzlinks| at the beginning and at the end, respectively.
+Specifying the option |<code.append>| extends the path after |\tzlinksAtEnd|.
+
+\begin{tzcode}{.3}
+% \tzlinks*: extending paths
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzlinksAtBegin{(0,2) to[bend left]}
+\tzlinksAtEnd{ to [out=210] (1,3) }
+\tzlinks*[blue](0,1)(1,2)[-|](3,1)(4,3); 
+             < -| (0,2) >
+\tzlinks*[fill=red]
+      (0,0)[to[bend right]]
+      (1,1)
+      (2,1)[to[out=-135,in=45]]
+      (3,0); <--cycle>
+\end{tikzpicture}
+\end{tzcode}
+
+
+
+
+%%==================================
+\chapter{Filling Area}
+\label{c:fillingarea}
+
+%%------------------------------------------------------------
+\section{\protect\cmd{\tzpath}: Semicolon version}
+\label{s:tzpath}
+
+
+The macro \icmd{\tzpath} is the same as |\tzlinks[draw=none]|. In other words, |\tzpath| creates a path connecting an arbitrary number of coordinates, but it does not stroke the path. Since |\tzpath| is a \iisw{semicolon version} macro, you need to enter a \xem{semicolon} `|;|' to indicate where the coordinate iteration ends.
+
+You can visualize the path with |\tzpath[draw]|, which is the same as |\tzlinks|.
+
+
+\begin{tzdef}
+% syntax: minimal
+\tzpath (<coor>)(<coor>) ..repeated.. (<coor>) ;
+% syntax: full
+\tzpath {<path style>}[<opt>]<shift coor>"<path name>"
+        (<coor>)[<code1>]{<text>}[<node opt>]<code2>
+        ..repeated.. ()[]{}[]<> ; <code.append>
+% remark:
+  - <code1> must be link style, such as --, to, -|, etc.
+           (possibly followed by other codes)
+  - <code2> is especially for + and ++
+           (possibly with other codes)
+  - repetition MUST be ended by ; (semicolon)
+% defaults: \tzpath
+  {to}[]<>"" (<m>)[]{}[]<> ..repeated.. ()[]{}[]<> ; <>
+\end{tzdef}
+
+\remark
+\begin{itemize}
+\item The main purpose of |\tzpath| is to fill an enclosed area with colors or patterns.
+You can use |\tzpath[fill]| or |\tzpath[pattern=<...>]| to do it.
+\item Use \icmd{\settzpathlayer}, like |\settzpathlayre{behind}|, to change the layer of |\tzpath| (default: |main|).
+\end{itemize}
+
+\paragraph{Path construction operation}
+(If you are not an experienced user of \Tikz\, just skip this part.)
+
+%|\tzpath| is similar to |\tztos|, but it is more flexible in constructing paths.
+|\tzpath| allows you to choose how to construct a path using the |[<path style>]| option \xem{in-between} coordinates. \xem{Path extension operation} can be selected from `|--|', `|to|', `\verb+|-+', `\verb+-|+', etc.
+You can use \xem{the first brace option} |{<path style>}| to change all the |<path style>| in-between coordinates.
+
+
+\begin{tzcode}{.3}
+% \tzpath: path construction
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzpath[draw](0,1)(1,2)[-|](3,1)(4,3);
+\tzpath[draw]
+      (0,0)[to[bend right]]
+      (1,1)
+      (2,1)[to[out=-135,in=45]]
+      (3,0);
+\end{tikzpicture}
+\end{tzcode}
+
+The default path style is `|to|' and can also be changed by \icmd{\settzpathstyle}, like, for example, |\settzpathstyle{--}|. |\settzpathstyle| is an alias of |\settzlinkstyle|. The effect remains valid until the end of |tikzpicture| environment unless changed again.
+
+\begin{tzcode}{.3}
+% \tzpath: \settzpathstyle
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\settzpathstyle{to[bend right]}
+\tzpath[draw](0,1)(1,2)[-|](3,1)(4,3);
+\tzpath[draw]
+      (0,0)[to[bend right]]
+      (1,1)
+      (2,1)[to[out=-135,in=45]]
+      (3,0);
+\end{tikzpicture}
+\end{tzcode}
+
+\begin{tzcode}{.3}
+% \tzpath: \settzpathstyle
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\settzpathstyle{to[bend right]}
+\tzlinks(0,1)(1,2)[-|](3,1)(4,3);
+\tzlinks
+      (0,0)[to[bend right]]
+      (1,1)
+      (2,1)[to[out=-135,in=45]]
+      (3,0);
+\end{tikzpicture}
+\end{tzcode}
+
+You can extend the path of |\tzpath| by writing \Tikz\ code in the last (after the semicolon) optional argument |<code.append>|.
+So |<--cycle>| closes the path with a straight line.
+
+\begin{tzcode}{.3}
+% \tzpath: <code.append>
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzpath[draw](0,1)(1,2)[-|](3,1)(4,3); 
+             < to [bend right=60] (0,1) >
+\tzpath[fill]
+      (0,0)[to[bend right]]
+      (1,1)
+      (2,1)[to[out=-135,in=45]]
+      (3,0); <--cycle>
+\end{tikzpicture}
+\end{tzcode}
+
+\section{\protect\cmd{\tzpath*}: Semicolon version}
+\label{s:tzpath*}
+
+The starred version \icmd{\tzpath*} is the (almost) same as |\tzlinks*[draw=none]|. It fills the interior of |\tzpath| with |fill=black!50| with |fill opacity=.3| and |text opacity=1|, by default.
+The only difference between |\tzpath*| and |\tzlinks*[draw=none]| is that the layer of |\tzpath*| can be changed by |\settzpathlayer|, like |\settzpathlayer{behind}|.
+
+|\tzpath*| works like |\tzpath[fill=black!50,fill opacity=.3,text opacity=1]|.
+You can change the defaults by \icmd{\settzfillcolor} and \icmd{\settzfillopacity}.
+
+\begin{tzdef}
+% syntax: minimal
+\tzpath*(<coor>)(<coor>) ..repeated.. (<coor>) ; {<fill opacity>}
+% syntax: full
+\tzpath*{<path style>}[<opt>]<shift coor>"<path name>"
+        (<coor>)[<code1>]{<text>}[<node opt>]<code2>
+        ..repeated.. ()[]{}[]<> ; {<fill opacity>} <code.append>
+% remark:
+  - <code1> must be link style, such as --, to, -|, etc.
+           (possibly followed by other codes)
+  - <code2> is especially for + and ++
+           (possibly with other codes)
+  - repetition MUST be ended by ; (semicolon)
+% defaults: \tzpath*
+ *{to}[fill=black!50,fill opacity=.3,text opacity=1]<>""
+  (<m>)[]{}[]<> ..repeated.. ()[]{}[]<> ; {.3}<>
+\end{tzdef}
+
+
+
+\paragraph{Filling the interior}
+
+You can optionally change the opacity of fill color using the \Tikz\ option |fill opacity|.
+
+\begin{tzcode}{.3}
+% \tzpath: fill, fill opacity
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzline[red,very thick](0,3)(4,0)
+\tzpath[fill](0,0)(3,1)(2,3)(0,2); % default opacity=1
+\tzpath[fill,green,fill opacity=.5]
+  <1,-1>(0,0)(3,1)(2,3)(0,2);
+\end{tikzpicture}
+\end{tzcode}
+
+You can also change the fill opacity by specifying the \xem{last} curly brace optional argument |{<fill opacity>}|, \xem{after the semicolon}.
+
+\begin{tzcode}{.3}
+% \tzpath*
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzline[red,very thick](0,3)(4,0)
+\tzpath*(0,0)(3,1)(2,3)(0,2);
+\tzpath*[green]
+  <1,-1>(0,0)(3,1)(2,3)(0,2); {.5} %%
+\end{tikzpicture}
+\end{tzcode}
+
+You can also use the macros |\settzfillcolor| and |\settzfillopacity| to change the defaults.
+The effect remains valid until the end of the |tikzpicture| environment, unless changed again.
+
+\begin{tzcode}{.3}
+% \tzpath*: \settzfillcolor
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\settzfillcolor{red}
+\tzpath*[blue](0,1)(1,2)[-|](3,1)(4,3); 
+             < to [bend right=60] (0,1) >
+\tzpath*
+      (0,0)[to[bend right]]
+      (1,1)
+      (2,1)[to[out=-135,in=45]]
+      (3,0); <--cycle>
+\end{tikzpicture}
+\end{tzcode}
+
+
+%%------------------------------------------------------------
+\section{\protect\cmd{\tzpath+} and \protect\cmd{\tzpath*+}: Relative coordinates: Semicolon versions}
+\label{s:tzpath+}
+
+The \iisw{plus version} \icmd{\tzpath+} uses each coordinate (except for the first coordinate) relative (with |++|) to the previous coordinate.
+
+\xem{Everything else is the same as in} |\tzpath|.
+
+\icmd{\tzpath*+} is simply the plus version of |\tzpath*|.
+
+\begin{tzcode}{.3}
+% \tzpath+
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzline[red,very thick](0,3)(4,0)
+\tzpath+[pattern=bricks,preaction={fill=brown}]
+        (0,0)(3,1)(-1,2)(-2,-1);
+\tzpath+[pattern=north east lines,opacity=.5]
+  <1,-1>(0,0)(3,1)(-1,2)(-2,-1);
+\end{tikzpicture}
+\end{tzcode}
+
+You can change the layer (|main| by default) using |\settzpathlayer|.
+
+\begin{tzcode}{.3}
+% \settzpathlayer
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\settzpathlayer{behind} %% layer
+\tzline[red,very thick](0,3)(4,0)
+\tzpath+[pattern=bricks,preaction={fill=brown}]
+        (0,0)(3,1)(-1,2)(-2,-1);
+\tzpath+[pattern=north east lines,opacity=.5]
+  <1,-1>(0,0)(3,1)(-1,2)(-2,-1);
+\end{tikzpicture}
+\end{tzcode}
+
+\begin{tzcode}{.3}
+% \tzpath*+
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzline[red,very thick](0,3)(4,0)
+\tzpath*+(0,0)(3,1)(-1,2)(-2,-1);
+\tzpath*+[fill=green]
+   <1,-1>(0,0)(3,1)(-1,2)(-2,-1); {.5} %%
+\end{tikzpicture}
+\end{tzcode}
+
+
+%%=======================================
+%%==================================
+\chapter{Curves}
+\label{c:curves}
+
+There are many ways to draw curves.
+
+%%-----------------------------------
+%%------------------------------------------------------------
+\section{B\'{e}zier curves}
+\label{s:beziercurves}
+
+\subsection{\protect\cmd{\tzbezier}}
+\label{ss:tzbezier}
+
+\icmd{\tzbezier} accepts \xem{three or four} coordinates to draw a B\'{e}zier curve from the first coordinate to the last coordinate, with \xem{one or two} control points.
+
+\begin{tzdef}
+% syntax: minimal
+\tzbezier(<start-coor>)(cntl-coor>)(<last-coor>)
+\tzbezier(<start-coor>)(cntl-coor>)(<cntl-coor>)(<last-coor>)
+% syntax: full
+\tzbezier[<draw opt>]<shift coor>"<name path>"
+         (<start-coor>)(cntl-coor>)(<cntl-coor>)(<last-coor>)
+         {<text>}[<node opt>]<code.append>
+% defaults
+  []<>""(<m>)(<m>)()(<m>){}[]<>
+\end{tzdef}
+
+\paragraph{Control points}
+
+You can specify one or two control points, |(<cntl-coor>)|.
+
+\begin{tztikz}
+% three coordinates: one control point
+\tzbezier(0,1)(1,0)(4,3) % works like:
+  \draw (0,0) ..controls (1,0).. (4,3);
+\end{tztikz}
+
+\begin{tztikz}
+% four coordinates: two control points
+\tzbezier(0,1)(1,0)(2,4)(4,3) % works like:
+  \draw (0,0) ..controls (1,0) and (2,4).. (4,3);
+\end{tztikz}
+
+\begin{tzcode}{.3}
+% \tzbezier
+\begin{tikzpicture}
+\tzhelplines(4,4)
+\tzbezier[red](0,3)(1,2)(2,4)(4,3)
+\tzbezier[blue](0,2)(1,.5)(4,0)
+\end{tikzpicture}
+\end{tzcode}
+
+The style \ixxw{tzshowcontrols} displays the control points by drawing dotted lines, by default.
+You can also change the dotted line style, like |tzshowcontrols={dashed,green}|.
+
+
+\begin{tzcode}{.3}
+% \tzbezier: tzshowcontrols
+\begin{tikzpicture}
+\tzhelplines(4,4)
+\tzbezier[blue,tzshowcontrols](0,2)(1,.5)(4,0)
+\tzdots*[blue](0,2)(1,.5)(4,0);
+\tzbezier[red,tzshowcontrols={green,dashed}]
+         (0,3)(1,2)(2,4)(4,3)
+\tzdots*[red](0,3)(1,2)(2,4)(4,3);
+\end{tikzpicture}
+\end{tzcode}
+
+\paragraph{Adding text}
+You can add text next to the curve or at the last coordinate
+by specifying the options |{<text>}| and |[<node opt>]| \xem{immediately after the last coordinate}.
+
+
+\begin{tzcode}{.3}
+% \tzbezier: adding text
+\begin{tikzpicture}
+\tzhelplines(4,4)
+\tzbezier[blue](0,2)(1,.5)(4,0){curve}[draw,black,r]
+\tzbezier[red](0,3)(1,2)(2,4)(4,3){bezier}[near end,a]
+\end{tikzpicture}
+\end{tzcode}
+
+\paragraph{Shift}
+You can move the curve of |\tzbezier| by specifying the option |<shift coor>| before the first coordinate or immediately before the option |"<path name>"|, if it exists.
+The \xem{empty} shift option |<>| is \xem{not allowed}.
+
+\begin{tzcode}{.3}
+% \tzbezier: shift
+\begin{tikzpicture}
+\tzhelplines(4,4)
+\tzbezier[blue]
+         (0,2)(1,.5)(4,0){curve}[draw,black,r]
+\tzbezier[blue,dashed]
+  <1,1>(0,2)(1,.5)(4,0){curve}[r]
+\tzbezier[red]
+         (0,3)(1,2)(2,4)(4,3){bezier}[near end,a]
+\tzbezier[red,dashed]
+  <0,-1>(0,3)(1,2)(2,4)(4,3){bezier}[blue,near end,a]
+\end{tikzpicture}
+\end{tzcode}
+
+\paragraph{Naming paths: intersections}
+You can name the path of |\tzbezier| by specifying the option |"<path name>"| \xem{immediately before} the first coordinate.
+
+\begin{tzcode}{.3}
+% \tzbezier: name path, intersection
+\begin{tikzpicture}
+\tzhelplines(4,4)
+\tzbezier[blue,dashed,thick]<1,1>"curve"
+  (0,2)(1,.5)(4,0){curve}[r]
+\tzbezier[red,dashed,thick]<0,-1>"bezier"
+  (0,3)(1,2)(2,4)(4,3){bezier}[blue,near end,a]
+% intersection point
+\tzXpoint*{curve}{bezier}(X){X}[-90]
+\end{tikzpicture}
+\end{tzcode}
+
+\paragraph{Extending paths}
+You can extend the path of |\tzbezier| from the last coordinate, by writing \Tikz\ code
+in the last optional argument |<code.append>|.
+
+\begin{tzcode}{.3}
+% \tzbezier: extending path
+\begin{tikzpicture}
+\tzhelplines(4,4)
+\tzbezier[red](0,3)(1,2)(2,4)(4,3){bezier}[near end,a]
+  < to [bend right] ++(-1,-1) node [below] {A} >
+\tzbezier[blue,->](0,2)(1,.5)(4,0)
+  < |- ++(-2,1) node [below] {B} >
+\end{tikzpicture}
+\end{tzcode}
+
+You can also use \icmd{\tzbezierAtBegin} and \icmd{\tzbezierAtEnd} to extend the path of |\tzbezier| at the beginning and at the end, respectively.
+Specifying the option |<code.append>| extends the path after |\tzbezierAtEnd|.
+
+\begin{tzcode}{.3}
+% \tzbezier: extending path
+\begin{tikzpicture}
+\tzhelplines(4,4)
+\tzbezierAtEnd
+  { to [bend right] ++(-1,-1) node [below] {A} }
+\tzbezier[red](0,3)(1,2)(2,4)(4,3){bezier}[near end,a]
+\tzbezierAtBegin{ (0,0) to [out=45,in=-30] }
+\tzbezierAtEnd{ |- ++(-2,1) }
+\tzbezier[blue,->](0,2)(1,.5)(4,0){B}[b]
+  < arc (0:90:1) node [a] {End!} >
+\end{tikzpicture}
+\end{tzcode}
+
+
+\subsection{\protect\cmd{\tzbezier+}: Relative coordinates}
+\label{ss:tzbezier+}
+
+For the \iisw{plus version} \icmd{\tzbezier+}, the last coordinate is \xem{relative} to the first coordinate.
+And the first control point is \xem{relative} to the first coordinate.
+
+\begin{tztikz}
+% three coordinates
+\tzbezier+(0,1)(1,-1)(4,3) % works like:
+  \draw (0,1) ..controls +(1,-1).. ($(0,1)+(4,3)$);
+\end{tztikz}
+
+In \Tikz, the second control point is \xem{relative} to the last coordinate.
+
+Therefore, for |\tzbezier+(A)(B)(C)(D)|, |(B)| and |(D)| are \xem{relative} to |(A)|, and the second control point |(C)| is \xem{relative} to the last coordinate |(D)|.
+
+\begin{tztikz}
+% four coordinates
+\tzbezier+(0,1)(1,-1)(-2,1)(4,3) % works like:
+  \draw (0,1) ..controls +(1,-1) and +(-2,1).. ($(0,1)+(4,3)$);
+\end{tztikz}
+
+\begin{tzcode}{.3}
+% \tzbezier+
+\begin{tikzpicture}
+\tzhelplines(4,4)
+\tzbezier+(0,3)(1,-1)(-2,1)(4,0){bezier}[near end,a]
+  < to [bend right] ++(-1,-1) node [below] {A} >
+\tzbezier+[blue,->](0,2)(1,-1.5)(4,-2)
+  < |- ++(-2,1) node [above] {B} >
+\end{tikzpicture}
+\end{tzcode}
+
+
+\begin{tzcode}{.3}
+% \tzbezierAtBegin, \tzbezierAtEnd
+\begin{tikzpicture}
+\tzhelplines(4,4)
+\tzbezierAtEnd
+  { to [bend right] ++(-1,-1) node [below] {A} }
+\tzbezier+(0,3)(1,-1)(-2,1)(4,0){bezier}[near end,a]
+\tzbezierAtBegin{ (1,0) to [out=150,in=30] }
+\tzbezierAtEnd{ |- ++(-2,1) node [a] {here!} }
+\tzbezier+[blue,->](0,2)(1,-1.5)(4,-2){B}[b]
+\end{tikzpicture}
+\end{tzcode}
+
+
+%%-----------------------------------
+%%------------------------------------------------------------
+\section{Parabolas}
+\label{s:parabolas}
+
+
+\subsection{\protect\cmd{\tzparabola}}
+\label{ss:tzparabola}
+
+\icmd{\tzparabola} accepts \xem{two or three} coordinates to draw a parabola from the first coordinate to the last coordinate.
+In the case of three coordinates, the parabola bends at the second coordinate.
+
+\begin{tztikz}
+% two coordinates
+\tzparabola(0,0)(3,2) % works like:
+  \draw (0,0) parabola (3,2);
+\end{tztikz}
+
+\begin{tztikz}
+% three coordinates
+\tzparabola(0,0)(1,1)(3,2) % works like:
+  \draw (0,0) parabola bend (1,1) (3,2);
+\end{tztikz}
+
+
+\begin{tzdef}
+% syntax: minimal
+\tzparabola(<coor>)(<coor>)
+\tzparabola(<coor>)(<coor>)(<coor>)
+% syntax: full
+\tzparabola[<opt1>]<shift coor>"<path name>"
+           (<coor>)(<coor>)(<coor>){<text>}[<node opt>]<code.append>
+% default
+  []<>""(<m>)()(<m>){}[]<>
+\end{tzdef}
+
+\paragraph{Parabolas}
+|\tzplot| draws the graph of a quadratic function $f(x)=ax^2+bx+c$ for appropriate values of $a$, $b$, and $c$.
+
+\begin{tzcode}{.3}
+% \tzparabola: two coordinates
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzparabola[thick](0,0)(2,2)
+\tzparabola[bend at end,dashed](0,0)(2,2)
+\tzparabola[red,thick,bend pos=.5](2,0)(4,3)
+\tzparabola[blue,parabola height=-2cm](2,3)(4,2)
+\end{tikzpicture}
+\end{tzcode}
+
+\begin{tzcode}{.3}
+% \tzparabola: three coordinates
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzparabola[thick](0,2)(1,0)(2,2)
+\tzparabola[blue](0,3)(2,1)(4,2)
+\tzparabola[red,thick](2,0)(3,2)(4,3)
+\end{tikzpicture}
+\end{tzcode}
+
+\paragraph{Adding text}
+You can add text at or around the \xem{last coordinate} by specifying the options |{<text>}| and |[<node opt>]| \xem{immediately after the last coordinate}.
+
+\begin{tzcode}{.3}
+% \tzparabola: adding text
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzparabola[thick](0,0)(2,2){parabola}[blue,draw,a]
+\tzparabola[blue](0,3)(2,1)(4,2){AC}[r]
+\tzparabola[red,thick,bend pos=.5](2,0)(4,3){C}[ar]
+\end{tikzpicture}
+\end{tzcode}
+
+\paragraph{Shift}
+You can move the parabola by specifying the option |<shift coor>| before the first coordinate or immediately before the option |"<path name>"|, if it exist.
+The \xem{empty} shift option |<>| is \xem{not allowed}.
+
+\begin{tzcode}{.3}
+% \tzparabola: shift
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzparabola[blue]         (0,3)(2,1)(4,2){AC}[r]
+\tzparabola[dashed]<0,-.5>(0,3)(2,1)(4,2){AC}[r]
+\tzparabola[dotted]<0,-1> (0,3)(2,1)(4,2){AC}[r]
+\end{tikzpicture}
+\end{tzcode}
+
+\paragraph{Naming paths: intersections}
+You can name the path of |\tzparabola| by specifying the option |"<path name>"| \xem{immediately before} the first coordinate.
+
+\begin{tzcode}{.3}
+% \tzparabola: name path, intersection
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzparabola[blue]"AC"(0,3)(2,1)(4,2){AC}[r]
+\tzparabola"BB"(1,0)(2,2)(3,0)
+% intersection points
+\tzXpoint*{AC}{BB}(X)
+\tzdot(X-2)(3pt)
+\end{tikzpicture}
+\end{tzcode}
+
+\paragraph{Extending paths}
+You can extend the path of |\tzparabola| from the last coordinate by writing \Tikz\ code in the last optional argument |<code.append>|.
+
+\begin{tzcode}{.3}
+% \tzparabola: extending path
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzparabola[blue,->]"AC"(0,3)(2,1)(4,2)
+  < -- ++ (-1,1) >
+\tzparabola"BB"(1,0)(2,2)(3,0)
+  < -| ++ (1,1) node [right] {K!} >
+\end{tikzpicture}
+\end{tzcode}
+
+You can also use the macros \icmd{\tzparabolaAtBegin} and \icmd{\tzparabolaAtEnd} to extend the path of |\tzparabola| at the beginning and at the and, respectively.
+Specifying the option |<code.append>| extends the path after |\tzparabolaAtEnd|.
+
+\begin{tzcode}{.3}
+% \tzparabola: extending path
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzparabolaAtEnd{ -- ++ (-1,1) }
+\tzparabola[blue,->]"AC"(0,3)(2,1)(4,2)
+\tzparabolaAtBegin{ (0,1) to [bend right ] }
+\tzparabolaAtEnd{ -| ++ (1,1) node [right] {End!} }
+\tzparabola"BB"(1,0)(2,2)(3,0){K!}[bl]
+  < arc (-90:0:1) node [a] {here!} >
+\end{tikzpicture}
+\end{tzcode}
+
+
+
+\subsection{\protect\cmd{\tzparabola+}: Relative coordinates}
+\label{ss:tzparabola+}
+
+The \iisw{plus version} \icmd{\tzparabola+} uses the second and the third coordinates \xem{relative} to the first coordinate.
+
+\xem{Everything else is the same as in} |\tzparabola|.
+
+\begin{tztikz}
+% two coordinates
+\tzparabola+(0,1)(1,2) % works like:
+  \draw (0,1) parabola ($(0,1)+(1,2)$);
+\end{tztikz}
+
+
+\begin{tztikz}
+% three coordinates
+\tzparabola+(0,1)(1,1)(3,-1) % works like:
+  \draw (0,1) parabola bend +(1,1) ($(0,1)+(3,-1)$);
+\end{tztikz}
+
+\begin{tzcode}{.3}
+% \tzparabola+
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzparabola+[thick](0,0)(2,2){parabola}[blue,draw,a]
+\tzparabola+[blue](0,3)(2,-2)(4,-1){AC}[r]
+\tzparabola+[red,thick,bend pos=.5](2,0)(2,3){C}[ar]
+\end{tikzpicture}
+\end{tzcode}
+
+
+
+%%------------------------------------------------------------
+\section{Edges}
+\label{s:edge}
+
+%%------------------------------------------------------------
+\subsection{\protect\cmd{\tzedge(+)}}
+\label{ss:tzedge}
+
+The macro \icmd{\tzedge} connects two coordinates with a straight or curved line, using the \Tikz\ |edge| operation.
+
+
+\begin{tzdef}
+% syntax
+\tzedge[<opt>]<shift coor>
+       (<coor>){<text>}[<opt>](<coor>){<text>}[<opt>]<code.append>
+% defaults
+  []<>(<m>){}[](<m>){}[]<>
+\end{tzdef}
+
+\remark In \Tikz, the |edge| operation works like the |to| operation, but it is independently drawn after a main path is drawn and does not form a main path. So the option |"<path name>"| (for finding intersections) is not provided in |\tzedge|.
+
+
+\begin{tztikz}
+\tzedge(1,1)(3,2) % works like:
+  \draw (1,1) edge (3,2);
+\end{tztikz}
+
+\begin{tztikz}
+\tzedge[->,bend right](1,1){A}[near start](3,2) % works like:
+  \draw (1,1) edge [->,bend right] node [near start] {A} (3,2);
+\end{tztikz}
+
+\begin{tzcode}{.3}
+% \tzedge
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzedge[->](0,1)(2,3)
+\tzedge[out=0,dashed]
+       (0,0){edge}[near start,sloped,a](4,2)
+\tzedge[in=90,blue](2,0)(4,1){C}[r]
+\end{tikzpicture}
+\end{tzcode}
+
+The \xem{plus version} \icmd{\tzedge+} use the second coordinate \xem{relative} to the first coordinate.
+
+\begin{tztikz}
+\tzedge+(1,1)(3,2) % works like:
+  \draw (1,1) edge ++(3,2);
+\end{tztikz}
+
+\begin{tztikz}
+\tzedge+[->,bend right](1,1){A}[near start](3,2){B}[right] % works like:
+  \draw (1,1) edge [->,bend right] node [near start] {A} ++(3,2)
+      ++(3,2) node [right] {B};
+\end{tztikz}
+
+\begin{tzcode}{.3}
+% \tzedge+: shift
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzedge+[->](0,1)(2,2)
+\tzedge+[out=0,dashed]
+       (0,0){edge}[near start,sloped,a](4,2)
+\tzedge+[in=90,blue]<-.5,.5>(2,0)(2,1){shifted}[b,draw]
+\end{tikzpicture}
+\end{tzcode}
+
+
+\remark |edge| in the option |<code.append>| works with the second coordinate, but it works with the last node if the second option |{<text>}| is not empty.
+(In \Tikz, if |edge| is preceded by |node|, the node is its start point.)
+
+\begin{tzcode}{.3}
+% <code.append>
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzedge[->](0,1)(2,3)<edge[bend left,red] ++(1,-2)>
+\tzedge[out=0,dashed]
+       (0,0){edge}[near start,sloped,a]
+       (4,2){A}[draw]
+       <edge[bend left,thick] ++ (-1,-2)>
+\end{tikzpicture}
+\end{tzcode}
+
+%%------------------------------------------------------------
+\subsection{\protect\cmd{\tzedges(+)}: Semicolon versions}
+\label{ss:tzedges}
+
+The macro \icmd{\tzedges} accepts any number of coordinates to draw edges from the first coordinate to each of the next using the \Tikz\ |edge| operation. That is, the first coordinate is the unique start coordinate, and all others are target coordinates.
+|\tzedges| is a semicolon version, so you need to type |;| to indicate when the coordinate iteration ends.
+
+
+\begin{tzdef}
+% syntax: minimum
+\tzedges(<coor>)(<coor>)..repeated..(<coor>);
+% syntax: full
+\tzedges[<opt>]<shift coor>
+        (<coor>)[<edge opt>]{<text>}[<opt>]..repeated..()[]{}[] ; <code.append>
+% defaults
+  [](<m>)[]{}[]..repeated..()[]{}[];
+\end{tzdef}
+
+\remark In \Tikz, the |edge| operation works like |to| operation, but it is added after main path is formed, like |node| does.
+\begin{itemize}\firmlist
+\item Each |edge| is drawn independently from a main path as well as any other |edge|'s. (See \Tikz\ manual for more details.)
+\item The |edge| operation of \Tikz\ does not change change anything about a main path, so the current point is not changed by |\tzedges|. This means that the last node (with |{<text>}| and |[<node opt>]|) works with the first (namely, start) coordinate.
+\end{itemize}
+
+
+
+
+
+\begin{tzcode}{.3}
+% \tzedges
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzedges(0,1){A}                  (1,2)
+             [blue,thick]{edge}[b](3,1)
+                                  (4,3);
+\end{tikzpicture}
+\end{tzcode}
+
+\begin{tztikz}
+\tzedges(0,1){A}(1,2)[blue,thick]{edge}[a](3,1)(4,3); % works like
+  \draw (0,1) edge              node         {A}    (1,2)
+              edge [blue,thick] node [above] {edge} (3,1)
+              edge                                  (4,3) ;
+\end{tikzpicture}
+\end{tztikz}
+
+\begin{tzcode}{.3}
+% \tzedges: shift
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzedges[bend right]<1,-1> % shift
+        (0,1)[->,thick,blue]{A}
+        (1,2)[dotted]{Beta}[b]
+        (3,1)[dashed]{Cate}[near end,sloped,a]
+        (4,3);
+\end{tikzpicture}
+\end{tzcode}
+
+
+The \xem{plus version} \icmd{\tzedges+} uses the second and next coordinates \xem{relative} to the first coordinate.
+
+\begin{tztikz}
+\tzedges+(0,1)(2,1)(3,0)(4,2); % works like
+  \draw (0,1) edge ++ (2,1)
+              edge ++ (3,0)
+              edge ++ (4,2);
+\end{tztikz}
+
+\begin{tzcode}{.3}
+% \tzedges+
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzedges+[bend right](0,1)[bend right=0]{A}
+         (1,1)[dotted]{Beta}[b]
+         (3,0)[dashed]{Cate}[near end,sloped,a]
+         (4,2);
+\end{tikzpicture}
+\end{tzcode}
+
+
+\remark The option |<code.append>| works with the first coordinate because |edge| and |node| do not change the current point.
+
+
+\begin{tzcode}{.3}
+% <code.append>
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzedges+(0,1)[bend right=0,->]{A}[fill=white]
+         (1,1)[bend right,dotted]{Beta}[midway]
+         (3,0)[bend right,dashed]{Cate}[near end]
+         (4,2);
+         < edge [bend left,thick,blue] (1,3) >
+\end{tikzpicture}
+\end{tzcode}
+
+
+
+%%------------------------------------------------------------
+\section{More curves}
+
+\subsection{\protect\cmd{\tzplotcurve}, \protect\cmd{\tzplot}}
+
+You can draw curves with |\tzplotcurve| and |\tzplot|.
+
+\begin{tzcode}{.3}
+% \tzplotcurve(*)
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzplotcurve*[red,text=blue]
+  (0,0)(1,2){B}(2,2)(3,3)(4,1){E}[0];
+\tzplotcurve(1,.5)(2,3)(3,2)(2,1)(3,1);
+\end{tikzpicture}
+\end{tzcode}
+
+
+See Section \ref{s:tzplotcurve} on page \pageref{s:tzplotcurve}, for more details on |\tzplotcurve|.
+
+See Section \ref{s:tzplot} on page \pageref{s:tzplot}, for more details on |\tzplot|.
+
+
+\subsection{\protect\cmd{\tzto}, \protect\cmd{\tztos}}
+\label{ss:curves:tzto}
+
+You can draw curves with |\tzto| and |\tztos|.
+|\tztos| are quite useful to draw various curves.
+
+\begin{tzcode}{.3}
+% \tztos
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzcoors*(0,0)(A)(1,2)(B){B}[b](3,3)(C)(4,2)(D);
+\tztos(A)[out=80,in=180]
+      (B)[out=0,in=180]
+      (C)[out=0,in=180]
+      (D){End!}[r];
+\end{tikzpicture}
+\end{tzcode}
+
+See Section \ref{s:tzto} on page \pageref{s:tzto}, for more details on |\tzto|.
+
+See Section \ref{s:tztos} on page \pageref{s:tztos}, for more details on |\tztos|.
+
+\subsection{\protect\cmd{\tzlink}, \protect\cmd{\tzlinks}}
+\label{ss:curves:tzlink}
+
+You can also draw curves with |\tzlink| and |\tzlinks|.
+
+\begin{tzcode}{.3}
+% \tztos
+\begin{tikzpicture}
+\tzhelplines(4,3)
+\tzcoors*(0,0)(A)(1,2)(B){B}[b](3,3)(C)(4,2)(D);
+\tzlinks(A)[to[out=80,in=180]]
+      (B)[to[out=0,in=180]]
+      (C)[to[out=0,in=180]]
+      (D){End!}[r];
+\end{tikzpicture}
+\end{tzcode}
+
+See Section \ref{s:tzlink} on page \pageref{s:tzlink}, for more details on |\tzlink|.
+
+See Section \ref{s:tzlink} on page \pageref{s:tzlinks}, for more details on |\tztos|.
+
+\subsection{\protect\cmd{\tzfn}}
+\label{ss:curves:tzfn}
+
+With \icmd{\tzfn}, you can plot functions such as $f(x)=\frac13(x-1)^3+1$, $g(x)=\sin x$, $h(x)=\sqrt{x-1}$, and so on.
+See Section \ref{s:tzfn} on page \pageref{s:tzfn}, for more details on |\tzfn|.
+
+
+
+
+
+

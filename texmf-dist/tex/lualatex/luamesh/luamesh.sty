@@ -1,27 +1,19 @@
 \NeedsTeXFormat{LaTeX2e}%
 \def\PackageName{luamesh}%
-\def\fileversion{v0.6}%
-\def\filedate{2020/06/06}%
+\def\fileversion{v0.7}%
+\def\filedate{2022/07/08}%
 \ProvidesPackage{luamesh}[\filedate\space\fileversion]%
 %
 % package to load
 \RequirePackage{xkeyval,xcolor,ifthen}%
-%% one global option: mp or tikz
-%\newif\ifluameshmp%
-%\define@key{luamesh.sty}{mp}[]{\luameshmptrue}%
-%\define@key{luamesh.sty}{tikz}[]{\luameshmpfalse}%
-%
-%\RequirePackage{etoolbox} % pour robustifier les commandes
-%
-%
-%\ifluameshmp%
-   \RequirePackage{luamplib}%
-%\else%
-   \RequirePackage{tikz}%
-%\fi%
+\RequirePackage{luamplib}%
+\RequirePackage{tikz}%
+
 %
 % load the lua code
 \directlua{require("luamesh.lua")}%
+% load metapost lib
+\everymplib[luamesh]{input luamesh;}
 %
 %%
 % for tikz (default value)
@@ -73,8 +65,10 @@
 \define@key{buildMeshInc}{color}[black]{\def\luameshval@bmi@color{#1}}%
 %% the name of the color of drawing the bbox
 \define@key{buildMeshInc}{colorBbox}[black]{\def\luameshval@bmi@colorbbox{#1}}%
+%% thickness of the drawing (default value of tikz)
+\define@key{buildMeshInc}{thickness}[0.4pt]{\def\luameshval@bm@thickness{#1}}%
 %
-\presetkeys{buildMeshInc}{tikz=false,bbox=none,scale, meshpoint,mode=int,print=none,color,colorBbox}{}%
+\presetkeys{buildMeshInc}{tikz=false,bbox=none,scale, meshpoint,mode=int,print=none,color,colorBbox,thickness}{}%
 %
 \newcommand*{\buildMeshBWinc}[4][]{%
   % #1 : optionnal arguments
@@ -86,13 +80,13 @@
   \def\MeshPoint{\luameshval@bmi@meshpoint}%
   \ifKV@buildMeshInc@tikz% if we are using tikz
   \directlua{%
-    buildMeshTikZBWinc("#2","\luaescapestring{\unexpanded{#3}}","\luaescapestring{\unexpanded{#4}}","\luameshval@bmi@mode","\luameshval@bmi@print","\luameshval@bmi@bbox","\luameshval@bmi@scale","\luameshval@bmi@color","\luameshval@bmi@colorbbox")%
+    buildMeshTikZBWinc("#2","\luaescapestring{\unexpanded{#3}}","\luaescapestring{\unexpanded{#4}}","\luameshval@bmi@mode","\luameshval@bmi@print","\luameshval@bmi@bbox","\luameshval@bmi@scale","\luameshval@bmi@color","\luameshval@bmi@colorbbox","\luameshval@bm@thickness")%
   }%
   \else % we are using MP
   \def\luameshmpcolor{\mpcolor{\luameshval@bmi@color}}%
   \def\luameshmpcolorBbox{\mpcolor{\luameshval@bmi@colorbbox}}%
   \directlua{%
-    buildMeshMPBWinc("#2","\luaescapestring{\unexpanded{#3}}","\luaescapestring{\unexpanded{#4}}","\luameshval@bmi@mode","\luameshval@bmi@print","\luameshval@bmi@bbox","\luameshval@bmi@scale")%
+    buildMeshMPBWinc("#2","\luaescapestring{\unexpanded{#3}}","\luaescapestring{\unexpanded{#4}}","\luameshval@bmi@mode","\luameshval@bmi@print","\luameshval@bmi@bbox","\luameshval@bmi@scale","\luameshval@bm@thickness")%
   }%
   %
   \fi%
@@ -135,8 +129,10 @@
 \define@key{buildMesh}{color}[black]{\def\luameshval@bm@color{#1}}%
 %% the name of the color of drawing the bbox
 \define@key{buildMesh}{colorBbox}[black]{\def\luameshval@bm@colorbbox{#1}}%
+%% thickness of the drawing (default value of tikz)
+\define@key{buildMesh}{thickness}[0.4pt]{\def\luameshval@bm@thickness{#1}}%
 %
-\presetkeys{buildMesh}{tikz=false,bbox=none,scale, meshpoint,mode=int,print=none,color,colorBbox}{}%
+\presetkeys{buildMesh}{tikz=false,bbox=none,scale, meshpoint,mode=int,print=none,color,colorBbox,thickness}{}%
 %
 \newcommand{\buildMeshBW}[2][]{%
   % #1 : optionnal arguments
@@ -146,13 +142,13 @@
   \def\MeshPoint{\luameshval@bm@meshpoint}%
   \ifKV@buildMesh@tikz% if we are using tikz
   \directlua{%
-    buildMeshTikZBW("#2","\luameshval@bm@mode","\luameshval@bm@print","\luameshval@bm@bbox","\luameshval@bm@scale","\luameshval@bm@color","\luameshval@bm@colorbbox")%
+    buildMeshTikZBW("#2","\luameshval@bm@mode","\luameshval@bm@print","\luameshval@bm@bbox","\luameshval@bm@scale","\luameshval@bm@color","\luameshval@bm@colorbbox","\luameshval@bm@thickness")%
   }%
   \else % we are using MP
   \def\luameshmpcolor{\mpcolor{\luameshval@bm@color}}%
   \def\luameshmpcolorBbox{\mpcolor{\luameshval@bm@colorbbox}}%
   \directlua{%
-    buildMeshMPBW("#2","\luameshval@bm@mode","\luameshval@bm@print","\luameshval@bm@bbox","\luameshval@bm@scale")%
+    buildMeshMPBW("#2","\luameshval@bm@mode","\luameshval@bm@print","\luameshval@bm@bbox","\luameshval@bm@scale","\luameshval@bm@thickness")%
   }%
   %
   \fi%
@@ -222,7 +218,13 @@
 %% the name of the color of drawing the bbox
 \define@key{buildVoronoiInc}{colorBbox}[black]{\def\luameshval@bvi@colorbbox{#1}}%
 %
-\presetkeys{buildVoronoiInc}{tikz=false,bbox=none,scale, meshpoint,circumpoint,mode=int,print=none,color,colorVoronoi,colorBbox,delaunay=none,styleDelaunay=none,styleVoronoi=none}{}%
+% thickness
+\define@key{buildVoronoiInc}{thickness}[0.4pt]{\def\luameshval@bvi@thickness{#1}}%
+%% voroni thickness
+\define@key{buildVoronoiInc}{thicknessVoronoi}[0.4pt]{\def\luameshval@bvi@thicknessVoronoi{#1}}%
+\presetkeys{buildVoronoiInc}{tikz=false,bbox=none,scale,
+  meshpoint,circumpoint,mode=int,print=none,color,colorVoronoi,colorBbox,delaunay=none,styleDelaunay=none,styleVoronoi=none,thickness,
+thicknessVoronoi}{}%
 %
 \newcommand*{\buildVoronoiBWinc}[4][]{%
   % #1 : optionnal arguments
@@ -235,14 +237,14 @@
   \def\CircumPoint{\luameshval@bvi@circumpoint}%
   \ifKV@buildVoronoiInc@tikz% if we are using tikz
   \directlua{%
-    buildVoronoiTikZBWinc("#2","\luaescapestring{\unexpanded{#3}}","\luaescapestring{\unexpanded{#4}}","\luameshval@bvi@mode","\luameshval@bvi@print","\luameshval@bvi@bbox","\luameshval@bvi@scale","\luameshval@bvi@delaunay","\luameshval@bvi@color","\luameshval@bvi@colorbbox","\luameshval@bvi@colorvoronoi","\luameshval@bvi@styleDelaunay","\luameshval@bvi@styleVoronoi")%
+    buildVoronoiTikZBWinc("#2","\luaescapestring{\unexpanded{#3}}","\luaescapestring{\unexpanded{#4}}","\luameshval@bvi@mode","\luameshval@bvi@print","\luameshval@bvi@bbox","\luameshval@bvi@scale","\luameshval@bvi@delaunay","\luameshval@bvi@color","\luameshval@bvi@colorbbox","\luameshval@bvi@colorvoronoi","\luameshval@bvi@styleDelaunay","\luameshval@bvi@styleVoronoi","\luameshval@bvi@thickness","\luameshval@bvi@thicknessVoronoi")%
   }%
   \else % we are using MP
   \def\luameshmpcolor{\mpcolor{\luameshval@bvi@color}}%
   \def\luameshmpcolorBbox{\mpcolor{\luameshval@bvi@colorbbox}}%
   \def\luameshmpcolorVoronoi{\mpcolor{\luameshval@bvi@colorvoronoi}}%
   \directlua{%
-    buildVoronoiMPBWinc("#2","\luaescapestring{\unexpanded{#3}}","\luaescapestring{\unexpanded{#4}}","\luameshval@bvi@mode","\luameshval@bvi@print","\luameshval@bvi@bbox","\luameshval@bvi@scale","\luameshval@bvi@delaunay","\luameshval@bvi@styleDelaunay","\luameshval@bvi@styleVoronoi")%
+    buildVoronoiMPBWinc("#2","\luaescapestring{\unexpanded{#3}}","\luaescapestring{\unexpanded{#4}}","\luameshval@bvi@mode","\luameshval@bvi@print","\luameshval@bvi@bbox","\luameshval@bvi@scale","\luameshval@bvi@delaunay","\luameshval@bvi@styleDelaunay","\luameshval@bvi@styleVoronoi","\luameshval@bvi@thickness","\luameshval@bvi@thicknessVoronoi")%
   }%
   %
   \fi%
@@ -311,9 +313,13 @@
 \define@key{buildVoronoi}{colorVoronoi}[red]{\def\luameshval@bv@colorVoronoi{#1}}%
 %% the name of the color of drawing the bbox
 \define@key{buildVoronoi}{colorBbox}[black]{\def\luameshval@bv@colorbbox{#1}}%
+% thickness
+\define@key{buildVoronoi}{thickness}[0.4pt]{\def\luameshval@bv@thickness{#1}}%
+%% voroni thickness
+\define@key{buildVoronoi}{thicknessVoronoi}[0.4pt]{\def\luameshval@bv@thicknessVoronoi{#1}}%
 %
 \presetkeys{buildVoronoi}{tikz=false,bbox=none,scale,
-  meshpoint,circumpoint,mode=int,print=none,color,colorVoronoi,colorBbox,delaunay=none,styleDelaunay=none, styleVoronoi=none}{}%
+  meshpoint,circumpoint,mode=int,print=none,color,colorVoronoi,colorBbox,delaunay=none,styleDelaunay=none, styleVoronoi=none,thickness,thicknessVoronoi}{}%
 %
 \newcommand{\buildVoronoiBW}[2][]{%
   % #1 : optionnal arguments
@@ -324,14 +330,14 @@
   \def\CircumPoint{\luameshval@bv@circumpoint}%
   \ifKV@buildVoronoi@tikz% if we are using tikz
   \directlua{%
-    buildVoronoiTikZBW("#2","\luameshval@bv@mode","\luameshval@bv@print","\luameshval@bv@bbox","\luameshval@bv@scale","\luameshval@bv@delaunay","\luameshval@bv@color","\luameshval@bv@colorbbox","\luameshval@bv@colorVoronoi","\luameshval@bv@styleDelaunay","\luameshval@bv@styleVoronoi")%
+    buildVoronoiTikZBW("#2","\luameshval@bv@mode","\luameshval@bv@print","\luameshval@bv@bbox","\luameshval@bv@scale","\luameshval@bv@delaunay","\luameshval@bv@color","\luameshval@bv@colorbbox","\luameshval@bv@colorVoronoi","\luameshval@bv@styleDelaunay","\luameshval@bv@styleVoronoi","\luameshval@bv@thickness","\luameshval@bv@thicknessVoronoi")%
   }%
   \else % we are using MP
   \def\luameshmpcolor{\mpcolor{\luameshval@bv@color}}%
   \def\luameshmpcolorBbox{\mpcolor{\luameshval@bv@colorbbox}}%
   \def\luameshmpcolorVoronoi{\mpcolor{\luameshval@bv@colorVoronoi}}%
   \directlua{%
-    buildVoronoiMPBW("#2","\luameshval@bv@mode","\luameshval@bv@print","\luameshval@bv@bbox","\luameshval@bv@scale","\luameshval@bv@delaunay","\luameshval@bv@styleDelaunay","\luameshval@bv@styleVoronoi")%
+    buildVoronoiMPBW("#2","\luameshval@bv@mode","\luameshval@bv@print","\luameshval@bv@bbox","\luameshval@bv@scale","\luameshval@bv@delaunay","\luameshval@bv@styleDelaunay","\luameshval@bv@styleVoronoi","\luameshval@bv@thickness","\luameshval@bv@thicknessVoronoi")%
   }%
   %
   \fi%
@@ -507,7 +513,12 @@
   \def\luameshval@ap@bbox{bbox}%
   \fi%
 }%
-\presetkeys{MeshAddOneBW}{tikz=false,scale, meshpoint,newpoint,color,colorBack,colorNew,colorCircle,step=badtriangles,mode=int,bbox=none,colorBbox}{}%
+%% thickness for mesh and circle and new elements
+\define@key{MeshAddOneBW}{thickness}[0.4pt]{\def\luameshval@ap@thickness{#1}}%
+\define@key{MeshAddOneBW}{thicknessCircle}[0.4pt]{\def\luameshval@ap@thicknesscircle{#1}}%
+\define@key{MeshAddOneBW}{thicknessNew}[1pt]{\def\luameshval@ap@thicknessnew{#1}}%
+
+\presetkeys{MeshAddOneBW}{tikz=false,scale, meshpoint,newpoint,color,colorBack,colorNew,colorCircle,step=badtriangles,mode=int,bbox=none,colorBbox,thickness,thicknessCircle,thicknessNew}{}%
 %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newcommand*{\meshAddPointBW}[3][]{%
@@ -519,7 +530,7 @@
   \def\NewPoint{\luameshval@ap@newpoint}%
   \ifKV@MeshAddOneBW@tikz% if we are using tikz
   \directlua{%
-    TeXOnePointTikZBW("#2","#3","\luameshval@ap@step","\luameshval@ap@scale","\luameshval@ap@mode","\luameshval@ap@bbox","\luameshval@ap@color","\luameshval@ap@colorback","\luameshval@ap@colornew","\luameshval@ap@colorcircle","\luameshval@ap@colorbbox")%
+    TeXOnePointTikZBW("#2","#3","\luameshval@ap@step","\luameshval@ap@scale","\luameshval@ap@mode","\luameshval@ap@bbox","\luameshval@ap@color","\luameshval@ap@colorback","\luameshval@ap@colornew","\luameshval@ap@colorcircle","\luameshval@ap@colorbbox","\luameshval@ap@thickness","\luameshval@ap@thicknesscircle","\luameshval@ap@thicknessnew")%
   }%
   \else % we are using MP
   \def\luameshmpcolor{\mpcolor{\luameshval@ap@color}}
@@ -528,7 +539,7 @@
   \def\luameshmpcolorCircle{\mpcolor{\luameshval@ap@colorcircle}}
   \def\luameshmpcolorBbox{\mpcolor{\luameshval@ap@colorbbox}}
   \directlua{%
-    TeXOnePointMPBW("#2","#3","\luameshval@ap@step","\luameshval@ap@scale","\luameshval@ap@mode","\luameshval@ap@bbox")%
+    TeXOnePointMPBW("#2","#3","\luameshval@ap@step","\luameshval@ap@scale","\luameshval@ap@mode","\luameshval@ap@bbox","\luameshval@ap@thickness","\luameshval@ap@thicknesscircle","\luameshval@ap@thicknessnew")%
   }%
   %
   \fi%
@@ -563,6 +574,12 @@
 %% the color of circoncircle
 \define@key{MeshAddOneBWinc}{colorCircle}[green]{\def\luameshval@api@colorcircle{#1}}%
 \define@key{MeshAddOneBWinc}{colorBbox}[black]{\def\luameshval@api@colorbbox{#1}}%
+%% thickness for mesh and circle and new elements
+\define@key{MeshAddOneBWinc}{thickness}[0.4pt]{\def\luameshval@api@thickness{#1}}%
+\define@key{MeshAddOneBWinc}{thicknessCircle}[0.4pt]{\def\luameshval@api@thicknesscircle{#1}}%
+\define@key{MeshAddOneBWinc}{thicknessNew}[1pt]{\def\luameshval@api@thicknessnew{#1}}%
+
+
 %
 %% a complete picture or some code of the engine
 \define@choicekey*{MeshAddOneBWinc}{mode}[\val\nr]{int, ext}{%
@@ -579,7 +596,7 @@
   \def\luameshval@api@bbox{bbox}%
   \fi%
 }%
-\presetkeys{MeshAddOneBWinc}{tikz=false,scale, meshpoint,newpoint,color,colorBack,colorNew,colorCircle,step=badtriangles,mode=int,bbox=none,colorBbox}{}%
+\presetkeys{MeshAddOneBWinc}{tikz=false,scale, meshpoint,newpoint,color,colorBack,colorNew,colorCircle,step=badtriangles,mode=int,bbox=none,colorBbox,thickness,thicknessCircle,thicknessNew}{}%
 %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newcommand*{\meshAddPointBWinc}[5][]{%
@@ -593,7 +610,7 @@
   \def\NewPoint{\luameshval@api@newpoint}%
   \ifKV@MeshAddOneBWinc@tikz% if we are using tikz
   \directlua{%
-    TeXOnePointTikZBWinc("#2","#3","\luaescapestring{\unexpanded{#4}}","\luaescapestring{\unexpanded{#5}}","\luameshval@ap@step","\luameshval@ap@scale","\luameshval@ap@mode","\luameshval@ap@bbox","\luameshval@ap@color","\luameshval@ap@colorback","\luameshval@ap@colornew","\luameshval@ap@colorcircle","\luameshval@ap@colorbbox")%
+    TeXOnePointTikZBWinc("#2","#3","\luaescapestring{\unexpanded{#4}}","\luaescapestring{\unexpanded{#5}}","\luameshval@api@step","\luameshval@api@scale","\luameshval@api@mode","\luameshval@api@bbox","\luameshval@api@color","\luameshval@api@colorback","\luameshval@api@colornew","\luameshval@api@colorcircle","\luameshval@api@colorbbox","\luameshval@api@thickness","\luameshval@api@thicknesscircle","\luameshval@api@thicknessnew")%
   }%
   \else % we are using MP
   \def\luameshmpcolor{\mpcolor{\luameshval@api@color}}
@@ -602,7 +619,7 @@
   \def\luameshmpcolorCircle{\mpcolor{\luameshval@api@colorcircle}}
   \def\luameshmpcolorBbox{\mpcolor{\luameshval@api@colorbbox}}
   \directlua{%
-    TeXOnePointMPBWinc("#2","#3","\luaescapestring{\unexpanded{#4}}","\luaescapestring{\unexpanded{#5}}","\luameshval@api@step","\luameshval@api@scale","\luameshval@api@mode","\luameshval@api@bbox")%
+    TeXOnePointMPBWinc("#2","#3","\luaescapestring{\unexpanded{#4}}","\luaescapestring{\unexpanded{#5}}","\luameshval@api@step","\luameshval@api@scale","\luameshval@api@mode","\luameshval@api@bbox","\luameshval@api@thickness","\luameshval@api@thicknesscircle","\luameshval@api@thicknessnew")%
   }%
   %
   \fi%
@@ -613,21 +630,23 @@
 %% before and after the generated code
 \define@boolkey{drawGmshInc}{tikz}[true]{}%
 %% the scale
-\define@key{drawGmshInc}{scale}[1cm]{\def\luameshvaldgi@scale{#1}}%
+\define@key{drawGmshInc}{scale}[1cm]{\def\luameshval@dgi@scale{#1}}%
 %% print ponits ?
 \define@choicekey*{drawGmshInc}{print}[\val\nr]{none, points}{%
   \ifcase\nr\relax%
-  \def\luameshvaldgi@print{none}%
+  \def\luameshval@dgi@print{none}%
   \or%
-  \def\luameshvaldgi@print{points}%
+  \def\luameshval@dgi@print{points}%
   \fi%
 }%
 %% the name of the point
-\define@key{drawGmshInc}{meshpoint}[P]{\def\luameshvaldgi@meshpoint{#1}}%
+\define@key{drawGmshInc}{meshpoint}[P]{\def\luameshval@dgi@meshpoint{#1}}%
 %% the name of the color of drawing
-\define@key{drawGmshInc}{color}[black]{\def\luameshvaldgi@color{#1}}%
+\define@key{drawGmshInc}{color}[black]{\def\luameshval@dgi@color{#1}}%
+%% thickness
+\define@key{drawGmshInc}{thickness}[0.4pt]{\def\luameshval@dgi@thickness{#1}}%
 %
-\presetkeys{drawGmshInc}{tikz=false,scale, meshpoint,print=none,color}{}%
+\presetkeys{drawGmshInc}{tikz=false,scale, meshpoint,print=none,color,thickness}{}%
 %
 \newcommand*{\drawGmshinc}[4][]{%
   % #1 : optionnal arguments
@@ -635,15 +654,15 @@
   % #3 : the code to place before the generated one
   % #4 : the code to place after the generated one
   \setkeys{drawGmshInc}{#1} %
-  \def\MeshPoint{\luameshvaldgi@meshpoint}%
+  \def\MeshPoint{\luameshval@dgi@meshpoint}%
   \ifKV@drawGmshInc@tikz% if we are using tikz
   \directlua{%
-    drawGmshTikZinc("#2","\luaescapestring{\unexpanded{#3}}","\luaescapestring{\unexpanded{#4}}","\luameshvaldgi@print","\luameshvaldgi@scale","\luameshvaldgi@color")%
+    drawGmshTikZinc("#2","\luaescapestring{\unexpanded{#3}}","\luaescapestring{\unexpanded{#4}}","\luameshval@dgi@print","\luameshval@dgi@scale","\luameshval@dgi@color","\luameshval@dgi@thickness")%
   }%
   \else % we are using MP
-  \def\luameshmpcolor{\mpcolor{\luameshvaldgi@color}}%
+  \def\luameshmpcolor{\mpcolor{\luameshval@dgi@color}}%
   \directlua{%
-    drawGmshMPinc("#2","\luaescapestring{\unexpanded{#3}}","\luaescapestring{\unexpanded{#4}}","\luameshvaldgi@print","\luameshvaldgi@scale")%
+    drawGmshMPinc("#2","\luaescapestring{\unexpanded{#3}}","\luaescapestring{\unexpanded{#4}}","\luameshval@dgi@print","\luameshval@dgi@scale","\luameshval@dgi@thickness")%
   }%
   %
   \fi%
@@ -653,35 +672,37 @@
 %% the code is complete and we don't have any callbacks
 \define@boolkey{drawGmsh}{tikz}[true]{}%
 %% the scale
-\define@key{drawGmsh}{scale}[1cm]{\def\luameshvaldg@scale{#1}}%
+\define@key{drawGmsh}{scale}[1cm]{\def\luameshval@dg@scale{#1}}%
 %% print points
 \define@choicekey*{drawGmsh}{print}[\val\nr]{none, points}{%
   \ifcase\nr\relax%
-  \def\luameshvaldg@print{none}%
+  \def\luameshval@dg@print{none}%
   \or%
-  \def\luameshvaldg@print{points}%
+  \def\luameshval@dg@print{points}%
   \fi%
 }%
 %% the name of the point
-\define@key{drawGmsh}{meshpoint}[P]{\def\luameshvaldg@meshpoint{#1}}%
+\define@key{drawGmsh}{meshpoint}[P]{\def\luameshval@dg@meshpoint{#1}}%
 %% the name of the color of drawing
-\define@key{drawGmsh}{color}[black]{\def\luameshvaldg@color{#1}}%
+\define@key{drawGmsh}{color}[black]{\def\luameshval@dg@color{#1}}%
+%% thickness
+\define@key{drawGmsh}{thickness}[0.4pt]{\def\luameshval@dg@thickness{#1}}%
 %
-\presetkeys{drawGmsh}{tikz=false,scale, meshpoint,print=none,color}{}%
+\presetkeys{drawGmsh}{tikz=false,scale, meshpoint,print=none,color,thickness}{}%
 %
 \newcommand{\drawGmsh}[2][]{%
   % #1 : optionnal arguments
   % #2 : the gmsh file
   \setkeys{drawGmsh}{#1} %
-  \def\MeshPoint{\luameshvaldg@meshpoint}%
+  \def\MeshPoint{\luameshval@dg@meshpoint}%
   \ifKV@drawGmsh@tikz% if we are using tikz
   \directlua{%
-    drawGmshTikZ("#2","\luameshvaldg@print","\luameshvaldg@scale","\luameshvaldg@color")%
+    drawGmshTikZ("#2","\luameshval@dg@print","\luameshval@dg@scale","\luameshval@dg@color","\luameshval@dg@thickness")%
   }%
   \else % we are using MP
-  \def\luameshmpcolor{\mpcolor{\luameshvaldg@color}}%
+  \def\luameshmpcolor{\mpcolor{\luameshval@dg@color}}%
   \directlua{%
-    drawGmshMP("#2","\luameshvaldg@print","\luameshvaldg@scale")%
+    drawGmshMP("#2","\luameshval@dg@print","\luameshval@dg@scale","\luameshval@dg@thickness")%
   }%
   %
   \fi%
@@ -732,6 +753,11 @@
 \define@key{gmshVoronoiInc}{color}[black]{\def\luameshval@gvi@color{#1}}%
 %% the name of the color of drawing Voronoi
 \define@key{gmshVoronoiInc}{colorVoronoi}[red]{\def\luameshval@gvi@colorvoronoi{#1}}%
+%% thickness
+\define@key{gmshVoronoiInc}{thickness}[0.4pt]{\def\luameshval@gvi@thickness{#1}}%
+%% Voronoi thickness
+\define@key{gmshVoronoiInc}{thicknessVoronoi}[0.4pt]{\def\luameshval@gvi@thicknessVoronoi{#1}}%
+
 %
 \presetkeys{gmshVoronoiInc}{tikz=false,scale,
   meshpoint,circumpoint,print=none,color,colorVoronoi,delaunay=none,styleVoronoi=none, styleDelaunay=none}{}%
@@ -746,13 +772,13 @@
   \def\CircumPoint{\luameshval@gvi@circumpoint}%
   \ifKV@gmshVoronoiInc@tikz% if we are using tikz
   \directlua{%
-    gmshVoronoiTikZinc("#2","\luaescapestring{\unexpanded{#3}}","\luaescapestring{\unexpanded{#4}}","\luameshval@gvi@print","\luameshval@gvi@scale","\luameshval@gvi@delaunay","\luameshval@gvi@color","\luameshval@gvi@colorvoronoi","\luameshval@gvi@styleDelaunay","\luameshval@gvi@styleVoronoi")%
+    gmshVoronoiTikZinc("#2","\luaescapestring{\unexpanded{#3}}","\luaescapestring{\unexpanded{#4}}","\luameshval@gvi@print","\luameshval@gvi@scale","\luameshval@gvi@delaunay","\luameshval@gvi@color","\luameshval@gvi@colorvoronoi","\luameshval@gvi@styleDelaunay","\luameshval@gvi@styleVoronoi","\luameshval@gvi@thickness","\luameshval@gvi@thicknessVoronoi")%
   }%
   \else % we are using MP
   \def\luameshmpcolor{\mpcolor{\luameshval@gvi@color}}%
   \def\luameshmpcolorVoronoi{\mpcolor{\luameshval@gvi@colorvoronoi}}%
   \directlua{%
-    gmshVoronoiMPinc("#2","\luaescapestring{\unexpanded{#3}}","\luaescapestring{\unexpanded{#4}}","\luameshval@gvi@print","\luameshval@gvi@scale","\luameshval@gvi@delaunay","\luameshval@gvi@styleDelaunay","\luameshval@gvi@styleVoronoi")%
+    gmshVoronoiMPinc("#2","\luaescapestring{\unexpanded{#3}}","\luaescapestring{\unexpanded{#4}}","\luameshval@gvi@print","\luameshval@gvi@scale","\luameshval@gvi@delaunay","\luameshval@gvi@styleDelaunay","\luameshval@gvi@styleVoronoi","\luameshval@gvi@thickness","\luameshval@gvi@thicknessVoronoi")%
   }%
   %
   \fi%
@@ -804,7 +830,12 @@
 %% the name of the color of drawing Voronoi
 \define@key{gmshVoronoi}{colorVoronoi}[red]{\def\luameshval@gv@colorVoronoi{#1}}%
 %
-\presetkeys{gmshVoronoi}{tikz=false,scale, meshpoint,circumpoint,print=none,color,colorVoronoi,delaunay=none,styleVoronoi=none, styleDelaunay=none}{}%
+%% thickness
+\define@key{gmshVoronoi}{thickness}[0.4pt]{\def\luameshval@gv@thickness{#1}}%
+%% Voronoi thickness
+\define@key{gmshVoronoi}{thicknessVoronoi}[0.4pt]{\def\luameshval@gv@thicknessVoronoi{#1}}%
+%
+\presetkeys{gmshVoronoi}{tikz=false,scale, meshpoint,circumpoint,print=none,color,colorVoronoi,delaunay=none,styleVoronoi=none, styleDelaunay=none,thickness,thicknessVoronoi}{}%
 %
 \newcommand{\gmshVoronoi}[2][]{%
   % #1 : optionnal arguments
@@ -814,13 +845,13 @@
   \def\CircumPoint{\luameshval@gv@circumpoint}%
   \ifKV@gmshVoronoi@tikz% if we are using tikz
   \directlua{%
-    gmshVoronoiTikZ("#2","\luameshval@gv@print","\luameshval@gv@scale","\luameshval@gv@delaunay","\luameshval@gv@color","\luameshval@gv@colorVoronoi","\luameshval@gv@styleDelaunay","\luameshval@gv@styleVoronoi")%
+    gmshVoronoiTikZ("#2","\luameshval@gv@print","\luameshval@gv@scale","\luameshval@gv@delaunay","\luameshval@gv@color","\luameshval@gv@colorVoronoi","\luameshval@gv@styleDelaunay","\luameshval@gv@styleVoronoi","\luameshval@gv@thickness","\luameshval@gv@thicknessVoronoi")%
   }%
   \else % we are using MP
   \def\luameshmpcolor{\mpcolor{\luameshval@gv@color}}%
   \def\luameshmpcolorVoronoi{\mpcolor{\luameshval@gv@colorVoronoi}}%
   \directlua{%
-    gmshVoronoiMP("#2","\luameshval@gv@print","\luameshval@gv@scale","\luameshval@gv@delaunay","\luameshval@gv@styleDelaunay","\luameshval@gv@styleVoronoi")%
+    gmshVoronoiMP("#2","\luameshval@gv@print","\luameshval@gv@scale","\luameshval@gv@delaunay","\luameshval@gv@styleDelaunay","\luameshval@gv@styleVoronoi","\luameshval@gv@thickness","\luameshval@gv@thicknessVoronoi")%
   }%
   %
   \fi%
@@ -879,11 +910,15 @@
 
 %% the name of the color of drawing
 \define@key{meshPolygon}{color}[black]{\def\luameshval@mp@color{#1}}%
-%% the name of the color of drawing Voronoi
+%% the name of the color for the polygon
 \define@key{meshPolygon}{colorPolygon}[red]{\def\luameshval@mp@colorPolygon{#1}}%
+%% thickness
+\define@key{meshPolygon}{thickness}[0.4pt]{\def\luameshval@mp@thickness{#1}}%
+%% polygon thickness
+\define@key{meshPolygon}{thicknessPolygon}[0.4pt]{\def\luameshval@mp@polygonThickness{#1}}%
 %% the name of the color of drawing the bbox
 %
-\presetkeys{meshPolygon}{tikz=false,scale,mode=int,step=mesh,print=none,color,colorPolygon,h,meshpoint,gridpoints=rect}{}%
+\presetkeys{meshPolygon}{tikz=false,scale,mode=int,step=mesh,print=none,color,colorPolygon,h,meshpoint,gridpoints=rect,thickness,thicknessPolygon}{}%
 %
 \newcommand{\meshPolygon}[2][]{%
   % #1 : optionnal arguments
@@ -893,13 +928,13 @@
   \def\MeshPoint{\luameshval@mp@meshpoint}%
   \ifKV@meshPolygon@tikz% if we are using tikz
   \directlua{%
-    drawMeshPolygonTikZ("#2","\luameshval@mp@mode","\luameshval@mp@h","\luameshval@mp@step","\luameshval@mp@print","\luameshval@mp@scale","\luameshval@mp@color","\luameshval@mp@colorPolygon","\luameshval@mp@gridpoints")%
+    drawMeshPolygonTikZ("#2","\luameshval@mp@mode","\luameshval@mp@h","\luameshval@mp@step","\luameshval@mp@print","\luameshval@mp@scale","\luameshval@mp@color","\luameshval@mp@colorPolygon","\luameshval@mp@gridpoints","\luameshval@mp@thickness","\luameshval@mp@polygonThickness")%
   }%
   \else % we are using MP
   \def\luameshmpcolor{\mpcolor{\luameshval@mp@color}}%
   \def\luameshmpcolorPoly{\mpcolor{\luameshval@mp@colorPolygon}}%
   \directlua{%
-    drawMeshPolygonMP("#2","\luameshval@mp@mode","\luameshval@mp@h","\luameshval@mp@step","\luameshval@mp@print","\luameshval@mp@scale","\luameshval@mp@gridpoints")%
+    drawMeshPolygonMP("#2","\luameshval@mp@mode","\luameshval@mp@h","\luameshval@mp@step","\luameshval@mp@print","\luameshval@mp@scale","\luameshval@mp@gridpoints","\luameshval@mp@thickness","\luameshval@mp@polygonThickness")%
   }%
   %
   \fi%
@@ -955,11 +990,14 @@
 
 %% the name of the color of drawing
 \define@key{meshPolygonInc}{color}[black]{\def\luameshval@mpi@color{#1}}%
-%% the name of the color of drawing Voronoi
+%% the name of the color for the polygon
 \define@key{meshPolygonInc}{colorPolygon}[red]{\def\luameshval@mpi@colorPolygon{#1}}%
-%% the name of the color of drawing the bbox
-%
-\presetkeys{meshPolygonInc}{tikz=false,scale,mode=int,step=mesh,print=none,color,colorPolygon,h,meshpoint,gridpoints=rect}{}%
+%% thickness
+\define@key{meshPolygonInc}{thickness}[0.4pt]{\def\luameshval@mpi@thickness{#1}}%
+%% polygon thickness
+\define@key{meshPolygonInc}{polygonThickness}[0.4pt]{\def\luameshval@mpi@polygonThickness{#1}}%
+
+\presetkeys{meshPolygonInc}{tikz=false,scale,mode=int,step=mesh,print=none,color,colorPolygon,h,meshpoint,gridpoints=rect,thickness,polygonThickness}{}%
 %
 \newcommand{\meshPolygonInc}[4][]{%
   % #1 : optionnal arguments
@@ -971,13 +1009,13 @@
   \def\MeshPoint{\luameshval@mpi@meshpoint}%
   \ifKV@meshPolygonInc@tikz% if we are using tikz
   \directlua{%
-    drawMeshPolygonTikZinc("#2","\luaescapestring{\unexpanded{#3}}","\luaescapestring{\unexpanded{#4}}","\luameshval@mpi@mode","\luameshval@mpi@h","\luameshval@mpi@step","\luameshval@mpi@print","\luameshval@mpi@scale","\luameshval@mpi@color","\luameshval@mpi@colorPolygon","\luameshval@mpi@gridpoints")%
+    drawMeshPolygonTikZinc("#2","\luaescapestring{\unexpanded{#3}}","\luaescapestring{\unexpanded{#4}}","\luameshval@mpi@mode","\luameshval@mpi@h","\luameshval@mpi@step","\luameshval@mpi@print","\luameshval@mpi@scale","\luameshval@mpi@color","\luameshval@mpi@colorPolygon","\luameshval@mpi@gridpoints","\luameshval@mpi@thickness","\luameshval@mpi@polygonThickness")%
   }%
   \else % we are using MP
   \def\luameshmpcolor{\mpcolor{\luameshval@mpi@color}}%
   \def\luameshmpcolorPoly{\mpcolor{\luameshval@mpi@colorPolygon}}%
   \directlua{%
-    drawMeshPolygonMPinc("#2","\luaescapestring{\unexpanded{#3}}","\luaescapestring{\unexpanded{#4}}","\luameshval@mpi@mode","\luameshval@mpi@h","\luameshval@mpi@step","\luameshval@mpi@print","\luameshval@mpi@scale","\luameshval@mpi@gridpoints")%
+    drawMeshPolygonMPinc("#2","\luaescapestring{\unexpanded{#3}}","\luaescapestring{\unexpanded{#4}}","\luameshval@mpi@mode","\luameshval@mpi@h","\luameshval@mpi@step","\luameshval@mpi@print","\luameshval@mpi@scale","\luameshval@mpi@gridpoints","\luameshval@mpi@thickness","\luameshval@mpi@polygonThickness")%
   }%
   %
   \fi%

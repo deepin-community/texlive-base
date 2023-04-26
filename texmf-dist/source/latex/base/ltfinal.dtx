@@ -1,6 +1,6 @@
 % \iffalse meta-comment
 %
-% Copyright (C) 1993-2021
+% Copyright (C) 1993-2022
 % The LaTeX Project and any individual authors listed elsewhere
 % in this file.
 %
@@ -33,7 +33,7 @@
 %<*driver>
 % \fi
 \ProvidesFile{ltfinal.dtx}
-             [2021/04/18 v2.2o LaTeX Kernel (Final Settings)]
+             [2022/11/30 v2.2y LaTeX Kernel (Final Settings)]
 % \iffalse
 \documentclass{ltxdoc}
 \GetFileInfo{ltfinal.dtx}
@@ -57,11 +57,14 @@
 %
 %
 % \section{Final settings}
-% This section contains the final settings for \LaTeX.  It initializes
-% some debugging and typesetting parameters, sets the default
-% |\catcode|s and uc/lc codes, and inputs the hyphenation file.
 %
-% \StopEventually{}
+%    This section contains the final settings for \LaTeX.  It initializes
+%    some debugging and typesetting parameters, sets the default
+%    |\catcode|s and uc/lc codes, and inputs the hyphenation file.
+%
+%
+%
+% \MaybeStop{}
 %
 % \changes{v0.1a}{1994/03/07}{Initial version, split from latex.dtx}
 % \changes{v0.1a}{1994/03/07}{Remove oldcomments environment}
@@ -149,6 +152,34 @@
 %<*2ekernel>
 %    \end{macrocode}
 % \end{macro}
+%
+%
+%    
+%    Allocate 3 mark classes to be used in \cs{markboth} and
+%    \cs{markright}. Should be done earlier but for that definition of
+%    \cs{newmarks} needs moving (which it should I guess).
+% \changes{v2.2s}{2022/04/03}{Integration of new mark management interface}
+%    \begin{macrocode}
+%</2ekernel>
+%<*2ekernel|latexrelease>
+%<latexrelease>\IncludeInRelease{2022/06/01}%
+%<latexrelease>                 {2e-left}{Delayed legacy marks}%
+\NewMarkClass {2e-left}     
+\NewMarkClass {2e-right}     
+\NewMarkClass {2e-right-nonempty}
+%    \end{macrocode}
+%    No rollback really, the marks will remain.
+%    \begin{macrocode}
+%</2ekernel|latexrelease>
+%<latexrelease>\EndIncludeInRelease
+%<latexrelease>\IncludeInRelease{0000/00/00}%
+%<latexrelease>                 {2e-left}{Delayed legacy marks}%
+%<latexrelease>
+%<latexrelease>\EndIncludeInRelease
+%<*2ekernel>
+%    \end{macrocode}
+
+
 %
 %\begin{macro}{\newXeTeXintercharclass}
 % \changes{v2.0a}{2014/12/30}{macro added}
@@ -242,9 +273,9 @@
 % \end{macro}
 % \end{macro}
 %
-% \begin{macro}{trace_stack_levels}
+% \begin{macro}{trace\string_stack\string_levels}
 %   Now define the Lua function to emulate \cs{tracingstacklevels} and
-%   install it in the \texttt{input_level_string} callback.
+%   install it in the |input_level_string| callback.
 %    \begin{macrocode}
 %</2ekernel>
 %<*2ekernel|latexrelease>
@@ -1032,54 +1063,36 @@
 %    \end{macrocode}
 %
 % \begin{macro}{\MakeUppercase}
-% \begin{macro}{\MakeUppercase}
+% \begin{macro}{\MakeLowercase}
+% \begin{macro}{\MakeTitlecase}
+% \begin{macro}{\NoCaseChange}
+% \begin{macro}{\AddToNoCaseChangeList}
+% \begin{macro}{\CaseSwitch}
+% \begin{macro}{\DeclareCaseChangeEquivalent}
 % \begin{macro}{\@uclclist}
+%
 %
 % \changes{v1.1a}{1997/10/20}{Removed \cs{aa} and \cs{AA} from
 %    \cs{@uclclist} as these are macros.}
-%
+% \changes{v2.2r}{2022/02/20}{use \cs{text_lowercase:n}}%
 %    And whilst we're doing things with uc/lc tables, here are two
 %    commands to upper- and lower-case a string.
 %
-%    \emph{Note} that this implementation is subject to change!  At
-%    the moment we're not providing any way to extend the list of
-%    uc/lc commands, since finding a good interface is difficult.
-%    These commands have some nasty features, such as uppercasing
-%    mathematics, environment names, labels, etc.  A much better
-%    long-term solution is to use all-caps fonts, but these aren't
-%    generally available.
-%    \begin{macrocode}
-\DeclareRobustCommand{\MakeUppercase}[1]{{%
-      \def\i{I}\def\j{J}%
-      \def\reserved@a##1##2{\let##1##2\reserved@a}%
-      \expandafter\reserved@a\@uclclist\reserved@b{\reserved@b\@gobble}%
-%    \end{macrocode}
-%    Tell UTF-8 processing to process chars even though we are in an \cs{protected@edef}.
-% \changes{v2.1h}{2019/09/14}{Expand UTF8 chars when case changing (github/177)}
-%    \begin{macrocode}
-      \let\UTF@two@octets@noexpand\@empty
-      \let\UTF@three@octets@noexpand\@empty
-      \let\UTF@four@octets@noexpand\@empty
-      \protected@edef\reserved@a{\uppercase{#1}}%
-      \reserved@a
-   }}
-\DeclareRobustCommand{\MakeLowercase}[1]{{%
-      \def\reserved@a##1##2{\let##2##1\reserved@a}%
-      \expandafter\reserved@a\@uclclist\reserved@b{\reserved@b\@gobble}%
-      \let\UTF@two@octets@noexpand\@empty
-      \let\UTF@three@octets@noexpand\@empty
-      \let\UTF@four@octets@noexpand\@empty
-      \protected@edef\reserved@a{\lowercase{#1}}%
-      \reserved@a
-   }}
-%    \end{macrocode}
 %
-%    \begin{macrocode}
-\def\@uclclist{\oe\OE\o\O\ae\AE
-      \dh\DH\dj\DJ\l\L\ng\NG\ss\SS\th\TH}
-%    \end{macrocode}
-%    The above code works, but has the nasty side-effect that if you
-%    say something like:
+% \changes{v2.1h}{2019/09/14}{Expand UTF8 chars when case changing (github/177)}
+% \changes{v2.2r}{2022/02/20}
+%                {Use \cs{@expl@text@uppercase@@n}, removing local redefinition of \cs{UTF@two@octets@noexpand}}%
+% \changes{v2.2t}{2022/04/21}{Support \cs{noexpand} in argument of \cs{@expl@text@uppercase@@n}}
+% \changes{v2.2v}{2022/06/30}{Just use \cs{text_lowercase:n} without \cs{protectd@edf} gh/881x}%
+% \changes{v2.2w}{2022/07/04}{Introduced \cs{CaseSwitch}, \cs{DeclareCaseChangeEquivalent} and \cs{MakeTitlecase} to support hooking into case changing gh/889}%
+% \changes{v2.2x}{2022/10/26}{Introduce optional argument for case-changing commands}
+% \changes{v2.2x}{2022/10/26}{Make case changing commands language-aware}
+% \changes{v2.2x}{2022/10/26}{Auto-detect \pkg{babel} locale}
+% Wrappers around the L3 case changing functions.
+% |\protected| to make them mostly safe as replacements for |uppercase|
+% and |\lowercase|.  
+%
+% In
 %\begin{verbatim}
 %    \markboth{\MakeUppercase\contentsname}
 %             {\MakeUppercase\contentsname}
@@ -1087,19 +1100,125 @@
 %    then the uppercasing is only done to the first letter of the
 %    contents name, since the mark expands out to:
 %\begin{verbatim}
-%    \mark{\protect\MakeUppercase Table of Contents}
-%         {\protect\MakeUppercase Table of Contents}
+%    \mark{\MakeUppercase Table of Contents}
+%         {\MakeUppercase Table of Contents}
 %\end{verbatim}
 %    In order to get round this, we redefine |\MakeUppercase| and
-%    |\MakeLowercase| to grab their argument and brace it.  This is a
-%    very low-level hack, and is \emph{not} recommended practice!
-%    This is an instance of a general problem that makes it unsafe to
-%    grab arguments unbraced, and probably needs a more general
-%    solution.  For the moment though, this hack will do:
+% |\MakeLowercase| to grab their argument and brace it. 
+%
+% Earlier versions needed to process |\@uclclist| in an |\edef|
+% to handle legacy input encodings, but recent (2022) expl3 versions
+% handle non-UTF8 text natively so we simply call the |\text_...case:n|
+% functions.
 %    \begin{macrocode}
-\protected@edef\MakeUppercase#1{\MakeUppercase{#1}}
-\protected@edef\MakeLowercase#1{\MakeLowercase{#1}}
+\ExplSyntaxOn
+\keys_define:nn { __kernel }
+  {
+    lang   .str_set:N = \reserved@a ,
+    locale .str_set:N = \reserved@a
+  }
+\cs_new_protected:Npn \@@text@case@aux #1#2#3
+  {
+    \cs_set_nopar:Npn \reserved@a { }
+    \tl_if_blank:nTF {#2}
+      { \@@text@case@aux@ }
+      { \keys_set:nn { __kernel } {#2} }
+    \use:c { text_ #1 case:Vn } \reserved@a {#3}
+  }
+\cs_new_protected:Npn \@@text@case@aux@ { }
+\tl_gput_right:Nn \@kernel@after@begindocument
+  {
+    \@ifpackageloaded { babel }
+      {
+        \@ifpackagelater { babel } { 2020-01-15 }
+          {
+            \cs_gset_protected:Npn \@@text@case@aux@
+              {
+                \str_set:Nx \reserved@a
+                  { \localeinfo* { tag.bcp47 } }
+              }
+          }
+          { }
+      }
+      { }
+  }
+\exp_args_generate:n { cnx }
 %    \end{macrocode}
+% The odd use of \emph{three} spaces here is needed as \pkg{ltcmd} uses the
+% name with one and two spaces to give a `friendly' error message for a runaway
+% argument: that means we can't use it here.
+%    \begin{macrocode}
+\cs_set_protected:Npn \reserved@a #1
+  {
+    \cs_generate_variant:cn { text_ \str_lowercase:n {#1} case:nn } { V }
+    \ExpandArgs { cnx } \NewExpandableDocumentCommand
+       { Make#1case }
+       { O{} +m }
+       { \exp_not:c { Make#1case \c_space_tl \c_space_tl \c_space_tl } [####1] {####2} }
+  }
+\reserved@a { Upper }
+\reserved@a { Lower }
+\reserved@a { Title }
+%    \end{macrocode}
+% \changes{v2.2y}{2022/11/30}{Set \cs{oe}/\cs{OE} equal to act as a marker for \pkg{babel}}
+% Currently, \pkg{babel} uses the equivalence of \cs{oe} and \cs{OE} to force casing of
+% some material, most notably in \cs{today}. To enable that to work, we have to set those
+% commands equal even though the current case changing code does not work using this
+% approach.
+%    \begin{macrocode}
+\cs_new_protected:cpn { MakeLowercase \c_space_tl \c_space_tl \c_space_tl } [#1] #2
+  {
+    \let \kernel@saved@OE \OE
+    \let \OE \oe
+    \@@text@case@aux { lower } {#1} {#2}
+    \let \OE \kernel@saved@OE
+  }
+\cs_new_protected:cpn { MakeUppercase \c_space_tl \c_space_tl \c_space_tl } [#1] #2
+  {
+    \let \kernel@saved@oe \oe
+    \let \oe \OE
+    \@@text@case@aux { upper } {#1} {#2}
+    \let \oe \kernel@saved@oe
+  }
+\cs_new_protected:cpn { MakeTitlecase \c_space_tl \c_space_tl \c_space_tl } [#1] #2
+  {
+    \let \kernel@saved@oe \oe
+    \let \oe \OE
+    \@@text@case@aux { title } {#1} {#2}
+    \let \oe \kernel@saved@oe
+  }
+%    \end{macrocode}
+%
+% \changes{v2.2u}{2022/06/02}{Add \cs{NoCaseChange}}
+% \changes{v2.2u}{2022/06/30}{Add \cs{AddToNoCaseChangeList}}
+% |\NoCaseChange| protects its argument from the case change functions.
+%
+% |\AddToNoCaseChangeList| Allows new commands to protect their arguments, eg
+% |AddToNoCaseChangeList{\eqref}| would protect the argument of |\eqref|
+% in the same way as the argument of |\ref|.
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn\AddToNoCaseChangeList
+         {\tl_put_right:Nn \l_text_case_exclude_arg_tl}
+\AddToNoCaseChangeList{ \NoCaseChange }
+\cs_new_protected:Npn \NoCaseChange #1 {#1}
+\cs_new_eq:NN \CaseSwitch \text_case_switch:nnnn
+\cs_new_eq:NN \DeclareCaseChangeEquivalent
+  \text_declare_case_equivalent:Nn
+\ExplSyntaxOff
+%    \end{macrocode}
+%
+% \changes{v2.2q}{2021/09/06}{Correctly upper and lowercase
+%                             \cs{ij} and \cs{IJ} (gh/658)}
+%    \begin{macrocode}
+\def\@uclclist{\oe\OE\o\O\ae\AE
+      \dh\DH\dj\DJ\l\L\ng\NG\ss\SS\ij\IJ\th\TH}
+%    \end{macrocode}
+%
+% \end{macro}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+% \end{macro}
 % \end{macro}
 % \end{macro}
 % \end{macro}
@@ -1244,6 +1363,39 @@
 % \end{macro}
 % \end{macro}
 %
+%  \subsection{Preparation for supporting PDF in backends}
+%
+%    At the current point in time, basic support for PDF in
+%    backends is not part of \LaTeX{} core; it is provided by external
+%    packages. At some time in the future that work will be placed
+%    into the kernel but for now it is separate and has to be
+%    explicitly loaded in the document.
+%
+%    In that code there is a command \cs{IfPDFManagementActiveTF} 
+%    which can be used by packages in order to execute different 
+%    code depending on the whether this basic backend support is loaded.
+%
+%    To make this also work properly when this external package is not
+%    loaded at all, we here add this command already in the
+%    kernel (with a trivial definition); thus any package can
+%    query this loading state in all circumstances.  
+%    Once this basic PDF backend
+%    support gets moved to the kernel, this definition will vanish
+%    again from here or, rather, it will be replaced by a real test.
+%
+%  \begin{macro}{\IfPDFManagementActiveTF}
+%    So long as the code for the basic backend support for PDF is not 
+%    loaded, the test that is implicit here will
+%    always return the false branch. 
+%    Once this code is loaded, this definition will get
+%    replaced by a real test (as it is then possible that the
+%    management code is either activated or not activated).
+% \changes{v2.2p}{2021/08/08}{Default definition added (gh/640)}
+%    \begin{macrocode}
+\let \IfPDFManagementActiveTF \@secondoftwo
+%    \end{macrocode}
+%  \end{macro}
+%
 %
 %
 % \subsection{Do some temporary work for pre-release}
@@ -1253,7 +1405,7 @@
 %    \begin{macrocode}
 %    \end{macrocode}
 %
-%    \subsection{Some last minute initializations \ldots}
+% \subsection{Some last minute initializations \ldots}
 %
 %    Load the first aid set of definitions for external packages that await updates.
 % \changes{v2.2j}{2020/09/26}

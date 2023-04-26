@@ -4,7 +4,7 @@
 cct_init
 include(tubedefs.m4)
 
-iflatex(`latexcommand({\sf)')
+ifpostscript(,iflatex(`latexcommand({\sf)'))
 
 Overall:[
 
@@ -366,5 +366,5 @@ PO: dot
 #showbox_
 #print last [].wid,last [].ht
 
-iflatex(latexcommand(}))
+ifpostscript(,iflatex(latexcommand(})))
 .PE

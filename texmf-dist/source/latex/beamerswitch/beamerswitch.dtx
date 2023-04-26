@@ -93,7 +93,7 @@ first three steps.
 
 ## Licence
 
-Copyright 2016–2021 Alex Ball.
+Copyright 2016–2022 Alex Ball.
 
 This work consists of the file beamerswitch.dtx and a Makefile.
 
@@ -194,7 +194,7 @@ See:     http://www.latex-project.org/lppl.txt
 \endpreamble
 \postamble
 
-Copyright (C) 2016-2021 by Alex Ball <ab318@bath.ac.uk>
+Copyright (C) 2016-2022 by Alex Ball <ab318@bath.ac.uk>
 \endpostamble
 
 \usedir{tex/latex/\jobname}
@@ -229,7 +229,7 @@ Copyright (C) 2016-2021 by Alex Ball <ab318@bath.ac.uk>
 %<class>\NeedsTeXFormat{LaTeX2e}[1999/12/01]
 %<class>\ProvidesClass{beamerswitch}
 %<*class>
-    [2021/04/12 v1.8 Convenient mode selection in Beamer documents]
+    [2022/08/20 v1.9 Convenient mode selection in Beamer documents]
 %</class>
 %<*driver>
 \documentclass[12pt]{article}
@@ -723,9 +723,13 @@ The various options are described below.
 
 \subsection{Passing options to the underlying classes}
 
+\begin{docKey}{articleclass}{=\meta{class}}{default and initially \val{article}}
+  Selects the \meta{class} to use when in \key{article} mode.
+\end{docKey}
+
 \begin{docKey}{articleoptions}{=\marg{options}}{default and initially empty}
-  Passes the \meta{options} to the \pkg{article} class when in \key{article}
-  mode.
+  Passes the \meta{options} to the underlying class (selected by \key{articleclass})
+  when in \key{article} mode.
 \end{docKey}
 
 \begin{docKey}{beameroptions}{=\marg{options}}{default and initially \val{ignorenonframetext}}
@@ -882,6 +886,7 @@ If you want to switch to using \texttt{rubber}, say, pre-define
 \begin{dispListing}
 \newcommand*{\SpawnedCompiler}{rubber -q --synctex}
 \newcommand*{\SpawnedPDFTeX}{\SpawnedCompiler -m pdftex}
+\newcommand*{\SpawnedLuaTeX}{\SpawnedCompiler -m lualatex} % needs v1.6.0+
 \newcommand*{\SpawnedXeTeX}{\SpawnedCompiler -m xelatex}
 \documentclass{beamerswitch}
 \end{dispListing}
@@ -1266,10 +1271,12 @@ suggestions for improvements or new features to the
 %   \pkg{shellesc} for running parallel compilations
 % \item
 %   \pkg{iftex} for determining which engine to use
+% \item
+%   \pkg{expl3} for cleaning options passed onward to underlying classes.
 % \end{itemize}
 %
 %    \begin{macrocode}
-\RequirePackage{xkeyval,xkvltxp,etoolbox,xstring,shellesc,iftex}
+\RequirePackage{xkeyval,xkvltxp,etoolbox,xstring,shellesc,iftex,expl3}
 %    \end{macrocode}
 %
 % \subsection{Class options}
@@ -1376,10 +1383,22 @@ suggestions for improvements or new features to the
 %    \end{macrocode}
 % \end{optionkey}
 %
+% \changes{v1.9}{2022/08/20}{Add \key{articleclass} option.}
+% \begin{optionkey}{articleclass}
+%
+% The \key{articleclass} option allows the class used for article mode
+% to be customized.
+%
+%    \begin{macrocode}
+\define@cmdkey[DC]{beamerswitch}{articleclass}[article]{}
+%    \end{macrocode}
+% \end{optionkey}
+%
 % \changes{v1.8}{2021/04/12}{Add \key{articleoptions} option.}
 % \begin{optionkey}{articleoptions}
 %
-% The \key{articleoptions} will passed to the \pkg{article} class.
+% The \key{articleoptions} will passed to the class used for
+% \key{article} mode.
 %
 %    \begin{macrocode}
 \define@cmdkey[DC]{beamerswitch}{articleoptions}[]{}
@@ -1409,13 +1428,24 @@ suggestions for improvements or new features to the
 %
 %    \begin{macrocode}
 \setkeys[DC]{beamerswitch}{beamer=true,alsobeamer=false,alsotrans=false,%
-  alsohandout=false,alsoarticle=false,beameroptions,articleoptions}
+  alsohandout=false,alsoarticle=false,beameroptions,articleclass,%
+  articleoptions}
 %    \end{macrocode}
 %
 % Now we process the options given by the user.
 %
 %    \begin{macrocode}
 \ProcessOptionsX[DC]<beamerswitch>
+%    \end{macrocode}
+%
+% We remove problematic whitespace from \key{articleoptions} and
+% \key{beameroptions}.
+%
+%    \begin{macrocode}
+\ExplSyntaxOn
+\tl_replace_all:Nnn \cmdDC@beamerswitch@articleoptions { ,~ } { , }
+\tl_replace_all:Nnn \cmdDC@beamerswitch@beameroptions { ,~ } { , }
+\ExplSyntaxOff
 %    \end{macrocode}
 %
 % \subsection{Jobname-based mode switching}\label{sec:switching}
@@ -1530,20 +1560,20 @@ suggestions for improvements or new features to the
 %
 % \subsection{Setting up modes}
 %
-% For article mode, we load the \pkg{article} class and the \pkg{beamerarticle}
-% support package. Apologies for anyone hoping for \pkg{scrartcl} or
-% \pkg{memoir} alternatives.
 % \begin{macro}{beamer@insttitle}
 % \begin{macro}{beamer@andtitle}
 % \begin{macro}{beamer@instinst}
 % \begin{macro}{beamer@andinst}
+% For article mode, we load the class selected by the \key{articleclass}
+% option and require the \pkg{beamerarticle} support package.
 % We also add some beamer base macros that are needed for the
-%\cs{insertinstitute} command.
+% \cs{insertinstitute} command.
 %
 %    \begin{macrocode}
 \ifbool{DC@beamerswitch@article}{%
-  \PassOptionsToClass{\cmdDC@beamerswitch@articleoptions}{article}
-  \LoadClass{article}
+  \PassOptionsToClass{\cmdDC@beamerswitch@articleoptions}{%
+    \cmdDC@beamerswitch@articleclass}
+  \LoadClass{\cmdDC@beamerswitch@articleclass}
   \RequirePackage{beamerarticle}
   \def\beamer@insttitle#1{\textsuperscript{#1}}
   \def\beamer@andtitle{\quad}
@@ -1592,27 +1622,17 @@ suggestions for improvements or new features to the
 }{%
 %    \end{macrocode}
 %
-%
-% For the presentation modes, we load the \pkg{beamer} class with appropriate
-% options. Since we are targeting users wanting different versions of their
-% presentations with the same code, we activate \key{ignorenonframetext}.
-%
-%    \begin{macrocode}
-  \ifbool{DC@beamerswitch@handout}{%
-    \PassOptionsToClass{\cmdDC@beamerswitch@beameroptions}{beamer}
-    \LoadClass[handout]{beamer}
-%    \end{macrocode}
+% For the presentation modes, we load the \pkg{beamer} class with the
+% appropriate mode option as well those chosen using \key{beameroptions}.
 %
 % Handout mode lays multiple slides out on a single page. For this we use
 % \pkg{pgfpages}. The actual configuration is handled later.
 %
 %    \begin{macrocode}
+  \ifbool{DC@beamerswitch@handout}{%
+    \PassOptionsToClass{\cmdDC@beamerswitch@beameroptions}{beamer}
+    \LoadClass[handout]{beamer}
     \RequirePackage{pgfpages}
-%    \end{macrocode}
-%
-% We also activate \key{ignorenonframetext} for the other two modes.
-%
-%    \begin{macrocode}
   }{%
     \ifbool{DC@beamerswitch@trans}{%
       \PassOptionsToClass{\cmdDC@beamerswitch@beameroptions}{beamer}

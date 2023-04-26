@@ -1,7 +1,7 @@
 .PS
-# inductors.m4
+# Inductors.m4
 cct_init
-iflatex(command "{\tt")
+ifpostscript(,latexcommand({\tt)) # disable "command" for psfrag
 
 movewid = 2 pt__
 hm = 2.05
@@ -30,8 +30,9 @@ vm = 0.4
   {ebox(,,,0) ; move ;"`{ebox(,{,},0)}'" ljust}
    move right_ hm -10bp__
   {TI: tapped(`ebox(,,,0)',-,1/4,-dimen_/6,3/4,-dimen_/6) ; move ;
-   "`tapped(\char96{}ebox(,{,},0)\char39,'" ljust at Here+(10bp__,-5bp__) \
-   "-,1/4,-dimen\_/6," ljust "3/4,-dimen\_/6)" ljust
+   "`tapped(\char96{}ebox(,{,},0)\char39,'" ljust at Here+(10bp__,3bp__)
+   "`-,1/4,-dimen\_/6,'" ljust at last ""+(0,-11pt__)
+   "`3/4,-dimen\_/6)'" ljust at last ""+(0,-11pt__)
    "\sl Tap1" at TI.Tap1 rjust below
    "\sl Tap2" at TI.Tap2 ljust below }
 }
@@ -43,5 +44,5 @@ vm = 0.4
    shielded(`ebox(,,,0)',R) ; move; `"shielded(`ebox(,{,},0)',R)"' ljust }
 }
 
-iflatex(command "}")
+ifpostscript(,latexcommand(}))
 .PE

@@ -1,7 +1,7 @@
 .PS
 # Timer.m4
 cct_init
-iflatex(`latexcommand({\small\sf)')
+ ifpostscript(,latexcommand({\small\sf))
 
 define(`ic555',`[Chip: box ht boxwid wid boxwid "555"
   P7: "7" ljust at 1/6<Chip.sw,Chip.nw>
@@ -17,13 +17,13 @@ Timer: [
   define(`elen_',`linewid')
 Vs: dot
   down_
-  variable(`resistor(,E); llabel(,\SI{1}{M})')
-  resistor(,E); llabel(,\SI{100}{\kilo{}})
+  variable(`resistor(,,E); llabel(,\SI{1}{M})')
+  resistor(,,E); llabel(,\SI{100}{\kilo{}})
   capacitor(,E); llabel(\SI{220}{\micro{}})
 Zero: dot
 
   dot(at Vs+(elen_*4/3,0))
-  resistor(,E); llabel(,\SI{33}{\kilo{}})
+  resistor(,,E); llabel(,\SI{33}{\kilo{}})
   line to (Here,Zero) chop 0 chop elen_
 C2: capacitor; llabel(\SI{0.1}{\micro{}})
   dot
@@ -41,7 +41,7 @@ R: dot
 B: buzzer(,,C) with .In3 at Here
   line from B.In1 to (R,B.In1)
   reversed(`diode',to (Here,Vs),LE); "red" at last line.c+(elen_/2,0)
-  resistor(down_ elen_ from R,E); llabel(,\num{470})
+  resistor(down_ elen_ from R,,E); llabel(,\num{470})
   diode(to (Here,Zero),LE); {"green" at last line.c+(elen_*2/3,0)}
   line to Zero chop 0 chop -elen_
   line up_ (Vs.y-Here.y)/3
@@ -70,5 +70,5 @@ Ex01: [
 
   ] with .sw at Timer.se+(0.5,0)
 
-iflatex(`latexcommand(}%)')
+  ifpostscript(,latexcommand(}%))
 .PE

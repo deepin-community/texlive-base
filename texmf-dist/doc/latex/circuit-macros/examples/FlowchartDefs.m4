@@ -162,7 +162,7 @@ define(`Fkeying',`[ boxwid = fboxwid; boxht = fboxht
                                `If-then
                                 Ftest( "text", wid expr ht expr, attributes )'
 define(`Ftest',`[boxwid = fboxwid*0.8; boxht = fboxht*1.4
- Box: box ifelse(`$2',,,`$2') invis
+ Box: box `$2' invis
  N: Box.n; S: Box.s; E: Box.e; W: Box.w 
  line from 0.5 between last box.n and last box.e to last box.e to last box.s \
   to last box.w to last box.n to 0.5 between last box.n and last box.e \

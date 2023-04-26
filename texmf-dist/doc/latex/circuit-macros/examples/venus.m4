@@ -68,6 +68,7 @@ AA:[
 
 BB:[
   venus(outerrate=8;innerrate=17;increment=2;innerlength=3.5;changephase=60,T)
-  ] with .nw at AA.sw+(0,-0.5)
+  ] at AA
+# ] with .nw at AA.sw+(0,-0.5)
 
 .PE

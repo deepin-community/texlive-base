@@ -56,7 +56,7 @@ local inanchor = lpeg.Cs{ "<anchor" * ((1 - (lpeg.P"<" + lpeg.P">")) + lpeg.V(1)
 local inopeningnote = lpeg.Cs{ "<note" * ((1 - (lpeg.P"<" + lpeg.P">")) + lpeg.V(1))^0 * ">" }
 local lnbrk = lpeg.Cs("\\\\")
 local poemline = lpeg.Cs(lnbrk * spcenc^-1 * lpeg.S("*!")^-1 * bsqbrackets^-1 * spcenc^-1)
-local poemlinebreak = lpeg.Cs(lnbrk * spcenc^-1 * lpeg.P("&gt;") * bsqbrackets^-1 * spcenc^-1)
+local poemlinebreak = lpeg.Cs(lnbrk * spcenc^-1 * (lpeg.P("&gt;") + lpeg.P("+")) * bsqbrackets^-1 * spcenc^-1)
 local linegroup = lpeg.Cs{ "<lg" * ((1 - lpeg.S"<>") + lpeg.V(1))^0 * ">" }
 local bclinegroup = lpeg.Cs(linegroup + lpeg.P("</lg>"))
 local endpoem = lpeg.Cs(lnbrk * lpeg.S("*!") * bsqbrackets^-1) -- not used
@@ -356,6 +356,18 @@ function ekdosis.newsource(id, siglum)
    return true
 end
 
+local familysep = nil
+
+function ekdosis.setfamilysep(str)
+   if str == "reset"
+   then
+      familysep = nil
+   else
+      familysep = str
+   end
+   return true
+end
+
 function ekdosis.getsiglum(str, opt)
    str = str..","
    str = string.gsub(str, "%s-(%,)", "%1")
@@ -378,6 +390,10 @@ function ekdosis.getsiglum(str, opt)
 	 local tempc = string.gsub(idsRend[i].xmlid, "([%-%.%_])", "%%%1")
 	 str  = string.gsub(str, tempc.."%,", idsRend[i].abbr)
 	 ctrl = string.gsub(ctrl, tempc.."%,", "")
+      end
+      if familysep ~= nil
+      then
+	 str = string.gsub(str, "%s+", familysep)
       end
    end
    -- if string.find(ctrl, "[A-Za-z0-9]")
@@ -418,6 +434,10 @@ local cmdtotags = {
 local texpatttotags = {
    {a="\\addentries%s+%[(.-)%]{(.-)}", b=""},
    {a="\\addentries%s+{(.-)}", b=""},
+   {a="\\vmodulolinenumbers%s+%[(.-)%]", b=""},
+   {a="\\vmodulolinenumbers%s+", b=""},
+   {a="\\modulolinenumbers%s+%[(.-)%]", b=""},
+   {a="\\modulolinenumbers%s+", b=""},
    {a="\\setverselinenums%s+{(.-)}{(.-)}", b=""},
    {a="\\resetvlinenumber%s+%[(.-)%]", b=""},
    {a="\\resetvlinenumber%s+", b=""},
@@ -759,6 +779,9 @@ local function versetotei(str)
    end)
    str = string.gsub(str, "\\begin%s?%{ekdverse%}(.-)\\end%s?%{ekdverse%}", function(arg)
 			arg = string.gsub(arg, "\\par%s?", "")
+			arg = string.gsub(arg, "\\begin%s?%{patverse%*?%}", "")
+			arg = string.gsub(arg, "\\end%s?%{patverse%*?%}", "")
+			arg = string.gsub(arg, "\\indentpattern%s?%b{}", "")
 			return "\\p@rb "..linestotei(string.format("<lg>%s</lg>", arg)).."\\p@ra "
    end)
    str = string.gsub(str, "\\begin%s?%{verse%}%b[](.-)\\end%s?%{verse%}", function(arg)
@@ -1675,6 +1698,7 @@ function ekdosis.closestream()
 end
 
 local cur_abs_pg = 0
+local ekd_abs_pg = 0
 local pg_i = nil
 local pg_ii = nil
 local prevcol = nil
@@ -1688,14 +1712,23 @@ function ekdosis.update_abspg(n) -- not used
 end
 
 function ekdosis.storeabspg(n, pg)
+   if tonumber(n) > tonumber(cur_abs_pg)
+   then
+      ekd_abs_pg = ekd_abs_pg + 1
+   end
+   cur_abs_pg = n
+   n = ekd_abs_pg
    if pg == "pg_i" then
       pg_i = n
    elseif pg == "pg_ii" then
       pg_ii = n
       table.insert(check_resetlineno, curcol.."-"..pg_ii)
    end
-   cur_abs_pg = n
    return true
+end
+
+function ekdosis.getekdabspg()
+   return ekd_abs_pg
 end
 
 function ekdosis.checkresetlineno()
@@ -1935,6 +1968,7 @@ function ekdosis.newapparatus(teitype,
 			      apprule,
 			      appdelim,
 			      appsep,
+			      appsubsep,
 			      appbhook,
 			      appehook,
 			      applimit,
@@ -1951,6 +1985,7 @@ function ekdosis.newapparatus(teitype,
 				 rule = apprule,
 				 delim = appdelim,
 				 sep = appsep,
+				 subsep = appsubsep,
 				 bhook = appbhook,
 				 ehook = appehook,
 				 limit = applimit,
@@ -2051,8 +2086,8 @@ function ekdosis.appin(str, teitype)
    local f = io.open(tex.jobname.."_tmp.ekd", "a+")
    if next(apparatuses) == nil
    then
-      f:write("<", cur_abs_pg, cur_alignment, curcol, "-0>", str, "</",
-	      cur_abs_pg, cur_alignment, curcol, "-0>\n")
+      f:write("<", ekd_abs_pg, cur_alignment, curcol, "-0>", str, "</",
+	      ekd_abs_pg, cur_alignment, curcol, "-0>\n")
    else
       for i = 1,#apparatuses
       do
@@ -2061,8 +2096,8 @@ function ekdosis.appin(str, teitype)
 	    break
 	 end
       end
-      f:write("<", cur_abs_pg, cur_alignment, curcol, "-",
-	      appno, ">", str, "</", cur_abs_pg, cur_alignment, curcol, "-", appno, ">\n")
+      f:write("<", ekd_abs_pg, cur_alignment, curcol, "-",
+	      appno, ">", str, "</", ekd_abs_pg, cur_alignment, curcol, "-", appno, ">\n")
    end
    f:close()
    return true
@@ -2080,10 +2115,10 @@ function ekdosis.appout()
 	 table.insert(output, "\\csname ekd@begin@apparatus\\endcsname\\ignorespaces")
 --	 table.insert(output, "\\noindent ")
 	 for i in string.gmatch(t,
-				"<"..cur_abs_pg
+				"<"..ekd_abs_pg
 				   ..cur_alignment_patt
 				   ..curcol.."%-0>.-</"
-				   ..cur_abs_pg
+				   ..ekd_abs_pg
 				   ..cur_alignment_patt
 				   ..curcol.."%-0>")
 	 do
@@ -2095,10 +2130,10 @@ function ekdosis.appout()
 	 local n = 1
 	 while apparatuses[n]
 	 do
-	    if string.match(t, "<"..cur_abs_pg
+	    if string.match(t, "<"..ekd_abs_pg
 			       ..cur_alignment_patt
 			       ..curcol.."%-"..n..">.-</"
-			       ..cur_abs_pg
+			       ..ekd_abs_pg
 			       ..cur_alignment_patt
 			       ..curcol.."%-"..n..">")
 	    then
@@ -2155,6 +2190,10 @@ function ekdosis.appout()
 		  table.insert(output, "\\edef\\ekdsep{" .. apparatuses[n].sep .. "}")
 	       else
 	       end
+	       if apparatuses[n].subsep ~= ""
+	       then
+		  table.insert(output, "\\edef\\ekdsubsep{" .. apparatuses[n].subsep .. "}")
+	       end
 	       if apparatuses[n].bhook ~= ""
 	       then
 		  table.insert(output, apparatuses[n].bhook)
@@ -2162,10 +2201,10 @@ function ekdosis.appout()
 		  table.insert(output, "\\relax")
 	       end
 	       for i in string.gmatch(t,
-				      "<"..cur_abs_pg
+				      "<"..ekd_abs_pg
 					 ..cur_alignment_patt
 					 ..curcol.."%-"..n..">.-</"
-					 ..cur_abs_pg
+					 ..ekd_abs_pg
 					 ..cur_alignment_patt
 					 ..curcol.."%-"..n..">")
 	       do
@@ -2185,8 +2224,8 @@ function ekdosis.appout()
       end
       f:close()
       str = table.concat(output)
-      str = string.gsub(str, "</"..cur_abs_pg..cur_alignment_patt..curcol.."%-[0-9]>", "")
-      str = string.gsub(str, "<"..cur_abs_pg..cur_alignment_patt..curcol.."%-[0-9]>", " ")
+      str = string.gsub(str, "</"..ekd_abs_pg..cur_alignment_patt..curcol.."%-[0-9]>", "")
+      str = string.gsub(str, "<"..ekd_abs_pg..cur_alignment_patt..curcol.."%-[0-9]>", " ")
       return str
    else
    end
@@ -2206,7 +2245,7 @@ end
 local curcol_curabspg = {}
 
 function ekdosis.testapparatus()
-   if isfound(curcol_curabspg, curcol.."-"..cur_abs_pg)
+   if isfound(curcol_curabspg, curcol.."-"..ekd_abs_pg)
    then
       if newalignment
       then
@@ -2219,7 +2258,7 @@ function ekdosis.testapparatus()
 	 return "\\boolfalse{do@app}"
       end
    else
-      table.insert(curcol_curabspg, curcol.."-"..cur_abs_pg)
+      table.insert(curcol_curabspg, curcol.."-"..ekd_abs_pg)
       if next(apparatuses) ~= nil then
 	 reset_bagunits()
       end

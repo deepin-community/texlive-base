@@ -12,14 +12,14 @@
 % See the file doc/licenses/LICENSE for more details.
 
 \ProvidesClass{beamer}
-  [2021/05/26 v3.63 A class for typesetting presentations]
+  [2022/09/13 v3.68 A class for typesetting presentations]
 
 % Setup modes and check for article option
 % Also loads packages required by both beamer and beamerarticle
 \RequirePackage{beamerbasemodes}
 
 % For testing PDF versus DVI mode
-\RequirePackage{ifpdf}
+\RequirePackage{iftex}
 
 %
 %
@@ -88,6 +88,7 @@
 \newif\ifbeamer@frameswithnotesonly
 \newif\ifbeamer@ignorenonframe
 \newif\ifbeamer@autopdfinfo
+\newif\ifbeamer@onlytextwidth
 
 % Option management
 \RequirePackage{beamerbaseoptions}
@@ -107,6 +108,7 @@
 \beamer@frameswithnotesonlyfalse
 \beamer@ignorenonframefalse
 \beamer@autopdfinfotrue
+\beamer@onlytextwidthfalse
 
 \DeclareOptionBeamer{usepdftitle}[true]{\csname beamer@autopdfinfo#1\endcsname}
 \DeclareOptionBeamer{envcountsect}{\beamer@countsecttrue}
@@ -170,6 +172,8 @@
       \catcode\count@=\active
       \lowercase{\def~{\kern1ex}}}}}
 
+\DeclareOptionBeamer{onlytextwidth}{\beamer@onlytextwidthtrue}
+
 % obsolete options
 \DeclareOptionBeamer{notes}[show]{\csname beamer@notesaction@#1\endcsname}
 \def\beamer@notesaction@hide{%
@@ -188,6 +192,8 @@
   \nofiles
 }
 \def\beamer@notesaction@onlyslideswithnotes{%
+  \ClassWarning{beamer}{This option is obsolete. Use beamer option
+    ``show only slides with notes'' instead.}%
   \beamer@notestrue
   \beamer@frameswithnotesonlytrue
   \nofiles
@@ -268,7 +274,7 @@
       \AtBeginDocument{\PreloadUnicodePage{0}}%
       \AtBeginDocument{\PreloadUnicodePage{1}}%
     }
-  \else    
+  \else
     \def\beamer@loaducs{%
       \RequirePackage{ucs}%
       \AtBeginDocument{\PreloadUnicodePage{0}}%
@@ -296,7 +302,10 @@
 \setlength\beamer@paperheight{9.60cm}
 
 \DeclareOptionBeamer{aspectratio}[43]{%
-  \ifnum#1=1610 %
+  \ifnum#1=2013 %
+    \setlength\beamer@paperwidth{14.00cm}%
+    \setlength\beamer@paperheight{9.10cm}%
+  \else\ifnum#1=1610 %
     \setlength\beamer@paperwidth{16.00cm}%
     \setlength\beamer@paperheight{10.00cm}%
   \else\ifnum#1=169 %
@@ -317,7 +326,15 @@
   \else\ifnum#1=141 %
     \setlength\beamer@paperwidth{14.85cm}%
     \setlength\beamer@paperheight{10.50cm}%
-  \fi\fi\fi\fi\fi\fi\fi
+  \else
+    \setlength\beamer@paperheight{9.60cm}%
+    \ifnum#1<1000%
+      \pgfmathparse{(#1-mod(#1,10))/10.0/mod(#1,10)}%
+    \else%
+      \pgfmathparse{(#1-mod(#1,100))/100.0/mod(#1,100)}%
+    \fi%
+    \setlength\beamer@paperwidth{\pgfmathresult\beamer@paperheight}%
+  \fi\fi\fi\fi\fi\fi\fi\fi
 }
 
 \RequirePackage[%
@@ -332,6 +349,9 @@
 %
 % Process Options
 %
+
+% before processing beamer options for \pgfmathparse
+\RequirePackage{pgfmath}
 
 \ExecuteOptionsBeamer{c}
 \ProcessOptionsBeamer
@@ -348,7 +368,8 @@
 
 % Normally loaded by hyperref but to be on the safe side ...
 \RequirePackage{atbegshi}
-
+% suppress the nameref beamer patches as they are now done by beamer:
+\def\NR@nopatch@beamer{}
 \RequirePackage[implicit=false]{hyperref}
 
 \hypersetup{pdfcreator={LaTeX with Beamer class}}
