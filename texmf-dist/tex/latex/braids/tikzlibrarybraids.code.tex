@@ -6,14 +6,15 @@
 %%
 %% braids_code.dtx  (with options: `library')
 %% ----------------------------------------------------------------
-%% braids --- a style file for drawing braid diagrams with TikZ/PGF
-%% E-mail: loopspace@mathforge.org
+%% braids --- a TikZ library for drawing braid diagrams
+%% bundle version: v2.3 2024/01/09
+%% E-mail: Andrew Stacey <loopspace@mathforge.org>
 %% Released under the LaTeX Project Public License v1.3c or later
 %% See http://www.latex-project.org/lppl.txt
 %% ----------------------------------------------------------------
 %% 
 \ProvidesFile{tikzlibrarybraids.code.tex}[%
-  2022/10/26 v2.2 Tikz/PGF library for drawing braid diagrams%
+  2024/01/09 v2.3 Tikz/PGF library for drawing braid diagrams%
 ]
 \RequirePackage{expl3}
 \ExplSyntaxOn
@@ -54,30 +55,30 @@
 \seq_new:N \l__braid_anchor_seq
 \seq_new:N \l__braid_floors_seq
 \str_new:N \l__braid_tmpa_str
-\str_new:N \l__braid_sup_str
-\str_set:Nn \l__braid_sup_str {^}
-\str_new:N \l__braid_sub_str
-\str_set:Nn \l__braid_sub_str {_}
-\str_new:N \l__braid_hyphen_str
-\str_set:Nn \l__braid_hyphen_str {-}
-\str_new:N \l__braid_bar_str
-\str_set:Nn \l__braid_bar_str {|}
-\str_new:N \l__braid_one_str
-\str_set:Nn \l__braid_one_str {1}
 \bool_new:N \l__braid_step_level_bool
 \bool_new:N \l__braid_swap_crossing_bool
+\bool_new:N \l__braid_default_crossing_bool
+\bool_new:N \l__braid_default_symbol_bool
+\bool_set_true:N \l__braid_default_crossing_bool
+\bool_set_true:N \l__braid_default_symbol_bool
 \bool_new:N \l__braid_floor_bool
+\bool_new:N \l__braid_height_bool
+\bool_new:N \l__braid_crossing_height_bool
 \prop_new:N \l__braid_strands_prop
 \prop_new:N \l__braid_permutation_prop
 \prop_new:N \l__braid_crossing_permutation_prop
 \prop_new:N \l__braid_inverse_prop
 \prop_new:N \l__braid_anchor_prop
+\msg_new:nnn {braids} {height} {The~ keys~ "height"~ and~ "crossing~ height"~ shouldn't~ be~ used~ together~ (the~ setting~ for~ "crossing~ height"~ will~ be~ used)}
 \cs_generate_variant:Nn \seq_set_split:Nnn {NVn}
+\cs_generate_variant:Nn \str_compare:nNnTF {VNnTF}
 \tikzset{
    braid/.pic={
+     \begin{scope}[every~ braid/.try]
      \__braid_parse_word:n {#1}
      \__braid_count:
      \__braid_render:
+     \end{scope}
    },
    floor/.pic={
      \path[pic~ actions, draw=none] (0,0) rectangle (1,1);
@@ -87,7 +88,60 @@
    braid/.cd,
    anchor/.initial=1-s,
    number~ of~ strands/.initial=0,
+   crossing~ convention/.is~choice,
+   crossing~ convention/over/.code={
+     \bool_set_true:N \l__braid_default_crossing_bool
+   },
+   crossing~ convention/down/.code={
+     \bool_set_true:N \l__braid_default_crossing_bool
+   },
+   crossing~ convention/under/.code={
+     \bool_set_false:N \l__braid_default_crossing_bool
+   },
+   crossing~ convention/up/.code={
+     \bool_set_false:N \l__braid_default_crossing_bool
+   },
+   crossing~ convention/.default=over,
+   flip~ crossing~ convention/.code={
+     \bool_set_inverse:N \l__braid_default_crossing_bool
+   },
+   set~ symbols/.is~choice,
+   set~ symbols/over/.code={
+     \bool_set_true:N \l__braid_default_symbol_bool
+   },
+   set~ symbols/down/.code={
+     \bool_set_true:N \l__braid_default_symbol_bool
+   },
+   set~ symbols/under/.code={
+     \bool_set_false:N \l__braid_default_symbol_bool
+   },
+   set~ symbols/up/.code={
+     \bool_set_false:N \l__braid_default_symbol_bool
+   },
+   set~ symbols/.default=over,
+   flip~ symbols/.code={
+     \bool_set_inverse:N \l__braid_default_symbol_bool
+   },
    height/.initial=-1cm,
+   height/.code={
+     \bool_if:NTF \l__braid_crossing_height_bool
+     {
+       \msg_term:nn {braids} {height}
+     }
+     {
+       \pgfkeyssetvalue{/tikz/braid/height}{#1}
+       \bool_set_true:N \l__braid_height_bool
+     }
+   },
+   crossing~ height/.code={
+     \bool_if:NT \l__braid_height_bool
+     {
+       \msg_term:nn {braids} {height}
+     }
+     \exp_args:Nnx \pgfkeyssetvalue {/tikz/braid/height}
+     {\dim_eval:n {-\dim_abs:n{#1}}}
+     \bool_set_true:N \l__braid_crossing_height_bool
+   },
    width/.initial=1cm,
    gap/.initial=.05,
    border~ height/.initial=.25cm,
@@ -205,7 +259,7 @@
   {
     \seq_put_right:Nx \l__braid_crossing_seq {\int_eval:n {#1 + 1} }
   }
-  \bool_if:NF \l__braid_swap_crossing_bool
+  \bool_xor:nnT {\l__braid_swap_crossing_bool} {\l__braid_default_symbol_bool}
   {
     \seq_reverse:N \l__braid_crossing_seq
   }
@@ -606,8 +660,15 @@
       }
       \int_step_inline:nnn {2} {\seq_count:N \l__braid_crossing_seq}
       {
-        \int_set:Nn \l__braid_tmpa_int {####1}
-        \int_set:Nn \l__braid_tmpb_int {####1 - 1}
+        \bool_if:NTF \l__braid_default_crossing_bool
+        {
+          \int_set:Nn \l__braid_tmpa_int {####1}
+          \int_set:Nn \l__braid_tmpb_int {####1 - 1}
+        }
+        {
+          \int_set:Nn \l__braid_tmpa_int {####1 - 1}
+          \int_set:Nn \l__braid_tmpb_int {####1}
+        }
       \prop_get:NxN \l__braid_crossing_permutation_prop
       {\seq_item:Nn \l__braid_crossing_seq {\l__braid_tmpa_int}} \l__braid_tmpa_tl
       \prop_get:NxN \l__braid_crossing_permutation_prop
@@ -1173,7 +1234,7 @@
 \ExplSyntaxOff
 
 %% 
-%% Copyright (C) 2011-2022 by Andrew Stacey <loopspace@mathforge.org>
+%% Copyright (C) 2011-2024 by Andrew Stacey <loopspace@mathforge.org>
 %% 
 %% This work may be distributed and/or modified under the
 %% conditions of the LaTeX Project Public License (LPPL), either

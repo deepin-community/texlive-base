@@ -1,6 +1,6 @@
 # LaTeX PDF management testphase bundle
 
-Version: 0.95t, 2022-11-03
+Version: 0.96d, 2023-12-09
 
 This package is used during a test phase to load the new PDF management code
 of LaTeX.
@@ -19,8 +19,8 @@ Bug reports and feedback are welcome and should be made at
 https://github.com/latex3/pdfresources
 
 ## Requirements 
-The package requires a LaTeX format 2022-06-01 or newer.
-It requires an L3 programming 2022-08-30 or newer.
+The package requires a current LaTeX format
+and L3 programming layer.
 
 ## Installation
 
@@ -31,7 +31,7 @@ For manual installation: unpack by compiling the .ins, then move all
 
 
 ## Copyright (C)
-* 2021-2022 The LaTeX Project
+* 2021-2023 The LaTeX Project
 
 ## License
 LaTeX Project Public License, version 1.3c or later.

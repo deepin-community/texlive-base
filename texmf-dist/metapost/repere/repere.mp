@@ -2,7 +2,7 @@
 %%                        repere.mp                           %%
 %%   Macros pour la construction de figures dans un repère    %%
 %%                    o.peault@posteo.net                     %%
-%%               Version 23.01 (Janvier 2023)                 %%
+%%                Version 23.05.b (Mai 2023)                  %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % This work may be distributed and/or modified under the conditions of
@@ -20,6 +20,8 @@
 %             angle_cote
 %             segments, vecteurs, polygones complets
 % Octobre-Décembre 2022 : doc
+% Février 2023 : Main levée
+% Mai 2023 : Transformations, couleur de fond, pixart
 
 input format;
 if not known mplib: input latexmp fi;
@@ -157,7 +159,7 @@ enddef;
 %%%% Initialisations tracés (redéfinition draw etc.)
 def init_traces =
   %% draw
-  def draw expr p =
+  def ddraw expr p =
     addto currentpicture
     if picture p:
       also p
@@ -166,6 +168,14 @@ def init_traces =
     fi
     _op_
   enddef;
+  def Draw expr p=
+    if (path p) and (type_trace="mainlevee"):
+         ddraw mainleveepath(p)
+    else:
+         ddraw p
+    fi
+  enddef;
+  def draw expr p= Draw p enddef;
   %% fill
   def fill expr c =
     if path c:
@@ -174,6 +184,10 @@ def init_traces =
       olddraw c
     fi
   enddef;
+  %% fill
+  def filldraw expr c =
+  addto currentpicture contour (c transformed _T) withpen currentpen
+  _op_ enddef;
   %% thelabel
   vardef thelabel@#(expr s,z) =  % Position s near z
     save p; picture p;
@@ -201,8 +215,22 @@ def init_traces =
   enddef;
   def labelrot = draw thelabelrot enddef;
   %% drawarrow
-  def drawarrow expr p = _apth:=p transformed _T; _finarr enddef;
-  def drawdblarrow expr p = _apth:=p transformed _T; _findarr enddef;
+  def ddrawarrow expr p = _apth:=p transformed _T; _finarr enddef;
+  def drawarrow expr p=
+    if type_trace="mainlevee":
+         ddrawarrow mainleveepath(p)
+    else:
+       ddrawarrow p
+    fi
+  enddef;
+  def ddrawdblarrow expr p = _apth:=p transformed _T; _findarr enddef;
+  def drawdblarrow expr p=
+    if type_trace="mainlevee":
+         ddrawdblarrow mainleveepath(p)
+    else:
+       ddrawdblarrow p
+    fi
+  enddef;
   %% bbox
   vardef bbox primary p =
     if picture p: oldbbox p transformed inverse _T
@@ -222,6 +250,9 @@ def traces_orig =
     fi
     _op_
   enddef;
+  def filldraw expr c =
+    addto currentpicture contour c withpen currentpen
+    _op_ enddef;
   vardef thelabel@#(expr s,z) =  % Position s near z
     save p; picture p;
     if picture s:  p=s
@@ -244,13 +275,13 @@ enddef;
 
 def _finarr text t =
   olddraw _apth t;
-  filldraw arrowhead _apth  t
+  oldfilldraw arrowhead _apth  t
 enddef;
 
 def _findarr text t =
   olddraw _apth t;
-  filldraw arrowhead _apth withpen currentpen  t;
-  filldraw arrowhead  reverse _apth  withpen currentpen  t
+  oldfilldraw arrowhead _apth withpen currentpen  t;
+  oldfilldraw arrowhead  reverse _apth  withpen currentpen  t
 enddef;
 
 vardef arrowhead expr p = %redéfinition flèches
@@ -261,8 +292,75 @@ vardef arrowhead expr p = %redéfinition flèches
   (q rotated .5ahangle & reverse q rotated -.5ahangle -- 0.5*(point 0 of q)-- cycle)  shifted e
 enddef;
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% Main levée %%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+vardef signe(expr n)=
+  if n=0:
+    0
+  elseif n>0:
+    1
+  else:
+    -1
+  fi
+enddef;
+
+
+% D'après Toby Thurston :  https://raw.githubusercontent.com/thruston/Drawing-with-Metapost/master/Drawing-with-Metapost.pdf
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+string type_trace;
+type_trace:="";
+
+def anglemainlevee(text t) =
+  def _anglemainlevee_ = t enddef
+enddef;
+
+anglemainlevee(5*signe(normaldeviate)+normaldeviate);
+
+
+%% Chemin de longueur 1, on rajoute l'angle aux extrémités
+def mainleveeseg(expr p) =
+  point 0 of p {(direction 0 of p) rotated (_anglemainlevee_)} ..
+  point 1 of p {(direction 1 of p) rotated (_anglemainlevee_)}
+enddef;
+
+%% Chemin de longueur quelconque, on divise en chemins simples
+def mainleveepath(expr p) =
+    mainleveeseg(subpath(0,1) of p)
+       for i=1 upto length(p)-1:
+           & mainleveeseg(subpath(i,i+1) of p)
+       endfor
+    if cycle p: & cycle fi
+enddef;
+string _tmp_type_trace_;
+_tmp_type_trace_:="";
+
+def drawmainlevee text t=
+  _tmp_type_trace_:=type_trace;
+  type_trace:="mainlevee";
+  draw t;
+  type_trace:=_tmp_type_trace_;
+enddef;
+
+def mainlevee(text t)=
+ if path t:
+    mainleveepath(t)
+ else:
+   image(drawmainlevee t)
+ fi
+enddef;
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 def setaxes(expr a,b,c,d)=
-  AxeXmin:=a;AxeXmax:=b;AxeYmin:=c;AxeYmax:=d
+  AxeXmin:=a;AxeXmax:=b;AxeYmin:=c;AxeYmax:=d;
+  setgrad(a,b,c,d);
+  setval(a,b,c,d);
 enddef;
 
 def setgrad(expr a,b,c,d)=
@@ -287,9 +385,25 @@ enddef;
 let setall=setrepere;
 let settout=setrepere;
 
+color fond_coul;
+
+
 def fin =
   if _nbaxes=1: olddraw _axorlab fi;
   if coupe: clip currentpicture to (cadre transformed _T) fi;
+%  Gestion du fond
+  if known fond_coul:
+    background:=fond_coul;
+    save tmpfig;
+    picture tmpfig;
+    tmpfig:=currentpicture;
+    currentpicture:=nullpicture;
+    newinternal bboxmargin;
+    bboxmargin:=0bp;
+    fill bbox tmpfig withcolor background;
+    draw tmpfig;
+  fi;
+% Fin gestion du fond
   if bf: oldendfig; bf:=false;_nfig:=_nfig+1 fi;
   rep_tab:=false;   % Ajout octobre 2021
   traces_orig;
@@ -331,32 +445,48 @@ pair _posgrady, _posgrady.lft, _posgrady.rt, _posgrady.ulft, _posgrady.top, _pos
 _posgrady=_posgrady.bot=_posgrady.lft=_posgrady.top=-_posgrady.rt=(-1,0);
 -_posgrady.llft=_posgrady.urt=(0.5,0.5);_posgrady.lrt=-_posgrady.ulft=(0.5,-0.5);
 
+path _dessin_axe_x_,_dessin_axe_y_;
+
 vardef _etiqx_@#(expr ab,dec,st)=   %étiquettes axe des abscisses
-  save pic;
+  save pic,tmppos;
   picture pic;
+   pair tmppos;
+   tmppos = _dessin_axe_x_ intersectionpoint droite(ab);
   if numeric st: pic:=LaTeX("$\num{" & decimal(st) & extranumx & "}$")
   elseif string st: pic:=LaTeX(st)
   else: pic:=st fi;
-  theoldlabel.@#(pic,_cart(ab,yO) shifted (dec*_posgradx@#))
+%  theoldlabel.@#(pic,_cart(ab,yO) shifted (dec*_posgradx@#))
+  theoldlabel.@#(pic,_cart(tmppos) shifted (dec*_posgradx@#))
 enddef;
 
 vardef _etiqy_@#(expr ro,dec,st)=   %étiquettes axe des ordonnées
-  save pic;
+  save pic,tmppos;
   picture pic;
+   pair tmppos;
+   tmppos = _dessin_axe_y_ intersectionpoint droite(0,ro);
   if numeric st: pic:=LaTeX("$\num{" & decimal(st) & extranumy & "}$")
   elseif string st: pic:=LaTeX(st)
   else: pic:=st fi;
-  theoldlabel.@#(pic,_cart(xO,ro) shifted (dec*_posgrady@#))
+%  theoldlabel.@#(pic,_cart(xO,ro) shifted (dec*_posgrady@#))
+  theoldlabel.@#(pic,_cart(tmppos) shifted (dec*_posgrady@#))
 enddef;
 
 
 vardef graduationx(expr x)=          %%%%%%% graduation axe des abscisses
-   ((0,taillegrad)--(0,-taillegrad)) rotated (theta-90) shifted _cart(x,yO)
+   save tmppos;
+   pair tmppos;
+   tmppos = _dessin_axe_x_ intersectionpoint droite(x);
+%   ((0,taillegrad)--(0,-taillegrad)) rotated (theta-90) shifted _cart(x,yO)
+   ((0,taillegrad)--(0,-taillegrad)) rotated (theta-90) shifted _cart(tmppos)
 enddef;
 
 
 vardef graduationy(expr y)=          %%%%%%% graduation axe des ordonnées
-   ((taillegrad,0)--(-taillegrad,0)) shifted _cart(xO,y)
+   save tmppos;
+   pair tmppos;
+   tmppos = _dessin_axe_y_ intersectionpoint droite(0,y);
+%   ((taillegrad,0)--(-taillegrad,0)) shifted _cart(xO,y)
+   ((taillegrad,0)--(-taillegrad,0)) shifted _cart(tmppos)
 enddef;
 
 vardef etiquettex@#(expr x)=
@@ -369,9 +499,25 @@ vardef etiquettey@#(expr y)=
 enddef;
 
 
-vardef dessinaxex=_cart(AxeXmin,yO)--_cart(AxeXmax,yO) enddef;
+%vardef dessinaxex=_cart(AxeXmin,yO)--_cart(AxeXmax,yO) enddef;
 
-vardef dessinaxey=_cart(xO,AxeYmin)--_cart(xO,AxeYmax) enddef;
+%vardef dessinaxey=_cart(xO,AxeYmin)--_cart(xO,AxeYmax) enddef;
+
+vardef cheminaxex=
+      (AxeXmin,yO)--
+        if (AxeXmin<xO) and (xO<AxeXmax):
+           (xO,yO)--
+        fi
+      (AxeXmax,yO)
+enddef;
+
+vardef cheminaxey=
+      (xO,AxeYmin)--
+        if (AxeYmin<yO) and (yO<AxeYmax):
+           (xO,yO)--
+        fi
+      (xO,AxeYmax)
+enddef;
 
 
 vardef graduationsaxex(expr grad)=      %%%% ensemble des graduations abscisses
@@ -382,7 +528,9 @@ vardef graduationsaxex(expr grad)=      %%%% ensemble des graduations abscisses
      olddraw graduationx(arrondimil(i*grad)+xO) withpen pencircle scaled 0.5bp;
     endfor
     % dernière graduation
-    if AxeXmax*Ux-(imax*grad+xO)*Ux>ahlength: olddraw graduationx(arrondimil(imax*grad)+xO) withpen pencircle scaled 0.5bp fi);
+    if AxeXmax*Ux-(imax*grad+xO)*Ux>ahlength: 
+     olddraw graduationx(arrondimil(imax*grad)+xO) withpen pencircle scaled 0.5bp
+    fi);
    $
 enddef;
 
@@ -462,9 +610,15 @@ enddef;
 vardef _axex_@#(expr grad,val,nn)=
    save $;
    picture $;
+   _dessin_axe_x_:= 
+              if type_trace="mainlevee": 
+                  mainlevee(cheminaxex) 
+              else: 
+                  cheminaxex
+              fi;
    $=image(
    %    axe
-   if flecheaxe: olddrawarrow  else: olddraw fi dessinaxex;
+   if flecheaxe: ddrawarrow  else: ddraw fi _dessin_axe_x_;
    %    graduations
    if grad>0: olddraw graduationsaxex(grad) fi;
    %    étiquettes
@@ -506,9 +660,15 @@ enddef;
 vardef _axey_@#(expr grad,val,nn)=
    save $;
    picture $;
+   _dessin_axe_y_:=
+        if type_trace="mainlevee":
+           mainlevee(cheminaxey)
+        else:
+           cheminaxey
+        fi;
    $=image(
    %    axe
-   if flecheaxe: olddrawarrow  else: olddraw fi dessinaxey;
+   if flecheaxe: ddrawarrow  else: ddraw fi _dessin_axe_y_;
    %    graduations
    if grad>0: olddraw graduationsaxey(grad) fi;
    %    étiquettes
@@ -727,9 +887,15 @@ vardef _axexpi_@#(expr num,den,nn)=
    numeric grad;
    picture $;
    grad:=num*pi/den;
+   _dessin_axe_x_:= 
+              if type_trace="mainlevee": 
+                  mainlevee(cheminaxex) 
+              else: 
+                  cheminaxex
+              fi;
    $=image(
    %    axe
-   if flecheaxe: olddrawarrow  else: olddraw fi dessinaxex;
+   if flecheaxe: ddrawarrow  else: ddraw fi _dessin_axe_x_;
    %    graduations
    if grad>0: draw graduationsaxex(grad) fi;
    %    étiquettes
@@ -771,9 +937,15 @@ vardef _axeypi_@#(expr num,den,nn)=
    numeric grad;
    picture $;
    grad:=num*pi/den;
+   _dessin_axe_y_:= 
+              if type_trace="mainlevee": 
+                  mainlevee(cheminaxey) 
+              else: 
+                  cheminaxey
+              fi;
    $=image(
    %    axe
-   if flecheaxe: olddrawarrow  else: olddraw fi dessinaxey;
+   if flecheaxe: ddrawarrow  else: ddraw fi _dessin_axe_y_;
    %    graduations
    if grad>0: draw graduationsaxey(grad) fi;
    %    étiquettes
@@ -1009,12 +1181,13 @@ def marquepoint(expr pp)=      % compatibilité geometriesyr15
   draw marquepointFig(pp)
 enddef;
 
+let MarquePoint = marquepoint;
 
 def marquepoints(text t) text q =      %geometriesyr15
-  for p_ = t: show p_; if pair p_: marquepoint(p_) q; fi endfor;
+  for p_ = t: if pair p_: marquepoint(p_) q; fi endfor;
 enddef;
 
-let MarquePoint = marquepoint;
+let pointe = marquepoints;
 
 % Juin 2019 : placement fin des étiquettes (angle donné)
 vardef thelabelang@#(expr s,z)=
@@ -1040,7 +1213,6 @@ enddef;
 
 def labelang = draw thelabelang enddef;
 
-
 vardef nommepoint@#(text t)=
    save $,ch,dess,latch;
    pair $;
@@ -1053,13 +1225,18 @@ vardef nommepoint@#(text t)=
    fi;
    if long_texte(t)=1:
       dess:=image(draw marquepointFig(t);
-                  ch:=_chaine(t);
-                  mylabel@#("$" & ch & "$",t) withcolor coullabel)
+                  ch:="$" & _chaine(t) & "$";
+                  if _ext_tr_<>"": ch:=aj_extr_trsf(t,ch) fi;
+                  mylabel@#(ch,t) withcolor coullabel)
    else:
       dess:=image(%
       for PP=t:
-        if pair PP: marquepoint(PP); $:=PP
-        else: if string PP: mylabel@#(PP,$) else: mylabel@#(PP scaled defaultscale,$) fi withcolor coullabel
+        if pair PP:
+           marquepoint(PP); $:=PP
+        elseif string PP:
+           mylabel@#(PP,$) withcolor coullabel;
+        else:
+           mylabel@#(PP scaled defaultscale,$) withcolor coullabel
         fi;
       endfor)
    fi;
@@ -1115,8 +1292,9 @@ vardef nommepointrot@#(text t)(expr an)=
    fi;
    if long_texte(t)=1:
       dess:=image(draw marquepointFig(t);
-                  ch:=_chaine(t);
-                  mylabel@#("$" & ch & "$",t,an) withcolor coullabel)
+                  ch:="$" & _chaine(t) & "$";
+                  if _ext_tr_<>"": ch:=aj_extr_trsf(t,ch) fi;
+                  mylabel@#(ch,t,an) withcolor coullabel)
    else:
       dess:=image(%
       for PP=t:
@@ -1154,10 +1332,12 @@ enddef;
 vardef nommeFig@#(text t)=
  save $;
  picture $;
- if long_texte(t)=4: $:=nommeangle@#(t)
+ if long_texte(t)=4: $:=nommeangle@#(t,0)
+ elseif long_texte(t)=5: $:=nommeangle@#(t)
  else:
    for i=t:
-     if pair i: $:=nommepoint@#(t)
+     if pair i: 
+           $:=nommepoint@#(t)
      elseif str @#="": $:=nommeautoobj(t)
      else: $:=nommecourbe@#(t)
      fi;
@@ -1596,6 +1776,7 @@ vardef intercourbes(suffix P)(expr p,q)= %renvoie les points d'intersections de 
   save i,pp;
   numeric i;
   path pp;
+  if unknown P: pair P[] fi;
   pp:=p;
   i:=1;
   forever:
@@ -1629,6 +1810,7 @@ enddef;
 
 vardef antecedents(suffix P)(expr y,p)=
   pair PP[];
+  numeric P[];
   ptantecedents(PP,y,p);
   for i=1 upto 10: P[i]:=xpart (PP[i]); endfor
 enddef;
@@ -1993,21 +2175,33 @@ enddef;
 %%%%%%%%%%   DROITES   %%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 vardef droiteeqred(expr a,b)=
- save $;
- path $;
- if (-(Ymax-Ymin)/(Xmax-Xmin)<a) and ((Ymax-Ymin)/(Xmax-Xmin)>a):
-  $:=(XmiN,a*XmiN+b)--(XmaX,a*XmaX+b);
+ save Pdr;
+ pair Pdr[];
+ if ((Ymin<a*Xmin+b) and (a*Xmin+b<Ymax)) or (a=0):
+  Pdr[1]:=(Xmin,a*Xmin+b)
  elseif a>0:
-  $:=(YmiN/a-b/a,YmiN)--(YmaX/a-b/a,YmaX);
+  Pdr[1]:=((Ymin-b)/a,Ymin)
  else:
-  $:=(YmaX/a-b/a,YmaX)--(YmiN/a-b/a,YmiN);
+  Pdr[1]:=((Ymax-b)/a,Ymax)
  fi;
- $
+ if ((Ymin<a*Xmax+b) and (a*Xmax+b<Ymax)) or (a=0):
+  Pdr[2]:=(Xmax,a*Xmax+b)
+ elseif a>0:
+  Pdr[2]:=((Ymax-b)/a,Ymax)
+ else:
+  Pdr[2]:=((Ymin-b)/a,Ymin)
+ fi;
+ Pdr[1]--
+   if (Xmin<0) and (0<Xmax) and (Ymin<b) and (b<Ymax): (0,b)-- fi
+ Pdr[2]
 enddef;
 
 vardef droiteeqx(expr c)=
-  (c,2*Ymin-Ymax)--(c,2*Ymax-Ymin)
+  (c,Ymax)--
+     if (Ymin<c) and (c<Ymax): (c,0)-- fi
+  (c,Ymin)
 enddef;
+
 
 vardef droiteeqcart(expr a,b,c)=
  save $;
@@ -2030,8 +2224,8 @@ vardef droiteeq(text t)=
 enddef;
 
 
-vardef droitept(expr A,B)=  %geometrie15syr
-  (_diag/abs(A-B))[B,A]--(_diag/abs(A-B))[A,B]
+vardef droitept(expr A,B)=
+  (_diag/abs(A-B))[B,A]--A--B--(_diag/abs(A-B))[A,B]
 enddef;
 
 vardef droite(text t)=
@@ -2227,11 +2421,11 @@ vardef suiterecprojx@#(text t)=   	%projections et étiquettes sur axe x, utilis
     endfor
   elseif nom="_val":
     if deb=_suiterecdeb_:
-      draw etiquettex.@#(arrondi(10**_prec,un));
+      draw etiquettex.@#(arrondidec(_prec,un));
       deb:=deb+1;un:=_suiterecfonc_(un)
     fi;
     for i=deb upto fin:
-      lab:="$\num{" &  decimal(arrondi(10**_prec,un)) & "}$";
+      lab:="$\num{" &  decimal(arrondidec(_prec,un)) & "}$";
       draw projectionx.@#((un,un),lab,-taillegrad);
       un:=_suiterecfonc_(un);
     endfor
@@ -2281,7 +2475,7 @@ vardef suiterecprojy@#(text t)=   	%projections et étiquettes sur axe y, utilis
       deb:=deb+1;
     fi;
     for i=deb-1 upto fin-1:
-      lab:="$\num{" &  decimal(arrondi(10**_prec,un)) & "}$";
+      lab:="$\num{" &  decimal(arrondidec(_prec,un)) & "}$";
       draw projectiony.@#((un,_suiterecfonc_(un)),lab,-taillegrad);
       un:=_suiterecfonc_(un);
     endfor
@@ -2694,11 +2888,9 @@ vardef polygone(text t)=
   poly
 enddef;
 
-if not known typetrace:
-  vardef triangle(expr A,B,C)=
+vardef triangle(expr A,B,C)=
     polygone(A,B,C)
-  enddef;
-fi
+enddef;
 
 vardef parallelogramme(expr A,O,B)=
   O--A--(A+B-O)--B--cycle
@@ -2811,10 +3003,11 @@ vardef marqueangle(text t)=
   fi
 enddef;
 
-vardef nommeangle@#(expr A,O,B,p)=
+vardef nommeangle@#(expr A,O,B,p,n)=
   save P,a;pair P;path a;
   save marque_p; string marque_p;
   marque_p:="";
+  if n>0: draw marqueangle(A,O,B,n) fi;
   a:=arc_marqueangle(A,O,B,taille_marque_a);
   P:= point (arctime 0.5*arclength a of a) of a;
   if str @# = "":
@@ -2859,6 +3052,9 @@ vardef marqueuniquerond_s(expr A,B)=
    fullcircle scaled (0.5taille_marque_s*echelle_marque_s)
 enddef;
 
+%%
+%% Figure de forme f, orientée en fonction de A--B
+%%
 vardef marqueunique_s(expr A,B,f)=
    if f="o":
       marqueuniquerond_s(A,B)
@@ -2872,6 +3068,23 @@ vardef marqueunique_s(expr A,B,f)=
 enddef;
 
 
+vardef marquepathpos(expr p,n,f,t)=
+ save $,AA,BB;
+ pair AA,BB;
+ AA:= point 0 of p;
+ BB:= point (length p) of p;
+ picture $;
+ $=image(
+    for i=1 upto n:
+      draw marqueunique_s(AA,BB,f) shifted ((i-1-(n-1)/2)*sep_marque_s*unitvector(_cart(BB)-_cart(AA))) transformed inverse _T;
+    endfor
+    );
+  $ shifted ((point (arctime t*(arclength p) of p) of p) transformed _T)
+enddef;
+
+%%
+%% n figures de forme f orientée en fonction de A--B et placées autour du milieu
+%%
 vardef marqueseg(expr A,B,n,f)=
  save $;
  picture $;
@@ -2883,31 +3096,42 @@ vardef marqueseg(expr A,B,n,f)=
   $ shifted milieu(_cart(A),_cart(B))
 enddef;
 
+%%
+%% Macro utilisateur t=A,B,n,f ou t=A,B,f ou t=A,B,n
+%%
 vardef marquesegment(text t)=
- save n,N,Pti,Ptii,tmpfig,tmpforme;
+ save n,N,Pti,Ptii,tmpfig,tmpforme,boolpath,tmppath;
  numeric n,N;
  picture tmpfig;
  string tmpforme;
  pair Pti,Ptii;
+ path tmppath;
+ boolean boolpath;
+ boolpath:=false;
  tmpforme:=substring (0,1) of forme_marque_s;
  N:=0;
  n:=1;
  for i=t:
    if numeric i: n:=i 
    elseif string i: tmpforme:=substring (0,1) of i;n:=length i
+   elseif path i: boolpath:=true;tmppath:=i
    fi;
  endfor
- tmpfig:=image(%
- for i=t:
-  N:=N+1;
-  if ((N mod 2) = 1) and (pair i):
-     Pti := i;
-  elseif pair i:
-     Ptii := i;
-     draw marqueseg(Pti,Ptii,n,tmpforme);
-  fi;
- endfor
-     );
+ if boolpath:
+   tmpfig:= marquepathpos(tmppath,n,tmpforme,0.5)
+ else:
+   tmpfig:=image(%
+   for i=t:
+    N:=N+1;
+    if ((N mod 2) = 1) and (pair i):
+       Pti := i;
+    elseif pair i:
+       Ptii := i;
+       draw marqueseg(Pti,Ptii,n,tmpforme);
+    fi;
+   endfor
+     )
+ fi;
   tmpfig
 enddef;
 
@@ -2949,20 +3173,29 @@ enddef;
 %   "\ang[round-mode=places,round-pad = false,drop-zero-decimal,round-precision=" & decimal(arr) & "]{" & decimal(nb) & "}"
 %enddef;
 
+numeric _tmp_puiss_dix_;
 vardef AffichageAngle(expr nb,arr)=
-   "\ang{" & decimal(arrondi(10**(arr),nb)) & "}"
+   _tmp_puiss_dix_:=round(10**arr);
+   "\ang{" & decimal(arrondi(_tmp_puiss_dix_,nb)) & "}"
+%   "\ang{" & decimal(arrondi(10**arr,nb)) & "}"
 enddef;
 
 
 %
 %%%%%%%%%%%%%%%%   Segments   %%%%%%%%%%%%%%%
 vardef Segment(suffix AA,BB)(text t)(text s)=
-  save ll_seg,posAA,anghh,count_tmp,chAA,chBB,chcote;
+  save ll_seg,posAA,anghh,count_tmp,chAA,chBB,chcote,pA,pB;
   numeric ll_seg,anghh,count_tmp;
   string chAA,chBB,chcote;
+  pair pA,pB;
+  pA:=AA;pB:=BB;
   count_tmp:=0;
   if AffCotes:
-     chcote:=decimal(abs(BB-AA));
+      if _tr_rapp_<>1:
+        chcote:=decimal(_tr_rapp_*abs(BB-AA))
+      else:
+        chcote:=decimal(abs(BB-AA))
+      fi;
      if UnitCotes<>"":
        chcote:="\SI[round-pad = false,round-mode=places,round-precision=" & decimal(ArrondiCotes) & "]{" & chcote & "}{" & UnitCotes & "}"
      else:
@@ -2983,31 +3216,44 @@ vardef Segment(suffix AA,BB)(text t)(text s)=
     elseif count_tmp=2: chBB:=i
     fi;
   endfor
+  % On modifie les noms si on est dans une transformation et on définit les points
+  if  _ext_tr_<>"":
+    chAA:=aj_extr_trsf(AA,chAA);
+    chBB:=aj_extr_trsf(BB,chBB);
+  fi
+  % On modifie les points si on est dans une transformation
+    if _tr_bool_:
+      def _transform_fig_= enddef;
+      pA:=_transform_pt_(AA);
+      pB:=_transform_pt_(BB);
+    fi
   for i=s:
     chcote:=i;
   endfor
-  SegmentComplet(AA,BB)(chAA,chBB,chcote)
+  SegmentComplet(pA,pB)(chAA,chBB,chcote)
 enddef;
 
 
 
-vardef SegmentComplet(expr AA,BB)(expr chAA,chBB,cotei) text t=
+vardef SegmentComplet(expr AA,BB)(expr chAA,chBB,cotei)=
 %% Les extrémités étant données, trace le segment, le nom des points et la cote
 %% La position du nom est calculée automatiquement
-  save tmp,anghh,tmpana,tmpanb;
+  save tmp,anghh,tmpana,tmpanb,chA,chB;
   picture tmp;
+  string chA,chB;
+  chA:=chAA;chB:=chBB;
   numeric anghh,tmpana,tmpanb;
   anghh:=angle(BB-AA);
   tmpana=anghh+180 ;
   tmpanb=anghh ;
   tmp:=image(%
-    draw AA--BB t;
-    nomme[tmpana](AA,chAA) t withpen currentpen;
-    nomme[tmpanb](BB,chBB) t withpen currentpen;
+    draw AA--BB;
+    nomme[tmpana](AA,chA) withpen currentpen;
+    nomme[tmpanb](BB,chB) withpen currentpen;
     if xpart AA <= xpart BB:
-       cote(AA,BB,cotei) t
+       cote(AA,BB,cotei)
     else:
-       cote(BB,AA,cotei) t
+       cote(BB,AA,cotei)
     fi;
   );
   tmp
@@ -3167,25 +3413,38 @@ numeric rep_tri_la,rep_tri_lb,rep_tri_lc,
 
 boolean rep_ad_A,rep_ad_B,rep_ad_C;
 
-def cotepolyplacee(suffix ptA,ptB)(expr chcote,sensdirect) text t=
+def cotepolyplacee(suffix ptA,ptB)(expr chcote,sensdirect)=
    if xpart ptA<= xpart ptB:
        if sensdirect:
-         cote(ptA,ptB,chcote) t
+         cote(ptA,ptB,chcote)
        else:
-         cote.top(ptA,ptB,chcote) t
+         cote.top(ptA,ptB,chcote)
        fi
    else:
        if sensdirect:
-         cote.top(ptB,ptA,chcote) t
+         cote.top(ptB,ptA,chcote)
        else:
-         cote(ptB,ptA,chcote) t
+         cote(ptB,ptA,chcote)
        fi
    fi
 enddef;
 
-vardef TriangleComplet(suffix AA,BB,CC)(expr chAA,chBB,chCC,coteAB,coteBC,coteCA,angAA,angBB,angCC) text t =
+def nommeangleaigu(expr B,A,C,chang,sensdirect)=
+  if sensdirect:
+     nomme(B,A,C,chang,1)
+  else:
+     nomme(C,A,B,chang,1)
+  fi
+enddef;
+
+
+vardef TriangleComplet(expr pAA,pBB,pCC)(expr chAA,chBB,chCC,coteAB,coteBC,coteCA,angAA,angBB,angCC) =
 %% Trace le triangle, les noms des points, les cotes et les angles
-  save tmpang,tmpfig,tmpscale,sensdir;
+  save tmpang,tmpfig,tmpscale,sensdir,chA,chB,chC,AA,BB,CC;
+  pair AA,BB,CC;
+  AA:=pAA;BB:=pBB;CC:=pCC;
+  string chA,chB,chC;
+  chA:=chAA;chB:=chBB;chC:=chCC;
   numeric tmpang,tmpscale;
   boolean sensdir;
   if angle(CC rotatedaround(AA,-angle(BB-AA)) - AA)>0:
@@ -3196,66 +3455,61 @@ vardef TriangleComplet(suffix AA,BB,CC)(expr chAA,chBB,chCC,coteAB,coteBC,coteCA
   tmpscale:=defaultscale;
   picture tmpfig;
   tmpfig:=image(%
-     draw triangle (AA,BB,CC) t;
+     draw triangle (AA,BB,CC);
      if AffPoints:
         tmpang:=angle(0.5BB+0.5CC-AA)+180;
-        nomme[tmpang](AA,chAA) t withpen currentpen;
+        nomme[tmpang](AA,chAA) withpen currentpen;
         tmpang:=angle(0.5AA+0.5CC-BB)+180;
-        nomme[tmpang](BB,chBB) t withpen currentpen;
+        nomme[tmpang](BB,chBB) withpen currentpen;
         tmpang:=angle(0.5BB+0.5AA-CC)+180;
-        nomme[tmpang](CC,chCC) t withpen currentpen;
+        nomme[tmpang](CC,chCC) withpen currentpen;
      fi
      if AffDonnees:
-        cote(AA,BB,coteAB) t;
-        if rep_type_triangle=0: cote(BB,CC,coteBC) t fi;
-        if rep_type_triangle<=1: cote(CC,AA,coteCA) t fi;
+        cote(AA,BB,coteAB);
+        if rep_type_triangle=0: cote(BB,CC,coteBC) fi;
+        if rep_type_triangle<=1: cote(CC,AA,coteCA) fi;
 %     elseif AffCotes:
      else:
-        cotepolyplacee(AA,BB)(coteAB,sensdir) t;
-        cotepolyplacee(BB,CC)(coteBC,sensdir) t;
-        cotepolyplacee(CC,AA)(coteCA,sensdir) t;
+        cotepolyplacee(AA,BB)(coteAB,sensdir);
+        cotepolyplacee(BB,CC)(coteBC,sensdir);
+        cotepolyplacee(CC,AA)(coteCA,sensdir);
      fi
      defaultscale:=EchelleAngles;
      if AffDonnees and (rep_type_triangle<3):
         if rep_type_triangle>=1:
           if rep_ad_A and AutoAngleDroit:
-             draw marqueangledroit(BB,AA,CC) t withpen currentpen
+             draw marqueangledroit(BB,AA,CC) withpen currentpen
           else:
-             draw marqueangle(BB,AA,CC,1) t withpen currentpen;
-             nomme(BB,AA,CC,angAA) t;
+             nommeangleaigu(BB,AA,CC,angAA,sensdir);
           fi;
         fi;
         if rep_type_triangle=2:
           if rep_ad_B and AutoAngleDroit:
-             draw marqueangledroit(CC,BB,AA) t withpen currentpen
+             draw marqueangledroit(CC,BB,AA) withpen currentpen
           else:
-             draw marqueangle(CC,BB,AA,1) t withpen currentpen;
-             nomme(CC,BB,AA,angBB) t;
+             nommeangleaigu(CC,BB,AA,angBB,sensdir);
           fi;
         fi;
      else:
         if (nang>=1):
           if rep_ad_A and AutoAngleDroit:
-             draw marqueangledroit(BB,AA,CC) t withpen currentpen
+             draw marqueangledroit(BB,AA,CC) withpen currentpen
           else:
-             draw marqueangle(BB,AA,CC,1) t withpen currentpen;
-             nomme(BB,AA,CC,angAA) t;
+             nommeangleaigu(BB,AA,CC,angAA,sensdir);
           fi;
         fi
         if (nang>=2):
           if rep_ad_B and AutoAngleDroit:
-             draw marqueangledroit(CC,BB,AA) t withpen currentpen
+             draw marqueangledroit(CC,BB,AA) withpen currentpen
           else:
-             draw marqueangle(CC,BB,AA,1) t withpen currentpen;
-             nomme(CC,BB,AA,angBB) t;
+             nommeangleaigu(CC,BB,AA,angBB,sensdir);
           fi;
         fi
         if (nang=3):
           if rep_ad_C and AutoAngleDroit:
-             draw marqueangledroit(AA,CC,BB) t withpen currentpen
+             draw marqueangledroit(AA,CC,BB) withpen currentpen
           else:
-             draw marqueangle(AA,CC,BB,1) t withpen currentpen;
-             nomme(AA,CC,BB,angCC) t;
+             nommeangleaigu(AA,CC,BB,angCC,sensdir);
           fi;
         fi
      fi
@@ -3540,9 +3794,9 @@ vardef defTriangle(text q)=
   rep_tri_lc:=abs(rep_tri_BB-rep_tri_AA);
   rep_tri_lb:=abs(rep_tri_CC-rep_tri_AA);
   rep_tri_la:=abs(rep_tri_BB-rep_tri_CC);
-  rep_tri_angA:=(angle(rep_tri_CC-rep_tri_AA) -angle(rep_tri_BB-rep_tri_AA) ) mod 360;
-  rep_tri_angB:=(angle(rep_tri_AA-rep_tri_BB)-angle(rep_tri_CC-rep_tri_BB)) mod 360;
-  rep_tri_angC:=180 - rep_tri_angB - rep_tri_angA;
+  rep_tri_angA:=abs(angle(rep_tri_CC-rep_tri_AA) -angle(rep_tri_BB-rep_tri_AA) );
+  rep_tri_angB:=abs(angle(rep_tri_AA-rep_tri_BB)-angle(rep_tri_CC-rep_tri_BB));
+  rep_tri_angC:=(180 - rep_tri_angB - rep_tri_angA);
   % Angles droits ?
   if arrondi(10**rep_int_arr,rep_tri_lc**2)=arrondi(10**rep_int_arr,(rep_tri_la)**2+(rep_tri_lb)**2):
      rep_ad_C:=true
@@ -3556,11 +3810,11 @@ vardef defTriangle(text q)=
   rep_tri_la:=arrondi(10**ArrondiCotes,rep_tri_la);
 enddef;
 
-vardef TriangleLLA(text q)(text s)(text p)(text c)(text a) text r=
+vardef TriangleLLA(text q)(text s)(text p)(text c)(text a)=
 %% Macro utilisateur, definit le triangle et appelle la macro de tracé
   defTriangleLLA(q)(s);
   rep_type_triangle:=1;
-  ProcessAffTriangles(q)(p)(c)(a) r
+  ProcessAffTriangles(q)(p)(c)(a)
 enddef;
 
 vardef triangleLLA(suffix AA,BB,CC)(text s)=
@@ -3570,11 +3824,11 @@ vardef triangleLLA(suffix AA,BB,CC)(text s)=
   triangle(AA,BB,CC)
 enddef;
 
-vardef TriangleLAA(text q)(text s)(text p)(text c)(text a) text r=
+vardef TriangleLAA(text q)(text s)(text p)(text c)(text a)=
 %% Macro utilisateur, definit le triangle et appelle la macro de tracé
   defTriangleLAA(q)(s);
   rep_type_triangle:=2;
-  ProcessAffTriangles(q)(p)(c)(a) r
+  ProcessAffTriangles(q)(p)(c)(a)
 enddef;
 
 vardef triangleLAA(suffix AA,BB,CC)(text s)=
@@ -3584,11 +3838,11 @@ vardef triangleLAA(suffix AA,BB,CC)(text s)=
   triangle(AA,BB,CC)
 enddef;
 
-vardef TriangleLLL(text q)(text s)(text p)(text c)(text a) text r=
+vardef TriangleLLL(text q)(text s)(text p)(text c)(text a)=
 %% Macro utilisateur, definit le triangle et appelle la macro de tracé
   defTriangleLLL(q)(s);
   rep_type_triangle:=0;
-  ProcessAffTriangles(q)(p)(c)(a) r
+  ProcessAffTriangles(q)(p)(c)(a)
 enddef;
 
 vardef triangleLLL(suffix AA,BB,CC)(text s)=
@@ -3599,34 +3853,29 @@ vardef triangleLLL(suffix AA,BB,CC)(text s)=
 enddef;
 
 
-vardef Triangle(text q)(text p)(text c)(text a) text r=
+vardef Triangle(text q)(text p)(text c)(text a)=
   defTriangle(q);
   rep_type_triangle:=3;
-  ProcessAffTriangles(q)(p)(c)(a) r
+  ProcessAffTriangles(q)(p)(c)(a)
 enddef;
 
 
 
-vardef ProcessAffTriangles(text q)(text p)(text c)(text a) text r=
+vardef ProcessAffTriangles(suffix A,B,C)(text p)(text c)(text a)=
 %% Gestion de l'affichage 
-  save chAA,chBB,chCC,cha,chb,chc,changA,changB,changC,count_tmp,ch,nang;
+  save chAA,chBB,chCC,cha,chb,chc,changA,changB,changC,count_tmp,ch,nang,AA,BB,CC;
   string chAA,chBB,chCC,cha,chb,chc,changA,changB,changC,ch;
   chAA=chBB=chCC=cha=chb=chc=changA=changB=changC="";
+  pair AA,BB,CC;
+  AA:=A;BB:=B;CC:=C;
   numeric count_tmp,nang;
   boolean tmpaffcotes,tmpaffangles;
   tmpaffcotes:=AffCotes;tmpaffangles:=AffAngles;
   if AffDonnees: AffCotes:=true;AffAngles:=true fi;
   % Noms des points passés en argument
-  count_tmp:=0;
-  forsuffixes i=q:
-    count_tmp:=count_tmp+1;
-    ch:=_chaine(i);
-    if count_tmp=1:     chAA:=
-    elseif count_tmp=2: chBB:=
-    else:               chCC:=
-    fi
-    "$" & ch & "$";
-  endfor
+   chAA:="$" & _chaine(A) & "$";
+   chBB:="$" & _chaine(B) & "$";
+   chCC:="$" & _chaine(C) & "$";
   % On modifie le nom des points si des valeurs sont passées dans p
   count_tmp:=0;
   for i=p:
@@ -3637,8 +3886,26 @@ vardef ProcessAffTriangles(text q)(text p)(text c)(text a) text r=
     fi
     i;
   endfor
+    % On modifie les noms si on est dans une transformation et on définit les points
+    if  _ext_tr_<>"":
+      chAA:=aj_extr_trsf(A,chAA);
+      chBB:=aj_extr_trsf(B,chBB);
+      chCC:=aj_extr_trsf(C,chCC);
+    fi
+  % On modifie les points si on est dans une transformation
+    if _tr_bool_:
+      def _transform_fig_= enddef;
+      AA:=_transform_pt_(A);
+      BB:=_transform_pt_(B);
+      CC:=_transform_pt_(C);
+    fi
   % Cotes données par les longueurs
     if AffCotes:
+      if _tr_rapp_<>1:
+        rep_tri_la:=rep_tri_la*_tr_rapp_;
+        rep_tri_lb:=rep_tri_lb*_tr_rapp_;
+        rep_tri_lc:=rep_tri_lc*_tr_rapp_;
+      fi;
       if UnitCotes<>"":
         cha:=AffichageCoteAvecUnite(rep_tri_la,ArrondiCotes,UnitCotes);
         chb:=AffichageCoteAvecUnite(rep_tri_lb,ArrondiCotes,UnitCotes);
@@ -3676,11 +3943,193 @@ vardef ProcessAffTriangles(text q)(text p)(text c)(text a) text r=
   if count_tmp>0: nang:= count_tmp elseif AffAngles: nang:=3 else: nang:=0 fi;
   AffCotes:=tmpaffcotes;AffAngles:=tmpaffangles;
 %
-  TriangleComplet(q)(chAA,chBB,chCC,chc,cha,chb,changA,changB,changC) r
+  TriangleComplet(AA,BB,CC)(chAA,chBB,chCC,chc,cha,chb,changA,changB,changC)
 enddef;
 
 
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%   TRANSFORMATIONS   %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+string extratransf;  % Chaine à ajouter aux nom des points 
+boolean  _tr_bool_;    % Indique qu'il faudra traiter la chaine précédente
+extratransf:="";
+ _tr_bool_:=false;
+
+numeric _tr_ang_rot_; % Angle à gérer pour l'affichage des points
+_tr_ang_rot_:=0;
+numeric _tr_rapp_; %Rapport d'agrandissement-réduction
+_tr_rapp_:=1;
+
+
+%% Translation
+
+vardef translationpoint(expr u)(expr A)=
+  A+u
+enddef;
+
+vardef translation(expr u)(text t)=
+ type_tr:=1;
+ if path t:
+    t shifted u
+ elseif pair t:
+    t+u
+ else:
+   def _transform_pt_= translationpoint(u) enddef;
+   def _transform_fig_= shifted u enddef;
+   _ext_tr_:=extratransf;
+    _tr_bool_ := true;
+   t
+   hide(_ext_tr_:=""; _tr_bool_:=false;
+         def _transform_pt_=  enddef;
+         def _transform_fig_= enddef;)
+ fi
+enddef;
+
+
+%% Rotation
+
+vardef rotationpoint(expr O,a)(expr A)=
+  A rotatedaround(O,a)
+enddef;
+
+vardef rotation(expr O,a)(text t)=
+ type_tr:=1;
+ if path t:
+    t rotatedaround(O,a)
+ elseif pair t:
+    t rotatedaround(O,a)
+ else:
+   def _transform_pt_= rotationpoint(O,a) enddef;
+   def _transform_fig_= rotatedaround(_cart(O),a) enddef;
+   _tr_ang_rot_:=a;
+   _ext_tr_:=extratransf;
+   _tr_bool_ := true;
+   t _transform_fig_
+   hide(_ext_tr_:="";_tr_bool_:=false;
+        def _transform_pt_=  enddef;
+        def _transform_fig_= enddef;
+        _tr_ang_rot_:=0;)
+ fi
+enddef;
+
+%% Symétrie centrale
+
+vardef symetriecentralepoint(expr O)(expr A)=
+  A rotatedaround(O,180)
+enddef;
+
+vardef symetriecentrale(expr O)(text t)=
+ type_tr:=1;
+ if path t:
+    t rotatedaround(O,180)
+ elseif pair t:
+    t rotatedaround(O,180)
+ else:
+   def _transform_pt_= symetriecentralepoint(O) enddef;
+   def _transform_fig_= rotatedaround(_cart(O),180) enddef;
+   _tr_ang_rot_:=180;
+   _ext_tr_:=extratransf;
+   _tr_bool_ := true;
+   t _transform_fig_
+   hide(_ext_tr_:="";_tr_bool_:=false;
+        def _transform_pt_=  enddef;
+        def _transform_fig_= enddef;
+        _tr_ang_rot_:=0;)
+ fi
+enddef;
+
+%% Symétrie axiale
+
+vardef symetrieaxialepoint(expr B,C)(expr A)=
+  A reflectedabout(B,C)
+enddef;
+
+vardef symetrieaxiale(expr B,C)(text t)=
+ type_tr:=1;
+ if path t:
+    t reflectedabout(B,C)
+ elseif pair t:
+    t reflectedabout(B,C)
+ else:
+   def _transform_pt_= symetrieaxialepoint(O) enddef;
+   def _transform_fig_= reflectedabout(_cart(B),_cart(C)) enddef;
+%   _tr_ang_rot_:=180;
+   _ext_tr_:=extratransf;
+   _tr_bool_ := true;
+   t _transform_fig_
+   hide(_ext_tr_:="";_tr_bool_:=false;
+        def _transform_pt_=  enddef;
+        def _transform_fig_= enddef;
+        _tr_ang_rot_:=0;)
+ fi
+enddef;
+
+%% Symétrie
+
+vardef symetrie(text r)(text t)=
+  if long_texte(r)=1:
+    symetriecentrale(r)(t)
+  else:
+    symetrieaxiale(r)(t)
+  fi
+enddef;
+
+
+
+%% Homothétie
+
+vardef homothetiepoint(expr O,k)(expr A)=
+  k[O,A]
+enddef;
+
+vardef homothetie(expr O,k)(text t)=
+ type_tr:=1;
+ if path t:
+    t shifted -O scaled k shifted O
+ elseif pair t:
+    k[O,t]
+ else:
+    def _transform_pt_= homothetiepoint(O,k) enddef;
+    def _transform_fig_= shifted -O scaled k shifted O enddef;
+    _ext_tr_:=extratransf;
+    _tr_bool_ := true;
+    _tr_rapp_:=abs(k);
+   t _transform_fig_
+   hide(_ext_tr_:=""; _tr_bool_:=false;
+         def _transform_pt_=  enddef;
+         def _transform_fig_= enddef;
+         _tr_rapp_:=1;)
+ fi
+enddef;
+
+%% Similitude
+
+vardef similitudepoint(expr O,k,a)(expr A)=
+  k[O,A] rotatedaround(O,a)
+enddef;
+
+vardef similitude(expr O,k,a)(text t)=
+ type_tr:=1;
+ if path t:
+    t rotatedaround(O,a) shifted -O scaled k shifted O
+ elseif pair t:
+    k[O,t] rotatedaround(O,a)
+ else:
+    def _transform_pt_= similitudepoint(O,k,a) enddef;
+    def _transform_fig_=rotatedaround(_cart(O),a) shifted -O scaled k shifted O enddef;
+    _ext_tr_:=extratransf;
+    _tr_bool_ := true;
+    _tr_rapp_:=abs(k);
+   t _transform_fig_
+   hide(_ext_tr_:=""; _tr_bool_:=false;
+         def _transform_pt_=  enddef;
+         def _transform_fig_= enddef;
+         _tr_rapp_:=1;)
+ fi
+enddef;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%   FONCTIONS USUELLES   %%%%%%%%%
@@ -3958,11 +4407,61 @@ vardef _chaine(suffix s)= %met les termes en indice si le 2e est un chiffre
   c
 enddef;
 
+string _ext_tr_; % Chaine à rajouter aux étiquette lors d'une transformation
+_ext_tr_:="";
+
+vardef ajout_extra_trsf(expr ch)= % ajoute _ext_tr_ en dernière ou avant dernière pos
+  save n;
+  numeric n;
+  n:=length(ch);
+  if n>1:
+    if substring (n-1,n) of ch = "$":
+      substring (0,n-1) of ch & _ext_tr_ & substring (n-1,n) of ch
+    else:
+      ch & _ext_tr_
+    fi
+  else:
+    ch
+  fi
+enddef;
+
+vardef aj_extr_trsf(expr A,ch)=
+  save tmpch,tmpchi,n;
+  numeric n;
+  string tmpch,tmpchi;
+  n:=length(ch);
+    if substring (n-1,n) of ch = "$":
+      tmpchi:=substring (1,n-1) of ch; %   Sans les $
+      if (ASCII _ext_tr_ > 47) and (ASCII _ext_tr_ < 58):
+        tmpch:="$" & tmpchi & "_" & _ext_tr_ & "$";
+        tmpchi:= tmpchi & "[]";
+        scantokens("pair " & tmpchi & ";");
+        tmpchi:= substring(0,n-1) of tmpchi & _ext_tr_ & "]";
+      else:
+        tmpchi:= tmpchi & _ext_tr_;
+        tmpch:="$" & tmpchi & "$";
+        scantokens("pair " & tmpchi & ";");
+      fi
+      scantokens(tmpchi) :=  _transform_pt_(A);
+    else:
+      tmpch:=ch;
+    fi
+  tmpch
+enddef;
+
 
 %%%%%%%%%%%%%%% MATHS %%%%%%%%%%%%%%%%%
+vardef arrondidec(expr n,x)=  % arrondi de x à 10^-n
+   save pp;
+   numeric pp;
+   pp:= 1  for i=1 upto n: *10 endfor;
+   round(pp*x)/pp
+enddef;
+
 
 vardef arrondi(expr p,x)=              %arrondi de x au p-ième
-  round((x-floor(x))*p)/p+floor(x)
+%  round((x-floor(x))*p)/p+floor(x)
+  round(p*x)/p
 enddef;
 
 vardef arrondimil(expr x)=
@@ -4444,6 +4943,65 @@ vardef tablabels(expr s)(text t) text cc=
     fi
   endfor
 enddef;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%  PIXEL ART %%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+color pixart_coul[],pixart_grille_coul;
+numeric pixart_ep;
+pixart_ep:=0.3;
+pixart_grille_coul:=background;
+
+
+def pixcoul(text t)=
+ save cnt;
+ numeric cnt;
+ cnt:=0;
+  for i=t:
+    pixart_coul[cnt]:=i;
+    cnt := cnt +1;
+  endfor
+enddef;
+
+pixcoul(white,black,red,green,blue,cyan,magenta,jaune);
+
+vardef contour_case_pix(expr n,m)=
+  save tmpne,tmpse;
+  pair tmpne,tmpse;
+  tmpne:=0.5*(pixart_ep,pixart_ep) transformed inverse _T;
+  tmpse:=0.5*(pixart_ep,-pixart_ep) transformed inverse _T;
+  (((0,0)+tmpne)--((1,0)-tmpse)--((1,1)-tmpne)--((0,1)+tmpse)--cycle)
+      shifted (_tab(n,m)-(0.5,0.5))
+enddef;
+
+
+vardef pixart(text t)=
+ save _;
+ numeric _;
+ _:=-1;
+ grille_ep:=pixart_ep;
+ save cnt,lig,col;
+ numeric cnt,lig,col;
+ cnt:=0;
+ lig:=rep_tab_p;col:=1;
+ image(%
+   for i=t:
+   if numeric i:
+    if i>-1: filldraw contour_case_pix(col,lig) withcolor pixart_coul[i] fi
+   elseif color i:
+     filldraw contour_case_pix(col,lig) withcolor i
+   fi;
+    if col=rep_tab_n:
+      lig:=lig-1;col:=1;
+    else:
+      col:=col+1;
+    fi
+   endfor
+ )
+enddef;
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%  DESSINS %%%%%%%%%%%%%%%%

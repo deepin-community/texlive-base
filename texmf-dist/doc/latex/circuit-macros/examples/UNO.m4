@@ -56,18 +56,6 @@ define(`HeaderPin',`
    `rotbox(m4Hps,m4Hps,fill_(1))',
    `circle diam m4Hps fill_(1)') at last line.start ')
 
-define(`brdge',`eleminit_(`$1')
- define(`m4h',ifelse(`$2',,`sourcerad_',`($2)/2'))dnl
- { line to rvec_(rp_len/2-m4h/2,0)
-   move to rvec_(m4h/2,0)
-   for m4ng=75 to 255 by 180 do {{
-     m4fshade(0, arc cw from rvec_(Rect_(m4h/2,m4ng)) \
-       to rvec_(Rect_(m4h/2,-m4ng)) \
-         with .c at Here ) }}
-   line from rvec_(m4h/2,0) to rvec_(rp_len/2,0) }
- { [box invis ht_ m4h wid_ m4h] at rvec_(rp_len/2,0) }
- line to rvec_(rp_len,0) invis ')
-
 define(`ATMEGA16U2',`[
   Chip: box wid 10*lg_pinsep ht 25*lg_pinsep
   Loopover_(`x',
@@ -92,7 +80,7 @@ define(`ATMEGA16U2',`[
    107;nul,
    2;XTAL2(PC0),
    108;nul, 109;nul)
-   lg_pin(Pin109+(0,lg_pinsep),RESET,Pin24,wN,24,pinlen)
+   lg_pin(Pin109+(0,lg_pinsep),ifpostscript(,\tiny\sf) RESET,Pin24,wN,24,pinlen)
   ]')
 define(`Aleftpin',`move to Chip.sw+(0,m4Lx*lg_pinsep)
  Pin`$1': ifelse(`$2',nul,Here,dnl
@@ -124,7 +112,7 @@ define(`ATMEGA328P',`[
    303;nul,
    10;XTAL2,
    304;nul, 305;nul)
-   lg_pin(Pin305+(0,lg_pinsep),RESET,Pin1,wN,1,pinlen)
+   lg_pin(Pin305+(0,lg_pinsep),ifpostscript(,\tiny\sf) RESET,Pin1,wN,1,pinlen)
   ]')
 
 define(`rswitch',`dswitch(`$1',,WBoDCP)
@@ -165,10 +153,10 @@ divert(0)dnl
   dot
   dot(at R1.start-(2*del,0))
   xtal(down_ 2*lg_pinsep)
-  rlabel(16,,"MHz"); dot
+  rlabel(,16,"MHz"); dot
  XT2: dot(at last line.start-(2*del,0)); { "XT2" at last [].n above }
 
- Br1: brdge(left_ from U3.Pin33.end to (XT2,U3.Pin33))
+ Br1: jumper(left_ from U3.Pin33.end to (XT2,U3.Pin33))
   rlabel(1,,2); llabel(,"GROUND")
  BRE: dot
   line to (Here,U3.Pin28) then to U3.Pin28.end
@@ -354,7 +342,7 @@ USB: [ K: box invis wid dimen_/2 ht 5*lg_pinsep
 
    line from ZU4.Pin1.end to (RN1D-(1.5*del,0),ZU4.Pin1) then up 7*del
    continue to (ZU4.Chip.w,Here)+(del,0); BRB: dot
-   { line down_ 2*del; Br2: brdge(right_ dimen_)
+   { line down_ 2*del; Br2: jumper(right_ dimen_)
       llabel(1,,2); rlabel(,"RESET\_EN"); line up_ 2*del; dot }
    line right_ dimen_+del
   C5: capacitor(right_ dimen_); llabel(,"C5"); rlabel("100n"); dot

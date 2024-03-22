@@ -19,7 +19,7 @@ vm = 0.28
    {resistor(,,AC) ; move ;"`{\tt resistor(,{,}AC)}'" ljust}
 }
    move down vm; right_
-{  {resistor(,,B) ; move ;"`{\tt resistor(,{,}B)}'" ljust}
+{  {resistor(,5,B) ; move ;"`{\tt resistor(,5,B)}'" ljust}
    move right_ hm
    {resistor(,,E) ; move 
     "`\shortstack[l]{\tt resistor(,{,}E)\\ {\tt $\equiv$ ebox}}'" ljust}

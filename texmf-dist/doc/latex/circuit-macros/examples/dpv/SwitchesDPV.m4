@@ -132,17 +132,17 @@ movewid = 0.25
     move down_ 6bp__ then right_
     dswitch(,,WBPrM); {"svg_tt(`(,,WBPrM)')" at last [].s Below}
     move right_
-    dswitch(,,WBDIGX,text=W); #{"svg_tt(`(,,WBDIGX,W)')" at last [].s Below}
+    dswitch(,,WBDIGX,text=W)
       {"svg_tt(`(,,WBDIGX,')" ljust at last line.start+(0,-15bp__) \
         "svg_tt(`text=W)')" ljust}
     move right_
-    dswitch(,,WBDIGC,text=M)
+    dswitch(,,WBDIGC,circle="M")
       {"svg_tt(`(,,WBDIGC,')" ljust at last line.start+(0,-15bp__) \
-        "svg_tt(`text=M)')" ljust}
+        "svg_tt(`circle=\"M\")')" ljust}
     move right_
-    dswitch(,,WBcDIGC,text=M) #
+    dswitch(,,WBcDIGC,circle="M")
       {"svg_tt(`(,,WBcDIGC,')" ljust at last line.start+(0,-15bp__) \
-        "svg_tt(`text=M)')" ljust}
+        "svg_tt(`circle=\"M\")')" ljust}
     }
 
  command "</g>')" # end font

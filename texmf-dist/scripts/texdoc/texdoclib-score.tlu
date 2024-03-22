@@ -30,7 +30,7 @@ local function set_score_table(tab, key, val)
 end
 
 -- interpret a confline as a score directive or return false
-function M.confline_to_score(line, file, pos)
+function M.confline_to_score(line)
     local keyw, pat, val
     -- try global adjscore
     pat, val = string.match(line, '^adjscore%s+([%w%p]+)%s*=%s*([%d+-.]+)')
@@ -212,7 +212,7 @@ local function set_score(df, original_kw)
 
     -- bonus for locale
     local config_lang = texdoc.config.get_value('lang')
-    if not is_alias and config_lang ~= nil then
+    if not is_alias then
         local file_lang = df.lang
 
         if not file_lang then
@@ -220,9 +220,14 @@ local function set_score(df, original_kw)
             file_lang = texdoc.const.lang_codes[file_lang]
         end
 
-        if config_lang == file_lang then
+        if config_lang ~= nil and config_lang == file_lang then
             score = score + 1
             dbg_score('Locale match bonus: +1.0')
+        elseif file_lang ~= nil and file_lang ~= 'en' then
+            -- normally, english documents do not have file_lang,
+            -- but sometimes the catalog includes en info (e.g., geometry)
+            score = score - 0.1
+            dbg_score('Locale unmatch: -0.1')
         end
     end
 
@@ -305,19 +310,18 @@ end
 
 -- returns the index of the most specific extension of file in ext_list,
 -- or config.ext_list_max + 1
-function M.ext_pos(file)
+function M.ext_pos(filename)
     -- remove zipext if applicable
-    file = texdoc.util.parse_zip(file)
+    filename = texdoc.util.parse_zip(filename)
     -- now find the extension
     local p, e, pos, ext
     for p, e in ipairs(texdoc.config.get_value('ext_list')) do
         if (e == '*') and (ext == nil) then
             pos, ext = p, e
-        elseif (e == '') and not string.find(file, '.', 1, true) then
+        elseif (e == '') and not filename:find('.', 1, true) then
             pos, ext = p, e
-        elseif string.sub(file, -string.len(e)-1) == '.' .. e then
-            if (ext == nil) or (ext == '*')
-                or (string.len(e) > string.len(ext)) then
+        elseif filename:sub(-e:len() - 1) == '.' .. e then
+            if (ext == nil) or (ext == '*') or (e:len() > ext:len()) then
                 pos, ext = p, e
             end
         end

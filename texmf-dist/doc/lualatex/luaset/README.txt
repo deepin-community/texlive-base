@@ -1,3 +1,8 @@
+# The luaset package
+# version 1.1
+# Authors: Chetan Shirore and Ajit Kumar
+# Email: mathsbeauty@gmail.com
+
 # Introduction
 The luaset package is developed to define finite sets and perform operations on them inside LaTeX documents. 
 There is no particular environment in the package for performing set operations. 

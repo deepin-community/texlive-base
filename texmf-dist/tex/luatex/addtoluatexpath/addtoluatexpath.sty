@@ -1,0 +1,52 @@
+\ProvidesPackage{addtoluatexpath}[2023-08-04]
+
+\RequirePackage{luacode}
+
+\providecommand{\input@path}{} % initialize input@path if not defined yet
+
+\begin{luacode*}
+
+  function atlp_main(atlp_raw) -- add to path from raw string
+
+    local atlp_tbl = require'luakeys'().parse(atlp_raw, {naked_as_value=true}) -- paths as table
+
+    local atlp_no_lua = atlp_tbl['nolua'] or false  -- check and set nolua=true
+    local atlp_no_tex = atlp_tbl['notex'] or false  -- check and set notex=true
+
+    if atlp_raw:find('*') ~= nil then  -- if *, must use penlight to expand subdirectories
+      penlight = require'penlight'
+      atlp_tbl = penlight.List(atlp_tbl) -- convert to pl.List for easy manipulation
+    end
+
+    for __, p in ipairs(atlp_tbl) do
+      if p:find('*') == nil then -- add paths without *, continue loop after
+        if not atlp_no_lua then package.path = package.path .. ';'..p..'/?.lua;' end
+        if not atlp_no_tex then  token.set_macro('input@path', token.get_macro('input@path')..'{'..p..'/}', 'global') end
+        goto continue
+      end
+
+      local p, c  = p:gsub('*','') -- if * added, include subdirectories
+      local atlp_subdirs = penlight.List(penlight.dir.getdirectories(p))
+      -- troubleshooting --texio.write_nl(penlight.pretty.write(atlp_subdirs))
+      if c == 2 then
+        atlp_subdirs = atlp_subdirs:map(function(s) return s ..'/**'  end) -- add ** to subdirs for recursive inclusion
+      end
+      atlp_tbl:append(p) -- make sure p (current path without *) is still added!
+      atlp_tbl:extend(atlp_subdirs) -- extend path to include additional subdirs; the for loop is lengthened
+
+      ::continue::
+    end
+
+    -- -- troubleshooting: show all paths
+    --texio.write_nl('Lua Paths >>> \n'..package.path:gsub(';','\n'))
+    --texio.write_nl('TeX Paths >>> \n'..token.get_macro('input@path'):gsub('}{','\n'))
+
+  end
+
+  atlp_main(token.get_macro('@raw@opt@addtoluatexpath.sty'))
+
+\end{luacode*}
+
+\NewDocumentCommand{\addtoluatexpath}{m}{\luadirect{atlp_main(\luastring{#1})}}  % a command
+
+\AtEndOfPackage{\let\@unprocessedoptions\relax}

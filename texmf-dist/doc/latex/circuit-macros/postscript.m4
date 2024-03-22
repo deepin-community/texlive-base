@@ -1,7 +1,7 @@
 divert(-1)
    postscript.m4                  Initialization for Postscript output.
 
-* Circuit_macros Version 10.1, copyright (c) 2022 J. D. Aplevich under     *
+* Circuit_macros Version 10.5, copyright (c) 2024 J. D. Aplevich under     *
 * the LaTeX Project Public Licence in file Licence.txt. The files of       *
 * this distribution may be redistributed or modified provided that this    *
 * copyright notice is included and provided that modifications are clearly *
@@ -41,7 +41,7 @@ define(`rgbfill',
                                 `Top-level test for comma'
 define(`ifm4_rgbtestcomma',`ifinstr(`$1',`,',`$2',`$3')')
 
-                                Define some primary colors
+                                xcolor predefined colors
 define(`defineRGBprimaries',`
 command "/white {1 1 1} def
 /lightgrey {0.75 0.75 0.75} def
@@ -56,7 +56,15 @@ command "/white {1 1 1} def
 /blue {0 0 1} def
 /cyan {0 1 1} def
 /magenta {1 0 1} def
-/yellow {1 1 0} def"')
+/yellow {1 1 0} def
+/brown {0.59 0.29 0} def
+/lime {0.8 1 0} def
+/olive {0.5 0.5 0} def
+/orange {1 0.5 0} def
+/pink {1 0.75 0.8} def
+/purple {0.5 0 0.5} def
+/teal {0 0.5 0.5} def
+/violet {0.56 0 1} def"')
 
 define(`thinlines_',`linethick = 0.4
  arrowwid = 0.04*scale; arrowht = 0.2/3*scale

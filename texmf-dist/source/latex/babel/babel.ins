@@ -3,7 +3,7 @@
 %% driver files from the doc files in this package when run through
 %% LaTeX or TeX.
 %%
-%% Copyright 2012-2022 Javier Bezos and Johannes L. Braams.
+%% Copyright 2012-2024 Javier Bezos and Johannes L. Braams.
 %% Copyright 1989-2008 Johannes L. Braams and any individual authors
 %% listed elsewhere in this file.  All rights reserved.
 %% 
@@ -26,7 +26,7 @@
 %% and covered by LPPL is defined by the unpacking scripts (with
 %% extension .ins) which are part of the distribution.
 %%
-\def\filedate{2022/12/26}
+\def\filedate{2024/01/07}
 \def\batchfile{babel.ins}
 \input docstrip.tex
 
@@ -74,7 +74,7 @@
   \else
     \activefiles
   \fi}
-  
+
 \newif\ifcollect
 \newif\ifsaving
 
@@ -104,6 +104,32 @@
   \ifsaving
     \expandafter\gdef\csname #1Var\endcsname{#2}%
   \fi}
+
+% The following is somewhat hackish, but it does the job for babel, and
+% must be used in the following way: <-name> starts a block to be
+% ignored if 'name' is active, and <+name> ends the block (in this
+% order). Used to exclude some parts from babel.def. With the original
+% definitions, some code goes 'visually' in comments/documentation, but
+% with this change they are in the real code. However, it must be
+% considered temporal, because the solution must be to reorganize the
+% code.
+
+\let\bblMinus\minusOption
+\def\minusOption-#1>#2\endLine{%
+  \global\let\bblactivefiles\activefiles
+  \def\tempa{}%
+  \def\do##1##2##3{%
+    \def\tempb{#1}\def\tempc{##2}%
+    \ifx\tempb\tempc\else
+      \expandafter\def\expandafter\tempa\expandafter{%
+        \tempa\do##1{##2}##3}%
+    \fi}%
+  \activefiles
+  \let\activefiles\tempa}
+
+\let\bblPlus\plusOption
+\def\plusOption+#1>#2\endLine{%
+  \let\activefiles\bblactivefiles}
 
 % Preambles
 
@@ -141,6 +167,7 @@
           \file{babel-ca-hebrew.tex}{\from{babel.dtx}{ca-hebrew}}
           \file{babel-ca-islamic.tex}{\from{babel.dtx}{ca-islamic}}
           \file{babel-ca-persian.tex}{\from{babel.dtx}{ca-persian}}
+          \file{babel-ca-chinese.tex}{\from{babel.dtx}{ca-chinese}}
           \file{xebabel.def}{\from{babel.dtx}{xetex}}
           \file{luababel.def}{\from{babel.dtx}{luatex}}
           \file{txtbabel.def}{\from{babel.dtx}{texxet}}
@@ -153,6 +180,9 @@
          }
 
 % compatibility files
+
+\let\minusOption\bblMinus
+\let\plusOption\bblPlus
 \def\compatfile#1{\file{#1.sty}{\from{bbcompat.dtx}{styfile,#1}}}
 
 \generate{%
@@ -252,5 +282,3 @@
 \Msg{* Happy TeXing}
 \Msg{*}
 \Msg{***********************************************************}
-
-

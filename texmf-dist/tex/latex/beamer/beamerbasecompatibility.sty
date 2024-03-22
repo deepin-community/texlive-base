@@ -3,13 +3,14 @@
 % Copyright 2011,2012,2015 by Vedran Mileti\'c, Joseph Wright
 % Copyright 2016 by Joseph Wright
 % Copyright 2017-2020 by Louis Stuart, Joseph Wright
+% Copyright 2020-2024 by Joseph Wright, samcarter
 %
 % This file may be distributed and/or modified
 %
 % 1. under the LaTeX Project Public License and/or
 % 2. under the GNU Public License.
 %
-% See the file doc/licenses/LICENSE for more details.
+% See the file LICENSE.md for more details.
 
 \mode
 <presentation>
@@ -247,6 +248,42 @@
 \IfFormatAtLeastTF{2020-10-01}{%
   \DeclareHookRule{begindocument/end}{beamer}{after}{polyglossia}%
 }{}
+
+%
+% Fix for metropolis theme
+% https://github.com/josephwright/beamer/issues/802
+% 
+% metropolis patches an old version of the \beamer@@frametitle 
+% definition and throws an error if it does not find the outdated 
+% code. To avoid breaking all metropolis persentations, we revert 
+% back to the old definition at the start of the file and then 
+% overwrite again with the current implimentation at the end
+%
+\AddToHook{file/beamerfontthememetropolis.sty/before}{%
+  \long\def\beamer@@frametitle[#1]#2{%
+    \ifblank{#2}{}{%
+      \gdef\insertframetitle{{#2\ifnum\beamer@autobreakcount>0\relax{}\space\usebeamertemplate*{frametitle continuation}\fi}}%
+    \gdef\beamer@frametitle{#2}%
+    \gdef\beamer@shortframetitle{#1}%
+  }%
+  }
+}
+\AddToHook{file/beamerfontthememetropolis.sty/after}{%
+  \long\def\beamer@@frametitle[#1]#2{%
+    \ifblank{#2}{}{%
+      \gdef\insertframetitle{{%
+        \metropolis@frametitleformat{#2}%
+        \ifnum\beamer@autobreakcount>0
+          \relax{}\space%
+          \beamer@insertframetitlecontinuation%
+        \fi%
+      }}%
+    \gdef\beamer@frametitle{#2}%
+    \gdef\beamer@shortframetitle{#1}%
+    }%
+  }
+}
+
 
 %
 % Obsolete commands from old versions of beamer

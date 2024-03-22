@@ -1,37 +1,101 @@
-\documentclass{article}
-\usepackage[T1]{fontenc}   % Correspondance clavier -> document
-\usepackage{fourier} 
-\usepackage[usenames,dvipsnames]{xcolor}
-\usepackage{atbegshi} 
-\usepackage{tikz}
-\usepackage{Parallel}
-\usetikzlibrary{arrows,snakes}%
 
-%\usetikzlibrary{external}
-%\tikzexternalize{main} % provide the file's real name
+% !TeX program =pdfLatex+shell-escape
+% !TeX encoding = utf8
+%  !TeX spellcheck = fr
+
+\documentclass[a4paper,12pt]{article}                      % Type de document
+\usepackage[french]{babel}  
+
+
+\usepackage[T1]{fontenc}   % Correspondance clavier -> document (sous pdflatex } shell-escape)
+\usepackage{kpfonts} 
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows,snakes,tikzmark,fit,positioning}
+\usepackage[listings,most]{tcolorbox}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{verbatim}
+
+
 
 \usepackage{calc,fullpage}
 \usepackage{amsmath,amssymb}
-\usepackage[frenchb]{babel}
 \usepackage{url}
+
+
+\usepackage{siunitx}
+\sisetup{output-decimal-marker={,},group-minimum-digits=4,abbreviations, 
+detect-family = true}
 
 \usepackage{multicol}
 
-\usepackage{tkzexample}
-%\usepackage{microtype}
 \usepackage{graphicx}
 
 
-\usepackage{hyperref}
-\parindent=0pt
+\usepackage[unicode]{hyperref}
 
-\newdimen\oldparindent
 
 \usepackage{bodegraph}
+
+
+%---------------Commandes mise en forme des exemples ----------
+
+\usepackage[most]{tcolorbox}
+\newtcblisting{tikzexample}[1][]{%tikz lower, 
+colback=red!5!white,colframe=red!75!black,listing side text,
+  title=,fonttitle=\bfseries,
+  toprule=2mm,
+           bicolor, 
+           colback=red!15!white, 
+           colbacklower=red!5!white, %white,
+           %listing options={style=tcblatex,basicstyle=\small},
+           #1}
+           
+
+
+\newtcblisting{tikzexampleL}[1][]{%tikz lower, 
+	listing above text,
+	colback=red!5!white,
+	colframe=red!75!black,
+  title=,fonttitle=\bfseries,
+  toprule=2mm,
+           bicolor, 
+           colback=red!15!white, 
+           colbacklower=red!5!white, %white,
+           listing options={style=tcblatex,basicstyle=\small},
+           #1}
+           
+\DeclareTotalTCBox{\myverb}{ v }{verbatim,
+  colframe=red!75!black,colupper=blue}{#1}      
+
+
+
+%---------------Commandes de traduction--------------------
+
+\newcommand{\traduction}[2]{
+\begin{tikzpicture}
+\coordinate(O);
+\node[text width=0.48\linewidth,below left=0 and 0.01\linewidth of O,align=justify](n1){
+#1
+};
+\node[text width=0.48\linewidth,,below right=0 and 0.01\linewidth of O,align=justify](n2){
+\color{blue}
+#2
+};
+\draw[blue] (O) -- (O|-n1.south) -- (O|-n2.south);
+\end{tikzpicture}
+}
+
+\newcommand{\TradEnLigne}[2]{
+#1 / {\color{blue}#2}
+}
+
+
 %-------------PAGE-DE-GARDE----------------------------------------------------
 
 \title{Diagrammes de Bode, Black et Nyquist   avec  PGF/TIKZ}                                    % Titre
-\author{Papanicola Robert\thanks{Merci à Germain Gondor pour ses remarques}}                                   % Auteur(s)
+\author{Papanicola Robert\thanks{Merci Ã  Germain Gondor pour ses remarques et Ã  Mariachiara Garofalo pour la traduction}}                                   % Auteur(s)
 
 \date{\today}                                     % Date (\today pour aujourd'hui)
 
@@ -39,43 +103,40 @@
 %-------------DEBUT-DU-DOCUMENT-----------------------------------------------
 \makeindex
 
-\newcommand{\traduction}[2]{
-\begin{minipage}[t]{0.48\linewidth}
-#1
-\end{minipage}\hfill
-\begin{minipage}[t]{0.48\linewidth}
-#2
-\end{minipage}
-}
-
 \begin{document}
 
 \maketitle
 
 
 \begin{description}
-\item[version 1.4] 09/10/2010 : modification du répertoire par défaut des fichiers gnuplot.
+\item[version 1.6]  04/11/2023: \TradEnLigne{Traduction en anglais  de la documentation par Mariachiara Garofalo. Correction de quelques coquilles et rÃ©-Ã©criture des exemples. Utilisation du package \textbf{tcolorbox} pour les exemples.}{English translation of the documentation by Mariachiara Garofalo. Fixed some typos and rewrote examples. Using the \textbf{tcolorbox} package for examples.}
+\item[version 1.5] 24/06/2014 : \TradEnLigne{Petites modifications pour prendre en compte les Ã©volutions de pgf.}{Small modifications to take into account the developments of pgf3.}
+\item[version 1.41] 08/06/2011: Ajout de la commande  \myverb{\Unites{}}, lÃ©gÃ¨re modification du positionnement des lÃ©gendes.
+\item[version 1.4] 09/10/2010 : Modification du rÃ©pertoire par dÃ©faut des fichiers Gnuplot.
 \item[version 1.3] 1/05/2010 : 
 \begin{itemize}
-\item Ajout de la commande \verb"\semilogNG"  qui permet de tracer un diagramme semi-log sans graduation
-\item suppression de tous les styles (couleurs et épaisseurs) et remplacement par des styles définis par \verb"\tikzset";
-\item Ajout de la commande \verb"\BodePoint".
+\item Ajout de la commande  \myverb{\semilogNG} qui permet de tracer un diagramme semi-log sans graduation
+\item suppression de tous les styles (couleurs et Ã©paisseurs) et remplacement par des styles dÃ©finis par  \myverb{\tikzset};
+\item Ajout de la commande  \myverb{\BodePoint}.
 
 \end{itemize}
-\item[version 1.2.1:] 20/01/2010 : ajout de la commande \verb"\semilog*" pour une grille log plus fine.
+\item[version 1.2.1:] 20/01/2010 : ajout de la commande  \myverb{\semilog*} pour une grille log plus fine.
 \item [version 1.2:] 22/08/2009, 
 \begin{itemize}
-\item remplacement des commandes \verb"\BodeAmp"  et \verb"\BodeArg"  par \verb"\BodeGraph",   ces deux commandes sont maintenues pour assurer la compatibilité avec les anciens fichiers.
-\item ajout des commandes \verb"\BlackText"  et \verb"\NyquistText"  permettant d'annoter les courbes de Black et Nyquist;
-\item ajout de la commande \verb"\BodePoint"  qui permet de marquer sur les diagrammes une liste de points par une puce (pas d'annotation de ces points);
+\item remplacement des commandes  \myverb{\BodeAmp}  et  \myverb{\BodeArg} par  \myverb{\BodeGraph},   ces deux commandes sont maintenues pour assurer la compatibilitÃ© avec les anciens fichiers.
+\item ajout des commandes  \myverb{\BlackText}  et  \myverb{\NyquistText}  permettant d'annoter les courbes de Black et Nyquist;
+\item ajout de la commande  \myverb{\BodePoint}
+
+  qui permet de marquer sur les diagrammes une liste de points par une puce (pas d'annotation de ces points);
+  
 \item ajout d'un style pour les puces;
 
 \end{itemize}
  
 \item[version 1.1:] 03/05/2009, ajout;
 \begin{itemize}
-\item abaque temps de réponse 2\up{nd} ordre,
-\item abaque des dépassements d'un 2\up{nd} ordre;
+\item abaque temps de rÃ©ponse 2\up{nd} ordre,
+\item abaque des dÃ©passements d'un 2\up{nd} ordre;
 \end{itemize}
 \item[version 1:] mise en ligne de la version initiale 06/04/2009.
 
@@ -84,74 +145,68 @@
 
 
 
-\section{Présentation / Introduction}
+\section{\TradEnLigne{Introduction}{Introduction}}
 
-\traduction{Ce package permet de tracer les diagrammes de Bode, Black et Nyquist à l'aide de Gnuplot et Tikz. Les fonctions de transfert élémentaires et les correcteurs courants sont préprogrammés pour être utilisés dans les fonctions de tracé.
-}{This package allows you to draw the Bode plots, Nyquist, and Black using Gnuplot and Tikz.  Elementary Functions Transfer  and basics correctors are preprogrammed to be used.
+\traduction{Ce package permet de tracer les diagrammes de Bode, Black et Nyquist Ã  l'aide de Gnuplot et Tikz. Les fonctions de transfert Ã©lÃ©mentaires et les correcteurs courants sont prÃ©programmÃ©s pour Ãªtre utilisÃ©s dans les fonctions de tracÃ©.
+}{This package allows to draw Bode, Nichols and Nyquist graphs using Gnuplot and Tikz. Basic transfer functions  and correctors are pre-installed to be used in the tracing functions. 
 }
 
 
-\subsection{Nécessite / Need}
+\subsection{ \TradEnLigne{NÃ©cessite}{ Need}}
+
 \traduction{Pour fonctionner ce package a besoin: 
 \begin{itemize}
-\item d'une version CVS de Pgf/Tikz (certaines commandes de calculs ont étés modifiées ou intégrées depuis la version 2), elle peut être téléchargée sur le site Texample \url{http://www.texample.net/tikz/builds/}.
-\item que \emph{gnuplot} soit installé et configuré pour être exécuté lors de la compilation de votre fichier   \LaTeX (Cf. la doc de Pgf/Tikz).
+\item d'une version CVS de Pgf/Tikz (certaines commandes de calculs ont Ã©tÃ©s modifiÃ©es ou intÃ©grÃ©es depuis la version 2), elle peut Ãªtre tÃ©lÃ©chargÃ©e sur le site Texample \url{http://www.texample.net/tikz/builds/}.
+\item que \emph{gnuplot} soit installÃ© et configurÃ© pour Ãªtre exÃ©cutÃ© lors de la compilation de votre fichier   \LaTeX (Cf. la doc de Pgf/Tikz).
 \end{itemize}
 }{To run this package requires:
 \begin{itemize}
 \item a  CVS Pgf / Tikz (some commands calculations have summers modified or integrated since version 2) it can be downloaded from Texample http://www.texample.net/tikz/builds/ 
-\item that \emph{gnuplot} is installed and configured to run when compiling your  \LaTeX  file (see the doc Pgf / Tikz)
+\item Gnuplot must be installed and configured to be executed when compiling your ...file (see the doc Pgf/Tikz)
 \end{itemize}
 }
 
 
 
 
-\subsection{Composition du package / Composition of Package}
+\subsection{\TradEnLigne{Composition du package}{Composition of Package}}
 
-\traduction{
-Ce package est constitué de trois fichiers:
+\traduction{Ce package est constituÃ© de trois fichiers:
 \begin{itemize}
 \item bodegraph.sys : le package proprement dit;
-\item isom.txt : macro-commandes de définition des courbes iso-module;
-\item isoa.tx  : macro-commandes de définition des courbes iso-arguments.
+\item isom.txt : macro-commandes de dÃ©finition des courbes iso-module;
+\item isoa.txt  : macro-commandes de dÃ©finition des courbes iso-arguments.
 \end{itemize}
 et du fichier bodegraph.tex, ce fichier contenant la documentation.
-
-Remarque: pour compiler ce document latex, vous avez besoin du package tkzexample \url{http://altermundus.fr/SandBox/tkzexample.zip} de Alain Matthes.
-
-Les courbes gnuplot précalculées sont dans le répertoire /gnuplot/.
+Les courbes gnuplot prÃ©calculÃ©es sont dans le rÃ©pertoire /gnuplot/.
 }{Package This package consists of three files: 
 \begin{itemize}
 \item bodegraph.sys: the package itself;
 \item Isom.txt: macros defining curves iso-module
-\item Isoa.tx: macros definition curves iso-arguments.
+\item Isoa.txt: macros definition curves iso-arguments.
 \end{itemize}
 bodegraph.tex file, the file containing the documentation. 
-
-Note: To compile latex document, you need the package tkzexample \url{http://altermundus.fr/SandBox/tkzexample.zip}  by Alain Matthes.
-
 Gnuplot precomputed curves are in the directory /gnuplot/.
 }
 
-\subsection{Utilisation / Use}
+
+
+
+\subsection{\TradEnLigne{Utilisation}{ Use}}
 
 \traduction{
-Décompresser l'archive du package dans votre répertoire personnel.
-
-Rajouter dans l'entête la commande \\usepackage\{bodegraph\}.
+DÃ©compresser l'archive du package dans votre rÃ©pertoire personnel.
+Rajouter dans lâ€™entÃªte la commande :
 }{Unzip the archive package in your home directory. 
-
-Add in the header control \\usepackage\{bodegraph\}..
+Add in the header control:
 }
+ \myverb{\usepackage{bodegraph}}
 
-
-
-\subsection{ToDo}
+\subsection{\TradEnLigne{Ã€ faire}{To Do}}
 
 \traduction{
 \begin{itemize}
-\item Compléter les fonctions élémentaires,
+\item ComplÃ©ter les fonctions Ã©lÃ©mentaires,
 \item Traduction correcte en anglais, 
 \item \dots
 \end{itemize}
@@ -165,168 +220,363 @@ Add in the header control \\usepackage\{bodegraph\}..
 
 
 
-\newpage
 
 
-\section{Les commandes / Orders}
 
-\subsection{Grille semilog / Semilog grid}
+\section{\TradEnLigne{Les commandes}{ Commands}}
+
+
+\subsection{\TradEnLigne{Grille semilog}{ semilog grid}}
+
 \begin{itemize}
-\item \verb"\semilog{décade mini}{décade maxi}{ymini}{ymaxi}"  
-\item \verb"\semilog*{décade mini}{décade maxi}{ymini}{ymaxi}"  
+\item  \myverb{\semilog{dÃ©cade mini}{dÃ©cade maxi}{ymini}{ymaxi} }
+\item  \myverb{\semilog*{dÃ©cade mini}{dÃ©cade maxi}{ymini}{ymaxi} } 
 \end{itemize}
 
  
+\traduction{
+Cette  commande gÃ©nÃ©rique, Ã©toilÃ©e  ou non (fig.~\ref{fig:semilog}) permet de tracer une grille semilog. La commande Ã©toilÃ©e permet d'afficher une grille logarithmique plus prÃ©cise (demi valeur).
+}{
+This generic command, starred   or not (fig.~\ref{fig:semilog}), allows to draw a semilog grid. When the command is starred, it allows to attach a logarithmic grid more precise (semi value).
+}
 
-Cette  commande générique, étoilée ou non permet de tracer une grille semilog. La commande étoilée permet d'afficher une grille logarithmique plus précise (demi valeur).
 
 
+\begin{figure}[!htb]
+\centering
 
-\begin{tkzexample}[latex=8cm,small]
-\begin{tikzpicture}[yscale=2/30,xscale=7/5]
+\begin{tikzexample}[title=,righthand width=0.55\textwidth,]
+\begin{tikzpicture}
+[yscale=2/30,xscale=7/5]
 \semilog{-2}{3}{-20}{10}
 \end{tikzpicture} 
-\end{tkzexample}
+\end{tikzexample}
 
-\begin{tkzexample}[latex=8cm,small]
-\begin{tikzpicture}[yscale=2/30,xscale=7/5]
+\begin{tikzexample}[title=,righthand width=0.55\textwidth,]
+\begin{tikzpicture}
+[yscale=2/30,xscale=7/5]
 \semilog*{-2}{3}{-20}{10}
 \end{tikzpicture} 
-\end{tkzexample}
-
-L'amplitude des coordonnées de l'abcisse doit être donnée en décade, de $10^{décade mini}$  à   $10^{decade maxi}$, l'ordonnée varie elle de $ymini$ à $ymaxi$.
-
-On utilisera les commandes d'échelles de tikz pour adapter les dimensions de la grille à celle de la page. Ainsi si on souhaite afficher un diagramme d'amplitude de 5 décades de $10^{-1}$  à  $10^{4}$ sur 7~cm  et 80~dB de -60 à 20~dB sur 3~cm, le diagramme de phase de $-180^\circ$  à $0^\circ$  sur 3~cm avec un pas vertical de $30^\circ$ en précisant les unités (figure~\ref{fig:semilog}):
-
-\begin{figure}[!ht]
-\centering
-\begin{tkzexample}[latex=8cm,small]
-
-\begin{tikzpicture}[xscale=7/5]
-\begin{scope}[yscale=3/80]
-\UnitedB
-\semilog{-1}{4}{-60}{20}
-\end{scope}
-
-\begin{scope}[yshift=-3cm,yscale=3/180]
-\UniteDegre
-\OrdBode{30} 
-\semilog{-1}{4}{-180}{0}
-\end{scope}
-\end{tikzpicture}
-
-\end{tkzexample}
-
-\caption{Grille semilog}
+\end{tikzexample}
+\caption{Grille semilog avec graduation}
 \label{fig:semilog}
 \end{figure}
 
 
-\subsection{Grille semilog sans graduation / grid without graduation}
 
-La commande \verb"\semilogNG{nbdec}{y}"   permet de tracer des diagrammes semi log sans graduation, le premier paramètre est le nombre de décade, le second l'amplitude des ordonées.
 
-\begin{tkzexample}[latex=8cm,small]
-\begin{tikzpicture}[yscale=3/50,xscale=\textwidth/3cm]
+\traduction{
+L'amplitude des coordonnÃ©es de lâ€™abscisse doit Ãªtre donnÃ©e en dÃ©cade, de $10^\text{dÃ©cade mini}$  Ã    $10^\text{dÃ©cade maxi}$, l'ordonnÃ©e varie elle de $ymini$ Ã  $ymaxi$.
+
+On utilisera les commandes d'Ã©chelles de tikz pour adapter les dimensions de la grille Ã  celle de la page. Ainsi si on souhaite afficher un diagramme d'amplitude de 5 dÃ©cades de $10^{-1}$  Ã   $10^{4}$ sur \SI{7}{\centi\metre}  et  $\SI{80}{\deci\bel}$   de  $-60$ Ã   $\SI{20}{\deci\bel}$ sur \SI{3}{\centi\metre}, le diagramme de phase de$\ang{- 180}$    Ã    $\ang{0}$  sur $\SI{3}{\cm}$    avec un pas vertical de \ang{30}en prÃ©cisant les unitÃ©s (fig.~\ref{fig:semilog}).
+}
+{
+The amplitude of the coordinates of the X axis must be given in decades, from $10^\text{minimum decade}$  to $10^\text{maxi decade}$. 
+
+You can use the commands of the tikz scales to adjust the grid dimension to the one of the page.  Therefore, if you would like to attach an amplitude graph of 5 decades of $10^{-1}$  to  $10^4$  on \SI{7}{\centi\metre} and   \SI{80}{\deci\bel}   of  $-60$  to  $\SI{20}{\deci\bel}$  on \SI{3}{\centi\metre}, phase graph of  $-\ang{180}$    to   $\ang{0}$   on   $\SI{3}{\cm}$   with a vertical step of  \ang{30}  specifying the unites (fig.~\ref{fig:semilog}).
+}
+
+
+
+
+
+\subsection{\TradEnLigne{Grille semilog sans graduation}{grid without graduation} }
+
+
+\begin{itemize}
+\item  \myverb{\semilogNG{nbdec}{y}}
+\end{itemize}
+
+\traduction{
+Cette commande   permet de tracer des diagrammes semi log sans graduation (fig.~\ref{fig:semilogNG}), le premier paramÃ¨tre est le nombre de dÃ©cade, le second l'amplitude des ordonnÃ©es.
+}
+{
+This command   allows to draw semilog graphs without graduation (fig.~\ref{fig:semilogNG}), the first parameter is the number of decade, the second the amplitude of ordinates. 
+}
+
+\begin{figure}[!htb]
+\centering
+\begin{tikzexample}[title=,righthand width=0.5\textwidth,] 
+\begin{tikzpicture}
+[yscale=3/50,
+xscale=0.9\textwidth/3cm]
 \semilogNG{3}{50}
 \end{tikzpicture} 
-\end{tkzexample}
-
-\subsection{Paramètres de configuration des diagrammes / parameters}
-
-\begin{itemize}
-\item \verb"\UnitedB" permet d'afficher les unités pour un diagramme d'amplitude
-\item \verb"\UniteDegre" permet d'afficher les unités pour un diagramme de phase,
-\item \verb"\OrdBode{pas}" permet de préciser le pas des graduations verticales (par défaut 10) du diagramme semilog,
-\item \verb"\Unitx{} " et \verb"\Unity{}"permettent de choisir directement les unités à afficher, à utiliser sous la forme \verb"\def\Unity{}"
-\end{itemize}
-
-Les styles de tracé  par défaut sont définis à l'aide de la commande \verb"\tikzset" :
-\begin{itemize}
-\item \verb"Bode lines/.style={very thick, blue}": style par défaut des tracé de bode (amplitude et gain);
-\item \verb"asymp lines/.style={Bode lines,thin}": style, déduit du précédent, utilisable pour tracer les asymptotes;
-\item \verb"semilog lines/.style={thin, brown}": style par défaut de la grille semilog;
-\item \verb"semilog half lines/.style={semilog lines 2, dashed }": style par défaut des demi pas de la grille semilog;
-\item \verb"semilog label x/.style={semilog lines,below,font=\tiny}": style des labels de l'axe des abscisses de la grille semilog;
-\item \verb"semilog label y/.style={semilog lines,right,font=\tiny}": idem pour l'axe des ordonnées.
-\end{itemize}
+\end{tikzexample}
+\caption{Grille semilog sans graduation}
+\label{fig:semilogNG}
+\end{figure}
 
 
-Vous pouvez, en modifiant ces styles agir les tracés par défaut.
 
-\begin{tkzexample}[latex=8cm,small]
+\subsection{\TradEnLigne{ParamÃ¨tres}{ parameters}}
+
+
+
+\begin{figure}[!htb]
+\centering
+\begin{tikzexample}[title=,righthand width=0.55\textwidth,] 
+
 \begin{tikzpicture}
-\begin{scope}[yscale=2/50,
-xscale=0.9\textwidth/3cm]
-\semilog*{0}{3}{-20}{30}
+[xscale=7/5]
+\begin{scope}[yscale=3/80]
+\UnitedB
+\semilog*{-1}{4}{-60}{20}
+\end{scope}
+
+\begin{scope}
+[yshift=-3cm,yscale=3/180]
+\UniteDegre
+\OrdBode{30} 
+\semilog*{-1}{4}{-180}{0}
+\end{scope}
+\end{tikzpicture}
+
+\end{tikzexample}
+
+\caption{Grille semilog avec unitÃ©s}
+\label{fig:semilog-parametre}
+\end{figure}
+
+
+\begin{itemize}
+\item  \myverb{\UnitedB}
+
+\traduction{permet d'afficher les unitÃ©s pour un diagramme d'amplitude}{
+allows to attach unites for an amplitude graph
+}
+
+
+%\myverb{\uniteDB}
+
+\item  \myverb{ \UniteDegre}
+
+\traduction{permet d'afficher les unitÃ©s pour un diagramme de phase.}
+{ allows to attach unites for a phase graph.}
+
+\item  \myverb{\OrdBode{pas}}
+
+\traduction{permet de prÃ©ciser le pas des graduations verticales (par dÃ©faut 10) du diagramme semilog.}
+{allows to specify the step of vertical graduations ( 10 by default) of the graph
+}
+
+\item  \myverb{\Unites{label axe X}{label axe Y}}
+
+\traduction{permet de prÃ©ciser directement les unitÃ©s des axes.}
+{allows to specify the label of axes
+}
+\item  \myverb{\Unitx{}} et  \myverb{\Unity{}}
+
+\traduction{permettent de choisir directement les unitÃ©s Ã  afficher, Ã  utiliser sous la forme 
+{\texttt{\def\Unity{}} }
+}
+{allow to choose directly the unites to attach, to be used under the form {\texttt{\def\Unity{}} }
+}
+
+\end{itemize}
+
+
+
+
+
+
+
+\subsubsection{Style du diagramme}
+
+
+\begin{figure}[!htb]
+\centering
+\begin{tikzexampleL}[title= ]
+\begin{tikzpicture}
+\begin{scope}[yscale=2/50,xscale=0.9\textwidth/2cm]
+\semilog*{0}{2}{-20}{30}
 \end{scope}
 \begin{scope}[yshift=-3cm, 
-yscale=2/50,xscale=0.9\textwidth/3cm]
-\tikzset{
-    semilog lines/.style={thin, blue},
-    semilog lines 2/.style={semilog lines,
-     red!50 },
-    semilog half lines/.style={semilog lines 2,
-     dotted },
-    semilog label x/.style={semilog lines,
-    below,font=\tiny},
-    semilog label y/.style={semilog lines,
-    right,font=\tiny}
+yscale=2/50,xscale=0.9\textwidth/2cm]
+\tikzset{ 
+	semilog lines/.style={thin, blue},
+	semilog lines 2/.style={semilog lines,red!50 },
+	semilog half lines/.style={semilog lines 2,dotted },
+	semilog label x/.style= {semilog lines, below,font=\tiny},
+	semilog label y/.style={semilog lines,right,font=\tiny}
 }
-\semilog*{0}{3}{-20}{30}
+\semilog*{0}{2}{-20}{30}
 \end{scope}
 \end{tikzpicture} 
-\end{tkzexample}
+\end{tikzexampleL}
 
 
 
 
-\subsection{Tracé des diagrammes / Drawing bode graph}
+\caption{Modification des styles par dÃ©faut}
 
-Les commandes de tracés nécessitent que  gnuplot (\url{http://www.gnuplot.info/}) soit installé et utilisable par votre distribution \LaTeX.
+\label{fig:semilogstyle}
+\end{figure}
 
-Trois commandes permettent de tracer les diagrammes d'amplitude et de phase (figure~\ref{fig:utilBodeGraph}). 
+
+
+\traduction{Les styles de tracÃ©  par dÃ©faut sont dÃ©finis Ã  l'aide de la commande \texttt{\textbackslash tikzset } (voir figure~\ref{fig:semilogstyle})}{Default drawing styles are defined by the command  \texttt{\textbackslash tikzset } ( see figure~\ref{fig:semilogstyle})  }
+
 \begin{itemize}
-\item \verb"\BodeGraph[Options]{domain}{fonction}"  pour le diagramme d'amplitude et de phase;
-\item \verb"\BodeGraph*[Options]{domain}{fonction}{[options]{texte}}"  réalise le tracé et ajoute le texte avec les options précisées à l'extrémité.
-\item \verb"\BodePoint[Options]{liste}{fonction}"  place les points de la liste  sur le diagramme;
-\end{itemize}
-avec
-\begin{itemize}
-\item \verb"domain"  le domaine du tracé précisé en puissance de 10, ainsi pour tracer une fonction de $10^{-2}$~rad/s  à  $10^{2}$~rad/s  on notera le domaine \verb"-2:2";
-\item \verb"fonction"  la fonction à tracé écrite avec la syntaxe gnuplot.
-\item \verb"options"  par défaut les options suivantes \verb"[samples=50, thick, blue]"  sont appliquées, toutes les options de tracé de tikz et de gnuplot peuvent être utilisées et substituent à celle par défaut, on notera principalement
-\begin{itemize}
-\item spécifiques à tikz
-\begin{itemize}
-\item la couleur, [red],  [blue], \dots
-\item l'épaisseur [thin], [thick], \dots
-\item le style [dotted] [dashed], \dots
-\end{itemize}
-\item  spécifiques à gnuplot
-\begin{itemize}
-\item le nombre de points [samples=xxx]
-\item l'identifiant du fichier créé [id=nomdufichier], il est à noter que tikz, sauvegarde au premier appel de gnuplot la table des valeurs et que si celle-ci est inchangée lors d'une compilation ultérieure, tikz réutilise la table précédemment sauvée. il est donc important pour minimiser le temps de compilation de préciser un id différent pour chaque courbe, par défaut les macros sauvegardent les graphes dans des fichiers différents (incrémentation d'un compteur), il n'est donc utile de nommer la courbe que si vous souhaitez la retrouver.
-\item le répertoire de sauvegarde des tables de données [prefix=repertoire/] (par défaut \verb"prefix=gnuplot/\jobname"). Cette configuration par défaut est réglé par un style défini à l'aide de \\ \verb"\tikzset" : \verb"gnuplot def/.style={samples=50,id=\arabic{idGnuplot},prefix=gnuplot/\jobname }".
-\end{itemize}
-\item pour les autres options, consulter la documentation de tikz.
-\end{itemize}
-\item styles prédéfinis: plusieurs styles sont prédéfinis à l'aide de la commande \verb"\tikzset", voir plus haut, la description des styles.
+\item  \myverb{ Bode lines/.style={very thick, blue}}:
+
+\traduction{ style par dÃ©faut des tracÃ© de bode (amplitude et gain);}{
+default style of the bode plot (amplitude and gain) ;
+}
+
+\item  \myverb{ asymp lines/.style={Bode lines,thin}}: 
+
+\traduction{style, dÃ©duit du prÃ©cÃ©dent, utilisable pour tracer les asymptotes;}
+{ style, deduced by the previous one, it can be used to trace the asymptotes, ; 
+}
+
+\item  \myverb{ semilog lines/.style={thin, brown}}:\\
+\traduction{  style par dÃ©faut de la grille semilog;}
+{default style of the semilog grid ; 
+}
+\item  \myverb{ semilog half lines/.style={semilog lines 2, dashed }}: 
+
+\traduction{style par dÃ©faut des demi pas de la grille semilog;}
+{default style of the grid half step ; 
+}
+
+\item  \myverb{ semilog label x/.style={semilog lines,below,font=\tiny}}: 
+
+\traduction{style des labels de l'axe des abscisses de la grille semilog;}{
+style of the grid X axis labels ; 
+}
+\item  \myverb{ semilog label y/.style={semilog lines,right,font=\tiny}}: 
+
+\traduction{ idem pour l'axe des ordonnÃ©es.}{
+do the same for the Y axis 
+}
 \end{itemize}
 
-    
 
-Ainsi pour tracer le diagramme d'amplitude de la  fonction du  premier ordre, $H(s) =\dfrac{3}{1+0.3\cdot s}$ entre $10^{-2}$~rad/s  et   $10^{2}$~rad/s sur une grille semi logarithmique, on utilise la séquence de commandes  ci-dessous.
+
+% 
+
+
+\traduction{ Vous pouvez, en modifiant ces styles agir les tracÃ©s par dÃ©faut (fig.~\ref{fig:semilogstyle}).}{
+You can move the defaults drawings by modifying these styles
+}
+
+
+
+
+
+\subsection{ \TradEnLigne{TracÃ© des diagrammes}{Drawing bode graph} }
+
+\subsubsection{\TradEnLigne{Commandes}{Commands}}
+
+\traduction{Les commandes de tracÃ©s nÃ©cessitent que  gnuplot (\url{http://www.gnuplot.info/}) soit installÃ© et utilisable par votre distribution \LaTeX.}{Plot commands require gnuplot (\url{http://www.gnuplot.info/}) to be installed and usable by your \LaTeX distribution.
+}
+
+\traduction{Trois commandes permettent de tracer les diagrammes d'amplitude et de phase. (fig.~\ref{fig:utilBodeGraph}).}{Three commands allow you to draw amplitude and phase diagrams (fig.~\ref{fig:utilBodeGraph}).}
+
+\begin{itemize}
+\item  \myverb{\BodeGraph[Options]{domain}{fonction}}:
+
+\traduction{pour le diagramme d'amplitude et de phase.}{
+for the amplitude and phase graph.
+}
+
+\item  \myverb{\BodeGraph*[Options]{domain}{fonction}{[options]{texte}}} 
+
+ \traduction{ rÃ©alise le tracÃ© et ajoute le texte avec les options prÃ©cisÃ©es Ã  l'extrÃ©mitÃ©.}{
+draw the graph and add the text by using the options at the end.
+}
+
+\item \myverb{\BodePoint[Options]{liste}{fonction}}
+
+\traduction{ place les points de la liste  sur le diagramme.}
+{place the list points on the graph.
+}
+
+\end{itemize}
+
+
+
+\TradEnLigne{avec}{with}
+
+\begin{itemize}
+\item  \myverb{domain}: 
+
+\traduction{
+le domaine du tracÃ© prÃ©cisÃ© en puissance de 10, ainsi pour tracer une fonction de $\SI{e-2}{\radian\per\second}$  Ã   $\SI{e3}{\radian\per\second}$  on notera le domaine \textbf{ \{-2:3\} }.}{
+the graph domain precised in power of 10 le, therefore to draw a function of  $\SI{e-2}{\radian\per\second}$ to  $\SI{e3}{\radian\per\second}$ you will note the domain \textbf{ \{-2:3\} }. 
+}
+
+\item  \myverb{ fonction} 
+
+\traduction{ la fonction Ã  tracer Ã©crite avec la syntaxe gnuplot.}
+{the function on the drawing written with gnuplot syntax.}
+
+\item  \myverb{ options}  
+
+\traduction{Toutes les options de tracÃ© de tikz et de gnuplot peuvent Ãªtre utilisÃ©es et substituent Ã  celle par dÃ©faut, on notera principalement:}{all the options of tikz and gnuplot drawings can be used to replace the default ones, it may be noted mainly:}
+
+
+
+\begin{itemize}
+\item \TradEnLigne{spÃ©cifiques Ã  tikz}{specifics to tikz}
+\begin{itemize}
+\item \TradEnLigne{la couleur}{the colour} : \myverb{[red]},   \myverb{[blue]}, \dots
+\item \TradEnLigne{l'Ã©paisseur}{the thickness}:   \myverb{[thin]}, \myverb{[thick]}, \dots
+\item \TradEnLigne{le style}{the style}: \myverb{[dotted]}, \myverb{[dashed]}, \dots
+\end{itemize}
+\item  \TradEnLigne{spÃ©cifiques Ã  gnuplot}{specifics to gnuplot}
+\begin{itemize}
+\item \TradEnLigne{nombre de points}{number of points} : \myverb{ [samples=xxx] }
+
+\item \TradEnLigne{Nom du  fichier crÃ©Ã©}{File name}   \myverb{[id=nomdufichier]} 
+
+\item \TradEnLigne{RÃ©pertoire par dÃ©faut}{default directory}  \myverb{prefix=gnuplot/\jobname}
+
+\item \TradEnLigne{valeurs par dÃ©faut}{ default values} :  \myverb{ [samples=50, thick, blue]}) l
+
+
+\traduction{Il est Ã  noter que tikz, sauvegarde au premier appel de gnuplot la table des valeurs et que si celle-ci est inchangÃ©e lors d'une compilation ultÃ©rieure, tikz rÃ©utilise la table prÃ©cÃ©demment sauvÃ©e. il est donc important pour minimiser le temps de compilation de prÃ©ciser un id diffÃ©rent pour chaque courbe, par dÃ©faut les macros sauvegardent les graphes dans des fichiers diffÃ©rents (incrÃ©mentation d'un compteur).}
+{It should be noticed that tikz saves at the first order of gnuplot the table of values and if it is not modified at the time of a further compilation, tikz reuses the table previously saved. Therefore, it is important, in order to reduce the compilation time, to specify a different id for each curve. As default macros save the graphs into different files (incrementing a counter).}
+
+\item RÃ©pertoire/ directory:  \myverb{[prefix=repertoire/] }
+
+\traduction{Le rÃ©pertoire de sauvegarde des tables de donnÃ©es . Cette configuration par dÃ©faut est rÃ©glÃ© par un style dÃ©fini en utilisant la commande :}{
+This default configuration is regulated by a style defined using: 
+}
+
+{\scriptsize
+  \myverb{\tikzset{gnuplot def/.style={samples=50,id=\arabic{idGnuplot},prefix=gnuplot/\jobname } }}
+}
+
+\traduction{Sur certains systÃ¨mes (windows),  le rÃ©pertoire \textbf{gnuplot/\jobname } est crÃ©Ã© par gnuplot, si ce n'est pas le cas,  vous devez le crÃ©er.}{On some systems (windows), the \textbf{gnuplot/\jobname } directory is created by gnuplot, if this is not the case, you must create it.}
+\end{itemize}
+\item \TradEnLigne{pour les autres options, consulter la documentation de tikz.}{ for the other options consult tikz documentation.}
+\end{itemize}
+\item \TradEnLigne{styles prÃ©dÃ©finis}{preset styles} :
+
+\traduction{ 
+plusieurs styles sont prÃ©dÃ©finis.}{many styles are preset.}
+\end{itemize}
+
+
+
+\subsubsection{\TradEnLigne{Exemples}{Examples}}
+
+\traduction{Pour tracer le diagramme d'amplitude de la  fonction du  premier ordre, $H(s) =\dfrac{3}{1+0.3\cdot s}$ entre $10^{-2}$~rad/s  et   $10^{2}$~rad/s sur une grille semi logarithmique, on utilise la sÃ©quence de commandes  ci-dessous.}{To draw an amplitude graph of the first order function , $H(s) =\dfrac{3}{1+0.3\cdot s}$ between $10^{-2}$~rad/s  et   $10^{2}$~rad/s  on a semi logarithmic grids, you can use the commands sequence below.}
 
 \begin{figure}[!ht]
 \centering
-\begin{tkzexample}[latex=8cm,small]
-\begin{tikzpicture}[xscale=7/4,yscale=5/30]
+\begin{tikzexample}[title=,righthand width=0.4\textwidth,] 
+\begin{tikzpicture}
+[xscale=5/4,yscale=5/30]
+\NomGnuplot[orde1-]
+\UnitedB
 \semilog{-2}{2}{-20}{10}
-\BodeGraph{-2:2}{20*log10(abs(3/sqrt
-(1+(0.3*10**t)**2)))}
+\BodeGraph{-2:2}
+{20*log10(abs(3/sqrt(1+(0.3*10**t)**2)))}
 \end{tikzpicture}
-\end{tkzexample}
+\end{tikzexample}
 \caption{Utilisation de BodeGraph}
 \label{fig:utilBodeGraph}
 \end{figure}
@@ -334,431 +584,539 @@ Ainsi pour tracer le diagramme d'amplitude de la  fonction du  premier ordre, $H
 
 \begin{figure}[!ht]
 \centering
-\begin{tkzexample}[latex=8cm,small]
-\begin{tikzpicture}[xscale=7/4,yscale=5/30]
+\begin{tikzexample}[title=,righthand width=0.45\textwidth,] 
+\begin{tikzpicture}
+[xscale=6/4,yscale=5/30]
+\Unites{rad/s}{Module en dB}
 \semilog{-2}{2}{-20}{10}
-\BodePoint{0.1,0.15,0.5,1,2.5,5,10,50,80}
+\BodePoint{0.1,0.15,0.5,1,2.5,
+5,10,20,50,80}
 {20*log10(abs(3/sqrt
 (1+(0.3*10**t)**2)))}
 \end{tikzpicture}
-\end{tkzexample}
+\end{tikzexample}
 \caption{Utilisation de BodePoint}
 \label{fig:utilBodePoint}
 \end{figure}
 
+\clearpage
+
+\subsection{\TradEnLigne{Fonctions de transfert Ã©lÃ©mentaires prÃ©programmÃ©es }{\\ pre-programmed elementary transfer functions }}
+
+\traduction{Les fonctions de base pour tracer les diagrammes de Bode des systÃ¨mes du premier, du second ordre, et l'intÃ©gration, sont directement implÃ©mentÃ©es dans le package ainsi que  les diagrammes asymptotiques de ces mÃªme fonctions.}{Basic functions to draw Bode graphs of the first, second order systems, and integration, are directly implemented in the package, as well as asymptotic graphs of the same functions.}
 
 
-\subsection{Fonctions de transfert élémentaires}
 
-Les fonctions de base pour tracer les diagrammes de Bode des systèmes du premier, du second ordre, et l'intégration, sont directement implémentées dans le package ainsi que  les diagrammes asymptotiques de ces même fonctions. 
-
-Ces fonctions ne peuvent être utilisées qu'avec les commandes de tracé:
-\begin{itemize}
-\item \verb"\BodeGraph[Options]{domaine}{fonction}";
-\item \verb"\BodeGraph*[Options]{domaine}{fonction}";
-\end{itemize}
-
-Le tracé des asymptotes présente un défaut à la cassure, cela est du à la finesse du tracé avec gnuplot, pour améliorer ce tracé, il est possible d'utiliser l'option \verb"const plot" qui permet de tracer des créneaux et d'augmenter le nombre de points à calculer \verb"samples=xxx" et  mais cela risque d'accroître  le temps de compilation.
-
-
-\subsubsection{Premier ordre}
-
-Deux commandes implémentent les formules permettant le tracé des diagrammes d'amplitude et de phase par gnuplot de la fonction du premier ordre $H_1(s)=\dfrac{K}{1+\tau\cdot s}$ et deux autres les diagrammes asymptotiques (figure~\ref{fig:premierordre}):
+\traduction{Ces fonctions ne peuvent Ãªtre utilisÃ©es qu'avec les commandes de tracÃ©:}{These functions can only be used with the drawing commands : }
 
 \begin{itemize}
-\item \verb"\POAmp{K}{tau}"  pour le diagramme d'amplitude, avec \verb"K" le gain \verb"tau" la constante de temps;
-\item \verb"\POAmpAsymp{K}{tau}"  pour le diagramme asymptotique d'amplitude;
-\item \verb"\POArg{K}{tau}"  pour le diagramme de phase; 
-\item \verb"\POArgAsymp{K}{tau}"  pour le diagramme  asymptotique de phase.
+\item  \myverb{\BodeGraph[Options]{domaine}{fonction}};
+\item  \myverb{\BodeGraph*[Options]{domaine}{fonction}};
 \end{itemize}
 
-Remarque : la donnée, \verb"{K}" n'est pas utile pour tracer le diagramme de phase, il est juste maintenu pour faciliter l'écriture de la fonction par copie directe de la commande de tracer du module.
+\traduction{Le tracÃ© des asymptotes prÃ©sente un dÃ©faut Ã  la cassure, cela est du Ã  la finesse du tracÃ© avec gnuplot, pour amÃ©liorer ce tracÃ©, il est possible d'utiliser l'option  \textbf{ const plot} qui permet de tracer des crÃ©neaux et d'augmenter le nombre de points Ã  calculer  \textbf{ samples=xxx} et  mais cela risque dâ€™accroÃ®tre  le temps de compilation.}
+{Asymptotes graph presents a defect on the break, this is due to the thinness of the graph with gnuplot. To improve this drawing, it is possible to use the option \textbf{ const plot} which allows to draw crenels and to increase the number of points to calculate \textbf{ samples=xxx} . However, this risks to increase the compilation time. }
 
-\begin{figure}[!ht]
+\newpage
+
+\subsubsection{\TradEnLigne{Premier ordre}{First order}}
+
+\traduction{Deux commandes implÃ©mentent les formules permettant le tracÃ© des diagrammes d'amplitude et de phase par gnuplot de la fonction du premier ordre $H_1(s)=\dfrac{K}{1+\tau\cdot s}$ et deux autres les diagrammes asymptotiques (fig.~\ref{fig:premierordre}):}{Two commands implement formulae which allow the drawing of amplitude and phase graphs , through gnuplot, of the first order function $H_1(s)=\dfrac{K}{1+\tau\cdot s}$ And two others for the asymptotic graphs  (fig.~\ref{fig:premierordre}):}
+
+
+\begin{figure}[!htb]
 \centering
-\begin{tkzexample}[latex=8cm,small]
+\begin{tikzexample}[title=,righthand width=0.55\textwidth,] 
 
-\begin{tikzpicture}[xscale=7/4]
-\begin{scope}[yscale=3/40]
+\begin{tikzpicture}
+[xscale=7/4]
+\begin{scope}[yscale=4/40]
 \semilog{-2}{2}{-20}{20}
-\BodeGraph[asymp lines,samples=100]{-2:2}
-{\POAmpAsymp{6}{0.3}}
-\BodeGraph{-2:2}{\POAmp{6}{0.3}}
+\BodeGraph[asymp lines,red,samples=100]
+{-2:2}{\POAmpAsymp{6}{0.3}}
+\BodeGraph{-2:2}
+{\POAmp{6}{0.3}}
 \end{scope}
 
-\begin{scope}[yshift=-2.5cm,yscale=3/90]
+\begin{scope}
+[yshift=-3.5cm,yscale=4/90]
 \semilog{-2}{2}{-90}{0}
-\BodeGraph[asymp lines,samples=100, const plot]{-2:2}
+\BodeGraph[asymp lines,
+red, samples=100,
+ const plot]{-2:2}
 {\POArgAsymp{6}{0.3}}
-\BodeGraph{-2:2}{\POArg{6}{0.3}}
+\BodeGraph{-2:2}
+{\POArg{6}{0.3}}
 \end{scope}
 \end{tikzpicture}
 
-\end{tkzexample}
+\end{tikzexample}
 \caption{Premier ordre}
 \label{fig:premierordre}
 \end{figure}
 
 
 
-
-
-\subsubsection{Second ordre}
-
-Deux commandes implémentent les formules permettant le tracé des diagrammes d'amplitude et de phase par gnuplot de la fonction du second  ordre $H_2(s)=\dfrac{K}{1+\dfrac{2\cdot z}{\omega_n}\cdot s +\dfrac{s^2}{\omega_n^2}}$ et deux pour le tracé des asymptotes (figure~\ref{fig:Secondordre}):
 \begin{itemize}
-\item \verb"\SOAmp{K}{z}{Wn}" pour le diagramme d'amplitude, avec \verb"K" le gain, \verb"z"  le coefficient d'amortissement et \verb"Wn"  la pulsation propre;
-\item \verb"\SOAmpAsymp{K}{z}{Wn}" pour le diagramme asymptotique d'amplitude;
-\item \verb"\SOArg{K}{z}{Wn}"  pour le diagramme de phase;
-\item \verb"\SOArgAsymp{K}{z}{Wn}"  pour le diagramme asymptotique de phase;
+\item  \myverb{\POAmp{K}{tau}}  \TradEnLigne{pour le diagramme d'amplitude, avec  \textbf{ K} le gain  \textbf{ tau} la constante de temps}{  for the amplitude graph, with  \textbf{K} as  gain  \textbf{tau}  constant of time };
+\item  \myverb{\POAmpAsymp{K}{tau}}  \TradEnLigne{pour le diagramme asymptotique d'amplitude}{for the asymptotic amplitude graph};
+\item  \myverb{\POArg{K}{tau}}  \TradEnLigne{pour le diagramme de phase}{for the phase graph}; 
+\item  \myverb{\POArgAsymp{K}{tau}}  \TradEnLigne{pour le diagramme  asymptotique de phase}{for the asymptotic phase graph}.
 \end{itemize}
 
+\traduction{Remarque :  \textbf{ K} n'est pas utile pour tracer le diagramme de phase, il est juste maintenu pour faciliter l'Ã©criture de la fonction par copie directe de la commande de tracer du module.}{Note: \textbf{K} is not useful anymore to trace a phase graph,it is only kept to simplify the writing od the function by a direct copy of the module drawing.}
 
-\begin{figure}[!ht]
+
+
+
+%\newpage
+
+\subsubsection{\TradEnLigne{Second ordre}{Second order }}
+
+
+\begin{figure}[!htb]
 \centering
-\begin{tkzexample}[latex=8cm,small]
+\begin{tikzexample}[title=,righthand width=0.55\textwidth,] 
 \begin{tikzpicture}[xscale=7/3]
 \tikzset{
-    mylines/.style={very thick, red},
-    myasymp/.style={Bode lines,thin,black},
-}
-\begin{scope}[yscale=3/40]
+mylines/.style={very thick, red},
+myasymp/.style={Bode lines,thin,blue}}
+\begin{scope}[yscale=4/40]
 \UnitedB
 \semilog{-1}{2}{-20}{20}
 \BodeGraph[myasymp]{-1:1.7}
-{+\SOAmpAsymp{6}{0.3}{10}}
-\BodeGraph[mylines,samples=101]{-1:1.7}
+{\SOAmpAsymp{6}{0.3}{10}}
+\BodeGraph[mylines,
+samples=101]{-1:1.7}
 {\SOAmp{6}{0.3}{10}}
 \end{scope}
-\begin{scope}[yshift=-2.5cm,yscale=3/180]
+\begin{scope}
+[yshift=-3cm,yscale=4/180]
 \OrdBode{30}
 \UniteDegre
 \semilog{-1}{2}{-180}{0}
-\BodeGraph[myasymp]{-1:0.999}
-{\SOArgAsymp{6}{0.3}{10}}
-\BodeGraph[myasymp]{1:2}
+\BodeGraph[myasymp, const plot]{-1:2}
 {\SOArgAsymp{6}{0.3}{10}}
 \BodeGraph[mylines]{-1:2}
 {\SOArg{6}{0.3}{10}}
 \end{scope}
 \end{tikzpicture}
-\end{tkzexample}
+\end{tikzexample}
 \caption{Second ordre}
 \label{fig:Secondordre}
 \end{figure}
 
 
+\traduction{Deux commandes implÃ©mentent les formules permettant le tracÃ© des diagrammes d'amplitude et de phase par gnuplot de la fonction du second  ordre $H_2(s)=\dfrac{K}{1+\frac{2\cdot z}{\omega_n}\cdot s +\frac{s^2}{\omega_n^2}}$ et deux pour le tracÃ© des asymptotes (fig.~\ref{fig:Secondordre}):}{Two commands implement formulae which allow the drawing of amplitude and phase graphs of the second order function  $H_2(s)=\dfrac{K}{1+\frac{2\cdot z}{\omega_n}\cdot s +\frac{s^2}{\omega_n^2}}$  And two for the asymptotic graphs (fig.~\ref{fig:Secondordre}): }
 
-
-
-
-\subsubsection{Intégrateur}
- $H_i(s)=\dfrac{K}{s}$ (figure~\ref{fig:integrateur})
 \begin{itemize}
-\item \verb"\IntAmp{K}"  pour le diagramme d'amplitude;
-\item \verb"\IntArg{K}"     pour le diagramme de phase.
+\item  \TradEnLigne{Pour le diagramme d'amplitude, avec  \textbf{K} le gain,  \textbf{z}  le coefficient d'amortissement et  \textbf{Wn}  la pulsation propre;}{for the amplitude graph, with \textbf{K}  the gain, \textbf{z}  damping coefficient  and  \textbf{Wn}  the natuarl pulsation  }: \\
+\myverb{\SOAmp{K}{z}{Wn}}
+\item   \TradEnLigne{Pour le diagramme asymptotique d'amplitude}{ for the asymptotic amplitude graph  }:\\ \myverb{\SOAmpAsymp{K}{z}{Wn}}
+\item  \TradEnLigne{Pour le diagramme de phase}{for the phase graph}:\\ \myverb{\SOArg{K}{z}{Wn} } 
+\item \TradEnLigne{Pour le diagramme asymptotique de phase;}{for the asymptotic phase graph}: \\
+\myverb{\SOArgAsymp{K}{z}{Wn}}  
 \end{itemize}
 
 
-\begin{figure}[!ht]
+
+%\newpage
+
+\subsubsection{\TradEnLigne{IntÃ©grateur}{Integrator }}
+ $H_i(s)=\dfrac{K}{s}$ (fig.~\ref{fig:integrateur})
+\begin{itemize}
+\item \TradEnLigne{Diagramme d'amplitude;}{Amplitude graph }:  \myverb{\IntAmp{K}}  
+\item  \TradEnLigne{Diagramme de phase.}{Phase graph}: \myverb{\IntArg{K}}     
+\end{itemize}
+
+
+\begin{figure}[!htb]
 \centering
-\begin{tkzexample}[latex=8cm,small]
+\begin{tikzexample}[title=,righthand width=0.55\textwidth,] 
 \begin{tikzpicture}
-\begin{scope}[xscale=7/4,yscale=3/80]
+\begin{scope}
+[xscale=7/4,yscale=2.5/80]
 \semilog{-2}{2}{-40}{40}
 \BodeGraph{-2:2}{\IntAmp{1}}
 \end{scope}
-
-\begin{scope}[yshift=-2.5cm,
-xscale=7/4,yscale=3/110]
+\begin{scope}[yshift=-2cm,
+xscale=7/4,yscale=2.5/110]
 \semilog{-2}{2}{-100}{10}
-\BodeGraph{-2:2}{+\IntArg{1}}
+\BodeGraph{-2:2}{\IntArg{1}}
 \end{scope}
 \end{tikzpicture} 
-\end{tkzexample}
-\caption{Intégrateur}
+\end{tikzexample}
+\caption{IntÃ©grateur}
 \label{fig:integrateur}
 \end{figure}
 
 
 
-\subsubsection{Gain seul}  $H_K(s)=K$ : \verb"\KAmp{K}" pour le diagramme d'amplitude (pas de diagramme de phase).
+
+\subsubsection{\TradEnLigne{Gain seul}{Gain alone}}
+
+$H_K(s)=K$ 
+
+\TradEnLigne{Pour le diagramme d'amplitude (pas de diagramme de phase).}{for the amplitude graph (not the phase graph) }:\\
+ \myverb{\KAmp{K}} 
 
 
-\subsubsection{Retard}  $H_r(s)=e^{-T_r\cdot s}$(figure~\ref{fig:ret1ordre})
+\subsubsection{\TradEnLigne{Premier Ordre gÃ©nÃ©ralisÃ©}{First order generalised }}
+$H(p)=K\dfrac{a_1+a_2\cdot p}{b_1+b_2\cdot p}$ (fig.~\ref{fig:premierordregeneralise})
+
+
+\TradEnLigne{Courbes rÃ©elles}{real curves}
 \begin{itemize}
-\item \verb"\RetAmp{Tr}"  pour le diagramme d'amplitude;
-\item \verb"\RetArg{Tr}"     pour le diagramme de phase.
+\item  \myverb{\POgAmp{K}{a1}{a2}{b1}{b2}} 
+\item  \myverb{\POgArg{K}{a1}{a2}{b1}{b2}}
 \end{itemize}
 
-\begin{figure}[!ht]
+Asymptotes
+\begin{itemize}
+\item  \myverb{\POgAmpAsymp{K}{a1}{a2}{b1}{b2}}
+\item  \myverb{\POgArgAsymp{K}{a1}{a2}{b1}{b2}}  
+\end{itemize}
+
+
+
+\TradEnLigne{$a_1$  et $b_1$  ne doivent pas Ãªtre nuls.}{$a_1$  and  $b_1$ must not be zero.}
+
+
+
+
+\begin{figure}[!htb]
 \centering
-\begin{tkzexample}[latex=8cm,small]
-\begin{tikzpicture}[xscale=7/3]
-\begin{scope}[yscale=4/50]
+\begin{tikzexample}[title=,righthand width=0.5\textwidth,]  
+\begin{tikzpicture}[xscale=7/4]
+\begin{scope}[yscale=4/40]
+\semilog{-2}{2}{-20}{10}
+\BodeGraph{-2:2}
+{\POgAmp{3}{4}{5}{6}{70}}
+\BodeGraph[thin,red]{-2:2}
+{\POgAmpAsymp{3}{4}{5}{6}{70}}
+\end{scope}
+\begin{scope}
+[yshift=-4cm,yscale=4/180]
+\OrdBode{30}
+\semilog{-2}{2}{-90}{60}
+\BodeGraph{-2:2}
+{\POgArg{3}{4}{5}{6}{70}}
+\BodeGraph[thin,red,const plot]{-2:2}
+{\POgArgAsymp{3}{4}{5}{6}{70}}
+\end{scope}
+\end{tikzpicture} 
+\end{tikzexample}
+\caption{Premier ordre gÃ©nÃ©ralisÃ©}
+\label{fig:premierordregeneralise}
+\end{figure}
+
+
+
+
+\subsubsection{\TradEnLigne{Retard}{Delay}}
+ $H_r(s)=e^{-T_r\cdot s}$(fig.~\ref{fig:ret1ordre})
+
+
+\begin{figure}[!htb]
+\centering
+\begin{tikzexampleL}[title=] 
+\begin{tikzpicture}[xscale=12/3]
+\begin{scope}[yscale=3.5/50]
 \UnitedB
 \semilog{0}{3}{-40}{10}
 \BodeGraph{0:3}{\RetAmp{0.08}}
-\BodeGraph[red]{0:3}{\POAmp{1}{0.08}}
-\BodeGraph[black]{0:3}{\POAmp{1}{0.08}
-+\RetAmp{0.08}}
-\draw [latex-](2.2,-0)--++(-0.1,-5)
-node[left]   {retard};
-\draw [latex-](2.2,-22)--++(-0.1,-5)
-node[left]  {1er  ordre};
-\draw [latex-](2.2,-22) --++(-0.1,-10)
-node[left] {1er  ordre retardé};
+\BodeGraph[red]{0:3}{\POAmp{1.0}{0.08}}
+\BodeGraph[black]{0:3}{\POAmp{1.0}{0.08}+\RetAmp{0.08}}
+\draw [latex-](2.2,-0)--++(-0.1,-5)node[left]   {retard};
+\draw [latex-](2.2,-22)--++(-0.1,-5)node[left]  {1er  ordre};
+\draw [latex-](2.2,-22) --++(-0.1,-10)node[left] {1er  ordre retardÃ©};
 \end{scope}
-\begin{scope}[yshift=-3.8cm,yscale=4/180]
+\begin{scope}[yshift=-3.5cm,yscale=3.5/180]
 \UniteDegre
 \OrdBode{30}
 \semilog{0}{3}{-180}{0}
 \BodeGraph{0:3}{\RetArg{0.08}}
 \BodeGraph[red]{0:3}{\POArg{1}{0.08}}
-\BodeGraph[black]{0:3}{\POArg{1}{0.08}
-+\RetArg{0.08}}
-\draw [latex-](2.8,-50)--++(-0.1,-10)
-node[left]   {retard};
-\draw [latex-](2.8,-88)--++(-0.1,+10)
-node[left]  {1er  ordre};
-\draw [latex-](2.8,-140) --++(-0.1,-10)
-node[left] {1er  ordre retardé};
+\BodeGraph[black]{0:3}{\POArg{1}{0.08}+\RetArg{0.08}}
+\draw [latex-](2.8,-50)--++(-0.1,-10)node[left]   {retard};
+\draw [latex-](2.8,-88)--++(-0.1,+10)node[left]  {1er  ordre};
+\draw [latex-](2.8,-140) --++(-0.1,-10)node[left] {1er  ordre retardÃ©};
 \end{scope}
 \end{tikzpicture}
-\end{tkzexample}
+\end{tikzexampleL}
 \caption{Retard et 1er ordre}
 \label{fig:ret1ordre}
 \end{figure}
-
-
-
-\subsubsection{Premier Ordre généralisé} $H(p)=K\dfrac{a_1+a_2\cdot p}{b_1+b_2\cdot p}$ (figure~\ref{fig:premierordregeneralise})
-\begin{multicols}{2}
-Courbes réelles
 \begin{itemize}
-\item \verb"\POgAmp{K}{a1}{a2}{b1}{b2}" 
-\item \verb"\POgArg{K}{a1}{a2}{b1}{b2}" 
+\item \myverb{\RetAmp{Tr}}:\\
+\traduction{TracÃ© du  diagramme d'amplitude.}{Plotting the amplitude diagram.}
+
+\item \myverb{\RetArg{Tr}}: \\
+\traduction{TracÃ© du  diagramme de phase.}{Plotting the phase graph.}
 \end{itemize}
 
-Asymptotes
-\begin{itemize}
-\item \verb"\POgAmpAsymp{K}{a1}{a2}{b1}{b2}" 
-\item \verb"\POgArgAsymp{K}{a1}{a2}{b1}{b2}"  
-\end{itemize}
-\end{multicols}
+\traduction{Sur la figure~\Ref{fig:ret1ordre} on note l'effet d'un retard sur une fonction de transfert du premier ordre. }{In the figure~\ref{fig:ret1ordre}, we note the effect of a delay on a first order transfer function.}
 
-$a_1$  et $b_1$  ne doivent pas être nuls.
+\subsubsection{\TradEnLigne{Fonctions inverses}{inverse functions}}
 
-
+\traduction{Ã€ partir des fonctions Ã©lÃ©mentaires ci-dessus il est facile de tracer les fonctions inverses en changeant uniquement le signe.}{Using the basic functions above, it is possible to draw the inverse functions just by changing their sign.}
 
 
 \begin{figure}[!ht]
 \centering
-\begin{tkzexample}[latex=8cm,small]
-\begin{tikzpicture}
-\begin{scope}[xscale=7/4,yscale=3/80]
-\semilog{-2}{2}{-40}{40}
-\BodeGraph{-2:2}{\POgAmp{3}{4}{5}{6}{70}}
-\BodeGraph[thin,red]{-2:2}
-{0+\POgAmpAsymp{3}{4}{5}{6}{70}}
-\end{scope}
+\begin{tikzexample}[title=,righthand width=0.55\textwidth,] 
 
-\begin{scope}[yshift=-3.5cm,
-xscale=7/4,yscale=3/180]
-\semilog{-2}{2}{-90}{90}
-\BodeGraph{-2:2}{\POgArg{3}{4}{5}{6}{70}}
-\BodeGraph[thin,red,const plot]{-2:2}
-{0+\POgArgAsymp{3}{4}{5}{6}{70}}
+\begin{tikzpicture}
+[xscale=7/4]
+\begin{scope}[yscale=4/40]
+\semilog{-2}{2}{-10}{30}
+\BodeGraph[asymp lines,red,samples=100]
+{-2:2}{-\POAmpAsymp{1}{0.3}}
+\BodeGraph{-2:2}
+{-\POAmp{1}{0.3}}
 \end{scope}
-\end{tikzpicture} 
-\end{tkzexample}
-\caption{Premier ordre généralisé}
-\label{fig:premierordregeneralise}
+\begin{scope}
+[yshift=-6cm,yscale=4/90]
+\semilog{-2}{2}{0}{90}
+\BodeGraph[asymp lines,
+red, samples=100,
+ const plot]{-2:2}
+{-\POArgAsymp{1}{0.3}}
+\BodeGraph{-2:2}
+{-\POArg{1}{0.3}}
+\end{scope}
+\end{tikzpicture}
+\end{tikzexample}
+\caption{Premier ordre au numÃ©rateur}
+\label{fig:premierordre}
 \end{figure}
 
 
-\subsubsection{Fonctions inverses}
-
-À partir des fonctions élémentaires ci dessus il est facile de tracer les fonctions inverses en changeant uniquement le signe.
 \begin{description}
-\item [Premier ordre au numérateur : ] $N_1(s)=1+T\cdot s$  avec 
+\item [\TradEnLigne{Premier ordre au numÃ©rateur}{ 1st order at the numerator}:] $N_1(s)=1+T\cdot s$ \TradEnLigne{avec}{with}
+
 \begin{itemize}
-\item \verb"\BodeGraph[Options]{domain}{-\POAmp{1}{T}}" pour le module,
-\item \verb"\BodeGraph[Options]{domain}{-\POArg{1}{T}}" pour la phase;
+\item  \TradEnLigne{pour le module}{for module}:\\
+ \myverb{\BodeGraph[Options]{domain}{-\POAmp{1}{T}}}
+\item  \TradEnLigne{pour la phase}{for phase}: \\
+\myverb{\BodeGraph[Options]{domain}{-\POArg{1}{T}}}
 \end{itemize}
-\item [Second ordre au numérateur : ]$N_2(s)=1+2\dfrac{2\cdot z}{\omega_n} cdot s +\dfrac{s^2}{\omega_n^2}$ avec 
+\item [\TradEnLigne{Second ordre au numÃ©rateur}{Second order in the numerator} : ]~\\ $N_2(s)=1+2\dfrac{2\cdot z}{\omega_n} \cdot s +\dfrac{s^2}{\omega_n^2}$ \\
+\TradEnLigne{avec}{with}
 \begin{itemize}
-\item \verb"\BodeGraph[Options]{domain}{-\SOAmp{1}{z}{Wn}}" pour le module,
-\item \verb"\BodeGraph[Options]{domain}{-\SOArg{1}{z}{Wn}}" pour la phase;
+\item  \TradEnLigne{pour le module}{for module}: \\
+ \myverb{\BodeGraph[Options]{domain}{-\SOAmp{1}{z}{Wn}}}
+\item  \TradEnLigne{pour la phase}{for phase}:\\
+ \myverb{\BodeGraph[Options]{domain}{-\SOArg{1}{z}{Wn}} }
 \end{itemize}
 
-\item [Dérivateur : ] $N_d(s)=s$ avec 
+\item [DÃ©rivateur : ] $N_d(s)=s$ avec 
 \begin{itemize}
-\item \verb"\BodeGraph[Options]{domain}{-\IntAmp{1}}" pour le module,
-\item \verb"\BodeGraph[Options]{domain}{-\IntArg{1}}" pour la phase.,
+\item  \TradEnLigne{Module}{Module} : \myverb{\BodeGraph[Options]{domain}{-\IntAmp{1}}} 
+\item \TradEnLigne{Phase}{Phase}: \myverb{\BodeGraph[Options]{domain}{-\IntArg{1}}} 
 
 \end{itemize}
 
 
 \end{description}
 
+
+\clearpage
+
 \subsection{Correcteurs}
 
-Les correcteurs de base sont aussi pre-programmés.
+\traduction{Les correcteurs de base sont aussi prÃ©-programmÃ©s.}{Basic correctors are also pre-programmed.}
 
-\paragraph{Correcteur P}$C(p)=K$
+\paragraph{\TradEnLigne{Correcteur Proportionnel  P}{Proportional controller P}} :$C(p)=K$
 \begin{itemize}
-\item module : \verb"\Kamp{K}"
-\item argument : \verb"\Karg{K}"\footnote{commande inutile, elle retourne 0}
+\item \TradEnLigne{Module}{Module} :  \myverb{\Kamp{K}}
+\item \TradEnLigne{Phase}{Phase} :  \myverb{\Karg{K}}\footnote{\TradEnLigne{commande inutile, elle retourne 0}{Useless command, it returns 0}}
 
 \end{itemize}
 
-\paragraph{Correcteur PI} $C(s)=K_p\cdot\dfrac{1+T_i\cdot s}{T_i\cdot s}$ (figure~\ref{fig:corpi})
+\paragraph{\TradEnLigne{Correcteur Proportionnel intÃ©grateur (PI)}{proportional-integral controller (PI)}}
+
+ $C(s)=K_p\cdot\dfrac{1+T_i\cdot s}{T_i\cdot s}$ (fig.~\ref{fig:corpi})
 
 \begin{multicols}{2}
+\begin{description}
+\item[Courbes rÃ©elles]~\\
 \begin{itemize}
-\item module : \verb"\PIAmp{Kp}{Ti}", 
-\item argument: \verb"\PIArg{Kp}{Ti}"
+\item module :  \myverb{\PIAmp{Kp}{Ti}}, 
+\item argument:  \myverb{\PIArg{Kp}{Ti}}
 \end{itemize}
-et les tracés asymptotiques
+
+\item[Asymptotes]~\\
+
 \begin{itemize}
-\item module : \verb"\PIAmpAsymp{Kp}{Ti}", 
-\item argument: \verb"\PIArgAsymp{Kp}{Ti}"
+\item module :  \myverb{\PIAmpAsymp{Kp}{Ti}}, 
+\item argument:  \myverb{\PIArgAsymp{Kp}{Ti}}
 \end{itemize}
+\end{description}
+
 \end{multicols}
 
 
 
 \begin{figure}[!ht]
 \centering
-\begin{tkzexample}[latex=8cm,small]
+\begin{tikzexample}[title=,righthand width=0.55\textwidth,] 
 \begin{tikzpicture}[xscale=7/3]
 \begin{scope}[yscale=3/40]
 \UnitedB
-%\node{\tiny \PIAmp{3}{0.5}};
 \BodeGraph[thick]{0:3}
 {\PIAmp{2}{0.08}}
 \BodeGraph[black]{0:3}
 {\PIAmpAsymp{2}{0.08}}
 \semilog{0}{3}{-10}{30}
 \end{scope}
-\begin{scope}[yshift=-1cm,yscale=3/90]
+\begin{scope}[yshift=-1.5cm,
+yscale=3/90]
 \UniteDegre
+\OrdBode{15}
 \semilog{0}{3}{-90}{0}
 \BodeGraph[thick]{0:3}
 {\PIArg{2}{0.08}}
-\BodeGraph[samples=2,black
-,samples=201]{0:3}{\PIArgAsymp{2}{0.08}}
+\BodeGraph[black
+,samples=201,const plot]{0:3}
+{\PIArgAsymp{2}{0.08}}
 \end{scope}
 \end{tikzpicture}
-\end{tkzexample}
+\end{tikzexample}
 \caption{Correcteur P.I}
 \label{fig:corpi}
 \end{figure}
 
+\clearpage
 
+\subsubsection{\TradEnLigne{Correcteur Proportionnel DerivÃ©e (PD)}{Derived proportional controller (PD)}}
 
-\subsubsection{Correcteur PD} $C(p)=K_p\cdot\left(1+T_d\cdot p\right)$, le correcteur PD programmé est un correcteur idéal, pour réaliser un correcteur réel, on utilisera le correcteur à avance de phase (figure~\ref{fig:corpd}).
-\begin{multicols}{2}
+ $C(s)=K_p\cdot\left(1+T_d\cdot s\right)$
+ 
+\traduction{Le correcteur PD programmÃ© est un correcteur idÃ©al, pour rÃ©aliser un correcteur rÃ©el, on utilisera le correcteur Ã  avance de phase (fig.~\ref{fig:corpd}).}{Controller PD programmed is an ideal corrector. To create an real  corrector, you can use the advance phase controller (fig.~\ref{fig:corpd}) }
+
+\begin{description}
+\item[\TradEnLigne{Courbes rÃ©elles}{Real curves}]~\\
 \begin{itemize}
-\item module : \verb"\PDAmp{Kp}{Td}",
-\item argument: \verb"\PDArg{Kp}{Td}"
+\item \TradEnLigne{Module}{Module}: \myverb{\PDAmp{Kp}{Td}},
+\item \TradEnLigne{Phase}{Phase}: \myverb{\PDArg{Kp}{Td}}
 \end{itemize}
-Asymptotes
+
+\item[Asymptotes]~\\
 \begin{itemize}
-\item module : \verb"\PDAmpAsymp{Kp}{Td}",
-\item argument: \verb"\PDArgAsymp{Kp}{Td}"
+\item \TradEnLigne{Module}{Module}: \myverb{\PDAmpAsymp{Kp}{Td}},
+\item \TradEnLigne{Phase}{Phase}: \myverb{\PDArgAsymp{Kp}{Td}}
 \end{itemize}
-\end{multicols}
+\end{description}
+
 
 \begin{figure}[!ht]
 \centering
-\begin{tkzexample}[latex=8cm,small]
+\begin{tikzexample}[title=,righthand width=0.5\textwidth,] 
 \begin{tikzpicture}[xscale=7/3]
 \begin{scope}[yscale=3/50]
 \UnitedB
-\BodeGraph[thick]{0:3}{\PDAmp{2}{0.08}}
-\BodeGraph[black]{0:3}{\PDAmpAsymp{2}{0.08}}
 \semilog{0}{3}{0}{50}
+\BodeGraph[thick]{0:3}
+{\PDAmp{2}{0.08}}
+\BodeGraph[black]{0:3}
+{\PDAmpAsymp{2}{0.08}}
 \end{scope}
-\begin{scope}[yshift=-3.5cm,yscale=3/90]
+\begin{scope}[yshift=-3.5cm,
+yscale=3/90]
 \UniteDegre
+\OrdBode{15}
 \semilog{0}{3}{0}{90}
-\BodeGraph[thick]{0:3}{\PDArg{2}{0.08}}
-\BodeGraph[samples=2,black,samples=201]
+\BodeGraph[thick]{0:3}
+{\PDArg{2}{0.08}}
+\BodeGraph[black,samples=201
+,const plot]
 {0:3}{\PDArgAsymp{2}{0.08}}
 \end{scope}
 \end{tikzpicture}
-\end{tkzexample}
+\end{tikzexample}
 \caption{Correcteur P.D}
 \label{fig:corpd}
 \end{figure}
 
 
 
+\newpage
 
+\subsubsection{\TradEnLigne{Correcteur Ã  Avance de phase}{Advance phase corrector}} 
 
-\subsubsection{Correcteur à Avance de phase} $C_{AP}(p)=K_p\cdot\dfrac{1+a\cdot T_1 \cdot p}{1+T_1\cdot p}$ (figure~\ref{fig:corav})
-\begin{multicols}{2}
-Courbes réelles
+$C_{AP}(s)=K_p\cdot\dfrac{1+a\cdot T_a \cdot s}{1+T_a\cdot s}$ (fig.~\ref{fig:corav})
+
+\begin{description}
+\item[\TradEnLigne{Courbes rÃ©elles}{Real curves}]~\\
 \begin{itemize}
-\item module : \verb"\APAmp{Kp}{T1}{a}",
-\item argument: \verb"\APArg{Kp}{Ti}{a}"
-
+\item \TradEnLigne{Module}{Module}: \myverb{\APAmp{Kp}{Ta}{a}},
+\item \TradEnLigne{Phase}{Phase}: \myverb{\APArg{Kp}{Ta}{a}}
 \end{itemize}
-Asymptotes
+\item[Asymptotes]~\\
 \begin{itemize}
-\item  module : \verb"\APAmpAsymp{Kp}{T1}{a}",
-\item  argument: \verb"\APArgAsymp{Kp}{Ti}{a}"
+\item \TradEnLigne{Module}{Module}: \myverb{\APAmpAsymp{Kp}{Ta}{a}},
+\item \TradEnLigne{Phase}{Phase}:  \myverb{\APArgAsymp{Kp}{Ta}{a}}
 \end{itemize}
-\end{multicols}
+\end{description}
+
 
 
 \begin{figure}[!ht]
 \centering
-\begin{tkzexample}[latex=8cm,small]
-\begin{tikzpicture}[xscale=7/3]
-\begin{scope}[yscale=3/40]
+\begin{tikzexample}[title=,righthand width=0.5\textwidth,] 
+\begin{tikzpicture}
+[xscale=7/3]
+\begin{scope}[yscale=4/40]
 \UnitedB
-%\node{\tiny \PIAmp{3}{0.5}};
-\semilog{0}{3}{-10}{30}
-\BodeGraph{0:3}{\APAmp{2}{0.02}{3}}
-\BodeGraph[thin,samples=101,red]
+\semilog{0}{3}{0}{30}
+\BodeGraph{0:3}
+{\APAmp{2}{0.02}{3}}
+\BodeGraph[thick,samples=101,
+red]
 {0:3}{\APAmpAsymp{2}{0.02}{3}}
 \end{scope}
-\begin{scope}[yshift=-3cm,yscale=3/180]
+\begin{scope}
+[yshift=-3cm,yscale=4/180]
 \UniteDegre
 \OrdBode{30}
-\semilog{0}{3}{-90}{90}
-\BodeGraph{0:3}{\APArg{2}{0.02}{3}}
-\BodeGraph[thin,samples=201,red]
+\semilog{0}{3}{-30}{90}
+\BodeGraph{0:3}
+{\APArg{2}{0.02}{3}}
+\BodeGraph[thick,samples=201,
+red,const plot]
 {0:3}{\APArgAsymp{2}{0.02}{3}}
 \end{scope}
 \end{tikzpicture}
-\end{tkzexample}
+\end{tikzexample}
 \caption{Correcteur avance de phase}
 \label{fig:corav}
 \end{figure}
 
+\clearpage
 
+\subsubsection{\TradEnLigne{Correcteur Ã  Retard de phase}{Phase delay corrector}}
 
-\subsubsection{Correcteur à Retard de phase} $C_{RP}(p)=K_p\cdot\dfrac{1+ T_1 \cdot p}{1+a\cdot T_1\cdot p}$(figure~\ref{fig:corar})
+ $C_{RP}(p)=K_p\cdot\dfrac{1+ T_r \cdot p}{1+a\cdot T_r\cdot p}$(fig.~\ref{fig:corar})
 
-\begin{multicols}{2}
+\begin{description}
+\item[\TradEnLigne{Courbes rÃ©elles}{Real curves}]~\\
 \begin{itemize}
-\item module : \verb"\RPAmp{Kp}{T1}{a}",
-\item argument: \verb"\RPArg{Kp}{Ti}{a}"
+\item \TradEnLigne{Module}{Module}: \myverb{\RPAmp{Kp}{Tr}{a}}
+\item \TradEnLigne{Phase}{Phase}: \myverb{\RPArg{Kp}{Tr}{a}}
 \end{itemize}
-Asymptotes
+\item[Asymptotes]~\\
 \begin{itemize}
-\item  module : \verb"\RPAmpAsymp{Kp}{T1}{a}",
-\item  argument: \verb"\RPArgAsymp{Kp}{Ti}{a}"
+\item \TradEnLigne{Module}{Module}:  \myverb{\RPAmpAsymp{Kp}{Tr}{a}}
+\item \TradEnLigne{Phase}{Phase}:  \myverb{\RPArgAsymp{Kp}{Tr}{a}}
 \end{itemize}
-\end{multicols}
+\end{description}
+
+
 
 \begin{figure}[!ht]
 \centering
-\begin{tkzexample}[latex=8cm,small]
+\begin{tikzexample}[title=,righthand width=0.5\textwidth,] 
 \begin{tikzpicture}[xscale=7/3]
 \begin{scope}[yscale=3/40]
 \UnitedB
@@ -769,41 +1127,47 @@ Asymptotes
 \BodeGraph[,thin,samples=101,red]
 {0:3}{\RPAmpAsymp{2}{0.02}{3}}
 \end{scope}
-\begin{scope}[yshift=-3cm,yscale=3/180]
+\begin{scope}
+[yshift=-3cm,yscale=3/180]
 \UniteDegre
 \OrdBode{30}
 \semilog{0}{3}{-90}{90}
 \BodeGraph[thick]
 {0:3}{\RPArg{2}{0.02}{3}}
-\BodeGraph[thin,samples=201,red]
+\BodeGraph[thin,samples=201,
+red,const plot]
 {0:3}{\RPArgAsymp{2}{0.02}{3}}
 \end{scope}
 \end{tikzpicture}
-\end{tkzexample}
+\end{tikzexample}
 \caption{Correcteur retard de phase}
 \label{fig:corar}
 \end{figure}
 
 
+\newpage
+
+\subsubsection{\TradEnLigne{Correcteur proportionnel intÃ©gral dÃ©rivateur (forme sÃ©rie) PID}{proportional integral derivative corrector (series form) (PID)} }
+
+$C(s)=K_p\cdot\dfrac{1+T_i\cdot s}{T_i\cdot s}\cdot\left(1+T_d\cdot s\right)$ (fig.~\ref{fig:corpids})
 
 
-\subsubsection{Correcteur PID série} $C(s)=K_p\cdot\dfrac{1+T_i\cdot s}{T_i\cdot s}\cdot\left(1+T_d\cdot s\right)$ (figure~\ref{fig:corpids})
-\begin{multicols}{2}
-Courbes réelles
+\begin{description}
+\item[\TradEnLigne{Courbes rÃ©elles}{Real curves}]~\\
 \begin{itemize}
-\item module : \verb"\PIDAmp{Kp}{Ti}{Td}",
-\item argument: \verb"\PIDArg{Kp}{Ti}{Td}"
+\item \TradEnLigne{Module}{Module}: \myverb{\PIDAmp{Kp}{Ti}{Td}}
+\item \TradEnLigne{Phase}{Phase}: \myverb{\PIDArg{Kp}{Ti}{Td}}
 \end{itemize}
 Asymptotes
 \begin{itemize}
-\item module : \verb"\PIDAmpAsymp{Kp}{Ti}{Td}",
-\item argument: \verb"\PIDArgAsymp{Kp}{Ti}{Td}"
+\item \TradEnLigne{Module}{Module}: \\myverb{\PIDAmpAsymp{Kp}{Ti}{Td}}
+\item \TradEnLigne{Phase}{Phase}: \myverb{\PIDArgAsymp{Kp}{Ti}{Td}}
 \end{itemize}
-\end{multicols}
+\end{description}
 
 \begin{figure}[!ht]
 \centering
-\begin{tkzexample}[latex=8cm,small]
+\begin{tikzexample}[title=,righthand width=0.55\textwidth,] 
 \begin{tikzpicture}[xscale=7/3]
 \begin{scope}[yscale=3/40]
 \UnitedB
@@ -814,7 +1178,7 @@ Asymptotes
 {0:3}{\PIDAmpAsymp{2}{0.08}{0.02}}
 \end{scope}
 \begin{scope}[yshift=-3cm,yscale=3/180]
-\UniteDegre
+\Unites{rad/s}{Argument en degrÃ©}
 \OrdBode{30}
 \semilog{0}{3}{-90}{90}
 \BodeGraph{0:3}
@@ -824,293 +1188,385 @@ black,samples=201]
 {0:3}{\PIDArgAsymp{2}{0.08}{0.02}}
 \end{scope}
 \end{tikzpicture}
-\end{tkzexample}
-\caption{Correcteur P.I.D série}
+\end{tikzexample}
+\caption{Correcteur P.I.D sÃ©rie}
 \label{fig:corpids}
 \end{figure}
 
+\clearpage
 
 
 
-\subsection{Fonctions de transfert complexe}
 
 
-Pour tracé les diagrammes de Bode d'un fonction de transfert complexe, définie par le produit de fonctions élémentaires, il suffit de sommer les représentation, aussi bien pour le tracé de la fonction que pour les asymptotes.
-\subsubsection{Exemples}
+\subsection{\TradEnLigne{Fonctions de transfert complexes}{Complex functions of transfer}}
+
+
+\traduction{
+Pour tracÃ© les diagrammes de Bode d'un fonction de transfert complexe, dÃ©finie par le produit de fonctions Ã©lÃ©mentaires, il suffit de sommer les reprÃ©sentations, aussi bien pour le tracÃ© de la fonction que pour les asymptotes.}{To trace Bode plot of a complex transfer function, defined by the product of basic functions, you can simply sum up the representations, of the function graph as well as of the asymptotes.
+}
+\subsubsection{\TradEnLigne{Exemples}{Examples}}
 
 \begin{description}
-\item [Premier ordre + intégrateur :] $H(s)=\dfrac{8}{s\cdot \left(1+0.5\cdot s\right)}$ (figure~\ref{fig:premiordreint})
+\item [\TradEnLigne{Premier ordre + intÃ©grateur}{first order + integrator}:] $H_1(s)=\dfrac{8}{s\cdot \left(1+\num{0.5}\cdot s\right)}=\dfrac{1}{s}\cdot\dfrac{8}{1+\num{0.5}\cdot s}$ (fig.~\ref{fig:premiordreint})
 
 \begin{figure}[!ht]
 \centering
-\begin{tkzexample}[latex=8cm,small]
-\begin{tikzpicture}[xscale=7/4]
-\begin{scope}[yscale=2.5/100]
+\begin{tikzexample}[title=,righthand width=0.5\textwidth,] 
+\begin{tikzpicture}
+[xscale=7/4]
+\begin{scope}
+[yscale=4/100]
 \semilog{-2}{2}{-40}{60}
-\BodeGraph[thin,samples=100]{-1.5:1.5}
-{\POAmpAsymp{8}{0.5}+\IntAmp{1}}
-\BodeGraph{-1.5:1.5}{\POAmp{8}{0.5}+\IntAmp{1}}
+\BodeGraph[thin,samples=100]
+{-1.5:1.5}
+{\POAmpAsymp{8}{0.5}
++\IntAmp{1}}
+\BodeGraph{-1.8:1.5}
+{\POAmp{8}{0.5}+\IntAmp{1}}
 \end{scope}
-\begin{scope}[yshift=-2cm,yscale=2.5/200]
+\begin{scope}
+[yshift=-2.5cm,yscale=4/200]
 \OrdBode{20}
 \semilog{-2}{2}{-200}{0}
-\BodeGraph[samples=100,thin]{-2:2}
-{\POArgAsymp{8}{0.5}+\IntArg{1}}
-\BodeGraph{-2:2}{\POArg{8}{0.5}+\IntArg{1}}
+\BodeGraph[samples=100,thin,
+red,const plot]
+{-2:2}
+{\POArgAsymp{8}{0.5}
++\IntArg{1}}
+\BodeGraph{-2:2}
+{\POArg{8}{0.5}+\IntArg{1}}
 \end{scope}
 \end{tikzpicture}
-\end{tkzexample}
-\caption{Premier ordre + intégrateur}
+\end{tikzexample}
+\caption{Premier ordre +intÃ©grateur}
 \label{fig:premiordreint}
 \end{figure}
 
 
+\clearpage
 
-\item [Second ordre généralisé : ] $5\cdot\dfrac{1+0.01\cdot s}{1+\dfrac{2\cdot 0.3}{15}\cdot s +\dfrac{s^2}{15^2}}$(figure~\ref{fig:secondordregene})
+\item [\TradEnLigne{Second ordre gÃ©nÃ©ralisÃ©}{Second order generalised} : ] ~\\
+$H_{2g}=5\cdot\dfrac{1+\num{0.01}\cdot s}{1+\dfrac{2\cdot \num{0.3}}{15}\cdot s +\dfrac{s^2}{15^2}}=\left({1+\num{0.01}\cdot s}\right)\dfrac{5}{1+\dfrac{2\cdot \num{0.3}}{15}\cdot s +\dfrac{s^2}{15^2}}$(fig.~\ref{fig:secondordregene})
 
 
 \begin{figure}[!ht]
 \centering
-\begin{tkzexample}[latex=8cm,small]
-\begin{tikzpicture}[xscale=7/5]
-\begin{scope}[yscale=3/80]
+\begin{tikzexample}[title=,righthand width=0.55\textwidth,] 
+\begin{tikzpicture}
+[xscale=7/5]
+\begin{scope}[yscale=4/80]
 \semilog{-1}{4}{-50}{30}
-\BodeGraph[thin]{-1:4}
-{\SOAmpAsymp{5}{15}-\POAmpAsymp{1}{0.01}}
-\BodeGraph[smooth,samples=100]{-1:4}
-{\SOAmp{5}{0.3}{15}-\POAmp{1}{0.01}}
+\BodeGraph[red]{-1:4}
+{\SOAmpAsymp{5}{0.3}{15}-
+\POAmpAsymp{1}{0.01}}
+\BodeGraph[smooth,samples=100,
+thick]{-1:4}
+{\SOAmp{5}{0.3}{15}
+-\POAmp{1}{0.01}}
 \end{scope}
-\begin{scope}[yshift=-2.5cm,yscale=3/210]
-\OrdBode{20}
-\semilog{-1}{4}{-200}{10}
-\BodeGraph[thin,samples=100]{-1:4}
-{\SOArgAsymp{5}{15}-\POArgAsymp{1}{0.01}}
-\BodeGraph{-1:4}{\SOArg{5}{0.3}{15}-\POArg{1}{0.01}}
+\begin{scope}
+[yshift=-3.5cm,yscale=4/210]
+\OrdBode{30}
+\semilog{-1}{4}{-180}{10}
+\BodeGraph[samples=100,
+red,const plot]{-1:4}
+{\SOArgAsymp{5}{0.3}{15}
+-\POArgAsymp{1}{0.01}}
+\BodeGraph[thick]{-1:4}
+{\SOArg{5}{0.3}{15}
+-\POArg{1}{0.01}}
 \end{scope}
 \end{tikzpicture}
-\end{tkzexample}
-\caption{Second ordre généralisé}
+\end{tikzexample}
+\caption{Second ordre gÃ©nÃ©ralisÃ©}
 \label{fig:secondordregene}
 \end{figure}
 
 
 
 \end{description}
+\clearpage
 
+\section{\TradEnLigne{Diagramme de black nichols}{black nichols diagram}}
 
-\section{Diagramme de Black}
+\traduction{Ce package permet aussi de tracer les diagrammes de Black avec des commandes analogues Ã  celles utilisÃ©es pour les diagrammes de Bode.}{This package also allows you to draw Black diagrams with commands similar to those used for Bode diagrams.
+}
 
+\subsection{\TradEnLigne{Lieu de Black-Nicols}{Black-Nichols locus}}
 
-\subsection{Lieu de Black}
-
- Trois commandes (et 3 étoilées) et permettent de tracer et commenter le lieu de Black d'une fonction (figure~\ref{fig:diagblack}).
-
-\begin{itemize}
-\item \verb"\BlackGraph[options de trace]{domaine}{fonction argument,fonction module}"
-\begin{itemize}
-\item \verb"{domaine}",  c'est le domaine de tracé au sens de GnuPlot, il est conseillé de  définir le domaine décade (entière ou non) comme \verb"{-1:3}", GnuPlot  va tracer la fonction pour $\omega$ compris  entre $10^{-1}$  et $10^{3}$.
-\item \verb"{argument,module}", la fonction à tracer doit être définie par la \verb"fonction argument" qui retourne l'argument en $~^\circ$  et  la \verb"fonction module" qui retourne le module en dB. On peut bien sur utiliser les fonctions définies au dessus pour les diagrammes de Bode pour ces fonctions.
-\item \verb"[options de trace]",  toutes les options tikz pour tracer des fonctions gnuplot.
-\end{itemize}
-\item \verb"\BlackGraph*[options de trace]{domaine}{fonction argument,fonction module}{[options]{texte}}" cette commande permet de rajouter commentaire (nom, référence, équation) à l'extrémité d'un tracé. Les paramètres sont identiques, se rajoute uniquement \verb"{[options]{texte}}"
-\begin{itemize}
-\item \verb"[options]",  ce sont les options d'écriture du texte (couleur, position,...),
-\item \verb"{texte}", le texte à écrire entre parenthèses;
-\end{itemize}
-\item \verb"\BlackPoint[options]{liste pulsations}{fonction argument,fonction module}"  cette commande permet de tracer et noter des points particuliers du graphe, la valeur de la pulsation est placée à coté (droite par défaut).
-\begin{itemize}
-\item \verb"[options]"  options de tracé (couleur, id, prefix,\dots),
-\item \verb"{liste pulsations}"  pulsations en rad/s séparées par une virgule,
-\item \verb"{fonction argument,fonction module}"  identique à \verb"\BlackGraph"
-\end{itemize}
-
-\item \verb"\BlackPoint*[options]{liste pulsations}{fonction argument,fonction module}"  la version étoilée de la commande précédente permet de choisir la position de chaque texte, comme l'exemple  \verb"{1/right,10/left,150/above right,....)"
-
-\item \verb"\BlackText[options]{pulsation/pos/texte}{fonction argument,fonction module}"  cette commande permet de positionner un  \verb"texte" par rapport à la courbe définie par \verb"{fonction argument,fonction module}" le texte étant positionné à la pulsation \verb"pulsation", le paramètre \verb"pos" permet de préciser la position du texte (\verb"right",  \verb"above",  \verb"below left", \dots). Le point est nommé \verb"NBlack"  
-
-\item \verb"\BlackText*[options]{pulsation/pos/texte}{fonction argument,fonction module}"   cette commande est identique à la précédente mais ne dessine pas de points.
-\end{itemize}
-
-\subsubsection{styles par défaut}
-
-Le tracé du diagramme de Black, de la grille et de l'abaque de Black-Nichols utilise plusieurs styles que vous pouvez modifier, avec la commande \verb"\tikzset".
+ \traduction{Trois commandes (et 3 Ã©toilÃ©es) et permettent de tracer et commenter le lieu de Black d'une fonction (fig.~\ref{fig:diagblack}).}{Three commands (and 3 starred) allow to trace and comment the Nichols locus of a function (fig.~\ref{fig:diagblack}). }
 
 \begin{itemize}
-\item \verb"Black lines/.style={very thick, blue}":  style par défaut du tracé du lieu de Black;
-\item \verb"Black grid/.style={ultra thin,brown!50}": Style par défaut de la grille (commande \verb"\BlackGrid");
-\item \verb"Black label points/.style={font=\tiny}": style par défaut du label des points marqués  (commandes \verb"\BlackPoint"  et \verb"\BlackText");
-\item \verb"Black label axes/.style={Black grid, font=\tiny}" style par défaut des axes du diagrame;
-\item \verb"Black abaque mag/.style={gray,ultra thin,dashed,smooth}": style par défaut des contours isogains;
-\item \verb"Black abaque phase/.style={gray,ultra thin,smooth}": style par défaut des contours isoarguments;
-\item \verb"ref points/.style={circle,draw, black, opacity=0.7,fill, minimum size= 2pt, inner sep=0}": style utilisé pour marquer les points sur le diagramme.
+\item { \myverb{\BlackGraph[options de trace]{domaine}{argument,module}} }
+\begin{itemize}
+\item  \myverb{{domaine}}: \\
+\traduction{ c'est le domaine de tracÃ© au sens de GnuPlot, il est conseillÃ© de  dÃ©finir le domaine dÃ©cade (entiÃ¨re ou non) comme  \textbf{ \{-1:3\}}, GnuPlot  va tracer la fonction pour $\omega$ compris  entre $10^{-1}$  et $10^{3}$.}{itâ€™s the domain of graph in the sense of  GnuPlot, I suggest to define the domain in decades (integer or not) like\textbf{ \{-1:3\}}, GnuPlot will trace the function for $\omega$  including between $10^{-1}$  et $10^{3}$. }
+\item  \myverb{{argument,module}}:\\
+ \traduction{la fonction Ã  tracer doit Ãªtre dÃ©finie par l'\textbf{argument} qui retourne l'argument en $~^\circ$  et  le \textbf{module} qui retourne le module en dB. On peut bien sur utiliser les fonctions dÃ©finies au dessus pour les diagrammes de Bode pour ces fonctions.}{the function to trace must be defined by the \textbf{argument}   function which returns the argument in $~^\circ$, and the module function which returns the  \textbf{module} in dB. You can also use the functions defined on the top for the bode graphs for these functions. 
+}
+\item  \myverb{ [options de trace]}: \\
+ \TradEnLigne{toutes les options tikz pour tracer des fonctions gnuplot.}{all of the tikz options to trace gnuplot functions.}
+\end{itemize}
+\item   {\small \myverb{\BlackGraph*[options de trace]{domaine}{argument,module}{[options]{texte}}} }\traduction{cette commande permet de rajouter commentaire (nom, rÃ©fÃ©rence, Ã©quation) Ã  l'extrÃ©mitÃ© d'un tracÃ©. Les paramÃ¨tres sont identiques, se rajoute uniquement  \textbf{\{[options]\{texte\}\}}.}{This command allows to add again comments (name, reference, equation) at the bottom of a drawing. Parameters are identical, you only re-add
+ \textbf{\{[options]\{texte\}\}} .}
+\begin{itemize}
+\item  \myverb{ [options]}:\\
+  \traduction{ce sont les options d'Ã©criture du texte (couleur, position,\dots)}{these are the options of the writing style of a text (colour, position,\dots), }
+\item  \myverb{ {texte}}, \TradEnLigne{le texte Ã  Ã©crire entre parenthÃ¨ses;}{text to write between brackets;}
+\end{itemize}
+\item  \myverb{\BlackPoint[options]{liste pulsations}{argument,module}}:\\
+\traduction{cette commande permet de tracer et noter des points particuliers du graphe, la valeur de la pulsation est placÃ©e Ã  cotÃ© (droite par dÃ©faut).}{this command allows to trace and mark specific points of the graph, the pulsation value is placed on the side (on the right by default.}
+\begin{itemize}
+\item  \myverb{ [options]}  \TradEnLigne{options de tracÃ© (couleur, id, prefix,\dots),}{ tracing options (colour, id, prefix,\dots), }
+\item  \myverb{ {liste pulsations}}  \TradEnLigne{pulsations en rad/s sÃ©parÃ©es par une virgule,}{beats in rad/s separated by a comma,}
+\item  \myverb{ {argument,module}} \TradEnLigne{identique Ã }{identical to}  \myverb{\BlackGraph}
+\end{itemize}
+
+\item  \myverb{\BlackPoint*[options]{liste pulsations}{argument,module}} :\\
+
+\traduction{ la version Ã©toilÃ©e de la commande prÃ©cÃ©dente permet de choisir la position de chaque texte, comme l'exemple   \textbf{ 1/right,10/left,150/above right,....)}}{starred version of the previous command. It allows to choose the position of each text, like in the example \textbf{1/right,10/left,150/above right,\dots) }}
+
+
+\item  \myverb{\BlackText[options]{pulsation/pos/texte}{argument,module}}:\\
+ \traduction{cette commande permet de positionner un   \textbf{texte} par rapport Ã  la courbe dÃ©finie par  \textbf{\{argument,module\}} le texte Ã©tant positionnÃ© Ã  la pulsation  \textbf{pulsation}, le paramÃ¨tre  \textbf{pos} permet de prÃ©ciser la position du texte ( \textbf{right},   \textbf{above},   \textbf{below left}, \dots). Le point est nommÃ©  \textbf{NBlack}.}{this command allows to position a text in relation to the curve defined by  \textbf{\{argument, module\} }once the text is positioned at the beat, the parameter pos allows to specify the text position (\textbf{right}, \textbf{above}, \textbf{below left}, \dots). The point is named \textbf{NBlack}.
+}
+
+\item  \myverb{\BlackText*[options]{pulsation/pos/texte}{argument,module}}:\\
+ \traduction{cette commande est identique Ã  la prÃ©cÃ©dente mais ne dessine pas de points.}{this command is identical to the previous one but it does not draw any points.}
 \end{itemize}
 
 
 
-\subsection{Grille et abaque de Black-Nichols}
+\subsubsection{\TradEnLigne{Styles par dÃ©faut}{Default styles}}
 
-\subsubsection{grille}
-Une grille peut aussi être ajoutée avec la commande \verb"\BlackGrid"  qui dessine une grille dont le pas horizontal est définie par la variable \verb"\valgridBx"  (par défaut $45^\circ$   que l'on change si on le souhaite par \verb"\def\valgridBx{10}", le pas vertical est lui défini par \verb"\valgridBy" (par défaut 10~dB ). Cette commande dessine aussi le point critique (-$180^\circ$ ,0~dB)  et gradue les axes. La commande étoilée \verb"\BlackGrid*" , ne dessine que la grille.
+\traduction{Le tracÃ© du diagramme de Black, de la grille et de l'abaque de Black-Nichols utilise plusieurs styles que vous pouvez modifier, avec la commande  \textbf{\textbackslash{tikzset}}.}{The drawing of Nichols plot, grid and  Nichols chart use different style you can modify using the command \textbf{\textbackslash{tikzset}}.}
 
-\subsubsection{Abaque de Black-Nichols}
+\begin{itemize}
+\item  \myverb{ Black lines/.style={very thick, blue}}:\\
+\traduction{style par dÃ©faut du tracÃ© du lieu de Black;}{style for the drawing of Nyquistâ€™s locus ;
+}
+\item  \myverb{ Black grid/.style={ultra thin,brown!50}}:\\
+\traduction{Style par dÃ©faut de la grille (commande   \textbf{\textbackslash BlackGrid});}{grid style  ; }
 
-\verb"\AbaqueBlack" permet de tracer les courbes isomodule et isoargument de l'abaque de Black-Nichols (figure~\ref{fig:AbaqueBlack}).
+\item  \myverb{ Black label points/.style={font=\tiny}}:\\
+\traduction{style par dÃ©faut du label des points marquÃ©s  (commandes  \textbf{\textbackslash BlackPoint}  et  \textbf{\textbackslash BlackText});}{style used to mark the points on graph; }
+
+\item  \myverb{ Black label axes/.style={Black grid, font=\tiny}} \\
+\traduction{style par dÃ©faut des axes du diagramme;}{style used for the axis ;}
+
+\item  \myverb{ Black abaque mag/.style={gray,ultra thin,dashed,smooth}}:\\
+\traduction{style par dÃ©faut des contours isogains;}{default style of isogain contours;}
+
+\item  \myverb{Black abaque phase/.style={gray,ultra thin,smooth}}: \\
+\traduction{style par dÃ©faut des contours isoarguments;}{default style of isoarguments contours;
+}
+\item {\small \myverb{ ref points/.style={circle,draw, black, opacity=0.7,fill, minimum size= 2pt, inner sep=0}} }:\\
+\traduction{style utilisÃ© pour marquer les points sur le diagramme.}{style used to mark points on the diagram.}
+\end{itemize}
 
 
-Les seules valeurs possibles pour ces courbes  de gain et d'argument sont les suivantes:
+
+
+
+\subsection{ \TradEnLigne{Grille et abaque de Black-Nichols}{Nichols plot chart and grid}}
+
+\subsection{\TradEnLigne{Exemples}{Examples}}
+
+ 
+\traduction{Sur les figures~\ref{fig:diagblack1}  et~\ref{fig:diagblack2}  sont reprÃ©sentÃ©es les fonctions suivantes:}{In the figures~\ref{fig:diagblack1}  et~\ref{fig:diagblack2} the following functions are represented:}
+
+\begin{multicols}{2}
+ $H_1(p)=\dfrac{1}{1+\dfrac{2\cdot 0.1}{1500}\cdot p +\dfrac{p^2}{1500^2}}$, \\
+  $H_2(p)=\dfrac{5}{1+\dfrac{2\cdot 0.2}{150}\cdot p +\dfrac{p^2}{150^2}}$,\\
+  $H_3(p)=\dfrac{5}{1+\dfrac{2\cdot 2}{150}\cdot p +\dfrac{p^2}{150^2}}$,\\
+  $H_4(p)=\dfrac{5}{1+3\cdot p}$,\\
+ \end{multicols}
+ $H_5(p)=\dfrac{1}{1+\dfrac{2\cdot 0.1}{1500}\cdot p +\dfrac{p^2}{1500^2}} \cdot \dfrac{0.43\cdot\left(1+0.0009\cdot p\right)^2}{0.0009\cdot p}$
+
+\begin{figure}[!htb]
+\centering
+
+\begin{tikzexample}[title=,righthand width=0.5\textwidth,]
+
+\begin{tikzpicture}
+\begin{scope}
+[xscale=6/180,yscale=8/60]
+\BlackGraph*[samples=150,red,
+smooth,ultra thick,-<]
+{-2:1}{\SOBlack{1}{0.1}{1500}}
+{[red,right]{\footnotesize $H_1$}}
+\BlackGraph*[samples=150,black,
+smooth,ultra thick]
+{-1:3.5}{\SOArg{5}{0.2}{150},
+\SOAmp{5}{0.2}{150}}
+{[right]{$H_2 $}}
+\BlackGraph*[samples=150,blue,
+smooth,ultra thick]
+{-1:3.5}{\SOArg{5}{2}{150},
+\SOAmp{5}{2}{150}}
+{[right]{$H_3 $}}
+\BlackGrid
+\end{scope}
+\end{tikzpicture}
+\end{tikzexample}
+\caption{Diagrammes de Black 1}
+\label{fig:diagblack1}
+\end{figure}
+
+
+
+\begin{figure}[!ht]
+\centering 
+\begin{tikzexample}[title=,righthand width=0.4\textwidth,]
+\begin{tikzpicture}
+\begin{scope}
+[xscale=6/180,yscale=8/60]
+\BlackGraph[samples=150,blue,
+smooth,ultra thick]
+{1:5}{\SOArg{1}{0.1}{1500}+
+\IntArg{0.43/0.0009}-2*\POArg{1}{0.0009},
+\SOAmp{1}{0.1}{1500}+\IntAmp{0.43/0.0009}
+-2*\POAmp{1}{0.0009}}
+\BlackGraph*[samples=100,purple,smooth]
+{-3:2}{\POArg{5}{3},\POAmp{5}{3}}
+{[purple!50,right]{\footnotesize $H_3$}}
+\BlackPoint[purple]{0.1,1,3,12,65}
+{\POArg{5}{3},\POAmp{5}{3}}
+\BlackPoint*[black]{25/right,
+80/above right,
+500/above,1500/above,4000/right}
+{\SOArg{1}{0.1}{1500}+\IntArg{0.43/0.0009}
+-2*\POArg{1}{0.0009},\SOAmp{1}{0.1}{1500}+
+\IntAmp{0.43/0.0009}-2*\POAmp{1}{0.0009}}
+\BlackText[blue]{5000/left/{\normalsize $H_4$}}
+{\SOArg{1}{0.1}{1500}+\IntArg{0.43/0.0009}
+-2*\POArg{1}{0.0009},\SOAmp{1}{0.1}{1500}+
+\IntAmp{0.43/0.0009}-2*\POAmp{1}{0.0009}}
+\BlackGrid
+\end{scope}
+\end{tikzpicture}
+\end{tikzexample}
+\caption{Diagramme de Black}
+\label{fig:diagblack2}
+\end{figure}
+
+
+
+\traduction{Pour les deux derniers exemples, les courbes ont Ã©tÃ© graduÃ©es en pulsation avec la commande \textbf{\textbackslash BlackPoint}  et annotÃ©es la commande \textbf{\textbackslash BlackText}.}{For the last two examples, the curves were graduated in pulsation with the command \textbf{\textbackslash BlackPoint} and annotated with the command \textbf{\textbackslash BlackText}.}
+
+
+\subsubsection{\TradEnLigne{Grille}{Grid}}
+
+\traduction{Une grille peut aussi Ãªtre ajoutÃ©e avec la commande  \textbf{\textbackslash BlackGrid}  qui dessine une grille dont le pas horizontal est dÃ©finie par la variable  \textbf{\textbackslash valgridBx}  (par dÃ©faut $45^\circ$   que l'on change si on le souhaite par  \textbf{\textbackslash def \textbackslash valgridBx{10}}, le pas vertical est lui dÃ©fini par  \textbf{\textbackslash valgridBy} (par dÃ©faut 10~dB ). Cette commande dessine aussi le point critique (-$180^circ$ ,0~dB)  et gradue les axes. La commande Ã©toilÃ©e  \textbf{\textbackslash BlackGrid*} , ne dessine que la grille.}{
+A grid can be added too by the command \textbf{\textbackslash BlackGrid} , which draws a grid whose horizontal step is defined by the variable \textbf{\textbackslash valgridBx}  (45â—¦ by default, you can change it  if you want by \textbf{\textbackslash def \textbackslash valgridBx{10}}), vertical step is defined by \textbf{\textbackslash valgridBy} (10 dB by  default). This command also draws the critic point (-180â—¦ ,0 dB) and graduates axis. The starred command \textbf{\textbackslash BlackGrid*} only draws the grid}
+
+
+
+
+%\clearpage
+
+\subsubsection{\TradEnLigne{Abaque de Black-Nichols}{Nichols chart}}
+
+ \myverb{\AbaqueBlack} \\
+ \traduction{permet de tracer les courbes isomodule et isoargument de l'abaque de Black-Nichols (fig.~\ref{fig:AbaqueBlack}).}{allows to trace isomodule curves and isoargument of Nichols chart (figure 17). }
+
+
+\traduction{Les seules valeurs possibles pour ces courbes  de gain et d'argument sont les suivantes:}{The only values possible for these curves of gain and argument are the following : }
+
 \begin{itemize}
 \item isomodule, gain en dB: -30, -25, -20, -15, -12, -10, -8, -6, -5, -4, -3, -2, -1, -0.5, -0.2, 0, 0.2, 0.5, 1, 2, 2.3, 3, 4, 5, 6, 8, 10;
 \item isoargument, en $~^\circ$: 359, 357, 354, 350, 345, 340, 330, 315, 300, 285, 270, 255, 240 , 225, 210,195, 190, 170,165, 150, 135, 120, 105, 90, 75, 60, 45, 30, 20, 15, 10, 6, 3, 1.
 \end{itemize}
 
-Deux autres commandes permettent de limiter l'affichage à quelques courbes:
+\traduction{Deux autres commandes permettent de limiter l'affichage Ã  quelques courbes:}{Two other commands allow to limit the display to certain curves:}
+
 \begin{itemize}
-\item \verb"\IsoModule[listedB]"  cette commande permet de tracer uniquement les courbes d'amplitude de la liste \verb"listedB", par défaut, toutes les courbes sont dessinées.
-\item \verb"\IsoArgument[listedeg]", cette commande permet de tracer uniquement les courbes d'amplitude de la liste \verb"listedeg", par défaut, toutes les courbes sont tracées.
+\item  \myverb{\IsoModule[listedB]} \\
+\traduction{ cette commande permet de tracer uniquement les courbes d'amplitude de la liste  \textbf{ listedB}, par dÃ©faut, toutes les courbes sont dessinÃ©es.}{this command allows to trace only the amplitude curves of the list edB list, all the curves are drawn by default.
+}
+
+\item  \myverb{\IsoArgument[listedeg]}\\
+\traduction{ cette commande permet de tracer uniquement les courbes d'amplitude de la liste  \textbf{ listedeg}, par dÃ©faut, toutes les courbes sont tracÃ©es.}{this command allows to trace only the amplitude curves of the \textbf{listedeg} list, all the curves are drawn by default.
+}
 \end{itemize}
 
-Le style des courbes tracées est modifiable à l'aide des deux commandes:
+\traduction{Le style des courbes tracÃ©es est modifiable Ã  l'aide des deux commandes:}{The style of the traced curve can be changed using two commands: }
+
 \begin{itemize}
-\item \verb"\StyleIsoM[couleur,épaisseur, ...]"  pour les courbes isomodules.
-\item \verb"\StyleIsoA[couleur,épaisseur, ...]"  pour les courbes isoarguments.
+\item  \myverb{\StyleIsoM[couleur,Ã©paisseur, ...]} \TradEnLigne{pour les courbes isomodules.}{for the isomodule curves.}
+\item  \myverb{\StyleIsoA[couleur,Ã©paisseur, ...]}  \TradEnLigne{pour les courbes isoarguments.}{for the isoargument curves.}
 \end{itemize}
 
-Ces deux commandes se rajoutent aux options de style défini par défaut.
-
-Remarque: pour ne pas trop ralentir la compilation, les courbes sont pré-calculées. Elles sont définies dans les deux fichiers isom.txt et isoa.txt (respectivement pour le module et l'argument). Si vous souhaitez ajouter  de nouvelles courbes, il faut les ajouter dans ces fichiers en respectant la syntaxe.
-
-
-
-
-
-
-\begin{figure}[!ht]
+\begin{figure}[!htb]
 \centering
-\begin{tkzexample}[latex=7cm,small]
-
+\begin{tikzexampleL}[title=]
 \begin{tikzpicture}
-\begin{scope}[xscale=6/180,yscale=8/60]
-\BlackGraph*[samples=150,red,smooth,ultra thick,-<]
-{-2:1}{\SOBlack{1}{0.1}{1500}}
-{[red,right]{\footnotesize $H_1$}}
-\BlackGraph*[samples=150,black,smooth,ultra thick]
-{-1:3.5}{\SOArg{5}{0.2}{150},\SOAmp{5}{0.2}{150}}
-{[right]{$H_2 $}}
-\BlackGraph[samples=150,blue,smooth,ultra thick]
-{1:5}{\SOArg{1}{0.1}{1500}+\IntArg{0.43/0.0009}
--2*\POArg{1}{0.0009},\SOAmp{1}{0.1}{1500}+
-\IntAmp{0.43/0.0009}-2*\POAmp{1}{0.0009}}
-
-\BlackGraph*[samples=100,purple,smooth]
-{-3:2}{\POArg{5}{3},\POAmp{5}{3}}
-{[purple!50,right]{\footnotesize $H_3$}}
-
-\BlackPoint[purple]{0.1,1,3,12,65}
-{\POArg{5}{3},\POAmp{5}{3}}
-
-\BlackPoint*[black]{25/right,
-80/above right,500/above,1500/above,4000/right}
-{\SOArg{1}{0.1}{1500}+\IntArg{0.43/0.0009}
--2*\POArg{1}{0.0009},\SOAmp{1}{0.1}{1500}+
-\IntAmp{0.43/0.0009}-2*\POAmp{1}{0.0009}}
-
-\BlackText[blue]{5000/left/{\normalsize $H_4$}}
-{\SOArg{1}{0.1}{1500}+\IntArg{0.43/0.0009}
--2*\POArg{1}{0.0009},\SOAmp{1}{0.1}{1500}+
-\IntAmp{0.43/0.0009}-2*\POAmp{1}{0.0009}}
-
-\BlackGrid
-\end{scope}
-\end{tikzpicture}
-\end{tkzexample}
-\caption{Diagramme de Black}
-\label{fig:diagblack}
-\end{figure}
-
-
-
-\subsection{Exemples}
-
-
-Sur l'exemple figure~\ref{fig:diagblack}  sont représentées les fonctions suivantes:
-
-\begin{multicols}{2}
-\small
-\begin{itemize}
-\item  $H_1(p)=\dfrac{1}{1+\dfrac{2\cdot 0.1}{1500}\cdot p +\dfrac{p^2}{1500^2}}$, 
-\item  $H_2(p)=\dfrac{5}{1+\dfrac{2\cdot 0.2}{150}\cdot p +\dfrac{p^2}{150^2}}$,
-\item  $H_3(p)=\dfrac{5}{1+3\cdot p}$,
-\item $H_4(p)=\dfrac{1}{1+\dfrac{2\cdot 0.1}{1500}\cdot p +\dfrac{p^2}{1500^2}} \cdot \dfrac{0.43\cdot\left(1+0.0009\cdot p\right)^2}{0.0009\cdot p}$
-
-\end{itemize}
-\end{multicols}
-
-
- 
-
-
-\begin{figure}[!ht]
-\centering
-\begin{tkzexample}[latex=12cm,small]
-\begin{tikzpicture}
-\begin{scope}
-[xscale=11/360,
-yscale=12/60]
-
-\BlackGraph[samples=100,
-purple,smooth]
-{-1:1}{\IntArg{0.3}+
-\SOArg{3.9}{0.4}{3},
-\IntAmp{0.3}+
-\SOAmp{3.9}{0.4}{3}}
-
+\begin{scope}[xscale=15/360,yscale=11/60]
+\BlackGraph[samples=100,purple,smooth]{-1:1}{\IntArg{0.3}+\SOArg{3.9}{0.4}{3},
+\IntAmp{0.3}+\SOAmp{3.9}{0.4}{3}}
 \def\valmaxBf{-360}
-%\StyleIsoM[blue!50,dashed]
-%\StyleIsoA[green,thin]
+\StyleIsoM[blue,dashed]
+\StyleIsoA[blue]
 \AbaqueBlack
-
 \StyleIsoM[blue,thick]
 \IsoModule[2.3]
-
 \BlackGrid
-
-\BlackText[black]{2.6/right/
-{\normalsize $\omega_r
-\approx 2.6~rad/sec$}}
-{\IntArg{0.3}+
-\SOArg{3.9}{0.4}{3},
-\IntAmp{0.3}+
-\SOAmp{3.9}{0.4}{3}}
-
+\BlackText[black]{2.6/right/{\normalsize $\omega_r\approx 2.6~rad/sec$}} {\IntArg{0.3}+\SOArg{3.9}{0.4}{3},
+\IntAmp{0.3}+\SOAmp{3.9}{0.4}{3}}
 \end{scope}
 \end{tikzpicture}
-\end{tkzexample}
+\end{tikzexampleL}
 \caption{Abaque de Black}
 \label{fig:AbaqueBlack}
 \end{figure}
 
 
 
-\section{Diagramme de Nyquist}
-
-Le package permet aussi de tracer le diagramme de Nyquist (figure~\ref{fig:diagnyq}) d'une fonction linéaire, le tracé est réalisé à partir de la description polaire de la fonction de transfert $H(i\cdot _omega)=\|{H(i\cdot \omega)}\|\cdot e^{\arg\left(H(i\cdot \omega)\right)}$. Cela permet de tracer le diagramme de Nyquist à partir des définitions précédentes du module et de l'argument.
-
+\traduction{Remarque: pour ne pas trop ralentir la compilation, les courbes sont prÃ©-calculÃ©es. Elles sont dÃ©finies dans les deux fichiers \textbf{isom.txt }  et  \textbf{isoa.txt}  (respectivement pour le module et l'argument). Si vous souhaitez ajouter  de nouvelles courbes, il faut les ajouter dans ces fichiers en respectant la syntaxe.}{
+Note: do not slow down the compilation too much, curves are already pre-calculated. They are defined by the files \textbf{isom.txt}  and \textbf{isoa.txt}  (respectively for the module and for the argument). If you would like to add new curves, you must add them in the files and using the same syntax.}
 
 
-\begin{figure}[:ht]
+
+\clearpage
+
+\section{\TradEnLigne{Diagramme de Nyquist}{Nyquist plot}}
+
+\traduction{Le package permet aussi de tracer le diagramme de Nyquist (fig.~\ref{fig:diagnyq}) d'une fonction linÃ©aire, le tracÃ© est rÃ©alisÃ© Ã  partir de la description polaire de la fonction de transfert $H(i\cdot \omega)=\|{H(i\cdot \omega)}\|\cdot e^{\arg\left(H(i\cdot \omega)\right)}$. Cela permet de tracer le diagramme de Nyquist Ã  partir des dÃ©finitions prÃ©cÃ©dentes du module et de l'argument.}{The package also allows to trace Nyquist plot (fig.~\ref{fig:diagnyq})  of a linear function, the drawing is traced out of the polar description of the transfer function $H(i\cdot \omega)=\|{H(i\cdot \omega)}\|\cdot e^{\arg\left(H(i\cdot \omega)\right)}$. This allows to trace (fig.~\ref{fig:diagnyq})  Nyquist graph, starting from the previous definitions of module and argument.}
+
+
+
+\begin{figure}[!htb]
 \centering
-\begin{tkzexample}[latex=7cm,small]
-\begin{tikzpicture}
+\begin{tikzexample}[title=,righthand width=0.4\textwidth,]
+\begin{tikzpicture}[scale=0.8]
 \begin{scope}
 \NyquistGraph[smooth,samples=81]{-1:4}
 {\POAmp{3}{0.5}}{\POArg{3}{0.5}}
-\NyquistGraph[purple,smooth,samples=81,]
-{-2:2}{\SOAmp{3}{0.5}{10}}{\SOArg{3}{0.5}{10}}
+%\NyquistGraph[purple,smooth,samples=81,]
+%{-2:2}{\SOAmp{3}{0.5}{10}}{\SOArg{3}{0.5}{10}}
 \NyquistGraph[red,samples=151,smooth,]
 {-3:2}{\POAmp{4}{0.5}+\POAmp{1}{2}}
 {\POArg{4}{0.5}+\POArg{1}{2}}
 \NyquistGraph[green,samples=101,smooth,]
 {0.5:2}{\SOAmp{15}{0.5}{10}+\IntAmp{1}}
+{\SOArg{15}{0.5}{10}+\IntArg{1}}
+\end{scope}
+\NyquistGrid
+\end{tikzpicture}
+
+\end{tikzexample}
+\caption{Diagrammes de Nyquist}
+\label{fig:diagnyq1}
+\end{figure}
+
+
+
+\begin{figure}[!htb]
+\centering
+\begin{tikzexample}[title=,righthand width=0.4\textwidth]
+\begin{tikzpicture}[scale=0.8]
+\begin{scope}
 {\SOArg{15}{0.5}{10}+\IntArg{1}}
 \NyquistGraph[black,smooth,]{-1:2}
 {\POAmp{4}{0.5}+\RetAmp{1.8}}
@@ -1121,135 +1577,175 @@ only marks,mark=.]{-1:0.3}
 {\POAmp{4}{0.5}+\RetAmp{1.8}}
 {\POArg{4}{0.5}+\RetArg{1.8}}{[above]
 {\footnotesize $H_3$}}
-
+\NyquistGraph[purple,smooth,samples=81,]
+{-2:2}{\SOAmp{3}{0.5}{10}}{\SOArg{3}{0.5}{10}}
 \NyquistPoint*[black,]{8/below right,
 10/below left,20/left}
 {\SOAmp{3}{0.5}{10}}{\SOArg{3}{0.5}{10}}
-
-
 \NyquistText[red]{8/below left/Texte}
 {\SOAmp{3}{0.5}{10}}{\SOArg{3}{0.5}{10}}
 \end{scope}
 \NyquistGrid
-
 \end{tikzpicture}
-
-\end{tkzexample}
+\end{tikzexample}
 \caption{Diagramme de Nyquist}
-\label{fig:diagnyq}
+\label{fig:diagnyq2}
 \end{figure}
 
-\begin{itemize}
-\item La commande \verb"\NyquistGraph[options]{domaine}{Module en dB}{Argument en degre}" trace donc le lieu de Nyquist de fonctions simples ou de fonctions composées (voir les exemples ci-dessous).
-\begin{itemize}
-\item \verb"[options]", options de tracé voir plus haut,
-\item \verb"{domaine}",  le domaine de tracé doit être défini en décade,
-\item \verb"{Module en dB}", le module doit être écrit en dB, on peut bien sûr utiliser les fonctions élémentaires ci-dessus comme \verb"\POAmp", \verb"\SOAmp" pour obtenir ce module.
-\item \verb"{Argument en degre}", l'argument doit être définie en degré, on peut utiliser les fonctions arguments ci-dessus comme \verb"\POArg", \verb"\SOArg".
-\end{itemize}
-\item  \verb"\NyquistGraph*[options]{domaine}{Module en dB}{Argument en degre}{[options]{texte}}", cette version étoilée permet de rajouter un commentaire à l'extrémité du tracé.
-\item  \verb"\NyquistPoint{options]{liste pulsations}{Module en dB}{Argument en degre}",  cette commande permet de tracer et noter des points particuliers du graphe, la valeur de la pulsation est placée à coté (droite par défaut).
-\item \verb"\NyquistPoint*{options]{liste pulsations}{Module en dB}{Argument en degre}", la version étoilée permet de préciser la position du point.
-
-\item \verb"\NyquistText{options]{pulsation/pos/text}{Module en dB}{Argument en degre}"   cette commande permet de positionner un  \verb"texte" par rapport à la courbe définie par \verb"{fonction argument,fonction module}" le texte étant positionné à la pulsation \verb"pulsation", le paramètre \verb"pos" permet de préciser la position du texte (\verb"right",  \verb"above",  \verb"below left", \dots).  Le point est nommé \verb"NNyquist".
-
-\item \verb"\NyquistText*{options]{pulsation/pos/text}{Module en dB}{Argument en degre}"  commande identique à la précédente mais le point n'est pas dessiné.
-\end{itemize}
 
 
-Un grille peut être ajoutée au tracé par la commande \verb"\NyquistGrid", par défaut le pas de la grille est de 1 mais peut être réglé avec les deux variables \verb"\valgridNx"  et \verb"\valgridNx".  La commande étoilée trace la grille seule sans graduation, la commande simple trace en plus le cercle unitaire, le point critique (-1,0).
-
-\subsubsection{Styles par défaut}
-
-Comme pour le diagramme de Black, des styles par défaut sont proposés:
 
 \begin{itemize}
-\item \verb"Nyquist lines/.style={very thick, blue}": style pour le tracé du lieu de Nyquist;
-\item \verb"Nyquist grid/.style={ultra thin,brown}": style de la grille;
-\item \verb"Nyquist label axes/.style={Nyquist grid,font=\tiny}":style utilisé pour les axes;
-\item \verb"Nyquist label points/.style={font=\tiny}", style utilisé pour les points
-\item \verb"ref points/.style={circle,draw, black, opacity=0.7,fill, minimum size= 2pt, inner sep=0}": style utilisé pour marquer les points sur le diagramme.
-\end{itemize}
+\item 
+\myverb{\NyquistGraph[options]{domaine}{Module en dB}{Argument en degre}} \\
+\traduction{trace donc le lieu de Nyquist de fonctions simples ou de fonctions composÃ©es (voir les exemples ci-dessous).}{ traces Nyquistâ€™s locus of simple functions or of compound functions ( see the examples below).}
 
-
-\subsection{Quelques exemples de tracé de lieu de Nyquist}
-
-Sur l'exemple figure~\ref{fig:diagnyq}  sont représentées les fonctions suivantes:
-\begin{multicols}{2}
 \begin{itemize}
-\item  $H_1(p)=\dfrac{1}{1+\dfrac{2\cdot 0.1}{1500}\cdot p +\dfrac{p^2}{1500^2}}$, 
-\item  $H_2(p)=\dfrac{5}{1+\dfrac{2\cdot 0.2}{150}\cdot p +\dfrac{p^2}{150^2}}$,
-\item  $H_3(p)=\dfrac{5}{1+3\cdot p}$,
-\item $H_4(p)=\dfrac{1}{1+\dfrac{2\cdot 0.1}{1500}\cdot p +\dfrac{p^2}{1500^2}} \cdot \dfrac{0.43\cdot\left(1+0.0009\cdot p\right)^2}{0.0009\cdot p}$
+\item  \myverb{ [options]}\\
+\traduction{options de tracÃ©}{options of drawing }
+\item  \myverb{ {domaine}}\\
+\traduction{le domaine de tracÃ© doit Ãªtre dÃ©fini en dÃ©cade}{domain of drawing must be indicated in decades}
+\item  \myverb{ {Module en dB}}\\
+\traduction{le module doit Ãªtre Ã©crit en dB, on peut bien sÃ»r utiliser les fonctions Ã©lÃ©mentaires ci-dessus comme  \textbf{\textbackslash POAmp},  \textbf{\textbackslash SOAmp} pour obtenir ce module.}
+{the module must be written in dB, you can also use the basic functions above such as \textbf{\textbackslash POAmp}, \textbf{\textbackslash SOAmp} to obtain the module.}
+\item  \myverb{ {Argument en degre}}\\
+\traduction{l'argument doit Ãªtre dÃ©finie en degrÃ©, on peut utiliser les fonctions arguments ci-dessus comme  \textbf{\textbackslash POArg},  \textbf{\textbackslash SOArg}.}
+{the argument must be indicated in degrees, you can use the argument functions above such as \textbf{\textbackslash POArg},  \textbf{\textbackslash SOArg}.}
+\end{itemize}
+\item {\small   \myverb{\NyquistGraph*[options]{domaine}{Module en dB}{Argument en degre}{[options]{texte}}} }\\
+
+\traduction{cette version Ã©toilÃ©e permet de rajouter un commentaire Ã  l'extrÃ©mitÃ© du tracÃ©.}{this allows to add again a comment at the bottom of the drawing. 
+}
+
+\item  {\small \myverb{\NyquistPoint[options]{liste pulsations}{Module en dB}{Argument en degre}}}\\
+\traduction{cette commande permet de tracer et noter des points particuliers du graphe, la valeur de la pulsation est placÃ©e Ã  cotÃ© (droite par dÃ©faut).}{this command allows to trace and msrk specific points of the graph, the pulsation value is place on the side (on the right side by default).}
+
+\item  {\small \myverb{\NyquistPoint*[options]{liste pulsations}{Module en dB}{Argument en degre}} }\\
+\traduction{la version Ã©toilÃ©e permet de prÃ©ciser la position du point.}{the starred version allows to specify the point position.}
+
+\item {\small \myverb{\NyquistText[options]{pulsation/pos/text}{Module en dB}{Argument en degre}} }\\
+\traduction{cette commande permet de positionner un   \textbf{texte} par rapport Ã  la courbe dÃ©finie par  \textbf{argument,module} le texte Ã©tant positionnÃ© Ã  la pulsation  \textbf{pulsation}, le paramÃ¨tre  \textbf{pos} permet de prÃ©ciser la position du texte (\textbf{ right},  \textbf{ above},  \textbf{ below left}, \dots).  Le point est nommÃ©  \textbf{ NNyquist}.}{this command allows to place a \textbf{texte} in relation to the curve defined by  \textbf{argument} , \textbf{module} the text being positioned to the pulsation pulsation, \textbf{pos}  parameter allows to specify the positioning of the text (\textbf{right}, \textbf{above}, \textbf{below left}, \dots). The point is named \textbf{NNyquist}.}
+
+\item  {\small \myverb{\NyquistText*[options]{pulsation/pos/text}{Module en dB}{Argument en degre}} }\\
+\traduction{commande identique Ã  la prÃ©cÃ©dente mais le point n'est pas dessinÃ©.}{identical command to the previous one, but the point is not drawn. }
 
 \end{itemize}
-\end{multicols}
+
+
+\traduction{Une grille peut Ãªtre ajoutÃ©e au tracÃ© par la commande  \textbf{\textbackslash NyquistGrid}, par dÃ©faut le pas de la grille est de 1 mais peut Ãªtre rÃ©glÃ© avec les deux variables  \textbf{\textbackslash valgridNx}  et  \textbf{\textbackslash valgridNy}.  La commande Ã©toilÃ©e trace la grille seule sans graduation, la commande simple trace en plus le cercle unitaire, le point critique (-1,0).}{You can add a grid to the drawing by the command \textbf{\textbackslash NyquistGrid},  the grid step is 1 by default, but it can be modified using the two variables  \textbf{\textbackslash valgridNx} and  \textbf{\textbackslash valgridNy}. The starred command traces only the grid without graduation, the simple command traces also the unit circle, the critic point (-1,0).}
 
 
 
+\subsubsection{\TradEnLigne{Styles par dÃ©faut}{Default style}}
 
+Comme pour le diagramme de Black, des styles par dÃ©faut sont proposÃ©s:
 
-\section{Réponse temporelle}
-figure~\ref{fig:graphreptemp}
 \begin{itemize}
-\item \verb"\RepTemp[options]{domaine}{fonction}" trace la fonction, la fonction doit être définie comme une fonction gnuplot.
-\item \verb"\RepTemp*[options]{domaine}{fonction}{[options]{texte}}" trace la fonction et ajoute le texte à l'extrémité.
+\item  \myverb{ Nyquist lines/.style={very thick, blue}}: \\
+\traduction{style pour le tracÃ© du lieu de Nyquist;}{style for the drawing of Nyquistâ€™s locus ;}
+
+\item  \myverb{ Nyquist grid/.style={ultra thin,brown}}:\\
+\traduction{ style de la grille;}{: grid style  ; }
+
+\item  \myverb{ Nyquist label axes/.style={Nyquist grid,font=\tiny}}:\\
+\traduction{style utilisÃ© pour les axes;}{style used for the axis ;}
+
+\item  \myverb{ Nyquist label points/.style={font=\tiny}}: \\
+\traduction{style utilisÃ© pour les points;}{style used for the points;}
+
+\item {\small \myverb{ ref points/.style={circle,draw, black, opacity=0.7,fill, minimum size= 2pt, inner sep=0}} }:\\
+\traduction{style utilisÃ© pour marquer les points sur le diagramme.}{style used to mark the points on graph.}
 \end{itemize}
 
-\begin{figure}[!ht]
+
+\subsection{\TradEnLigne{Quelques exemples de tracÃ© de lieu de Nyquist}{Some examples of Nyquistâ€™s locus drawing }}
+
+\traduction{Sur les deux figures fig.~\ref{fig:diagnyq1} et~\ref{fig:diagnyq2}  sont reprÃ©sentÃ©es les fonctions suivantes:}{ the following functions are represented on the figure~\ref{fig:diagnyq1} et~\ref{fig:diagnyq2}.
+}
+
+\begin{itemize}
+\item  $H_1(p)=\dfrac{1}{1+\dfrac{2\cdot 0.1}{1500}\cdot p +\dfrac{p^2}{1500^2}}$
+\item  $H_2(p)=\dfrac{5}{1+\dfrac{2\cdot 0.2}{150}\cdot p +\dfrac{p^2}{150^2}}$
+\item  $H_3(p)=\dfrac{5}{1+3\cdot p}$
+\item $H_4(p)=\dfrac{1}{1}\dfrac{2\cdot 0.1}{1500}\cdot p +\dfrac{p^2}{1500^2}+ \cdot \dfrac{0.43\cdot\left(1+0.0009\cdot p\right)^2}{0.0009\cdot p}$
+
+\end{itemize}
+
+
+\clearpage
+
+\section{\TradEnLigne{RÃ©ponse temporelle}{Time response}}
+fig.~\ref{fig:graphreptemp}
+\begin{itemize}
+\item  \myverb{\RepTemp[options]{domaine}{fonction}}\\
+\traduction{trace la fonction, la fonction doit Ãªtre dÃ©finie comme une fonction Gnuplot.}{traces the function, function must be defined like a gnuplot function.}
+\item  \myverb{\RepTemp*[options]{domaine}{fonction}{[options]{texte}}}\\
+\traduction{trace la fonction et ajoute le texte Ã  l'extrÃ©mitÃ©.}{traces the function and adds the text at the bottom.}
+\end{itemize}
+
+\begin{figure}[!htb]
 \centering
-\begin{tkzexample}[latex=7cm,small]
+\begin{tikzexample}[title=,righthand width=0.4\textwidth]
 \begin{tikzpicture}[xscale=5/2,yscale=7/2]
-\RepTemp*[color=black,samples=31,smooth,
-]{0:1.8}{
--.198*exp(-35.4*x)-.638*exp(-2.28*x)*cos(18.3*x)
+\RepTemp*[color=black,samples=31,
+smooth,]{0:1.8}
+{-.198*exp(-35.4*x)-.638*exp(-2.28*x)
+*cos(18.3*x)
 -.462*exp(-2.28*x)*sin(18.3*x)+.833
 }{[right]{\small 1}}
 \RepTemp*[color=blue,samples=31,smooth
-,]{0:1.8}{
-1-.117*exp(-24.1*x)-.883*exp(-2.94*x)*cos(7.03*x)
+]{0:1.8}{1-.117*exp(-24.1*x)-.883*exp(-2.94*x)
+*cos(7.03*x)
 -.769*exp(-2.94*x)*sin(7.03*x)
 }{[right]{\small 2}}
 \def\valmaxx{1.8}
 \def\valmaxy{1.2}
 \TempGrid[xstep=0.2,ystep=0.2]
 \end{tikzpicture}
-\end{tkzexample}
-\caption{Réponse temporelle}
+\end{tikzexample}
+\caption{RÃ©ponse temporelle}
 \label{fig:graphreptemp}
 \end{figure}
 
 
-\subsection{styles}
-Plusieurs styles sont définis par défaut:
+\subsection{\TradEnLigne{Styles}{Styles}}
+\traduction{Plusieurs styles sont dÃ©finis par dÃ©faut:}{ Different styles are defined by default:}
 
 \begin{itemize}
-\item \verb"Temp lines/.style={very thick, blue} ": style du tracé;
-\item \verb"Temp grid/.style={ultra thin,brown!80} ": style de la grille;
-\item \verb"Temp label axes/.style={Temp grid, font=\tiny} ": style des labels des axes;
-\item \verb"Temp label points/.style={font=\tiny}": style des points marqués.
+\item  \myverb{ Temp lines/.style={very thick, blue} }: \TradEnLigne{style du tracÃ©;}{ style of the drawing ;}
+\item  \myverb{ Temp grid/.style={ultra thin,brown!80} }: \TradEnLigne{style de la grille;}{grid style;}
+
+\item  \myverb{ Temp label axes/.style={Temp grid, font=\tiny} }: \TradEnLigne{style des labels des axes;}{style of the labels of the axis ;}
+
+\item  \myverb{ Temp label points/.style={font=\tiny}}: \TradEnLigne{style des points marquÃ©s.}{style of marked points .}
 \end{itemize}
+
 
 
 \newpage
 
-\section{Abaques}
-\subsection{Temps de réponse d'un second ordre}
+\section{\TradEnLigne{Abaques}{Abacus}}
 
-\begin{tkzexample}[latex=7cm,small]
-\begin{tikzpicture}[xscale=1.5,yscale=2]
+\traduction{Ces deux derniÃ¨res commandes permettent de tracer les abaques caractÃ©ristiques d'un systÃ¨me du second ordre}{These last two commands allow you to draw the characteristic charts of a second order system.}
+
+\subsection{\TradEnLigne{Temps de rÃ©ponse d'un second ordre}{Second order response time chart}}
+
+\begin{tikzexample}[title=,righthand width=0.5\textwidth,]
+\begin{tikzpicture}
+[xscale=2.5,yscale=3]
 \AbaqueTRsecond
 \end{tikzpicture}
-\end{tkzexample}
+\end{tikzexample}
 
 
-\subsection{Abaque des dépassements indiciels}
+\subsection{\TradEnLigne{Abaque des dÃ©passements indiciels}{Abacus of index overruns}}
 
-\begin{tkzexample}[latex=7cm,small]
-\begin{tikzpicture}[scale=7/2]
+\begin{tikzexample}[title=,righthand width=0.55\textwidth,]
+\begin{tikzpicture}
+[scale=6/2]
 \AbaqueDepassement
 \end{tikzpicture}
-\end{tkzexample}
+\end{tikzexample}
 
 
 

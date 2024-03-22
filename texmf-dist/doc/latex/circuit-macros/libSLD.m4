@@ -2,7 +2,7 @@ divert(-1)
  
   libSLD.m4                    Draft macros for single-line diagram elements
 
-* Circuit_macros Version 10.1, copyright (c) 2022 J. D. Aplevich under     *
+* Circuit_macros Version 10.5, copyright (c) 2024 J. D. Aplevich under     *
 * the LaTeX Project Public Licence in file Licence.txt. The files of       *
 * this distribution may be redistributed or modified provided that this    *
 * copyright notice is included and provided that modifications are clearly *
@@ -628,8 +628,8 @@ define(`sl_ct',`[ Origin: Here
  pushkeys_(`$2', type:L:N; scale:1; grnd::N ) dnl
  define(`m4scf',`(m4scale*1.2)')dnl
  setdir_(`$3',R)
- ifinstr(m4type,L,
-  `L: inductor(to vec_(2*dimen_/8*m4scf,0) with .c at Origin,,2); C: L.c
+ ifinstr(m4type,L,`define(`m4lw',`dimen_/8*m4scf')dnl
+   L: inductor(to vec_(2*m4lw,0) with .c at Origin,,2,,m4lw); C: L.c
      pushkey_(`$2',stemlgth,dimen_/5)dnl
      line from L.start to L.start+vec_(0,-m4stemlgth)
    Tstart: Here

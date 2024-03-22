@@ -1,35 +1,43 @@
 .PS
-# Opamp.m4
+# OpampDPV.m4
 cct_init(svg_font(sans-serif,11bp__))
 
-  A: opamp
+  A: opamp(,,, body=shaded "yellow")
      thinlines_
-       "`opamp'" at A.s-(0,0.25)
-       "Out" below at A.Out
+      `"opamp(,,,"' wid 0.65 ljust at A.sw-(0.4,0.4) \
+        `"body=shaded \"yellow\")"' ljust
+      `"Out"' below at A.Out
        spline <- from A.In1 left 0.1 then up 0.1 left 0.1
-         "In1" wid 0.25 rjust above
+        `"In1"' wid 0.25 rjust above
        spline <- from A.In2 left 0.1 then down 0.1 left 0.1
-         "In2" rjust below
+        `"In2"' rjust below
+       arrow <- up 0.1 right 0.1 from A.N
+        `"N"' ljust above
        arrow <- up 0.1 right 0.1 from A.E1
-         "E1" ljust above
+        `"E1"' ljust above
+       arrow <- up 0.1 right 0.1 from A.E
+        `"E"' ljust above
        arrow <- down 0.1 right 0.1 from A.E2
-         "E2" ljust below
-     thicklines_
-     Point_(15)
-  B: opamp(,,,,PR) with .sw at A.se+(0.65,0)
-     thinlines_
-       "`Point_(15); opamp(,,,,PR)'" at B.s-(0,0.25)
-       spline <- right arrowht up arrowht from B.V1 then right 0.1
-       "V1" ljust
-       spline <- right arrowht down arrowht from B.V2 then right 0.1
-       "V2" ljust
+        `"E2"' ljust below
+       arrow <- down 0.1 right 0.1 from A.S
+        `"S"' ljust below
+       arrow <- left 0.2 from A.W
+        `"W"' rjust
      thicklines_
      Point_(90)
-  C: opamp with .sw at B.se+(1.05,0)
-       "`Point_(90); opamp'" at C.s-(0,0.25)
+  B: opamp(,,,,PR) with .sw at A.se+(0.75,0)
+     thinlines_
+      `"Point_(90);"' ljust at B.sw-(0,0.2) \
+      `"opamp(,,,,PR)"' ljust
+       spline <- left arrowht down arrowht from B.V1 then left 0.1
+        `"V1"' rjust
+       spline <- right arrowht down arrowht from B.V2 then right 0.1
+        `"V2"' ljust
+     thicklines_
      right_
-  D: opamp(,,,,T) with .sw at C.se+(0.65,0)
-       "`opamp(,,,,T)'" wid 0.85 at D.s-(0,0.25)
+  C: opamp(,,,body=shaded "orange",T) with .sw at B.se+(0.75,0)
+      `"opamp(,,,"' wid 0.85 ljust at C.sw+(0,-0.25) \
+         `"body=shaded \"orange\",T)"' wid 1.75 ljust
 
- command "</g>" # end font
+ command `"</g>"' # end font
 .PE

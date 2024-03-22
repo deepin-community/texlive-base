@@ -1,0 +1,205 @@
+\documentclass{ltxdoc}
+
+\EnableCrossrefs
+\CodelineIndex
+\RecordChanges
+
+\usepackage{mdframed}
+\usepackage{minted}
+\usepackage{multicol}
+\usepackage{luacode}
+\usepackage{syntax}
+
+\usemintedstyle{friendly}
+\BeforeBeginEnvironment{minted}{\begin{mdframed}}
+\AfterEndEnvironment{minted}{\end{mdframed}}
+\setminted{
+  breaklines=true,
+  fontsize=\footnotesize,
+  style=manni,
+}
+\def\lua#1{\mintinline{lua}|#1|}
+\def\latex#1{\mintinline{latex}|#1|}
+
+\NewDocumentCommand { \InputLatex } { O{} m } {
+  \begin{mdframed}
+  \inputminted[linenos=false,#1]{latex}{examples/#2}
+  \end{mdframed}
+}
+
+\NewDocumentCommand { \InputLua } { O{} m } {
+  \begin{mdframed}
+  \inputminted[linenos=false,#1]{lua}{examples/#2}
+  \end{mdframed}
+}
+
+\begin{document}
+
+\providecommand*{\url}{\texttt}
+
+\title{The \textsf{lparse} package}
+\author{%
+  Josef Friedrich\\%
+  \url{josef@friedrich.rocks}\\%
+  \href{https://github.com/Josef-Friedrich/lparse}
+       {github.com/Josef-Friedrich/lparse}%
+}
+\date{0.1.0 from 2023/01/29}
+
+\maketitle
+
+\InputLatex[firstline=5,lastline=14]{title-page.tex}
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+% \section{Einführung}
+\section{Introduction}
+
+% Der Name |lparse| ist von |xparse| abgeleitet.
+The name |lparse| is derived from |xparse|.
+%
+% Das |x| wurde durch |l| ersetzt, da dieses Packet nur zusammen mit
+% Lua\TeX{} funktioniert.
+The |x| has been replaced by |l| because this package only works with Lua\TeX{}.
+%
+% |l| steht für \emph{Lua}
+|l| stands for \emph{Lua}.
+%
+% Ebenso wie bei dem Paket |xparse| ist es möglich, die Argumente eines
+% Makros mit Hilfe einer speziellen Syntax bestehend aus einzelnen
+% Buchstaben zu beschreiben.
+Just as with |xparse|, it is possible to use a special syntax consisting
+of single letters to express the arguments of a macro.
+%
+% |lparse| ist jedoch im Stande unabhängig von der verwendeten
+% Makrosammlung - ob LaTeX oder ConTeXt oder sogar Plain TeX - Argumente
+% einzulesen.
+However, |lparse| is able to read arguments regardless of the macro
+systemd used - whether \LaTeX{} or Con\TeX{}t or even plain \TeX.
+%
+% Als Engine musst natürlich immer LuaTeX verwendet werden.
+Of course, Lua\TeX{} must always be used as the engine.
+
+\subsection{Similar projects}
+
+% Für ConTeXt gibt es einen ähnlichen Argumenten scanner.
+For Con\TeX{}t there is a similar argument scanner (see Con\TeX{}t Lua
+Document
+\href{http://www.pragma-ade.nl/general/manuals/cld-mkiv.pdf}{cld-mkiv}).
+%
+% Dieser Scanner ist in folgenden Dateien implementiert
+This scanner is implemented in the following files:
+\href{https://github.com/contextgarden/context/blob/main/tex/context/base/mkiv/toks-scn.lua}{toks-scn.lua}
+\href{https://github.com/contextgarden/context/blob/main/tex/context/base/mkiv/toks-aux.lua}{toks-aux.lua}
+\href{https://github.com/contextgarden/context/blob/main/tex/context/base/mkiv/toks-ini.lua}{toks-ini.lua}
+% Con\TeX{}t scanner verwendet offenbar die Token Bibliothek des LuaTeX Nachfolgeprojekts luametaTeX
+%
+Con\TeX{}t scanner apparently uses the token library of the LuaTeX
+successor project luameta\TeX:
+\href{https://github.com/contextgarden/context/blob/main/source/luametatex/source/lua/lmttokenlib.c}{lmttokenlib.c}
+
+\section{Description of the argument specification}
+%
+% Folgende Listen, die die Argumenttypen beschreiben, entstammen den
+% Handbücher usrguide bzw. xparse.
+The following lists, which describe the individual argument types, are
+taken from the manuals
+\href{http://mirrors.ctan.org/macros/latex/base/usrguide.pdf}{usrguide}
+and
+\href{http://mirrors.ctan.org/macros/latex/contrib/l3packages/xparse.pdf}{xparse}.
+%
+% Die Beschreibungstexte der einzelnen Argumententypen wurden nur leicht angepasst.
+The descriptive texts of the individual argument types have only been
+slightly adjusted.
+%
+% Die noch nicht unterstützen Argumentypen sind eingeklammert.
+The argument types that are not yet supported are bracketed.
+
+% /usr/local/texlive/texmf-dist/source/latex/l3packages/xparse/xparse.dtx
+\begin{itemize}
+  \item[m] A standard mandatory argument, which can either be a single
+    token alone or multiple tokens surrounded by curly braces |{}|.
+    Regardless of the input, the argument will be passed to the
+    internal code without the outer braces. This is the \pkg{xparse}
+    type specifier for a normal \TeX{} argument.
+  \item[r] Given as \texttt{r}\meta{token1}\meta{token2}, this denotes a
+    \enquote{required} delimited argument, where the delimiters are
+    \meta{token1} and \meta{token2}. If the opening delimiter
+    \meta{token1} is missing, |nil| will be
+    returned after a suitable error.
+  \item[R] Given as \texttt{R}\meta{token1}\meta{token2}\marg{default},
+    this is a \enquote{required} delimited argument as for~\texttt{r},
+    but it has a user-definable recovery \meta{default} instead of
+    |nil|.
+  \item[v] Reads an argument \enquote{verbatim}, between the following
+    character and its next occurrence.
+  \item[(b)] Not implemented! Only suitable in the argument specification of an
+    environment, it denotes the body of the environment, between
+    |\begin|\marg{environment} and |\end|\marg{environment}.
+\end{itemize}
+The types which define optional arguments are:
+\begin{itemize}
+  \item[o] A standard \LaTeX{} optional argument, surrounded with square
+    brackets, which will supply
+    |nil| if not given (as described later).
+  \item[d] Given as \texttt{d}\meta{token1}\meta{token2}, an optional
+    argument which is delimited by \meta{token1} and \meta{token2}.
+    As with \texttt{o}, if no
+    value is given |nil| is returned.
+  \item[O] Given as \texttt{O}\marg{default}, is like \texttt{o}, but
+    returns \meta{default} if no value is given.
+  \item[D] Given as \texttt{D}\meta{token1}\meta{token2}\marg{default},
+    it is as for \texttt{d}, but returns \meta{default} if no value is given.
+    Internally, the \texttt{o}, \texttt{d} and \texttt{O} types are
+    short-cuts to an appropriated-constructed \texttt{D} type argument.
+  \item[s] An optional star, which will result in a value
+    |true| if a star is present and |false|
+    otherwise (as described later).
+  \item[t] An optional \meta{token}, which will result in a value
+    |true| if \meta{token} is present and |false|
+    otherwise. Given as \texttt{t}\meta{token}.
+  \item[(e)] Not implemented! Given as \texttt{e}\marg{tokens}, a set of optional
+    \emph{embellishments}, each of which requires a \emph{value}.
+    If an embellishment is not present, |-NoValue-| is returned.  Each
+    embellishment gives one argument, ordered as for the list of
+    \meta{tokens} in the argument specification.  All \meta{tokens}
+    must be distinct.  \emph{This is an experimental type}.
+  \item[(E)] Not implemented! As for \texttt{e} but returns one or more \meta{defaults}
+    if values are not given: \texttt{E}\marg{tokens}\marg{defaults}.
+\end{itemize}
+
+\clearpage
+
+\section{Implementation}
+
+%%
+%
+%%
+
+\subsection{lparse.lua}
+
+\inputminted[linenos=true]{lua}{lparse.lua}
+
+%%
+%
+%%
+
+\clearpage
+
+\subsection{lparse.tex}
+
+\inputminted[linenos=true]{latex}{lparse.tex}
+
+\clearpage
+
+\subsection{lparse.sty}
+
+\inputminted[linenos=true]{latex}{lparse.sty}
+
+\pagebreak
+\PrintIndex
+\end{document}

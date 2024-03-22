@@ -1,3 +1,11 @@
+--  linebreaker.lua
+-- 
+--  (c) Michal Hoftich <michal.h21@gmail.com>
+-- 
+--  This program can be redistributed and/or modified under the terms
+--  of the LaTeX Project Public License Distributed from CTAN archives
+--  in directory macros/latex/base/lppl.txt.
+
 local linebreaker = {}
 
 local hlist_id = node.id "hlist"
@@ -22,7 +30,7 @@ end
 linebreaker.debug = false
 
 -- max allowed value of tolerance
-linebreaker.max_tolerance = 9999 
+linebreaker.max_tolerance = 8189 -- maximal possible value of tolerance (thanks to Jan Šustek for pointing that out)
 -- maximal allowed emergencystretch
 linebreaker.max_emergencystretch = tex.sp("3em")
 -- line breaking function is customizable
@@ -43,9 +51,38 @@ linebreaker.previous_points = linebreaker.vertical_point / linebreaker.boxsize
 linebreaker.width_factor = 1.5
 -- will be linebreaker active?
 linebreaker.active = true
+
+-- use cubic method for tolerance calculation
+linebreaker.use_cubic = false
 -- return array with default parameters
 function linebreaker.parameters()
-	return {} 
+	return {
+    pardir = tex.pardir
+    ,pretolerance = tex.pretolerance
+    ,tracingparagraphs=tex.tracingparagraphs
+    ,tolerance=tex.tolerance
+    ,looseness=tex.looseness
+    ,hyphenpenalty=tex.hyphenpenalty
+    ,exhyphenpenalty=tex.exhyphenpenalty
+    ,pdfadjustspacing=tex.pdfadjustspacing
+    ,adjdemerits=tex.adjdemerits
+    ,pdfprotrudechars=tex.pdfprotrudechars
+    ,linepenalty=tex.linepenalty
+    ,lastlinefit=tex.lastlinefit
+    ,doublehyphendemerits=tex.doublehyphendemerits
+    ,finalhyphendemerits=tex.finalhyphendemerits
+    ,hangafter=tex.hangafter
+    ,interlinepenalty=tex.interlinepenalty
+    ,clubpenalty=tex.clubpenalty
+    ,widowpenalty=tex.widowpenalty
+    ,brokenpenalty=tex.brokenpenalty
+    ,emergencystretch=tex.emergencystretch
+    ,hangindent=tex.hangindent
+    ,hsize=tex.hsize
+    ,leftskip=tex.leftskip
+    ,rightskip=tex.rightskip
+    ,parshape=tex.parshape
+  } 
 end
 
 -- diagnostic function for traversing nodes returned by linebreaking
@@ -123,8 +160,14 @@ local function find_best(params)
 		end
 	end
 	linebreaker.debug_print "best solution"
+  local ignored_types = {userdata=true, table = true}
 	for k,v in pairs(n) do 
-		linebreaker.debug_print(k,v)
+    -- we must ignore some properties in the params table,
+    -- as they produce errors when used in debug_print,
+    -- and they are not interesting for debugging anyway
+    if not ignored_types[type(v)]  then
+      linebreaker.debug_print(k,v)
+    end
 	end
 	return n
 end
@@ -144,9 +187,23 @@ local function glue_calc(n, sign,set)
 end
 
 
--- calculate new tolerance
+local function cube_root(num)
+  return num ^(1/3)
+end
+
+
+-- calculate new tolerance using method suggested by Jan Šustek
+local function calc_tolerance_cubic(previous, step)
+  local previous = previous or tex.tolerance
+  local max_cycles = linebreaker.max_cycles
+  local max_tolerance = linebreaker.max_tolerance 
+  local new = 100 * (cube_root(previous / 100) + (cube_root(max_tolerance/100) - cube_root(previous/100)) * (step/max_cycles))^3
+  -- local new =  previous + (max_tolerance / max_cycles)-- + math.sqrt(previous * 4)
+  return (new < max_tolerance) and new or max_tolerance
+end
+
 -- max_tolerance / max_cycles is added to the current tolerance value
-local function calc_tolerance(previous)
+local function calc_tolerance(previous, step)
   local previous = previous or tex.tolerance
   local max_cycles = linebreaker.max_cycles
   local max_tolerance = linebreaker.max_tolerance 
@@ -340,7 +397,9 @@ end
 
 -- try to linebreak current paragraph with increasing tolerance and
 -- emergencystretch
-function linebreaker.best_solution(par, parameters)
+function linebreaker.best_solution(par, parameters, step)
+  -- step is used in the tolerance calculation
+  local step = (step or 0) + 1
   -- save current node list, because call to the linebreaker modifies it
   -- and we wouldn't be able to run it multiple times
   local head = node.copy_list(par)
@@ -353,7 +412,7 @@ function linebreaker.best_solution(par, parameters)
   local params = parameters[#parameters]	-- newest parameters are last in the
   -- table that will be used in recursive invocations of this function
   -- it holds updated parameters
-  local newparams =  {}
+  local newparams =  linebreaker.parameters()
   -- this value is set by hpack_quality callback that is executed by
   -- tex.linebreak when overflow or underflow happens
   linebreaker.badness = 0
@@ -373,9 +432,14 @@ function linebreaker.best_solution(par, parameters)
   params.badness =  badness
   if badness > 0 then
     -- calc new value of tolerance
-    local tolerance = calc_tolerance(params.tolerance) -- or 10000 
+    local tolerance
+    if linebreaker.use_cubic then
+      tolerance = calc_tolerance_cubic(params.tolerance, step) -- or 10000 
+    else
+      tolerance = calc_tolerance(params.tolerance, step) -- or 10000 
+    end
     -- save tolerance to newparams so this value will be used in next run
-    newparams.tolerance = tolerance 
+    newparams.tolerance = math.floor(tolerance)
     newparams.emergencystretch = (params.emergencystretch or 0) + linebreaker.max_emergencystretch / linebreaker.max_cycles
     table.insert(parameters, newparams)
     -- run linebreaker again
@@ -416,16 +480,17 @@ local function fix_nest(info)
   tex.nest[tex.nest.ptr].prevgraf=info.prevgraf
 end
 
+
 -- test whether the current overfull box message occurs inside our linebreaker function
 local is_inside_linebreaker = false
 function linebreaker.linebreak(head,is_display)
+  local parameters = linebreaker.parameters()
   -- we can disable linebreaker processing
   if linebreaker.active == false then
-    local newhead, info =  linebreaker.breaker(head)
+    local newhead, info =  linebreaker.breaker(head, parameters)
     fix_nest(info)
     return newhead
   end
-  local parameters = linebreaker.parameters()
   is_inside_linebreaker = true
   local newhead, info = linebreaker.best_solution(head, {parameters}) 
   is_inside_linebreaker = false

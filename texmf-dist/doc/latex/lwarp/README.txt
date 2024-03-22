@@ -1,5 +1,5 @@
 
-LaTeX lwarp package v0.910  README.txt
+LaTeX lwarp package v0.915  README.txt
 
 Files included are:
 
@@ -41,7 +41,6 @@ and version 1.3 or later is part of all distributions of LaTeX
 version 2005/12/01 or later.
 
 
-Copyright 2016-2023 Brian Dunn
+Copyright 2016-2024 Brian Dunn
 
-Homepage: http://BDTechConcepts.com
-Email: bd@BDTechConcepts.com
+GitHub: https://github.com/bdtc/lwarp

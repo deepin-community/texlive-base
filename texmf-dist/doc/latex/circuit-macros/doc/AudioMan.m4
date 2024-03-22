@@ -32,8 +32,8 @@ L:[
   thicklines_
   ]
 [
-  H: speaker(,,H)
-  `"\tt speaker(,{,}H)"' at H.s+(0,-0.30) #below
+  H: speaker(,,H,fill_(0.9))
+  `"\tt speaker(,{,}H,"' at H.s+(0,-0.30) `"\tt fill\_(0.9))"'
   ] with .sw at last [].se+(0.25,-0.1)
   ]
 [
@@ -93,8 +93,8 @@ R:[
   E: earphone(,,C)
   `"\tt earphone(,{,}C)"' at E.s+(0,-0.2) #below
   thinlines_
-  arrow <- from E.L up 0.15 left 0.15; "\sl L" rjust
-  arrow <- from E.R up 0.15 right 0.15; "\sl R" ljust
+  arrow <- from E.L.nw up 0.1 left 0.1; "\sl L" rjust
+  arrow <- from E.R.ne up 0.1 right 0.1; "\sl R" ljust
   "\sl N" at E.N above
   "\sl C" at E.C
   thicklines_

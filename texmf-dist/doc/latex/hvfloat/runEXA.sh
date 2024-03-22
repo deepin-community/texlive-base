@@ -16,5 +16,6 @@ do
      then TEST=0
      fi
    done
-   rm -fr $MAIN.aux $MAIN.log $MAIN.out $MAIN.toc $MAIN.lof $MAIN.lot $MAIN.idx 
+   rm -fr $MAIN.aux $MAIN.log $MAIN.out $MAIN.toc $MAIN.lof $MAIN.run.xml $MAIN.bcf $MAIN.lot $MAIN.idx 
+
 done

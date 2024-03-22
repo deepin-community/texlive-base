@@ -1,8 +1,10 @@
 -- Rudimentary parser for making the CAS easier to use. Essentially just wraps SymbolExpression() around symbols and Integer() around integers.
 
 
-
-require("calculus.luacas-calculus_init")
+local luacas = require("luacas_init")
+luacas:initglobalmodule("core")
+luacas:initglobalmodule("algebra")
+luacas:initglobalmodule("calculus")
 
 -- Splits a string on a seperator.
 function split(str, sep)
@@ -284,8 +286,16 @@ end
 --- @param input string
 function CASparse(input)
 
-    -- First, we replace any occurance of a number with an integer or rational version of itself.
-    local str = string.gsub(input, ".?[0-9]+", function (s)
+    -- First, we replace any occurrence of a decimal with the appropriate fraction.
+
+    local str = string.gsub(input,"%d+%.%d+", function(s)
+        local ints = split(s,"%.")
+        return "("..ints[1]..ints[2].." / 10^" .. tostring(string.len(ints[2])) .. ")"
+    end)
+
+    -- Next, we replace any occurance of a number with an integer or rational version of itself.
+
+    str = string.gsub(str, ".?[0-9]+", function (s)
         -- Here, we are part of an identifier, so we don't replace anything
         if string.match(string.sub(s, 1, 1), "[A-Z]") or string.match(string.sub(s, 1, 1), "[a-z]") or string.match(string.sub(s, 1, 1), "_") then
             return
@@ -301,11 +311,11 @@ function CASparse(input)
     --------------------------
     -- HERE COMES THE JANK. --
     --------------------------
-
+    -- The JANK may not actually be doing anything now. But for the sake of posterity...
     -- Replaces each instance of a decimal with .., so we can use integer metatables to convert it into a rational properly.
     str = string.gsub(str, "Integer%('[0-9]+'%)%.Integer%('[0-9]+'%)", function (s)
         local ints = split(s, "%.")
-        return ints[1] .. ".." .. ints[2]
+        return "("..ints[1] .. ".." .. ints[2] .. ")"
     end)
     str = string.gsub(str, ".?%.Integer%('[0-9]+'%)", function (s)
         if string.sub(s, 1, 2) == ".." then

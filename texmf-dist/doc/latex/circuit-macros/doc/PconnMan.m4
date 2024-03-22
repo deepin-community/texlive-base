@@ -24,10 +24,10 @@ P1: [
   C3: pconnex(,ACF) with .w at last [].e+(0.2,0)
    `"\tt (,ACF)"' at last [].s below
 
-  C5: pconnex(U,D) with .w at last [].e+(0.25,0)
-   `"\tt (U,D)"' at last [].s below
-  C6: pconnex(U,DF) with .w at last [].e+(0.25,0)
-   `"\tt (U,DF)"' at last [].s below
+  C5: pconnex(Up,D) with .w at last [].e+(0.25,0)
+   `"\tt (Up,D)"' at last [].s below
+  C6: pconnex(Up,DF) with .w at last [].e+(0.25,0)
+   `"\tt (Up,DF)"' at last [].s below
   C7: pconnex(U,J) with .w at last [].e+(0.25,0)
    `"\tt (U,J)"' at last [].s below
   C8: pconnex(U,JF) with .w at last [].e+(0.25,0)

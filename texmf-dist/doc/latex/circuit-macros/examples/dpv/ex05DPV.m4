@@ -97,8 +97,8 @@ Coxeter: [
 
   define(`customarc',
    `pushdef(`dfillcolor',`0.7,0.7,0.7') linethick_(0.4); dnl
-    Darc(`$1',linewid, (`$2')*dtor_, (`$3')*dtor_,
-      thick=linewid/6; wid=linewid*0.3; ht=linewid/6; ends=<->)dnl
+    Darc(,centre=`$1';rad=linewid;startdeg= (`$2');enddeg=(`$3');
+      thick=linewid/6; wid=linewid*0.3; ht=linewid/6; ends=<->)
     linethick_(customlinethick); popdef(`dfillcolor')')
 
   customarc((linewid,-linewid/3), 25,155)
@@ -112,4 +112,9 @@ Coxeter: [
   customarc(Orig,-110,-10);                 "svg_it(c)" at (Rect_(linewid,-60))
 
   ] with .sw at Kalman.se+(15bp__,0)
+[
+  linethick = 5
+  Darrow(right_ Coxeter.wid,
+    thick=0.3;wid=0.55;ht=0.55;ends=<->; innershade=(0,1,1);outline=(0,0,1))
+  ] with .sw at Coxeter.nw+(0,0.3)
 .PE

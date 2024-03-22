@@ -7,6 +7,29 @@ this project uses date-based 'snapshot' version identifiers.
 
 ## [Unreleased]
 
+## [2023-10-10]
+
+### Changed
+- Track `expl3` changes
+
+## [2023-08-29]
+
+### Added
+- Re-add `\GetDocumentCommandArgSpec`, etc., to `xparse` stub
+
+## [2023-02-02]
+
+### Changed
+- Re-order arguments of `\DeclareInstanceCopy`
+
+## [2023-02-01]
+
+### Added
+- `\DeclareInstanceCopy`
+
+### Changes
+- Set only known keys in `\SetTemplateKeys`
+
 ## [2023-01-16]
 
 ### Fixed
@@ -214,7 +237,11 @@ this project uses date-based 'snapshot' version identifiers.
 - Switch to ISO date format
 - Improve cross-module use of internal functions
 
-[Unreleased]: https://github.com/latex3/latex3/compare/2023-01-16...HEAD
+[Unreleased]: https://github.com/latex3/latex3/compare/2023-10-10...HEAD
+[2023-10-10]: https://github.com/latex3/latex3/compare/2023-08-29...2023-10-10
+[2023-08-29]: https://github.com/latex3/latex3/compare/2023-02-02...2023-08-29
+[2023-02-02]: https://github.com/latex3/latex3/compare/2023-02-01...2023-02-02
+[2023-02-01]: https://github.com/latex3/latex3/compare/2023-01-16...2023-02-01
 [2023-01-16]: https://github.com/latex3/latex3/compare/2022-12-17...2023-01-16
 [2022-12-17]: https://github.com/latex3/latex3/compare/2022-06-22...2022-12-17
 [2022-06-22]: https://github.com/latex3/latex3/compare/2022-06-16...2022-06-22

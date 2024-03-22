@@ -4,14 +4,12 @@
 % -------------------------------------------------------------------
 %
 % This file may be distributed and/or modified under the
-% conditions of the LaTeX Project Public License, either version 1.2
+% conditions of the LaTeX Project Public License, either version 1.3
 % of this license or (at your option) any later version.
 % The latest version of this license is in:
 %
 %    http://www.latex-project.org/lppl.txt
 %
-% and version 1.2 or later is part of all distributions of LaTeX
-% version 1999/12/01 or later.
 % and version 1.3 or later is part of all distributions of LaTeX
 % version 2003/12/01 or later.
 %
@@ -23,9 +21,9 @@
 % \fi
 %
 % \iffalse
-%<package>\NeedsTeXFormat{LaTeX2e}[2020-10-01]
+%<package>\NeedsTeXFormat{LaTeX2e}[2020/10/01]
 %<package>\ProvidesPackage{eso-pic}
-%<package>   [2020/10/14 v3.0a eso-pic (RN)]
+%<package>   [2023/05/03 v3.0c eso-pic (RN)]
 %
 %<*driver>
 \documentclass[a4paper]{ltxdoc}
@@ -37,7 +35,7 @@
 %</driver>
 % \fi
 %
-% \CheckSum{750}
+% \CheckSum{758}
 %
 % \CharacterTable
 %  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
@@ -55,25 +53,6 @@
 %   Grave accent  \`     Left brace    \{     Vertical bar  \|
 %   Right brace   \}     Tilde         \~}
 %
-% \iffalse meta-comment
-% ===================================================================
-%  @LaTeX-package-file{
-%    author         = {Rolf Niepraschk},
-%    version        = "v2.0i",
-%    date           = "12 Apr 2018",
-%    filename       = "eso-pic.sty",
-%    address        = "",
-%    telephone      = "",
-%    email          = "Rolf.Niepraschk@gmx.de",
-%    codetable      = "ISO/ASCII",
-%    keywords       = "LaTeX2e, \shipout, picture",
-%    dependences    = "atbegshi",
-%    supported      = "yes",
-%    docstring      = "LaTeX package which makes it easy to add some
-%                       picture commands to every page."
-%  }
-% ===================================================================
-% \fi
 %
 % \providecommand\env[1]{\textsf{#1}}
 % \providecommand\clsname[1]{\textsf{#1}}
@@ -123,7 +102,7 @@
 %  internal macro \cs{ESO@HookIBG}. This macro is part of a
 %  zero-length \texttt{picture} environment with basepoint at the lower left
 %  corner of the page (default) or at the upper left corner
-%  (package option "texcoord"). The \texttt{picture} environment will be
+%  (package option ``texcoord''). The \texttt{picture} environment will be
 %  shipped out at every new page.
 %
 %  \DescribeMacro{\AddToShipoutPictureBG*} \cs{AddToShipoutPictureBG*} works like
@@ -138,7 +117,7 @@
 %  \DescribeMacro{\AddToShipoutPictureFG}
 %  \DescribeMacro{\AddToShipoutPictureFG*} Works like
 %  \cs{AddToShipoutPictureBG} but the picture commands are on the top
-%  oft the normal document content.
+%  of the normal document content.
 %
 %  \DescribeMacro{\ClearShipoutPictureBG} A call of
 %  \cs{ClearShipoutPictureBG}
@@ -310,23 +289,29 @@
 % \begin{macro}{\AtTextUpperLeft}
 %  \changes{v2.0a}{2009/10/07}{Works now for class \clsname{memoir}}
 %  \changes{v2.0e}{2014/04/20}{Wrong horizontal position in one-column mode}
+%  \changes{v3.0c}{2023/05/03}{Wrong horizontal position in  memoir one-side
+%     mode (issue \#5)}
 %    \begin{macrocode}
 \ESO@isMEMOIR{%
   \newcommand\AtTextUpperLeft[1]{%
     \begingroup
-      \ifodd\c@page
-        \ESO@tempdima=\spinemargin
+      \if@twoside
+        \ifodd\c@page
+          \ESO@tempdima=\spinemargin
+        \else
+          \ESO@tempdima=\paperwidth
+          \advance\ESO@tempdima-\textwidth
+          \advance\ESO@tempdima-\spinemargin
+        \fi
       \else
-        \ESO@tempdima=\paperwidth
-        \advance\ESO@tempdima-\textwidth
-        \advance\ESO@tempdima-\spinemargin
+        \ESO@tempdima=\spinemargin
       \fi
       \ESO@tempdimb=-\uppermargin
       \AtPageUpperLeft{%
         \put(\ESO@tempdima,\ESO@tempdimb){#1}%
       }%
     \endgroup
-  }
+  }%
 }{%
   \newcommand\AtTextUpperLeft[1]{%
     \begingroup
@@ -573,6 +558,7 @@
 %    `pdfTeX'. Now using with Xe\LaTeX\ should be possible.}
 %  \changes{v2.0a}{2009/10/07}{Better test of color/xcolor}
 %  \changes{v2.0d}{2013/10/06}{Improved color commands}
+%  \changes{v3.0b}{2023/03/23}{More code inside \cmd{\AtBeginDocument}}
 %    \begin{macrocode}
 \@ifundefined{colorbox}{%
   \IfFileExists{xcolor.sty}{\RequirePackage{xcolor}}%
@@ -616,14 +602,15 @@
       \renewcommand*\ESO@gridlines{\thicklines}
     \fi
   \fi
+% \changes{v3.0b}{2023/03/23}{More code inside \cmd{\AtBeginDocument}}
+  \ifESO@texcoord
+    \def\ESO@yoffsetI{\z@}\def\ESO@yoffsetII{-\paperheight}
+    \edef\ESO@griddeltaY{-\ESO@griddelta}\edef\ESO@gridDeltaY{-\ESO@gridDelta}
+  \else
+    \def\ESO@yoffsetI{-\paperheight}\def\ESO@yoffsetII{\z@}
+    \edef\ESO@griddeltaY{\ESO@griddelta}\edef\ESO@gridDeltaY{\ESO@gridDelta}
+  \fi
 }
-\ifESO@texcoord
-  \def\ESO@yoffsetI{\z@}\def\ESO@yoffsetII{-\paperheight}
-  \edef\ESO@griddeltaY{-\ESO@griddelta}\edef\ESO@gridDeltaY{-\ESO@gridDelta}
-\else
-  \def\ESO@yoffsetI{-\paperheight}\def\ESO@yoffsetII{\z@}
-  \edef\ESO@griddeltaY{\ESO@griddelta}\edef\ESO@gridDeltaY{\ESO@gridDelta}
-\fi
 %    \end{macrocode}
 %    \begin{macro}{\ESO@gridpicture}
 %    \begin{macrocode}

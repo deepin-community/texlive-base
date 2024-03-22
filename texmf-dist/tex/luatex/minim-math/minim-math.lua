@@ -365,8 +365,9 @@ end
 --   list of noads.
 --]]
 
-local listmathfields = { 'head', 'nucleus', 'sub', 'sup', 'accent', 'bot_accent',
-    'display', 'text', 'script', 'scriptscript', 'num', 'denom', 'degree', 'next' }
+local listmathfields = { 'head', 'nucleus', 'sub', 'sup', 'accent',
+    'bot_accent', 'display', 'text', 'script', 'scriptscript', 'num', 'denom',
+    'degree', 'next' } -- note that ‘next’ should be last!
 
 local function noad_iterator (head)
     local nodelist = { link=nil, content=head }
@@ -385,7 +386,7 @@ end
 
 local math_char = node.id ('math_char')
 
-local function inspect_noads (h,d,n)
+local function inspect_noads (h, _, _)
     for nd in noad_iterator (h) do
         if nd.id == math_char then
             local sa = node.has_attribute(nd, style_attribute)
@@ -430,11 +431,6 @@ local is_delimiter =
   , close = true
   }
 
-local function tex_accent(class, num, char)
-    kind = kind or ''
-    return '\\math:'..accents[class]..'{'..num..'}'..char
-end
-
 local function add_mathchar(code, char, class, cs, alphabet)
     if char:sub(0,1) == ' ' then
         -- accents can be given above a space (compare ' ́' with '́')
@@ -448,13 +444,15 @@ local function add_mathchar(code, char, class, cs, alphabet)
         if is_delimiter[class] then tex.setdelcode(code, default_fam, code, 0, 0) end
     elseif class == 'radical' then
         if cs then
-            token.set_macro(cs, '\\math:radical{'..code..'}'..char)
-            tex.print('\\mathlet\\'..char..'\\'..cs)
+            tex.print(string.format('\\protected\\def\\%s{\\math:radical{%s}%s}', cs, code, char))
+            tex.print(string.format('\\mathlet\\%s\\%s', char, cs))
         end
     else
         -- TODO: in the future, allow accent characters by re-ordering them
         tex.setmathcode(code, 0, default_fam, 0) -- provisional
-        if cs then token.set_macro(cs, tex_accent(class, code, char)) end
+        if cs then
+            tex.print(string.format('\\protected\\def\\%s{\\math:%s{%s}%s}', cs, accents[class], code, char))
+        end
     end
     add_to_alphabet(code, class)
     if alphabet then

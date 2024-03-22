@@ -20,8 +20,8 @@
 --  
 local ProvidesLuaModule = {
     name          = "newpax",
-    version       = "0.53",       --TAGVERSION
-    date          = "2022-09-15", --TAGDATE
+    version       = "0.55",       --TAGVERSION
+    date          = "2023-11-08", --TAGDATE
     description   = "newpax lua code",
     license       = "The LATEX Project Public License 1.3c"
 }
@@ -180,9 +180,17 @@ end
 -- destinations can be an dict (/D [array]) or only an array!
 
 local function getdestdata (name,pagereftonum,destnamestoref)
-   local destref = destnamestoref[name]
+   local destref
    local type,ref,pagenum,destx,desty = nil, nil, 1,0,0
    local data = {{0,0}, {5,constDEST_XYZ}}
+   -- if we get directly an array
+   if (TYPE(name) == "pdfe.array") then
+     data = ARRAYTOTABLE(name)
+     type, ref, pageref = GETFROMARRAY(name,1)
+     pagenum = pagereftonum[pageref]
+   else
+    destref = destnamestoref[name]
+   end
    if destref then
      type,value,detail = GETFROMREFERENCE(destref)
      if TYPE(value) == "pdfe.dictionary" then
@@ -198,6 +206,7 @@ local function getdestdata (name,pagereftonum,destnamestoref)
         pagenum = pagereftonum[pageref]
      end
    end
+  -- print("XXXXXXXXXX",table.serialize(data),pagenum)
   return pagenum, data
 end
 
@@ -406,8 +415,16 @@ local function outputKV_gotor (pdfedict) -- action dictionary
   return a
 end
 
+-- this outputs the key DestLabel with a count
+
 local function outputKV_goto (count)
   local a = strKV_BEG .. constKEY_DEST_LABEL .. strVALUE_BEG .. count .. strVALUE_END .. strKV_END
+  return a
+end
+
+-- this outputs the key DestName with a name
+local function outputKV_goto_name (name)
+  local a = strKV_BEG .. constKEY_DEST_NAME .. strVALUE_BEG .. name .. strVALUE_END .. strKV_END
   return a
 end
 
@@ -430,7 +447,7 @@ local function outputENTRY_dest (destcount,name,pagereftonum,destnamestoref,pdfe
    if data[4] and data[4][2] then
     a = a .. strKV_BEG .. constKEY_DEST_Y .. strVALUE_BEG .. data[4][2] .. strVALUE_END .. strKV_END
    else
-    a = a .. strKV_BEG .. constKEY_DEST_X .. strVALUE_BEG .. mediabox[4] .. strVALUE_END .. strKV_END
+    a = a .. strKV_BEG .. constKEY_DEST_Y .. strVALUE_BEG .. mediabox[4] .. strVALUE_END .. strKV_END
    end
    if data[5] and data[5][2] then
     a = a .. strKV_BEG .. constKEY_DEST_ZOOM .. strVALUE_BEG .. data[5][2] .. strVALUE_END .. strKV_END
@@ -460,6 +477,11 @@ local function outputENTRY_dest (destcount,name,pagereftonum,destnamestoref,pdfe
    a = a .. data[5][2] .. strRECT_SEP
    a = a .. data[6][2] .. strVALUE_END .. strKV_END
  end
+  -- output also the name. This perhaps need a check if the name exists
+  -- print("DEBUG TYPE name", TYPE(name))
+  if not (TYPE(name) == "pdfe.array") then
+   a = a .. strKV_BEG .. constKEY_DEST_NAME .. strVALUE_BEG .. name .. strVALUE_END .. strKV_END
+  end
  a = a .. strKVS_END .. strENTRY_END
  return a
 end
@@ -480,6 +502,7 @@ local function __writepax (ext,file)
   -- build from names table:
   local destnamestorefVAR = getdestreferences (docVAR)
   local collected_destinations = {}
+  local useddestnames = {}
   -- output ...
   WRITE(strENTRY_BEG .. "{pax}{0.1l}" .. strENTRY_END)
   WRITE(outputENTRY_file(fileVAR,docVAR))
@@ -508,6 +531,7 @@ local function __writepax (ext,file)
                annotgoto,pagereftonumVAR,destnamestorefVAR,docVAR))
         else
           local annotaction = GETDICTIONARY(annot,"A")
+          --  print("DEBUG A:",table.serialize(DICTIONARYTOTABLE(annotaction)))
           local annotactiontype =""
           if annotaction then
             annotactiontype = GETNAME(annotaction,"S")
@@ -521,8 +545,14 @@ local function __writepax (ext,file)
             if annotactiontype == constKEY_URI then
               WRITE ( outputKV_uri(annotaction) )
             elseif annotactiontype =="GoTo" then
+              local desttype, destname, destdetail =  GETFROMDICTIONARY(annotaction,"D")
+              -- print("DEBUG annotaction", desttype, destname, destdetail)
               destcountVAR=destcountVAR + 1
               WRITE ( outputKV_goto (destcountVAR) )
+              -- this needs perhaps a check if destname actually exists.
+              if desttype == 6 then
+                WRITE ( outputKV_goto_name(destname) )
+              end
             elseif annotactiontype=="GoToR" then
               WRITE ( outputKV_gotor(annotaction) )
             elseif annotactiontype=="Named" then
@@ -532,6 +562,10 @@ local function __writepax (ext,file)
             WRITE(strENTRY_END) -- end annot data
             if annotactiontype =="GoTo" then
               local type,annotactiongoto,hex = GETFROMDICTIONARY(annotaction,"D")
+               if type==6 then
+               -- record used name
+               useddestnames[annotactiongoto] = 1
+              end
               table.insert(collected_destinations, outputENTRY_dest(destcountVAR,annotactiongoto,pagereftonumVAR,destnamestorefVAR,docVAR))
             end
           end
@@ -541,6 +575,23 @@ local function __writepax (ext,file)
   end
   for i=1,#collected_destinations do
    WRITE (collected_destinations[i])
+  end
+  -- write out the rest of the destinations.
+  -- We order first the table so that the newpax file doesn't change between
+  -- compilations, see issue #25 and PR #25
+  local destnamessorted = {}
+  for k,v in pairs (destnamestorefVAR) do
+   -- ignore use dests and page destinations.
+    i=string.find(k,"page.",1)
+    if not useddestnames[k] and not i then
+      table.insert (destnamessorted,k)
+    end
+  end
+  table.sort(destnamessorted)
+  for i = 1, #destnamessorted do
+      k=destnamessorted[i]
+      destcountVAR=destcountVAR + 1
+      WRITE(outputENTRY_dest(destcountVAR,k,pagereftonumVAR,destnamestorefVAR,docVAR))
   end
   io.close(writeVAR)
 end

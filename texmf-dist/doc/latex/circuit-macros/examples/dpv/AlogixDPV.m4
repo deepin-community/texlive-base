@@ -18,12 +18,14 @@ A: Autologix(
 
 #                             Draw a tree of gates only.  The ~ has been
 #                             replaced by NOT gates.
-B: Autologix(Or(And(B,Not(C)),And(Not(A),B,C)),N) \
+B: Autologix(Or(And(B,Not(C)),And(Not(A),B,C)),N, shaded "lightblue" ) \
   with .sw at A.e+(1.3,-0.5)
   "svg_it(Out)" at B.Out above ljust
   "svg_tt(`Autologix(Or(And(B,Not(C)),')" wid 165bp__ \
      with .w at B.sw+(-0.6,-0.15)
-  "svg_tt(`And(Not(A),B,C)),N)')" wid 122bp__ with .w at last "".w+(1.1,-0.18)
+  "svg_tt(`And(Not(A),B,C)),N,')" wid 122bp__ with .w at last "".w+(1.1,-0.18)
+  "svg_tt(`shaded \"lightblue\")')" wid 120bp__ \
+    with .w at last "".w+(0,-0.18)
   for_(1,4,1,`"svg_it(B.In`'m4x)" at B.In`'m4x rjust')
   "svg_it(B.In5)" at B.In5+(0,-1.5bp__) rjust
 

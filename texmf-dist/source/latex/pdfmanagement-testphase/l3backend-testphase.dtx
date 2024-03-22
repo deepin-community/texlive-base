@@ -2,7 +2,7 @@
 %
 %% File: l3backend-testphase.dtx
 %
-% Copyright (C) 2019-2021 The LaTeX Project
+% Copyright (C) 2019-2023 The LaTeX Project
 %
 % It may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -45,7 +45,7 @@
 %    }^^A
 % }
 %
-% \date{Version 0.95t, released 2022-11-03}
+% \date{Version 0.96d, released 2023-12-09}
 %
 % \maketitle
 %
@@ -56,61 +56,142 @@
 %    \begin{macrocode}
 %<drivers>\ProvidesExplFile
 %<*dvipdfmx>
-  {l3backend-testphase-dvipdfmx.def}{2022-11-03}{}
+  {l3backend-testphase-dvipdfmx.def}{2023-12-09}{}
   {LaTeX~PDF~management~testphase~bundle~backend~support: dvipdfmx}
 %</dvipdfmx>
 %<*dvips>
-  {l3backend-testphase-dvips.def}{2022-11-03}{}
+  {l3backend-testphase-dvips.def}{2023-12-09}{}
   {LaTeX~PDF~management~testphase~bundle~backend~support: dvips}
 %</dvips>
 %<*dvisvgm>
-  {l3backend-testphase-dvisvgm.def}{2022-11-03}{}
+  {l3backend-testphase-dvisvgm.def}{2023-12-09}{}
   {LaTeX~PDF~management~testphase~bundle~backend~support: dvisvgm}
 %</dvisvgm>
 %<*luatex>
-  {l3backend-testphase-luatex.def}{2022-11-03}{}
+  {l3backend-testphase-luatex.def}{2023-12-09}{}
   {LaTeX~PDF~management~testphase~bundle~backend~support: PDF output (LuaTeX)}
 %</luatex>
 %<*pdftex>
-  {l3backend-testphase-pdftex.def}{2022-11-03}{}
+  {l3backend-testphase-pdftex.def}{2023-12-09}{}
   {LaTeX~PDF~management~testphase~bundle~backend~support: PDF output (pdfTeX)}
 %</pdftex>
 %<*xdvipdfmx>
-  {l3backend-testphase-xetex.def}{2022-11-03}{}
+  {l3backend-testphase-xetex.def}{2023-12-09}{}
   {LaTeX~PDF~management~testphase~bundle~backend~support: XeTeX}
 %</xdvipdfmx>
 %    \end{macrocode}
-% \subsection{Crossreferences}
-% This uses the temporary l3ref-tmp.sty. It will
-% will be replaced by kernel code later.
-% It is only needed to get a reference for the absolute page counter.
-% This uses the counter from the
-% new lthooks/ltshipout package.
+% \subsection{Variants}
+% We need to generate temporarly a few e-types variants of kernel backend commands. 
+% These can be removed once the kernel provides them.
 %    \begin{macrocode}
 %<@@=pdf>
+%<*luatex|pdftex>
+\cs_generate_variant:Nn \__kernel_backend_literal_page:n { e }
+%</luatex|pdftex>
+%<*dvipdfmx|xdvipdfmx>
+\cs_generate_variant:Nn \__kernel_backend_literal:n { e }
+\cs_generate_variant:Nn \@@_backend:n { e }
+%</dvipdfmx|xdvipdfmx>
+%<*dvips>
+\cs_generate_variant:Nn \__kernel_backend_postscript:n { e }
+\cs_generate_variant:Nn \@@_backend_pdfmark:n { e }
+%</dvips>
+%    \end{macrocode}
+% \subsection{Support for delayed literal and special}
+% Starting with TeXlive 2023 the engines support a \texttt{shipout} keyword
+% for \cs{pdfliteral} and \cs{special}. When used the argument is not expanded
+% when the command is used but only when the page is shipped out. This allows for example
+% the tagging code to delay the page-wise numbering of MC-chunks until the page is 
+% actually built. For now we test the engine support. The boolean is setup 
+% in pdfmanagement-testphase.dtx.
+%    \begin{macrocode}
 %<*drivers>
-\RequirePackage{l3ref-tmp}
-\cs_generate_variant:Nn \ref_label:nn {en}
-\cs_generate_variant:Nn \ref_value:nn {en}
-\cs_new_protected:Npn \@@_backend_ref_label:nn #1 #2
+%    \end{macrocode}
+% 
+% The following commands provide the needed kernel backend support. This are basically
+% copies of similar commands of l3backend-basics.
+% \begin{macro}
+%   {
+%     \__kernel_backend_shipout_literal:e
+%   }
+%  The one shared function for all backends is access to the basic
+%  \tn{special} primitive. 
+%    \begin{macrocode}
+\bool_if:NT \l__pdfmanagement_delayed_shipout_bool
+ {
+   \cs_new_protected:Npn \__kernel_backend_shipout_literal:e #1
+     { \tex_special:D~shipout { #1} }
+%</drivers>
+%    \end{macrocode}
+% \end{macro}
+% 
+%    \begin{macrocode}
+%<*luatex|pdftex>
+%    \end{macrocode}
+% \begin{macro}{\__kernel_backend_shipout_literal_pdf:e}
+%   This is equivalent to \verb|\special{pdf:}| but the engine can
+%   track it. Without the \texttt{direct} keyword everything is kept in
+%   sync: the transformation matrix is set to the current point automatically.
+%   Note that this is still inside the text (\texttt{BT} \dots \texttt{ET}
+%   block).
+%    \begin{macrocode}
+  \cs_new_protected:Npn \__kernel_backend_shipout_literal_pdf:e #1
+    {
+%<*luatex>
+      \tex_pdfextension:D ~ literal ~ shipout ~ 
+%</luatex>
+%<*pdftex>
+      \tex_pdfliteral:D ~ shipout ~
+%</pdftex>
+        { #1 }
+    }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\__kernel_backend_shipout_literal_page:e}
+%  Page literals are pretty simple. 
+%    \begin{macrocode}
+  \cs_new_protected:Npn \__kernel_backend_shipout_literal_page:e #1
+    {
+%<*luatex>
+      \tex_pdfextension:D ~ literal ~ shipout ~ 
+%</luatex>
+%<*pdftex>
+      \tex_pdfliteral:D ~ shipout ~
+%</pdftex>
+        page { #1 }
+    }
+%</luatex|pdftex> 
+%<drivers> }
+%    \end{macrocode}
+% \end{macro} 
+
+% \subsection{Crossreferences}
+% Commands to get a reference for the absolute page counter.
+%    \begin{macrocode}
+%<*drivers>
+%    \end{macrocode}
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_backend_record_abspage:n #1
   {
      \@bsphack
-     \ref_label:nn{#1}{abspage}
+     \property_record:nn{#1}{abspage}
      \@esphack
   }
-\cs_new:Npn \@@_backend_ref_value:nn #1 #2
+\cs_new:Npn \@@_backend_ref_abspage:n #1
   {
-     \ref_value:nn{#1}{#2}
+     \property_ref:nn{#1}{abspage}
   }
-\cs_generate_variant:Nn \@@_backend_ref_label:nn {en}
-\cs_generate_variant:Nn \@@_backend_ref_value:nn {en}
+
+\cs_generate_variant:Nn \@@_backend_record_abspage:n {e}
+\cs_generate_variant:Nn \@@_backend_ref_abspage:n {e}
 %</drivers>
 %    \end{macrocode}
 % avoid that destinations names are optimized with xelatex/dvipdfmx
 % see https://tug.org/pipermail/dvipdfmx/2019-May/000002.html
 %    \begin{macrocode}
-%<*dvipdfmx|xdvipdfmx>
-    \__kernel_backend_literal:x { dvipdfmx:config~C~ 0x0010 }
+%<*dvipdfmx|xdvipdfmx>    
+    \__kernel_backend_literal:n { dvipdfmx:config~C~ 0x0010 }
 %</dvipdfmx|xdvipdfmx>
 %    \end{macrocode}
 % \begin{variable}{\g_@@_tmpa_prop, \l_@@_tmpa_tl, \l_@@_backend_tmpa_box }
@@ -338,10 +419,10 @@
   {
     %we need to know the page the resource should be added too.
     \int_gincr:N\g_@@_backend_resourceid_int
-    \@@_backend_ref_label:en { l3pdf\int_use:N\g_@@_backend_resourceid_int }{abspage}
-    \tl_set:Nx \l_@@_tmpa_tl
+    \@@_backend_record_abspage:e { l3pdf\int_use:N\g_@@_backend_resourceid_int }
+    \tl_set:Ne \l_@@_tmpa_tl
       {
-        \@@_backend_ref_value:en {l3pdf\int_use:N\g_@@_backend_resourceid_int}{abspage}
+        \@@_backend_ref_abspage:e {l3pdf\int_use:N\g_@@_backend_resourceid_int}
       }
     \pdfdict_if_exist:nF { g_@@_Core/backend_Page\l_@@_tmpa_tl}
       {
@@ -364,7 +445,7 @@
             \prop_gput:Nnn \g_@@_tmpa_prop { ##1 }{ ##2 }
           }
       }
-    \exp_args:Nx \@@_backend_Page_primitive:n
+    \@@_backend_Page_primitive:e
       {
         \prop_map_function:NN \g_@@_tmpa_prop \pdfdict_item:ne
       }
@@ -475,7 +556,7 @@
   %issues the values stored in the global prop with dvi
 \cs_new_protected:Npn \@@_backend_ThisPage_gpush:n #1
   {
-    \exp_args:Nx \@@_backend_Page_primitive:n
+    \@@_backend_Page_primitive:e
       { \pdfdict_use:n { g_@@_Core/Page} }
   }
 %</dvipdfmx|xdvipdfmx>
@@ -514,8 +595,8 @@
   %issues the values stored in the global prop with dvi
 \cs_new_protected:Npn \@@_backend_ThisPage_gpush:n #1
   {
-    \exp_args:Nx \@@_backend_Page_primitive:n
-          { \pdfdict_use:n { g_@@_Core/Page} }
+    \@@_backend_Page_primitive:e
+      { \pdfdict_use:n { g_@@_Core/Page} }
   }
 %</dvips>
 %<*dvisvgm>
@@ -540,6 +621,9 @@
 \cs_new_protected:Npn \@@_backend_ThisPage_gpush:n #1
   {}
 %</dvisvgm>
+%<*drivers>
+\cs_generate_variant:Nn \@@_backend_Page_primitive:n { e }
+%</drivers>
 %    \end{macrocode}
 % \end{macro}
 %
@@ -624,7 +708,7 @@
         \prop_if_empty:cF
           { \__kernel_pdfdict_name:n { g_@@_Core/Page/Resources/##1} }
           {
-            \pdf_object_write:nnx
+            \pdf_object_write:nne
               { @@/Page/Resources/##1 } { dict }
               { \pdfdict_use:n { g_@@_Core/Page/Resources/##1} }
           }
@@ -661,12 +745,11 @@
   }
 \cs_new_protected:Npn \@@_backend_PageResources_gput:nnn #1 #2 #3
   {
-   % this is not used for output, but there is a test if the resource is empty
-   \exp_args:Nnx
-   \prop_gput:cnn { \__kernel_pdfdict_name:n { g_@@_Core/Page/Resources/#1} }
+   % this is not used for output, but there is a test if the resource is empty   
+   \prop_gput:cne { \__kernel_pdfdict_name:n { g_@@_Core/Page/Resources/#1} }
      { \str_convert_pdfname:n {#2} }{ #3 }
    %objects are not filled with \pdf_object_write as this is not additive!
-    \@@_backend:x
+    \@@_backend:e
       {
         put~\@@_backend_object_ref:n {@@/Page/Resources/#1}<</#2~#3>>
       }
@@ -704,13 +787,15 @@
 % \begin{macro}
 %   {
 %     \@@_backend_bdc:nn,
+%     \@@_backend_shipout_bdc:ee,
 %     \@@_backend_bdcobject:nn,
 %     \@@_backend_bdcobject:n,
 %     \@@_backend_bmc:n,
 %     \@@_backend_emc:,
 %     \@@_backend_PageResources_gpush:n
 %   }
-% \cs{@@_backend_bdc:nn}, \cs{@@_backend_bdcobject:nn}, \cs{@@_backend_bdcobject:n},
+% \cs{@@_backend_bdc:nn}, \cs{@@_backend_shipout_bdc:ee},
+% \cs{@@_backend_bdcobject:nn}, \cs{@@_backend_bdcobject:n},
 % \cs{@@_backend_bmc:n} and \cs{@@_backend_emc:}
 %  are the backend command that
 %  create the bdc/emc marker and store the properties.
@@ -731,15 +816,25 @@
 %
 \cs_set_protected:Npn \@@_backend_bdc:nn #1 #2 % #1 eg. Span, #2: dict_content
   {
-    \@@_backend_pdfmark:x{/#1~<<#2>>~/BDC}
+    \@@_backend_pdfmark:n{/#1~<<#2>>~/BDC}
   }
+
+\bool_if:NT\l__pdfmanagement_delayed_shipout_bool
+  {
+    \cs_new_protected:Npn \@@_backend_bdc_shipout:ee #1 #2 % #1 eg. Span, #2: dict_content
+      { 
+        \__kernel_backend_shipout_literal:e
+          {ps: SDict ~ begin ~ mark /#1~<<#2>>~/BDC ~ pdfmark ~ end }
+      }
+  }      
+  
 \cs_set_protected:Npn \@@_backend_bdcobject:nn #1 #2 % #1 eg. Span, #2: object name
   {
-    \@@_backend_pdfmark:x{/#1~\@@_backend_object_ref:n{#2}~/BDC}
+    \@@_backend_pdfmark:e{/#1~\@@_backend_object_ref:n{#2}~/BDC}
   }
 \cs_set_protected:Npn \@@_backend_bdcobject:n #1  % #1 eg. Span,
   {
-    \@@_backend_pdfmark:x{/#1~\@@_backend_object_last:~/BDC}
+    \@@_backend_pdfmark:e{/#1~\@@_backend_object_last:~/BDC}
   }
 \cs_set_protected:Npn \@@_backend_emc:
   {
@@ -757,6 +852,11 @@
 %
 \cs_set_protected:Npn \@@_backend_bdc:nn #1 #2 % #1 eg. Span, #2: dict_content
   {}
+\bool_if:NT\l__pdfmanagement_delayed_shipout_bool
+  {  
+    \cs_set_protected:Npn \@@_backend_shipout_bdc:ee #1 #2 % #1 eg. Span, #2: dict_content
+      {}  
+  }    
 \cs_set_protected:Npn \@@_backend_bdcobject:nn #1 #2 % #1 eg. Span, #2: object name
   {}
 \cs_set_protected:Npn \@@_backend_bdcobject:n #1  % #1 eg. Span,
@@ -779,11 +879,11 @@
  \cs_set_protected:Npn \@@_backend_bdcobject:nn #1 #2 % #1 eg. Span, #2: object name
    {
      \int_gincr:N \g_@@_backend_name_int
-     \__kernel_backend_literal:x
+     \__kernel_backend_literal:e
        {
          pdf:code~/#1/l3pdf\int_use:N\g_@@_backend_name_int\c_space_tl BDC
        }
-     \__kernel_backend_literal:x
+     \__kernel_backend_literal:e
        {
          pdf:put~@resources~
            <<
@@ -798,11 +898,11 @@
  \cs_set_protected:Npn \@@_backend_bdcobject:n #1  % #1 eg. Span
    {
      \int_gincr:N \g_@@_backend_name_int
-     \__kernel_backend_literal:x
+     \__kernel_backend_literal:e
        {
-         pdf:code~/#1/l3pdf\int_use:N\g_@@_backend_name_int\c_space_tl BDC
+         pdf:code~/\exp_not:n{#1}/l3pdf\int_use:N\g_@@_backend_name_int\c_space_tl BDC
        }
-     \__kernel_backend_literal:x
+     \__kernel_backend_literal:e
        {
          pdf:put~@resources~
            <<
@@ -831,12 +931,21 @@
     \__kernel_backend_literal:n {pdf:code~ /#1~<<#2>>~BDC }
   }
 
-\cs_set_protected:Npn \@@_backend_bdc:nn #1 #2
+ \cs_set_protected:Npn \@@_backend_bdc:nn #1 #2
   {
     \bool_if:NTF  \g__pdfmanagement_active_bool
       {\cs_gset_eq:NN \@@_backend_bdc:nn \@@_backend_bdc_contobj:nn}
       {\cs_gset_eq:NN \@@_backend_bdc:nn \@@_backend_bdc_contstream:nn}
       \@@_backend_bdc:nn {#1}{#2}
+  }
+
+\bool_if:NT\l__pdfmanagement_delayed_shipout_bool
+  { 
+    \cs_set_protected:Npn \@@_backend_bdc_shipout_contstream:ee #1 #2
+      {
+        \__kernel_backend_shipout_literal:e {pdf:code~ /#1~<<#2>>~BDC }
+      }  
+    \cs_set_eq:NN \@@_backend_bdc_shipout:ee \@@_backend_bdc_shipout_contstream:ee
   }
 \cs_set_protected:Npn \@@_backend_emc:
   {
@@ -850,7 +959,7 @@
       {
         \prop_if_empty:cF { \__kernel_pdfdict_name:n { g_@@_Core/Page/Resources/##1} }
           {
-            \__kernel_backend_literal:x
+            \__kernel_backend_literal:e
               {
                 pdf:put~@resources~
                   <</##1~\@@_backend_object_ref:n {@@/Page/Resources/##1}>>
@@ -864,17 +973,17 @@
 \cs_set_protected:Npn \@@_backend_bdcobject:nn #1 #2 % #1 eg. Span, #2: object name
   {
     \int_gincr:N \g_@@_backend_name_int
-    \exp_args:Nx\__kernel_backend_literal_page:n
+    \__kernel_backend_literal_page:e
       { /#1 ~ /l3pdf\int_use:N\g_@@_backend_name_int\c_space_tl BDC }
     \bool_if:NTF \l_@@_backend_xform_bool
       {
-        \exp_args:Nnx\pdfdict_gput:nnn
+        \pdfdict_gput:nee
           { g_@@_Core/Xform/Resources/Properties }
           { l3pdf\int_use:N\g_@@_backend_name_int }
           { \@@_backend_object_ref:n { #2 } }
       }
       {
-        \exp_args:Nx \tex_latelua:D
+        \exp_args:Ne \tex_latelua:D
           {
             ltx.pdf.Page_Resources_Properties_gput
               (
@@ -888,17 +997,17 @@
 \cs_set_protected:Npn \@@_backend_bdcobject:n #1% #1 eg. Span
   {
     \int_gincr:N \g_@@_backend_name_int
-    \exp_args:Nx\__kernel_backend_literal_page:n
-      { /#1 ~ /l3pdf\int_use:N\g_@@_backend_name_int\c_space_tl BDC }
+    \__kernel_backend_literal_page:e
+      { /\exp_not:n{#1} ~ /l3pdf\int_use:N\g_@@_backend_name_int\c_space_tl BDC }
     \bool_if:NTF \l_@@_backend_xform_bool
       {
-        \exp_args:Nnx\pdfdict_gput:nnn %no handler needed
+        \pdfdict_gput:nee %no handler needed
           { g_@@_Core/Xform/Resources/Properties }
           { l3pdf\int_use:N\g_@@_backend_name_int }
           { \@@_backend_object_last: }
       }
       {
-        \exp_args:Nx \tex_latelua:D
+        \exp_args:Ne \tex_latelua:D
           {
             ltx.pdf.Page_Resources_Properties_gput
               (
@@ -922,13 +1031,24 @@
   {
     \__kernel_backend_literal_page:n { /#1~<<#2>>~BDC }
   }
-\cs_set_protected:Npn \@@_backend_bdc:nn #1 #2
+  
+ \cs_set_protected:Npn \@@_backend_bdc:nn #1 #2
   {
     \bool_if:NTF  \g__pdfmanagement_active_bool
       {\cs_gset_eq:NN \@@_backend_bdc:nn \@@_backend_bdc_contobj:nn}
       {\cs_gset_eq:NN \@@_backend_bdc:nn \@@_backend_bdc_contstream:nn}
       \@@_backend_bdc:nn {#1}{#2}
   }
+
+\bool_if:NT\l__pdfmanagement_delayed_shipout_bool
+  {  
+    \cs_set_protected:Npn \@@_backend_bdc_shipout_contstream:ee #1 #2
+      {
+        \__kernel_backend_shipout_literal_page:e { /#1~<<#2>>~BDC }
+      }    
+    \cs_set_eq:NN \@@_backend_bdc_shipout:ee \@@_backend_bdc_shipout_contstream:ee
+  }
+  
 \cs_set_protected:Npn \@@_backend_emc:
   {
     \__kernel_backend_literal_page:n { EMC }
@@ -942,28 +1062,28 @@
 \cs_set_protected:Npn \@@_backend_bdcobject:nn #1 #2 % #1 eg. Span, #2: object name
   {
     \int_gincr:N \g_@@_backend_name_int
-    \exp_args:Nx\__kernel_backend_literal_page:n
+    \__kernel_backend_literal_page:e
       { /#1 ~ /l3pdf\int_use:N\g_@@_backend_name_int\c_space_tl BDC }
     % code to set the property ....
     \int_gincr:N\g_@@_backend_resourceid_int
     \bool_if:NTF \l_@@_backend_xform_bool
       {
-        \exp_args:Nnxx\pdfdict_gput:nnn %no handler needed
+        \pdfdict_gput:nee %no handler needed
           { g_@@_Core/Xform/Resources/Properties }
           { l3pdf\int_use:N\g_@@_backend_resourceid_int }
           { \@@_backend_object_ref:n { #2 } }
       }
       {
-        \@@_backend_ref_label:en{l3pdf\int_use:N\g_@@_backend_resourceid_int}{abspage}
-        \tl_set:Nx \l_@@_tmpa_tl
+        \@@_backend_record_abspage:e {l3pdf\int_use:N\g_@@_backend_resourceid_int}
+        \tl_set:Ne \l_@@_tmpa_tl
           {
-            \@@_backend_ref_value:en{l3pdf\int_use:N\g_@@_backend_resourceid_int}{abspage}
+            \@@_backend_ref_abspage:e{l3pdf\int_use:N\g_@@_backend_resourceid_int}
           }
         \pdfdict_if_exist:nF { g_@@_Core/backend_Page\l_@@_tmpa_tl/Resources/Properties }
           {
             \pdfdict_new:n { g_@@_Core/backend_Page\l_@@_tmpa_tl/Resources/Properties }
           }
-        \exp_args:Nnxx\pdfdict_gput:nnn
+        \pdfdict_gput:nee
           { g_@@_Core/backend_Page\l_@@_tmpa_tl/Resources/Properties }
           { l3pdf\int_use:N\g_@@_backend_resourceid_int }
           { \@@_backend_object_ref:n{#2} }
@@ -972,28 +1092,28 @@
 \cs_set_protected:Npn \@@_backend_bdcobject:n #1% #1 eg. Span
   {
     \int_gincr:N \g_@@_backend_name_int
-    \exp_args:Nx\__kernel_backend_literal_page:n
-      { /#1 ~ /l3pdf\int_use:N\g_@@_backend_name_int\c_space_tl BDC }
+    \__kernel_backend_literal_page:e
+      { /\exp_not:n{#1} ~ /l3pdf\int_use:N\g_@@_backend_name_int\c_space_tl BDC }
     % code to set the property ....
     \int_gincr:N\g_@@_backend_resourceid_int
     \bool_if:NTF \l_@@_backend_xform_bool
       {
-        \exp_args:Nnxx\pdfdict_gput:nnn
+        \pdfdict_gput:nee
           { g_@@_Core/Xform/Resources/Properties }
           { l3pdf\int_use:N\g_@@_backend_resourceid_int }
           { \@@_backend_object_last: }
       }
       {
-        \@@_backend_ref_label:en{l3pdf\int_use:N\g_@@_backend_resourceid_int}{abspage}
-        \tl_set:Nx \l_@@_tmpa_tl
+        \@@_backend_record_abspage:e{l3pdf\int_use:N\g_@@_backend_resourceid_int}
+        \tl_set:Ne \l_@@_tmpa_tl
           {
-            \@@_backend_ref_value:en{l3pdf\int_use:N\g_@@_backend_resourceid_int}{abspage}
+            \@@_backend_ref_abspage:e{l3pdf\int_use:N\g_@@_backend_resourceid_int}
           }
         \pdfdict_if_exist:nF { g_@@_Core/backend_Page\l_@@_tmpa_tl/Resources/Properties }
           {
             \pdfdict_new:n { g_@@_Core/backend_Page\l_@@_tmpa_tl/Resources/Properties }
           }
-        \exp_args:Nnxx\pdfdict_gput:nnn
+        \pdfdict_gput:nee
           { g_@@_Core/backend_Page\l_@@_tmpa_tl/Resources/Properties }
           { l3pdf\int_use:N\g_@@_backend_resourceid_int }
           { \@@_backend_object_last: }
@@ -1013,6 +1133,7 @@
    {
      \__kernel_backend_literal_page:n { /#1~<<#2>>~BDC }
    }
+
 \cs_set_protected:Npn \@@_backend_bdc:nn #1 #2
   {
     \bool_if:NTF  \g__pdfmanagement_active_bool
@@ -1020,6 +1141,15 @@
       {\cs_gset_eq:NN \@@_backend_bdc:nn \@@_backend_bdc_contstream:nn}
       \@@_backend_bdc:nn {#1}{#2}
   }
+\bool_if:NT\l__pdfmanagement_delayed_shipout_bool
+  {  
+    \cs_set_protected:Npn \@@_backend_bdc_shipout_contstream:ee #1 #2
+       {
+         \__kernel_backend_shipout_literal_page:e { /#1~<<#2>>~BDC }
+       }     
+    \cs_set_eq:NN \@@_backend_bdc_shipout:ee \@@_backend_bdc_shipout_contstream:ee
+  }
+  
 \cs_set_protected:Npn \@@_backend_emc:
   {
     \__kernel_backend_literal_page:n { EMC }
@@ -1036,7 +1166,7 @@
 
 \cs_new_protected:Npn \@@_backend_PageResources_gpush:n #1
   {
-     \exp_args:NNx \tex_global:D \tex_pdfpageresources:D
+     \exp_args:NNe \tex_global:D \tex_pdfpageresources:D
        {
          \prop_if_exist:cT
            { \__kernel_pdfdict_name:n { g_@@_Core/backend_Page#1/Resources/Properties } }
@@ -1089,7 +1219,7 @@
 \cs_new_protected:Npn \@@_backend_Names_gpush:nn #1 #2 %#1 name of name tree, #2 array content
   {
      \pdf_object_unnamed_write:nn {dict} {/Names [#2] }
-     \@@_backend:x {put~@names~<</#1~\pdf_object_ref_last: >>}
+     \@@_backend:e {put~@names~<</#1~\pdf_object_ref_last: >>}
   }
 %</dvipdfmx|xdvipdfmx>
 
@@ -1115,7 +1245,7 @@
 %<*dvips>
 \cs_new_protected:Npn  \@@_backend_NamesEmbeddedFiles_add:nn #1 #2
       {
-        \@@_backend_pdfmark:x
+        \@@_backend_pdfmark:e
           {
             /Name~#1~
             /FS~#2~
@@ -1202,13 +1332,13 @@
         #4
       }
     %store the dimensions
-    \tl_const:cx
+    \tl_const:ce
       { c_@@_backend_xform_wd_ \tl_to_str:n {#1} _tl }
       { \tex_the:D \box_wd:N \l_@@_backend_tmpa_box }
-    \tl_const:cx
+    \tl_const:ce
       { c_@@_backend_xform_ht_ \tl_to_str:n {#1} _tl }
       { \tex_the:D \box_ht:N \l_@@_backend_tmpa_box }
-    \tl_const:cx
+    \tl_const:ce
       { c_@@_backend_xform_dp_ \tl_to_str:n {#1} _tl }
       { \tex_the:D \box_dp:N \l_@@_backend_tmpa_box }
     %% do we need to test if #2 and #3 are empty??
@@ -1283,13 +1413,13 @@
         \prop_gclear:c { \__kernel_pdfdict_name:n { g_@@_Core/Xform/Resources/Properties } }
         #4
       }
-    \tl_const:cx
+    \tl_const:ce
       { c_@@_backend_xform_wd_ \tl_to_str:n {#1} _tl }
       { \tex_the:D \box_wd:N \l_@@_backend_tmpa_box }
-    \tl_const:cx
+    \tl_const:ce
       { c_@@_backend_xform_ht_ \tl_to_str:n {#1} _tl }
       { \tex_the:D \box_ht:N \l_@@_backend_tmpa_box }
-    \tl_const:cx
+    \tl_const:ce
       { c_@@_backend_xform_dp_ \tl_to_str:n {#1} _tl }
       { \tex_the:D \box_dp:N \l_@@_backend_tmpa_box }
     %% do we need to test if #2 and #3 are empty??
@@ -1375,13 +1505,13 @@
              \bool_set_true:N \l_@@_backend_xform_bool
              #4
            }
-         \tl_const:cx
+         \tl_const:ce
            { c_@@_backend_xform_wd_ \tl_to_str:n {#1} _tl }
            { \tex_the:D \box_wd:c { g_@@_backend_xform_#1_box } }
-         \tl_const:cx
+         \tl_const:ce
            { c_@@_backend_xform_ht_ \tl_to_str:n {#1} _tl }
            { \tex_the:D \box_ht:c { g_@@_backend_xform_#1_box } }
-         \tl_const:cx
+         \tl_const:ce
            { c_@@_backend_xform_dp_ \tl_to_str:n {#1} _tl }
            { \tex_the:D \box_dp:c { g_@@_backend_xform_#1_box } }
          \box_set_dp:cn  { g_@@_backend_xform_#1_box } { \c_zero_dim }
@@ -1390,7 +1520,7 @@
          \hook_gput_next_code:nn {shipout/background}
            {
              \mode_leave_vertical: %needed, the xform disappears without it.
-             \@@_backend:x
+             \@@_backend:e
                {
                  bxobj  ~ \@@_backend_xform_ref:n  { #1 }
                  \c_space_tl width  ~ \pdfxform_wd:n { #1 }
@@ -1398,38 +1528,37 @@
                  \c_space_tl depth  ~ \pdfxform_dp:n { #1 }
                }
              \box_use_drop:c { g_@@_backend_xform_#1_box }
-             \@@_backend:x {put ~ @resources ~<<#3>> }
-             \@@_backend:x
+             \@@_backend:e {put ~ @resources ~<<#3>> }
+             \@@_backend:e
                {
                  put~ @resources ~
                    <<
                      /ExtGState~ \pdf_object_ref:n { @@/Page/Resources/ExtGState }
                    >>
                }
-             \@@_backend:x
+             \@@_backend:e
                {
                  put~ @resources ~
                  <<
                    /Pattern~ \pdf_object_ref:n { @@/Page/Resources/Pattern }
                  >>
                }
-             \@@_backend:x
+             \@@_backend:e
                {
                  put~ @resources ~
                  <<
                    /Shading~ \pdf_object_ref:n { @@/Page/Resources/Shading }
                  >>
                }
-             \@@_backend:x
+             \@@_backend:e
                {
                  put~ @resources ~
                  <<
                    /ColorSpace~
                    \pdf_object_ref:n { @@/Page/Resources/ColorSpace }
                  >>
-               }
-             \exp_args:Nx
-             \@@_backend:x {exobj ~<<#2>>}
+               }             
+             \@@_backend:e {exobj ~<<#2>>}
            }
       }
 
@@ -1444,7 +1573,7 @@
      {
        \hbox_set:Nn \l_@@_backend_tmpa_box
          {
-           \@@_backend:x
+           \@@_backend:e
              {
                uxobj~ \@@_backend_xform_ref:n { #1 }
              }
@@ -1489,27 +1618,27 @@
         #4
       }
    %store the dimensions
-    \tl_const:cx
+    \tl_const:ce
       { c_@@_backend_xform_wd_ \tl_to_str:n {#1} _tl }
       { \tex_the:D \box_wd:N \l_@@_backend_tmpa_box }
-    \tl_const:cx
+    \tl_const:ce
       { c_@@_backend_xform_ht_ \tl_to_str:n {#1} _tl }
       { \tex_the:D \box_ht:N \l_@@_backend_tmpa_box }
-    \tl_const:cx
+    \tl_const:ce
       { c_@@_backend_xform_dp_ \tl_to_str:n {#1} _tl }
       { \tex_the:D \box_dp:N \l_@@_backend_tmpa_box }
    %store content dimensions in DPI units (Dots) (code from issue 25)
-    \tl_set:Nx\l_@@_backend_xform_tmpwd_tl
+    \tl_set:Ne\l_@@_backend_xform_tmpwd_tl
       {
         \dim_to_decimal_in_sp:n{ \box_wd:N \l_@@_backend_tmpa_box }~
         65536~div~72.27~div~DVImag~mul~Resolution~mul~
       }
-    \tl_set:Nx\l_@@_backend_xform_tmpht_tl
+    \tl_set:Ne\l_@@_backend_xform_tmpht_tl
       {
         \dim_to_decimal_in_sp:n{ \box_ht:N \l_@@_backend_tmpa_box }~
         65536~div~72.27~div~DVImag~mul~VResolution~mul~
       }
-    \tl_set:Nx\l_@@_backend_xform_tmpdp_tl
+    \tl_set:Ne\l_@@_backend_xform_tmpdp_tl
       {
         \dim_to_decimal_in_sp:n{ \box_dp:N \l_@@_backend_tmpa_box }~
         65536~div~72.27~div~DVImag~mul~VResolution~mul~
@@ -1518,7 +1647,7 @@
     %\box_scale:Nnn \l_@@_backend_tmpa_box {1} {-1}
     \hbox_set:Nn\l_@@_backend_tmpb_box
       {
-        \__kernel_backend_postscript:x
+        \__kernel_backend_postscript:e
           {
             gsave~currentpoint~
             initclip~ % restore default clipping path (page device/whole page)
@@ -1546,7 +1675,7 @@
           }
        \str_if_eq:eeF{#1}{}
          {
-           \__kernel_backend_postscript:x
+           \__kernel_backend_postscript:e
              {
                product~(Ghostscript)~search~
                 {
@@ -1573,7 +1702,7 @@
   {
     \hbox_set:Nn \l_@@_backend_tmpa_box
       {
-        \__kernel_backend_postscript:x
+        \__kernel_backend_postscript:e
          {
            gsave~currentpoint~translate~1~-1~scale~
            mark~{ pdf.obj \int_use:c{c__pdf_backend_xform_ \tl_to_str:n {#1} _int }}~
@@ -1689,7 +1818,7 @@
 %<*xdvipdfmx|dvipdfmx>
 \cs_set_protected:Npn \@@_backend_structure_destination:nn #1#2
   {
-    \@@_backend:x
+    \@@_backend:e
       {
         dest ~ ( \exp_not:n {#1} )
         [
@@ -1715,7 +1844,7 @@
 %    \begin{macrocode}
     \exp_args:Ne \pdf_object_if_exist:nT { \l_pdf_current_structure_destination_tl }
       {
-        \@@_backend:x
+        \@@_backend:e
          {
           obj ~ @pdf.SDest.\exp_not:n{#1}
           [
@@ -1773,7 +1902,7 @@
 %    \begin{macrocode}
             \exp_args:Ne \pdf_object_if_exist:nT { \l_pdf_current_structure_destination_tl }
               {
-                \@@_backend:x
+                \@@_backend:e
                   {
                     obj ~ @pdf.SDest.\exp_not:n{#2}
                     [
@@ -1965,8 +2094,18 @@
     \pdfmanagement_add:nnn{Info}{Creator}{(TeX)}
 %</drivers>
 %<*dvips>
+    \AddToHook{begindocument}{\pdfmanagement_add:nnn{Info}{Producer}{(pdfTeX+dvips)}}
     \__kernel_backend_literal:e{!~<</DocumentUUID~(DocumentUUID)>>~setpagedevice}
     \__kernel_backend_literal:e{!~<</InstanceUUID~(InstanceUUID)>>~setpagedevice}
+    \str_if_exist:NTF\c_sys_timestamp_str 
+      {
+       \pdfmanagement_add:nne{Info}{CreationDate}{(\c_sys_timestamp_str)}
+       \pdfmanagement_add:nne{Info}{ModDate}{(\c_sys_timestamp_str)}     
+      }
+      {
+       \pdfmanagement_add:nnn{Info}{CreationDate}{(D:20010101205959-00'00')}
+       \pdfmanagement_add:nnn{Info}{ModDate}{(D:20010101205959-00'00')}
+      }     
 %</dvips>
 %<*dvipdfmx>
     \pdfmanagement_add:nnn{Info}{Producer}{(dvipdfmx)}
@@ -1999,13 +2138,17 @@
      ]}
 %</luatex>
 %<*drivers>
-    \pdfmanagement_add:nnn{Info}{CreationDate}{(D:20010101205959-00'00')}
-    \pdfmanagement_add:nnn{Info}{ModDate}{(D:20010101205959-00'00')}
-    \AddToDocumentProperties[document]{pdfcreationdate}{D:20010101205959-00'00'}
-    \AddToDocumentProperties[document]{pdfmoddate}{D:20010101205959-00'00'}
-    \AddToDocumentProperties[hyperref]{pdfmetadate}{D:20010101205959-00'00'}
-    \AddToDocumentProperties[hyperref]{pdfdate}{D:20010101205959-00'00'}
+    \str_if_exist:NF\c_sys_timestamp_str 
+      {
+       \pdfmanagement_add:nnn{Info}{CreationDate}{(D:20010101205959-00'00')}
+       \pdfmanagement_add:nnn{Info}{ModDate}{(D:20010101205959-00'00')}
+       \AddToDocumentProperties[document]{creationdate}{D:20010101205959-00'00'}
+       \AddToDocumentProperties[document]{moddate}{D:20010101205959-00'00'}
+       \AddToDocumentProperties[hyperref]{pdfmetadate}{D:20010101205959-00'00'}
+       \AddToDocumentProperties[hyperref]{pdfdate}{D:20010101205959-00'00'}
+      }
     \AddToDocumentProperties[hyperref]{pdfinstanceid}{uuid:0a57c455-157a-4141-8c19-6237d832fc80}
+    \AddToDocumentProperties[hyperref]{pdfproducer}{\c_sys_engine_exec_str-NN.NN.NN}
    }
 %</drivers>
 %    \end{macrocode}
@@ -2024,29 +2167,98 @@
 % an unnamed object so should be referenced directly with |\pdf_object_ref_last:|
 %    \begin{macrocode}
 %<*luatex>
-\cs_new_protected:Npn \__pdf_backend_metadata_stream:n #1
+\cs_new_protected:Npn \@@_backend_metadata_stream:n #1
   {
     \tex_immediate:D \tex_pdfextension:D obj ~uncompressed~
-      \__pdf_backend_object_write:nn {stream} {{/Type~/Metadata~/Subtype~/XML}{#1}}
+      \@@_backend_object_write:nn {stream} {{/Type~/Metadata~/Subtype~/XML}{#1}}
   }
 %</luatex>
 %<*pdftex>
-\cs_new_protected:Npn \__pdf_backend_metadata_stream:n #1
+\cs_new_protected:Npn \@@_backend_metadata_stream:n #1
   {
     \group_begin:
      \tex_pdfcompresslevel:D  0 \scan_stop:
      \tex_immediate:D \tex_pdfobj:D
-     \__pdf_backend_object_write:nn {stream} {{/Type~/Metadata~/Subtype~/XML}{#1}}
+     \@@_backend_object_write:nn {stream} {{/Type~/Metadata~/Subtype~/XML}{#1}}
     \group_end:
   }
 %</pdftex>
 %<*xdvipdfmx|dvipdfmx|dvips|dvisvgm>
-\cs_new_protected:Npn \__pdf_backend_metadata_stream:n #1
+\cs_new_protected:Npn \@@_backend_metadata_stream:n #1
   {
     \pdf_object_unnamed_write:nn {stream}{{/Type~/Metadata~/Subtype~/XML}{#1}}
   }
 %</xdvipdfmx|dvipdfmx|dvips|dvisvgm>
 %    \end{macrocode}
+%
+% \subsection{Suppressing deprecated PDF features}
+% 
+% \texttt{/ProcSet}, \texttt{/CharSet} and the \texttt{/Info} dictionary
+% are deprecated in PDF 2.0. For the pdf/A-4 standard they must be suppressed.
+% Not every engine is able to do this, but for pdfTeX and luatex we define suitable
+% backend command. \texttt{/ProcSet} is suppressed automatically 
+% for pdf version 2.0 starting with in texlive 2023. 
+% \begin{macro}{\@@_backend_omit_charset:n}
+% The option to omit /Charset exists already for quite some time for the two 
+% engines.
+%    \begin{macrocode}
+%<*xdvipdfmx|dvipdfmx|dvips|dvisvgm>
+\cs_new_protected:Npn \@@_backend_omit_charset:n #1 {} %#1 number
+%</xdvipdfmx|dvipdfmx|dvips|dvisvgm>
+%<*pdftex>
+\cs_new_protected:Npn \@@_backend_omit_charset:n #1 %#1 number
+  {
+    \tex_pdfomitcharset:D = #1 \scan_stop:
+  } 
+%</pdftex>
+%<*luatex>
+\cs_new_protected:Npn \@@_backend_omit_charset:n #1 %#1 number
+  {
+    \tex_pdfvariable:D omitcharset  = #1 \scan_stop:
+  } 
+%</luatex>
+%    \end{macrocode}
+% \end{macro}
+% 
+% \begin{macro}{\@@_backend_omit_info:n}
+% The option to suppress the info dictionary will be available in 
+% texlive 2023.
+%    \begin{macrocode}
+%<*xdvipdfmx|dvipdfmx|dvips|dvisvgm>
+\cs_new_protected:Npn \@@_backend_omit_info:n #1 {} %#1 number
+%</xdvipdfmx|dvipdfmx|dvips|dvisvgm>
+%<*pdftex>
+\bool_lazy_and:nnTF
+  { \int_compare_p:nNn {\tex_pdftexversion:D } > {139} }
+  { \int_compare_p:nNn {\tex_pdftexrevision:D } > {24} }
+  {
+    \cs_new_protected:Npn \@@_backend_omit_info:n #1 %#1 number
+     {
+       \pdfomitinfodict = #1 \scan_stop:
+     } 
+  }
+  {
+    \cs_new_protected:Npn \@@_backend_omit_info:n #1 {}%#1 number
+     
+  }
+%</pdftex>
+%<*luatex>
+ \int_compare:nNnTF {\directlua{tex.print(status.list()["development_id"])} } > {7560}
+  {
+    \cs_new_protected:Npn \@@_backend_omit_info:n #1 %#1 number
+     {
+       \tex_pdfvariable:D omitinfodict  = #1 \scan_stop:
+     }
+  }
+  {
+    \cs_new_protected:Npn \@@_backend_omit_info:n #1 {} %#1 number   
+  }    
+%</luatex>
+%    \end{macrocode}
+% \end{macro}
+% 
+ 
+%
 % \subsection{lua code for lualatex}
 %    \begin{macrocode}
 %<*lua>

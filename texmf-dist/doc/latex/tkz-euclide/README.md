@@ -1,6 +1,5 @@
 # tkz-euclide — for euclidean geometry
-
-Release 4.25c 2022/09/23
+Release 5.06c 2024/02/04
 
 ## Description
 
@@ -10,6 +9,7 @@ It uses a Cartesian coordinate system orthogonormal (unit 1cm)
  as well as tools to define the unique coordinates of points and to
 manipulate them. The idea is to allow you to follow step by step a construction
 that would be done by hand as naturally as possible.
+Now tkz-euclide introduces a "lua" option which allows to do most of the calculations using "lua".
 
 ## Licence
 
@@ -19,7 +19,7 @@ conditions of the [LaTeX Project Public License](https://www.latex-project.org/l
 
 ## Requirements
 
-The package compiles with utf8, pdflatex and lualatex, loads and depends on updated versions of:
+The package compiles with utf8 and pdflatex or lualatex, loads and depends on updated versions of:
 - [xfp](https://ctan.org/pkg/xfp)
 - [tikz](https://ctan.org/pkg/tikz)
 
@@ -41,16 +41,12 @@ To use the package `tkz-euclide`, place the following lines in the preamble of
 your LaTeX document:
 
 ```
-\usepackage{tkz-euclide}
+\usepackage{tkz-euclide} or \usepackage[lua]{tkz-euclide}
 \begin{document}
 \begin{tikzpicture}
     your code
 \end{tikzpicture}
 ```
-
-The line `\usetkzobj{all}` is no longer required with `tkz-euclide` but you can use it with
-other packages.
-
 If you use the `xcolor` package, load that package before `tkz-euclide` to avoid
 package conflicts.
 
@@ -67,13 +63,33 @@ Other examples, in French, are on my site.
 
 
 ## History
-- 4.25c. Remove \input{tkz-obj-eu-draw-triangles.tex} from the list of files to load.
+- 5.06c 
+     - Correction of a bug with the macro \tkzLabelAngle and the option “angle”
+     - Added \tkzSetUpCircle
+     - Correction of some typos
+     - Remove some french texts
+  
+- 5.05c Correction of the documentation. 
 
-- 4.24c. Correction of a bug in the macro `\tkzMarkAngle`;    
+- 5.04c Some files have been renamed.
+
+- 5.03c Correction of the file tkz-obj-lua-points-spc.tex.  Bug in the macro `\tkzDefBarycentricPointTwo`.
+  Add macro  |\tkzDrawEllipse|;  
+
+- 5.02c Correction of the file tkz-lib-eu-shape.tex.  Remove duplicate macro inside tkz-draw-eu-points.tex  (ex tkz-obj-eu-draw-points.tex);
+
+
+- 5.01c Correction of the date of the file tkz-euclide.sty. Cleaned up the file tkz-tools-lua-math.tex. Added file tkz-obj-eu-points-spc.tex;
+
+- 5.00c Added the "lua" option to the package, allowing to perform most of the calculations with "lua". This saves time and precision;
+
+- 4.25c Remove \input{tkz-obj-eu-draw-triangles.tex} from the list of files to load.
+
+- 4.24c Correction of a bug in the macro `\tkzMarkAngle`;    
          Modification of the macro `\tkzDefCircle[apollonius]`;  
           
          
-- 4.23c. Correction of a bug in the macro `\tkzDrawSemiCircle`,
+- 4.23c Correction of a bug in the macro `\tkzDrawSemiCircle`,
          Modification of `\tkzDefRadicalAxis`,
          Remove old codes,
          Correction of  the documentation;
@@ -97,8 +113,7 @@ Complement in the documentation for the macro `\tkzDefCircle[R](....)`. You can 
   Thus  `\tkzDrawSquare(A,B)`  becomes  `\tkzDefSquare(A,B)`  `\tkzGetPoints{C}{D}`  then
 
    `\tkzDrawPolygon(A,B,C,D)` ;
-
-  
+ 
   
  If you want to draw a circle, you can't do so  \tkzDrawCircle[R](A,1) . First you have to define the point through which the circle passes, so you have to do 
   `\tkzDefCircle[R](A,1)`   `\tkzGetPoint{a}`  and finally  `\tkzDrawCircle(A,a)` . Another possibilty is to define a point on the circle  `\tkzDefShiftPoint[A](1,O){a}` ;  
@@ -140,31 +155,23 @@ Complement in the documentation for the macro `\tkzDefCircle[R](....)`. You can 
 
   Correct allocation for gold sublime and euclide triangles;
 
-
   I added the option " next to" for the intersections LC and CC;
 
-
   Correction option isoceles right;
-
 
    `\tkzDefMidArc(O,A,B)`  gives the middle of the arc center $O$ from $A$ to $B$; 
 
   Good news : Some useful tools have been added. They are present on an experimental basis and will undoubtedly need to be improved;
 
-
   The options "orthogonal from and through" depend now of `tkzDefCircleBy`
-
   
     `\tkzDotProduct(A,B,C)`  computes the scalar product in an orthogonal reference system of the vectors $\overrightarrow{A,B}$ and $\overrightarrow{A,C}$. 
   
     `\tkzDotProduct(A,B,C)=aa'+bb' if vec{AB} =(a,b) and vec{AC} =(a',b')` 
   
-  
     `\tkzPowerCircle(A)(B,C)`  power of point $A$ with respect to the circle of center $B$ passing through $C$;
   
-  
     `\tkzDefRadicalAxis(A,B)(C,D)`  Radical axis of two circles of center $A$ and $C$;
-  
   
    Some tests :  `\tkzIsOrtho(A,B,C)`  and  `\tkzIsLinear(A,B,C)`  The first indicates whether the lines AB and AC are orthogonal. The second indicates whether the points $A$, $B$ and $C$ are aligned;
 

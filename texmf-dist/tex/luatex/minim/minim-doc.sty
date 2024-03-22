@@ -9,6 +9,7 @@
 %\decompressedpdf
 
 \pdfalevel 3a
+\pdfualevel 1
 \overfullrule = 0pt
 
 % 1 page layout
@@ -59,7 +60,7 @@
 \scriptfont       0 = \tenmaths
 \scriptscriptfont 0 = \tenmathss
 
-\expandglyphsinfont \tenrm 40 25 5
+\expandglyphsinfont \tenrm 25 25 5
 \protrudechars=2 \adjustspacing=2
 \tenrm
 
@@ -124,8 +125,22 @@ endfig;}
 % page artifacts
 \edef\tmp{\markartifact{Pagination /Subtype/Footer}{\the\footline}}
 \footline\expandafter{\tmp}
-\def\footnoterule{\markartifact{Layout}{\kern-3\p@
-  \hrule width 2truein \kern 2.6\p@}} % the \hrule is .4pt high
+
+% footnotes
+\edef\footnoterule{\markartifact{Layout}\footnoterule}
+\catcode`\@=11
+\def\footnote#1{\let\@sf\empty % parameter #2 (the text) is read later
+  \ifhmode\edef\@sf{\spacefactor\the\spacefactor}\/\fi
+  \marknoteref{#1}\@sf\vfootnote{#1}}
+\def\vfootnote#1{%
+    \insert\footins\bgroup
+    \interlinepenalty\interfootnotelinepenalty
+    \splittopskip\ht\strutbox % top baseline for broken footnotes
+    \splitmaxdepth\dp\strutbox \floatingpenalty\@MM
+    \leftskip\z@skip \rightskip\z@skip \spaceskip\z@skip \xspaceskip\z@skip
+    \nextpartag{}\marknotelbl{#1}\enspace\startelement{P}%
+    \footstrut\futurelet\next\fo@t}
+\catcode`\@=12
 
 % \startlist \item x. ... \stoplist
 \def\listskip{\vskip 3pt plus 2pt\vskip-\parskip}
@@ -141,22 +156,26 @@ endfig;}
 \protected\def\chapter#1 \par{%
     \vfil\break
     \ensurestopelement{Section}%
-    \startelement{Chapter}%
+    \global\advance\chapterno1 \global\sectionno0
+    \startelement title{Chapter \the\chapterno}{Chapter}%
     \outline open {#1}%
     \addtotoc{\chapter{#1}{\lastdestinationname}}%
     \nextpartag{H}\quitvmode
     \red{\Title#1\hfill\copy\notehead}\bigskip\nobreak}
+\newcount \chapterno
 
 % \section Title \par
 \addstructuretype Sect Section
 \protected\def\section#1 \par{%
     \bigskip\penalty-50\relax
-    \startelement{Section}%
+    \global\advance\sectionno1
+    \startelement title{Section \the\chapterno.\the\sectionno}{Section}%
     \outline closed {#1}%
     \addtotoc{\section{#1}{\lastdestinationname}}%
     \nextpartag{H}\quitvmode
     \red{\title#1}%
     \par\nobreak}
+\newcount \sectionno
 
 % table of contents
 \newtoks\toc \newif\iftoc \toctrue
@@ -178,6 +197,7 @@ endfig;}
 
 \autotagformulas
 
+\def\mailname{minim}
 \def\maketitle{%
     \setembeddedfilesmoddate {\getmetadata date}
     \begingroup
@@ -185,11 +205,13 @@ endfig;}
     \tocfalse \chapter \getmetadata title
         \hfill \tenrm version \getmetadata version
     \par\endgroup
-    \marktableaslist \halign {\strut
+    \marktableaslist
+        \tagattribute List ListNumbering /None
+        \halign {\strut
         \qquad##\quad&##\hfil\cr
     author&\getmetadata author\cr
     contact&{\def\tmp{@}\def\TMP{.}%
-        minim\tmp elrenkema\TMP nl}\cr}
+        \mailname\tmp elrenkema\TMP nl}\cr}
     \smallskip}
 
 % 1 Chapters and full manuals
@@ -206,8 +228,9 @@ Licence (EUPL) version 1.2 or later. An english version of this licence has
 been included as an attachment to this file; copies in other languages can be 
 obtained at
 \stopformulatagging$$\hbox
-{\hyperlink url {https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12}%
-https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12\endlink}$$\startformulatagging}
+{\hyperlink alt{Link to the website of the EUPL.}
+    url {https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12}%
+    https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12\endlink}$$\startformulatagging}
 
 % for identifying which file we are typesetting
 \edef\thejobname{\expandafter\scantextokens\expandafter{\jobname}}

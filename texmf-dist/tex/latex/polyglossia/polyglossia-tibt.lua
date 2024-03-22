@@ -1,6 +1,6 @@
 --
 -- polyglossia-tibt.lua
--- part of polyglossia v1.59 -- 2022/11/29
+-- part of polyglossia v1.66 -- 2023/12/11
 --
 
 require('polyglossia') -- just in case...

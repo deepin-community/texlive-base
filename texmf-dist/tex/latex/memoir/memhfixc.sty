@@ -44,6 +44,9 @@
 %% With the new hooking system from 2020+ memhfixc is automatically
 %% added after loading hyperref with the memoir class
 %%
+%% Version 1.22  2023/09/10
+%% Version 1.21  2023/07/28
+%% Version 1.21  2023/07/28
 %% Version 1.20  2022/11/17
 %% Version 1.19  2021/06/16
 %% Version 1.18  2019/10/24
@@ -66,44 +69,12 @@
 %% Version 1.1  2003/01/22
 %% Version 1.0  2002/10/22
 %%
-\ProvidesPackage{memhfixc}[2022/11/17 v1.20 nameref/hyperref package fixes for memoir class]
+\ProvidesPackage{memhfixc}[2023/09/10 v1.22 hyperref package fixes for memoir class]
 \let\M@hfixcfinish\relax
 \@ifclassloaded{memoir}{}%
                        {\let\M@hfixcfinish\endinput
                         \typeout{No memoir class: memhfixc does nothing}}
 \M@hfixcfinish
-
-\AtEndPackage{nameref}{%
-
-  \@ifundefined{NR@sectm@m}{% haven't fiddled with \M@sect
-    \typeout{Redoing nameref's sectioning}
-    \let\NR@sectm@m\M@sect
-    \def\M@sect##1##2##3##4##5##6[##7][##8]##9{%
-      \setcounter{section@level}{##2}%
-      \def\@currentlabelname{##7}%
-      \NR@sectm@m{##1}{##2}{##3}{##4}{##5}{##6}[{##7}][{##8}]{\Sectionformat{##9}{##2}}}%
-  }%
-  {% \NR@sectm@m has already been defined
-  }%
-  \@ifundefined{MNR@label}{% haven't fiddled with \label
-    \typeout{Redoing nameref's label}
-    \let\MNR@label\label
-    \def\label##1{\@bsphack\begingroup
-      \protected@edef\@currentlabel{\protect\M@TitleReference
-        {\@currentlabel}{\M@currentTitle}}%
-      \MNR@label{##1}%
-      \endgroup \@esphack}%
-    \let\MNR@old@caption\@caption
-    \long\def\@caption##1[##2]##3{%
-      \MNR@old@caption{##1}[{##2}]{##3}%
-      \def\@currentlabelname{##2}%
-      \M@gettitle{##2}%
-    }%
-  }%
-  {% \MNR@label has already been defined
-  }%
-\DeclareRobustCommand\nameref{\@ifstar{\@mem@titlerefnolink}{\@mem@titleref}}
-}% end of AtEndPackage
 
 %% We are done unless the hyperref package has been loaded
 \@ifpackageloaded{hyperref}{}{\let\M@hfixcfinish\endinput}
@@ -143,6 +114,7 @@
   \g@addto@macro{\HyLang@afrikaans}{\def\bookautorefname{Boek}}}
 
 \providecommand{\bookautorefname}{Book}
+\providecommand{\subfigureautorefname}{Subfigure}
 
 \@ifpackagelater{hyperref}{2006/11/15}{%
 }{%
@@ -250,40 +222,45 @@
   \addtocounter{\@captype}{\m@ne}\H@refstepcounter{\@captype}%
   \@contcaption\@captype}
 
-\def\endsidecaption{%
-  \m@mscapend@fbox
-  \H@refstepcounter{\@captype}%
-  \hyper@makecurrent{\@captype}%
-  \m@mscaplabel
-  \m@mscapcheckside %<--- added 2013/05/30
-  \begin{lrbox}{\m@mscap@capbox}%
-    \begin{minipage}[c]{\sidecapwidth}%
-      \sidecapstyle
-      \@caption\@captype[\m@mscap@fortoc]{\m@mscap@forcap}%
-    \end{minipage}%
-  \end{lrbox}%
-  \m@mscapopboxes}
+\renewcommand*\sidecaption@refstepcounter[2]{%
+  \H@refstepcounter{#1}%
+  \hyper@makecurrent{#2}%
+}
+
+ % \def\endsidecaption{%
+ % \m@mscapend@fbox
+ % \H@refstepcounter{\@captype}%
+ % \hyper@makecurrent{\@captype}%
+ % \m@mscaplabel
+ % \m@mscapcheckside %<--- added 2013/05/30
+ % \begin{lrbox}{\m@mscap@capbox}%
+ %   \begin{minipage}[c]{\sidecapwidth}%
+ %     \sidecapstyle
+ %     \@caption\@captype[\m@mscap@fortoc]{\m@mscap@forcap}%
+ %   \end{minipage}%
+ % \end{lrbox}%
+ % \m@mscapopboxes}
 
 \renewcommand*{\sidecontcaption}{%
   \refstepcounter{memhycontfloat}%
   \@sidecontcaption}
-\def\endsidecontcaption{%
-  \m@mscapend@fbox
-  \addtocounter{\@captype}{\m@ne}\H@refstepcounter{\@captype}%
-  \hyper@makecurrent{memhycontfloat}%
-  \m@mscaplabel
-  \m@mscapcheckside %<--- added 2013/05/30
-  \begin{lrbox}{\m@mscap@capbox}%
-    \begin{minipage}[c]{\sidecapwidth}%
-      \sidecapstyle
-      \@contcaption\@captype{\m@mscap@forcap}%
-    \end{minipage}%
-  \end{lrbox}%
-  \m@mscapopboxes}
+ % \def\endsidecontcaption{%
+ % \m@mscapend@fbox
+ % \addtocounter{\@captype}{\m@ne}\H@refstepcounter{\@captype}%
+ % \hyper@makecurrent{memhycontfloat}%
+ % \m@mscaplabel
+ % \m@mscapcheckside %<--- added 2013/05/30
+ % \begin{lrbox}{\m@mscap@capbox}%
+ %   \begin{minipage}[c]{\sidecapwidth}%
+ %     \sidecapstyle
+ %     \@contcaption\@captype{\m@mscap@forcap}%
+ %   \end{minipage}%
+ % \end{lrbox}%
+ % \m@mscapopboxes}
 
-\def\@mem@titlerefnolink#1{\begingroup \let\numberline\@gobble
-  \let\M@TitleReference\@mem@theTR % interrupt recursion of \ref
-  \ref*{#1}\endgroup}
+ %\def\@mem@titlerefnolink#1{\begingroup \let\numberline\@gobble
+ % \let\M@TitleReference\@mem@theTR % interrupt recursion of \ref
+ % \ref*{#1}\endgroup}
 
 \AtBeginDocument{%
     \let\printpageinnotes\printpageinnoteshyperref%

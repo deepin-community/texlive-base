@@ -7,7 +7,7 @@
 -- babel.dtx  (with options: `basic-r')
 -- 
 --
--- Copyright (C) 2012-2022 Javier Bezos and Johannes L. Braams.
+-- Copyright (C) 2012-2024 Javier Bezos and Johannes L. Braams.
 -- Copyright (C) 1989-2012 Johannes L. Braams and
 --           any individual authors listed elsewhere in this file.
 -- All rights reserved.
@@ -101,7 +101,7 @@ function Babel.bidi(head, ispar)
         attr_dir = 0
         for at in node.traverse(item.attr) do
           if at.number == Babel.attr_dir then
-            attr_dir = at.value % 3
+            attr_dir = at.value & 0x3
           end
         end
         if attr_dir == 1 then

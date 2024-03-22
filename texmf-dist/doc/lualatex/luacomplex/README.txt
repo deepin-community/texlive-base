@@ -1,3 +1,8 @@
+# The luacomplex package
+# version 1.4
+# Authors: Chetan Shirore and Ajit Kumar
+# Email: mathsbeauty@gmail.com
+
 # Introduction
 The luacomplex package is developed to define complex numbers and perform basic arithmetic on complex numbers in LaTeX. 
 It also loads the luamaths package. 
@@ -14,6 +19,6 @@ Lua is available as a certified open-source software.
 Its license is simple and liberal, which is compatible with GPL.
 
 #Installation and Inclusion
-The installation of luagcd package is similar to plain latex package, where the .sty file is in LaTeX directory of texmf tree. 
-The package can be included with \usepackage{luacomplex } command in the preamble of the LaTeX document. 
+The installation of luacomplex package is similar to plain latex package, where the .sty file is in LaTeX directory of texmf tree. 
+The package can be included with \usepackage{luacomplex} command in the preamble of the LaTeX document. 
 The TeX file is to be compiled using the LuaLaTeX engine. 

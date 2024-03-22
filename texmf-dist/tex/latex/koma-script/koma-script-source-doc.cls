@@ -268,7 +268,7 @@
   idxgroup  = Do hooks,
   printtype = \textit{dohook}
 ]{DoHook}{dohook}
-%%% From File: $Id: scrlogo.dtx 3688 2022-02-10 08:26:37Z kohm $
+%%% From File: $Id: scrlogo.dtx 4032 2023-04-17 09:45:11Z kohm $
 \IfFileExists{scrlogo.sty}{%
 \RequirePackage{scrlogo}
 }{}%

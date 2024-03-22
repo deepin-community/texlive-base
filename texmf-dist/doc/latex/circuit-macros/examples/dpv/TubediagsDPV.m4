@@ -330,8 +330,8 @@ Pwr: [
     dot(at PXform.ST3); line right_ dimen_/4; dot
     dot(at PXform.ST1); line right_ dimen_/4 then down_ dimen_*3/2; ground(,T)
   line from PXform.S2.end right_ dimen_*2.5 then up_ dimen_/4
-  Rect2: V_5V4G with .F1.sw at Here; "5V4G" at Rect2.n+(0,dimen_/2)
-  Rect1: V_5V4G with .e at Rect2.w-(dimen_/2,0); "5V4G" at Rect1.n+(0,dimen_/2)
+  Rect2: V_5U4G with .F1.sw at Here; "5U4G" at Rect2.n+(0,dimen_/2)
+  Rect1: V_5U4G with .e at Rect2.w-(dimen_/2,0); "5U4G" at Rect1.n+(0,dimen_/2)
   move to Rect1.F1.sw; line to (Here,PXform.S2.end); dot
   move to Rect1.F1.se; line to (Here,PXform.S2.start); dot
   move to Rect2.F1.se; line to (Here,PXform.S2.start)

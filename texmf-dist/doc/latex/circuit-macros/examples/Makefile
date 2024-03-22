@@ -15,8 +15,8 @@
 # To test the file test.m4, type "make tst" if boxdims is used, otherwise
 # type "make tst1".  In either case the file tst.ps is created.
 #
-# There are a few extra examples in this directory.  Process them one
-# at a time, or type "make extras.pdf"
+# There are more examples in the extras directory. Go to that
+# directory and process them one at a time, or type "make".
 #
 # To debug a single diagram in a directory other than this examples
 # directory, copy this makefile and tst.tex to where you want to work,
@@ -78,7 +78,8 @@ TEXPICS = \
   Quantum.tex quick.tex \
   random.tex Rectifiers.tex recycle.tex relaycoil.tex Relay.tex \
   Resistors.tex Rotbox.tex \
-  Schottky.tex sfg.tex shapes.tex ShiftR.tex Sierpinski.tex Sixpole.tex \
+  Schottky.tex sfg.tex shadowed.tex shapes.tex ShiftR.tex Sierpinski.tex \
+  Sixpole.tex \
   Smithchart.tex Sources.tex SQUID.tex Switches.tex \
   Tgate.tex Three.tex thyristor.tex TTLnand.tex Tubediags.tex \
   UNO.tex ujt.tex Variable.tex Windings.tex worm.tex Xform.tex XOR.tex
@@ -98,6 +99,7 @@ BS = tr '|' '\134'
 LTX = pdflatex --shell-escape
 
 PDFLTXSRC=printf "|documentclass[11pt]{standalone}\n\
+|usepackage[dvipsnames]{xcolor}\n\
 |usepackage{times,boxdims,siunitx,amssymb,tikz,geometry}\n\
 |geometry{paperwidth=15in,paperheight=14in,margin=1in}\n\
 |pagestyle{empty}|thispagestyle{empty}\n\
@@ -127,6 +129,8 @@ LTXFILE=printf "|documentclass[11pt]{article}\n\
 .m4.tex:
 	@touch $(DIMFILE) F_$*.dim
 	$(M4) $(CONF) $(DIMFILE) F_$*.dim $*.m4 | $(PIC) $(MODE) > $*.tex
+#	$(M4) $(CONF) $(DIMFILE) F_$*.dim $*.m4 > $*.pic
+#	$(PIC) $(MODE) $*.pic > $*.tex
 .m4.dvi:
 	@touch $(DIMFILE) F_$*.dim
 	$(M4) pstricks.m4 $(DIMFILE) F_$*.dim $*.m4 | $(PIC) -p > $*.tex
@@ -209,16 +213,16 @@ $(DOC).pdf: clean pdfmode $(DOC).tex files.tex header.tex
 rose.pdf: rose.m4
 	m4 pdf.m4 rose.m4 | dpic -d > rose.pdf
 
-paletteDPV.svg: paletteDPV.m4
-	m4 svg.m4 paletteDPV.m4 | dpic -v > paletteDPV.svg
-
 keyboard.svg: keyboard.m4
 	m4 svg.m4 keyboard.m4 | dpic -v > keyboard.svg
 
 keyboard.pdf: keyboard.svg
-	convert keyboard.svg keyboard.pdf
+	-conv=`which convert` ; if test "`basename $$conv`" = "convert" ; then \
+       convert keyboard.svg keyboard.pdf ; \
+     else printf '.PS\n "keyboard.pdf requires imagemagick convert"\n.PE\n' \
+       | dpic -d > keyboard.pdf ; fi
 
-pics: $(TEXPICS) rose.pdf keyboard.pdf
+pics: rose.pdf keyboard.pdf $(TEXPICS)
 	touch pics
 
 $(DOC).ps: psmode $(DOC).dvi
@@ -264,43 +268,6 @@ gpic:
 echopics:
 	@echo $(TEXPICS)
 
-XTRASRC=printf "|documentclass[11pt]{article}\n\
-|usepackage[dvipsnames]{xcolor}\n\
-|usepackage{times,boxdims,siunitx,amssymb,tikz,geometry}\n\
-|geometry{margin=0.5cm}\n\
-|begin{document}\n" | $(BS)
-
-extras:
-	( for file in `ls *.m4` ; do \
-      fbase=`basename $$file .m4` ; \
-      if test "`grep -L $$fbase files.tex`" = "files.tex" ; then \
-        echo $$fbase ; \
-        fi ; \
-      done ) | sed -e '/Ball/d' \
-        -e '/ASME_Y14-5/d' -e '/FlowchartDefs/d' -e '/tubedefs/d' \
-        -e '/debug1/d' -e '/debug2/d' \
-        -e '/paletteSVG/d' \
-        -e '/Consumption/d' -e '/rotatetext/d' -e '/windows/d' \
-        > extras
-
-XBOXDIMS = Chuck
-
-extras.pdf: extras
-	@$(XTRASRC) > extras.tex
-	touch extras.dim
-	-for file in `cat extras` ; do \
-     $(M4) pgf.m4 extras.dim $$file.m4 | $(PIC) -g > $$file.tex ; \
-      printf "\n|input{$$file.tex}\n" | $(BS) >> extras.tex ; \
-      printf "\n $$file.m4\n |pagebreak\n" | $(BS) >> extras.tex ; \
-      done
-	printf "\n|end{document}\n" | $(BS) >> extras.tex
-	pdflatex extras
-	-for file in $(XBOXDIMS) ; do \
-      rm -f $$file.tex ; \
-      $(M4) pgf.m4 extras.dim $$file.m4 | $(PIC) -g > $$file.tex ; \
-      done
-	pdflatex extras
-
 testall:
 	(cd mf; make)
 	(cd mpost; make)
@@ -312,6 +279,7 @@ clobber:	clean
 	rm -f *.ps
 	-@for dir in mf mpost pdflatex xfig psfrag svg dev test; \
       do (if test -d $$dir ; then cd $$dir; make clobber; fi) ; done
+	rm -f ../doc/Circuit_macros.pdf ../Circuit_macros.pdf
 	rm -f *.warn
 	rm -f examples.pdf
 	rm -rf index.html html basenames *.png* dist zips htmlfiles svgfiles
@@ -321,17 +289,15 @@ clobber:	clean
 	for file in `ls *.tex` ; do \
       nm=`echo $$file | sed -e "s/\(.*\)\.tex/\1/"` ; \
       if test -s $$nm.m4 ; then rm -f $$nm.pic $$nm.tex ; fi ; done
+	(cd dpv; make clobber)
 #	@if test -f distmakefile ; then make -f distmakefile clobber ; fi
 
 clean:
 	@printf "\n\n examples clean:\n\n"
-	-if test -f extras ; then \
-      for file in `cat extras` ; do rm -f $$file.pic $$file.tex ; done ; fi
-	rm -f extras extras.*
 	rm -f core boxdims.tar.gz pics
 	rm -f *.dvi *.aux *.log *.toc *.blg *.eps *.tif *.epsi eps *-mfpic* *.svg
 	rm -f fig*.tex $(TEXPICS) *.roff *.int *.pic gpic.m4 test.tex xxx* *.fig
-	rm -f rose.pdf
+	rm -f rose.pdf keyboard.pdf
 	rm -f *.dim *.bak rotate.ps tst.ps *.bbl *-pics.ps
 	rm -f *.tfm *[0-9]pk *.png *.svg *.1 *.gif
 	rm -f F_* Version.tex *stackdump *.ico ./.[A-Za-z]*

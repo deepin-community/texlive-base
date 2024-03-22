@@ -15,81 +15,41 @@
 %%   http://www.latex-project.org/lppl.txt
 %% and version 1.3 or later is part of all distributions of LaTeX
 %% version 2005/12/01 or later.
-\LWR@ProvidesPackagePass{simplebnf}[2022/05/08]
+\LWR@ProvidesPackagePass{simplebnf}[2023-11-25]
 \ExplSyntaxOn
+
+\VerifyEnvironment[lwarp][simplebnf]{bnf}
+    {A7E8911B9291D4EB7C1CD8366CD75341}{3B45D7D9107687D718F5303B6632776C}
+
+\RenewDocumentEnvironment { bnf } { d() O{llcll} +b }
+  {
+    \begin{lateximage}[bnf:\space\detokenize{#3}]%         lwarp
+
+    \IfNoValueF { #1 }
+      { \keys_set:nn { simplebnf } { #1 } }
+
+    \__simplebnf_build_grammar:n { #3 }
+
+    \begin{@simplebnf_tblr_env}[expand=\l__simplebnf_table_tl]{#2}
+      \tl_use:N \l__simplebnf_table_tl
+    \end{@simplebnf_tblr_env}
+    \end{lateximage}%               lwarp
+  }
+  { }
+
+\VerifyEnvironment[lwarp][simplebnf]{bnfgrammar}
+    {E7326E6CAE6E35827E866B4A08C5CEA8}{A9B27A2478E8BD67B19E94ECF8A44F14}
 
 \RenewDocumentEnvironment { bnfgrammar } { O{llcll} O{[^\|]\|[^\|]} O{\|\|} +b }
   {
-    \regex_gset:Nn \g_simplebnf_rhs_newline_r { #2 }
-    \regex_gset:Nn \g_simplebnf_rhs_nb_r { #3 }
-
-    %% \l__input_seq is a list of term definitions.
-    \regex_split:nnN { ;; } { #4 } \l__input_seq
+    \msg_warning:nn { simplebnf } { dep }
     \begin{center}
-    \begin{lateximage}[#4]%     lwarp
-      \tl_set:Nn \l__table_tl
-        {
-          \begin{tabular}{#1}
-        }
-
-    \bool_set_true:N \l_tmp_first_term % Is this the first term in this grammar?
-    \seq_map_inline:Nn \l__input_seq
-      {
-        %% If not-first, add newline
-        \bool_if:NTF \l_tmp_first_term
-          {
-            \bool_set_false:N \l_tmp_first_term
-          }
-          {
-            \tl_put_right:Nn \l__table_tl { \\ }
-          }
-
-        \regex_split:nnNTF { ::= } { ##1 } \l__term_seq
-          % Parse a ::= definition
-          {
-            %% \l__term_seq    - (lhs, rhses)...
-            %% \l__term_tl     - lhs
-            %% \l__keypairs_tl - rhses
-            \seq_pop_left:NN \l__term_seq \l__term_tl
-            \seq_pop_left:NN \l__term_seq \l__keypairs_tl
-
-            \simplebnf_typeset_lhs:n{\l__term_tl}
-            \tl_put_right:Nn \l__table_tl
-              {
-                & \SimpleBNFDefEq &
-              }
-            %% \l__keypairs_seq - (rhs:annot | rhs)...
-            \regex_split:NVN \g_simplebnf_rhs_newline_r \l__keypairs_tl \l__keypairs_seq
-
-            \bool_set_true:N \l__first_rhs
-            \seq_map_function:NN \l__keypairs_seq \simplebnf_typeset_rhs:n
-          }
-          {
-            % Else, parse a \in declaration
-            \regex_split:nnNTF { \c{in} } { ##1 } \l__term_seq
-              {
-                %% \l__term_seq - (lhs, rhs)
-                \seq_pop_left:NN \l__term_seq \l_tmpa_tl
-
-                \simplebnf_typeset_lhs:n{\l_tmpa_tl}
-                \tl_put_right:Nn \l__table_tl
-                  {
-                    & $\in$ & $
-                  }
-                \seq_pop_left:NN \l__term_seq \l_tmpa_tl
-                \tl_put_right:NV \l__table_tl \l_tmpa_tl
-                \tl_put_right:Nn \l__table_tl
-                  {
-                    $ &
-                  }
-              }
-              { \msg_error:nn {simplebnf} { Could not parser ##1 } }
-          }
-      }
-
-    \tl_put_right:Nn \l__table_tl { \end{tabular} }
-    \tl_use:N \l__table_tl
-    \end{lateximage}%       lwarp
+      \begin{lateximage}[bnf:\space\detokenize{#4}]%       lwarp
+      \begin{tabular}{#1}
+        \@dep__simplebnf_typeset_grammar:nnn { #2 } { #3 } { #4 }
+        \tl_use:N \l__simplebnf_table_tl
+      \end{tabular}
+      \end{lateximage}%             lwarp
     \end{center}
   }
   { }

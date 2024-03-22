@@ -1,3 +1,9 @@
+* graph35 0.1.4 (2023-04-04)
+
+    * Fixed key XthetaT: Drawing it would would cause compilation to fail (with some TeX engines, too old or too recent).
+
+    -- Louis Paternault <spalax@gresille.org>
+
 * graph35 0.1.3 (2022-11-29)
 
     * Fix packaging issues.

@@ -2,7 +2,7 @@
 %
 %% File: l3draw-softpath.dtx
 %
-% Copyright (C) 2018-2022 The LaTeX Project
+% Copyright (C) 2018-2024 The LaTeX Project
 %
 % It may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -44,7 +44,7 @@
 %    }^^A
 % }
 %
-% \date{Released 2022-04-20}
+% \date{Released 2024-01-04}
 %
 % \maketitle
 %
@@ -82,10 +82,10 @@
 %    \end{macrocode}
 % \end{variable}
 %
-% \begin{variable}{\l_@@_softpath_internal_tl}
-%   The soft path itself.
+% \begin{variable}{\l_@@_softpath_tmp_tl}
+%   Scratch space.
 %    \begin{macrocode}
-\tl_new:N \l_@@_softpath_internal_tl
+\tl_new:N \l_@@_softpath_tmp_tl
 %    \end{macrocode}
 % \end{variable}
 %
@@ -96,27 +96,53 @@
 %    \end{macrocode}
 % \end{variable}
 %
-% \begin{macro}{\@@_softpath_add:n, \@@_softpath_add:o, \@@_softpath_add:x}
+% \begin{macro}{\@@_softpath_add:n, \@@_softpath_add:o, \@@_softpath_add:e}
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_softpath_add:n
   { \tl_build_gput_right:Nn \g_@@_softpath_main_tl }
-\cs_generate_variant:Nn \@@_softpath_add:n { o, x }
+\cs_generate_variant:Nn \@@_softpath_add:n { o, e }
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}
-%   {\@@_softpath_use:, \@@_softpath_clear:}
+% \begin{macro}{\@@_softpath_use:, \@@_softpath_clear:}
 %   Using and clearing is trivial.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_softpath_use:
   {
-    \tl_build_get:NN \g_@@_softpath_main_tl \l_@@_softpath_internal_tl
-    \l_@@_softpath_internal_tl
+    \tl_build_get_intermediate:NN
+      \g_@@_softpath_main_tl
+      \l_@@_softpath_tmp_tl
+    \l_@@_softpath_tmp_tl
   }
 \cs_new_protected:Npn \@@_softpath_clear:
   {
-    \tl_build_gclear:N \g_@@_softpath_main_tl
+    \tl_build_gbegin:N \g_@@_softpath_main_tl
     \bool_gset_false:N \g_@@_softpath_corners_bool
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_softpath_save:, \@@_softpath_restore:}
+%   Abstracted ideas to keep variables inside this submodule.
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_softpath_save:
+  {
+    \tl_build_gend:N \g_@@_softpath_main_tl
+    \tl_set_eq:NN
+      \l_@@_softpath_main_tl
+      \g_@@_softpath_main_tl
+    \bool_set_eq:NN
+      \l_@@_softpath_corners_bool
+      \g_@@_softpath_corners_bool
+    \@@_softpath_clear:
+  }
+\cs_new_protected:Npn \@@_softpath_restore:
+  {
+    \@@_softpath_clear:
+    \@@_softpath_add:o \l_@@_softpath_main_tl
+    \bool_gset_eq:NN
+      \g_@@_softpath_corners_bool
+      \l_@@_softpath_corners_bool
   }
 %    \end{macrocode}
 % \end{macro}
@@ -150,7 +176,7 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_softpath_closepath:
   {
-    \@@_softpath_add:x
+    \@@_softpath_add:e
       {
         \@@_softpath_close_op:nn
           { \dim_use:N \g_@@_softpath_lastx_dim }
@@ -302,7 +328,7 @@
 % \begin{macro}{\@@_softpath_round_roundpoint:NnnNnnNnn}
 % \begin{macro}{\@@_softpath_round_calc:NnnNnn}
 % \begin{macro}[EXP]
-%   {\@@_softpath_round_calc:nnnnnn, \@@_softpath_round_calc:fVnnnn}
+%   {\@@_softpath_round_calc:nnnnnn, \@@_softpath_round_calc:eVnnnn}
 % \begin{macro}[EXP]{\@@_softpath_round_calc:nnnnw}
 % \begin{macro}{\@@_softpath_round_close:nn}
 % \begin{macro}[EXP]{\@@_softpath_round_close:w}
@@ -323,9 +349,9 @@
           \fp_zero:N \l_@@_softpath_lasty_fp
           \tl_clear:N \l_@@_softpath_first_tl
           \tl_clear:N \l_@@_softpath_move_tl
-          \tl_build_get:NN \g_@@_softpath_main_tl \l_@@_softpath_internal_tl
+          \tl_build_gend:N \g_@@_softpath_main_tl
           \exp_after:wN \@@_softpath_round_loop:Nnn
-            \l_@@_softpath_internal_tl
+            \g_@@_softpath_main_tl
             \q_@@_recursion_tail ? ?
             \q_@@_recursion_stop
         \group_end:
@@ -466,22 +492,22 @@
 %   corner, in order to work out where the curve we are adding will start
 %   and end. From those, plus the points we already have, we work out where
 %   the control points will lie.  All of this is done in an expansion to
-%   avoid multiple calls to |\tl_put_right:Nx|. The end point of the line
+%   avoid multiple calls to |\tl_put_right:Ne|. The end point of the line
 %   is worked out up-front and saved: we need that if dealing with a
 %   close-path operation.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_softpath_round_calc:NnnNnn #1#2#3#4#5#6
   {
-    \tl_set:Nx \l_@@_softpath_curve_end_tl
+    \tl_set:Ne \l_@@_softpath_curve_end_tl
       {
         \draw_point_interpolate_distance:nnn
           \l_@@_softpath_cornerii_dim
           { #5 , #6 } { #2 , #3 }
       }
-    \tl_put_right:Nx \l_@@_softpath_part_tl
+    \tl_put_right:Ne \l_@@_softpath_part_tl
       {
         \exp_not:N #4
-        \@@_softpath_round_calc:fVnnnn
+        \@@_softpath_round_calc:eVnnnn
           {
             \draw_point_interpolate_distance:nnn
               \l_@@_softpath_corneri_dim
@@ -507,7 +533,7 @@
     \@@_softpath_round_calc:nnnnw {#3} {#4} {#5} {#6}
       #1 \s_@@_mark #2 \s_@@_stop
   }
-\cs_generate_variant:Nn \@@_softpath_round_calc:nnnnnn { fV }
+\cs_generate_variant:Nn \@@_softpath_round_calc:nnnnnn { eV }
 %    \end{macrocode}
 %   The calculations themselves are relatively straight-forward, as we use a
 %   quadratic Bézier curve.
@@ -546,11 +572,11 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_softpath_round_close:nn #1#2
   {
-    \use:x
+    \use:e
       {
         \@@_softpath_round_calc:NnnNnn
           {
-            \tl_set:Nx \exp_not:N \l_@@_softpath_move_tl
+            \tl_set:Ne \exp_not:N \l_@@_softpath_move_tl
               {
                 \@@_softpath_moveto_op:nn
                 \exp_not:N \exp_after:wN
@@ -558,7 +584,7 @@
                   \exp_not:N \l_@@_softpath_curve_end_tl
                     \s_@@_stop
               }
-            \use:x
+            \use:e
               {
                 \exp_not:N \exp_not:N \exp_not:N \use_i:nnnn
                   {
@@ -587,7 +613,7 @@
       \l_@@_softpath_move_tl
     \tl_put_right:No \l_@@_softpath_main_tl
       \l_@@_softpath_part_tl
-    \tl_build_gclear:N \g_@@_softpath_main_tl
+    \tl_build_gbegin:N \g_@@_softpath_main_tl
     \@@_softpath_add:o \l_@@_softpath_main_tl
   }
 %    \end{macrocode}

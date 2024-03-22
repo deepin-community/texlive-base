@@ -1,10 +1,10 @@
-% $Id: luarandom.sty 862 2018-12-15 16:25:55Z herbert $
+% $Id: luarandom.sty 813 2023-11-13 19:33:29Z herbert $
 %%
 %% This is file `luarandom.sty'.
 %%
 %% IMPORTANT NOTICE:
 %%
-%% luarandom Copyright (C) 2019-     Herbert Voss <hvoss@tug.org>
+%% luarandom Copyright (C) 2018,2023-     Herbert Voss <hvoss@tug.org>
 %%
 %% This package may be distributed under the terms of the LaTeX Project
 %% Public License, as described in lppl.txt in the base LaTeX distribution.
@@ -12,8 +12,9 @@
 %%
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{luarandom}[2018/12/16 v 0.01 package for random numbers]
-\RequirePackage{ifluatex}
+\ProvidesPackage{luarandom}[2023/11/12 v 0.02 package for random numbers]
+\RequirePackage{iftex}
+
 \def\lua@nl{^^J\space\space\space\space}
 \newcommand\lua@PackageError[2]{\PackageError{luarandom}{\lua@nl #1^^J}{#2}}
 \ifluatex\else
@@ -39,24 +40,32 @@ function allFound(R)
   return true
 end
 
-function makeRandomNumberList(l,r,n)
+function makeRandomNumberList(l,r,n,seed)
   RandomNumbers = {}
-  math.randomseed(os.time())
+  if seed == 0 then 
+    math.randomseed(os.time())  
+  else
+    math.randomseed(seed)  
+  end
   local R = {}
   local i,j
   for i=1,n do R[i] = false end
   repeat
     local rand = math.random(l,r)
-    if not R[rand] then
-      R[rand] = true
+    if not R[rand+1-l] then
+      R[rand+1-l] = true
       RandomNumbers[#RandomNumbers+1] = rand
     end
   until allFound(R)
 end
 
-function makeSimpleRandomNumberList(l,r,n)
+function makeSimpleRandomNumberList(l,r,n,seed)
   RandomNumbers = {}
-  math.randomseed(os.time()/3)
+  if seed == 0 then 
+    math.randomseed(os.time()/3)  
+  else
+    math.randomseed(seed)  
+  end
   local i
   for i=1,n do RandomNumbers[#RandomNumbers+1] = math.random(l,r) end
 end
@@ -66,10 +75,10 @@ function getRand(i)
 end
 \end{luacode*}
 
-\def\makeRandomNumberList#1#2#3{%
-  \directlua{makeRandomNumberList(#1,#2,#3)}}
-\def\makeSimpleRandomNumberList#1#2#3{%
-  \directlua{makeSimpleRandomNumberList(#1,#2,#3)}}
+\newcommand\makeRandomNumberList[4][0]{%
+  \directlua{makeRandomNumberList(#2,#3,#4,#1)}}
+\newcommand\makeSimpleRandomNumberList[4][0]{%
+  \directlua{makeSimpleRandomNumberList(#2,#3,#4,#1)}}
 \def\getNumberFromList#1{\directlua{getRand(#1)}}
 
 

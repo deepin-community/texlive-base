@@ -1,6 +1,6 @@
 .PS
 # sfg.m4
-sfg_init( 1.2 )   # scale default size by 1.2
+sfg_init( 1.2 )   # default edge length = 1.2
 
   iflatex(`textoffset = 1bp__; ifpsfrag(`textht = 9.5bp__',
           `latexcommand({\small)') ')
@@ -8,7 +8,7 @@ sfg_init( 1.2 )   # scale default size by 1.2
 [
 # Graph 1
 T:[
- Ft: sfgnode(,f(t),sfgbelow)
+ Ft: sfgnode(,f(t),sfgbelow,shaded "red")
      sfgline(,1/K)
  Y1: sfgnode(,y_1,sfgbelow rjust)
      sfgline(,K/M)
@@ -16,12 +16,12 @@ T:[
      sfgline(,s^{-1})
  DY2: sfgnode(,\d`'ot{y}_2=x_2,sfgbelow ljust) dnl dot is an m4 macro
      sfgline(,s^{-1})
- Y2: sfgnode(,y_2=x_1,sfgbelow ljust)
+ Y2: sfgnode(,y_2=x_1,sfgbelow ljust,shaded "green")
  
  sf = 1
-   sfgarc(from DY2 to DDY2,-B/M,below,,sf)
-   sfgarc(from Y2 to DDY2,-K/M,above,ccw,sf)
-   sfgarc(from Y2 to Y1,1,sfgabove,,sf)
+   sfgarc(from DY2 to DDY2,-B/M,below,,sf,outlined "gray")
+   sfgarc(from Y2 to DDY2,-K/M,above,ccw,sf,outlined "gray")
+   sfgarc(from Y2 to Y1,1,sfgabove,,sf,outlined "gray")
  ]
 #showbox_(,"T")
 
@@ -43,10 +43,12 @@ B: [
 #showbox_(,"B")
 
 # Graph 3
-G3: [#sfg_init( 0.85,0.35/2 )   # change node spacing and increase node size
+G3: [#sfg_init( 0.85,0.35/2 )   # change node spacing and size
   sfg_wid = 0.85
   sfg_rad = 0.35/2
- for_(1,4,1,`N`'m4x: sfgnode(,m4x,,fill_(0.9))
+  NeedDpicTools
+ cmyktorgb(96,0,0,0,r,g,b)
+ for_(1,4,1,`N`'m4x: ColoredV(circle,(r,g,b),"m4x" rad sfg_rad)
    sfgself(at N`'m4x,-90,P_{m4x},,cw)
    ifelse(m4x,4,,`sfgline(,G_{m4x},sfgbelow)') ')
  sfgarc(from N2 to N1,F_2,sfgabove,ccw,)
@@ -70,7 +72,7 @@ A: [#sfg_init( 0.75,0.15 )
  ] with .w at G3.e+(linewid/2,0)
 #showbox_(,"A")
 
-G4: [sfg_init( 2.0,0.25/2 )   # change node spacing and increase node size
+G4: [sfg_init( 2.0,0.25/2 )   # change node spacing and size
  s1 = 0.9
  s2 = 1.2
  N0: sfgnode(,\hbox{\Large 0},,invis)
@@ -92,14 +94,14 @@ G4: [sfg_init( 2.0,0.25/2 )   # change node spacing and increase node size
 #showbox_(,"G4")
 
 # https://tex.stackexchange.com/questions/637455/tikz-how-to-set-exact-position-of-node
-G5: [sfg_init( 1.75,0.25/2 )   # change node spacing and increase node size
- Dstar: sfgnode(,*)
- D0: sfgnode(at Dstar+(2,0),\diamond_0)
+G5: [sfg_init( 1.75,0.25/2 )   # change node spacing and size
+ Dstar: sfgnode(,*,,shaded "green")
+ D0: sfgnode(at Dstar+(2,0),\diamond_0,,shaded "green")
  sfgline(,`1-r_{x{-}1,x}-q^i_{x{-}1,x}',,->)
- Ddots: sfgnode(,\cdots)
+ Ddots: sfgnode(,\cdots,,shaded "green")
  sfgline(,`1-r_{x{-}4,x}-q^i_{x{-}4,x}',,->)
- D5: sfgnode(,\diamond_5)
- DD: sfgnode(at D0+(0,-1.0),\dagger)
+ D5: sfgnode(,\diamond_5,,shaded "green")
+ DD: sfgnode(at D0+(0,-1.0),\dagger,,shaded "green")
  sfgself(at Dstar,L,,,,0.5)
  "$`1-i_x-q^a_x'$" wid 45bp__ at Dstar + (-0.3,0.25)
  sfgself(at DD,D,1\mathstrut,above_,,0.5)

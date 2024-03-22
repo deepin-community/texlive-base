@@ -248,7 +248,7 @@ define(`V_6L6G',`[ ifelse(`$1',,,`pushdef(`tubediam',`$1')')
     popdef(`tgap') `$4' ifelse(`$1',,,`popdef(`tubediam')')] ')
 
                             `5U4G rectifier(diam,R)'
-define(`V_5V4G',`[ ifelse(`$1',,,`pushdef(`tubediam',`$1')')
+define(`V_5U4G',`[ ifelse(`$1',,,`pushdef(`tubediam',`$1')')
   drawEnv(`$2')
   P1: line thick tubethick up tubediam/3 with .c at Env-(tubediam/6,0)
   P2: line thick tubethick up tubediam/3 with .c at Env+(tubediam/6,0)

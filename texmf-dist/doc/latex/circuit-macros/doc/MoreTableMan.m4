@@ -5,14 +5,8 @@ cct_init
 movewid = 2 pt__
 hm = 2.05
 vm = 0.28
-{  right; {lamp ; move;"`{\tt lamp}'" ljust}
-   move right_ hm
-   {thermocouple ; move;"`{\tt thermocouple}'" ljust }
-}
    move down 0.25; right_
 {  {memristor ; move;"`{\tt memristor}'" ljust}
-   move right_ hm
-   {heater; move;"`{\tt heater}'" ljust}
    move right_ hm
    {tline ; move;"`{\tt tline}'" ljust}
 }

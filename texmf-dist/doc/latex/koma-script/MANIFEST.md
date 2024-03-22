@@ -52,7 +52,6 @@ KOMA-Script bundle of LaTeX classes and packages.
 * `scrlfile-patcholdlatex.dtx`
 * `scrlogo.dtx`
 * `scrtime.dtx`
-* `scrwfile.dtx`
 * `tocbasic.dtx`
 * `scrjura.dtx`
 * `scrmain.ins`
@@ -212,6 +211,7 @@ of the KOMA-Script bundle of LaTeX classes and packages.
 * `README.scrletter.cls`
 * `README.scrletter.sty`
 * `README.scrlfile-hook.sty`
+* `README.scrlfile-hook-3.34.sty`
 * `README.scrlfile-patcholdlatex.sty`
 * `README.scrlfile.sty`
 * `README.scrlogo.sty`
@@ -219,7 +219,6 @@ of the KOMA-Script bundle of LaTeX classes and packages.
 * `README.scrreport.cls`
 * `README.scrreprt.cls`
 * `README.scrtime.sty`
-* `README.scrwfile.sty`
 * `README.tocbasic.sty`
 * `README.typearea.sty`
 * `releaselist.txt`
@@ -249,7 +248,6 @@ of LaTeX classes and packages.
 * `scrlfile.sty`
 * `scrlogo.sty`
 * `scrtime.sty`
-* `scrwfile.sty`
 * `tocbasic.sty`
 * `typearea.sty`
 * `koma-script-source-doc.cls`
@@ -314,7 +312,6 @@ KOMA-Script bundle of LaTeX classes and packages.
 * `scrextend.html`
 * `scrlayer-scrpage.html`
 * `scrlfile-hook.html`
-* `scrwfile.html`
 * `scrdate.html`
 * `scrartcl.html`
 * `scrlfile.html`

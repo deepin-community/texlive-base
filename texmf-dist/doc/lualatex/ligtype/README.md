@@ -8,7 +8,7 @@ suppression rules. With the help of options and macros it
 can be used for other languages as well.
 The package requires LuaLaTeX.
 
-Copyright (c) 2022 Thomas Kelkel kelkel@emaileon.de
+Copyright (c) 2022-2023 Thomas Kelkel kelkel@emaileon.de
 
 The files of this package may be distributed and/or
 modified under the conditions of the LaTeX Project

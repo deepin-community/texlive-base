@@ -1,4 +1,4 @@
--- Copyright (c) 2022 Thomas Kelkel kelkel@emaileon.de
+-- Copyright (c) 2022-2023 Thomas Kelkel kelkel@emaileon.de
 
 -- This file may be distributed and/or modified under the
 -- conditions of the LaTeX Project Public License, either
@@ -10,7 +10,7 @@
 -- and version 1.3c or later is part of all distributions of
 -- LaTeX version 2009/09/24 or later.
 
--- Version: 0.1b
+-- Version: 0.3
 
 -- The ligtype package makes use of the German language
 -- ligature suppression rules of the selnolig package by
@@ -27,52 +27,84 @@ local DISC = ID ( "disc" )
 local GLUE = ID ( "glue" )
 local KERN = ID ( "kern" )
 local WI = ID ( "whatsit" )
-local BOUND = ID ( "boundary" )
 local HLIST = ID ( "hlist" )
 local VLIST = ID ( "vlist" )
-local USERKERN = table.swapped ( node.subtypes ("kern") )["userkern"]
+local INS = ID ( "ins" )
+
+local SWAPPED = table.swapped
+local SUBTYPES = node.subtypes
+local WIS = node.whatsits
+local PDF_LITERAL = SWAPPED ( WIS () )["pdf_literal"]
+local USER_DEFINED = SWAPPED ( WIS () )["user_defined"]
+local LEADERS = SWAPPED ( SUBTYPES ("glue") )["leaders"]
+local USERKERN = SWAPPED ( SUBTYPES ("kern") )["userkern"]
+
 local NEW = node.new
 local REM = node.remove
 local PREV = node.prev
 local NEXT = node.next
 local TAIL = node.tail
-local HAS_GLYPH = node.has_glyph
 local INS_B = node.insert_before
 local INS_A = node.insert_after
+local HAS_GLYPH = node.has_glyph
 local T = node.traverse
 local T_GLYPH = node.traverse_glyph
-local WIS = node.whatsits()
-local userdefined
-local pdfliteral
+
 local pairs = pairs
+local ipairs = ipairs
 local next = next
 local type = type
+
 local U = unicode.utf8
 local CHAR = U.char
-local GSUB = U.gsub
 local SUB = U.sub
+local GSUB = U.gsub
 local LEN = U.len
 local BYTE = U.byte
 local FIND = U.find
+local MATCH = U.match
+local LOWER = U.lower
+
 local T_INS = table.insert
 local T_CC = table.concat
+local SORT = table.sort
+
 local FLOOR = math.floor
+
 local GET_FONT = font.getfont
+
+local SPRINT = tex.sprint
+
+local LOG = texio.write
+local LOG_LINE = texio.write_nl
+
+local OUTPUT = io.output
+
 local ATC = luatexbase.add_to_callback
 local RFC = luatexbase.remove_from_callback
+
+-----
 
 local make_marks = false
 local no_short_f = false
 local all_short_f = false
 local no_default = false
+local lig_list = false
+local con_notes = false
 local lig_table = {}
+local nolig_list = {}
+local keeplig_list = {}
+local white_list = {}
+local black_list = {}
+local log_sep = "==============================================================================="
 
-for key, value in pairs ( WIS ) do
-    if value == "user_defined" then
-        userdefined = key
-    elseif value == "pdf_literal" then
-        pdfliteral = key
+local function log ( label, output )
+    if not output then
+        output = ""
     end
+    LOG ( "\n" .. log_sep )
+    LOG ( label .. output .. "\n" )
+    LOG ( log_sep .. "\n" )
 end
 
 function ligtype_no_short_f ()
@@ -85,6 +117,14 @@ end
 
 function ligtype_no_default ()
     no_default = true
+end
+
+function ligtype_lig_list ()
+    lig_list = true
+end
+
+function ligtype_con_notes ()
+    con_notes = true
 end
 
 local function to_ascii ( text )
@@ -115,8 +155,25 @@ local function round ( num, dec )
 end
 
 local function calc_value ( value )
-    value = round ( value / 65536, 3 )
+    value = round ( value / 65781, 3 )
     return value
+end
+
+local function file_exists ( name )
+    return os.rename ( name, name ) and true or false
+end
+
+local function import_list ( file_name, list )
+    if file_exists ( file_name ) then
+        for line in io.lines ( file_name ) do
+            list[LOWER ( line )] = true
+        end
+    end
+end
+
+local function get_lists ()
+    import_list ( "lig-whitelist.txt", white_list )
+    import_list ( "lig-blacklist.txt", black_list )
 end
 
 local function get_char_bytes ( text, text_len, reverse )
@@ -131,17 +188,66 @@ local function get_char_bytes ( text, text_len, reverse )
     return a
 end
 
-local function find_glyph ( n, d, replace )
-    if d ( n ) then
-        n = d ( n )
-            while n.id ~= GLYPH do
-                if not d ( n ) or n.id == GLUE or n.id == BOUND or ( n.id == KERN and n.subtype == USERKERN ) then replace = false break end
-                n = d ( n )
-            end
-    else
-        replace = false
+local function find_first_last ( n, node_type, last )
+    local d = NEXT
+    if last then
+        d = PREV
+        n = TAIL ( n )
     end
-    return n, replace
+    while true do
+        if n and n.id == node_type then
+            return n
+        end
+        if d ( n ) then
+            n = d ( n )
+        else
+            return false
+        end
+    end
+end
+
+local function check_node ( n, d, lig, hlist_bound, hlist_node )
+    local point = n
+    if hlist_bound then
+        point = hlist_node
+    end
+    if n.replace then
+        return find_first_last ( n.replace, GLYPH, d == PREV ), point
+    end
+    if MATCH ( CHAR ( n.char ), "[%a]" ) or con_notes and not lig and ( n.char == 124 or n.char == 166 ) then
+        return n, point
+    end
+    return false
+end
+
+local function find_glyph ( n, d, lig, hlist_check, hlist_node )
+    if n then
+        if hlist_check and ( n.id == GLYPH or n.replace and HAS_GLYPH ( n.replace ) ) then
+            local hlist_bound = not find_glyph ( n, d, lig )
+            return check_node ( n, d, lig, hlist_bound, hlist_node )
+        elseif not hlist_check then
+            if d ( n ) then
+                n = d ( n )
+            else
+                return false
+            end
+        end
+        while not ( n.id == GLYPH and n.char or n.replace and HAS_GLYPH ( n.replace ) ) do
+            if not lig and n.id == HLIST and n.head then
+                local point = n.head
+                if d == PREV then
+                    point = TAIL ( point )
+                end
+                return find_glyph ( point, d, lig, true, n )
+            end
+            if not hlist_check and ( n.id == GLUE and ( n.stretch > 0 or n.width > 0 ) or n.id == KERN and n.subtype == USERKERN ) or not d ( n ) or n.id == INS or n.id == GLUE and n.subtype == LEADERS then
+                return false
+            end
+            n = d ( n )
+        end
+        return check_node ( n, d, lig )
+    end
+    return false
 end
 
 local function get_ligs ( head )
@@ -154,17 +260,24 @@ local function get_ligs ( head )
     local char_table = {}
     for key, _ in pairs ( lig_check ) do
         char_table[BYTE ( SUB ( key, 1, 1 ) )] = true
+        if lig_list then
+            if not nolig_list[key] then
+                nolig_list[key] = {}
+            end
+            if not keeplig_list[key] then
+                keeplig_list[key] = {}
+            end
+        end
     end
     for n in T_GLYPH ( head ) do
         if n.char and char_table[n.char] then
             if NEXT ( n ) then
                 local next_chars = { false, false }
                 local second_glyph
-                local success
                 local next_glyph = n
                 for i = 1, 2 do
-                    next_glyph, success = find_glyph ( next_glyph, NEXT, true )
-                    if success and next_glyph.char then
+                    next_glyph = find_glyph ( next_glyph, NEXT, true )
+                    if next_glyph and next_glyph.char then
                         next_chars[i] = next_glyph.char
                         if i == 1 then
                             second_glyph = next_glyph
@@ -185,30 +298,66 @@ local function get_ligs ( head )
     return ligs
 end
 
-local function check_text ( replace, n, d, string_len, string_chars, plus_boolean )
-    if d ( n ) then
-        local MOVE = d ( n )
-        for i = 1, string_len do
-            while MOVE.id ~= GLYPH do
-                if not d ( MOVE ) or MOVE.id == GLUE or MOVE.id == BOUND or ( MOVE.id == KERN and MOVE.subtype == USERKERN ) then replace = false break end
-                MOVE = d ( MOVE )
+local function check_text ( n, d, string_len, string_chars, plus_boolean )
+    local point = n
+    for i = 1, string_len do
+        local some_node
+        some_node, point = find_glyph ( point, d )
+        if some_node then
+            if con_notes and ( some_node.char == 124 or some_node.char == 166 ) then
+                some_node, point = find_glyph ( point, d )
             end
-            if ( MOVE.char ~= string_chars[i] and string_chars[i] ~= 43 ) or ( string_chars[i] == 43 and not plus_boolean[MOVE.char] ) then replace = false break end
-            if d ( MOVE ) then
-                MOVE = d ( MOVE )
-            elseif i ~= string_len then replace = false break end
+            if not some_node or some_node.char ~= string_chars[i] and string_chars[i] ~= 43 or string_chars[i] == 43 and not plus_boolean[some_node.char] then
+                return false
+            end
+        else
+            return false
         end
-    else
-        replace = false
     end
-    return replace
+    return true
+end
+
+local function chars_to_string ( string, chars, reverse )
+    local loop_start = 1
+    local loop_end = LEN ( chars )
+    local loop_it = 1
+    if reverse then
+        loop_start = LEN ( chars )
+        loop_end = 1
+        loop_it = - 1
+    end
+    for i = loop_start, loop_end, loop_it do
+        string = string .. SUB ( chars, i, i )
+    end
+    return string
+end
+
+local function get_word ( word, n, d )
+    local reverse = true
+    local string = ""
+    local glyph_node = n
+    if d == NEXT then
+        string = string .. "|"
+        reverse = false
+    end
+    if glyph_node and glyph_node.char then
+        string = string .. CHAR ( glyph_node.char )
+    end
+    local point = glyph_node
+    while true do
+        if not find_glyph ( point, d ) then break end
+        glyph_node, point = find_glyph ( point, d )
+        if not con_notes or glyph_node.char ~= 124 and glyph_node.char ~= 166 then
+            string = string .. CHAR ( glyph_node.char )
+        end
+    end
+    return chars_to_string ( word, string, reverse )
 end
 
 local function no_lig ( nolig, lig, lig_beg, lig_end, text, head, ligs, plus )
     local chars = { lig = { nil, nil, nil }, before = { nil, nil, nil, nil, nil }, after = { nil, nil, nil, nil, nil }, plus = { nil, nil, nil, nil, nil, nil, nil, nil, nil } }
     local before_lig
     local after_lig
-    local count = 0
     local text_len = LEN ( text )
     local before_lig_len = lig_beg - 1
     local after_lig_len = text_len - lig_end
@@ -218,7 +367,7 @@ local function no_lig ( nolig, lig, lig_beg, lig_end, text, head, ligs, plus )
         chars.before = get_char_bytes ( before_lig, before_lig_len, true )
     end
     if lig_end < text_len then
-        after_lig = SUB ( text, (lig_end + 1), text_len )
+        after_lig = SUB ( text, lig_end + 1, text_len )
         chars.after = get_char_bytes ( after_lig, after_lig_len, false )
     end
     local plus_boolean = { nil, nil, nil, nil, nil, nil, nil, nil, nil }
@@ -231,43 +380,46 @@ local function no_lig ( nolig, lig, lig_beg, lig_end, text, head, ligs, plus )
         end
     end
     for _, value in pairs ( ligs ) do
-        count = count + 1
         local n
         if value.char ~= chars.lig[2] then
-            local BEFORE = value
-            BEFORE = find_glyph ( BEFORE, PREV, true )
-            n = BEFORE
+            n = find_glyph ( value, PREV, true )
         else
             n = value
         end
-        if n.char == chars.lig[2] then
-            local replace = true
-            local prev_glyph = n
-            prev_glyph, replace = find_glyph ( prev_glyph, PREV, replace )
-            if NEXT ( prev_glyph ) and NEXT ( prev_glyph ).user_id and NEXT ( prev_glyph ).user_id == 289473 and nolig then
-                replace = false
+        local prev_glyph = find_glyph ( n, PREV, true )
+        if not ( nolig and NEXT ( prev_glyph ) and NEXT ( prev_glyph ).user_id == 289473 ) then
+            local word
+            local word_lc
+            if lig_list then
+                word = get_word ( "", prev_glyph, PREV )
+                word = get_word ( word, NEXT ( prev_glyph ), NEXT )
+                word_lc = LOWER ( word )
             end
-            if prev_glyph.char ~= chars.lig[1] then
-                replace = false
-            end
-            if replace then
-                if lig_beg > 1 then
-                    replace = check_text ( replace, prev_glyph, PREV, before_lig_len, chars.before, plus_boolean )
-                end
-                if lig_end < text_len then
-                    replace = check_text ( replace, n, NEXT, after_lig_len, chars.after, plus_boolean )
-                end
-                if replace then
-                    if nolig then
-                        INS_A ( head, prev_glyph, NEW ( WI, userdefined ) )
-                        NEXT ( prev_glyph ).type = 100
-                        NEXT ( prev_glyph ).user_id = 289473
-                    else
-                        if NEXT ( prev_glyph ) and NEXT ( prev_glyph ).user_id == 289473 then
-                            REM ( head, NEXT ( prev_glyph ) )
+            if ( lig_beg == 1 or check_text ( prev_glyph, PREV, before_lig_len, chars.before, plus_boolean ) ) and ( lig_end == text_len or check_text ( n, NEXT, after_lig_len, chars.after, plus_boolean ) ) then
+                if nolig then
+                    INS_A ( head, prev_glyph, NEW ( WI, USER_DEFINED ) )
+                    NEXT ( prev_glyph ).type = 100
+                    NEXT ( prev_glyph ).user_id = 289473
+                    if lig_list then
+                        if not white_list[word_lc] and not white_list[GSUB ( word_lc, "|", "·" )] then
+                            nolig_list[lig][word_lc] = word
+                        end
+                        keeplig_list[lig][word_lc] = false
+                    end
+                else
+                    if NEXT ( prev_glyph ) and NEXT ( prev_glyph ).user_id == 289473 then
+                        REM ( head, NEXT ( prev_glyph ) )
+                    end
+                    if lig_list then
+                        nolig_list[lig][word_lc] = false
+                        if not black_list[word_lc] and not black_list[GSUB ( word_lc, "|", "·" )] then
+                            keeplig_list[lig][word_lc] = word
                         end
                     end
                 end
+            end
+            if lig_list and keeplig_list[lig][word_lc] == nil and nolig_list[lig][word_lc] == nil and not black_list[word_lc] and not black_list[GSUB ( word_lc, "|", "·" )] then
+                keeplig_list[lig][word_lc] = word
             end
         end
     end
@@ -314,9 +466,6 @@ local function make_kern ( head )
     if glyph_count > 4 then
         for n in T ( head ) do
             if n.id == WI and n.user_id == 289473 then
-                local font_kern = true
-                local hyphen_font_kern = true
-                local post_lig_font_kern = true
                 local prev_glyph, lig_post = find_prev_next_glyph ( n, PREV )
                 local next_glyph = find_prev_next_glyph ( n, NEXT )
                 local kern_value = 0
@@ -325,7 +474,10 @@ local function make_kern ( head )
                 local post_lig_kern = 0
                 if prev_glyph.font then
                     local tfmdata = GET_FONT ( prev_glyph.font )
-                    if tfmdata.resources then
+                    local second_tfmdata = GET_FONT ( next_glyph.font )
+                    local font_id = GSUB ( SUB ( tfmdata.name, 1, FIND ( tfmdata.name, ":" ) - 1 ), "\"", "" )
+                    local second_font_id = GSUB ( SUB ( second_tfmdata.name, 1, FIND ( second_tfmdata.name, ":" ) - 1 ), "\"", "" )
+                    if tfmdata.resources and font_id == second_font_id then
                         local resources = tfmdata.resources
                         if not no_short_f and resources.unicodes then
                             local uni = resources.unicodes
@@ -335,40 +487,34 @@ local function make_kern ( head )
                             for key, value in pairs ( uni ) do
                                 if key == "f_f" or key == "uniFB00" then
                                     ff = value
-                                elseif key == "f_f.short" or key == "f_f.alt" then
+                                elseif key == "f_f.short" or key == "f_f.alt" or key == "f_f_short" or key == "f_f.alt01" or key == "f_f.liga-alt" then
                                     ff_short = value
-                                elseif key == "f.short" or key == "f.alt" then
+                                elseif key == "f.short" or key == "f.alt" or key == "f_short" or key == "f.alt01" then
                                     f_short = value
                                 end
                             end
-                            if ( prev_glyph.char == 102 ) and f_short then
+                            if prev_glyph.char == 102 and f_short then
                                 prev_glyph.char = f_short
-                            elseif ( prev_glyph.char == ff ) and ff_short then
+                            elseif prev_glyph.char == ff and ff_short then
                                 prev_glyph.char = ff_short
                             end
                         end
                         if resources.sequences then
                             local seq = resources.sequences
                             for _, t in pairs ( seq ) do
-                                if t.steps then
+                                if t.steps and ( table.swapped ( t.order )["kern"] or tfmdata.specification.features.raw[t.name] ) then
                                     local steps = t.steps
                                     for _, k in pairs ( steps ) do
-                                        if k.coverage and ( k.coverage[prev_glyph.char] or ( lig_post and k.coverage[lig_post.char] ) ) then
+                                        if k.coverage and ( k.coverage[prev_glyph.char] or lig_post and k.coverage[lig_post.char] ) then
                                             if k.coverage[prev_glyph.char] then
                                                 local glyph_table = k.coverage[prev_glyph.char]
                                                 if type ( glyph_table ) == "table" then
                                                     for key, value in pairs ( glyph_table ) do
-                                                        if ( key == next_glyph.char or key == 45 ) and type ( value ) == "number" and ( k.format == "move" or tfmdata.specification.features.raw[t.name] ) then
-                                                            if font_kern and key == next_glyph.char then
-                                                                kern_value = kern_value + ( value / tfmdata.units_per_em * tfmdata.size )
-                                                                if tfmdata.specification.features.raw[t.name] then
-                                                                    font_kern = false
-                                                                end
-                                                            elseif hyphen_font_kern and key == 45 then
-                                                                hyphen_kern = hyphen_kern + ( value / tfmdata.units_per_em * tfmdata.size )
-                                                                if tfmdata.specification.features.raw[t.name] then
-                                                                    hyphen_font_kern = false
-                                                                end
+                                                        if ( key == next_glyph.char or key == 45 ) and type ( value ) == "number" then
+                                                            if key == next_glyph.char then
+                                                                kern_value = kern_value + value / tfmdata.units_per_em * tfmdata.size
+                                                            elseif key == 45 then
+                                                                hyphen_kern = hyphen_kern + value / tfmdata.units_per_em * tfmdata.size
                                                             end
                                                         end
                                                     end
@@ -378,12 +524,9 @@ local function make_kern ( head )
                                                 local glyph_table = k.coverage[lig_post.char]
                                                 if type ( glyph_table ) == "table" then
                                                     for key, value in pairs ( glyph_table ) do
-                                                        if ( key == next_glyph.char ) and type ( value ) == "number" and ( k.format == "move" or tfmdata.specification.features.raw[t.name] ) then
-                                                            if post_lig_font_kern and key == next_glyph.char then
-                                                                post_lig_kern = post_lig_kern + ( value / tfmdata.units_per_em * tfmdata.size )
-                                                                if tfmdata.specification.features.raw[t.name] then
-                                                                    post_lig_font_kern = false
-                                                                end
+                                                        if key == next_glyph.char and type ( value ) == "number" then
+                                                            if key == next_glyph.char then
+                                                                post_lig_kern = post_lig_kern + value / tfmdata.units_per_em * tfmdata.size
                                                             end
                                                         end
                                                     end
@@ -446,9 +589,9 @@ local function place_marks ( head )
             if font.current() then
                 size_factor = calc_value ( GET_FONT ( font.current() ).size / 10 )
             end
-            head = INS_B ( head, n, NEW ( WI, pdfliteral ) )
+            head = INS_B ( head, n, NEW ( WI, PDF_LITERAL ) )
             PREV ( n ).mode = 0
-            PREV ( n ).data = "q .2 .8 1 rg " .. kern_add .. " 0 m " .. ( kern_add + 2 * size_factor ) .. " " .. -3 * size_factor .. " l " .. ( kern_add - 2 * size_factor ) .. " " .. -3 * size_factor .. " l " .. kern_add .. " 0 l f Q"
+            PREV ( n ).data = "q .2 .8 1 rg " .. kern_add .. " 0 m " .. kern_add + 2 * size_factor .. " " .. -3 * size_factor .. " l " .. kern_add - 2 * size_factor .. " " .. -3 * size_factor .. " l " .. kern_add .. " 0 l f Q"
             n.user_id = 848485
         end
     end
@@ -492,10 +635,13 @@ local function lig_parse ( head )
         for i = 1, table_counter do
             text_string[#text_string + 1] = text_table[i]
         end
-        text_string = T_CC (text_string)
+        text_string = T_CC ( text_string )
+        if con_notes then
+            text_string = GSUB ( text_string, "[|¦]", "" )
+        end
 
         local function lt ( nolig, lig, lig_beg, lig_end, text, ligs, plus )
-            if FIND ( text_string, text ) then
+            if FIND ( text_string, text ) or lig_list then
                 no_lig ( nolig, lig, lig_beg, lig_end, text, head, ligs, plus )
             end
         end
@@ -527,7 +673,6 @@ local function lig_parse ( head )
                 lt ( false, "ff", 5, 6, "scheffel", ligs["ff"] )
                 lt ( false, "ff", 4, 5, "cheffizi", ligs["ff"] )
                 lt ( false, "ff", 4, 5, "cheffé", ligs["ff"] )
-                lt ( true, "ff", 4, 5, "cheffl+", ligs["ff"], "aiou" )
                 lt ( true, "ff", 5, 6, "Dampff", ligs["ff"] )
                 lt ( true, "ff", 5, 6, "dampff", ligs["ff"] )
                 lt ( true, "ff", 4, 5, "Dorff+", ligs["ff"], "aäeiloöruü" )
@@ -1271,6 +1416,7 @@ local function lig_parse ( head )
                 lt ( true, "fl", 3, 4, "üffle", ligs["ffl"] )
                 lt ( true, "ff", 3, 4, "Auffl", ligs["ffl"] )
                 lt ( true, "ff", 3, 4, "auffl", ligs["ffl"] )
+                lt ( true, "ff", 4, 5, "cheffl+", ligs["ff"], "aiou" )
                 lt ( true, "ff", 3, 4, "eiffleck", ligs["ffl"] )
                 lt ( true, "ff", 1, 2, "fflatter", ligs["ffl"] )
                 lt ( true, "ff", 1, 2, "ffläch", ligs["ffl"] )
@@ -1608,6 +1754,14 @@ local function no_ligs ( head )
     end
 end
 
+function ligtype_no_ligs()
+    ATC ( "ligaturing", no_ligs, "no ligs" )
+end
+
+function ligtype_ligs()
+    RFC ( "ligaturing", "no ligs" )
+end
+
 function ligtype_write_ligs ( s )
     ATC ( "ligaturing", no_ligs, "no ligs" )
     local lig_check = {}
@@ -1621,7 +1775,81 @@ function ligtype_write_ligs ( s )
         end
     end
     local par_end = [[\par\addvspace{\baselineskip}]]
-    tex.sprint ( [[\newpage{}\pagestyle{empty}\parindent=0em{}]] .. ligs_string .. par_end .. [[\textbf{]] .. ligs_string .. [[}]] .. par_end .. [[\textit{]] .. ligs_string .. [[}]] .. par_end .. [[\textit{\textbf{]] .. ligs_string .. [[}}]] .. par_end .. [[{\sffamily{}]] .. ligs_string .. par_end .. [[\textbf{]] .. ligs_string .. [[}]] .. par_end .. [[\textit{]] .. ligs_string .. [[}]] .. par_end .. [[\textit{\textbf{]] .. ligs_string .. [[}}]] .. par_end .. [[}\newpage{}]] )
+    SPRINT ( [[\newpage{}\pagestyle{empty}\parindent=0em{}]] .. ligs_string .. par_end .. [[\textbf{]] .. ligs_string .. [[}]] .. par_end .. [[\textit{]] .. ligs_string .. [[}]] .. par_end .. [[\textit{\textbf{]] .. ligs_string .. [[}}]] .. par_end .. [[{\sffamily{}]] .. ligs_string .. par_end .. [[\textbf{]] .. ligs_string .. [[}]] .. par_end .. [[\textit{]] .. ligs_string .. [[}]] .. par_end .. [[\textit{\textbf{]] .. ligs_string .. [[}}]] .. par_end .. [[}\newpage{}]] )
+end
+
+local function process_table ( str_table, order )
+    if #str_table > 0 then
+        if order then
+            SORT ( str_table, function ( a, b ) if a:upper() == b:upper() then return a < b else return a:upper() < b:upper() end end )
+        end
+    else
+        str_table[1] = "None!\n"
+    end
+    return T_CC ( str_table )
+end
+
+local function make_string ( list, order, point )
+    local array = {}
+    for key, value in pairs ( list ) do
+        if value then
+            local string = ""
+            string = string .. "\n"
+            if point then
+                string = string .. GSUB ( value, "|", "·" )
+            else
+                string = string .. value
+            end
+            array[#array + 1] = string
+        end
+    end
+    array = process_table ( array, order )
+    return array
+end
+
+local function make_file ( file_name, content )
+    OUTPUT ( file_name ):write ( content )
+end
+
+local function check_table ( table )
+    for key, value in pairs ( table ) do
+        if value then
+            return true
+        end
+    end
+    return false
+end
+
+local function get_keys_ordered ( table )
+    local table_keys = {}
+    for key in pairs ( table ) do
+        T_INS ( table_keys, key )
+    end
+    SORT ( table_keys )
+    return table_keys
+end
+
+local function make_list ()
+    local nolig_keys = get_keys_ordered ( nolig_list )
+    local keeplig_keys = get_keys_ordered ( keeplig_list )
+    local output_array = {}
+    output_array[#output_array + 1] = "NO LIG\n======"
+    for _, table_key in ipairs ( nolig_keys ) do
+        if check_table ( nolig_list[table_key] ) then
+            output_array[#output_array + 1] = "\n\n" .. table_key .. ":"
+            output_array[#output_array + 1] = make_string ( nolig_list[table_key], true )
+        end
+    end
+    output_array[#output_array + 1] = "\n\nKEEP LIG\n========"
+    for _, table_key in ipairs ( keeplig_keys ) do
+        if check_table ( keeplig_list[table_key] ) then
+            output_array[#output_array + 1] = "\n\n" .. table_key .. ":"
+            output_array[#output_array + 1] = make_string ( keeplig_list[table_key], true, true )
+        end
+    end
+    output_array = T_CC ( output_array )
+    make_file ( tex.jobname  .. ".lig", output_array )
+    log ( "\n" .. output_array .. "\n" )
 end
 
 function ligtype_make_marks ()
@@ -1634,10 +1862,17 @@ function ligtype_on ()
     ATC ( "ligaturing", lig_parse, "make and break ligatures" )
     ATC ( "pre_linebreak_filter", make_kern, "make kerns preline" )
     ATC ( "hpack_filter", make_kern, "make kerns hpack", 2 )
+    if lig_list then
+        get_lists()
+        ATC ( "wrapup_run", make_list, "make list" )
+    end
 end
 
 function ligtype_off ()
     RFC ( "ligaturing", "make and break ligatures" )
     RFC ( "pre_linebreak_filter", "make kerns preline" )
     RFC ( "hpack_filter", "make kerns hpack" )
+    if lig_list then
+        RFC ( "wrapup_run", "make list" )
+    end
 end

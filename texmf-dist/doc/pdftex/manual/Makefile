@@ -1,10 +1,10 @@
-# $Id: Makefile 875 2022-03-01 02:08:10Z karl $
+# $Id: Makefile 905 2023-02-28 01:23:10Z karl $
 # Makefile for pdfTeX documentation.  Public domain.
 
 # Get version we're documenting from the \def in the manual.
 pdftexversion=`sed -n 's,^.def.currentpdftex{\(.*\)},\1,p' manual/pdftex-t.tex`
 
-context = texexec --batchmode
+context = env PATH=/usr/local/texlive/dev/bin/x86_64-linux:$$PATH texexec --batchmode
 # context does not have \setupoutput.
 # texmfstart exits immediately.
 
@@ -60,6 +60,7 @@ pdftex-w.txt: pdftex-w.pdf
 pdftex_binary = ../../source/build-pdftex/texk/web2c/pdftex
 pdftex-w.pdf: pdftex-w.tex Makefile
 	TEXFONTS=/usr/local/texlive/dev/texmf-dist/fonts// \
+	KPATHSEA_WARNING=0 \
 	$(pdftex_binary) -ini '$<'
 
 
@@ -68,7 +69,7 @@ pdftex-help.txt: force
 	$(pdftex_binary) --help >$@ || rm -f $@
 force:
 
-# if we don't have a build tree around, just try from the path.
+# if we don't have a build tree around, try from PATH.
 build_binary := ../../source/build-pdftex/texk/web2c/pdftex
 ifneq "$(realpath $(build_binary))" ""
 pdftex_binary := $(build_binary)
@@ -88,7 +89,7 @@ pdftex-syntax.txt: pdftex-t.tex pdftex-syntax.tex syntaxform.awk
 #  Install from this source directory to TL.
 
 # svn co svn://u:pw@tug.org/texlive/trunk/Master/texmf-dist/doc/pdftex
-tltree = /v/texlive/karl/Master/texmf-dist
+tltree = /home/texlive/karl/Master/texmf-dist
 dest = $(tltree)/doc/pdftex/manual
 
 INSTALL_DATA = cp -p

@@ -8,7 +8,7 @@
 %% 
 %% This is a generated file.
 %% 
-%% Copyright 2021,2022 LaTeX Project
+%% Copyright 2021-2023 LaTeX Project
 %% 
 %% This file was generated from file(s) of the  `LaTeX-lab Bundle'.
 %% ------------------------------------------------------------------------------------
@@ -33,9 +33,12 @@
 %% 
 %% 
 %% File: latex-lab-footnotes.dtx
+\def\ltlabfootnotedate{2023-09-04}
+\def\ltlabfootnoteversion{0.8c}
+
 %%
 %% Copyright (c) 1995-2011 Robin Fairbairns
-%% Copyright (c) 2018-2022 Robin Fairbairns, Frank Mittelbach
+%% Copyright (c) 2018-2023 Robin Fairbairns, Frank Mittelbach
 %%
 %% This file is part of the `latex-lab Bundle'.
 %% --------------------------------------------
@@ -50,9 +53,6 @@
 %%
 %% This work has the LPPL maintenance status 'maintained'.
 %%
-%%
-%% File: footmisc.dtx (C) Copyright 1995-2011 Robin Fairbairns
-%%                    (C) Copyright 2018-2022 Frank Mittelbach
 \NeedsTeXFormat{LaTeX2e}
 \providecommand\DeclareRelease[3]{}
 \providecommand\DeclareCurrentRelease[2]{}
@@ -92,14 +92,13 @@
                             option "para"}%
                  {I shall ignore "\CurrentOption"}%
   \else
-    \def\@footnotetext@cfgpoint {\marginpar}
     \AddToHook{fntext/para}{%
       \hsize\marginparwidth     % correct the default \hsize
       \footnotesep\z@           % don't add a default separation
     }
-    \def\@footnotetext@cfgpointii  {\@makefntext}
-    \def\@footnotetext@cfgpointiii {}
-    \def\@footnotetext@cfgpointiv  {}
+    \AssignSocketPlug{fntext/process}{side}
+    \AssignSocketPlug{fntext/begin}{noop}
+    \AssignSocketPlug{fntext/end}{noop}
   \fi
 }
 \let\footnotelayout\@empty
@@ -168,9 +167,10 @@
 \DeclareOption{multiple}{\FN@multiplefootnotetrue}
 \ProcessOptions
 \ifFN@para
-  \def\@makecol@cfgpointii {%
+  \NewSocketPlug{@makecol/footnotes}{para}{%
      \global\setbox\footins\vbox{\FN@makefootnoteparagraph}%
     }
+  \AssignSocketPlug{@makecol/footnotes}{para}
 \fi
 \ifFN@fixskip
   \def\@outputbox@removebskip{%
@@ -193,61 +193,27 @@
   \let\@outputbox@reinsertbskip\relax
 \fi
 \ifcase \FN@bottomcases\relax
-\ERROR
-\or
+  \ERROR
+\or %1
   \ifFN@abovefloats
-    \def\@makecol@cfgpoint {%
-       \@if@footnotes@TF
-          {\@outputbox@append{\vfill}}%
-          {\@if@bfloats@TF{\@outputbox@append{\vfill}}%
-                          {\@outputbox@reinsertbskip}}%
-       \@outputbox@appendfootnotes
-       \@outputbox@attachfloats
-      }
+    \AssignSocketPlug {@makecol/outputbox}{space-footnotes-floats}
   \else
-    \def\@makecol@cfgpoint {%
-       \@outputbox@attachfloats
-       \@if@footnotes@TF
-          {\@outputbox@append{\vfill}}%
-          {\@outputbox@reinsertbskip}%
-       \@outputbox@appendfootnotes
-    }
+    \AssignSocketPlug {@makecol/outputbox}{floats-footnotes-space}
   \fi
-\or
+\or %2
   \ifFN@abovefloats
-     \def\@makecol@cfgpoint {%
-        \@outputbox@appendfootnotes
-        \@if@bfloats@TF
-            {\@outputbox@append{\vfill}}%
-            {\@outputbox@reinsertbskip}%
-        \@outputbox@attachfloats
-     }
+    \AssignSocketPlug {@makecol/outputbox}{footnotes-space-floats}
   \else
-     \def\@makecol@cfgpoint {%
-       \@if@footnotes@TF
-          {\@outputbox@append{\vfill}}%
-          {\@if@bfloats@TF{\@outputbox@append{\vfill}}%
-                          {\@outputbox@reinsertbskip}}%
-        \@outputbox@attachfloats
-        \@outputbox@appendfootnotes
-     }
+    \AssignSocketPlug {@makecol/outputbox}{space-floats-footnotes}
   \fi
-\or
+\or %3
   \ifFN@abovefloats
-    \def\@makecol@cfgpoint {%
-       \@outputbox@appendfootnotes
-       \@outputbox@attachfloats
-       \@outputbox@reinsertbskip
-    }
+    \AssignSocketPlug {@makecol/outputbox}{footnotes-floats}
   \else
-    \def\@makecol@cfgpoint {%
-       \@outputbox@attachfloats
-       \@outputbox@appendfootnotes
-       \@outputbox@reinsertbskip
-}
+    \AssignSocketPlug {@makecol/outputbox}{floats-footnotes}
   \fi
 \else
-\ERROR
+  \ERROR
 \fi
 
 \newif\ifFN@setspace
@@ -268,23 +234,11 @@
  }
 
 \ifFN@para
-  \def\@footnotetext@cfgpoint {\insert\footins}
 
-  \long\def\@footnotetext@cfgpointii #1{%
-    \setbox\FN@tempboxa\hbox{\@makefntext{#1}}%
-    \dp\FN@tempboxa\z@
-    \ht\FN@tempboxa
-      \dimexpr\wd\FN@tempboxa *%
-              \footnotebaselineskip /\columnwidth\relax
-    \box\FN@tempboxa
-  }
+  \AssignSocketPlug{fntext/make}{para}
+  \AssignSocketPlug{fntext/begin}{noop}
+  \AssignSocketPlug{fntext/end}{para}
 
-  \def\@footnotetext@cfgpointiii {}
-  \def\@footnotetext@cfgpointiv {% config point
-           \strut
-           \penalty-10\relax
-           \hskip\footglue
-  }
 \fi
 
 \ifFN@para
@@ -347,7 +301,7 @@
 
 
 
-\AddToHook{fntext/begin}{\nobreak \hspace{.2em}}
+  \AddToHook{fntext/begin}{\nobreak \hspace{.2em}}
 
 \else
 
@@ -385,7 +339,9 @@
 
 \ifFN@multiplefootnote
   \providecommand*{\multiplefootnotemarker}{3sp}
-  \providecommand*{\multfootsep}{,}
+  \ExplSyntaxOn
+  \providecommand*{\multfootsep}{\tag_mc_end_push:\tag_mc_begin:n{artifact},\tag_mc_end:\tag_mc_begin_pop:n{}}
+  \ExplSyntaxOff
   \AddToHook{fnmark}      {\FN@mf@check}
   \AddToHook{fnmark/end}  {\FN@mf@prepare}
   \def\FN@mf@prepare{%
@@ -609,7 +565,7 @@
     {\mathparagraph\mathparagraph\mathparagraph}%
 }
 \newcommand\mpfootnotemark{%
-  \@ifnextchar[%
+  \@ifnextchar[%]
     \@xmpfootnotemark
     {%
       \stepcounter\@mpfn

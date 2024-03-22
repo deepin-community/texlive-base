@@ -46,7 +46,7 @@ README.txt and curve2e-v161.sty.
 %<+package>\ProvidesPackage{curve2e}%
 %<+readme>File README.txt for package curve2e
 %<*package|readme>
-        [2023-01-01 v.2.2.22 Extension package for pict2e]
+        [2023-07-04 v.2.3.1 Extension package for pict2e]
 %</package|readme>
 %<*driver>
 \documentclass{ltxdoc}\errorcontextlines=9
@@ -161,7 +161,7 @@ README.txt and curve2e-v161.sty.
 %</driver>
 % \fi
 %
-% \CheckSum{5602}
+% \CheckSum{5678}
 % \begin{abstract}
 % This file documents the |curve2e| extension package to  the |pict2e|
 % bundle implementation; the latter was described by Lamport
@@ -421,7 +421,11 @@ README.txt and curve2e-v161.sty.
 % and transcendental functions can be computed in the background with the
 % stable internal floating point facilities. We maintain some computation
 % with complex number algebra, but use the |xfp| functionalities to
-% implement them and to make other calculations.
+% implement them and to make other calculations. Most |xfp| code has been
+% included into the \LaTeX\ kernel, so that most of this package
+% functionality is already available without the need of loading the 
+% package. Loading is necessary only when a small set of special
+% functionalities are needed, that have not made their way to the kernel.
 %
 % Many aspects of this extension could be fine tuned for better
 % performance; many new commands could be defined in order to further
@@ -585,6 +589,7 @@ README.txt and curve2e-v161.sty.
 % protected so as to avoid overwriting register values loaded by other
 % macro packages.
 %    \begin{macrocode}
+\newif\ifCV@polare \let\ifCV@polare\iffalse
 \ifx\undefined\@tdA \newdimen\@tdA \fi
 \ifx\undefined\@tdB \newdimen\@tdB \fi
 \ifx\undefined\@tdC \newdimen\@tdC \fi
@@ -934,8 +939,11 @@ README.txt and curve2e-v161.sty.
 % closed by the macro itself, so that no traces remain behind after its
 % expansion.
 %    \begin{macrocode}
-\def\GetCoord(#1)#2#3{\bgroup\edef\x{\egroup\noexpand\IsPolar#1:?}\x
+\def\GetCoord(#1)#2#3{\let\ifCV@polare\iffalse
+\bgroup\edef\x{\egroup
+\noexpand\IsPolar#1:?}\x
 {% Polar 
+  \let\ifCV@polare\iftrue
   \bgroup\edef\x{\egroup\noexpand\SplitPolar(#1)}\x\SCt@X\SCt@Y}%
 {% Cartesian
   \bgroup\edef\x{\egroup\noexpand\SplitCartesian(#1)}\x\SCt@X\SCt@Y}%
@@ -2099,7 +2107,40 @@ Computations go on, but the results may be meaningless}}{%
 %^^A%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % \subsubsection{Arcs}
 %^^A%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% We start with tracing a circular arc of arbitrary center, arbitrary
+% We provide two ways of producing arcs so as to use different although
+% similar macros macros; they follow the following syntax:
+%\begin{flushleft}
+%  \cs{Arc}\parg{center coordinates}\parg{starting cartesian point}\marg{angle}
+%  
+%  \cs{Arc}\parg{centercoordinates}\parg{starting polar point}\marg{ange}
+%\end{flushleft}
+%The difference between these macros and that of the standard
+% \pack{pict2e} package assumes that these new ones are easier to use;
+% the standard one; The latter does no require the center coordinates
+% and must be put in place with a |\put| command; its reference point
+% becomes the arc center; is it necessary to specify the coordinates
+% of both the starting and the ending point angles and the radius;
+% this implies that the user specifies compatible data; not too
+% difficult, but it is delicate for choosing the correct angles and
+% the correct distance from the implicit center.
+%
+% These new alternative macros leave the calculation of the radius
+% the software and the Pythagorean distance between the center and
+% the staring point and require the specification of the rotation
+% angle; but even in this way, used in the previous version of this
+% package, the cartesian coordinates of the staring point are very
+% easy when they imply an angle of an inter number of right angles
+% starting from the $x$ axis, but thy bicome non that easy when the
+% center and the starting point don't share either their abscissas
+% or their ordinates. The new alternate syntax uses the polar
+% coordinates; their reference point is the arc center and it appears
+% to be easier to specify the position of the starting point, because
+% its angle and it distance are both specified by the user. With the
+% drawings madre with the extended |picture| environment it seem to
+% be easier to have available both the absolute cartesian specification
+% and the centred polar specification.
+%
+% Therefore wetracing a circular arc of arbitrary center, arbitrary
 % starting point and arbitrary aperture; the first macro checks the
 % aperture; if this is not zero it actually proceeds with the necessary
 % computations, otherwise it does nothing.
@@ -2113,7 +2154,7 @@ Computations go on, but the results may be meaningless}}{%
 %    \end{macrocode}
 % The aperture is already memorised in |\@tdA|; the |\@Arc| macro
 % receives the center coordinates in the first argument and the
-% coordinates of the starting point in the second argument.
+% coordinates of the starting point in the second argument. Fo easier calculation we assume that the angles are positve when rotating counterclockwise; if the user specificato is negative, we change sign, but remember the original sign so that in the end the arc will floe in the right direction
 %    \begin{macrocode}
 \def\@Arc(#1)(#2){%
 \ifdim\@tdA>\z@
@@ -2142,9 +2183,17 @@ Computations go on, but the results may be meaningless}}{%
 % Now the radius is determined and the drawing point is moved to the
 % starting point.
 %    \begin{macrocode}
-\SubVect#2from#1to\@V \ModOfVect\@V to\@Raggio 
-\CopyVect#2to\@pPun
-\CopyVect#1to\@Cent \GetCoord(\@pPun)\@pPunX\@pPunY
+\GetCoord(#2)\@pPunX\@pPunY
+\ifCV@polare 
+  \ModOfVect#2to\@Raggio 
+  \CopyVect#1to\@Cent 
+  \AddVect#2and#1to\@pPun% punto da cui parte l'arco
+  \GetCoord(\@pPun)\@pPunX\@pPunY
+\else
+  \SubVect#2from#1to\@V \ModOfVect\@V to\@Raggio
+  \CopyVect#2to\@pPun
+  \CopyVect#1to\@Cent \GetCoord(\@pPun)\@pPunX\@pPunY
+\fi
 %    \end{macrocode}
 % From now on it's better to define a new macro that will be used also in
 % the subsequent macros that draw arcs; here we already have the starting
@@ -2255,9 +2304,9 @@ Computations go on, but the results may be meaningless}}{%
 %^^A%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % \subsubsection{Arc vectors}
 %^^A%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% We exploit much of the above definitions for the |\Arc| macro for
+% We exploit much of the above definitions of the |\Arc| macro for
 % drawing circular arcs with an arrow at one or both ends; the first
-% macro |\VerctorArc| draws an arrow at the ending point of the arc; the
+% macro |\VectorArc| draws an arrow at the ending point of the arc; the
 % second macro |\VectorARC| (alias |\VVectorArc|) draws arrows at both
 % ends; the arrows tips have the same shape as those for vectors;
 % actually they are drawn by putting a vector of zero length at the
@@ -2265,9 +2314,13 @@ Computations go on, but the results may be meaningless}}{%
 % PostScript arrows according to the specific option to the
 % \texttt{pict2e} package.
 %
+% It goes by itself the the ending point may be specified as absolute
+% cartesian coordinates or centred polar ones, the same as it was
+% described above for the arcs without vector tips.
+%
 % But the arc drawing done here shortens it so as not to overlap on the
-% arrow tip(s); the only arrow tip (or both tips) are also lightly tilted in
-% order to avoid the impression of a corner where the arc enters the
+% arrow tip(s); the only arrow tip (or both tips) are also lightly tilted
+% in order to avoid the impression of a corner where the arc enters the
 % arrow tip.
 %
 % All these operations require a lot of ``playing'' with vector
@@ -2299,11 +2352,13 @@ Computations go on, but the results may be meaningless}}{%
   \@VARC(#1)(#2)%
 \fi
 \endgroup\ignorespaces}%
+%
 \let\VVectorArc\VectorARC
+%
 %    \end{macrocode}
 %
-% The single arrow tiped arc is defined with the following long macro where
-% all the described operations are performed more or less in the
+% The single arrow tipped arc is defined with the following long macro
+% where all the described operations are performed more or less in the
 % described succession; probably the macro requires a little cleaning,
 % but since it works fine we did not try to optimise it for time or
 % number of tokens. The final part of the macro is almost identical to
@@ -2330,16 +2385,26 @@ Computations go on, but the results may be meaningless}}{%
       to the range 0--360 taking the sign into consideration}%
  \@whiledim\@tdA>360\p@\do{\advance\@tdA-360\p@}%
 \fi
-\SubVect#1from#2to\@V \ModOfVect\@V to\@Raggio \CopyVect#2to\@pPun
-\@tdE=\pIIe@FAW\@wholewidth \@tdE=\pIIe@FAL\@tdE
+\GetCoord(#2)\@pPunX\@pPunY
+\ifCV@polare 
+  \ModOfVect#2to\@Raggio \CopyVect#2to\@V
+  \CopyVect#1to\@Cent 
+  \AddVect#2and#1to\@pPun% punto da cui parte l'arco
+  \GetCoord(\@pPun)\@pPunX\@pPunY
+\else
+  \SubVect#1from#2to\@V \ModOfVect\@V to\@Raggio 
+  \CopyVect#2to\@pPun
+  \CopyVect#1to\@Cent \GetCoord(\@pPun)\@pPunX\@pPunY
+\fi
+\@tdE=\pIIe@FAW\@wholewidth \@tdE=\pIIe@FAL\@tdE 
 \DividE\@tdE by \@Raggio\unitlength to\DeltaGradi
 \@tdD=\DeltaGradi\p@
-\@tdD=57.29578\@tdD \Numero\DeltaGradi\@tdD
-\@tdD=\ifx\Segno--\fi\@gradi\p@ \Numero\@tempa\@tdD
-\DirFromAngle\@tempa to\@Dir
-\Multvect{\@V}{\@Dir}\@sPun
+\@tdD=57.29578\@tdD \Numero\DeltaGradi\@tdD 
+\@tdD=\ifx\Segno--\fi\@gradi\p@ \Numero\@tempa\@tdD 
+\DirFromAngle\@tempa to\@Dir 
+\Multvect{\@V}{\@Dir}\@sPun 
 \edef\@tempA{\ifx\Segno-\m@ne\else\@ne\fi}%
-\Multvect{\@sPun}{0,\@tempA}\@vPun
+\Multvect{\@sPun}{0,\@tempA}\@vPun 
 \DirOfVect\@vPun to\@Dir
 \AddVect\@sPun and #1 to \@sPun
 \GetCoord(\@sPun)\@tdX\@tdY
@@ -2354,6 +2419,7 @@ Computations go on, but the results may be meaningless}}{%
 \CopyVect#1to\@Cent \GetCoord(\@pPun)\@pPunX\@pPunY
 \@@Arc
 \strokepath\ignorespaces}%
+%
 %    \end{macrocode}
 %
 % The macro for the arc terminated with arrow tips at both ends is again
@@ -2373,10 +2439,21 @@ Computations go on, but the results may be meaningless}}{%
       to the range 0--360 taking the sign into consideration}%
  \@whiledim\@tdA>360\p@\do{\advance\@tdA-360\p@}%
 \fi
-\SubVect#1from#2to\@V \ModOfVect\@V to\@Raggio \CopyVect#2to\@pPun
-\@tdE=\pIIe@FAW\@wholewidth \@tdE=0.8\@tdE
+\GetCoord(#2)\@pPunX\@pPunY
+\ifCV@polare 
+  \ModOfVect#2to\@Raggio \CopyVect#2to\@V
+  \CopyVect#1to\@Cent 
+  \AddVect#2and#1to\@pPun% punto da cui parte l'arco
+  \GetCoord(\@pPun)\@pPunX\@pPunY
+\else
+  \SubVect#1from#2to\@V \ModOfVect\@V to\@Raggio
+  \CopyVect#2to\@pPun
+  \CopyVect#1to\@Cent \GetCoord(\@pPun)\@pPunX\@pPunY
+\fi
+\@tdE=\pIIe@FAW\@wholewidth \@tdE=\pIIe@FAL\@tdE
 \DividE\@tdE by \@Raggio\unitlength to\DeltaGradi
-\@tdD=\DeltaGradi\p@ \@tdD=57.29578\@tdD \Numero\DeltaGradi\@tdD
+\@tdD=\DeltaGradi\p@ 
+\@tdD=57.29578\@tdD \Numero\DeltaGradi\@tdD
 \@tdD=\if\Segno--\fi\@gradi\p@ \Numero\@tempa\@tdD
 \DirFromAngle\@tempa to\@Dir
 \Multvect{\@V}{\@Dir}\@sPun% corrects the end point
@@ -2411,6 +2488,7 @@ Computations go on, but the results may be meaningless}}{%
 \GetCoord(\@pPun)\@pPunX\@pPunY
 \@@Arc
 \strokepath\ignorespaces}%
+
 %    \end{macrocode}
 %
 % It must be understood that the curved vectors, the above circular arcs

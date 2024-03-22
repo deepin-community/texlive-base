@@ -2,7 +2,7 @@
 %
 %% File: ltdocinit.dtx
 %
-% Copyright (C) 2018-2022 The LaTeX Project
+% Copyright (C) 2018-2023 The LaTeX Project
 %
 % It may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -47,7 +47,7 @@
 %    }^^A
 % }
 %
-% \date{Version 0.95t, released 2022-11-03}
+% \date{Version 0.96d, released 2023-12-09}
 %
 % \maketitle
 % \begin{documentation}
@@ -89,9 +89,11 @@
 %    \item[\texttt{pdfstandard}] Choice key to set the pdf standard.
 %    
 %      Starting with version 0.95s it is also possible to use the values
-%      |X-4|, |X-4p|, |X-5g|, |X-5n|, |X-5pg|, |X-6|, |X-6n|, |X-6p|, |UA-1| for
+%      |X-4|, |X-4p|, |X-5g|, |X-5n|, |X-5pg|, |X-6|, |X-6n|, |X-6p|, |UA-1|, for
 %      a PDF/X and PDF/UA standard. These keys set \emph{only} the relevant
-%      XMP-metadata.
+%      XMP-metadata. In version 0.95z support for |UA-2| has been added but
+%      note that |UA-2| hasn't been released yet. It should be used only together
+%      with pdf version 2.0.
 %      
 %      Beside this |A-1b|, |A-2a|, |A-2b|, |A-2u|, |A-3a|, |A-3b|, |A-3u| and |A-4|
 %      are accepted as values for A-standards. The casing is irrelevant, |a-1b| works too.
@@ -141,6 +143,9 @@
 %     \item[\texttt{firstaidoff}] This accepts a comma lists of keywords and disables the patches
 %       related to them. More information can be found in the documentation of
 %       \pkg{pdfmanagement-firstaid}.
+%     \item[\texttt{xmp-export}] This will export the XMP-metadata to a file \verb+\jobname.xmpi+.
+%     with \texttt{debug=\{xmp-export=filename\}} the file name can be changed. 
+%     More information can be found in the documentation of \pkg{l3pdfmeta}.  
 %    \end{description}
 % \end{description}
 %
@@ -215,48 +220,34 @@
 %    \begin{macrocode}
 %<@@=pdfmanagement>
 %<*header>
-\ProvidesExplPackage{ltdocinit}{2022-11-03}{0.95t}
+\ProvidesExplPackage{ltdocinit}{2023-12-09}{0.96d}
   {Initialize document metadata}
 %</header>
 %    \end{macrocode}
-% \cs{DocumentMetadata} will be defined by the kernel in short time.
-% So we define it and the keys here only if it is not already defined.
-%  \subsection{The keys for \cs{DocumentMetadata}}
-%  We define the keys first so that we can test if \cs{DocumentMetadata}
-%  exist (testing for the format date would be nice but would fail for the current
-%  latex-dev).
+%    \begin{macrocode}
+%<*package>
+%    \end{macrocode}
+% \subsection{Variables}
+% This variable definitions can be remove once latex-lab has been updated to
+% provide them too.
 %  \begin{variable}{\g_@@_firstaidoff_clist}
 %  A list to store the firstaid code which should be disabled
 %    \begin{macrocode}
-%<*package>
-\clist_new:N \g_@@_firstaidoff_clist
-%    \end{macrocode}
+\clist_if_exist:NF \g_@@_firstaidoff_clist
+  { \clist_new:N \g_@@_firstaidoff_clist }
+%    \end{macrocode} 
 % \end{variable}
 %  \begin{variable}{\g_@@_testphase_tl}
 %  a tl to store the testphase loading code so that we can load them at
 %  the end of the command.
 %    \begin{macrocode}
-\tl_new:N \g_@@_testphase_tl
+\tl_if_exist:NF \g_@@_testphase_tl
+ { \tl_new:N \g_@@_testphase_tl }
 %    \end{macrocode}
 % \end{variable}
-%    \begin{macrocode}
-\keys_define:nn { document / metadata }
-  {
-    ,testphase / new-or-1 .code:n =   
-      {
-        \tl_gput_right:Nn\g_@@_testphase_tl
-           {
-             \file_if_exist_input:nF {new-or-1-latex-lab-testphase.ltx}
-               {
-                \RequirePackage{output-patches-tmp-ltx}
-               }
-           }    
-      }
-  }
-%    \end{macrocode}
-%
 % \subsection{\cs{DeclareDocumentMetadata}}
-% We define the older alias \cs{DeclareDocumentMetadata}
+% \cs{DocumentMetadata} is defined by the kernel.
+% We only define the older alias \cs{DeclareDocumentMetadata}
 %
 % \begin{macro}{\DeclareDocumentMetadata}
 %    \begin{macrocode}
@@ -275,7 +266,7 @@
 %    \begin{macrocode}
 \NewDocumentCommand\AddToDocumentProperties{O{\@currname}mm}
   {
-    \exp_args:NNx
+    \exp_args:NNe
       \prop_gput:Nnn \g_@@_documentproperties_prop
         {
           \tl_if_blank:eTF {#1}{top-level/}{#1/} #2
@@ -328,7 +319,7 @@
   }
 \NewDocumentCommand\ShowDocumentProperties {}
   {
-    \msg_show:nnx {pdfmanagement}{show-properties}
+    \msg_show:nne {pdfmanagement}{show-properties}
       {
         \prop_map_function:NN \g_@@_documentproperties_prop \msg_show_item:nn
       }

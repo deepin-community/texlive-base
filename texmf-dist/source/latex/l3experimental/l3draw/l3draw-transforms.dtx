@@ -2,7 +2,7 @@
 %
 %% File: l3draw-transforms.dtx
 %
-% Copyright (C) 2018-2022 The LaTeX Project
+% Copyright (C) 2018-2024 The LaTeX Project
 %
 % It may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -44,7 +44,7 @@
 %    }^^A
 % }
 %
-% \date{Released 2022-04-20}
+% \date{Released 2024-01-04}
 %
 % \maketitle
 %
@@ -154,10 +154,7 @@
       { \@@_transform_shift_absolute:nn } {#1}
   }
 \cs_new_protected:Npn \@@_transform_shift_absolute:nn #1#2
-  {
-    \dim_set:Nn \l_@@_xshift_dim {#1}
-    \dim_set:Nn \l_@@_yshift_dim {#2}
-  }
+  { \@@_transform_shift:nnnn { 0pt } { 0pt } {#1} {#2} }
 %    \end{macrocode}
 % \end{macro}
 % \end{macro}
@@ -172,7 +169,7 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \draw_transform_matrix:nnnn #1#2#3#4
   {
-    \use:x
+    \use:e
       {
         \@@_transform:nnnn
           { \fp_eval:n {#1} }
@@ -183,7 +180,7 @@
   }
 \cs_new_protected:Npn \@@_transform:nnnn #1#2#3#4
   {
-    \use:x
+    \use:e
       {
         \draw_transform_matrix_absolute:nnnn
           { #1 * \l_@@_matrix_a_fp + #2 * \l_@@_matrix_c_fp }
@@ -199,8 +196,10 @@
   }
 \cs_new_protected:Npn \@@_transform_shift:nn #1#2
   {
-    \dim_set:Nn \l_@@_xshift_dim { \l_@@_xshift_dim + #1 }
-    \dim_set:Nn \l_@@_yshift_dim { \l_@@_yshift_dim + #2 }
+    \@@_transform_shift:nnnn
+      \l_@@_xshift_dim
+      \l_@@_yshift_dim
+      {#1} {#2}
   }
 %    \end{macrocode}
 % \end{macro}
@@ -208,8 +207,35 @@
 % \end{macro}
 % \end{macro}
 %
+% \begin{macro}{\@@_transform_shift:nnnn}
+%   Apply the current transformation matrix to the shift, then store
+%   the resulting values: we may or may not have a none-zero starting
+%   point here.
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_transform_shift:nnnn #1#2#3#4
+  {
+    \dim_set:Nn \l_@@_xshift_dim
+      {
+        \fp_to_dim:n
+          {
+            #1 +
+            ( #3 * \l_@@_matrix_a_fp + #4 * \l_@@_matrix_b_fp )
+          }
+      }
+    \dim_set:Nn \l_@@_yshift_dim
+      {
+        \fp_to_dim:n
+          {
+            #2 +
+            ( #3 * \l_@@_matrix_c_fp + #4 * \l_@@_matrix_d_fp )
+          }
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
 % \begin{macro}{\draw_transform_matrix_invert:}
-% \begin{macro}{\@@_transform_invert:n, \@@_transform_invert:f}
+% \begin{macro}{\@@_transform_invert:n, \@@_transform_invert:e}
 % \begin{macro}{\draw_transform_shift_invert:}
 %   Standard mathematics: calculate the inverse matrix and use that, then
 %   undo the shifts.
@@ -218,7 +244,7 @@
   {
     \bool_if:NT \l_@@_matrix_active_bool
       {
-        \@@_transform_invert:f
+        \@@_transform_invert:e
           {
             \fp_eval:n
               { 
@@ -242,7 +268,7 @@
     \fp_set:Nn \l_@@_matrix_d_fp
       { \l_@@_matrix_a_fp * #1 }
   }
-\cs_generate_variant:Nn \@@_transform_invert:n { f }
+\cs_generate_variant:Nn \@@_transform_invert:n { e }
 \cs_new_protected:Npn \draw_transform_shift_invert:
   {
     \dim_set:Nn \l_@@_xshift_dim { -\l_@@_xshift_dim }
@@ -262,14 +288,14 @@
     \@@_point_process:nnn
       {
         \@@_point_process:nn
-          { \@@_tranform_triangle:nnnnnn }
+          { \@@_transform_triangle:nnnnnn }
           {#1}
       }
       {#2} {#3}
   }
-\cs_new_protected:Npn \@@_tranform_triangle:nnnnnn #1#2#3#4#5#6
+\cs_new_protected:Npn \@@_transform_triangle:nnnnnn #1#2#3#4#5#6
   {
-    \use:x
+    \use:e
       {
         \draw_transform_matrix_absolute:nnnn
           { #3 - #1 }
@@ -312,24 +338,24 @@
 % \begin{macro}{\draw_transform_rotate:n}
 % \begin{macro}
 %   {
-%     \@@_transform_rotate:n, \@@_transform_rotate:f,
-%     \@@_transform_rotate:nn, \@@_transform_rotate:ff
+%     \@@_transform_rotate:n, \@@_transform_rotate:e,
+%     \@@_transform_rotate:nn, \@@_transform_rotate:ee
 %   } 
 %   Slightly more involved: evaluate the angle only once, and the sine and
 %   cosine only once.
 %    \begin{macrocode}
 \cs_new_protected:Npn \draw_transform_rotate:n #1
-  { \@@_transform_rotate:f { \fp_eval:n {#1} } }
+  { \@@_transform_rotate:e { \fp_eval:n {#1} } }
 \cs_new_protected:Npn \@@_transform_rotate:n #1
   {
-    \@@_transform_rotate:ff 
+    \@@_transform_rotate:ee
       { \fp_eval:n { cosd(#1) } }
       { \fp_eval:n { sind(#1) } }
   }
-\cs_generate_variant:Nn \@@_transform_rotate:n { f }
+\cs_generate_variant:Nn \@@_transform_rotate:n { e }
 \cs_new_protected:Npn \@@_transform_rotate:nn #1#2
   { \draw_transform_matrix:nnnn {#1} {#2} { -#2 } { #1 } }
-\cs_generate_variant:Nn \@@_transform_rotate:nn { ff }
+\cs_generate_variant:Nn \@@_transform_rotate:nn { ee }
 %    \end{macrocode}
 % \end{macro}
 % \end{macro}

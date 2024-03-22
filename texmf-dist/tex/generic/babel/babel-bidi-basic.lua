@@ -7,7 +7,7 @@
 -- babel.dtx  (with options: `basic')
 -- 
 --
--- Copyright (C) 2012-2022 Javier Bezos and Johannes L. Braams.
+-- Copyright (C) 2012-2024 Javier Bezos and Johannes L. Braams.
 -- Copyright (C) 1989-2012 Johannes L. Braams and
 --           any individual authors listed elsewhere in this file.
 -- All rights reserved.
@@ -113,7 +113,7 @@ function Babel.bidi(head, ispar, hdir)
   local save_outer
   local temp = node.get_attribute(head, ATDIR)
   if temp then
-    temp = temp % 3
+    temp = temp & 0x3
     save_outer = (temp == 0 and 'l') or
                  (temp == 1 and 'r') or
                  (temp == 2 and 'al')
@@ -183,7 +183,7 @@ function Babel.bidi(head, ispar, hdir)
           attr_d = 0
         else
           attr_d = node.get_attribute(item, ATDIR)
-          attr_d = attr_d % 3
+          attr_d = attr_d & 0x3
         end
         if attr_d == 1 then
           outer_first = 'r'
@@ -211,6 +211,7 @@ function Babel.bidi(head, ispar, hdir)
 
     elseif item.id == DIR then
       d = nil
+
       if head ~= item then new_d = true end
 
     elseif item.id == node.id'glue' and item.subtype == 13 then

@@ -51,14 +51,16 @@ R2: [
     arrow <- from A.B up 0.1 right 0.1; "svg_it(B)" ljust
     arrow <- from A.G up 0.05 right 0.15; "svg_it(G)" ljust
     thicklines_ }')
+  sep = 0.35
 [
   arrester(,E)
   {"svg_tt(...(,E))" at last line.c+(0,-0.25)}
-  move sep
-  A: arrester(,DE)
-  {"svg_tt(...(,DE))" at last [].s+(0,-0.1)}
+  move up_ 0.1 then right_ sep
+  A: arrester(,DE,,,fill_(0.95))
+  {"svg_tt(...svg_lparen,DE,,,)" wid 61bp__ at A.A+(-0.1,-0.4) ljust \
+   "svg_tt(fill`'svg_fsize(_,65)`'svg_lparen`0.95'svg_rparen`'svg_rparen)" ljust}
   Dlabels
-  move sep*3
+  move down_ 0.1 then right_ sep*3
   A: arrester(,DS)
   {"svg_tt(...(,DS))" at last [].s+(0,-0.1)}
   Dlabels

@@ -1,7 +1,7 @@
 LaTeX3 Programming Conventions
 ==============================
 
-Release 2023-01-16
+Release 2024-01-22
 
 Overview
 --------
@@ -21,9 +21,6 @@ team as stable. There may still be changes to some functions, but these will be
 very minor when compared to the scope of `l3kernel`. In particular, no functions
 will be removed, although some may be deprecated.
 
-Programmers making use of `l3kernel` are *strongly* encouraged to subscribe to
-the LaTeX-L mailing list (see below): announcements concerning the deprecation
-or modification of functions are made on the list.
 
 Requirements
 ------------
@@ -33,6 +30,7 @@ The `l3kernel` bundle requires the e-TeX extensions and a number of additional
 particular, the functionality equivalent to the following pdfTeX primitives must
 be available
 
+- `\ifincsname`
 - `\ifpdfprimitive`
 - `\pdfcreationdate`
 - `\pdfelapsedtime`
@@ -60,14 +58,13 @@ since the release of version 1.40.0 in 2007; `\expanded` was added for TeX Live
 2019. Similarly, the full set of these utility primitives has been available in
 XeTeX from the 2019 TeX Live release, and has always been available in LuaTeX
 (some by Lua emulation). The Japanese pTeX and upTeX gained all of the above
-(except `\ifincsname`) for TeX Live 2019 `\ifincsname` for TeX Live 2020.
+(except `\ifincsname`) for TeX Live 2019 and `\ifincsname` for TeX Live 2020.
 
-At present, the `\expanded` primitive is emulated if unavailable. This code is
-slow and imposes some coding restrictions. As such, it will be *removed* for TeX
-Live 2022.
+Starting from release 2023-05-15, the `\expanded` primitive is *required*.
+Its slow emulation has been removed.
 
 In addition to the above, engines which are fully Unicode-compatible
-must provde the functionality of the following primitives, documented in the
+must provide the functionality of the following primitives, documented in the
 LuaTeX manual
 
 - `\Uchar`
@@ -77,29 +74,11 @@ LuaTeX manual
 The existence of the primitive `\Umathcode` is used as the marker for Unicode
 support.
 
-Discussion
-----------
-
-Discussion concerning the approach, suggestions for improvements,
-changes, additions, _etc._ should be addressed to the list
-[LaTeX-L](https://listserv.uni-heidelberg.de/cgi-bin/wa?A0=LATEX-L).
-
-You can subscribe to this list by sending mail to
-
-    listserv@urz.uni-heidelberg.de
-
-with the body containing
-
-    subscribe LATEX-L  <Your-First-Name> <Your-Second-Name>
-
 Issues
 ------
 
 The issue tracker for LaTeX3 is currently located
 [on GitHub](https://github.com/latex3/latex3/issues).
-
-Please report specific issues with LaTeX3 code there; more general
-discussion should be directed to the [LaTeX-L list](#Discussion).
 
 The LaTeX Project
 ------------------
@@ -108,11 +87,10 @@ Development of LaTeX3 is carried out by
 [The LaTeX Project](https://www.latex-project.org/latex3/).
 
 The development team can be contacted
-by e-mail: <latex-team@latex-project.org>; for general LaTeX3 discussion
-the [LaTeX-L list](#Discussion) should be used.
+by e-mail: <latex-team@latex-project.org>.
 
 -----
 
-<p>Copyright (C) 1998-2012,2015-2023 The LaTeX Project <br />
+<p>Copyright (C) 1998-2012,2015-2024 The LaTeX Project <br />
 <a href="http://latex-project.org/">http://latex-project.org/</a> <br />
 All rights reserved.</p>

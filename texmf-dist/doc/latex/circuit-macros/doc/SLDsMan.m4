@@ -183,7 +183,8 @@ ifelse(1,1,`
     arrow <- from CTC.Tend down 10bp__ right 7bp__; "\sl Tend" below ljust
     "\sl Tc" at CTC.Tc ljust
   thicklines_
-  BB: sl_busbar(right_ 3*dimen_,4,port=D) with .Start at Ref.start+(0,-dimen_*2)
+  BB: sl_busbar(right_ 3*dimen_,4,port=D) \
+   with .Start at Ref.start+(0,-dimen_*1.75)
     "sl\_busbar(right\_ 3{\tt*}dimen\_,4,port=D)" ljust at BB.Start+(0,-15bp__)
     thinlines_
     arrow up ds right ds/2 <- from BB.P1.ne chop dotrad_; "\sl P1" ljust
@@ -207,9 +208,6 @@ ifelse(1,1,`
     "\sl BrI" at Tr32.BrI.n above
     "\sl BrO" at Tr32.BrO.n above
     "\sl Br" at Tr32.Br.w rjust
-#   "\sl C1" at Tr32.Body.C1.nw rjust
-#   "\sl C2" at Tr32.Body.C2.ne ljust
-#   "\sl C3" at Tr32.C3.se ljust
   ] #with .nw at Generators.sw+(0,-dimen_/2)
 
 command "}%"

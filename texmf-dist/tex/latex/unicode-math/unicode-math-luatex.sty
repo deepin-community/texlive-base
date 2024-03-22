@@ -43,7 +43,7 @@
 %%^^A%% Metadata for the package code, including files and versioning
 
 \ProvidesExplPackage{unicode-math-luatex}
-  {2020/01/31} {0.8q} {Unicode maths in XeLaTeX and LuaLaTeX}
+  {2023/08/13} {0.8r} {Unicode maths in XeLaTeX and LuaLaTeX}
 
 %%^^A%% um-code-opening.dtx -- part of UNICODE-MATH <wspr.io/unicode-math>
 %%^^A%% Assorted initialisation tasks, including some low-level function definitions.
@@ -61,10 +61,6 @@
         \@ifpackageloaded {#1} {#2} {}
       }
   }
-\RequirePackage{xparse,l3keys2e}
-\RequirePackage{fontspec}
-\RequirePackage{fix-cm}
-\RequirePackage{lualatex-math}
 \cs_set_protected_nopar:Npn \exp_last_unbraced:NNx { \::N \::x_unbraced \::: }
 \cs_generate_variant:Nn \fontspec_set_family:Nnn {Nx,Nxx}
 \cs_generate_variant:Nn \prop_get:NnNTF {cx}
@@ -145,12 +141,6 @@
 \cs_new:Nn \__um_zero_fontdimen:n
   {
     \fontdimen #1 \font = 0pt\relax
-  }
-\cs_new_protected:Nn \__um_fontdimen_from_param:nn
-  {
-    \fontdimen #1 \font =
-      \lua_now:n { fontspec.mathfontdimen(font.current(),"#2") }
-    \scan_stop:
   }
 \prg_new_conditional:Nnn \__um_int_if_zero:n {p,TF,T,F}
   {
@@ -240,7 +230,6 @@
 \int_new:N \g__um_fam_int
 \int_new:N \g__um_fonts_used_int
 \int_new:N \l__um_primecount_int
-\tl_if_exist:NF \g__um_secret_hook_tl { \tl_new:N \g__um_secret_hook_tl }
 \tl_const:Nn \c__um_math_alphabet_name_latin_tl {Latin,~lowercase}
 \tl_const:Nn \c__um_math_alphabet_name_Latin_tl {Latin,~uppercase}
 \tl_const:Nn \c__um_math_alphabet_name_greek_tl {Greek,~lowercase}
@@ -541,12 +530,7 @@
   {
     {small}
     {
-      \cs_if_exist:NTF \tfrac
-        { \bool_set_true:N \l__um_smallfrac_bool }
-        {
-          \__um_warning:n {no-tfrac}
-          \bool_set_false:N \l__um_smallfrac_bool
-        }
+      \bool_set_true:N \l__um_smallfrac_bool
       \use:c {__um_setup_active_frac:}
     }
 
@@ -581,11 +565,6 @@
 %%^^A%% Definitions of error, warning, and log messages.
 
 \char_set_catcode_space:n {32}
-\__um_msg_new:nn {no-tfrac}
-{
-  Small fraction command \protect\tfrac\ not defined.\\
-  Load amsmath or define it manually before loading unicode-math.
-}
 \__um_msg_new:nn {default-math-font}
 {
   Defining the default maths font as '\l__um_fontname_tl'.
@@ -728,6 +707,7 @@
 \usv_set:nnn {scr}  {Latin} {"1D49C}
 \usv_set:nnn {cal}  {Latin} {"1D49C}
 \usv_set:nnn {scr}  {latin} {"1D4B6}
+\usv_set:nnn {cal}  {latin} {"1D4B6}
 \usv_set:nnn {frak} {Latin} {"1D504}
 \usv_set:nnn {frak} {latin} {"1D51E}
 \usv_set:nnn {sf}   {num}   {"1D7E2}
@@ -758,6 +738,7 @@
 \usv_set:nnn {bfscr}  {Latin} {"1D4D0}
 \usv_set:nnn {bfcal}  {Latin} {"1D4D0}
 \usv_set:nnn {bfscr}  {latin} {"1D4EA}
+\usv_set:nnn {bfcal}  {latin} {"1D4EA}
 \usv_set:nnn {bfsf}   {num}   {"1D7EC}
 \usv_set:nnn {bfsfup} {num}   {"1D7EC}
 \usv_set:nnn {bfsfit} {num}   {"1D7EC}
@@ -880,6 +861,7 @@
 \usv_set:nnn {bb}     {h} {"1D559}
 \usv_set:nnn {tt}     {h} {"1D691}
 \usv_set:nnn {scr}    {h} {"1D4BD}
+\usv_set:nnn {cal}    {h} {"1D4BD}
 \usv_set:nnn {frak}   {h} {"1D525}
 \usv_set:nnn {bfup}   {h} {"1D421}
 \usv_set:nnn {bfit}   {h} {"1D489}
@@ -887,6 +869,7 @@
 \usv_set:nnn {sfit}   {h} {"1D629}
 \usv_set:nnn {bffrak} {h} {"1D58D}
 \usv_set:nnn {bfscr}  {h} {"1D4F1}
+\usv_set:nnn {bfcal}  {h} {"1D4F1}
 \usv_set:nnn {bfsfup} {h} {"1D5F5}
 \usv_set:nnn {bfsfit} {h} {"1D65D}
 \usv_set:nnn {up} {dotlessi} {"00131}
@@ -938,6 +921,9 @@
 \usv_set:nnn {cal} {L} {"2112}
 \usv_set:nnn {cal} {M} {"2133}
 \usv_set:nnn {cal} {R} {"211B}
+\usv_set:nnn {cal} {e} {"212F}
+\usv_set:nnn {cal} {g} {"210A}
+\usv_set:nnn {cal} {o} {"2134}
 \usv_set:nnn {frak} {C} {"212D}
 \usv_set:nnn {frak} {H} {"210C}
 \usv_set:nnn {frak} {I} {"2111}
@@ -983,7 +969,7 @@
    }
    { \char_set_catcode_other:n {#4} }
 
-  \tl_case:Nn #3
+  \token_case_meaning:Nn #3
    {
     \mathord   { \__um_set_mathcode:nnn {#4} {#3} {#1} }
     \mathalpha { \__um_set_mathcode:nnn {#4} {#3} {#1} }
@@ -1114,7 +1100,7 @@
     \SetMathAlphabet #1 {\l__um_mversion_tl} {\g_fontspec_encoding_tl} {\l__um_tmpa_tl} {\mddefault} {\shapedefault}
 
     % integrate with fontspec's \setmathrm etc:
-    \tl_case:Nn #1
+    \token_case_meaning:Nn #1
       {
         \mathrm { \cs_gset_eq:NN \g__fontspec_mathrm_tl \l__um_tmpa_tl }
         \mathsf { \cs_gset_eq:NN \g__fontspec_mathsf_tl \l__um_tmpa_tl }
@@ -1129,7 +1115,7 @@
       \__um_mathgroup_set:n {#2}
     \math@egroup
   }
-\cs_set:Npn \operator@font
+\cs_set_protected:Npn \operator@font
   {
     \__um_switch_to:n {literal}
     \__um_fontswitch:n { \g__um_operator_mathfont_tl }
@@ -1306,7 +1292,7 @@
    Renderer = Basic,
         BoldItalicFont = {}, ItalicFont = {}, SmallCapsFont = {},
         Script = Math,
-   FontAdjustment = { \__um_luatex_copy_fontdimens: },
+   RawFeature = {mathfontdimen=xetex},
         \l__um_unknown_keys_clist
       }
 
@@ -1347,7 +1333,7 @@
               \l__um_sscript_features_tl
             }
           } ,
-   FontAdjustment = { \__um_luatex_copy_fontdimens: },
+   RawFeature = {mathfontdimen=xetex},
         \l__um_unknown_keys_clist
       }
 
@@ -1367,27 +1353,6 @@
 \tl_gset:Nn \g__um_main_font_cmd_tl  { \l__um_font }
 \tl_gset:Nn \g__um_sqrt_font_cmd_tl  { \l__um_font }
 \tl_gset:Nn \g__um_prime_font_cmd_tl { \l__um_font }
-\__um_cs_new:Nn \__um_luatex_copy_fontdimens:
-  {
-    \__um_fontdimen_from_param:nn {10} {ScriptPercentScaleDown}
-    \__um_fontdimen_from_param:nn {11} {ScriptScriptPercentScaleDown}
-    \__um_fontdimen_from_param:nn {15} {AxisHeight}
-    \__um_fontdimen_from_param:nn {18} {SubscriptShiftDown}
-    \__um_fontdimen_from_param:nn {20} {SubscriptBaselineDropMin}
-    \__um_fontdimen_from_param:nn {21} {SuperscriptShiftUp}
-    \__um_fontdimen_from_param:nn {22} {SuperscriptShiftUpCramped}
-    \__um_fontdimen_from_param:nn {24} {SuperscriptBaselineDropMax}
-    \__um_fontdimen_from_param:nn {28} {UpperLimitGapMin}
-    \__um_fontdimen_from_param:nn {29} {UpperLimitBaselineRiseMin}
-    \__um_fontdimen_from_param:nn {30} {LowerLimitGapMin}
-    \__um_fontdimen_from_param:nn {31} {LowerLimitBaselineDropMin}
-    \__um_fontdimen_from_param:nn {32} {StackTopShiftUp}
-    \__um_fontdimen_from_param:nn {42} {FractionNumeratorShiftUp}
-    \__um_fontdimen_from_param:nn {43} {FractionNumeratorDisplayStyleShiftUp}
-    \__um_fontdimen_from_param:nn {44} {FractionDenominatorShiftDown}
-    \__um_fontdimen_from_param:nn {45} {FractionDenominatorDisplayStyleShiftDown}
-    \__um_fontdimen_from_param:nn {48} {FractionRuleThickness}
-  }
 \__um_cs_new:Nn \__um_setup_math_fam:
   {
     \cs_if_exist:cF { sym \l__um_symfont_label_tl }
@@ -1408,25 +1373,7 @@
     \fontspec_set_family:Nxn \l__um_fam_two_tl
       {
         \l__um_font_keyval_tl,
-        ScaleAgain = 1.0001,
-        FontAdjustment =
-          {
-            \__um_copy_fontdimen:nnN { 8} {43} \g__um_main_font_cmd_tl
-            \__um_copy_fontdimen:nnN { 9} {42} \g__um_main_font_cmd_tl
-            \__um_copy_fontdimen:nnN {10} {32} \g__um_main_font_cmd_tl
-            \__um_copy_fontdimen:nnN {11} {45} \g__um_main_font_cmd_tl
-            \__um_copy_fontdimen:nnN {12} {44} \g__um_main_font_cmd_tl
-            \__um_copy_fontdimen:nnN {13} {21} \g__um_main_font_cmd_tl
-            \__um_copy_fontdimen:nnN {14} {21} \g__um_main_font_cmd_tl
-            \__um_copy_fontdimen:nnN {15} {22} \g__um_main_font_cmd_tl
-            \__um_copy_fontdimen:nnN {16} {18} \g__um_main_font_cmd_tl
-            \__um_copy_fontdimen:nnN {17} {18} \g__um_main_font_cmd_tl
-            \__um_copy_fontdimen:nnN {18} {24} \g__um_main_font_cmd_tl
-            \__um_copy_fontdimen:nnN {19} {20} \g__um_main_font_cmd_tl
-            \__um_copy_fontdimen:nnN {22} {15} \g__um_main_font_cmd_tl
-            \__um_zero_fontdimen:n   {20} % delim1 = FractionDelimiterDisplaySize
-            \__um_zero_fontdimen:n   {21} % delim2 = FractionDelimiterSize
-         }
+   RawFeature = {mathfontdimen=tex2},
       } {\l__um_fontname_tl}
 
     \SetSymbolFont{symbols}{\l__um_mversion_tl}
@@ -1443,15 +1390,7 @@
     \fontspec_set_family:Nxn \l__um_fam_three_tl
       {
         \l__um_font_keyval_tl,
-        ScaleAgain = 0.9999,
-        FontAdjustment = {
-          \__um_copy_fontdimen:nnN { 8} {48} \g__um_main_font_cmd_tl
-          \__um_copy_fontdimen:nnN { 9} {28} \g__um_main_font_cmd_tl
-          \__um_copy_fontdimen:nnN {10} {30} \g__um_main_font_cmd_tl
-          \__um_copy_fontdimen:nnN {11} {29} \g__um_main_font_cmd_tl
-          \__um_copy_fontdimen:nnN {12} {31} \g__um_main_font_cmd_tl
-          \__um_zero_fontdimen:n   {13}
-       }
+   RawFeature = {mathfontdimen=tex3},
       } {\l__um_fontname_tl}
 
     \SetSymbolFont{largesymbols}{\l__um_mversion_tl}
@@ -2318,8 +2257,8 @@
 \__um_default_mathalph:nnn {bb    } {latin,Latin,num,misc}             {bb    }
 \__um_default_mathalph:nnn {bbit  } {misc}                             {bbit  }
 \__um_default_mathalph:nnn {scr   } {latin,Latin}                      {scr   }
-\__um_default_mathalph:nnn {cal   } {Latin}                            {scr   }
-\__um_default_mathalph:nnn {bfcal } {Latin}                            {bfscr }
+\__um_default_mathalph:nnn {cal   } {latin,Latin}                      {scr   }
+\__um_default_mathalph:nnn {bfcal } {latin,Latin}                      {bfscr }
 \__um_default_mathalph:nnn {frak  } {latin,Latin}                      {frak  }
 \__um_default_mathalph:nnn {tt    } {latin,Latin,num}                  {tt    }
 \__um_default_mathalph:nnn {sfup  } {latin,Latin,num}                  {sfup  }
@@ -2605,6 +2544,13 @@
     \__um_set_mathalphabet_pos:nnnn  {cal} {L} {up,it} {#1}
     \__um_set_mathalphabet_pos:nnnn  {cal} {M} {up,it} {#1}
     \__um_set_mathalphabet_pos:nnnn  {cal} {R} {up,it} {#1}
+  }
+\__um_new_alphabet_config:nnn {cal} {latin}
+  {
+    \__um_set_mathalphabet_latin:nnn {cal}     {up,it} {#1}
+    \__um_set_mathalphabet_pos:nnnn  {cal} {e} {up,it} {#1}
+    \__um_set_mathalphabet_pos:nnnn  {cal} {g} {up,it} {#1}
+    \__um_set_mathalphabet_pos:nnnn  {cal} {o} {up,it} {#1}
   }
 \__um_new_alphabet_config:nnn {frak} {Latin}
   {
@@ -2970,6 +2916,10 @@
 \__um_new_alphabet_config:nnn {bfcal} {Latin}
   {
     \__um_set_mathalphabet_Latin:nnn {bfcal}  {up,it}{#1}
+  }
+\__um_new_alphabet_config:nnn {bfcal} {latin}
+  {
+    \__um_set_mathalphabet_latin:nnn {bfcal}  {up,it}{#1}
   }
 \__um_new_alphabet_config:nnn {bfsfup} {num}
   {
@@ -3487,6 +3437,8 @@
    }
 \group_end:
 
+\cs_set_eq:NN \active@math@prime \__um_scan_sup_prime:
+
 %%^^A%% um-code-sscript.dtx -- part of UNICODE-MATH <wspr.io/unicode-math>
 %%^^A%% Setup for active chars needed to process subscript/superscript input chars.
 
@@ -3781,14 +3733,6 @@
         \tl_set:cx {it ##1} { \exp_not:N \symit \exp_not:c { ##1 } }
       }
   }
-\AtBeginDocument{ \@ifpackageloaded { amsmath } { } { \__um_redefine_radical: } }
-\cs_new:Nn \__um_redefine_radical:
-  {
-    \cs_set:Npn \root ##1 \of ##2
-      {
-        \Uroot \c__um_radical_sqrt_tl { ##1 } { ##2 }
-      }
-  }
 \cs_new:Nn \__um_which_frac:nn
   {
     \bool_if:NTF \l__um_smallfrac_bool {\tfrac} {\frac} {#1} {#2}
@@ -3848,18 +3792,10 @@
   {
     \mode_if_math:TF \mathunderbar \latexe_underbar:n
   }
-\@ifpackageloaded{amsmath}
-  {
-    % define their own colon, perhaps I should just steal it. (It does look much better.)
-  }
-  {
-    \cs_set_protected:Npn \colon
-      {
-        \bool_if:NTF \g__um_literal_colon_bool {:} { \mathpunct{:} }
-      }
-  }
-\protected\def\digamma{\updigamma}
-\protected\def\Digamma{\upDigamma}
+\cs_set_protected:Npn \smallsetminus { \mathbin{ \mathpalette \__um_smallsetminus: \relax} }
+\cs_set:Npn \__um_smallsetminus: #1 { \rotatebox{135}{ \smash{ \raisebox{-\height}{$#1\minus$} } }}
+\cs_set_protected:Npn \digamma {\updigamma}
+\cs_set_protected:Npn \Digamma {\upDigamma}
 \cs_set_protected:Npn \| {\Vert}
 \cs_set_protected:Npn \mathellipsis {\mathinner{\unicodeellipsis}}
 \cs_set_protected:Npn \cdots {\mathinner{\unicodecdots}}
@@ -3933,6 +3869,5 @@
 \__um_undeclare_symbol:N \arrowvert
 \__um_undeclare_symbol:N \Arrowvert
 \__um_undeclare_symbol:N \bracevert
-\AtBeginDocument{\g__um_secret_hook_tl}
 \endinput
 

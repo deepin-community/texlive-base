@@ -1,7 +1,7 @@
 % \iffalse^^A meta-comment
 % ======================================================================
 % scrlayer.dtx
-% Copyright (c) Markus Kohm, 2012-2022
+% Copyright (c) Markus Kohm, 2012-2023
 %
 % This file is part of the LaTeX2e KOMA-Script bundle.
 %
@@ -18,7 +18,7 @@
 %
 % This work consists of all files listed in MANIFEST.md.
 % ======================================================================
-%%% From File: $Id: scrlayer.dtx 3945 2022-07-19 09:16:17Z kohm $
+%%% From File: $Id: scrlayer.dtx 4058 2023-06-16 08:32:27Z kohm $
 %<identify>%%%            (run: identify)
 %<init>%%%            (run: init)
 %<options>%%%            (run: options)
@@ -28,9 +28,9 @@
 \ifx\ProvidesFile\undefined\def\ProvidesFile#1[#2]{}\fi
 \begingroup
   \def\filedate$#1: #2-#3-#4 #5${\gdef\filedate{#2/#3/#4}}
-  \filedate$Date: 2022-07-19 11:16:17 +0200 (Di, 19. Jul 2022) $
+  \filedate$Date: 2023-06-16 10:32:27 +0200 (Fr, 16. Jun 2023) $
   \def\filerevision$#1: #2 ${\gdef\filerevision{r#2}}
-  \filerevision$Revision: 3945 $
+  \filerevision$Revision: 4058 $
   \edef\reserved@a{%
     \noexpand\endgroup
     \noexpand\ProvidesFile{scrlayer.dtx}%
@@ -89,6 +89,7 @@
 % \changes{v3.36}{2022/02/08}{require package \pkg*{scrlogo} instead of
 %   defining \cs{KOMAScript}}
 % \changes{v3.36}{2022/02/08}{whole implementation documentation in English}
+% \changes{v3.40}{2023/04/17}{guide names changed}
 %
 % \GetFileInfo{scrlayer.dtx}
 % \title{Layers and Page Styles with \href{https://komascript.de}{\KOMAScript}
@@ -105,8 +106,9 @@
 %
 % \section{User Manual}
 %
-% You can find the user manuals of \pkg*{scrlayer} in the \KOMAScript{} manual,
-% either the German \file{scrguide} or the English \file{scrguien}.
+% You can find the user manuals of \pkg*{scrlayer} in the \KOMAScript{}
+% manual, either the German \file{scrguide-de.pdf} or the English
+% \file{scrguide-en.pdf}.
 %
 % \MaybeStop{\PrintIndex}
 %
@@ -307,9 +309,13 @@
 % done already by \pkg*{scrlayer}. But not the deprecated options.
 %
 % \begin{option}{markcase}
+% \changes{v3.39}{2022/11/11}{initial dot in member argument of option storage
+%   commands removed}
+% \changes{v3.41}{2023/06/16}{new value \texttt{title} to support
+%   \cs{MakeTitlecase}}
 % \begin{description}
 % \item[\texttt{=\meta{setting}}] one of: \texttt{upper}, \texttt{lower},
-% \texttt{used}, or \texttt{ignoreuppercase}.
+%   \texttt{title}, \texttt{used}, or \texttt{ignoreuppercase}.
 % \end{description}\noindent
 % The two options \opt{markuppercase} and \opt{markusedcase} become
 % deprecated and are replace be the single option \opt{markcase}. Note,
@@ -321,9 +327,9 @@
 %<interface&scrpage>\scrlayer@AtEndOfPackage{%
   \begingroup
     \KOMA@set@ncmdkey{markcase}{reserved@a}{%
-      {upper}{0},{lower}{1},{used}{2},%
-      {ignoreuppercase}{3},{nouppercase}{3},%
-      {ignoreupper}{3},{noupper}{3}%
+      {upper}{0},{lower}{1},{title}{2},{used}{3},%
+      {ignoreuppercase}{4},{nouppercase}{4},%
+      {ignoreupper}{4},{noupper}{4}%
     }{#1}%
     \ifx\FamilyKeyState\FamilyKeyStateProcessed
       \aftergroup\FamilyKeyStateProcessed
@@ -336,6 +342,15 @@
           \aftergroup\MakeLowercase
           \aftergroup\scrlayer@forceignoreuppercasefalse
         \or
+          \scr@ifundefinedorrelax{MakeTitlecase}{%  
+            \PackageWarning{scrlayer}{`markcase=title' ignored because
+              \string\MakeTitlecase\space not available}%
+            \aftergroup\MakeMarkcase
+          }{%
+            \aftergroup\MakeTitlecase
+          }%
+          \aftergroup\scrlayer@forceignoreuppercasefalse
+        \or  
           \aftergroup\@firstofone
           \aftergroup\scrlayer@forceignoreuppercasefalse
         \else
@@ -348,8 +363,8 @@
     \fi
   \endgroup
   \ifx\FamilyKeyState\FamilyKeyStateProcessed
-    \KOMA@kav@removekey{.scrlayer.sty}{markcase}%
-    \KOMA@kav@xadd{.scrlayer.sty}{markcase}{#1}%
+    \KOMA@kav@removekey{scrlayer.sty}{markcase}%
+    \KOMA@kav@xadd{scrlayer.sty}{markcase}{#1}%
   \fi
 %<interface&scrpage>}%
 }
@@ -367,14 +382,16 @@
 %<*package&options>
 \@ifundefined{MakeMarkcase}{\let\MakeMarkcase\@firstofone}{}
 \ifx\MakeMarkcase\@firstofone
-  \KOMA@kav@replacevalue{.scrlayer.sty}{markcase}{used}%
+  \KOMA@kav@replacevalue{scrlayer.sty}{markcase}{used}%
 \else\ifx\MakeMarkcase\MakeUppercase
-    \KOMA@kav@replacevalue{.scrlayer.sty}{markcase}{upper}%
+    \KOMA@kav@replacevalue{scrlayer.sty}{markcase}{upper}%
   \else\ifx\MakeMarkcase\MakeLowercase
-      \KOMA@kav@replacevalue{.scrlayer.sty}{markcase}{lower}%
-    \else\ifx\MakeMarkcase\scr@ignoreuppercase
-        \KOMA@kav@replacevalue{.scrlayer.sty}{markcase}{ignoreuppercase}%
-\fi\fi\fi\fi
+      \KOMA@kav@replacevalue{scrlayer.sty}{markcase}{lower}%
+    \else\ifx\MakeMarkcase\MakeTitlecase
+        \KOMA@kav@replacevalue{scrlayer.sty}{markcase}{title}%
+      \else\ifx\MakeMarkcase\scr@ignoreuppercase
+          \KOMA@kav@replacevalue{scrlayer.sty}{markcase}{ignoreuppercase}%
+\fi\fi\fi\fi\fi
 %    \end{macrocode}
 % \begin{macro}{\scrlayer@ignoreuppercase}
 % We span a group and set \cs{uppercase} and \cs{MakeUppercase} to
@@ -595,6 +612,8 @@
 % \end{command}^^A \markdouble
 %
 % \begin{option}{autooneside}
+% \changes{v3.39}{2022/11/11}{initial dot in member argument of option storage
+%   commands removed}
 % \begin{macro}{\ifscrlayer@autooneside}
 % Decide whether or not use the optional argument of \cs{automark} in
 % single-side layout.
@@ -603,12 +622,12 @@
 %<*package>
 \KOMA@ifkey{autooneside}{scrlayer@autooneside}\scrlayer@autoonesidetrue
 \scrlayer@@add@inherited@option{autooneside}
-\KOMA@kav@replacebool{.scrlayer.sty}{autooneside}{scrlayer@autooneside}
+\KOMA@kav@replacebool{scrlayer.sty}{autooneside}{scrlayer@autooneside}
 %</package>
 %<*interface>
 \KOMA@key{autooneside}[true]{%
   \KOMA@set@ifkey{autooneside}{scrlayer@autooneside}{#1}%
-  \KOMA@kav@replacebool{.scrlayer.sty}{autooneside}{scrlayer@autooneside}%
+  \KOMA@kav@replacebool{scrlayer.sty}{autooneside}{scrlayer@autooneside}%
 }
 %</interface>
 %</options>
@@ -634,7 +653,9 @@
 %   handles \opt{autooneside}?
 % \end{description}
 % \changes{v3.22}{2016/12/07}{prepared for classes without \cs{section} or
-%     \cs{subsection}}
+%   \cs{subsection}}
+% \changes{v3.39}{2022/11/11}{initial dot in member argument of option storage
+%   commands removed}
 %    \begin{macrocode}
 %<*options>
 \KOMA@key{automark}[]{%
@@ -659,9 +680,9 @@
     \fi
   }%
   \FamilyKeyStateProcessed
-  \KOMA@kav@removekey{.scrlayer.sty}{automark}%
-  \KOMA@kav@removekey{.scrlayer.sty}{manualmark}%
-  \KOMA@kav@add{.scrlayer.sty}{automark}{}%
+  \KOMA@kav@removekey{scrlayer.sty}{automark}%
+  \KOMA@kav@removekey{scrlayer.sty}{manualmark}%
+  \KOMA@kav@add{scrlayer.sty}{automark}{}%
 }
 %<package>\scrlayer@@add@inherited@option{automark}
 %</options>
@@ -675,9 +696,9 @@
   \scrlayer@testunexpectedarg{manualmark}{#1}%
   \scrlayer@AtEndOfPackage{\manualmark}%
   \FamilyKeyStateProcessed
-  \KOMA@kav@removekey{.scrlayer.sty}{automark}%
-  \KOMA@kav@removekey{.scrlayer.sty}{manualmark}%
-  \KOMA@kav@add{.scrlayer.sty}{manualmark}{}%
+  \KOMA@kav@removekey{scrlayer.sty}{automark}%
+  \KOMA@kav@removekey{scrlayer.sty}{manualmark}%
+  \KOMA@kav@add{scrlayer.sty}{manualmark}{}%
 }
 %<package>\scrlayer@@add@inherited@option{manualmark}
 %</options>
@@ -776,6 +797,8 @@
 %    \end{macrocode}
 % \end{macro}^^A \automark@basics
 % \begin{macro}{\automark@righthigh}
+% \changes{v3.41}{2023/06/16}{split usage of \cs{MakeMarkcase} to support
+%   \cs{MakeTitlecase}}
 % Set up the right mark of a higher level, but in single-side layout only if
 % \opt{autooneside} hasn't been used. Note, that with this definition no
 % special handling for \KOMAScript's \cs{addchap} and \cs{addsec} is
@@ -791,11 +814,11 @@
       \expandafter\endgroup
       \if@tempswa
         \@mkright{%
-          \MakeMarkcase{%
-            \ifnum \c@secnumdepth<\numexpr \csname #1numdepth\endcsname +0\relax
-            \else\if@mainmatter \csname #1markformat\endcsname\fi\fi
-            ##1%
-          }%
+          \ifnum \c@secnumdepth<\numexpr \csname #1numdepth\endcsname +0\relax
+          \else
+            \if@mainmatter \MakeMarkcase{\csname #1markformat\endcsname}\fi
+          \fi
+          \MakeMarkcase{##1}%
         }%
       \fi
     }%
@@ -824,15 +847,17 @@
 % instead of only a left high mark, we set up both marks.
 % \changes{v3.27}{2019/07/25}{replaced \cs{@empty} by \texttt{\{\}} to avoid
 %   \textsf{babel} issue}
+% \changes{v3.41}{2023/06/16}{split usage of \cs{MakeMarkcase} to support
+%   \cs{MakeTitlecase}}
 %    \begin{macrocode}
         \expandafter\@mkdouble
       \fi
       {%
-        \MakeMarkcase{%
-          \ifnum \c@secnumdepth<\numexpr \csname #1numdepth\endcsname +0\relax
-          \else\if@mainmatter \csname #1markformat\endcsname\fi\fi
-          ##1%
-        }%
+        \ifnum \c@secnumdepth<\numexpr \csname #1numdepth\endcsname +0\relax
+        \else
+          \if@mainmatter \MakeMarkcase{\csname #1markformat\endcsname}\fi
+        \fi
+        \MakeMarkcase{##1}%
       }{}%
     }%
   }{}%
@@ -859,17 +884,17 @@
 %    \end{macrocode}
 % Level of left mark is equal to level of right mark. This is
 % nice and very easy to handle.
+% \changes{v3.41}{2023/06/16}{split usage of \cs{MakeMarkcase} to support
+%   \cs{MakeTitlecase}}
 %    \begin{macrocode}
           \expandafter\def\csname #2mark\endcsname##1{%
             \@mkdouble{%
-              \MakeMarkcase{%
-                \ifnum \c@secnumdepth<\numexpr 
-                  \csname #2numdepth\endcsname +0\relax
-                \else
-                  \if@mainmatter \csname #2markformat\endcsname\fi
-                \fi
-                ##1%
-              }%
+              \ifnum \c@secnumdepth<\numexpr 
+                \csname #2numdepth\endcsname +0\relax
+              \else
+                \if@mainmatter \MakeMarkcase{\csname #2markformat\endcsname}\fi
+              \fi
+              \MakeMarkcase{##1}%
             }%
           }%
         \else
@@ -885,25 +910,23 @@
             \expandafter\endgroup
             \if@tempswa
               \@mkleft{%
-                \MakeMarkcase{%
-                  \ifnum \c@secnumdepth
-                       < \numexpr\csname #1numdepth\endcsname +0\relax
-                  \else
-                    \if@mainmatter \csname #1markformat\endcsname\fi
-                  \fi
-                  ##1%
-                }%
+                \ifnum \c@secnumdepth
+                     < \numexpr\csname #1numdepth\endcsname +0\relax
+                \else
+                  \if@mainmatter \MakeMarkcase{\csname #1markformat\endcsname}\fi
+                \fi
+                \MakeMarkcase{##1}%
               }%
             \fi
           }%
           \expandafter\def\csname #2mark\endcsname##1{%
             \@mkboth{}{%
-              \MakeMarkcase{%
-                \ifnum \c@secnumdepth
-                     < \numexpr \csname #2numdepth\endcsname +0\relax
-                \else\if@mainmatter \csname #2markformat\endcsname\fi\fi
-                ##1%
-              }%
+              \ifnum \c@secnumdepth
+                   < \numexpr \csname #2numdepth\endcsname +0\relax
+              \else
+                \if@mainmatter \MakeMarkcase{\csname #2markformat\endcsname}\fi
+              \fi
+              \MakeMarkcase{##1}%
             }%
           }%
         \fi
@@ -2307,11 +2330,11 @@
 \KOMA@key{onpsselect}{%
   \l@addto@macro{\@ps@initialhook}{#1}%
   \FamilyKeyStateProcessed
-  \KOMA@kav@add{.scrlayer.sty}{onpsselect}{#1}%
+  \KOMA@kav@add{scrlayer.sty}{onpsselect}{#1}%
 }
 %<package>\scrlayer@@add@inherited@option{onpsselect}
 %<package>\newcommand*{\@ps@initialhook}{}
-%<package>\KOMA@kav@add{.scrlayer.sty}{onpsselect}{}
+%<package>\KOMA@kav@add{scrlayer.sty}{onpsselect}{}
 %</options>
 %<*interface&body>
 \expandafter\let
@@ -2344,11 +2367,11 @@
 \KOMA@key{onpsinit}{%
   \l@addto@macro{\@ps@hook}{#1}%
   \FamilyKeyStateProcessed
-  \KOMA@kav@add{.scrlayer.sty}{onpsinit}{#1}%
+  \KOMA@kav@add{scrlayer.sty}{onpsinit}{#1}%
 }
 %<package>\scrlayer@@add@inherited@option{onpsinit}
 %<package>\newcommand*{\@ps@hook}{}
-%<package>\KOMA@kav@add{.scrlayer.sty}{onpsinit}{}
+%<package>\KOMA@kav@add{scrlayer.sty}{onpsinit}{}
 %</options>
 %<*interface&body>
 \expandafter\let
@@ -2372,6 +2395,8 @@
 % \begin{option}{ononeside}
 % \changes{v3.28}{2019/11/28}{marker for \cs{ModifyLayerPageStyleOptions}}
 % \begin{option}{onpsoneside}
+% \changes{v3.39}{2022/11/11}{initial dot in member argument of option storage
+%   commands removed}
 % \begin{macro}{\@ps@onesidehook}
 % \begin{description}
 % \item[\opt{=\meta{code}}:] executes \meta{code} after
@@ -2385,11 +2410,11 @@
 \KOMA@key{onpsoneside}{%
   \l@addto@macro{\@ps@onesidehook}{#1}%
   \FamilyKeyStateProcessed
-  \KOMA@kav@add{.scrlayer.sty}{onpsoneside}{#1}%
+  \KOMA@kav@add{scrlayer.sty}{onpsoneside}{#1}%
 }
 %<package>\scrlayer@@add@inherited@option{onpsoneside}
 %<package>\newcommand*{\@ps@onesidehook}{}
-%<package>\KOMA@kav@add{.scrlayer.sty}{onpsoneside}{}
+%<package>\KOMA@kav@add{scrlayer.sty}{onpsoneside}{}
 %</options>
 %<*interface&body>
 \expandafter\let
@@ -2413,6 +2438,8 @@
 % \begin{option}{ontwoside}
 % \changes{v3.28}{2019/11/28}{marker for \cs{ModifyLayerPageStyleOptions}}
 % \begin{option}{onpstwoside}
+% \changes{v3.39}{2022/11/11}{initial dot in member argument of option storage
+%   commands removed}
 % \begin{macro}{\@ps@twosidehook}
 % \begin{description}
 % \item[\opt{=\meta{code}}:] executes \meta{code} after
@@ -2426,11 +2453,11 @@
 \KOMA@key{onpstwoside}{%
   \l@addto@macro{\@ps@twosidehook}{#1}%
   \FamilyKeyStateProcessed
-  \KOMA@kav@add{.scrlayer.sty}{onpstwoside}{#1}%
+  \KOMA@kav@add{scrlayer.sty}{onpstwoside}{#1}%
 }
 %<package>\scrlayer@@add@inherited@option{onpstwoside}
 %<package>\newcommand*{\@ps@twosidehook}{}
-%<package>\KOMA@kav@add{.scrlayer.sty}{onpstwoside}{}
+%<package>\KOMA@kav@add{scrlayer.sty}{onpstwoside}{}
 %</options>
 %<*interface&body>
 \expandafter\let
@@ -2454,6 +2481,8 @@
 % \begin{option}{onoddpage}
 % \changes{v3.28}{2019/11/28}{marker for \cs{ModifyLayerPageStyleOptions}}
 % \begin{option}{onpsoddpage}
+% \changes{v3.39}{2022/11/11}{initial dot in member argument of option storage
+%   commands removed}
 % \begin{macro}{\@ps@oddpagehook}
 % \begin{description}
 % \item[\texttt{=\meta{code}}:] executes \meta{code} after
@@ -2467,11 +2496,11 @@
 \KOMA@key{onpsoddpage}{%
   \l@addto@macro{\@ps@oddpagehook}{#1}%
   \FamilyKeyStateProcessed
-  \KOMA@kav@add{.scrlayer.sty}{onpsoddpage}{#1}%
+  \KOMA@kav@add{scrlayer.sty}{onpsoddpage}{#1}%
 }
 %<package>\scrlayer@@add@inherited@option{onpsoddpage}
 %<package>\newcommand*{\@ps@oddpagehook}{}
-%<package>\KOMA@kav@add{.scrlayer.sty}{onpsoddpage}{}
+%<package>\KOMA@kav@add{scrlayer.sty}{onpsoddpage}{}
 %</options>
 %<*interface&body>
 \expandafter\let
@@ -2495,6 +2524,8 @@
 % \begin{option}{onevenpage}
 % \changes{v3.28}{2019/11/28}{marker for \cs{ModifyLayerPageStyleOptions}}
 % \begin{option}{onpsevenpage}
+% \changes{v3.39}{2022/11/11}{initial dot in member argument of option storage
+%   commands removed}
 % \begin{macro}{\@ps@evenpagehook}
 % \begin{description}
 % \item[\texttt{=\meta{code}}:] executes \meta{code} after
@@ -2508,11 +2539,11 @@
 \KOMA@key{onpsevenpage}{%
   \l@addto@macro{\@ps@evenpagehook}{#1}%
   \FamilyKeyStateProcessed
-  \KOMA@kav@add{.scrlayer.sty}{onpsevenpage}{#1}%
+  \KOMA@kav@add{scrlayer.sty}{onpsevenpage}{#1}%
 }
 %<package>\scrlayer@@add@inherited@option{onpsevenpage}
 %<package>\newcommand*{\@ps@evenpagehook}{}
-%<package>\KOMA@kav@add{.scrlayer.sty}{onpsevenpage}{}
+%<package>\KOMA@kav@add{scrlayer.sty}{onpsevenpage}{}
 %</options>
 %<*interface&body>
 \expandafter\let
@@ -2536,6 +2567,8 @@
 % \begin{option}{onfloatpage}
 % \changes{v3.28}{2019/11/28}{marker for \cs{ModifyLayerPageStyleOptions}}
 % \begin{option}{onpsfloatpage}
+% \changes{v3.39}{2022/11/11}{initial dot in member argument of option storage
+%   commands removed}
 % \begin{macro}{\@ps@floatpagehook}
 % \begin{description}
 % \item[\opt{=\meta{code}}:] executes \meta{code} after
@@ -2547,11 +2580,11 @@
 \KOMA@key{onpsfloatpage}{%
   \l@addto@macro{\@ps@floatpagehook}{#1}%
   \FamilyKeyStateProcessed
-  \KOMA@kav@add{.scrlayer.sty}{onpsfloatpage}{#1}%
+  \KOMA@kav@add{scrlayer.sty}{onpsfloatpage}{#1}%
 }
 %<package>\scrlayer@@add@inherited@option{onpsfloatpage}
 %<package>\newcommand*{\@ps@floatpagehook}{}
-%<package>\KOMA@kav@add{.scrlayer.sty}{onpsfloatpage}{}
+%<package>\KOMA@kav@add{scrlayer.sty}{onpsfloatpage}{}
 %</options>
 %<*interface&body>
 \expandafter\let
@@ -2575,6 +2608,8 @@
 % \begin{option}{onnonfloatpage}
 % \changes{v3.28}{2019/11/28}{marker for \cs{ModifyLayerPageStyleOptions}}
 % \begin{option}{onpsnonfloatpage}
+% \changes{v3.39}{2022/11/11}{initial dot in member argument of option storage
+%   commands removed}
 % \begin{macro}{\@ps@nonfloatpagehook}
 % \begin{description}
 % \item[\opt{=\meta{code}}:] executes \meta{code} after
@@ -2586,11 +2621,11 @@
 \KOMA@key{onpsnonfloatpage}{%
   \l@addto@macro{\@ps@nonfloatpagehook}{#1}%
   \FamilyKeyStateProcessed
-  \KOMA@kav@add{.scrlayer.sty}{onpsnonfloatpage}{#1}%
+  \KOMA@kav@add{scrlayer.sty}{onpsnonfloatpage}{#1}%
 }
 %<package>\scrlayer@@add@inherited@option{onpsnonfloatpage}
 %<package>\newcommand*{\@ps@nonfloatpagehook}{}
-%<package>\KOMA@kav@add{.scrlayer.sty}{onpsnonfloatpage}{}
+%<package>\KOMA@kav@add{scrlayer.sty}{onpsnonfloatpage}{}
 %</options>
 %<*interface&body>
 \expandafter\let
@@ -2614,6 +2649,8 @@
 % \begin{option}{onbackground}
 % \changes{v3.28}{2019/11/28}{marker for \cs{ModifyLayerPageStyleOptions}}
 % \begin{option}{onpsbackground}
+% \changes{v3.39}{2022/11/11}{initial dot in member argument of option storage
+%   commands removed}
 % \begin{macro}{\@ps@backgroundhook}
 % \begin{description}
 % \item[\texttt{=\meta{code}}:] executes \meta{code} after
@@ -2627,11 +2664,11 @@
 \KOMA@key{onpsbackground}{%
   \l@addto@macro{\@ps@backgroundhook}{#1}%
   \FamilyKeyStateProcessed
-  \KOMA@kav@add{.scrlayer.sty}{onpsbackground}{#1}%
+  \KOMA@kav@add{scrlayer.sty}{onpsbackground}{#1}%
 }
 %<package>\scrlayer@@add@inherited@option{onpsbackground}
 %<package>\newcommand*{\@ps@backgroundhook}{}
-%<package>\KOMA@kav@add{.scrlayer.sty}{onpsbackground}{}
+%<package>\KOMA@kav@add{scrlayer.sty}{onpsbackground}{}
 %</options>
 %<*interface&body>
 \expandafter\let
@@ -2655,6 +2692,8 @@
 % \begin{option}{onforeground}
 % \changes{v3.28}{2019/11/28}{marker for \cs{ModifyLayerPageStyleOptions}}
 % \begin{option}{onpsforeground}
+% \changes{v3.39}{2022/11/11}{initial dot in member argument of option storage
+%   commands removed}
 % \begin{macro}{\@ps@foregroundhook}
 % \begin{description}
 % \item[\texttt{=\meta{code}}:] executes \meta{code} after
@@ -2668,11 +2707,11 @@
 \KOMA@key{onpsforeground}{%
   \l@addto@macro{\@ps@foregroundhook}{#1}%
   \FamilyKeyStateProcessed
-  \KOMA@kav@add{.scrlayer.sty}{onpsforeground}{#1}%
+  \KOMA@kav@add{scrlayer.sty}{onpsforeground}{#1}%
 }
 %<package>\scrlayer@@add@inherited@option{onpsforeground}
 %<package>\newcommand*{\@ps@foregroundhook}{}
-%<package>\KOMA@kav@add{.scrlayer.sty}{onpsforeground}{}
+%<package>\KOMA@kav@add{scrlayer.sty}{onpsforeground}{}
 %</options>
 %<*interface&body>
 \expandafter\let
@@ -2934,6 +2973,8 @@
 %</package&body>
 %    \end{macrocode}
 % \begin{option}{deactivatepagestylelayers}
+% \changes{v3.39}{2022/11/11}{initial dot in member argument of option storage
+%   commands removed}
 % \begin{macro}{\ifscrlayer@deactivate@layers}
 %   \begin{description}
 %   \item[\marg{simple switch}:] whether or not
@@ -2954,7 +2995,7 @@
 %<*interface>
 \KOMA@key{deactivatepagestylelayers}[true]{%
   \KOMA@set@ifkey{deactivatepagestylelayers}{scrlayer@deactivate@layers}{#1}%
-  \KOMA@kav@replacebool{.scrlayer.sty}{deactivatepagestylelayers}
+  \KOMA@kav@replacebool{scrlayer.sty}{deactivatepagestylelayers}
                        {scrlayer@deactivate@layers}%
 }
 %</interface>
@@ -3211,6 +3252,8 @@
 % \end{command}^^A \layerpicturemode
 % 
 % \begin{option}{draft}
+% \changes{v3.39}{2022/11/11}{initial dot in member argument of option storage
+%   commands removed}
 % \begin{macro}{\ifscrlayer@draft,\scrlayer@drafttrue,\scrlayer@draftfalse}
 %   \begin{description}
 %   \item[\marg{simple switch}:] whether or not to use the draft mode,
@@ -3227,7 +3270,7 @@
 %<*interface>
 \KOMA@key{draft}[true]{%
   \KOMA@set@ifkey{draft}{scrlayer@draft}{#1}%
-  \KOMA@kav@replacebool{.scrlayer.sty}{draft}{scrlayer@draft}%
+  \KOMA@kav@replacebool{scrlayer.sty}{draft}{scrlayer@draft}%
 }
 %</interface>
 %</options>
@@ -4246,6 +4289,8 @@
 %</package&body>
 %    \end{macrocode}
 % \begin{option}{forceoverwrite}
+% \changes{v3.39}{2022/11/11}{initial dot in member argument of option storage
+%   commands removed}
 % \begin{macro}{\ifscrlayer@forceoverwrite}
 %   \begin{description}
 %   \item[\marg{simple switch}:] whether or not to overwrite already
@@ -4260,7 +4305,7 @@
 %<*interface>
 \KOMA@key{forceoverwrite}[true]{%
   \KOMA@set@ifkey{forceoverwrite}{scrlayer@forceoverwrite}{#1}%
-  \KOMA@kav@replacebool{.scrlayer.sty}{forceoverwrite}{scrlayer@forceoverwrite}%
+  \KOMA@kav@replacebool{scrlayer.sty}{forceoverwrite}{scrlayer@forceoverwrite}%
 }
 %</interface>
 %</options>
@@ -4275,6 +4320,8 @@
 % \end{option}^^A forceoverwrite
 %
 % \begin{option}{autoremoveinterfaces}
+% \changes{v3.39}{2022/11/11}{initial dot in member argument of option storage
+%   commands removed}
 % \begin{macro}{\ifscrlayer@autoremoveinterfaces}
 %   \begin{description}
 %   \item[\marg{simple switch}:] whether or not older interfaces may be
@@ -4290,7 +4337,7 @@
 \KOMA@key{autoremoveinterfaces}[true]{%
   \scrlayer@report@deprecated{#1}{autoremoveinterface}%
   \KOMA@set@ifkey{autoremoveinterfaces}{scrlayer@autoremoveinterfaces}{#1}%
-  \KOMA@kav@replacebool{.scrlayer.sty}{autoremoveinterfaces}
+  \KOMA@kav@replacebool{scrlayer.sty}{autoremoveinterfaces}
                        {scrlayer@autoremoveinterfaces}%
 }
 %</interface>

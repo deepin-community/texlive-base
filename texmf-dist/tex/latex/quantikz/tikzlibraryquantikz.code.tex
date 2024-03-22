@@ -1,9 +1,20 @@
-%This is the quantikz library for typesetting quantum circuits using LaTeX/Tikz. version 0.9.6
+%This is the quantikz library for typesetting quantum circuits using LaTeX/Tikz. version 0.9.8
 % Written by Alastair Kay, 2018. Published under a CC-BY-4.0 licence
 % Please email me (alastair.kay@rhul.ac.uk) with any bug reports or feature requests.
 % If you find this library useful, please cite its usage in your work, using arXiv:1809.03842, and possibly the DOI: 10.17637/rh.7000520.
 % Usage is at your own risk.
 
+%version 0.9.8 (not yet released)
+%added \multimeter and \multimeterD. Multi qubit versions of \meter and \meterD command. Arguments directly mirror those of \gate, except that style={} parameter in first optional argument does not work. Instead, these are provided as an extra optiona parameter (the second). Updated the drawing to respect this better.
+%drawing function of meterD now accepts commands such as "rectangle with rounded corners north west=20pt" to control rounding of individual corners of node
+%added \permute command. Experimental - I'm not confident that the wire crossings will look good in all situations.
+%fixed a bug spotted by Stefan Krastanov about spacing that particularly affects transparent gates.
+%fixed a bug spotted by Leo Colisson about spacing
+%	added \forceredefine if you prefer my bra, ket etc to ones given in other packages
+% 	added pswap[i]{j} command. Similar to \swap{i} but now has label j in a circle. Only works well if i is odd. Draw order issue with even i.
+%	I've altered a few options such that transparency is applied more uniformly and line colours are inherited better. Background colours of items now derived from tikzcd parameter in \pgfkeysvalueof{/tikz/commutative diagrams/background color}.
+%version 0.9.7
+%	added a parameter \ctrlbundle[3]{}. This lets you control off classical wires.
 %version 0.9.6:
 %	changed packaging so there isn't a compile warning any more
 %	modified the meter command so that \meter[draw=blue]{} colours everything blue, not just outline.
@@ -50,6 +61,8 @@
 \RequirePackage{environ} %in an attempt to help with compatibility with the external library of tikz.
 %\RequirePackage{tikz}
 \usetikzlibrary{cd,decorations.pathreplacing,calc,positioning,fit,shapes.symbols,decorations.pathmorphing,shapes.misc,backgrounds,decorations.markings,math}
+
+\PackageWarning{quantikz}{You are using an old version of quantikz. Please update your command to "quantikz2".}
 
 \newlength{\myl}
 \newlength{\myh}
@@ -140,6 +153,70 @@
 %find the vertical position of the middle of an equals sign
 %https://tex.stackexchange.com/questions/355680/how-can-i-vertically-align-an-equals-sign-in-a-tikz-node/355686
 \pgfmathsetmacro\MathAxis{height("$\vcenter{}$")}
+\newcounter{wirenumberpermute}
+
+\newcommand{\permute}[1]{%
+\hphantom{Wide}%
+\def\firstlist{#1}
+ 	\edef\n{\the\pgfmatrixcurrentrow} %the row
+ 	\edef\m{\the\pgfmatrixcurrentcolumn} %the column
+ 	\edef\mn{\the\numexpr\m-1\relax}
+ 	\edef\mp{\the\numexpr\m+1\relax}
+ 	\settowidth{\myl}{$Wide$}
+ 	\setcounter{wirenumberpermute}{0}
+ 	\foreach \x [count=\c] in \firstlist {%
+ 		\edef\start{\the\numexpr\c+\n-1\relax}%
+ 		\edef\endy{\the\numexpr\x+\n-1\relax}%
+ 		%apply auto width to the cell, and make sure we unset the setting so that it doesn't apply to later circuits.
+ 	 	%I think use of globaldefs in this way is very slow, but I don't know of a better way.
+ 		\globaldefs=1%
+ 		\edef\dotikzset{\noexpand\tikzset{row \start\space column \m/.append style={minimum width={\the\myl}}}}%
+ 		\dotikzset%
+ 		\edef\undotikzset{\noexpand\tikzset{row \start\space column \m/.style={}}}%
+    \expandafter\pgfutil@g@addto@macro\expandafter\tikzcd@atendglobals\expandafter{\undotikzset}%
+    \globaldefs=0%
+ 		\stepcounter{wirenumberpermute}
+ 	 	}
+ 	 	\expandafter\expandafter\expandafter\pgfutil@g@addto@macro\expandafter\expandafter\expandafter\tikzcd@atendsavedpaths\expandafter\expandafter\expandafter{%
+ 	 	\expandafter\expandafter\expandafter\wirepair@end\expandafter\expandafter\expandafter{\expandafter\n\expandafter}\expandafter{\m}{#1}%
+ 		}
+ 	\edef\lim{\the\numexpr\arabic{wirenumberpermute}+\n-1\relax}
+ 	 	\foreach \i in {\n,...,\lim} {%
+ 	     \edef\newcom{\noexpand\vqwexplicit{\i-\m}{\i-\mn}}
+ 	 		 \newcom%
+ 	 	}
+}
+
+\newcommand{\wirepair@end}[3]{%#row,col of left-most site. #row of right-most site.
+	\xdef\LoopGG{}
+	\edef\i{#1}
+	\def\firstlist{#3}
+	%\show\i
+	%\show\j
+	%create a list of cell names to be included in this grouped gate
+	\foreach \n in \firstlist {%
+	\ifnodedefined{\tikzcdmatrixname-\the\numexpr\n+\i-1\relax-#2}{%
+		\xdef\LoopGG{\LoopGG(\tikzcdmatrixname-\the\numexpr\n+\i-1\relax-#2)}
+		}{}
+	}
+	\ifnodedefined{\tikzcdmatrixname-\i-#2}{%
+		\xdef\LoopGG{\LoopGG(\tikzcdmatrixname-\i-#2)}
+		}{}
+	\node (group\tikzcdmatrixname-#1-#2) [fit=\LoopGG,transparent,inner sep=0pt] {\phantom{Wide}};
+		\foreach \n [count=\c] in \firstlist{%
+			\draw [line width=3pt,\pgfkeysvalueof{/tikz/commutative diagrams/background color},shorten >=0.9pt,shorten <=0.9pt] (group\tikzcdmatrixname-#1-#2.west|-\tikzcdmatrixname-\the\numexpr\i+\c-1\relax-#2.center) to[out=0,in=180] (group\tikzcdmatrixname-#1-#2.east|-\tikzcdmatrixname-\the\numexpr\i+\n-1\relax-#2.center);
+			\draw [thickness] (group\tikzcdmatrixname-#1-#2.west|-\tikzcdmatrixname-\the\numexpr\i+\c-1\relax-#2.center) to[out=0,in=180] (group\tikzcdmatrixname-#1-#2.east|-\tikzcdmatrixname-\the\numexpr\i+\n-1\relax-#2.center);
+		}
+}
+
+\DeclareExpandableDocumentCommand{\multimeter}{O{}O{}O{1.5pt}O{1.5pt}m}{
+\gate[style={meter,inner sep=0,#2},#1][#3][#4]{#5}
+}
+\DeclareExpandableDocumentCommand{\multimeterD}{O{}O{}O{1.5pt}O{1.5pt}m}{%
+% \pgfkeys{/quantikz,#1}%
+% \pgfkeysgetvalue{/quantikz/style}{\a}%
+\gate[#1,style={meterD,inner sep=0,#2}][#3][#4]{#5}
+}
 
 %the main gate command
 \DeclareExpandableDocumentCommand{\gate}{O{}O{1.5pt}O{1.5pt}m}{%optional parameter contains styling info. compulsory is gate text.
@@ -150,9 +227,9 @@
  	\edef\options{row=\n,col=\m,#1}
  	\def\toswap{0}%
  	\def\DisableMinSize{0}%
- 	\pgfkeys{/quantikz,wires=1,style=,label style=,braces=}%
+ 	%\pgfkeys{/quantikz,wires=1,style=,label style=,braces=}%
  	%import options passed as parameters
-  	\pgfkeys{/quantikz,#1}%
+  	\pgfkeys{/quantikz,wires=1,style=,label style=,braces=,#1}%
  	\pgfkeysgetvalue{/quantikz/wires}{\quantwires}
  	\pgfkeysgetvalue{/quantikz/style}{\a}
  	\pgfkeysgetvalue{/quantikz/label style}{\b}
@@ -160,6 +237,7 @@
  	\pgfkeysgetvalue{/quantikz/nwires}{\nowires}
  	\pgfkeysgetvalue{/quantikz/bundle}{\bundle}
  	\ifthenelse{\toswap=1}{%if it's a swap gate...
+ 		\pgfkeys{/quantikz,wires=2}
  		\def\quantwires{2}
  		\phantom{wide}
  		\settowidth{\myl}{$wide$}
@@ -229,7 +307,7 @@
 	\ifthenelse{\toswap=1}{
 		\node (group\tikzcdmatrixname-\row-\col) [fit=\LoopGG,operator,inner sep=0pt,#1] {\hphantom{Wide}};
 		\draw [thickness] (group\tikzcdmatrixname-\row-\col.west|-\tikzcdmatrixname-\row-\col.center) to[out=0,in=180] (group\tikzcdmatrixname-\row-\col.east|-\tikzcdmatrixname-\the\numexpr\row+1\relax-\col.center);
-		\draw [line width=3pt,white,shorten >=0.9pt,shorten <=0.9pt] (group\tikzcdmatrixname-\row-\col.east|-\tikzcdmatrixname-\row-\col.center) to[out=180,in=0] (group\tikzcdmatrixname-\row-\col.west|-\tikzcdmatrixname-\the\numexpr\row+1\relax-\col.center);
+		\draw [line width=3pt,\pgfkeysvalueof{/tikz/commutative diagrams/background color},shorten >=0.9pt,shorten <=0.9pt] (group\tikzcdmatrixname-\row-\col.east|-\tikzcdmatrixname-\row-\col.center) to[out=180,in=0] (group\tikzcdmatrixname-\row-\col.west|-\tikzcdmatrixname-\the\numexpr\row+1\relax-\col.center);
 		\draw [thickness] (group\tikzcdmatrixname-\row-\col.east|-\tikzcdmatrixname-\row-\col.center) to[out=180,in=0] (group\tikzcdmatrixname-\row-\col.west|-\tikzcdmatrixname-\the\numexpr\row+1\relax-\col.center);
 	}{
 	%the actual gate drawing command
@@ -313,7 +391,7 @@
 }
 
 \newcommand\midstick[2][]{%
-	\hphantom{\text{gg#2gg}}\ %leave enough space for whatever text we've inserted
+	\hphantom{\text{g#2g}}\ %leave enough space for whatever text we've inserted
 	\pgfkeys{/quantikz,wires=1,style=,label style=,braces=}
 	\pgfkeys{/quantikz,#1}%
 	\edef\newoptions{row=\the\pgfmatrixcurrentrow,col=\the\pgfmatrixcurrentcolumn,#1}
@@ -324,7 +402,7 @@
  	\edef\m{\the\pgfmatrixcurrentcolumn} %the column
 	\edef\mn{\the\numexpr\m-1\relax}
 	\edef\k{\the\numexpr\n+\quantwires-1\relax}
-	\settowidth{\myl}{gg#2gg}
+	\settowidth{\myl}{g#2g}
 	%if more than 1 wire, need to reserve space for each wire
 	\ifthenelse{\quantwires=1}{}{
 	 	\foreach \i in {\the\numexpr\n+1\relax,...,\k} {
@@ -399,7 +477,8 @@
 			\xdef\LoopGO{\LoopGO(\tikzcdmatrixname-\n-\col)} 
 		}}
 		\ifthenelse{\quantwires=1} {
-		\node (midgr-\row-\col) [fit=\LoopGO, inner sep=0pt,label={[align=center,#2]#4}] {};
+		%\node (midgr-\row-\col) [fit=\LoopGO, inner sep=0pt,label={[align=center,#2]#4}] {};
+		\node (midgr-\row-\col) [fit=\LoopGO, inner sep=0pt,label={[anchor=mid,#2]center:#4}] {};
 	}{
 	\node (midgr-\row-\col) [fit=\LoopGO, inner sep=0pt,label={[anchor=mid,#2]center:#4}] {};
 	\ifthenelse{\rightbrace=1}{
@@ -540,7 +619,7 @@
 }
 
 %patch tikzcd to allow for multiple layers of commands
-\patchcmd\tikzcd@{\tikzpicture}{\def\toslice{0}\def\vert{0}
+\patchcmd\tikzcd@{\tikzpicture}{\def\toslice{0}\def\vert{0}%
  \begin{tikzpicture}}{}{}
 \patchcmd\tikzcd@
     {\global\let\tikzcd@savedpaths\pgfutil@empty}
@@ -623,7 +702,9 @@
 \pgfmathtruncatemacro\wholepart{floor(#1)}
 \pgfmathtruncatemacro\neighbour{floor(#1)+1}
 \pgfmathsetmacro\fractionalpart{#1-floor(#1)}
-\edef\temp{\noexpand\tikzset{%
+\edef\temp{
+%\noexpand\tikzset{every matrix/.append style={baseline=([yshift=-\MathAxis]$(\noexpand\tikzcdmatrixname-\wholepart-1.base)!\fractionalpart!(\noexpand\tikzcdmatrixname-\neighbour-1.base)$)}%
+\noexpand\tikzset{%
 /tikz/baseline={([yshift=-\MathAxis]$(\noexpand\tikzcdmatrixname-\wholepart-1.base)!\fractionalpart!(\noexpand\tikzcdmatrixname-\neighbour-1.base)$)}
 }}
 %\show\temp
@@ -632,12 +713,14 @@
 }
 
 %initialise all the pgfkeys for key=value parameter passing in macro options
-
 \pgfkeys{/tikz/slice all/.code={\def\toslice{1}},/tikz/remove end slices/.initial=0,/tikz/slice titles/.initial={\col},/tikz/slice style/.initial={},/tikz/slice label style/.initial={},/tikz/thin lines/.code={\resetstyles},/tikz/transparent/.code={\maketransparent},/tikz/vertical slice labels/.code={\def\vert{1}},/tikz/align equals at/.code={\setmiddle{#1}}}
+%\tikzcdset{slice all/.code={\def\toslice{1}},remove end slices/.initial=0,slice titles/.initial={\col},slice style/.initial={},slice label style/.initial={},thin lines/.code={\resetstyles},transparent/.code={\maketransparent},vertical slice labels/.code={\def\vert{1}},align equals at/.code={\setmiddle{#1}}
+%}
 \pgfkeys{/quantikz/.is family,/quantikz,%
 .unknown/.style={%
 	/quantikz/wires=\pgfkeyscurrentname
 },%
+%wires/.store in=\quantwires,%
 wires/.initial=1,%
 style/.initial={},label style/.initial={},braces/.initial={},background/.code={\def\background{1}},alternate/.default=1,alternate/.code={\def\helper{#1}},row/.initial=1,col/.initial=1,steps/.initial=1,Strike Width/.initial=0.08cm,Strike Height/.initial=0.12cm,swap/.code={\def\toswap{1}},disable auto height/.code={\def\DisableMinSize{1}},cwires/.initial={-1},nwires/.initial={-1},bundle/.initial={-1},brackets/.is choice,brackets/.initial=both}
 \pgfkeys{/quantikz,brackets/.cd,none/.code={\def\leftbrace{0}\def\rightbrace{0}},left/.code={\def\leftbrace{1}\def\rightbrace{0}},right/.code={\def\leftbrace{0}\def\rightbrace{1}},both/.code={\def\leftbrace{1}\def\rightbrace{1}}}
@@ -647,6 +730,13 @@ style/.initial={},label style/.initial={},braces/.initial={},background/.code={\
 \providecommand{\bra}[1]{\ensuremath{\left\langle#1\right |}}
 \providecommand{\proj}[1]{\ensuremath{\ket{#1}\!\bra{#1}}}
 \providecommand{\braket}[2]{\ensuremath{\left\langle#1\middle|#2\right\rangle}}
+\newcommand{\forceredefine}{%
+\renewcommand{\ket}[1]{\ensuremath{\left|##1\right\rangle}}
+\renewcommand{\bra}[1]{\ensuremath{\left\langle##1\right |}}
+\renewcommand{\proj}[1]{\ensuremath{\ket{##1}\!\bra{##1}}}
+\renewcommand{\braket}[2]{\ensuremath{\left\langle##1\middle|##2\right\rangle}}
+}
+
 
 %single qubit operations
 \newcommand{\phantomgate}[1]{|[linecont,thickness, inner ysep=3pt]| \phantom{#1} \qw}
@@ -677,6 +767,12 @@ style/.initial={},label style/.initial={},braces/.initial={},background/.code={\
 	\edef\start{\the\pgfmatrixcurrentrow-\the\pgfmatrixcurrentcolumn}
 	\edef\end{\the\numexpr#1+\pgfmatrixcurrentrow\relax-\the\pgfmatrixcurrentcolumn}
 	\expandafter\expandafter\expandafter\vqwexplicitcenter\expandafter\expandafter\expandafter{\expandafter\start\expandafter}\expandafter{\end}
+}
+\DeclareExpandableDocumentCommand{\pswap}{O{0.5}mm}{%
+	\targX{}
+	\edef\start{\the\pgfmatrixcurrentrow-\the\pgfmatrixcurrentcolumn}
+	\edef\end{\the\numexpr#2+\pgfmatrixcurrentrow\relax-\the\pgfmatrixcurrentcolumn}
+	\expandafter\expandafter\expandafter\vqwexplicitc\expandafter\expandafter\expandafter{\expandafter\start\expandafter}\expandafter{\end}{#3}{#1}
 }
 
 %vertical wires
@@ -711,6 +807,10 @@ style/.initial={},label style/.initial={},braces/.initial={},background/.code={\
 \newcommand{\vqwexplicitcenter}[2]{
 	\arrow[from=#1,to=#2,arrows,start anchor=center,end anchor=center] {}
 }
+%quantum wire, absolute positioning, going to centres of cell, not edge. Add a label contianing circle
+\newcommand{\vqwexplicitc}[4]{
+	\arrow[from=#1,to=#2,arrows,start anchor=center,end anchor=center,"{#3}"{grade,pos=#4}]{}
+}
 
 %horizontal wires
 \newcommand{\qw}{\ifthenelse{\the\pgfmatrixcurrentcolumn>1}{\arrow[arrows]{l}}{}}
@@ -721,37 +821,78 @@ style/.initial={},label style/.initial={},braces/.initial={},background/.code={\
 \newcommand{\qwbundle}[2][]{\ifthenelse{\the\pgfmatrixcurrentcolumn>1}{
 	\def\helper{0}
 	\pgfset{/quantikz,#1}
+	\ifthenelse{\helper=3}{
+\arrow[arrows,yshift=0.05cm]{l}
+\arrow[arrows,yshift=-0.05cm]{l}
+	}{
 	\ifthenelse{\helper>0}{
 		\arrow[arrows,yshift=0.1cm]{l}
 		\ifthenelse{\helper=1}{\arrow[arrows]{l}}{}
 		\arrow[arrows,yshift=-0.1cm]{l}
 	}{
 	\arrow[phantom,strike arrow]{l}[xshift=\pgfkeysvalueof{/quantikz/Strike Width}, yshift=\pgfkeysvalueof{/quantikz/Strike Height},anchor=south west,inner sep=0pt]{\scriptstyle #2}\qw
-	}}{}}
+	}}}{}}
 
 
-
+\pgfdeclareshape{rectangle with rounded corners}{
+  \inheritsavedanchors[from=rectangle] % this is nearly a rectangle
+  \inheritanchorborder[from=rectangle]
+  \inheritanchor[from=rectangle]{center}
+  \inheritanchor[from=rectangle]{north}
+  \inheritanchor[from=rectangle]{south}
+  \inheritanchor[from=rectangle]{west}
+  \inheritanchor[from=rectangle]{east}
+  \inheritanchor[from=rectangle]{north east}
+  \inheritanchor[from=rectangle]{south east}
+  \inheritanchor[from=rectangle]{north west}
+  \inheritanchor[from=rectangle]{south west}
+  \backgroundpath{% this is new
+    % store lower right in xa/ya and upper right in xb/yb
+    \southwest \pgf@xa=\pgf@x \pgf@ya=\pgf@y
+    \northeast \pgf@xb=\pgf@x \pgf@yb=\pgf@y
+    % construct main path
+    \pgfkeysgetvalue{/tikz/rectangle with rounded corners north west}{\pgf@rectc}
+    \pgfsetcornersarced{\pgfpoint{\pgf@rectc}{\pgf@rectc}}
+    \pgfpathmoveto{\pgfpoint{\pgf@xa}{\pgf@ya}}
+    \pgfpathlineto{\pgfpoint{\pgf@xa}{\pgf@yb}}
+    \pgfkeysgetvalue{/tikz/rectangle with rounded corners north east}{\pgf@rectc}
+    \pgfsetcornersarced{\pgfpoint{\pgf@rectc}{\pgf@rectc}}
+    \pgfpathlineto{\pgfpoint{\pgf@xb}{\pgf@yb}}
+    \pgfkeysgetvalue{/tikz/rectangle with rounded corners south east}{\pgf@rectc}
+    \pgfsetcornersarced{\pgfpoint{\pgf@rectc}{\pgf@rectc}}
+    \pgfpathlineto{\pgfpoint{\pgf@xb}{\pgf@ya}}
+    \pgfkeysgetvalue{/tikz/rectangle with rounded corners south west}{\pgf@rectc}
+    \pgfsetcornersarced{\pgfpoint{\pgf@rectc}{\pgf@rectc}}
+    \pgfpathclose
+ }
+}
 
 %configure some of the style properties.
+%annoyingly, this first one will affect all tikzcd instances, not just quantum circuits. I should have only provided the quantikz environment as a modified version of tikzcd, and not allowed direct use of tikzcd. Probably too late now.
 \tikzcdset{row sep/normal=0.5cm,column sep/normal=0.5cm,thick,nodes in empty cells,
 	every cell/.style={
         anchor=center,minimum size=0pt,inner sep=0pt,outer sep=0pt,thick
     },
     arrows/.style={dash,thick},
-    1-row diagram/.style={}
+    1-row diagram/.style={},
+    grade/.style={description,circle,draw=black,fill=white,inner sep=0pt, outer sep=0pt,font=\tiny}
     }
 \tikzset{
 	thickness/.style={thick},
-    operator/.style={draw,fill=white,minimum size=1.5em, inner sep=2pt,thickness,align=center},
+    operator/.style={draw,fill=\pgfkeysvalueof{/tikz/commutative diagrams/background color}, inner sep=2pt,thickness,align=center},
     ggroup/.style={draw,minimum size=1.5em,thickness,align=center,inner sep=4pt},
     leftinternal/.style={anchor=mid west,font=\scriptsize,inner sep=4pt,align=center},
     rightinternal/.style={anchor=mid east,font=\scriptsize,inner sep=4pt,align=center},
-    wave/.style={inner sep=-3pt,tape,fill=white,apply={draw=black} except on segments {5,6,1,2,9}},
+    wave/.style={inner sep=-3pt,tape,fill=\pgfkeysvalueof{/tikz/commutative diagrams/background color},apply={draw=black} except on segments {5,6,1,2,9}},
     phase/.style={fill,shape=circle,minimum size=4pt},
     phase bundle/.style={fill,shape=rectangle,rounded corners=1.5pt,minimum width=4pt,minimum height=10pt},
     phase label/.style={label distance=2mm,anchor=mid,label position=45},
-    ophase/.style={fill=white,draw=black,shape=circle,minimum size=4pt},
-    internal/.style={thickness,black},
+    ophase/.style={fill=\pgfkeysvalueof{/tikz/commutative diagrams/background color},draw,shape=circle,minimum size=4pt},
+    internal/.style={thickness},
+    rectangle with rounded corners north west/.initial=0pt,
+	  rectangle with rounded corners south west/.initial=0pt,
+	  rectangle with rounded corners north east/.initial=8pt,
+	  rectangle with rounded corners south east/.initial=8pt,
     line/.style={path picture={ 
 \draw[internal](path picture bounding box.west) -- (path picture bounding box.east);
 }},
@@ -766,14 +907,30 @@ style/.initial={},label style/.initial={},braces/.initial={},background/.code={\
 }},
 	crossx2/.style={circle,crossx,minimum size=1em},
 	trash/.style={path picture={\draw[internal,inner sep=0pt,-stealth] (path picture bounding box.west) -- (path picture bounding box.center) -- (path picture bounding box.south);},minimum height=2.5em,minimum width=2em},
+	hidden bend/.style={path picture={\draw[internal,inner sep=0pt] (path picture bounding box.west) -- (path picture bounding box.center) -- (path picture bounding box.south);},minimum height=1.5em,minimum width=1em},
     dd/.style={decoration={brace},decorate,thickness},
     dm/.style={decoration={brace,mirror},decorate,thickness},
     slice/.style={thickness,red,dash pattern=on 5pt off 3pt,align=center},
-    meter/.style={draw,fill=white,minimum width=2em,minimum height=1.5em, rectangle, font=\vphantom{A}, thickness,
- path picture={\draw ([shift={(.1,.24)}]path picture bounding box.south west) to[bend left=50] ([shift={(-.1,.24)}]path picture bounding box.south east);\draw[-{Latex[scale=0.6]}] ([shift={(0,.1)}]path picture bounding box.south) -- ([shift={(.3,-.1)}]path picture bounding box.north);}},
- 	measuretab/.style={draw,signal,signal to=west,inner sep=4pt,fill=white},
- 	meterD/.style={draw,rounded rectangle,rounded rectangle left arc=none,inner sep=4pt,fill=white},
- 	measure/.style={draw,rounded rectangle,inner sep=4pt,fill=white},
+    meter/.style={draw,
+        fill=\pgfkeysvalueof{/tikz/commutative diagrams/background color},
+        minimum width=2em,
+        minimum height=1.5em,
+        rectangle, 
+        font=\vphantom{A}, 
+        thickness,
+        path picture={
+            \draw ([shift={(.1,-.06)}]path picture bounding box.west) to[bend left=50] ([shift={(-.1,-.06)}]path picture bounding box.east);
+            \draw[-{Latex[scale=0.6]}] ([shift={(0,-.1)}]path picture bounding box.center) -- ([shift={(-.1,.2)}]path picture bounding box.east);
+        }
+    },
+ 	measuretab/.style={draw,signal,signal to=west,inner sep=4pt,fill=\pgfkeysvalueof{/tikz/commutative diagrams/background color}},
+    meterD/.style={
+        draw,
+        shape=rectangle with rounded corners,
+        inner sep=4pt,
+        fill=\pgfkeysvalueof{/tikz/commutative diagrams/background color}
+    },
+ 	measure/.style={draw,rounded rectangle,inner sep=4pt,fill=\pgfkeysvalueof{/tikz/commutative diagrams/background color}},
  	my label/.style={yshift=0.1cm,above,align=center},
  	gg label/.style={label position=center,align=center},
  	group label/.style={label position=above,yshift=0.2cm,anchor=mid},
@@ -807,6 +964,17 @@ style/.initial={},label style/.initial={},braces/.initial={},background/.code={\
 \def\maketransparent{
 \tikzset{
 	operator/.append style={fill opacity=0},
-	meter/.append style={fill opacity=0}
+	meter/.append style={fill opacity=0},
+	measuretab/.append style={fill opacity=0},
+	meterD/.append style={fill opacity=0},
+	measure/.append style={fill opacity=0},
+	wave/.append style={fill opacity=0},
+	ophase/.append style={fill opacity=0}
 }
 }
+\def\bin{\begin{tikzpicture}[thick,scale=0.2]
+\draw (0,0) -- (1,0) -- (1,-0.2) -- (2,-0.8) -- (1.4,-3) -- (-0.4,-3) -- (-1,-0.8) -- (0,-0.2) -- cycle;
+\draw (2,-0.8) arc (360:180:1.5 and 0.2);
+\draw (-0.2,-1.1) -- (0.3,-2.8);
+\draw (1.2,-1.1) -- (0.7,-2.8);
+\end{tikzpicture}}

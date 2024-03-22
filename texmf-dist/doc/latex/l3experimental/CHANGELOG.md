@@ -7,6 +7,59 @@ this project uses date-based 'snapshot' version identifiers.
 
 ## [Unreleased]
 
+## [2024-01-04]
+
+### Changed
+- Apply transformation matrix to drawing shifts
+
+### Fixed
+- Remove a stray scaling in `\draw_path_rectangle:nn` (issue \#1386)
+- Correct baseline calculations in some `l3draw` cases (issue \#1400)
+
+## [2023-12-08]
+
+### Added
+- `\draw_box_use:Nn` and `\draw_coffin_use:Nnnn` to allow
+  placement of boxed material at an offset (issue \#1357)
+
+### Removed
+- `l3bitset`: moved to `l3kernel`
+
+## [2023-11-01]
+
+### Changed
+- Track `expl3` core changes
+
+## [2023-10-10]
+
+### Changed
+- Slowdown a l3benchmark slow branch code slightly to gain test suite
+  robustness (issue \#1274)
+
+## [2023-05-11]
+
+### Changed
+- Track `expl3` core changes
+
+## [2023-04-19]
+
+### Added
+- Key `pdf-attr` to `l3graphics` for additional attribute setting
+
+### Fixed
+- Grouping in `\draw_path_arc_axes:nnnn` (see \#1195)
+
+## [2023-03-30]
+
+### Fixed
+- 'Fallback' value used for benchmarking single op
+  (see \#1182)
+
+## [2023-01-24]
+
+### Changed
+- Track `expl3` core changes
+
 ## [2022-04-20]
 
 ### Fixed
@@ -25,7 +78,7 @@ this project uses date-based 'snapshot' version identifiers.
 ## [2022-02-05]
 
 ### Changed
-- Documentation for horizontal coffin poles (see issue #1041)
+- Documentation for horizontal coffin poles (see issue [\#1041](https://github.com/latex3/latex3/issues/1041))
 
 ## [2021-11-12]
 
@@ -116,7 +169,6 @@ this project uses date-based 'snapshot' version identifiers.
 - Support for multiple color models (see #739)
 
 ### Removed
-
 - `l3cctab`: moved to `l3kernel`
 
 ## [2020-06-18]
@@ -191,8 +243,7 @@ this project uses date-based 'snapshot' version identifiers.
 
 ## [2019-05-03]
 
-## Fixed
-
+### Fixed
 - Clipping of paths by `l3draw`
 
 ## [2019-03-05]
@@ -251,7 +302,15 @@ this project uses date-based 'snapshot' version identifiers.
 - New `l3color` module using `xcolor`-like expression syntax
 - New `l3draw` module, based on `pgf` layer of the TikZ system
 
-[Unreleased]: https://github.com/latex3/latex3/compare/2022-04-20...HEAD
+[Unreleased]: https://github.com/latex3/latex3/compare/2024-01-04...HEAD
+[2024-01-04]: https://github.com/latex3/latex3/compare/2023-12-08...2024-01-04
+[2023-12-08]: https://github.com/latex3/latex3/compare/2023-11-01...2023-12-08
+[2023-11-01]: https://github.com/latex3/latex3/compare/2023-10-10...2023-11-01
+[2023-10-10]: https://github.com/latex3/latex3/compare/2023-05-11...2023-10-10
+[2023-05-11]: https://github.com/latex3/latex3/compare/2023-04-19...2023-05-11
+[2023-04-19]: https://github.com/latex3/latex3/compare/2023-03-30...2023-04-19
+[2023-03-30]: https://github.com/latex3/latex3/compare/2023-01-24...2023-03-30
+[2023-01-24]: https://github.com/latex3/latex3/compare/2022-04-20...2023-01-24
 [2022-04-20]: https://github.com/latex3/latex3/compare/2022-04-10...2022-04-20
 [2022-04-10]: https://github.com/latex3/latex3/compare/2022-02-05...2022-04-10
 [2022-02-05]: https://github.com/latex3/latex3/compare/2021-11-12...2022-02-05

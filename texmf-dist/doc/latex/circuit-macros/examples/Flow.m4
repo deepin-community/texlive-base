@@ -1,7 +1,9 @@
 .PS
 # Flow.m4
 gen_init
-ifdef(`FlowchartDefs_',,`include(FlowchartDefs.m4)')
+ifdef(`FlowchartDefs_',,
+ `sinclude(FlowchartDefs.m4def)
+  sinclude(../FlowchartDefs.m4def)')
 
 define(`Thistle',`rgbstring(0.85,0.75,0.85)')dnl
 define(`RubineRed',`rgbstring(0.81,0,0.35)')dnl
@@ -43,7 +45,7 @@ Case: Fcase(,
             arrow down linewid/3 from last [].S
             Fbox("Task 1.5",, shaded Thistle) with .N at Here
             E:last [].E; S:last [].S],
-  "Test 2",Fbox("Task 2" "is bigger", wid fboxwid*1.2 ht fboxht*3/2, \
+  "Test 2",Fbox("Task 2" "is bigger", wid flowboxwid*1.2 ht flowboxht*3/2, \
                 shaded SeaGreen),
   "Test 3",Fbox("Task 3",, shaded RubineRed)dnl
   )
@@ -68,7 +70,7 @@ Repeatuntil: Frepeatuntil("$n \geq 5$",,,Fbox("Task"),
 
 Ifthenelse: Fifthenelse("$A<B$",,,
      Fbox("False"),
-     Fbox("True",ht fboxht*1.2 wid fboxwid)dnl
+     Fbox("True",ht flowboxht*1.2 wid flowboxwid)dnl
      ) with .nw at Repeatuntil.sw +(-0.5,-0.3)
 
   "\sl .N" at Ifthenelse.N rjust above; "\sl .S" at Ifthenelse.S below rjust
@@ -104,7 +106,7 @@ Example: [ fillvalue = 0.8; awid = linewid/2; right_
   B2: Fbox(`"Execu\c{c}\~ao"') with .W at B1.E+(awid*3,0)
   B3: Fbox(`"Sele\c{c}\~ao"') with .W at B2.E+(awid*3,0)
   LT: Ftest(`"Avalia\c{c}\~ao do" "Planejamento"',
-    wid fboxwid*1.5 ht fboxht*2.0,
+    wid flowboxwid*1.5 ht flowboxht*2.0,
     shaded YellowGreen,
     "Correto" at Box.e above ljust;
     "Incompleto" at Box.w above rjust) with .S at 0.5 between B1.ne and B2.nw
@@ -112,7 +114,7 @@ Example: [ fillvalue = 0.8; awid = linewid/2; right_
   arrow from LT.W to (B1.N,LT.W) then to B1.N
   arrow from LT.E to (B2.N,LT.E) then to B2.N
   RT: Ftest(`"Avalia\c{c}\~ao da" "Execu\c{c}\~ao"',
-    wid fboxwid*1.5 ht fboxht*2.0,
+    wid flowboxwid*1.5 ht flowboxht*2.0,
     shaded YellowGreen,
     "Correto" at Box.e below ljust;
     "Incompleto" at Box.w below rjust) with .N at 0.5 between B2.se and B3.sw
@@ -127,6 +129,6 @@ Example: [ fillvalue = 0.8; awid = linewid/2; right_
   arrow up_ awid from B5.N
   ellipse wid boxwid/2 ht boxwid/3 shaded "red" # at (B5.S,Start)
 # arrow down_ awid from B5.S to last ellipse.n
-] with .nw at last [].Compound.sw+(0,2.5*fboxht)
+] with .nw at last [].Compound.sw+(0,2.5*flowboxht)
 
 .PE

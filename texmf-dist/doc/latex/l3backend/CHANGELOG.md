@@ -6,6 +6,45 @@ this project uses date-based 'snapshot' version identifiers.
 
 ## [Unreleased]
 
+## [2024-01-04]
+
+### Changed
+- Documentation tweaks
+
+## [2023-11-09]
+
+### Changed
+- Changed `luaotfload` integration to allow coexistance with (x)color.
+
+## [2023-11-04]
+
+### Fixed
+- Interaction with `luaotfload` transparency colorstacks
+
+## [2023-10-23]
+
+### Changed
+- Update minimal `expl3` version required
+
+## [2023-10-10]
+
+### Changed
+- Track `expl3` changes
+
+## [2023-04-19]
+
+### Changed
+- Pass additional attributes when loading graphics in PDF mode
+
+### Fixed
+- Remove a stray `>` from graphics inclusion code for `dvipdfmx`
+
+## [2023-03-30]
+
+### Changed
+- Integrate `l3color` and `l3opacity` with `luaotfload` to ensure that
+  opacity specifications don't conflict
+
 ## [2023-01-16]
 
 ### Changed
@@ -14,7 +53,7 @@ this project uses date-based 'snapshot' version identifiers.
 ## [2022-10-26]
 
 ### Changed
-- Avoid setting media box is `\mag` is non-standard
+- Avoid setting media box if `\mag` is non-standard
 
 ## [2022-09-28]
 
@@ -99,7 +138,7 @@ this project uses date-based 'snapshot' version identifiers.
 
 ## [2021-08-04]
 
-## Changed
+### Changed
 - Only use `pdfmanagement` module if active
 
 ## [2021-07-12]
@@ -282,7 +321,14 @@ this project uses date-based 'snapshot' version identifiers.
 - Include `l3backend` in file names
 - Moved backend code to internal for each 'parent' module
 
-[Unreleased]: https://github.com/latex3/latex3/compare/2023-01-16...HEAD
+[Unreleased]: https://github.com/latex3/latex3/compare/2024-01-04...HEAD
+[2024-01-04]: https://github.com/latex3/latex3/compare/2023-11-09...2024-01-04
+[2023-11-09]: https://github.com/latex3/latex3/compare/2023-11-04...2023-11-09
+[2023-11-04]: https://github.com/latex3/latex3/compare/2023-10-23...2023-11-04
+[2023-10-23]: https://github.com/latex3/latex3/compare/2023-10-10...2023-10-23
+[2023-10-10]: https://github.com/latex3/latex3/compare/2023-04-19...2023-10-10
+[2023-04-19]: https://github.com/latex3/latex3/compare/2023-03-30...2023-04-19
+[2023-03-30]: https://github.com/latex3/latex3/compare/2023-01-16...2023-03-30
 [2023-01-16]: https://github.com/latex3/latex3/compare/2022-10-26...2023-01-16
 [2022-10-26]: https://github.com/latex3/latex3/compare/2022-09-28...2022-10-26
 [2022-09-28]: https://github.com/latex3/latex3/compare/2022-08-30...2022-09-28

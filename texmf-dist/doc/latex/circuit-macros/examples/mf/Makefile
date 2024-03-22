@@ -1,5 +1,4 @@
 # Type "make" or "make testfont.ps"
-# To test an individual diagram, type "make DOC=file clean file.ps"
 
 LIBDIR = $$HOME/lib
 M4MACROS = mfpic.m4

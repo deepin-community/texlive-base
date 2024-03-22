@@ -1,3 +1,22 @@
+* pixelart 1.0.2 (2023-02-20)
+
+    * Fix error while trying to load pixelart.lua (closes #2).
+
+    -- Louis Paternault <spalax@gresille.org>
+
+* pixelart 1.0.1 (2023-02-18)
+
+    * Bugs
+
+        * Minor change to take into account backward-incompatible change in `luakeys` v0.13.0 (thanks Jonathan P. Spratte).
+        * Pixelart (with option `square`) no longer fails when asked to draw an empty pixelart.
+
+    * Documentation
+
+        * Minor changes and improvements.
+
+    -- Louis Paternault <spalax@gresille.org>
+
 * pixelart 1.0.0 (2022-11-16)
 
     * Full, backward incompatible, rewrite of `pixelart`, in Lua.

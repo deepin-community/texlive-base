@@ -133,7 +133,7 @@ Plant: box wid boxwid*3/2 ht boxht*5/4 \
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . #
 
-ifelse(1,1,`
+ifelse(0,1,`
 Multiblock: [
 boxht = 0.4
 boxwid = boxht
@@ -172,7 +172,7 @@ Rf: doublebox(R_2,R_3) at ((S1.x+T.x)/2,T.y-boxht*5/4)
   arrow from Rf.w to (S1,Rf) then to S1.s
   "$n_2$" at S1.s+(0,-boxht/2) ljust
 ] with .nw at Observer.sw + (0,-0.3)
-  "(c) A multiblock example" below ljust at Multiblock.sw+(0,-3pt__)
+  "(c) A multiblock example" below ljust at last [].sw+(0,-3pt__)
 ')
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . #
@@ -211,7 +211,7 @@ UR:(D.e,UL) + (0.1,0)
    line dashed to (Gh.w,Here) "Controller" above
    line dashed to (Here,Gh.s+(0,-boxht/2))
    line dashed to (UL,Here) then to UL
-] with .nw at last [].sw + (0,-0.2)
+] with .nw at last [].sw + (0,-0.25)
   "(d) Nonlinear feedforward (for performance) and small-signal feedback
      (for stability)" below ljust at Nonlinear.sw+(0,-5pt__)
 

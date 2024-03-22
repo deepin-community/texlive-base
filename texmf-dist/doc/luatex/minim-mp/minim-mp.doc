@@ -8,8 +8,8 @@
 \else \startmetadata
     author   {Esger Renkema}
     title    {minim-mp}
-    date     {2022-03-03}
-    version  {2022/1.1}
+    date     {2024-01-05}
+    version  {2024/1.4}
     keywords {LuaTeX; Plain TeX; MetaPost; mplib}
     stopmetadata
 \maketitle \fi
@@ -32,14 +32,34 @@ explained there (for simple cases, you will not need them).
 The logging of the metapost run will be included in the regular log file. If an 
 error occurs, the logging will also be shown on the terminal.
 
+\section As a stand-alone Metapost compiler %1
+
 This package can also be used as a stand-alone metapost compiler. Saying
 \stopformulatagging$$\hbox{⟦luatex  --fmt=minim-mp  your_file.mp⟧}$$\startformulatagging
 will create a pdf file of all images in ⟦your_file.mp⟧, in order, with page 
 sizes adjusted to image dimensions. You might need generate the format first, 
 this is done with
 \stopformulatagging$$\hbox{⟦luatex  --ini  minim-mp.ini⟧}$$\startformulatagging
-Use minim-lamp instead of minim-mp for an experimental latex-based version 
-of the minim-mp format.
+Use minim-lamp instead of minim-mp for a latex-based version of the minim-mp 
+format.
+With minim-lamp, for specifying the contents of the preamble, you can use
+⟦verbatimtex ... etex;⟧ statements at the top of your file.
+Concluding the preamble with ⟦\begin{document}⟧ is optional, as both ⟦\begin⟧ 
+and ⟦\end{document}⟧ will be inserted automatically if omitted.
+
+\section LaTeX compatibility %1
+
+An experimental latex package is included in ⟦minim-mp.sty⟧. It accepts no 
+options, as it really is a rather thin wrapper around the plain tex package.
+It does, however, provide a proper ⟦*metapost⟧ latex environment as an 
+alternative to ⟦\directmetapost⟧.
+
+The ⟦metapost⟧ environment has no persistent backing instance.
+You can create a similar environment ⟦envname⟧ that does with
+⟦*\newmetapostenvironment [options] {envname}⟧.
+If your demands are even more complex, you should fall back to the plain tex 
+commands described below.
+
 
 \section Metapost instances %1
 
@@ -81,6 +101,7 @@ tex can parse as a number.
 – Puts the image named ⟦name⟧ in box ⟦box-nr⟧.
 
 Say ⟦*\remainingmpimages \id⟧ for the number of images not yet retrieved.
+
 Finally, as a shorthand, ⟦*\runmetapostimage \id { code }⟧ will add
 ⟦beginfig ... endfig⟧ to your ⟦code⟧ and write the resulting image immediately 
 to the current list.
@@ -111,6 +132,7 @@ a (numerical) font~id or the (cs)name of a font (without backslash).
 
 One possible use of the ⟦infont⟧ operator is setting text along curves:
 
+\nobreak
 ⟦beginfig(1)
     save t, w, r, a; picture t;
     t = "Running TeX from within MetaPost" infont "tenrm";
@@ -125,7 +147,7 @@ endfig;⟧
 \vskip-2\parskip plus 2\parskip
 \quitvmode\hfil
 \startelement alt {The text ‘Running TeX from within MetaPost’ set along a half-circle.} {Figure}%
-\stoptagging\directmetapost{%
+\startsinglecontentitem\directmetapost{%
 beginfig(1)
     save t, w, r, a; picture t;
     t = "Running TeX from within MetaPost" infont "tenrm";
@@ -136,9 +158,13 @@ beginfig(1)
         draw c rotatedaround((x,0), a)
                shifted (-r*sind(a)-x, r*cosd(a));
     endfor
-endfig;}\starttagging \stopelement{Figure}
+endfig;}\stopsinglecontentitem \stopelement{Figure}
 
-For the greatest amount of control, however, you will need the ⟦*glyph g of f⟧ 
+By default, the ⟦maketext⟧ operator is used for typesetting labels. You can, 
+however, order de ⟦label⟧ macro to use ⟦infont⟧ instead by setting 
+⟦*maketextlabels⟧ to ⟦false⟧.
+
+For the greatest amount of control, you can use the ⟦*glyph g of f⟧ 
 operator, which returns the contours that make up a glyph. It is a bit more 
 versatile than its traditional metapost counterpart: ⟦g⟧ may also be the name 
 of the glyph instead of its index, while ⟦f⟧ can be a font~id or font name (as 
@@ -173,9 +199,9 @@ between parentheses and can be followed by the usual drawing options.
 For example,
 ⟦multidraw (contours "example" of "tenbf") withpen currentpen scaled 1/10;⟧
 will give the word%
-\markelement{Span}{\setactualtext{example }
+\markelement{Span}{\setactualtext{example }\startsinglecontentitem\space
 \directmetapost{beginfig(1) multidraw (contours "example" of "tenbf")
-withpen currentpen scaled 1/10; baseline 0; endfig;}}
+withpen currentpen scaled 1/10; baseline 0; endfig;}\stopsinglecontentitem}
 in a thin outline.
 
 Finally, two handy clipping macros have been added:
@@ -191,13 +217,27 @@ metapost instance carries around its own lua environment so that assignments
 you make are local to the instance. (You can of course order the global 
 environment to be used by giving ⟦env = _G⟧ as option to 
 ⟦\newmetapostinstance⟧.)
+Any environment you specify will be supplemented with the contents of the 
+⟦*M.mp_functions⟧ table. It currently contains two functions: ⟦quote(s)⟧, which 
+escapes all double quotes in the string ⟦s⟧ before surrounding it with the same 
+(so that it may be read as a metapost string literal); and ⟦sp_to_pt(nr)⟧, 
+which prints dimensions in points (preventing overflows).
+
+When using ⟦runscript⟧ in this way, you must ensure its argument is a correct 
+lua program. As an escape hatch, raw strings can be passed to lua with
+⟦runscript ("[[function_name]]" & raw_string)⟧.
+This will return the result of the function ⟦function_name⟧ applied to 
+⟦raw_string⟧ as a lua string.
 
 If your lua snippet returns nothing, the ⟦runscript⟧ call will be invisible to 
 metapost. If on the other hand it does return a value, that value will have to 
 be translated to metapost. Numbers and strings will be returned as they are
 (so make sure the string is surrounded by quotes if you want to return 
-a metapost string). You can return a point or colour by returning an array of 
-two to four elements. For other return values, ⟦tostring()⟧ will be called.
+a metapost string). You can return a point, colour or transform by returning an 
+array of two to six elements (excluding five). For other return values, 
+⟦tostring()⟧ will be called.
+
+\section Passing values to lua
 
 Do keep in mind that metapost and lua represent numbers in different ways and 
 that rounding errors may occur. For instance, metapost’s ⟦decimal epsilon⟧ 
@@ -210,10 +250,38 @@ than tex, so that ⟦epsilon⟧ when taken as a dimension is not quite equal to
 ⟦1sp⟧. Use the metapost macro ⟦*scaledpoints⟧ for passing to lua a metapost 
 dimension as an integral number of scaled points.
 
+Strings can be passed to lua with the ⟦*lua_string⟧ macro, which escapes the 
+necessary characters and then surrounds its argument with quotes.
+A generic macro for passing values to lua, finally, is ⟦*quote_for_lua⟧, which 
+automatically converts strings, numbers, points and colours to (metapost) 
+strings that lua can understand.
+
+
+\section Querying tex and lua variables
+
+Stitching together lua snippets by hand is not very convenient. Therefore, 
+minim-mp provides three helper macros that should cover most lua interaction.
+For running a single lua function, ⟦*luafunction⟧ ⟦<suffix> (<arguments>)⟧ 
+returns the result of the function ⟦str <suffix>⟧ applied to any number of 
+arguments, which are quoted automatically.
+Variables can be queried with ⟦*luavariable⟧ ⟦<suffix>⟧
+and set with ⟦*setluavariable⟧ ⟦<suffix> = <value>;⟧.
+
+The details of metapost tokenisation make these macros rather powerful: you can 
+not only say e.g. ⟦luavariable tex.jobname⟧ to get the current jobname, but 
+even define a ⟦texvariable⟧ macro with
+\stopformulatagging$$\hbox{⟦vardef texvariable @# = luavariable tex @# enddef;⟧}$$\startformulatagging
+and have ⟦texvariable jobname⟧ work as expected.
+
+For accessing count, dimen, attribute or toks registers, the macros are
+⟦*tex.count⟧ ⟦[number]⟧ or ⟦*tex.count⟧⟦.name⟧ [etc. etc.] for getting and
+⟦*set tex.count⟧ ⟦[number] = value⟧ or ⟦*set tex.count⟧⟦.name = value⟧ etc. for 
+setting values.
+
 
 \section Tiling patterns %1
 
-The ⟦*withpattern(<name>)⟧ added to a ⟦fill⟧ statement will fill the path with 
+The condition ⟦*withpattern(<name>)⟧ added to a ⟦fill⟧ statement will fill the path with 
 a pattern instead of a solid colour. If the patterns contains no colour 
 information of itself, it will have the colour given by ⟦withcolor⟧.
 Stroking operations (the ⟦draw⟧ part) will not be affected.
@@ -237,7 +305,7 @@ information on these parameters.
 You can use text inside patterns, as in this example:
 \hfill \vbox to 0pt{
 \startelement alt{A circle filled with red As in a rectangular pattern.}{Figure}
-\directmetapost{
+\startsinglecontentitem \directmetapost{
 % define the pattern
 picture letter; letter = maketext("a");
 beginpattern(a)
@@ -248,7 +316,8 @@ endpattern(12pt,12pt);
 beginfig(1)
     fill fullcircle scaled 3cm withpattern(a) withcolor 3/4red;
     draw fullcircle scaled 3cm withpen pencircle scaled 1;
-endfig;}\stopelement{Figure}\vss}\hskip10pt\strut
+endfig;}\stopsinglecontentitem
+\stopelement{Figure}\vss}\hskip10pt\strut
 \par\nobreak
 ⟦% define the pattern
 picture letter; letter = maketext("a");
@@ -265,6 +334,41 @@ endfig;⟧
 A small pattern library is available in the ⟦*minim-hatching.mp⟧ file; see the 
 accompanying documentation sheet for an overview of patterns.
 
+\section Advanced PDF graphics %1
+
+You can use ⟦*savegstate⟧ and ⟦*restoregstate⟧ for inserting the ⟦q⟧ and ⟦Q⟧ 
+operators; these must always be paired, or horrible errors will occur. You may 
+need them if you use ⟦*setgstate(<params>)⟧ for modifying the extended 
+graphical state (ExtGState). The ⟦params⟧ must be a comma-separated 
+⟦Key=value⟧ list, with all ⟦value⟧s being suffixes. The latter restriction may 
+require the use of additional variables, but as this is a very low-level 
+command, it is best to wrap it in a more specialised macro anyway.
+The ⟦*withgstate (<params>)⟧ can be added to a drawing statement and includes 
+saving/restoring the graphical state.
+
+Note that while you could try and use ⟦setgstate⟧ for modifying variables like 
+the line cap or dash pattern, the result of doing so will be unpredictable, 
+since such changes will be invisible to metapost. Its intended use is 
+restricted to graphics parameters outside the scope of metapost.
+
+For applying transparency, ⟦*setalpha(a)⟧ updates the ⟦CA⟧ and ⟦ca⟧ parameters 
+as a stand-alone command and ⟦*withalpha(a)⟧ can be used in a drawing statement 
+where it will save/restore the graphical state around it. For applying 
+transparency to an ensemble of drawing statements, ⟦*transparent (a) <picture>⟧ 
+will create and insert the proper transparency group. The transparency group 
+attributes can be set with the string internal ⟦transparency_group_attrs⟧, 
+while for all three macros the blend mode can be set with the string internal 
+⟦blend_mode⟧ (it will be added whenever set).
+
+A transparency group is a special kind of XForm, and these can be created from 
+withing metapost: ⟦<id> =⟧ ⟦*saveboxresource (<attributes>) <picture>⟧ returns 
+a number identifying the resource and can be fed attributes in the same way as 
+⟦setgstate⟧. XForms defined through metapost are available to other metapost 
+instances, but not to tex, though the macro painting them, ⟦*boxresource <id>⟧, 
+also accepts identifiers of tex-defined box resources. There remains a subtle 
+difference, however: metapost-defined box resources are placed at their 
+original origin.
+
 
 \section Other metapost extensions %1
 
@@ -274,7 +378,9 @@ x~coordinate of zero will be added). Transformations will be taken into
 account, hence the specification of two coordinates. The last given baseline 
 will be used.
 
-You can write to tex’s log directly with ⟦*texmessage "hello"⟧.
+You can write to tex’s log directly with ⟦*texmessage "hello";⟧. You can feed 
+it a comma-separated list of strings and numbers, which will be passed through 
+⟦string.format()⟧ first.
 
 You can write direct pdf statements with ⟦*special "pdf: statements"⟧ and you 
 can add comments to the pdf file with ⟦*special "pdfcomment: comments"⟧.
@@ -291,6 +397,11 @@ cmyk-colours ⟦*cyan⟧, ⟦*magenta⟧, ⟦*yellow⟧ and ⟦*key⟧. The macr
 ⟦*clockwise⟧, ⟦*xshifted⟧, ⟦*yshifted⟧, ⟦*hflip⟧ and ⟦*vflip⟧, where the flips 
 are defined in such a way that ⟦p & hflip p⟧ gives the expected result.
 
+Version 1.2 brought the following additions: ⟦*save_pair⟧, ⟦*save_path⟧ etc. 
+etc. that save and declare in one go; the missing trigonometric functions 
+⟦*tand⟧, ⟦*arcsind⟧, ⟦*arccosd⟧ and ⟦*arctand⟧, and the unit circle segment 
+drawing function ⟦*arc(⟧$θ_0$⟦*,⟧$θ_ℓ$⟦*)⟧ (taking a starting angle and arc 
+length, both in degrees).
 
 \section Lua interface %1
 
@@ -308,7 +419,9 @@ Say ⟦*nr_remaining = M.left(nr)⟧ for the number of remaining images.
 Each metapost instance is a table containing the following entries:
 
 \smallskip\smallskip
-\marktableaslist \halign{\qquad#\quad\hfil&#\hfil\cr
+\marktableaslist
+\tagattribute List ListNumbering /Description
+\halign{\qquad#\quad\hfil&#\hfil\cr
 ⟦jobname⟧&The jobname.\cr
 ⟦instance⟧&The primitive metapost instance.\cr
 ⟦results⟧&A linked list of unretrieved images.\cr
@@ -351,7 +464,9 @@ processing.
 Specials can store information in the ⟦user⟧ table of the picture that is being 
 processed; this information is still available inside the ⟦*finish_mpfigure⟧ 
 callback that is executed just before the processed image is surrounded by 
-properly-dimensioned boxes.
+properly-dimensioned boxes. If a ⟦user.save_fn⟧ function is defined, it will 
+replace the normal saving of the image to the image list and the image node 
+list will be flushed.
 
 The ⟦*M.init_code⟧ table contains the code used for initialing new instances. 
 In it, the string ⟦INIT⟧ will be replaced with the value of the ⟦format⟧ option 

@@ -1,14 +1,15 @@
 .PS
 # sfgDPV.m4
 gen_init(svg_font(Times,11bp__))
-sfg_init( 1.2 )   # scale default size by 1.2
+sfg_init( blen=1.2 )   # default edge length
 
 textht = textht*0.9
+define(`celadon',`0.67,0.88,0.69')dnl
 
 # Graph 1
 move right 0.15
 T:[
- Ft: sfgnode(,f(t),sfgbelow)
+ Ft: sfgnode(,f(t),sfgbelow,shaded "red")
      sfgline(,1/K)
  Y1: sfgnode(,y`'svg_sub(1),sfgbelow rjust)
      sfgline(,K/M)
@@ -18,12 +19,13 @@ T:[
  DY2: sfgnode(,y`'svg_sub(2) = x`'svg_sub(2),sfgbelow ljust)
      {"." at DY2 +(2,-1)*textoffset}
      sfgline(,1/s)
- Y2: sfgnode(,y`'svg_sub(2) = x`'svg_sub(1),sfgbelow ljust)
+ Y2: sfgnode(,y`'svg_sub(2) = x`'svg_sub(1),sfgbelow ljust,
+      shaded rgbstring(celadon))
  
  sf = 1
-   sfgarc(from DY2 to DDY2,-B/M,below,,sf)
-   sfgarc(from Y2 to DDY2,-K/M,above,ccw,sf)
-   sfgarc(from Y2 to Y1,1,sfgabove,,sf)
+   sfgarc(from DY2 to DDY2,-B/M,below,,sf,outlined "gray")
+   sfgarc(from Y2 to DDY2,-K/M,above,ccw,sf,outlined "gray")
+   sfgarc(from Y2 to Y1,1,sfgabove,,sf,outlined "gray")
  ]
 
 # Graph 2
@@ -46,7 +48,9 @@ B: [
 G3: [
   # change node spacing and increase node size
   sfg_wid = 0.85; sfg_rad = 0.35/2
- for_(1,4,1,`N`'m4x: sfgnode(,m4x,,fill_(0.9))
+  NeedDpicTools
+  cmyktorgb(96,0,0,0,r,g,b)
+  for_(1,4,1,`N`'m4x: ColoredV(circle,(r,g,b),rad sfg_rad "m4x")
    sfgself(at N`'m4x,-90,P`'svg_sub(m4x),,cw)
    ifelse(m4x,4,,`sfgline(,G`'svg_sub(m4x),sfgbelow)') ')
  sfgarc(from N2 to N1,F`'svg_sub(2),sfgabove,ccw,)
@@ -71,7 +75,7 @@ define(`svg_choose',`[ P:"svg_fsize(( ),150)"
   "svg_small(`$2')" at P-(0,3bp__)
   ]')
 
-G4: [sfg_init( 2.0,0.25/2 )   # change node spacing and increase node size
+G4: [sfg_init( blen=2;rad=0.25/2 )   # change node spacing and size
  s1 = 0.9
  s2 = 1.2
  N0: sfgnode(,svg_fsize(0,120),,invis)
@@ -98,16 +102,18 @@ G4: [sfg_init( 2.0,0.25/2 )   # change node spacing and increase node size
  ] with .nw at G3.sw+(0,-0.1)
 
 # https://tex.stackexchange.com/questions/637455/tikz-how-to-set-exact-position-of-node
-G5: [sfg_init( 1.75,0.25/2 )   # change node spacing and increase node size
- Dstar: sfgnode(,* )
- D0: sfgnode(at Dstar+(2,0),svg_small(&lt;&gt;)svg_sub(0) )
+G5: [sfg_init( blen=1.75;rad=0.25/2 )   # change node spacing and size
+ Dstar: sfgnode(,*,,shaded rgbstring(celadon))
+ D0: sfgnode(at Dstar+(2,0),svg_small(&lt;&gt;)svg_sub(0),,
+       shaded rgbstring(celadon) )
  sfgline(,
-  svg_it(1-r`'svg_sub(`x-1,x')-q`'svg_sup(i)svg_sub(x-1`,'x,,,-0.8ex)),,->)
- Ddots: sfgnode(,... )
- sfgline(,svg_it(1-r`'svg_sub(x-4`,'x)-q`'svg_sup(i)svg_sub(x-4`,'x,,,-0.8ex)),
+  svg_it(1-r`'svg_sub(`x-1`'svg_comma`'x')-q`'svg_sup(i)svg_sub(x-1`'svg_comma`'x,,,-0.8ex)),,->)
+ Ddots: sfgnode(,...,,shaded rgbstring(celadon) )
+ sfgline(,svg_it(1-r`'svg_sub(x-4`'svg_comma`'x)-q`'svg_sup(i)svg_sub(x-4`'svg_comma`'x,,,-0.8ex)),
   ,->)
- D5: sfgnode(,svg_small(&lt;&gt;)svg_sub(5) )
- DD: sfgnode(at D0+(0,-1.0),svg_symbol(&``#''8224;) )
+ D5: sfgnode(,svg_small(&lt;&gt;)svg_sub(5),,shaded rgbstring(celadon) )
+ DD: sfgnode(at D0+(0,-1.0),svg_symbol(&``#''8224;),,
+       shaded rgbstring(celadon) )
  sfgself(at Dstar,L,,,,0.5)
  "svg_it(1-i`'svg_sub(x)-q`'svg_sub(x)svg_sup(a,,,-0.8ex))" wid 45bp__ \
    at Dstar + (-0.3,0.25)
@@ -115,13 +121,13 @@ G5: [sfg_init( 1.75,0.25/2 )   # change node spacing and increase node size
  sfgself(at D5,R,,,,0.5)
  "svg_it(1-q`'svg_sub(x)svg_sup(i,,,-0.8ex)-r`'svg_sub(x))" wid 47bp__ \
    at D5 + (0.3,0.25)
- sfgarc(from D0 to Dstar ->,svg_it(r`'svg_sub(x`,'x)),below_,ccw)
+ sfgarc(from D0 to Dstar ->,svg_it(r`'svg_sub(x`'svg_comma`'x)),below_,ccw)
  sfgarc(from Dstar to D0 ->,svg_it(i`'svg_sub(x)),above_,ccw)
  sfgarc(from Dstar to DD ->,svg_it(q`'svg_sub(x)svg_sup(a,,,-0.8ex)),
   above_ ljust_,ccw)
- sfgline(from D0 to DD,svg_it(q`'svg_sup(i)svg_sub(x`,'x,,,-0.8ex)),ljust,->)
- sfgarc(from Ddots to Dstar,svg_it(r`'svg_sub(j`,'x)),below_,ccw,,->)
- sfgarc(from Ddots to DD ->,svg_it(q`'svg_sup(i)svg_sub(x-j`,'x)),
+ sfgline(from D0 to DD,svg_it(q`'svg_sup(i)svg_sub(x`'svg_comma`'x,,,-0.8ex)),ljust,->)
+ sfgarc(from Ddots to Dstar,svg_it(r`'svg_sub(j`'svg_comma`'x)),below_,ccw,,->)
+ sfgarc(from Ddots to DD ->,svg_it(q`'svg_sup(i)svg_sub(x-j`'svg_comma`'x)),
    above_ rjust_,)
  sfgarc(from D5 to Dstar ->,svg_it(r`'svg_sub(x)),below_,ccw)
  sfgarc(from D5 to DD ->,svg_it(q`'svg_sup(i)svg_sub(x,,,-0.8ex)),

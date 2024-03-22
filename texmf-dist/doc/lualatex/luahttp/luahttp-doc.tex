@@ -1,0 +1,227 @@
+\documentclass[11pt]{article}
+\usepackage[english]{babel}
+\usepackage{listings}
+
+\lstset{
+  frame=shadowbox,
+  numbers=left,
+  basicstyle=\ttfamily,
+  keywordstyle=\bfseries,
+  breakatwhitespace=false,
+  breaklines=true,
+  keepspaces=true,
+}
+
+% Document
+\begin{document}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 2pt minus 1pt}
+
+\title{The \textsf{LuaHTTP} package}
+\author{Johannes Casaburi \\ \texttt{johannes.casaburi@protonmail.com}}
+\date{\today\\Version 1.0.1}
+
+\maketitle
+
+\tableofcontents
+
+\newpage
+
+\section{Introduction}
+This is a small package that is the result of a case study on Internet-Interactive \LaTeX\ PDF-documents. It provides five commands to make API calls, fetch data from the internet and insert that data into the PDF-document. This package depends on LuaTex, Lua and additional dependencies that need to be installed.
+
+\section{Manual Installation}
+First the required dependencies need to be installed:
+
+\texttt{MacOS using Homebrew}
+\begin{lstlisting}[language=bash]
+brew install lua@5.3 luarocks expat openssl
+\end{lstlisting}
+
+\texttt{Arch}
+\begin{lstlisting}[language=bash]
+pacman -S lua53 luarocks expat openssl
+\end{lstlisting}
+
+\texttt{Debian}
+\begin{lstlisting}[language=bash]
+apt install liblua5.3-dev libssl-dev lua5.3 libexpat1-dev luarocks
+\end{lstlisting}
+
+Copy the \texttt{.sty} and \texttt{.lua} files in the directory where the \texttt{.tex} file is located.
+
+In order to get the package working, a few dependencies first need to be installed. An easy way to do so, is by using \texttt{luarocks} which is the package manager for Lua modules which are called \texttt{rocks}.
+
+To install the Lua rocks locally in the directory where the \lstinline{.tex} file(s) is located, execute the following commands. This will initialize a new Lua project and install the required dependencies (See below for MacOS):
+
+\begin{lstlisting}[language=bash]
+luarocks --lua-version=5.3 init
+luarocks --lua-version=5.3 install dkjson
+luarocks --lua-version=5.3 install luasec
+luarocks --lua-version=5.3 install ltn12
+luarocks --lua-version=5.3 install luaexpat
+luarocks --lua-version=5.3 install feedparser
+\end{lstlisting}
+
+The Lua version may be changed if the Lua rocks support the version.
+
+For \texttt{MacOS} you may need to add the Lua5.3 executable to your \texttt{\$PATH}.
+\begin{lstlisting}[language=bash]
+echo 'export PATH="/usr/local/opt/lua@5.3/bin:$PATH"' >> ~/.zshrc
+\end{lstlisting}
+
+And it may also be necessary to install \texttt{luaexpat} and \texttt{luasec} using the commands below:
+\begin{lstlisting}[language=bash]
+luarocks install luaexpat EXPAT_DIR=/usr/local/Cellar/expat/${YOUR_VERSION_HERE}
+luarocks install luasec OPENSSL_DIR=/usr/local/Cellar/openssl@3/${YOUR_VERSION_HERE}
+\end{lstlisting}
+
+\section{Usage}
+The LaTeX package can be used by adding the following line to the \texttt{.tex} file.
+\begin{lstlisting}[language=tex]
+\usepackage{luahttp}
+\end{lstlisting}
+
+To compile the PDF-document use:
+\begin{lstlisting}[language=bash]
+lualatex --shell-escape
+\end{lstlisting}
+
+\subsection{fetchJson}
+
+\begin{lstlisting}[language=tex]
+\fetchJson{URL}[optional: "key1,key2,.."]
+\end{lstlisting}
+
+This command takes an URL as the first argument and a list of comma separated keys as a second optional argument. Upon execution a GET request will be sent to the specified address. The accept header is set to \texttt{application/json}. The keys which are to be specified like \texttt{key1,key2,..} are used to filter out the desired values from the response. They have to exactly math the keys in the response otherwise the value will not be written to the PDF-Document. The same key can occur multiple times, this will output all values found to the PDF-Document.
+
+Values with special characters are escaped. Values are searched for URLs. If an URL pointing to a image is detected the user will be prompted to either display the image or the actual URL.
+
+\subsection{fetchJsonUsingFile}
+
+\begin{lstlisting}[language=tex]
+\fetchJsonUsingFile{Path to JSON file}[optional: "key1,key2,.."]
+\end{lstlisting}
+
+This is very similar to the \texttt{fetchJson} command but takes a path to a JSON file instead of an URL. This allows the user to specify the request method, headers and body. The file should look something like this:
+
+\begin{lstlisting}
+{
+    "method": "POST",
+    "url": "https://httpbin.org/post",
+    "redirect": false,
+    "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+    },
+    "body": {
+        "name": "john",
+        "id" : 1234
+    }
+}
+\end{lstlisting}
+
+Like the command before this command also takes and optional argument where the \texttt{keys} can be specified. If a value contains an URL leading to an image the user will be asked to either display the image or the URL.
+
+\subsection{fetchJsonUsingQuery}
+
+\begin{lstlisting}[language=tex]
+\fetchJsonUsingQuery{URL}{"key1,key2,.."} [optional: "?queryparameter1=value1"] .. [optional: "&queryparameter5=value5"]
+\end{lstlisting}
+
+This command can be used to send up to five query parameters using a POST request. The required arguments are the \texttt{URL} and a list of keys. The optional query parameters need to be written in key-value pairs:
+
+\begin{lstlisting}[language=tex]
+\fetchJsonUsingQuery{URL}{key1,key2}[?q=The first value][&second=The second value and so on"]
+\end{lstlisting}
+
+The values after the \texttt{=} sign are URL-encoded and sent using the \lstinline{application/json} Accept header and \texttt{application/x-www-form-urlencoded} Content-Type header. Like in the \texttt{fetchJson} command the user will be prompted if an URL leading to an image is detected.
+
+\subsection{fetchRss}
+
+\begin{lstlisting}[language=tex]
+\fetchRss{URL}{limit}[optional: "feedinfokey1,feedinfokey2,.."][optional: "entrykey1,entrykey2,.."]
+\end{lstlisting}
+
+This command takes an \texttt{URL} and a \texttt{limit}. The limit describes how many entries of the feed are written to the PDF-Document. There are two optional arguments. The first argument is a list of keys used to filter out feed information. At this time possible values are \texttt{title, subtitle, rights, generator, author, author\_detail, link, links, updated\_parsed, updated, id, contributors}. Every entry can be filtered using the second argument. Possible values for the entry keys are \texttt{id, link, links, updated, updated\_parsed, title, summary, contributors}. These values may change if the Lua rock called \texttt{feedparser} that is used to parse the feed changes. More information about \texttt{feedparser} can be found here: \lstinline{https://github.com/LuaDist-testing/feedparser}
+
+The \texttt{summary} from the entries may contain HTML which will just be written to the PDF-Document. As described in the \texttt{fetchJson} command you may be promoted when a link to an image is detected.
+
+
+\subsection{fetchImage}
+
+\begin{lstlisting}[language=tex]
+\fetchImage{URL}[optional: width in cm][optional: height in cm]
+\end{lstlisting}
+
+Images can be inserted into the PDF-Document using the URL. To resize the image, one or two optional arguments can be given to specify the width or width and height in \texttt{centimeters}:
+
+\begin{lstlisting}[language=tex]
+\fetchImage{URL}[7cm][5cm]
+\end{lstlisting}
+
+\section{Examples}
+
+\subsection{fetchJson}
+
+To display the title and summary of the first article returned by the space-news API we have to specify the URL and the keys that hold the desired values:
+
+\begin{lstlisting}[language=tex]
+\fetchJson{https://api.spaceflightnewsapi.net/v3/articles?_limit=1}[title,summary]
+\end{lstlisting}
+
+\subsection{fetchJsonUsingFile}
+Like the example above the same can be done using \texttt{fetchJsonUsingFile}. For that we need a \texttt{JSON} file with the following content:
+
+\begin{lstlisting}
+{
+    "method": "GET",
+    "url": "https://api.spaceflightnewsapi.net/v3/articles?_limit=1",
+    "redirect": false,
+    "headers": {
+        "Accept": "application/json"
+    }
+}
+\end{lstlisting}
+
+If the \texttt{JSON} file is located in the same directory as the \texttt{.lua} files the command looks like this:
+
+\begin{lstlisting}[language=tex]
+\fetchJsonUsingFile{myjsonfile.json}[title,summary]
+\end{lstlisting}
+
+If the package was not manually installed the absolute path must be used.
+
+\subsection{fetchJsonUsingQuery}
+
+Here is an example of an API call using query parameters:
+
+\begin{lstlisting}[language=tex]
+\fetchJsonUsingQuery{http://127.0.0.1:5000/translate}{translatedText}[?q=I want to translate this text][&source=en][&target=de][&format=text]
+\end{lstlisting}
+
+First we need to specify the first part of the URL, followed by the key(s) that hold the desired return values. The values of the query parameters get URL-encoded and put back together in a single URL. We may need to add an \texttt{\&} before the query parameter or an \texttt{?} depending on the location.
+
+\subsection{fetchRss}
+
+In this example the first the subtitle from the feed information is printed as a subsection. The second command prints the \texttt{title, link} and \texttt{updated} information of the first three entries received.
+
+\begin{lstlisting}[language=tex]
+\subsection{
+    \fetchRss{https://www.eff.org/rss/updates.xml}{1}[subtitle][none]
+}
+
+\fetchRss{https://www.eff.org/rss/updates.xml}{3}[none][title,link,updated]
+\end{lstlisting}
+
+Note that \texttt{none} is not a special keyword, if there was a key called \texttt{none} then its value would be printed to the PDF-Document.
+
+\subsection{fetchImage}
+Here is an example how to embed an image and scaling it to have a width of 5cm:
+
+\begin{lstlisting}[language=tex]
+\fetchImage{https://i0.wp.com/spacenews.com/wp-content/uploads/2023/03/vorb-march2023.jpg}[5cm]
+\end{lstlisting}
+
+\end{document}

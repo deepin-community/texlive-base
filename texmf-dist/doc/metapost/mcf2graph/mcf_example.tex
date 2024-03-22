@@ -1,25 +1,16 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Example of MCF   Typeset with LuaLaTeX(luamplib)   by A.Yamaji   2023.01.09
+% Example of MCF   Typeset with LuaLaTeX(luamplib)   by A.Yamaji   2024.01.21
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% ** mcf2graph.mf must be version 4.91
+% ** mcf2graph.mf must be version 5.11
 % ** use mcf_library.mcf
 % ** typeset by LuaLaTeX(luamplib)
+%-------------------------------------------------------------------------
 \documentclass{article}
 \usepackage{luamplib}
 \usepackage[T1]{fontenc}
 \mplibcodeinherit{enable}
 \mplibnumbersystem{double}
 \mpliblegacybehavior{disabled}
-%-------------------------------------------------------------------------
-\everymplib{
-  if unknown Ph1:
-    input mcf2graph;
-    outputformat:="eps";
-    sw_output:=Fig+Calc;
-    fsize:=(35mm,24mm);
-    max_blength:=4mm;
-  fi
-}%
 %-------------------------------------------------------------------------
 \pagestyle{empty}
 \topmargin=-24mm
@@ -38,8 +29,9 @@
  Author : Akira Yamaji \quad Date : \today \\
  Located at : http://www.ctan.org/pkg/mcf2graph
 \end{center}
-{\small *typeset with LuaLaTeX \quad
-        *use molecular library file 'mcf\_library.mcf' \\
+{\small *use 'mcf2grapf.mp' ver 5.10  \quad
+        *typeset with LuaLaTeX \quad
+        *use molecular library file 'main\_lib.mcf' \\
         ** FM(fm):molecular formula (calculated) \quad 
         * MW(mw):molecular weight (calculated)} \vspace{3mm} \\
 \fi%
@@ -53,42 +45,112 @@
 \fig@num=0%
 \col@num=0%
 \unitlength=0.01mm%
-\edef\zero{0}%
 \noindent%
 %-------------------------------------------------------------------------
 \newif\ifCONT@%
 \CONT@true%
+%-------------------------------------------------------------------------
+\begin{mplibcode}
+  input mcf2graph;
+  sw_output:=Fig+Calc;
+  fsize:=(35mm,24mm);
+  max_blength:=4mm;
+  loadm("EXA=1");
+\end{mplibcode}
+%-------------------------------------------------------------------------
 \loop%
 \advance\fig@num\@ne\relax%
 \advance\col@num\@ne\relax%
+\ifnum\fig@num=276 \CONT@false%
+\else%
 \sbox{\fig@box}{%
 \begin{mplibcode}
-  beginfigm("t:EXA","v+:1")
-    if mc_check(mc)=0:
-      MC(scantokens(mc))
-      VerbatimTeX("\gdef\EN{"&inf_EN&"}");
-      VerbatimTeX("\gdef\MW{"&inf_MW&"}");
-      VerbatimTeX("\gdef\mw{"&cal_MW&"}");
-      VerbatimTeX("\gdef\fm{"&cal_FM&"}");
-   fi
+  beginfigm
+    getm(fig_num);
+    if checkm(mc)=0:
+      drawm(scantokens(mc))
+      VerbatimTeX("\gdef\EN{"&EN&"}");
+      VerbatimTeX("\gdef\MW{"&MW&"}");
+      VerbatimTeX("\gdef\mw{"&mw&"}");
+      VerbatimTeX("\gdef\fm{"&fm&"}");
+    fi
   endfigm
-  VerbatimTeX("\gdef\EOF{"&decimal(f_EOF)&"}");
 \end{mplibcode}
 }%
 %------------------------------------------------------------------------
-\ifx\EOF\zero%
+  \message{[\the\fig@num:\EN]}%
   \begin{picture}(3750,3350)%
     \put(20,3000){\footnotesize\bf \EN}%
-    \put(20,2750){\labelM mw:\mw { / }fm:\fm}%
-    \put(20,2530){\labelM MW:\MW { / }[\the\fig@num]}%
+    \put(20,2750){\labelM MW:\MW { / }fm:\fm}%
+    \put(20,2530){\labelM mw:\mw { / }[\the\fig@num]}%
     \put(0,0){\makebox(3750,2530){\usebox{\fig@box}}}%
   \end{picture}%
   \ifnum\col@num=5 \\ \col@num=\z@ \fi%
-\else%
-  \CONT@false%
 \fi%
 %------------------------------------------------------------------------
-%%%%%%%%\ifnum\fig@num=10 \CONT@false \fi%
+\ifCONT@\repeat%
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{mplibcode}
+  loadm("EXA=2");
+  fig_num:=0;
+  fsize:=(50mm,34mm);
+  fmargin:=(1mm,1mm);
+  max_blength:=4mm;
+  row_h:=3.8mm;
+  header_h:=3.8mm;
+  def make_frame=
+    draw (0,0)--(185mm,0)--(185mm,h)--(0,h)--cycle wpcs thickness_frame;
+    draw (w,h-header_h)--(185mm,h-header_h) wpcs thickness_frame;
+    draw (w,h)--(w,0) wpcs thickness_frame;
+    for col_w=75mm,105mm,130mm,155mm:
+      draw (col_w,h)--(col_w,h-header_h) wpcs thickness_frame;
+    endfor
+  enddef;
+\end{mplibcode}
+%------------------------------------------------------------------------------
+\noindent%
+\CONT@true%
+\fig@num=0%
+\loop%
+\advance\fig@num\@ne\relax%
+\ifnum\fig@num=9 \CONT@false%
+\else%
+\begin{mplibcode}%
+  beginfigm
+    getm(fig_num);
+    if checkm(mc)=0:
+      drawm(scantokens(mc))
+      ext(
+        defaultfont:="cmtt9";
+        label.lrt("["&decimal(fig_num)&"]",(0,h));
+        label.llft(EXA,(w,h));
+        if length(EN)>23:
+          nA:=defaultscale;
+          defaultscale:=23/length(EN); label.lrt(EN, (w,h));
+          defaultscale:=nA;
+        else:
+          label.lrt(EN, (w,h));
+        fi
+        label.lrt(CAT,(75mm,h));
+        label.lrt(MW,(105mm,h));
+        label.lrt(mw,(130mm,h));
+        label.lrt(fm,(155mm,h));
+        make_frame;
+        if mc_row>12: defaultscale:=0.6; row_h:=5.25;
+        ef mc_row>8:  defaultscale:=0.8; row_h:=6.5;
+        else: row_h:=10;
+        fi
+        for i=1 upto mc_row:
+          label.lrt(mc[i],(w+mc_indent[i]*4.25,h-(i-1)*row_h-11.5));
+        endfor
+      )
+      VerbatimTeX("\gdef\EN{"&EN&"}");
+   fi
+  endfigm
+\end{mplibcode}\vspace{-1.2pt}\\
+%------------------------------------------------------------------------
+\fi%
 \message{[\the\fig@num:\EN]}%
 \ifCONT@ \repeat%
 %------------------------------------------------------------------------------

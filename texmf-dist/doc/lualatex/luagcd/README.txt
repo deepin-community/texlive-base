@@ -1,3 +1,8 @@
+# The luagcd package
+# version 1.1
+# Authors: Chetan Shirore and Ajit Kumar
+# Email: mathsbeauty@gmail.com
+
 # Introduction
 Using Lua, the luagcd package is developed to find the greatest common divisor (gcd) of integers in LaTeX.
 The package provides commands to obtain step-by-step computation of gcd of two integers by using the Euclidean algorithm. 

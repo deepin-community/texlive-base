@@ -27,18 +27,18 @@ define(`CanLogic',
  `define(`terms',`shift(shift(shift(shift($@))))')
 #                               Determine required input variables and negated
 #                               variables
-  Loopover_(`t_',`varloop(`v_',`define(X`'v_)',`define(XN`'v_)',t_)',terms)
+  Loopover_(`t_',`CLvarloop(`v_',`define(X`'v_)',`define(XN`'v_)',t_)',terms)
 #                               Draw the inputs with NOT gates as necessary
   LastInput: Here-(inputsep,0)
-  Loopover_(`t_',`varloop(`v_',
-   `ifdef(D`'v_,,`ifdef(XN`'v_,`DrawInNotIn(v_)',`DrawIn(v_)')')',
-   `ifdef(D`'v_,,`ifdef(X`'v_,`DrawInNotIn(v_)',`DrawNotIn(v_)')')', t_)',
+  Loopover_(`t_',`CLvarloop(`v_',
+   `ifdef(D`'v_,,`ifdef(XN`'v_,`CLDrawInNotIn(v_)',`CLDrawIn(v_)')')',
+   `ifdef(D`'v_,,`ifdef(X`'v_,`CLDrawInNotIn(v_)',`CLDrawNotIn(v_)')')', t_)',
    terms)
 #                               Draw 2nd-layer gates
   right_
   LastGateSE: LastInput+(5*jog,-(AND_wd*L_unit*1.5))
   Loopover_(`t_',
-   `define(`termcount',m4Lx)DrawLayerGate(G`'termcount,$1,$2,t_)',
+   `define(`termcount',m4Lx)CLDrawLayerGate(G`'termcount,$1,$2,t_)',
     terms)
 #                               Draw output gate
   linethick = gatelineth
@@ -47,26 +47,26 @@ define(`CanLogic',
   Out: Here
   linethick = lineth
 #                               Connect 2nd-layer gates to the output gate
-  VectorConnect(G,termcount,OP)
+  CLVectorConnect(G,termcount,OP)
 #                               Connect the inputs and negated inputs to
 #                               2nd-layer gates
-  Loopover_(`t_',`ConnectInputs(G`'m4Lx,t_)',terms)
+  Loopover_(`t_',`CLConnectInputs(G`'m4Lx,t_)',terms)
 #                               Clean up
-  Loopover_(`t_',`DeleteLogDefs(t_)',terms)
+  Loopover_(`t_',`CLDeleteLogDefs(t_)',terms)
  ')
-                               `VectorConnect(number of 2nd layer gates,
+                               `CLVectorConnect(number of 2nd layer gates,
                                               common 2nd layer gate name,
                                               output gate name)
                                 Connect the 2nd-layer gate outputs to the
                                 output gate inputs'
-define(`VectorConnect',
+define(`CLVectorConnect',
  `for_(1,`$2',1,
   `line from `$1'm4x.Out right `$3'.In1.x-`$1'm4x.Out.x \
     - jog/2*(`$2'+1-abs(2*m4x-`$2'-1)) \
     then down `$1'm4x.Out.y - `$3'.In`'m4x.y then to `$3'.In`'m4x ')')
 
                                 Draw and label a non-inverted input
-define(`DrawIn',
+define(`CLDrawIn',
  `LastInput: LastInput+(inputsep,0)
   In`'$1: LastInput
   "svg_it($1)" ljust at LastInput     # Maybe labels should be done externally
@@ -74,7 +74,7 @@ define(`DrawIn',
   define(D`'$1)')
 
                                 Draw and label an inverted input
-define(`DrawNotIn',
+define(`CLDrawNotIn',
  `LastInput: LastInput+(inputsep,0)
   InN`'$1: LastInput
   "svg_it($1)" ljust at LastInput     # Maybe labels should be done externally
@@ -86,7 +86,7 @@ define(`DrawNotIn',
   define(D`'$1)')
                                 Draw and label an input that is required both
                                 inverted and uninverted.
-define(`DrawInNotIn',
+define(`CLDrawInNotIn',
  `LastInput: LastInput+(inputsep,0)
   In`'$1: LastInput
   "svg_it($1)" ljust at LastInput     # Maybe labels should be done externally
@@ -99,23 +99,23 @@ define(`DrawInNotIn',
   linethick = lineth
   InNt`'$1: Here
   define(D`'$1)')
-                               `varloop(`var',ifnotnegated,ifnegated,term)
+                               `CLvarloop(`var',ifnotnegated,ifnegated,term)
                                 Loop over term variables performing actions'
-define(`varloop',`ifelse(`$4',,,substr(`$4',0,1),~,
+define(`CLvarloop',`ifelse(`$4',,,substr(`$4',0,1),~,
    `define(`$1',substr($4,1,1)) $3
-    varloop(`$1',`$2',`$3',substr($4,2))',
+    CLvarloop(`$1',`$2',`$3',substr($4,2))',
    `define(`$1',substr($4,0,1)) $2
-    varloop(`$1',`$2',`$3',substr($4,1))')')')
+    CLvarloop(`$1',`$2',`$3',substr($4,1))')')')
 
                                 Count gate inputs and mark last appearance
-define(`Countinputs',`varloop(`v_',
+define(`CLCountinputs',`CLvarloop(`v_',
  `define(`incount',incr(incount)) define(Last`'v_,`$1')',
  `define(`incount',incr(incount)) define(LastN`'v_,`$1')',$2)')
 
                                 Draw a 2nd layer gate
-define(`DrawLayerGate',
+define(`CLDrawLayerGate',
  `define(`incount',0)
-  Countinputs($1,$4)
+  CLCountinputs($1,$4)
   ifelse(incount,1,
    `LastGateSE: LastGateSE-(0,jog)
     $1: [ In1:Here; line right AND_wd*L_unit; Out: Here] \
@@ -126,7 +126,7 @@ define(`DrawLayerGate',
     linethick = lineth ')')
 
                                 Connect this gate to its input lines
-define(`ConnectInputs',`define(`innum',0) varloop(`v_',
+define(`CLConnectInputs',`define(`innum',0) CLvarloop(`v_',
  `define(`innum',incr(innum))
   line from `$1'.In`'innum to (In`'v_,`$1'.In`'innum)dnl
     ifelse(`$1',m4xpand(Last`'v_),`then to In`'v_',`; dot')',
@@ -136,7 +136,7 @@ define(`ConnectInputs',`define(`innum',0) varloop(`v_',
 
                                 Delete definitions to allow more than one
                                 circuit per diagram
-define(`DeleteLogDefs',`varloop(`v_',
+define(`CLDeleteLogDefs',`CLvarloop(`v_',
    `undefine(Last`'v_) undefine(D`'v_) undefine(X`'v_)',
    `undefine(LastN`'v_) undefine(D`'v_) undefine(XN`'v_)',$1)')
 

@@ -3,7 +3,7 @@
 
 \manual{minim-pdf}
 
-\ifchapter \chapter Hypertext
+\ifchapter \chapter Advanced PDF features
 
 This chapter and the next document the support of the modern pdf features 
 provided by the minim-pdf package.
@@ -14,8 +14,8 @@ all other features of the package are described here.
 \else \startmetadata
     author   {Esger Renkema}
     title    {minim-pdf}
-    date     {2022-03-03}
-    version  {2022/1.1}
+    date     {2024-01-05}
+    version  {2024/1.4}
     keywords {LuaTeX; Plain TeX; PDF/A; Tagged PDF; accessibility; a11y;
               hypertext; bookmarks; document outline; associated files}
     stopmetadata
@@ -33,10 +33,16 @@ all other features will be covered first.
 
 \section Hyperlinks %1
 
-For most simple cases, you can use
-⟦*\hyperlink [name {...} | url {...}] ... \endlink⟧ for linking to a named 
-destination in your own document or to an external hyperlink respectively.
-There is no support for nonsimple cases.
+Hyperlinks can be made with
+⟦*\hyperlink [alt {...}] [attr {...}] <action> ... \endlink⟧, where the 
+⟦<action>⟧ must be one of
+⟦name {...} | url {...} | name {...} | next | prev | first | last⟧
+With the ⟦name⟧ action, a named destination must be used (see below), while the 
+⟦user⟧ action will be passed directly to the back-end (as with the pdftex 
+primitive).
+The ⟦*\hyperlinkstyle⟧ token list can be used so set common (pdf) link 
+attributes; it defaults to ⟦/Border [0 0 0]⟧. The contents of the optional 
+⟦attr⟧ parameter will be appended to these.
 
 A named destination can be created with ⟦*\nameddestination {...}⟧ (also in 
 horizontal mode, unlike the backend primitive) and if you cannot think of 
@@ -47,9 +53,10 @@ generated name.
 
 \section Bookmarks %1
 
-Bookmarks can be added with ⟦*\outline [open|closed] [dest {name}] {title}⟧.
-Add ⟦open⟧ or ⟦closed⟧ to have the bookmark appear initially open or 
-closed (default), and
+Bookmarks (also known as outlines) can be added with ⟦*\outline [open|closed] 
+[dest {name}] {title}⟧.
+Add ⟦open⟧ or ⟦closed⟧ to have the bookmark appear initially open or closed 
+(default), and
 say ⟦dest {name}⟧ for having it refer to a specific named destination 
 (otherwise, a new one will be created where the ⟦\outline⟧ command appears).
 
@@ -101,6 +108,48 @@ are enabled by default.
 You can disable them by setting ⟦*\writehyphensandspaces⟧ to a nonpositive value.
 
 
+\section PDF/UA %1
+
+You can claim pdf/ua conformance with ⟦*\pdfualevel 1⟧.
+By itself, this will do very little:
+
+\startlist
+\tagattribute List ListNumbering /Decimal
+\item 1. The ⟦pdfuaid:part⟧ metadata key will be set.
+\item 2. A conforming ⟦ViewerPreferences⟧ dictionary will be added to the document catalog.
+\item 3. The ⟦/Suspects⟧ key of the ⟦MarkInfo⟧ dictionary will be set to ⟦false⟧.
+\item 4. ⟦/Tab /S⟧ will be added to the page attributes.
+\stoplist
+
+Also making your document pdf/a-compliant, however, will relieve you of a few 
+additional worries:
+
+\startlist
+\tagattribute List ListNumbering /Decimal
+\tagattribute List ContinuedList true
+\item 5. Fonts will be included properly.
+\item 6. The (natural) language of every element will be known.
+\item 7. Headings will be strongly-structured.
+\item 8. Table headers will have their ⟦Scope⟧ set properly.
+\item 9. A document outline will be generated automatically.
+\stoplist
+
+This leaves the following for you to provide before your document can be 
+pdf/ua-compliant:
+
+\startlist
+\tagattribute List ListNumbering /Decimal
+\tagattribute List ContinuedList true
+\item 10. Figure and Formula structure elements must have alt texts.
+\item 11. Hyperlinks must have alternate descriptions.
+\item 12. Lists must have the ⟦ListNumbering⟧ attribute set.
+\item 13. Tables must have headers that are tagged as such.
+\item 14. Page headers and footers must be marked as header or footer artifacts.
+\item 15. Document section structure elements should have their ⟦title⟧ set.
+\item 16. All embedded files must have a description.
+\stoplist
+
+
 \section Embedded files %1
 
 You can attach (associate) files with ⟦*\embedfile <options>⟧.
@@ -110,7 +159,9 @@ document catalog.
 Arguments consisting of a single word can be given without braces and
 exactly one of the options ⟦file⟧ or ⟦string⟧ must be present.
 
-\smallskip\marktableaslist \halign{#\quad\hfil&#\hfil\cr
+\smallskip\marktableaslist
+\tagattribute List ListNumbering /Description
+\halign{#\quad\hfil&#\hfil\cr
 ⟦file ⟧\hfill⟦{...}⟧ & The file to embed.\cr
 ⟦string ⟧\hfill⟦{...}⟧ & The string to embed.\cr
 ⟦global⟧ & Attach to the document catalog.\cr
@@ -166,6 +217,7 @@ You should always check the result in an external application.
 
 This is the full list of limitations, pitfalls and shortcomings:
 \startlist
+\tagattribute List ListNumbering /Decimal
 \item1. Document content must be seen by tex in its logical order (although you 
 can mark out-of-order content explicitly if you know what you are doing; see 
 below).
@@ -292,6 +344,8 @@ Keep in mind that the reassignment is local: if a paragraph marked with
 Auto-marking paragraphs can be (locally) disabled or enabled by saying 
 ⟦*\markparagraphsfalse⟧ or ⟦*\markparagraphstrue⟧.
 
+You can query the place in the document structure of any point with 
+⟦*\showdocumentstructure⟧.
 
 \section Structure element aliases %1
 
@@ -324,20 +378,32 @@ current SE from a named identifier ⟦\name⟧.
 
 \section Structure element options %1
 
-The ⟦\startelement⟧ command allows a few options that are not mentioned 
-above: its full syntax is ⟦*\startelement <options> {Tag}⟧.
+The ⟦\startelement⟧ command allows a few options that are not mentioned above: 
+its full syntax is ⟦*\startelement <options> {Tag}⟧.
 The three most useful options are ⟦alt⟧ for setting an alt-text (the ⟦/Alt⟧ 
 entry in the structure element dicionary), ⟦actual⟧ for a text replacement 
 (⟦/ActualText⟧) and ⟦lang⟧ for the language (⟦/Lang⟧; see the next section).
 The alternative and actual texts can also be given after the fact with
-⟦*\setalttext{...}⟧ and ⟦*\setactualtext{...}⟧; these apply to the current 
+⟦*\setalttext {...}⟧ and ⟦*\setactualtext {...}⟧; these apply to the current 
 structure element.
 
 Structure element attributes can be given with
-⟦attr <owner> <key> <value>⟧, e.g. ⟦attr Layout Placement /Inline⟧.
+⟦attr <owner> <key> <value>⟧, e.g. ⟦attr Layout Placement /Inline⟧ or added 
+later with ⟦*\tagattribute⟧.
 Note that for the ⟦owner⟧ and ⟦key⟧ the initial slash must be omitted; the 
 ⟦value⟧ on the other hand will be written to the pdf verbatim.
 Any number of attributes can be added.
+
+An identifier can be set with the ⟦id {...}⟧ option, or after the fact with
+⟦*\settagid {...}⟧. This identifier will be added to the ⟦IDTree⟧ and is 
+entirely optional; you will probably already know when you need it.
+The ⟦ref {...}⟧ option lets a structure element refer to another (the ⟦/Ref⟧ 
+option in the structure element dictionary). Its argument should be the ⟦id⟧ of 
+the other structure element.
+
+The title of the structure element (corresponding to the ⟦/T⟧ entry in the 
+structure element dictionary) can be set with the ⟦title {...}⟧ option. The 
+pdf/ua standard requires this key for all document sections.
 
 Finally, structure element classes can be given with the
 ⟦class <classname>⟧ keyword, which can be repeated.
@@ -385,17 +451,44 @@ This package ensures the existence of the ⟦nohyph⟧, ⟦nolang⟧, ⟦uncoded
 ⟦undetermined⟧ dummy languages, all without hyphenation.
 
 
-\section Helper macros %1
+\section Mathematics %1
 
-For marking up an entry in a table of contents, you can use the macro
-⟦*\marktocentry {dest} {lbl} {title} {filler} {pageno}⟧, which should insert all 
-tags in the correct way. (The ⟦dest⟧ is a link destination and can be empty; 
-the ⟦lbl⟧ is a section number and can also be empty.)
+You can auto-tag equations as formulas by specifing ⟦*\autotagformulas⟧.
+After this command, auto-tagging can be switched off and on with
+⟦*\stopformulatagging⟧ and ⟦*\startformulatagging⟧.
+Auto-tagging formulas is dangerous, because sometimes equations are used for 
+lay-out and should not be marked as such.
+It is also somewhat fragile, as it requires equations to end with dollar 
+signs (and not with ⟦\Ustopmath⟧ or ⟦\Ustopdisplaymath⟧).
+
+The tex source of an equation can be associated with the ⟦Formula⟧ structure 
+element in various ways, which can be configured with ⟦*\includeformulasources 
+{options}⟧, where the ⟦options⟧ must be a comma-separated list of
+⟦alttext⟧, ⟦actualtext⟧ or ⟦attachment⟧.
+The ⟦alttext⟧ and ⟦actualtext⟧ option will set the ⟦/Alt⟧ or ⟦/ActualText⟧ 
+attributes to the unexpanded source code of the equation, surrounded by the 
+appropriate number of dollar signs.
+The ⟦attachment⟧ option attaches the source of the formula as an embedded file 
+with its ⟦/AFRelation⟧ set to ⟦Source⟧;
+this will only work if ⟦\pdfaconformancelevel⟧ equals three.
+The name of this file can be changed by redefining ⟦*\formulafilename⟧ inside 
+the equation.
+The default value is ⟦{actualtext,attachment}⟧.
+
+Note that the contents of the equation will be expanded fully (as in ⟦\xdef⟧) 
+before their inclusion as the equation source. This may place restrictions on 
+the macros you want to use (those in minim-math should be safe).
+Any occurrence of ⟦\alttext⟧ or ⟦\actualtext⟧ overrides the 
+automatically-assigned value and will be stripped from the equation source.
+
+
+\section Tables %1
 
 For marking up tables, a whole array of helper macros is available. First, 
 ⟦*\marktable⟧ should be given \emph{before} the ⟦\halign⟧.
-Then, in the template, the first cell should start with ⟦*\marktablerow⟧ and 
-each subsequent cell with ⟦*\marktablecell⟧.
+Then, in the template, the first cell should start with ⟦*\marktablerow⟧
+⟦*\marktablecell⟧ and 
+each subsequent cell with ⟦\marktablecell⟧.
 If your table starts with a header, insert ⟦*\marktableheader⟧ before it and 
 ⟦*\marktablebody⟧ after.
 Before a table footer, insert ⟦*\marktablefooter⟧.
@@ -408,24 +501,33 @@ If you use a table for typesetting a list, you can use ⟦*\marktableaslist⟧
 instead, which marks the first column as list label and the second column as 
 list item. Of course, this only works with two-column tables.
 
-Finally, you can auto-tag equations as formulas by specifing 
-⟦*\autotagformulas⟧. This is especially dangerous, because sometimes equations 
-are used for lay-out and should not be marked as such.
-After the latter command, auto-tagging can be switched off and on with
-⟦*\stopformulatagging⟧ and ⟦*\startformulatagging⟧.
+Cells spanning multiple cells or rows can be marked with 
+⟦*\markcolumnspan {width}⟧ and ⟦*\markrowspan {height}⟧; these statements may not 
+occur before ⟦\marktablecell⟧. Note that while ⟦\markcolumnspan⟧ properly 
+increases the (internal) column number, ⟦\markcolumnrow⟧ does nothing of the 
+sort (and indeed, no general logic can be given in the latter case). Always proceed 
+with caution when using cells spanning multiple rows, and inspect the resulting 
+structure carefully.
 
-The source of the equation can be associated with the ⟦Formula⟧ structure 
-element in various ways, which can be configured with ⟦*\includeformulasources 
-{option}⟧, where the ⟦option⟧ must be one of ⟦none⟧, ⟦actualtext⟧, ⟦attachment⟧ 
-or ⟦both⟧.
-The ⟦actualtext⟧ option will use the unexpanded source code of the equation, 
-surrounded by the appropriate number of dollar signs.
-The ⟦attachment⟧ option will only work if ⟦\pdfaconformancelevel⟧ equals three: 
-then the source of the formula will be attached in an embedded file with the 
-⟦/AFRelation⟧ set to ⟦Source⟧.
-The name of this file can be changed by redefining ⟦*\formulafilename⟧ inside 
-the equation.
-The default value is ⟦both⟧.
+Marking up a table header (except if done through ⟦\automarktable⟧)
+will not connect normal table cells with their headers; you will have to 
+connect these manually by including ⟦*\markcolumnhead⟧ or ⟦*\markrowhead⟧ in 
+the appropriate header cells. This must be done \emph{after} ⟦\markcolumnspan⟧ 
+if the latter appplies. If properly setup like this, other cells of the table 
+(including header cells) will be assigned to matching row or column headers 
+automatically.
+
+
+\section Other helper macros %1
+
+For marking up an entry in a table of contents, you can use the macro
+⟦*\marktocentry {dest} {lbl} {title} {filler} {pageno}⟧, which should insert all 
+tags in the correct way. (The ⟦dest⟧ is a link destination and can be empty; 
+the ⟦lbl⟧ is a section number and can also be empty.)
+
+For tagging (foot)notes, ⟦*\marknoteref{*}⟧ and ⟦*\marknotelbl{*}⟧, when placed 
+around the footnote markers, will insert the proper ⟦Ref⟧, ⟦Note⟧ and ⟦Lbl⟧ 
+tags.
 
 % 
 
