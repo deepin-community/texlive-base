@@ -1,13 +1,15 @@
 % =============================================================================
 % worldflags.sty - Flags of the World with TikZ
 % (c) Wilhelm Haager 2021-05-12
+%  2022-07-09 ... option "variant" added
 % =============================================================================
 \RequirePackage{ifthen}
 \RequirePackage{tikz}
 \RequirePackage{xcolor}
 \RequirePackage{etex}
 \RequirePackage{xkeyval}
-\usetikzlibrary{calc,shadows,shapes,shapes.symbols,positioning,math}
+\RequirePackage{graphicx}
+\usetikzlibrary{calc,shadows,shapes,shapes.symbols,positioning,math,decorations.text}
 \definecolor{gridcolor}{rgb}{0.8,0.8,0.8}
 
 % ----------------------------------------------------------------------------
@@ -16,10 +18,12 @@
 \newdimen\fl@gwidth\fl@gwidth=15mm
 \newdimen\fl@glength\fl@glength=0mm
 \newdimen\fl@gframe\fl@gframe=0.2mm
+\def\fl@gvariant{0} % 2022-07-09
 \def\fl@gstretch{0}
 \def\fr@mecolor{black!60}
-\newif\if@rid\@ridfalse
+\def\gr@dcolor{black!80}
 \newif\if@mbl@m\@mbl@mtrue
+\newif\if@rid\@ridfalse
 \newif\ifn@@mbl@m\n@@mbl@mtrue
 \def\view@ngle{0}
 \def\hang@ngle{0}
@@ -170,18 +174,11 @@
      \end{scope}
    \fi
    \begin{scope}}
-\def\wf@gridcode{\ifgrid
-   \begin{scope}[x=1mm,y=1mm]
-   \pgfmathparse{\flaglength*0.351462}
-   \def\n{\pgfmathresult}
-   \foreach \x in {0,1,...,\n} \draw [line width=0.1pt,gridcolor!20] (\x,0)--++(0,\flagwidth);
-   \foreach \x in {0,5,...,\n} \draw [line width=0.25pt,gridcolor!60] (\x,0)--++(0,\flagwidth);
-   \foreach \x in {0,10,...,\n} \draw [line width=0.5pt,gridcolor] (\x,0)--++(0,\flagwidth);
-   \pgfmathparse{\flagwidth*0.351462}
-   \def\n{\pgfmathresult}
-   \foreach \x in {0,1,...,\n} \draw [line width=0.1pt,gridcolor!20] (0,\x)--++(\flaglength,0);
-   \foreach \x in {0,5,...,\n} \draw [line width=0.25pt,gridcolor!60] (0,\x)--++(\flaglength,0);
-   \foreach \x in {0,10,...,\n} \draw [line width=0.5pt,gridcolor] (0,\x)--++(\flaglength,0);
+\def\wf@gridcode{\ifgrid        % Version 2023-07-03
+   \begin{scope}[x=1mm,y=1mm,black,line width=0.1pt]
+   \draw [\gr@dcolor,opacity=0.15,xstep=1mm,ystep=1mm] (0,0) grid (\flaglength,\flagwidth);
+   \draw [\gr@dcolor,opacity=0.15,xstep=5mm,ystep=5mm] (0,0) grid (\flaglength,\flagwidth);
+   \draw [\gr@dcolor,opacity=0.15,xstep=10mm,ystep=10mm] (0,0) grid (\flaglength,\flagwidth);
    \end{scope}
    \fi}
 
@@ -229,6 +226,7 @@
     \coordinate (-e) at (\flaglength,0.5\flagwidth);
     \coordinate (-se) at (\flaglength,0);}
 {\end{scope}\wf@gridcode\end{scope}\end{scope}%\endgroup
+    \global\let\flagvariant\undefined % 2022-07-09
     \global\let\flagwidth\undefined
     \global\let\flaglength\undefined
     \global\let\flagframe\undefined
@@ -270,6 +268,7 @@
 % ----------------------------------------------------------------------------
 % Key Management
 % ----------------------------------------------------------------------------
+\define@key{worldflag}{variant}{\def\flagvariant{#1}} % 2022-07-09
 \define@key{worldflag}{length}{\flaglength#1}
 \define@key{worldflag}{width}{\flagwidth#1}
 \define@key{worldflag}{framewidth}{\flagframe#1}
@@ -277,11 +276,12 @@
 \define@key{worldflag}{emblem}[true]{\emblemtrue\noemblemfalse}
 \define@key{worldflag}{noemblem}[true]{\noemblemtrue\emblemfalse}
 \define@key{worldflag}{emblemdefault}[true]{\noemblemtrue\emblemtrue}
-\define@key{worldflag}{grid}[true]{\gridtrue}
+\define@key{worldflag}{grid}[black!80]{\gridtrue\def\gr@dcolor{#1}}
 \define@key{worldflag}{stretch}[1]{\def\flagstretch{#1}}
 \define@key{worldflag}{turn}[1]{\def\viewangle{#1}}
 \define@key{worldflag}{hang}[1]{\def\hangangle{#1}}
 
+\define@key{flagsdefault}{variant}{\def\fl@gvariant{#1}} % 2022-07-09
 \define@key{flagsdefault}{length}{\fl@glength#1}
 \define@key{flagsdefault}{width}{\fl@gwidth#1}
 \define@key{flagsdefault}{framewidth}{\fl@gframe#1}
@@ -289,7 +289,7 @@
 \define@key{flagsdefault}{emblem}[true]{\@mbl@mtrue\n@@mbl@mfalse}
 \define@key{flagsdefault}{noemblem}[true]{\n@@mbl@mtrue\@mbl@mfalse}
 \define@key{flagsdefault}{emblemdefault}[true]{\n@@mbl@mtrue\@mbl@mtrue}
-\define@key{flagsdefault}{grid}[true]{\@ridtrue}
+\define@key{flagsdefault}{grid}[black!80]{\@ridtrue\def\gr@dcolor{#1}}
 \define@key{flagsdefault}{stretch}[1]{\def\fl@gstretch{#1}}
 \define@key{flagsdefault}{turn}[1]{\def\view@ngle{#1}}
 \define@key{flagsdefault}{hang}[1]{\def\hang@ngle{#1}}
@@ -310,6 +310,7 @@
   \newdimen\flaglength\flaglength=\fl@glength
   \newdimen\flagframe\flagframe=\fl@gframe
   \def\flagstretch{\fl@gstretch}%
+  \def\flagvariant{\fl@gvariant}%  2022-07-009
   \newif\ifgrid\if@rid\gridtrue\else\gridfalse\fi
   \newif\ifemblem\if@mbl@m\emblemtrue\else\emblemfalse\fi
   \newif\ifnoemblem\ifn@@mbl@m\noemblemtrue\else\noemblemfalse\fi
@@ -317,7 +318,7 @@
   \def\hangangle{0}%
   \setkeys{worldflag}{#1}%
   \IfFileExists{worldflag_#2.tex}{%
-     \begin{tikzpicture}
+     \begin{tikzpicture} % [opacity=0.3] % zum Testen
      \input{worldflag_#2.tex}
      \end{tikzpicture}}{\relax}
 }
@@ -331,6 +332,7 @@
 \tikzset{stretch/.style={execute at begin scope={\def\flagstretch{#1}}}}
 \tikzset{framecolor/.style={execute at begin scope={\def\framecolor{#1}}}}
 \tikzset{country/.style={execute at begin scope={\def\country{#1}}}}
+\tikzset{variant/.style={execute at begin scope={\def\flagvariant{#1}}}} % 2022-07-09
 \tikzset{emblem/.style={execute at begin scope={\newif\ifemblem\emblemtrue\newif\ifnoemblem\noemblemfalse}}}
 \tikzset{grid/.style={execute at begin scope={\newif\ifgrid\gridtrue}}}
 \tikzset{noemblem/.style={execute at begin scope={\newif\ifnoemblem\noemblemtrue}}}
@@ -343,6 +345,7 @@
     \ifx\flaglength\undefined\newdimen\flaglength\global\flaglength=\fl@glength\fi
     \ifx\flagframe\undefined\newdimen\flagframe\global\flagframe=\fl@gframe\fi
     \ifx\flagstretch\undefined\def\flagstretch{\fl@gstretch}\fi
+    \ifx\flagvariant\undefined\def\flagvariant{\fl@gvariant}\fi  % 2022-07-09
     \ifx\framecolor\undefined\def\framecolor{\fr@mecolor}\fi
     \def\makeifgrid{\newif\ifgrid\if@rid\gridtrue\else\gridfalse\fi}
     \ifx\ifgrid\undefined\makeifgrid\fi

@@ -61,7 +61,7 @@ movewid = 0.25
   move down 0.4; right_; {
     dswitch(,,WBCb); {"\tt (,{,}WBCb)" at last [].s Below}
     move right_
-    dswitch(,,WBcCb); {"\tt (,{,}WBcCb)" at last [].s Below}
+    dswitch(,,WBcCb); {"\tt (,{,}WBcCb)" wid 50bp__ at last [].s Below}
     move right_
     dswitch(,,WBcDI); {"\tt (,{,}WBcDI)" at last [].s Below}
     thinlines_
@@ -129,17 +129,17 @@ movewid = 0.25
     move down_ 6bp__ then right_
     dswitch(,,WBPrM); {"\tt (,{,}WBPrM)" at last [].s Below}
     move right_
-    dswitch(,,WBDIGX,text=W); #{"\tt (,{,}WBDIGX,W)" at last [].s Below}
+    dswitch(,,WBDIGX,text=W)
       {"\tt (,{,}WBDIGX," ljust at last line.start+(0,-15bp__) \
         "\tt text=W)" ljust}
     move right_
-    dswitch(,,WBDIGC,text=M)
+    dswitch(,,WBDIGC,circle="M")
       {"\tt (,{,}WBDIGC," ljust at last line.start+(0,-15bp__) \
-        "\tt text=M)" ljust}
+        "\tt circle=\"M\")" ljust}
     move right_
-    dswitch(,,WBcDIGC,text=M) #
+    dswitch(,,WBcDIGC,circle="M")
       {"\tt (,{,}WBcDIGC," ljust at last line.start+(0,-15bp__) \
-        "\tt text=M)" ljust}
+        "\tt circle=\"M\")" ljust}
     }
 
 .PE

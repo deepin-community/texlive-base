@@ -45,9 +45,9 @@ movewid = 2pt__
 {  {diode(,Z,RE) ; move ; "`{\tt diode(,Z,RE)}'" ljust}
    move down 0.30; right_
    {diode(,U) ; move ; "`{\tt diode(,U)}'" ljust}
-   move down 0.25; right_
+   move down 0.15; right_
    {diode(,T) ; move ; "`{\tt diode(,T)}'" ljust}
-   move down 0.20; right_
+   move down 0.30; right_
    {diode(,P) ; move ; "`{\tt diode(,P)}'" ljust}
    move down 0.30; right_
    {diode(,LE) ; move ; "`{\tt diode(,LE)}'" ljust}

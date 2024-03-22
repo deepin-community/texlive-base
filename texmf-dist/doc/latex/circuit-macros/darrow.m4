@@ -1,40 +1,42 @@
 divert(-1)
   darrow.m4                     Macros for double lines and arrows
 
-* Circuit_macros Version 10.1, copyright (c) 2022 J. D. Aplevich under     *
+* Circuit_macros Version 10.5, copyright (c) 2024 J. D. Aplevich under     *
 * the LaTeX Project Public Licence in file Licence.txt. The files of       *
 * this distribution may be redistributed or modified provided that this    *
 * copyright notice is included and provided that modifications are clearly *
 * marked to distinguish them from this distribution.  There is no warranty *
 * whatsoever for these files.                                              *
 
+` Some of these macros have uncomfortably many arguments for specifying
+  options, so wrappers beginning with upper-case letters (Dline,
+  Darrow, Darc) are provided and implement key=val;key=val... option
+  specifications.  Sometimes however, cleaner code results from using
+  the original macros.  Could these be written in a more straightforward
+  fashion? Probably, but the current versions have evolved from macros
+  written very early on and backward compatibility has been kept, with
+  only a few exceptions.
 
-`Notes: these macros have been reworked (Jan 2013) so that dlthick is the
-  total outside width, consistent with solid lines and arrows, and to add
-  the !- and -! half-linethick line caps to simplify butting to boxes.
-
-  Some of these macros have uncomfortably many arguments for specifying
-  options, so wrappers beginning with upper-case letters (Dline, Darrow, Darc)
-  are provided and implement key=val;key=val... option specifications.
+  The drawn elements are
+    darc darrow dend dleft dline dright dtee dturn
+  and there are wrappers
+    Darc Darrow Dline
 '
-
-=============================================================================
 define(`darrow_')
 ifdef(`libgen_',,`include(libgen.m4)divert(-1)')
 
+=============================================================================
+# Style defaults:
                                 Default width (thickness) of double lines
 define(`dlthick',`(0.08*scale+lthick)')
-#efine(`dlinewid',`dlthick')    Obsolete, keep for a while for compatibility.
 
                                `ELement fill color (default white)
-                                e.g. define(`dfillcolor',`1,0.84,0')
-                                Obsolete:
-                                command "\definecolor{gold}{rgb}{1,0.84,0}"
-                                define(`dfillcolor',gold)'
-define(`dfillcolor',`1,1,1')
+                                e.g. define(`dfillcolor',`1,0.84,0')'
+define(`dfillcolor',`1,1,1')   `=white'
 
 define(`dfillgrey',1)          `fill shade for gpic'
 define(`darcrad',`dlthick*2')  `default darc radius'
+define(`dfillext',0.25bp__) `extended length of dtee, dleft, dright fill'
 
                                `Default length:'
 ifdef(`elen_',,`define(`elen_',linewid*3/2)')
@@ -53,103 +55,120 @@ define(`dbelow',`below ifelse(`$1',,`at Here',`$1')-(0,dlthick/2)')
 define(`dljust',`ljust ifelse(`$1',,`at Here',`$1')+(dlthick/2,0)')
 define(`drjust',`rjust ifelse(`$1',,`at Here',`$1')-(dlthick/2,0)')
 
-               `dline(linespec,start truncation,end truncation,dlthick, ends )
+               `dline(linespec,start truncation,end truncation,dlthick, ends,
+                  outline attributes, inner attributes )
                   ends= blank, x-x, -x, x-, where x means ! or |'
 define(`dline',`deleminit_(`$1',,`$4')
-  M4DL: line from last line.start to last line.end \
+  M4DL: line invis from last line.start to last line.end \
     chop ifelse(`$2',,0,m4dlthk/2) chop ifelse(`$3',,0,m4dlthk/2)
-  ifelse(rgbstring(1,1,1),"",,
-   `{line thick m4dlthk/(1bp__) from M4DL.start to M4DL.end }
-    {line thick m4dlthk/(1bp__)-2*linethick outlined rgbstring(dfillcolor) \
-     from M4DL.start \
-      ifinstr(`$5',|-,`+vec_(lthick,0)',`$5',!-,`+vec_(lthick/2,0)') \
+  {line thick m4dlthk/(1bp__) `$6' from M4DL.start to M4DL.end }
+  ifelse(rgbstring(dfillcolor),"",,
+   `{line thick m4dlthk/(1bp__)-2*linethick \
+      ifelse(`$7',,`outlined rgbstring(dfillcolor)',`$7') \
+      from M4DL.start \
+        ifinstr(`$5',|-,`+vec_(lthick,0)',`$5',!-,`+vec_(lthick/2,0)') \
       to M4DL.end \
-      ifinstr(`$5',-|,`-vec_(lthick,0)',`$5',-!,`-vec_(lthick/2,0)') }')
+        ifinstr(`$5',-|,`-vec_(lthick,0)',`$5',-!,`-vec_(lthick/2,0)') }')
   ifgpic(`M4dV: vec_(0,m4dlthk/2-lthick/2); shade(dfillgrey,
     {line from M4DL.start+(M4dV.x,M4dV.y) to M4DL.end+(M4dV.x,M4dV.y)}
     {line from M4DL.start-(M4dV.x,M4dV.y) to M4DL.end-(M4dV.x,M4dV.y)})')
    line invis from M4DL.start to M4DL.end')
 
-               `Dline(linespec,params)
-                 params is a semicolon-separated list of items:
-                   S truncate at start by dline thickness/2
-                   E truncate at end by dline thickness/2
-                   thick=val   (total thicknes, ie width)
-                   ends= x-x or -x or x- where x is ! or |
-                   |- closed end with full-width line
-                   !- closed end with half-width line
-                eg Dline(from A to B,E;ends=|-)'
-define(`Dline',
- `pushkey_(`$2',thick,dlthick)
-  pushkey_(`$2',ends)pushdef(`m4ends',substr(m4ends,1,eval(len(m4ends)-2)))
-  dline(`$1',ifinstr(`$2',S,t),ifinstr(`$2',E,t),m4thick,m4ends)
-  popdef(`m4ends')popdef(`m4ends')popdef(`m4thick')
-  ')
-
-                               `dleft(at position,dlthick) Turn left,
-                                leaving current location at exit of corner'
+                               `dleft(at position,dlthick,attribs)
+                                Turn left, leaving current location
+                                at exit of corner.
+                                attribs=
+                                  innershade=(r,g,b)|"color";
+                                  outline=(r,g,b)|"color";'
 define(`dleft',`deleminit_(,ifelse(`$2',,dlthick,`$2'),`$2')
+  pushkeys_(`$3',innershade::N;outline::N;) dnl
   ifelse(`$1',,,`move to substr(`$1',eval(index(`$1',t)+1))-vec_(m4dlthk/2,0)')
   { line thick m4dlthk/(1bp__) to rvec_(m4dlthk,0) }
-  ifelse(rgbstring(1,1,1),"",,
-   `line thick m4dlthk/(1bp__)-2*linethick outlined rgbstring(dfillcolor) \
-      to rvec_(m4dlthk/2,0) then to rvec_(m4dlthk/2,m4dlthk/2)')
+  ifelse(rgbstring(dfillcolor),"",,
+   `{line thick m4dlthk/(1bp__)-2*linethick \
+      m4fixcolor(outlined,m4innershade,`dfillcolor') \
+      to rvec_(m4dlthk/2,0) then to rvec_(m4dlthk/2,m4dlthk/2+dfillext)}
+    move to rvec_(m4dlthk/2,0) then to rvec_(m4dlthk/2,m4dlthk/2) ')
   ifgpic(`{line from rvec_(0,m4dlthk/2-lthick/2) to rvec_(0,m4dlthk/2-lthick/2)}
    {line from rvec_(m4dlthk-lthick/2,m4dlthk/2) \
      to rvec_(m4dlthk-lthick/2,-m4dlthk/2+lthick/2) then \
      to rvec_(0,-m4dlthk/2+lthick/2)}
-   move to rvec_(m4dlthk/2,m4dlthk/2)')
+   move to rvec_(m4dlthk/2,m4dlthk/2)') popdef(`m4innershade',`m4outline')
    rp_ang = rp_ang+pi__/2')
-                               `dright(at position,dlthick) Turn right,
-                                leaving current location at exit of corner'
+                               `dright(at position,dlthick,attribs)
+                                Turn right, leaving current location
+                                at exit of corner.
+                                attribs=
+                                  innershade=(r,g,b)|"color";
+                                  outline=(r,g,b)|"color";'
 define(`dright',`deleminit_(,ifelse(`$2',,dlthick,`$2'),`$2')
+  pushkeys_(`$3',innershade::N;outline::N;) dnl
   ifelse(`$1',,,`move to substr(`$1',eval(index(`$1',t)+1))-vec_(m4dlthk/2,0)')
   { line thick m4dlthk/(1bp__) to rvec_(m4dlthk,0) }
-  ifelse(rgbstring(1,1,1),"",,
-   `line thick m4dlthk/(1bp__)-2*linethick outlined rgbstring(dfillcolor) \
-      to rvec_(m4dlthk/2,0) then to rvec_(m4dlthk/2,-m4dlthk/2)')
+  ifelse(rgbstring(dfillcolor),"",,
+   `{line thick m4dlthk/(1bp__)-2*linethick \
+      m4fixcolor(outlined,m4innershade,`dfillcolor') \
+      to rvec_(m4dlthk/2,0) then to rvec_(m4dlthk/2,-m4dlthk/2-dfillext)}
+    move to rvec_(m4dlthk/2,0) then to rvec_(m4dlthk/2,-m4dlthk/2) ')
   ifgpic(`{line from rvec_(0,-m4dlthk/2+lthick/2) \
                   to rvec_(0,-m4dlthk/2+lthick/2)}
    {line from rvec_(m4dlthk-lthick/2,-m4dlthk/2) \
      to rvec_(m4dlthk-lthick/2,m4dlthk/2-lthick/2) then \
      to rvec_(0,m4dlthk/2-lthick/2)}
-   move to rvec_(m4dlthk/2,-m4dlthk/2)')
+   move to rvec_(m4dlthk/2,-m4dlthk/2)') popdef(`m4innershade',`m4outline')
    rp_ang = rp_ang-pi__/2')
 
-                               `dturn(arg,dlthick) 
-                                Turn arg relative degrees ccw'
+                   `m4fixcolor(outlined|shaded,"colorname"|(r,g,b),colormacro)
+                      define(`colormacro',`r,g,b')'
+  define(`m4fixcolor',`ifelse(`$2',,`ifelse(`$3',,,``$1' rgbstring($3)')',
+    index(`$2',`"'),0,``$1' `$2'' ,
+    ``$1' rgbstring(m4ctrunc(`$2'))')')
+
+                               `dturn(arg,dlthick,attribs) 
+                                Turn arg relative degrees ccw
+                                attribs=
+                                  innershade=(r,g,b)|"color";
+                                  outline=(r,g,b)|"color";'
 define(`dturn',`deleminit_(,ifelse(`$2',,dlthick,`$2'),`$2')
-[S: Here
+[S: Here pushkeys_(`$3',innershade::N;outline::N;)
   deg = ifelse(`$1',,0,`$1')
   c = cosd(deg); s = sind(deg); sgn = sign(deg); r = (dlthick-lthick)/2
+  G: S+vec_(lthick/2*abs(s),sgn*dlthick/2)
   A: S+vec_(lthick/2*abs(s),sgn*r)
   B: A+vec_(vscal_(lthick/2*abs(s),c,s))
+  H: G+vec_(vscal_(lthick/2*abs(s),c,s))
   C: S+vec_(0, sgn*r)
+  J: S+vec_(0, sgn*dlthick/2)
   if deg==0 then {t = 0} else { t = (1-c)/s } # t = tan(deg/2)
   D: A+vec_(vscal_(r*2,sgn*t,-sgn))
   E: B+vec_(vscal_(r*2,sgn*s,-sgn*c))
   F: S+vec_(0,-sgn*r)
-  T: 0.5 between A and D
   X: 0.5 between B and E
-  ifelse(rgbstring(1,1,1),"",,
-   `line thick r*2/(1bp__) outlined rgbstring(dfillcolor) \
-      from S to T then to X')
+  ifelse(rgbstring(dfillcolor),`""',,`line thick 0 \
+    m4fixcolor(outlined,m4innershade,`dfillcolor') \
+    m4fixcolor(shaded,m4innershade,`dfillcolor') \
+    from S to F then to D then to E then to H then to G then to J then to S')
   ifgpic(`m4tmpth = linethick; linethick=0
     shade(dfillgrey,`line from C to A then to B; line from E to D then to F')
     linethick = m4tmpth')
-  line from C to A then to B
-  line from E to D then to F
-#{"A" at A;"B" at B;"C" at C;"D" at D;"E" at E; "F" at F;"T" at T;"X" at X}
-  `$3'] with .S at Here
+  line thick lthick/(1bp__) m4fixcolor(outlined,m4outline) from C to A then to B
+  line thick lthick/(1bp__) m4fixcolor(outlined,m4outline) from E to D then to F
+# Loopover_(`Px',`"Px" at Px above;', A,B,C,D,E,F,S,X)
+# Loopover_(`Px',`"Px" at Px above;', G,H,J)
+  `$4' popdef(`m4innershade',`m4outline')] with .S at Here
   move to last [].X
   ifelse(`$1',,,`Point_(`$1'+rp_ang*rtod_)') ')
 
                 `darrow(linespec, start truncation, end truncation, dlthick,
-                   arrow wid, arrow ht, terminals)
+                   arrowhd wid, arrowhd ht, terminals,color attribs)
                  terminals is blank or x-, ->, x->, <-, <-x, <-> where x is
                    ! for closed end with half-width line or
                    | for closed end with full-width line'
+                 `e.g.,
+                   linethick=5; rgbdraw(1,0,0,darrow(down_ 2,,,0.5,0.75,0.75,|)'
+
 define(`darrow',`deleminit_(`$1',,`$4')
+  arrow invis from last line.start to last line.end
   ifelse(ifinstr(`$7',<->,,`$7',<-,T),T,
    `define(`m4dx',`ifinstr(`$7',|,|,`$7',!,!)'->)dnl
     M4DA: line invis from last line.end to last line.start \
@@ -170,7 +189,7 @@ define(`darrow',`deleminit_(`$1',,`$4')
     W: vec_(lthick/2,0)
     X: ifinstr(`$7',<->,C,m4dx,!,S,m4dx,|,S+(W.x,W.y),S)
   ifgpic(`shade(dfillgrey,') line dnl
-  ifelse(rgbstring(1,1,1),"",,`shaded rgbstring(dfillcolor)') from dnl
+  ifelse(rgbstring(dfillcolor),"",,`shaded rgbstring(dfillcolor)') `$8' from dnl
     ifinstr(m4dx,|,`X to X+(V.x,V.y) then',`X+(V.x,V.y)') to \
     E-(T.x,T.y)+(V.x,V.y) then to E-(T.x,T.y)+(Vt.x,Vt.y) \
     then to E-(P.x,P.y) \
@@ -195,109 +214,187 @@ define(`darrow',`deleminit_(`$1',,`$4')
    `arrow invis from M4DA.start to M4DA.end')
 ')
 
-               `Darrow(linespec,params)
-                 params is a semicolon-separated list of items:
-                   S truncate at start by dline thickness/2
-                   E truncate at end by dline thickness/2
-                   thick=val   (total thicknes, ie width)
-                   wid=val     (arrowhead width)
-                   ht=val      (arrowhead height)
-                   ends= -> or x-> or <- or <-x or <-> where x is | or ! 
-                   |- closed end with full-width line
-                   !- closed end with half-width line
-                eg Darrow(from A to B,E;ends=<-|)'
-define(`Darrow',
- `pushkey_(`$2',thick,dlthick)
-  pushkey_(`$2',wid,dlthick*3/2)
-  pushkey_(`$2',ht,dlthick)
-  pushkey_(`$2',ends)pushdef(`m4ends',substr(m4ends,1,eval(len(m4ends)-2)))
-  darrow(`$1',ifinstr(`$2',S,t),ifinstr(`$2',E,t),m4thick,m4wid,m4ht,m4ends)dnl
-  popdef(`m4ends')popdef(`m4ends')popdef(`m4ht',`m4wid',`m4thick')')
-
-                          `dtee([L|R],dlthick) Construct tee with tail right,
-                           left, or back along current direction, leaving
-                           current location at tee centre; eg
+                          `dtee([L|R],dlthick|attribs)
+                           Construct tee with tail to back (default), left,
+                           or right of current direction, leaving current
+                           location at tee centre; eg
                            dline(right_,,t); dtee(R);
-                           { darrow(down_,t) }; darrow(right_,t)'
-define(`dtee',`deleminit_(,ifelse(`$2',,dlthick,`$2'),`$2')
+                           { darrow(down_,t) }; darrow(right_,t)
+                           attribs:
+                             thick=expr; (line thickness in drawing units)
+                             innershade=(r,g,b)|"color";
+                             outline=(r,g,b)|"color";'
+define(`dtee',`pushkeys_(`$2',thick:m4nil;innershade::N;outline::N;)dnl
+  deleminit_(,ifelse(m4thick,(m4nil),dlthick,m4thick))
   move to last line.c
-  ifelse(`$1',L,`rp_ang = rp_ang-pi_/2',`$1',R,`rp_ang = rp_ang+pi_/2')
-  ifelse(rgbstring(1,1,1),"",,
-   `{line thick dlthick/(1bp__) from rvec_(-m4dlthk/2,0) to rvec_(m4dlthk/2,0)}
-    {line thick dlthick/(1bp__)-2*linethick outlined rgbstring(dfillcolor) \
-       to rvec_(-m4dlthk/2,0) }
-    {line thick dlthick/(1bp__)-2*linethick outlined rgbstring(dfillcolor) \
-      from rvec_(0,-m4dlthk/2) to rvec_(0,m4dlthk/2) } ')
+  ifelse(`$1',L,`rp_ang = rp_ang-pi_/2', `$1',R,`rp_ang = rp_ang+pi_/2')
+  ifelse(m4innershade,,,`pushdef(`dfillcolor',`m4ctrunc(m4innershade)')') dnl
+  {line thick m4dlthk/(1bp__) dnl
+    ifelse(m4outline,,,index(m4outline,`"'),0,`outlined m4outline',
+    `outlined rgbstring(m4ctrunc(m4outline))') dnl
+    from rvec_(-m4dlthk/2,0) to rvec_(m4dlthk/2,0)}
+  pushdef(`m4dll',(m4dlthk/2+dfillext))dnl
+  pushdef(`m4df',`rgbstring(dfillcolor)')dnl
+  ifelse(m4df,"",,
+   `{line thick m4dlthk/(1bp__)-2*linethick outlined m4df to rvec_(-m4dll,0) }
+    {line thick m4dlthk/(1bp__)-2*linethick outlined m4df \
+       from rvec_(0,-m4dll) to rvec_(0,m4dll) } ')
   ifgpic(`m4tmpth = linethick; linethick=0; shade(dfillgrey,
     {line from rvec_(-m4dlthk/2, m4dlthk/2) to rvec_( m4dlthk/2, m4dlthk/2)}
     {line from rvec_( m4dlthk/2,-m4dlthk/2) to rvec_(-m4dlthk/2,-m4dlthk/2)})
-    linethick = m4tmpth') ')
+    linethick = m4tmpth')
+  ifelse(m4innershade,,,`popdef(`dfillcolor')')dnl
+  popdef(`m4thick',`m4innershade',`m4outline',`m4dll',`m4df')')
 
-                                Close off line end: `dend([at position])'
-define(`dend',`deleminit_(,lthick)
- ifelse(`$1',,,`move to substr(`$1',eval(index(`$1',at)+2))')
- {line from rvec_(0,-dlthick/2) to rvec_(0,dlthick/2)}
- move to rvec_(lthick/2,0) ')
+                           `dend([at position],dlthick|attribs)
+                           Close off line end
+                           attribs:
+                             thick=expr; (line thickness in drawing units)
+                             outline=(r,g,b)|"color";'
+define(`dend',`pushkeys_(`$2',thick:m4nil;outline::N;)dnl
+  pushdef(`m4thk',`ifelse(m4thick,(m4nil),dlthick,m4thick)')dnl
+  ifelse(`$1',,,`move to patsubst(`$1',`^ *at *')')
+  {line ifelse(m4outline,,,`outlined m4outline') ifinstr(`$2',=,,`$2') dnl
+    from rvec_(0,-m4thk/2) to rvec_(0,m4thk/2) }
+  move to rvec_(last line.thick pt__/2,0)dnl
+  popdef(`m4thick',`m4outline',`m4thk')')
 
                 `darc(center pos, radius, start radians, end radians, dlthick,
-                      arrow wid, arrow ht, symbols )  draw CCW arc
+                      arrow wid, arrow ht, symbols,
+                      outline attributes, inner attributes )
+                 draw CCW arc in a [ ] block
                  symbols= x-, -x, x-x, ->, x->, <-, <-x, <->
                  where x is | or ! ; arrowheads for dpic only '
-define(`darc',`[ C: (0,0)
-  dlth=ifelse(`$5',,dlthick,`$5')
-  w = ifelse(`$6',,dlth*1.75,(`$6'))
-  h = ifelse(`$7',,dlth,(`$7'))
-  r = ifelse(`$2',,darcrad,`($2)')
-  p = sqrt((w/2)^2+h^2)/(w/2)*lthick
-  as = ifelse(`$3',,rp_ang-pi__/2,`$3')
-  tas = as ifinstr(`$8',<-,`+ p/r')
-  ae = ifelse(`$4',,as+pi__/2,`$4')
-  tae = ae ifinstr(`$8',<-,`- p/r')
-  S: (rect_(r,as)); TS: (rect_(r,tas))
-  E: (rect_(r,ae)); TE: (rect_(r,tae))
-  arc thick dlth/(1bp__) wid w ht h dnl
-   ifinstr(`$8',<-,<-`'ifinstr(`$8',->,>),`$8',->,->) from S to E with .c at C
-  ifelse(rgbstring(1,1,1),"",,
-   `arc thick dlth/(1bp__)-linethick*2 wid (h-p-lthick)/h*w ht h-p-lthick \
-      colored rgbstring(dfillcolor) \
+pushdef(`darc',`pushdef(`m4r',`(ifelse(`$2',,darcrad,`($2)'))') dnl
+  pushdef(`m4C',`ifelse(`$1',,rvec_(0,m4r),`$1')') dnl
+  pushdef(`m4as',`(ifelse(`$3',,rp_ang-pi__/2,`$3'))') dnl
+  pushdef(`m4ae',`(ifelse(`$4',,m4as+pi__/2,`$4'))') dnl
+  arc invis from m4C+(rect_(m4r,m4as)) to m4C+(rect_(m4r,m4ae)) with .c at m4C
+  C_darc: last arc.c; Start_darc: last arc.start; End_darc: Here
+  r_darc = m4r; as_darc = m4as; ae_darc = m4ae popdef(`m4r',`m4C',`m4as',`m4ae')
+  dlth_darc=ifelse(`$5',,dlthick,(`$5'))
+  w_darc = ifelse(`$6',,dlth_darc*1.75,(`$6'))
+  h_darc = ifelse(`$7',,dlth_darc,(`$7'))
+  p_darc = sqrt((w_darc/2)^2+h_darc^2)/(w_darc/2)*lthick
+  tas_darc = as_darc ifinstr(`$8',<-,`+ p_darc/r_darc')
+  tae_darc = ae_darc ifinstr(`$8',->,`- p_darc/r_darc')
+  TS: C_darc+(rect_(r_darc,tas_darc))
+  TE: C_darc+(rect_(r_darc,tae_darc))
+  { arc thick dlth_darc/(1bp__) wid w_darc ht h_darc dnl
+    ifinstr(`$8',<-,<-`'ifinstr(`$8',->,>),`$8',->,->) dnl
+    `$9' from Start_darc to End_darc with .c at C_darc }
+  pushdef(`m4inn',`ifelse(`$10',,`ifelse(rgbstring(dfillcolor),"",,
+    ifdef(`dfillcolor',T),T,`outlined rgbstring(dfillcolor)')',`$10')') dnl
+  ifelse(m4inn,,,
+   `arc thick dlth_darc/(1bp__)-linethick*2 \
+      wid (h_darc-p_darc-lthick)/h_darc*w_darc ht h_darc-p_darc-lthick \
       ifinstr(`$8',<-,<-`'ifinstr(`$8',->,>),`$8',->,->) \
-      from TS to TE rad r with .c at C')
-  ifinstr(`$8',|-,`X: (vscal_(lthick/2,-sin(as),cos(as)))
-    line from C+(rect_(r+dlthick/2-lthick/2,as))+(X.x,X.y) to \
-              C+(rect_(r-dlthick/2+lthick/2,as))+(X.x,X.y)',
-  `$8',!-,`X: (vscal_(lthick/4,-sin(as),cos(as)))
-    line thick linethick/2 \
-      from C+(rect_(r+dlthick/2-lthick/4,as))+(X.x,X.y) to \
-           C+(rect_(r-dlthick/2+lthick/4,as))+(X.x,X.y)')
-  ifinstr(`$8',-|,`X: (vscal_(lthick/2,-sin(ae),cos(ae)))
-    line from C+(rect_(r+dlthick/2-lthick/2,ae))-(X.x,X.y) to \
-              C+(rect_(r-dlthick/2+lthick/2,ae))-(X.x,X.y)',
-  `$8',!-,`X: (vscal_(lthick/4,-sin(ae),cos(ae)))
-    line thick linethick/2 \
-      from C+(rect_(r+dlthick/2-lthick/4,ae))-(X.x,X.y) to \
-           C+(rect_(r-dlthick/2+lthick/4,ae))-(X.x,X.y)')
-  rp_ang := ae+pi__/2
-  ] with ifelse(`$1',,.S at Here,.C at `$1')
-  move to last [].E
-  ')
+      m4inn from TS to TE with .c at C_darc') popdef(`m4inn')
+  ifinstr(`$8',|-,`X: (vscal_(lthick/2,-sin(as_darc),cos(as_darc)))
+    line `$9' \
+    from C_darc+(rect_(r_darc+dlth_darc/2-lthick/2,as_darc))+X to \
+         C_darc+(rect_(r_darc-dlth_darc/2+lthick/2,as_darc))+X',
+  `$8',!-,`X: (vscal_(lthick/4,-sin(as_darc),cos(as_darc)))
+    line `$9' thick linethick/2 \
+      from C_darc+(rect_(r_darc+dlth_darc/2-lthick/4,as_darc))+X to \
+           C_darc+(rect_(r_darc-dlth_darc/2+lthick/4,as_darc))+X')
+  ifinstr(`$8',-|,`X: (vscal_(lthick/2,-sin(ae_darc),cos(ae_darc)))
+    line `$9' from C_darc+(rect_(r_darc+dlth_darc/2-lthick/2,ae_darc))-X to \
+              C_darc+(rect_(r_darc-dlth_darc/2+lthick/2,ae_darc))-X',
+  `$8',-!,`X: (vscal_(lthick/4,-sin(ae_darc),cos(ae_darc)))
+    line `$9' thick linethick/2 \
+      from C_darc+(rect_(r_darc+dlth_darc/2-lthick/4,ae_darc))-X to \
+           C_darc+(rect_(r_darc-dlth_darc/2+lthick/4,ae_darc))-X')
+  rp_ang := ae_darc+pi__/2 ')
 
                 `Darc(center pos, radius, start radians, end radians, params)
+                   or
+                 Darc(,params)
                  draw CCW arc
-                 params is a semicolon-separated list of items:
-                   thick=val   (total thicknes, ie width)
-                   wid=val     (arrowhead width)
-                   ht=val      (arrowhead height)
+                 params is a semicolon-separated list:
+                   thick=val;  (total thicknes, ie width)
+                   wid=val;    (arrowhead width)
+                   ht=val;     (arrowhead height)
+                   outline=color; (e.g. "red" or (1,0,0) )
+                   innershade=color;  (e.g. (0,1,1) or "cyan")
                    ends= x-, -x, x-x, ->, x->, <-, <-x, <-> where x is ! or |
                      < and > work for dpic only
                    |- closed end with full-width line
                    !- closed end with half-width line
+                If arg1 is null then the additional list items are accepted:
+                   centre=Position;
+                   rad=expr;
+                   startdeg=degrees;  NOTE: degrees
+                   enddeg=degrees;    NOTE: degrees
                 eg Darc(C,r,ang1,ang2,ends=<-|)'
 define(`Darc',
- `pushkey_(`$5',thick,dlthick)
-  pushkey_(`$5',wid,dlthick*1.75)
-  pushkey_(`$5',ht,dlthick)
-  pushkey_(`$5',ends)pushdef(`m4ends',substr(m4ends,1,eval(len(m4ends)-2)))
-  darc(`$1',`$2',`$3',`$4',m4thick,m4wid,m4ht,m4ends)dnl
-  popdef(`m4ends')popdef(`m4ends')popdef(`m4ht',`m4wid',`m4thick')')
+ `pushkeys_(ifelse(`$1',,`$2',`$5'),thick:dlthick;wid:dlthick*1.75;ht:dlthick;
+    outline::N;innershade::N;ends::N;centre:Here:N;rad:darcrad;
+    startdeg::;enddeg::;)dnl
+  pushdef(`m4ou',`m4fixcolor(outlined,m4outline)')dnl
+  pushdef(`m4sh',`m4fixcolor(outlined,m4innershade,`dfillcolor')')dnl
+  ifelse(`$1',,
+   `darc(m4centre,m4rad,m4startdeg*dtor_,m4enddeg*dtor_,
+      m4thick,m4wid,m4ht,m4ends,m4ou,m4sh)',
+   `darc(`$1',`$2',ifelse(m4startdeg,,`$3',m4startdeg*dtor_),
+     ifelse(m4enddeg,,`$4',m4enddeg*dtor_),
+     m4thick,m4wid,m4ht,m4ends,m4ou,m4sh)') dnl
+  popdef(`m4thick',`m4wid',`m4ht',`m4outline',`m4innershade',`m4ends',
+    `m4centre',`m4rad',`m4startdeg',`m4enddeg',`m4ou',`m4sh')')')
 
+               `darrow(linespec,params)
+                 params is a semicolon-separated list of items:
+                   s; truncate at start by dline thickness/2
+                   e; truncate at end by dline thickness/2
+                   thick=expr;   (total thicknes, ie width)
+                   wid=expr;     (arrowhead width)
+                   ht=expr;      (arrowhead height)
+                   outline=color; (e.g. "red" or (1,0,0) )
+                   innershade=color;  (e.g. (0,1,1) or "cyan")
+                   name=name;    (name of underlying invis line)
+                   ends= -> or x-> or <- or <-x or <-> where x is | or ! 
+                     |- closed end with full-width line
+                     !- closed end with half-width line
+                     eg Darrow(from A to B,E;ends=<-|)'
+define(`Darrow',
+ `pushkeys_(`$2',thick:dlthick;wid:dlthick*3/2;ht:dlthick;
+    outline::N;innershade::N;name::N;ends::N;)dnl
+  ifelse(m4innershade,,,`pushdef(`dfillcolor',`m4ctrunc(m4innershade)')')dnl
+  pushdef(`m4nm',ifelse(m4name,,,m4name:))dnl
+  ifelse(m4outline,,
+   `m4nm darrow(`$1',ifinstr(`$2',S,t),ifinstr(`$2',E,t),
+     m4thick,m4wid,m4ht,m4ends)',
+  index(m4outline,`"'),0,
+   `m4nm darrow(`$1',ifinstr(`$2',S,t),ifinstr(`$2',E,t),
+     m4thick,m4wid,m4ht,m4ends,outlined m4outline)',
+   `rgbdraw(m4ctrunc(m4outline),
+     m4nm darrow(`$1',ifinstr(`$2',S,t),ifinstr(`$2',E,t),
+     m4thick,m4wid,m4ht,m4ends))')
+  ifelse(m4innershade,,,`popdef(`dfillcolor')')dnl
+  popdef(`m4ends',`m4thick',`m4wid',`m4ht',`m4outline',`m4innershade',`m4name',
+   `m4nm')')
+
+               `Dline(linespec,params)
+                 params is a semicolon-separated list of items:
+                   S; truncate at start by dline thickness/2
+                   E; truncate at end by dline thickness/2
+                   thick=val;   (total thicknes, ie width)
+                   outline=color; (e.g. "red" or (1,0,0) )
+                   innershade=color;  (e.g. (0,1,1) or "cyan")
+                   name=Name;
+                   ends= x-x; or -x; or x-; where x is ! or |
+                   |- closed end with full-width line
+                   !- closed end with half-width line
+                eg Dline(from A to B,E;ends=|-)'
+define(`Dline',
+ `pushkeys_(`$2',thick:dlthick;outline::N;innershade::N;ends::N;name::N;)dnl
+  ifelse(m4name,,,m4name:) dline(`$1',ifinstr(`$2',S;,t),ifinstr(`$2',E;,t),
+    m4thick,m4ends,m4fixcolor(outlined,m4outline),
+                   m4fixcolor(outlined,m4innershade,`dfillcolor'))
+  popdef(`m4thick',`m4outline',`m4innershade',`m4ends',`m4name') ')
+
+define(`m4ctrunc',`substr(`$1',1,eval(len(`$1')-2))')
+
+#efine(`mark',`{dot(at `$1'); "`$1'" at last [].s below}')
+#efine(`pure',`patsubst(`$1',`"',`\\"')')
 divert(0)dnl

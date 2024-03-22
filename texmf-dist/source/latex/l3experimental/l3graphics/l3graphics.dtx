@@ -2,7 +2,7 @@
 %
 %% File: l3graphics.dtx
 %
-% Copyright (C) 2017-2022 The LaTeX Project
+% Copyright (C) 2017-2024 The LaTeX Project
 %
 % It may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -22,9 +22,6 @@
 %
 % for those people who are interested.
 %
-%<*driver|package>
-\RequirePackage{expl3}
-%</driver|package>
 %<*driver>
 \documentclass[full]{l3doc}
 \begin{document}
@@ -46,7 +43,7 @@
 %    }^^A
 % }
 %
-% \date{Released 2022-04-20}
+% \date{Released 2024-01-04}
 %
 % \maketitle
 %
@@ -81,16 +78,18 @@
 %   which may contain multiple pages.
 % \end{variable}
 %
+% \begin{variable}{pdf-attr}
+%   Additional PDF-focussed attributes: available to allow control of
+%   extended |.pdf| structures beyond those needed for graphic inclusion.
+%   Due to backend restrictions, this key is only functional with direct
+%   PDF mode (pdf\TeX{} and Lua\TeX{}).
+% \end{variable}
+%
 % \begin{variable}{pagebox}
 %   The nature of the page box setting used to determine the bounding box of
 %   material: used for |.pdf| files which feature multiple page box
 %   specifications. A choice from |art|, |bleed|, |crop|, |media|, |trim|.
 %   The standard setting is |crop|.
-% \end{variable}
-%
-% \begin{variable}{draft}
-%   Switch to enable draft mode: graphics are read but not included when this is
-%   true.
 % \end{variable}
 %
 % \begin{variable}{type}
@@ -185,7 +184,7 @@
 %    \end{macrocode}
 %
 %    \begin{macrocode}
-\ProvidesExplPackage{l3graphics}{2022-04-20}{}
+\ProvidesExplPackage{l3graphics}{2024-01-04}{}
   {L3 Experimental graphics inclusion support}
 %    \end{macrocode}
 %
@@ -214,6 +213,7 @@
 %     \l_@@_interpolate_bool ,
 %     \l_@@_page_int         ,
 %     \l_@@_pagebox_tl       ,
+%     \l_@@_pdf_str          ,
 %     \l_@@_type_str
 %   }
 %   Keys which control features of graphics. The standard value of |pagebox|
@@ -236,13 +236,15 @@
     pagebox .choices:nn =
       { art , bleed , crop , media , trim }
       {
-        \tl_set:Nx \l_@@_pagebox_tl
-           { \tl_use:N \l_keys_choice_tl box }
+        \tl_set:Ne \l_@@_pagebox_tl
+          { \l_keys_choice_tl box }
       } ,
     pagebox .initial:n =
       crop ,
     page .int_set:N =
       \l_@@_page_int ,
+    pdf-attr .str_set:N =
+      \l_@@_pdf_str ,
     type . str_set:N =
       \l_@@_type_str
   }
@@ -265,8 +267,8 @@
 %    \end{macrocode}
 % \end{variable}
 %
-% \begin{macro}{\@@_bb_save:n, \@@_bb_save:x}
-% \begin{macro}{\@@_bb_restore:nF, \@@_bb_restore:xF}
+% \begin{macro}{\@@_bb_save:n, \@@_bb_save:e}
+% \begin{macro}{\@@_bb_restore:nF, \@@_bb_restore:eF}
 %   Caching graphic bounding boxes is sensible, and these functions are needed both
 %   here and for drive-specific work. So they are made available as documented
 %   functions. To save on registers, the \enquote{origin} is only saved if it is
@@ -285,7 +287,7 @@
         \dim_const:cn { c_@@_ #1 _ury_dim } { \l_@@_ury_dim }
       }
   }
-\cs_generate_variant:Nn \@@_bb_save:n { x }
+\cs_generate_variant:Nn \@@_bb_save:n { e }
 \cs_new_protected:Npn \@@_bb_restore:nF #1#2
   {
     \dim_if_exist:cTF { c_@@_ #1 _urx_dim }
@@ -301,7 +303,7 @@
       }
       {#2}
   }
-\cs_generate_variant:Nn \@@_bb_restore:nF { x }
+\cs_generate_variant:Nn \@@_bb_restore:nF { e }
 %    \end{macrocode}
 % \end{macro}
 % \end{macro}
@@ -373,7 +375,7 @@
     \@@_bb_restore:nF {#1#2}
       { \@@_read_bb_auxii:nnnn {#3} {#4} {#1} {#2} }
   }
-\cs_new_protected:Npx \@@_read_bb_auxii:nnnn #1#2#3#4
+\cs_new_protected:Npe \@@_read_bb_auxii:nnnn #1#2#3#4
   {
     #1
     \exp_not:N \ior_if_eof:NTF \exp_not:N \l_@@_internal_ior
@@ -388,15 +390,15 @@
       }
     \ior_close:N \exp_not:N \l_@@_internal_ior
   }
-\use:x
+\use:e
   {
     \cs_new_protected:Npn \exp_not:N \@@_read_bb_auxiii:w
-      ##1 \c_colon_str ##2 \s_@@_stop
+      #1 \c_colon_str #2 \s_@@_stop
       {
         \exp_not:N \str_if_eq:nnT
           { \c_percent_str \c_percent_str BoundingBox }
-          {##1}
-          { \exp_not:N \@@_read_bb_auxiv:w ##2 ( ) \s_@@_stop }
+          {#1}
+          { \exp_not:N \@@_read_bb_auxiv:w #2 ( ) \s_@@_stop }
       }
   }
 %    \end{macrocode}
@@ -411,7 +413,7 @@
   {
     \str_if_eq:nnF {#2} { atend }
       {
-        \tl_set_rescan:Nnx \l_@@_internal_tl
+        \tl_set_rescan:Nne \l_@@_internal_tl
           {
             \char_set_catcode_space:n {  9 }
             \char_set_catcode_space:n { 32 }
@@ -532,10 +534,10 @@
         \@@_include_auxi:e
           {
             \exp_args:Ne \str_tail:n
-              { \str_foldcase:V \l_@@_ext_str }
+              { \str_casefold:V \l_@@_ext_str }
           }
-       }
-       { \@@_include_auxi:e { \l_@@_type_str } }
+      }
+      { \@@_include_auxi:e { \l_@@_type_str } }
   }
 \cs_new_protected:Npn \@@_include_auxi:n #1
   {
@@ -550,8 +552,8 @@
     \cs_if_exist:cTF { @@_backend_include_ #1 :n }
       {
         \tl_set_eq:NN \l_@@_final_name_str \l_@@_full_name_str
-        \str_set:Nx \l_@@_full_name_str
-         { \exp_args:NV \__kernel_file_name_quote:n \l_@@_full_name_str }
+        \str_set:Ne \l_@@_full_name_str
+          { \exp_args:NV \__kernel_file_name_quote:n \l_@@_full_name_str }
         \exp_args:NnV \use:c { @@_backend_getbb_ #1 :n }
           \l_@@_full_name_str
         \seq_gput_right:NV \g_@@_record_seq \l_@@_final_name_str
@@ -599,7 +601,7 @@
     \box_set_dp:Nn \l_@@_internal_box { 0pt }
     \box_set_ht:Nn \l_@@_internal_box
       { \l_@@_ury_dim - \l_@@_lly_dim }
-     \box_set_wd:Nn \l_@@_internal_box
+    \box_set_wd:Nn \l_@@_internal_box
       { \l_@@_urx_dim - \l_@@_llx_dim }
     \box_use_drop:N \l_@@_internal_box
   }
@@ -613,8 +615,8 @@
 % \begin{macro}[EXP]{\@@_list_aux:n}
 %   A function to list all graphic files used.
 %    \begin{macrocode}
-\cs_new_protected:Npn \graphics_show_list: { \@@_list:N \msg_show:nnxxxx }
-\cs_new_protected:Npn \graphics_log_list: { \@@_list:N \msg_log:nnxxxx }
+\cs_new_protected:Npn \graphics_show_list: { \@@_list:N \msg_show:nneeee }
+\cs_new_protected:Npn \graphics_log_list: { \@@_list:N \msg_log:nneeee }
 \cs_new_protected:Npn \@@_list:N #1
   {
     \seq_remove_duplicates:N \g_@@_record_seq
@@ -712,7 +714,7 @@
     \exp_args:NNNV \group_end:
     \tl_set:Nn #2 #2
   }
-\cs_new_protected:Npx \@@_get_pagecount:n #1
+\cs_new_protected:Npe \@@_get_pagecount:n #1
   {
     \ior_shell_open:Nn \exp_not:N \l_@@_internal_ior
       { extractbb~-O~#1 }
@@ -729,16 +731,16 @@
       }
     \ior_close:N \exp_not:N \l_@@_internal_ior
   }
-\use:x
+\use:e
   {
     \cs_new_protected:Npn \exp_not:N \@@_get_pagecount:nw
-      ##1##2 \c_colon_str ##3 \c_colon_str ##4 \s_@@_stop
+      #1#2 \c_colon_str #3 \c_colon_str #4 \s_@@_stop
       {
         \exp_not:N \str_if_eq:nnT
           { \c_percent_str \c_percent_str Pages }
-          {##2}
+          {#2}
           {
-            \int_const:cn { c_@@_ ##1 _pages_int } {##3}
+            \int_const:cn { c_@@_ #1 _pages_int } {#3}
             \exp_not:N \ior_map_break:
           }
       }

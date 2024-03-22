@@ -1,8 +1,11 @@
+#
+#
 LIBDIR = $$HOME/lib
 M4LIBS = svg.m4 DPVconfig.m4
 M4LIBS = svg.m4
 M4 = m4
 # PDFCONVERT = pdf2svg
+# The current dvisvgm outputs CRLF line endings
 PDFCONVERT = dvisvgm
 
 # To process a single file, copy it to test.m4 and type "make tst"
@@ -32,7 +35,8 @@ DPIC = dpic
 	touch F_$*.dim
 	$(M4) pgf.m4 F_$*.dim $*.m4 > $*.pic
 	$(DPIC) -g $*.pic >> $*.tex
-	echo "\documentclass[crop,tikz,multi=false]{standalone}" > F_$*.tex
+#	echo "\documentclass[crop,tikz,multi=false]{standalone}" > F_$*.tex
+	echo "\documentclass[tikz]{standalone}" > F_$*.tex
 	echo "\usepackage{boxdims,siunitx,amssymb}" >> F_$*.tex
 	echo "\begin{document}" >> F_$*.tex
 	echo "\input $*.tex" >> F_$*.tex
@@ -42,9 +46,10 @@ DPIC = dpic
 	$(DPIC) -g $*.pic >> $*.tex
 	pdflatex --quiet F_$*
 	if test "$(PDFCONVERT)" = "pdf2svg" ; then \
-      pdf2svg F_$*.pdf $*.xsvg && cp $*.xsvg $*.svg ; \
+      pdf2svg F_$*.pdf $*.xsvg && cat $*.xsvg | tr -d '\r' > $*.svg ; \
     else \
-      dvisvgm --pdf F_$*.pdf && mv F_$**.svg $*.svg ; cp $*.svg $*.xsvg ; \
+      dvisvgm --pdf F_$*.pdf && cat F_$**.svg | tr -d '\r' > $*.svg ; \
+      cp $*.svg $*.xsvg ; \
       fi
 	rm -f F_$**
 
@@ -96,6 +101,7 @@ examplesDPV.html: examplesDPV.htmx
 	Version=`sed -e 's/Version //' $(LIBDIR)/doc/Version.tex` ; \
       sed -e 's/Version XXX/Version '$$Version'/' examplesDPV.htmx \
       | m4 > examplesDPV.html
+	rm -f quick.xsvg
 
 examplesDPVs.html: examplesDPVs.htmx
 	cp ../quick.m4 .
@@ -162,5 +168,4 @@ clean:
 	@printf "\n"
 
 clobber: clean
-#	(cd dev; make clobber)
 	rm -f test.m4

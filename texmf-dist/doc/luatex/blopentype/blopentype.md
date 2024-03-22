@@ -1,24 +1,38 @@
-# Basic LuaTeX OpenType Handler Minimal User Guide
+# Basic LuaTeX OpenType Manager Minimal User Guide
 
-As for version 0.0.0 December 2022
+As of version 0.0.1 May 2023
 
-Fonts (fonts.ltm and fonts.lts)
-==================================
+Loading the macros
+==================
+
+This is a Plain TeX macro package, so simply type
+
+```
+\input blot
+```
+
+and you are halfway through: there are font parameter defaults, but no font is loaded 
+automatically, since it must depend on your system; so you have to load fonts
+on your own.
+
+Fonts 
+=====
 
 The fontloader uses gates, but only superficially. They won't be
 documented here.
 
 To load a given font, you define it in YaX syntax with the `\setfont` command.
+Thus, the instruction:
 
-```\setfont <command>:<attributes>```
+```\setfont <fontcommand>:<attributes>```
 
-Sets <command> to call the font described in <attributes>; all defaults
-to the values of the `metafont` parameter. If `<command>` is `\mainfont`, 
-as the name of the main font for the document, the font is called at once; 
-any other `\command` requires explicit calls.
+sets <fontcommand> to call the font described in <attributes>; all new fonts default
+to the values of the `metafont` parameter described elsewhere. 
+If `<fontcommand>` is `\mainfont`, the font is called at once; 
+any other `\fontcommand` requires an explicit call.
 
-You may thing of `\setfont <command>` as similar to DEKTeX's `\font\cmr10 at 12pt` 
-or whatever font definition, but now the call is to an array of font attributes.
+You may thing of `\setfont <fontcommand>` as similar to DEKTeX's `\font<fontcommand> <parameters>`,
+but now the call is to an array of font attributes, enumerated below.
 
 `name`
 The family name of the font; e.g. Palatino Linotype for the main text of

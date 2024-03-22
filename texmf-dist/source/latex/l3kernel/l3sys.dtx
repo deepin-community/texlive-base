@@ -2,7 +2,7 @@
 %
 %% File: l3sys.dtx
 %
-% Copyright (C) 2015-2023 The LaTeX Project
+% Copyright (C) 2015-2024 The LaTeX Project
 %
 % It may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -31,7 +31,7 @@
 % \fi
 %
 % \title{^^A
-%   The \pkg{l3sys} package: System/runtime functions^^A
+%   The \pkg{l3sys} module\\ System/runtime functions^^A
 % }
 %
 % \author{^^A
@@ -43,7 +43,7 @@
 %    }^^A
 % }
 %
-% \date{Released 2023-01-16}
+% \date{Released 2024-01-22}
 %
 % \maketitle
 %
@@ -54,7 +54,7 @@
 % \begin{variable}[added = 2015-09-19, updated = 2019-10-27]{\c_sys_jobname_str}
 %   Constant that gets the \enquote{job name} assigned when \TeX{} starts.
 %   \begin{texnote}
-%     This copies the contents of the primitive \tn{jobname}. For technical
+%     This is the \TeX{} primitive \tn{jobname}. For technical
 %     reasons, the string here is not of the same internal form as other,
 %     but may be manipulated using normal string functions.
 %   \end{texnote}
@@ -73,10 +73,16 @@
 %   The date and time at which the current job was started: these are
 %   all reported as integers.
 %   \begin{texnote}
-%     Whilst the underlying primitives can be altered by the user, this
+%     Whilst the underlying \TeX{} primitives \tn{time}, \tn{day}, \tn{month},
+%     and~\tn{year} can be altered by the user, this
 %     interface to the time and date is intended to be the \enquote{real}
 %     values.
 %   \end{texnote}
+% \end{variable}
+%
+% \begin{variable}[added = 2023-08-27]{\c_sys_timestamp_str}
+%   The timestamp for the current job: the format is as described for
+%   \cs{file_timestamp:n}.
 % \end{variable}
 %
 % \section{Engine}
@@ -90,6 +96,7 @@
 %     \sys_if_engine_xetex:
 %   }
 %   \begin{syntax}
+%     \cs{sys_if_engine_pdftex_p:}
 %     \cs{sys_if_engine_pdftex:TF} \Arg{true code} \Arg{false code}
 %   \end{syntax}
 %   Conditionals which allow engine-specific code to be used. The names
@@ -121,7 +128,28 @@
 %   \tn{fmtname}).
 % \end{variable}
 %
-% \begin{function}[added = 2020-09-24, EXP]{\sys_timer:}
+% \begin{variable}[added = 2018-05-02]{\c_sys_engine_version_str}
+%   The version string of the current engine, in the same form as
+%   given in the banner issued when running a job. For \pdfTeX{}
+%   and \LuaTeX{} this is of the form
+%   \begin{quote}
+%     \meta{major}.\meta{minor}.\meta{revision}
+%   \end{quote}
+%   For \XeTeX{}, the form is
+%   \begin{quote}
+%     \meta{major}.\meta{minor}
+%   \end{quote}
+%   For \pTeX{} and \upTeX{}, only releases since \TeX{} Live 2018
+%   make the data available, and the form is more complex, as it comprises
+%   the \pTeX{} version, the \upTeX{} version and the e-\pTeX{} version.
+%   \begin{quote}
+%     p\meta{major}.\meta{minor}.\meta{revision}-u\meta{major}.\meta{minor}^^A
+%     -\meta{epTeX}
+%   \end{quote}
+%   where the |u| part is only present for \upTeX{}.
+% \end{variable}
+%
+% \begin{function}[added = 2021-05-12, EXP]{\sys_timer:}
 %   \begin{syntax}
 %     \cs{sys_timer:}
 %   \end{syntax}
@@ -132,6 +160,14 @@
 %   scaled seconds ($2^{-16}$ seconds).
 % \end{function}
 %
+% \begin{function}[added = 2021-05-12, EXP, pTF]{\sys_if_timer_exist:}
+%   \begin{syntax}
+%     \cs{sys_if_timer_exist_p:}
+%     \cs{sys_if_timer_exist:TF} \Arg{true code} \Arg{false code}
+%   \end{syntax}
+%   Tests whether current engine has timer support.
+% \end{function}
+%
 % \section{Output format}
 %
 % \begin{function}[added = 2015-09-19, EXP, pTF]
@@ -140,6 +176,7 @@
 %     \sys_if_output_pdf:
 %   }
 %   \begin{syntax}
+%     \cs{sys_if_output_dvi_p:}
 %     \cs{sys_if_output_dvi:TF} \Arg{true code} \Arg{false code}
 %   \end{syntax}
 %   Conditionals which give the current output mode the \TeX{} run is
@@ -162,6 +199,7 @@
 %     \sys_if_platform_windows:
 %   }
 %   \begin{syntax}
+%     \cs{sys_if_platform_unix_p:}
 %     \cs{sys_if_platform_unix:TF} \Arg{true code} \Arg{false code}
 %   \end{syntax}
 %   Conditionals which allow platform-specific code to be used. The names
@@ -187,7 +225,7 @@
 %
 % \begin{function}[added = 2017-05-27]{\sys_gset_rand_seed:n}
 %   \begin{syntax}
-%     \cs{sys_gset_rand_seed:n} \Arg{intexpr}
+%     \cs{sys_gset_rand_seed:n} \Arg{int expr}
 %   \end{syntax}
 %   Globally sets the seed for the engine's pseudo-random number
 %   generator to the \meta{integer expression}.  This random seed
@@ -220,8 +258,13 @@
 %   \cs{q_no_value} in the non-branching version.
 %   Note that quote characters (|"|) \emph{cannot} be used inside the
 %   \meta{shell command}.  The \cs{sys_get_shell:nnNTF} conditional
-%   inserts the \texttt{true code} if the shell is available and no quote is
-%   detected, and the \texttt{false code} otherwise.
+%   inserts the \meta{true code} if the shell is available and no quote is
+%   detected, and the \meta{false code} otherwise.
+%
+%   \emph{Note}: It is not possible to tell from \TeX{} if a command is allowed
+%   in restricted shell escape. If restricted escape is enabled, the
+%   \texttt{true} branch is taken: if the command is forbidden at this stage, a
+%   low-level \TeX{} error will arise.
 % \end{function}
 %
 % \begin{variable}[added = 2017-05-27]{\c_sys_shell_escape_int}
@@ -262,17 +305,19 @@
 %   enabled.  This returns false if unrestricted shell escape is
 %   enabled.  Unrestricted shell escape is not considered a superset
 %   of restricted shell escape in this case.  To find whether any
-%   shell escape is enabled use \cs{sys_if_shell:}.
+%   shell escape is enabled use \cs{sys_if_shell:TF}.
 % \end{function}
 %
-% \begin{function}[added = 2017-05-27]{\sys_shell_now:n, \sys_shell_now:x}
+% \begin{function}[added = 2017-05-27]
+%   {\sys_shell_now:n, \sys_shell_now:e}
 %   \begin{syntax}
 %     \cs{sys_shell_now:n} \Arg{tokens}
 %   \end{syntax}
 %   Execute \meta{tokens} through shell escape immediately.
 % \end{function}
 %
-% \begin{function}[added = 2017-05-27]{\sys_shell_shipout:n, \sys_shell_shipout:x}
+% \begin{function}[added = 2017-05-27]
+%   {\sys_shell_shipout:n, \sys_shell_shipout:e}
 %   \begin{syntax}
 %     \cs{sys_shell_shipout:n} \Arg{tokens}
 %   \end{syntax}
@@ -382,7 +427,7 @@
 %   Set up the engine tests on the basis exactly one test should be true.
 %   Mainly a case of looking for the appropriate marker primitive.
 %    \begin{macrocode}
-\str_const:Nx \c_sys_engine_str
+\str_const:Ne \c_sys_engine_str
   {
     \cs_if_exist:NT \tex_luatexversion:D { luatex }
     \cs_if_exist:NT \tex_pdftexversion:D { pdftex }
@@ -419,7 +464,7 @@
 %    \begin{macrocode}
 \group_begin:
   \cs_set_eq:NN \lua_now:e    \tex_directlua:D
-  \str_const:Nx \c_sys_engine_exec_str
+  \str_const:Ne \c_sys_engine_exec_str
     {
       \sys_if_engine_pdftex:T { pdf }
       \sys_if_engine_xetex:T  { xe  }
@@ -437,7 +482,7 @@
       tex
     }
 \group_end:
-\str_const:Nx \c_sys_engine_format_str
+\str_const:Ne \c_sys_engine_format_str
   {
     \cs_if_exist:NTF \fmtname
       {
@@ -472,18 +517,69 @@
 %    \end{macrocode}
 % \end{variable}
 %
-% \subsubsection{Randomness}
-%
-% This candidate function is placed there because
-% \cs{sys_if_rand_exist:TF} is used in \pkg{l3fp-rand}.
-%
-% \begin{macro}[EXP, pTF]{\sys_if_rand_exist:}
-%   Currently, randomness exists under \pdfTeX{}, \LuaTeX{}, \pTeX{} and \upTeX{}.
+% \begin{variable}{\c_sys_engine_version_str}
+%   Various different engines, various different ways to extract the
+%   data!
 %    \begin{macrocode}
-\@@_const:nn { sys_if_rand_exist }
-  { \cs_if_exist_p:N \tex_uniformdeviate:D }
+\str_const:Ne \c_sys_engine_version_str
+  {
+    \str_case:on \c_sys_engine_str
+      {
+        { pdftex }
+          {
+            \int_div_truncate:nn { \tex_pdftexversion:D } { 100 }
+            .
+            \int_mod:nn { \tex_pdftexversion:D } { 100 }
+            .
+            \tex_pdftexrevision:D
+          }
+        { ptex }
+          {
+            \cs_if_exist:NT \tex_ptexversion:D
+              {
+                p
+                \int_use:N  \tex_ptexversion:D
+                .
+                \int_use:N \tex_ptexminorversion:D
+                \tex_ptexrevision:D
+                -
+                \int_use:N \tex_epTeXversion:D
+              }
+          }
+        { luatex }
+          {
+            \int_div_truncate:nn { \tex_luatexversion:D } { 100 }
+            .
+            \int_mod:nn { \tex_luatexversion:D } { 100 }
+            .
+            \tex_luatexrevision:D
+          }
+        { uptex }
+          {
+            \cs_if_exist:NT \tex_ptexversion:D
+              {
+                p
+                \int_use:N  \tex_ptexversion:D
+                .
+                \int_use:N \tex_ptexminorversion:D
+                \tex_ptexrevision:D
+                -
+                u
+                \int_use:N  \tex_uptexversion:D
+                \tex_uptexrevision:D
+                -
+                \int_use:N \tex_epTeXversion:D
+              }
+          }
+        { xetex }
+          {
+            \int_use:N \tex_XeTeXversion:D
+            \tex_XeTeXrevision:D
+          }
+      }
+  }
 %    \end{macrocode}
-% \end{macro}
+% \end{variable}
 %
 % \subsubsection{Platform}
 %
@@ -514,7 +610,7 @@
         \tl_if_blank:nF {#1}
           { \tl_gset:Nn \g_@@_backend_tl {#1} }
         \@@_load_backend_check:N \g_@@_backend_tl
-        \str_const:Nx \c_sys_backend_str { \g_@@_backend_tl }
+        \str_const:Ne \c_sys_backend_str { \g_@@_backend_tl }
         \__kernel_sys_configuration_load:n
           { l3backend- \c_sys_backend_str }
       }
@@ -530,7 +626,7 @@
             { xetex }     { }
           }
           {
-            \msg_error:nnxx { sys } { wrong-backend }
+            \msg_error:nnee { sys } { wrong-backend }
               #1 { xetex }
             \tl_gset:Nn #1 { xetex }
           }
@@ -549,7 +645,7 @@
                   { \str_if_eq_p:Vn #1 { luatex } }
                   { \str_if_eq_p:Vn #1 { pdftex } }
                   {
-                    \msg_error:nnxx { sys } { wrong-backend }
+                    \msg_error:nnee { sys } { wrong-backend }
                       #1 { \sys_if_engine_luatex:TF { luatex } { pdftex } }
                     \sys_if_engine_luatex:TF
                       { \tl_gset:Nn #1 { luatex } }
@@ -565,7 +661,7 @@
                 { dvisvgm }  { }
               }
               {
-                \msg_error:nnxx { sys } { wrong-backend }
+                \msg_error:nnee { sys } { wrong-backend }
                   #1 { dvips }
                 \tl_gset:Nn #1 { dvips }
               }
@@ -617,7 +713,7 @@
 % \begin{variable}{\c_@@_marker_tl}
 %   The same idea as the marker for rescanning token lists.
 %    \begin{macrocode}
-\tl_const:Nx \c_@@_marker_tl { : \token_to_str:N : }
+\tl_const:Ne \c_@@_marker_tl { : \token_to_str:N : }
 %    \end{macrocode}
 % \end{variable}
 %
@@ -641,7 +737,7 @@
   {
     \tl_if_in:nnTF {#1} { " }
       {
-        \msg_error:nnx
+        \msg_error:nne
           { kernel } { quote-in-shell } {#1}
         \prg_return_false:
       }
@@ -679,7 +775,7 @@
 %    \end{macrocode}
 % \end{variable}
 %
-% \begin{macro}{\sys_shell_now:n}
+% \begin{macro}{\sys_shell_now:n, \sys_shell_now:e, \sys_shell_now:x}
 % \begin{macro}{\@@_shell_now:e}
 %   Execute commands through shell escape immediately.
 %
@@ -717,13 +813,13 @@ do
     \cs_new_protected:Npn \sys_shell_now:n #1
       { \iow_now:Nn \c_@@_shell_stream_int {#1} }
   }
-\cs_generate_variant:Nn \sys_shell_now:n { x }
+\cs_generate_variant:Nn \sys_shell_now:n { e, x }
 %</tex>
 %    \end{macrocode}
 % \end{macro}
 % \end{macro}
 %
-% \begin{macro}{\sys_shell_shipout:n}
+% \begin{macro}{\sys_shell_shipout:n, \sys_shell_shipout:e, \sys_shell_shipout:x}
 % \begin{macro}{\@@_shell_shipout:e}
 %   Execute commands through shell escape at shipout.
 %
@@ -763,18 +859,18 @@ end
     \cs_new_protected:Npn \sys_shell_shipout:n #1
       { \iow_shipout:Nn \c_@@_shell_stream_int {#1} }
   }
-\cs_generate_variant:Nn \sys_shell_shipout:n { x }
+\cs_generate_variant:Nn \sys_shell_shipout:n { e , x }
 %    \end{macrocode}
 % \end{macro}
 % \end{macro}
 %
 % \subsection{Dynamic (every job) code}
 %
-% \begin{macro}{\sys_everyjob:}
+% \begin{macro}{\__kernel_sys_everyjob:}
 % \begin{macro}{\@@_everyjob:n}
 % \begin{variable}{\g_@@_everyjob_tl}
 %    \begin{macrocode}
-\cs_new_protected:Npn \sys_everyjob:
+\cs_new_protected:Npn \__kernel_sys_everyjob:
   {
     \tl_use:N \g_@@_everyjob_tl
     \tl_gclear:N \g_@@_everyjob_tl
@@ -853,26 +949,31 @@ end
 %    \end{macrocode}
 % \end{variable}
 %
-% \subsubsection{Random numbers}
-%
-% \begin{macro}[EXP]{\sys_rand_seed:}
-%   Unpack the primitive.  When random numbers are not available, we
-%   return zero after an error (and incidentally make sure the number of
-%   expansions needed is the same as with random numbers available).
+% \begin{variable}{\c_sys_timestamp_str}
+%   A simple expansion: Lua\TeX{} chokes if we use \tn{pdffeedback} here,
+%   hence the direct use of Lua. Notice that the function there is in the
+%   \texttt{pdf} library but isn actually tied to PDF.
 %    \begin{macrocode}
 \@@_everyjob:n
   {
-    \sys_if_rand_exist:TF
-      { \cs_new:Npn \sys_rand_seed: { \tex_the:D \tex_randomseed:D } }
+    \str_const:Ne \c_sys_timestamp_str
       {
-        \cs_new:Npn \sys_rand_seed:
-          {
-            \int_value:w
-            \msg_expandable_error:nnn { kernel } { fp-no-random }
-              { \sys_rand_seed: }
-            \c_zero_int
-          }
+        \cs_if_exist:NTF \tex_directlua:D
+          { \tex_directlua:D { tex.print(pdf.getcreationdate()) } }
+          { \tex_creationdate:D }
       }
+  }
+%    \end{macrocode}
+% \end{variable}
+%
+% \subsubsection{Random numbers}
+%
+% \begin{macro}[EXP]{\sys_rand_seed:}
+%   Unpack the primitive.
+%    \begin{macrocode}
+\@@_everyjob:n
+  {
+    \cs_new:Npn \sys_rand_seed: { \tex_the:D \tex_randomseed:D }
   }
 %    \end{macrocode}
 % \end{macro}
@@ -882,18 +983,8 @@ end
 %    \begin{macrocode}
 \@@_everyjob:n
   {
-    \sys_if_rand_exist:TF
-      {
-        \cs_new_protected:Npn \sys_gset_rand_seed:n #1
-          { \tex_setrandomseed:D \int_eval:n {#1} \exp_stop_f: }
-      }
-      {
-        \cs_new_protected:Npn \sys_gset_rand_seed:n #1
-          {
-            \msg_error:nnn { kernel } { fp-no-random }
-              { \sys_gset_rand_seed:n {#1} }
-          }
-      }
+    \cs_new_protected:Npn \sys_gset_rand_seed:n #1
+      { \tex_setrandomseed:D \int_eval:n {#1} \exp_stop_f: }
   }
 %    \end{macrocode}
 % \end{macro}
@@ -1002,7 +1093,7 @@ end
 %    \begin{macrocode}
 \cs_new_protected:Npn \sys_finalise:
   {
-    \sys_everyjob:
+    \__kernel_sys_everyjob:
     \tl_use:N \g_@@_finalise_tl
     \tl_gclear:N \g_@@_finalise_tl
   }
@@ -1026,7 +1117,7 @@ end
 %    \begin{macrocode}
 \@@_finalise:n
   {
-    \str_const:Nx \c_sys_output_str
+    \str_const:Ne \c_sys_output_str
       {
         \int_compare:nNnTF
           { \cs_if_exist_use:NF \tex_pdfoutput:D { 0 } } > { 0 }
@@ -1056,14 +1147,14 @@ end
         \sys_if_engine_xetex:TF
           { xetex }
           {
-             \sys_if_output_pdf:TF
+            \sys_if_output_pdf:TF
               {
                 \sys_if_engine_pdftex:TF
                   { pdftex }
                   { luatex }
               }
               { dvips }
-           }
+          }
       }
   }
 %    \end{macrocode}

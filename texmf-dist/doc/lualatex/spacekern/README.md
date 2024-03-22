@@ -5,7 +5,7 @@ kerning against space are correctly applied.
 Second, interword kerning can be applied.
 The package requires LuaLaTeX.
 
-Copyright (c) 2022 Thomas Kelkel kelkel@emaileon.de
+Copyright (c) 2022-2023 Thomas Kelkel kelkel@emaileon.de
 
 The files of this package may be distributed and/or
 modified under the conditions of the LaTeX Project

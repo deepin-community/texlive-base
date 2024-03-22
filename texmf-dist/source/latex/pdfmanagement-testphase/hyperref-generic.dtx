@@ -2,7 +2,7 @@
 %
 %% File: hyperref-generic.dtx
 %
-% Copyright (C) 2021-2022 The LaTeX Project
+% Copyright (C) 2021-2023 The LaTeX Project
 %
 % It may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -82,7 +82,7 @@
 %    }^^A
 % }
 %
-% \date{Version 0.95t, released 2022-11-03}
+% \date{Version 0.96d, released 2023-12-09}
 %
 % \maketitle
 % \begin{documentation}
@@ -97,10 +97,9 @@
 % combination should work too.
 %
 % The driver \emph{requires} the new PDF management code, so documents wanting to use it
-% should start like this
+% should start like this (this requires \LaTeX-2022-06-01  or newer):
 % \begin{verbatim}
-% \RequirePackage{pdfmanagement-testphase} %loads the code
-% \DocumentMetadata % activates it
+% \DocumentMetadata %loads the PDF management and activates it
 %   {
 %    %% options
 %    %% e.g. pdf version, backend:
@@ -109,18 +108,6 @@
 %   }
 %  \end{verbatim}
 %
-%  Starting with \LaTeX-2022-06-01 (or a suitable latex-dev) loading the testphase
-%  package is no longer required and this can be simplified to
-% \begin{verbatim}
-% \DocumentMetadata
-%   {
-%    %% options
-%    %% e.g. pdf version, backend:
-%    % pdfversion=1.7,
-%    % backend = dvipdfmx
-%   }
-%  \end{verbatim}
-
 %  The new driver tries to be compatible with the standard \pkg{hyperref} drivers
 %  but there are nevertheless differences. Some of them due to the still experimental
 %  status of the driver, others are design decisions: one part of the project is
@@ -628,7 +615,15 @@
 %  the link type, so the link is for example no longer colored. It also removes the
 %  implicit grouping of the content.
 %
-%
+%  \DescribeHypkey{nested-links}%
+%  
+%  Links are sometimes nested. E.g. if a section heading contains a reference
+%  it can lead to nested links in the table of contents or if |\nameref| is used. 
+%  That is not forbidden and normally work as expected: If the link area overlap 
+%  normally the inner link is \enquote{on top} and chosen at a click. 
+%  But it is not always actually wanted, so with the |nested-links| (a boolean key)
+%  it is possible to disable such nested links. 
+%  
 %  \section{Draftmode}
 %  pdftex and other engines knows a
 %  draftmode which can be set with |\pdfdraftmode=1|
@@ -810,7 +805,7 @@
 %
 %\section{Assorted key descriptions}\label{sec:keydesc}
 %The following gives a few details to some keys that are perhaps not
-%completly described in the manual, or are a bit different in this driver.
+%completely described in the manual, or are a bit different in this driver.
 %The list is alphabetic.
 %
 % \DescribeHypkey{bookmarkstype} This key takes as value the extension of a list
@@ -925,9 +920,9 @@
 %^^A %% \l_@@_dest_box
 %^^A %%
 %^^A %% References (ref)
-%^^A %% *\@@_ref_label:nn
-%^^A %% *\@@_ref_if_exist:nn
-%^^A %% *\@@_ref_check:nn
+%^^A %% *\@@_property_record:nn
+%^^A %% *\property_if_recorded:nn
+%^^A %% *\property_ref_undefined_warn:nn,
 %^^A %% % helps to display key list messages
 %^^A %% \@@_clist_display:n
 %^^A %%
@@ -969,10 +964,14 @@
 %<@@=hyp>
 %    \end{macrocode}
 %    \begin{macrocode}
-\ProvidesFile{hgeneric-testphase.def}[2022-11-03 v0.95t %
+\ProvidesFile{hgeneric-testphase.def}[2023-12-09 v0.96d %
   generic Hyperref driver for the LaTeX PDF management testphase bundle]
 
 \RequirePackage{etoolbox} %why?
+%    \end{macrocode}
+% Temporary command definition, can be remove when hyperref is update too.
+%    \begin{macrocode}
+\long\def\Hy@ReturnAfterFi#1\fi{\fi#1}
 %    \end{macrocode}
 %    \begin{macrocode}
 \ExplSyntaxOn
@@ -1170,6 +1169,7 @@
 %    \begin{macrocode}
 \cs_generate_variant:Nn\pdf_destination:nn {nf}
 \cs_generate_variant:Nn\pdf_object_ref:n {e}
+\cs_generate_variant:Nn\pdf_pageobject_ref:n {e}
 %    \end{macrocode}
 % \section{Overwriting/providing commands from hyperref}
 %  \pkg{hyperref} checks driver version, we need to suppress this during the development
@@ -1225,19 +1225,19 @@
 %    \begin{macrocode}
 %  TODO should go at some time ...
 % \kv@set@family@handler{Hyp}
-%  { \msg_warning:nnx {hyp}{unknown-key-to-Hyp}{#1} }
+%  { \msg_warning:nne {hyp}{unknown-key-to-Hyp}{#1} }
 \cs_set_protected:Npn \hypersetup #1
   {
      %\kvsetkeys{Hyp} {#1}
-     \keys_set:nn { hyp / setup }{ #1 }
+     \keys_set:nn { hyp }{ #1 }
   }
 % TODO for now unknown keys should only give warnings.
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
   {
     unknown .code:n =
     {
-      \msg_warning:nnxxx { hyp } { unknown-key }
-      { hyp~/~setup }{ \l_keys_key_str } { #1 }
+      \msg_warning:nneee { hyp } { unknown-key }
+      { hyp }{ \l_keys_key_str } { #1 }
     }
   }
 %    \end{macrocode}
@@ -1246,7 +1246,7 @@
 % chapters and sections and with \cs{phantomsection}. The following key allows
 % to force a specific name for the destination so that it can be used by bookmarks.
 %    \begin{macrocode}
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
   {
     next-anchor .code:n =
     {
@@ -1282,7 +1282,7 @@
     ,destination .tl_set:N = \l_@@_href_pdf_destination_tl
     ,pdfremotestartview .code:n =
       {
-        \keys_set:nn { hyp / setup }
+        \keys_set:nn { hyp }
           { pdfremotestartview = #1 }
       }
     ,page .code:n =
@@ -1301,18 +1301,18 @@
          {
            \pdfdict_put:nnn{l_hyp/annot/A}{Next}{#1}
            \tl_set:Nn \Hy@href@nextactionraw {/Next~#1}
-           \keys_set:nn {hyp / setup }{ pdfnewwindow = true}
+           \keys_set:nn {hyp }{ pdfnewwindow = true}
          }
      }
     ,afrelationship .code:n =
       {
-        \pdfdict_put:nnx
+        \pdfdict_put:nne
           { l_pdffile/Filespec}{AFRelationship}{ \pdf_name_from_unicode_e:n {#1}}
       }
 
   }
 
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
   {
     ,href / urlencode .bool_set:N =  \l_@@_href_url_encode_bool
     ,href / urlencode .default:n  = {true}
@@ -1466,7 +1466,7 @@
     %\tl_set:cn {@#1}{#2}
     \AddToDocumentProperties[hyperref]{#1}{#2}
   }
-\cs_generate_variant:Nn \@@_store_metadata:nn {xn,nx,xx}
+\cs_generate_variant:Nn \@@_store_metadata:nn {en,ne,ee}
 %    \end{macrocode}
 % \subsection{citecolor}
 % cite is a link context. So we define a hook, and the keys in terms of this hook.
@@ -1475,7 +1475,7 @@
 \hook_new:n{hyp/link/cite}
 %\color_set:nnn {hyp/color/cite}{HTML}{2E7E2A}
 %\color_set:nn  {hyp/color/citeborder}{hyp/color/cite!60!white}
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
   {
     ,citecolor .code:n = {\@@_color_set:ne {hyp/color/cite}{#1}\@@_citecolor_hook_init:}
     ,citebordercolor
@@ -1485,7 +1485,7 @@
  {
    \hook_gput_code:nnn { hyp/link/cite }{hyp/cite}
      {
-       \keys_set:nn { hyp / setup }
+       \keys_set:nn { hyp }
          {
            linkcolor      = hyp/color/cite
          }
@@ -1496,7 +1496,7 @@
  {
    \hook_gput_code:nnn { hyp/link/cite }{hyp/citeborder}
      {
-       \keys_set:nn { hyp / setup }
+       \keys_set:nn { hyp }
          {
            linkbordercolor      = hyp/color/citeborder
          }
@@ -1547,57 +1547,28 @@
 %    \end{macrocode}
 %
 % \section{Reference and label commands}
-% The code uses the l3ref-tmp package which
-% must have been loaded as pdfmanagement is a requirement.
-% The commands use after the module prefix always |_ref|.
-%
-% At first a label command which add the space commands from LaTeX:
+% This uses the in-built property module.
+% 
 % \begin{macro}
 %  {
-%    \@@_ref_label:nn,
-%    \@@_ref_if_exist:nn,
-%    \@@_ref_check:nn,
-%    \@@_ref_value:nn
+%    \@@_property_record:nn,
 %  }
 %    \begin{macrocode}
 %
-\cs_new_protected:Npn \@@_ref_label:nn #1 #2 %label/attributes
-  {
-    \@bsphack
-      \ref_label:nn{#1}{#2}
-    \@esphack
-  }
-\cs_generate_variant:Nn \@@_ref_label:nn {en}
 %    \end{macrocode}
-% This provides a condition which tests if a label/attribute combination is known
-%   \begin{macrocode}
-\prg_new_eq_conditional:NNn \@@_ref_if_exist:nn \ref_if_exist:nn { p , T , F,  TF }
-\prg_generate_conditional_variant:Nnn \@@_ref_if_exist:nn  {en}  { p , T , F, TF }
-%    \end{macrocode}
-% This checks if the label/attribute is known and issues a warning if not.
-% It then also triggers the standard rerun message.
+%  A label command which adds the space commands from LaTeX:
 %    \begin{macrocode}
-\cs_new_protected:Npn \@@_ref_check:nn #1 #2 %label/attribute
-  {
-    \@@_ref_if_exist:nnF {#1}{#2}
-      {
-        \protect\G@refundefinedtrue
-        \@latex@warning
-          {
-            Reference~'\tl_to_str:n {#1}'~with~attribute~'\tl_to_str:n {#2}'~
-            on~page~\thepage~\space undefined
-          }
-      }
-  }
-\cs_generate_variant:Nn \@@_ref_check:nn {en}
+\cs_new_protected:Npn \@@_property_record:nn #1 #2 %label/attributes
+ {
+   \@bsphack
+     \property_record:nn{#1}{#2}
+   \@esphack
+ }
 %    \end{macrocode}
-% This retrieves a value, it is a simple wrapper around the \cs{ref_value:nn}
+% we generate a few variants. We use ee-variants as they already exist
+% in the module and once this is there it can go here.
 %    \begin{macrocode}
-\cs_new:Npn \@@_ref_value:nn #1 #2
-  {
-    \ref_value:nn{#1}{#2}
-  }
-\cs_generate_variant:Nn \@@_ref_value:nn {en}
+\cs_generate_variant:Nn \@@_property_record:nn {ee}  
 %    \end{macrocode}
 % \end{macro}
 % \section{Variables}
@@ -1862,7 +1833,7 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_text_purify:nN #1 #2 %#1 input, #2  str command
   {
-     \str_set:Nx #2 {\text_purify:n { #1 } }
+     \str_set:Ne #2 {\text_purify:n { #1 } }
   }
 %    \end{macrocode}
 % \end{macro}
@@ -1920,7 +1891,7 @@
     \group_end:
     \str_set_eq:NN #3 \g_@@_text_tmpa_str
  }
-\cs_generate_variant:Nn \@@_text_pdfstring:nnN {xnN,onN,xoN,ooN,noN}
+\cs_generate_variant:Nn \@@_text_pdfstring:nnN {enN,onN,eoN,ooN,noN}
 %    \end{macrocode}
 % \end{macro}
 % !!! temporary until all instances are gone
@@ -1931,7 +1902,7 @@
 %^^A  \char_set_catcode_active:N \~
 %    \begin{macrocode}
 \cs_new_protected:Npn\Hy@pstringdef #1 #2
-  { \@@_text_pdfstring:xnN {#2} {utf8/string-raw}#1 }
+  { \@@_text_pdfstring:enN {#2} {utf8/string-raw}#1 }
 %    \end{macrocode}
 %
 % This is a special version for info keys:
@@ -1993,7 +1964,7 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn\@@_PageLabels_gpush:
   {
-    \pdfmanagement_add:nnx {Catalog} {PageLabels}{<</Nums[\HyPL@Labels]>>}
+    \pdfmanagement_add:nne {Catalog} {PageLabels}{<</Nums[\HyPL@Labels]>>}
   }
 
 \def\Hy@PutCatalog #1 {}
@@ -2003,13 +1974,13 @@
   {
     \cs_set_protected:Npn \HyPL@StorePageLabel #1
       {
-        \tl_gput_right:Nx \HyPL@Labels { \the\Hy@abspage<<#1>> }
+        \tl_gput_right:Ne \HyPL@Labels { \the\Hy@abspage<<#1>> }
         \@@_PageLabels_gpush:
       }
   }
 %    \end{macrocode}
 % \end{macro}
-% \section {Core Hyperref Commands}
+% \section{Core Hyperref Commands}
 % Every \pkg{hyperref} has to define eight core command:
 % \begin{verbatim}
 % \hyper@anchor
@@ -2024,7 +1995,46 @@
 %
 % This driver defines for consistency also
 % |\hyper@linklaunch| for Launch and |\hyper@linknamed| for Named.
+% 
+% \subsection{Link level}
+% Links can be nested. Inner links need perhaps special handling, e.g.
+% to deactivate the link, or to change the border, or in the case of 
+% tagging to add some additional structure to handle the parent-child rules.
+% We therefore add a global counter which is increased at the begin of 
+% link and decreased at the end. 
+% \begin{macro}{g_@@_linknestlevel_int}
+%    \begin{macrocode}
+\int_new:N \g_@@_linknestlevel_int
+%    \end{macrocode}
+% \end{macro}
+% 
+%    \begin{macrocode}
+\prg_new_conditional:Npnn \@@_if_outer_link: {TF}
+ {
+   \int_compare:nNnTF { \g_@@_linknestlevel_int } > {1}
+     { \prg_return_false:  }
+     { \prg_return_true: }
+ }
+%    \end{macrocode}
+
+%    \begin{macrocode}
+\cs_new:Npn \@@_check_link_nesting:TF #1 #2
+ {
+   \use_i:nn {#1}{#2}
+ }
+%    \end{macrocode}
 %
+%    \begin{macrocode}
+\keys_define:nn { hyp }
+  { 
+    nested-links .choice:,
+    nested-links / true .code:n = 
+     { \cs_set_eq:NN \@@_check_link_nesting:TF \use_i:nn },
+    nested-links / false .code:n = 
+     { \cs_set_eq:NN \@@_check_link_nesting:TF \@@_if_outer_link:TF },  
+    nested-links .default:n = {true}
+  }
+%    \end{macrocode}
 % \subsection{ Anchors / destinations}
 % The first three commands are needed for \enquote{anchors}. At first
 % the internal commands to create a destination. It uses
@@ -2046,7 +2056,7 @@
     \mode_if_horizontal:T { \@savsf\spacefactor }
     \Hy@SaveLastskip      %defined in hyperref
     \Hy@VerboseAnchor{#1} %defined in hyperref, for debugging
-    \@@_text_pdfstring:xoN
+    \@@_text_pdfstring:eoN
       { \HyperDestNameFilter{#1}  }
       { \l_@@_text_enc_dest_tl }
       \l_@@_tmpa_tl
@@ -2128,14 +2138,14 @@
     \protected@edef \l_@@_dest_name_tmpa_tl { #1 }
     \tl_if_empty:NTF \l_@@_dest_name_tmpa_tl
       {
-        \msg_warning:nnx
+        \msg_warning:nne
           { hyp }
           { empty-destination-name }
           { \c_@@_dest_undefined_tl }
         \tl_set_eq:NN \l_@@_dest_name_tmpa_tl \c_@@_dest_undefined_tl
       }
       {
-        \@@_text_pdfstring:xoN
+        \@@_text_pdfstring:eoN
           { \exp_args:No \HyperDestNameFilter { \l_@@_dest_name_tmpa_tl } }
           { \l_@@_text_enc_dest_tl }
           \l_@@_dest_name_tmpa_tl
@@ -2194,27 +2204,41 @@
   {
     \bool_if:NTF \l_@@_annot_GoTo_bool
       {
-        \Hy@VerboseLinkStart{#1}{#2}
-        \group_begin:
-        \tl_set:Nn \l_hyp_current_dest_name_tl {#2}
-        \hook_use:n {hyp/link/#1}
-        \@@_link_goto_begin:nw {#2}#3\Hy@xspace@end
-        \@@_link_goto_end:
-        \group_end:
-        \Hy@VerboseLinkStop
+        \int_gincr:N\g_@@_linknestlevel_int
+        \@@_check_link_nesting:TF
+          {
+            \Hy@VerboseLinkStart{#1}{#2}
+            \group_begin:
+            \tl_set:Nn \l_hyp_current_dest_name_tl {#2}
+            \hook_use:n {hyp/link/#1}
+            \@@_link_goto_begin:nw {#2}#3\Hy@xspace@end
+            \@@_link_goto_end:
+            \group_end:
+            \Hy@VerboseLinkStop
+          } 
+          {
+            \group_begin: #3\group_end:
+          }
+        \int_gdecr:N\g_@@_linknestlevel_int
       }
       {{\let\protect\relax#3}}
   }
-
 \cs_new_protected:Npn \hyper@linkstart #1 #2 %#1 context, #2=destination name
   {
     \bool_if:NT \l_@@_annot_GoTo_bool
       {
-        \Hy@VerboseLinkStart{#1}{#2}% only for debug
-        \group_begin:
-        \tl_set:Nn \l_hyp_current_dest_name_tl {#2}
-        \hook_use:n {hyp/link/#1}
-        \@@_link_goto_begin:nw {#2}
+        \int_gincr:N\g_@@_linknestlevel_int
+        \@@_check_link_nesting:TF
+          {
+            \Hy@VerboseLinkStart{#1}{#2}% only for debug
+            \group_begin:
+            \tl_set:Nn \l_hyp_current_dest_name_tl {#2}
+            \hook_use:n {hyp/link/#1}
+            \@@_link_goto_begin:nw {#2}
+          } 
+          {
+            \group_begin:          
+          } 
       }
   }
 
@@ -2222,9 +2246,16 @@
   {
     \bool_if:NT \l_@@_annot_GoTo_bool
       {
-        \@@_link_goto_end:
-        \group_end:
-        \Hy@VerboseLinkStop
+        \@@_check_link_nesting:TF
+          {
+            \@@_link_goto_end:
+            \group_end:
+            \Hy@VerboseLinkStop
+          }
+          {
+            \group_end:
+          }  
+        \int_gdecr:N\g_@@_linknestlevel_int
       }
   }
 %    \end{macrocode}
@@ -2240,31 +2271,39 @@
   {
     \bool_if:NTF \l_@@_annot_URI_bool
       {
-        \group_begin:
-         \@@_text_pdfstring:xoN
-           { #2}
-           { \l_@@_text_enc_uri_print_tl }
-           \l_@@_uri_tmpa_tl
-         \pdfdict_put:nno{l_hyp/annot/A/URI}{URI}{\l_@@_uri_tmpa_tl}
-         \bool_if:NT \l_@@_href_url_ismap_bool
+        \int_gincr:N\g_@@_linknestlevel_int
+        \@@_check_link_nesting:TF
+          {
+           \group_begin:
+            \@@_text_pdfstring:eoN
+              { #2}
+              { \l_@@_text_enc_uri_print_tl }
+              \l_@@_uri_tmpa_tl
+            \pdfdict_put:nno{l_hyp/annot/A/URI}{URI}{\l_@@_uri_tmpa_tl}
+            \bool_if:NT \l_@@_href_url_ismap_bool
+              {
+               \pdfdict_put:nnn{l_hyp/annot/A/URI}{IsMap}{true}
+              }
+            \cs_set_eq:NN \# \c_hash_str
+            \cs_set_eq:NN \% \c_percent_str
+            \Hy@safe@activestrue
+            \mode_leave_vertical:
+            \pdfannot_dict_put:nne {link/URI}{A}{<<\pdfdict_use:n {l_hyp/annot/A/URI}>>}
+            \pdfannot_link:nen { URI }
+              {
+              }
+              {
+                \let\protect\relax
+                #1
+                \Hy@xspace@end
+                \Hy@VerboseLinkStop %where is the start??
+              }
+            \group_end:
+           } 
            {
-            \pdfdict_put:nnn{l_hyp/annot/A/URI}{IsMap}{true}
+             \group_begin: #1 \group_end:
            }
-         \cs_set_eq:NN \# \c_hash_str
-         \cs_set_eq:NN \% \c_percent_str
-         \Hy@safe@activestrue
-         \mode_leave_vertical:
-         \pdfannot_dict_put:nnx {link/URI}{A}{<<\pdfdict_use:n {l_hyp/annot/A/URI}>>}
-         \pdfannot_link:nxn { URI }
-           {
-           }
-           {
-             \let\protect\relax
-             #1
-             \Hy@xspace@end
-             \Hy@VerboseLinkStop %where is the start??
-           }
-         \group_end:
+         \int_gdecr:N\g_@@_linknestlevel_int
       }
       {{\let\protect\relax#1}}
   }
@@ -2276,63 +2315,70 @@
 \pdfdict_put:nnn {l_hyp/annot/A/GoToR}{Type}{/Action}
 \pdfdict_put:nnn {l_hyp/annot/A/GoToR}{S}{/GoToR}
 
-
+\cs_generate_variant:Nn \pdffile_embed_file:nnn {noe}
 \cs_new_protected:Npn \hyper@linkfile #1 #2 #3 % link text, filename, destname
   {
    \bool_if:NTF \l_@@_annot_GoToR_bool
      {
-        \group_begin:
-        \tl_set:Nx \l_@@_filename_tmpa_tl { \text_expand:n { #2 } }
-        \exp_args:Nx
-          \pdf_object_if_exist:nF { @@_file_\tl_to_str:N \l_@@_filename_tmpa_tl }
-            {
-              \pdfdict_put:nnx { l_pdffile/Filespec}{Subtype}{\pdf_name_from_unicode_e:n {application/pdf}}
-              \exp_args:Nnox
-              \pdffile_embed_file:nnn
-                {}
-                {\l_@@_filename_tmpa_tl }
-                {@@_file_\tl_to_str:N \l_@@_filename_tmpa_tl }
-            }
-        \pdfdict_put:nnx
-           {l_hyp/annot/A/GoToR}
-           {F}
-           {\pdf_object_ref:e {@@_file_\tl_to_str:N \l_@@_filename_tmpa_tl}}
-        \@@_text_pdfstring:nnN
-          { #3 }
-          { \l_@@_text_enc_dest_print_tl }
-          \l_@@_dest_name_tmpa_tl
-        \tl_if_blank:eTF {#3}
+        \int_gincr:N\g_@@_linknestlevel_int
+        \@@_check_link_nesting:TF
           {
-            \pdfdict_put:nnx {l_hyp/annot/A/GoToR}{D}
+            \group_begin:
+            \tl_set:Ne \l_@@_filename_tmpa_tl { \text_expand:n { #2 } }
+            \exp_args:Ne
+              \pdf_object_if_exist:nF { @@_file_\tl_to_str:N \l_@@_filename_tmpa_tl }
+                {
+                  \pdfdict_put:nne { l_pdffile/Filespec}{Subtype}{\pdf_name_from_unicode_e:n {application/pdf}}
+                  \pdffile_embed_file:noe
+                    {}
+                    {\l_@@_filename_tmpa_tl }
+                    {@@_file_\tl_to_str:N \l_@@_filename_tmpa_tl }
+                }
+            \pdfdict_put:nne
+               {l_hyp/annot/A/GoToR}
+               {F}
+               {\pdf_object_ref:e {@@_file_\tl_to_str:N \l_@@_filename_tmpa_tl}}
+            \@@_text_pdfstring:nnN
+              { #3 }
+              { \l_@@_text_enc_dest_print_tl }
+              \l_@@_dest_name_tmpa_tl
+            \tl_if_blank:eTF {#3}
               {
-               [
-                 \int_eval:n
-                  { \int_max:nn {0}{ 0\l_@@_href_pdf_page_tl - 1 }}
-                 /\l_@@_dest_pdfremotestartview_tl
-               ]
+                \pdfdict_put:nne {l_hyp/annot/A/GoToR}{D}
+                  {
+                   [
+                     \int_eval:n
+                      { \int_max:nn {0}{ 0\l_@@_href_pdf_page_tl - 1 }}
+                     /\l_@@_dest_pdfremotestartview_tl
+                   ]
+                  }
               }
-          }
-          {
-            \pdfdict_put:nno {l_hyp/annot/A/GoToR}{D}{\l_@@_dest_name_tmpa_tl}
-          }
-        \mode_leave_vertical:
+              {
+                \pdfdict_put:nno {l_hyp/annot/A/GoToR}{D}{\l_@@_dest_name_tmpa_tl}
+              }
+            \mode_leave_vertical:
 %    \end{macrocode}
 % We use an extra object here, as ghostscript doesn't like the
 % object reference in the dict
 % \url{https://chat.stackexchange.com/transcript/message/57361080#57361080}
 %    \begin{macrocode}
-        \pdf_object_unnamed_write:nx{dict}{\pdfdict_use:n {l_hyp/annot/A/GoToR}}
-        \pdfannot_dict_put:nnx {link/GoToR}{A}{\pdf_object_ref_last:}
-        \pdfannot_link:nxn %expansion??
-          { GoToR }
+            \pdf_object_unnamed_write:ne{dict}{\pdfdict_use:n {l_hyp/annot/A/GoToR}}
+            \pdfannot_dict_put:nne {link/GoToR}{A}{\pdf_object_ref_last:}
+            \pdfannot_link:nnn %expansion??
+              { GoToR }
+              {
+              }
+              {
+               \let\protect\relax
+                #1\Hy@xspace@end
+                \Hy@VerboseLinkStop %where is the start??
+              }
+            \group_end:
+          }  
           {
+            \group_begin: #1 \group_end:
           }
-          {
-           \let\protect\relax
-            #1\Hy@xspace@end
-            \Hy@VerboseLinkStop %where is the start??
-          }
-        \group_end:
+        \int_gdecr:N\g_@@_linknestlevel_int
      }
      {{\let\protect\relax#1}}
   }
@@ -2350,45 +2396,53 @@
   {
    \bool_if:NTF \l_@@_annot_Launch_bool
      {
-        \group_begin:
-          \@@_text_pdfstring:nnN
-            { #1 }
-            { \l_@@_text_enc_file_print_tl }
-            \l_@@_filename_tmpa_tl
-          \pdfdict_put:nno {l_hyp/annot/A/Launch}{F}{\l_@@_filename_tmpa_tl}
-          \@@_text_pdfstring:noN
-            { #3 }
-            { \l_@@_text_enc_para_print_tl }
-            \l_@@_para_tmpa_tl
-          \bool_if:nTF
-            {
-              \str_if_eq_p:Vn \l_@@_para_tmpa_tl {()}
-              ||
-              \pdf_version_compare_p:Nn > {1.9}
-            }
-            {
-              \pdfdict_remove:nn {l_hyp/annot/A/Launch}{Win}
-            }
-            {
-              \pdfdict_put:nnx {l_hyp/annot/A/Launch}{Win}
-                {<</P \l_@@_para_tmpa_tl /F \l_@@_filename_tmpa_tl >>}
-            }
-          \mode_leave_vertical:
-          \pdfannot_dict_put:nnx {link/Launch}{A}{<<\pdfdict_use:n {l_hyp/annot/A/Launch}>>}
-          \pdfannot_link:nxn
-            { Launch }
-            {
-  %            /A
-%              <<
-%                \pdfdict_use:n {l_hyp/annot/A/Launch}
-%              >>
-            }
-            {
-              \let\protect\relax
-              #2\Hy@xspace@end
-              \Hy@VerboseLinkStop %where is the start??
-            }
-        \group_end:
+        \int_gincr:N\g_@@_linknestlevel_int
+        \@@_check_link_nesting:TF
+          {
+           \group_begin:
+             \@@_text_pdfstring:nnN
+               { #1 }
+               { \l_@@_text_enc_file_print_tl }
+               \l_@@_filename_tmpa_tl
+             \pdfdict_put:nno {l_hyp/annot/A/Launch}{F}{\l_@@_filename_tmpa_tl}
+             \@@_text_pdfstring:noN
+               { #3 }
+               { \l_@@_text_enc_para_print_tl }
+               \l_@@_para_tmpa_tl
+             \bool_if:nTF
+               {
+                 \str_if_eq_p:Vn \l_@@_para_tmpa_tl {()}
+                 ||
+                 \pdf_version_compare_p:Nn > {1.9}
+               }
+               {
+                 \pdfdict_remove:nn {l_hyp/annot/A/Launch}{Win}
+               }
+               {
+                 \pdfdict_put:nne 
+                   {l_hyp/annot/A/Launch}
+                   {Win}
+                   {<</P \l_@@_para_tmpa_tl /F \l_@@_filename_tmpa_tl >>}
+               }
+             \mode_leave_vertical:
+             \pdfannot_dict_put:nne {link/Launch}{A}{<<\pdfdict_use:n {l_hyp/annot/A/Launch}>>}
+             \pdfannot_link:nen
+               { Launch }
+               {
+     %            /A
+   %              <<
+   %                \pdfdict_use:n {l_hyp/annot/A/Launch}
+   %              >>
+               }
+               {
+                 \let\protect\relax
+                 #2\Hy@xspace@end
+                 \Hy@VerboseLinkStop %where is the start??
+               }
+           \group_end:
+          }
+          { \group_begin: #2 \group_end: }
+        \int_gdecr:N\g_@@_linknestlevel_int
       }
       {{\let\protect\relax#2}}
   }
@@ -2396,9 +2450,9 @@
 % The actually command used by \pkg{hyperref} is \cs{@hyper@launch} which uses a delimited
 % argument, because of the color the definition is a bit convoluted.
 %    \begin{macrocode}
-\use:x
+\use:e
   { % filename, anchor text, linkname
-    \cs_set_protected:Npn \exp_not:N \@hyper@launch run \c_colon_str ##1 \exp_not:N \\ ##2 ##3
+    \cs_set_protected:Npn \exp_not:N \@hyper@launch run \c_colon_str #1 \exp_not:N \\ #2 #3
   }
   {
     \hyper@linklaunch {#1}{#2}{#3}
@@ -2416,31 +2470,37 @@
   {
     \bool_if:NTF \l_@@_annot_Named_bool
       {
-         \group_begin:
-         \pdfmeta_standard_verify:nnTF {named_actions}{#1}
-           {
-             \mode_leave_vertical:
-             \pdfdict_put:nnx {l_hyp/annot/A/Named}{N}
-               {\pdf_name_from_unicode_e:n{#1}}
-             \pdfannot_dict_put:nnx {link/Named}{A}{<<\pdfdict_use:n {l_hyp/annot/A/Named}>>}
-             \pdfannot_link:nxn { Named }
+         \int_gincr:N\g_@@_linknestlevel_int
+         \@@_check_link_nesting:TF
+          {
+            \group_begin:
+            \pdfmeta_standard_verify:nnTF {named_actions}{#1}
               {
-%                /A
-%                  <<
-%                    \pdfdict_use:n { l_hyp/annot/A/Named }
-%                  >>
+                \mode_leave_vertical:
+                \pdfdict_put:nne {l_hyp/annot/A/Named}{N}
+                  {\pdf_name_from_unicode_e:n{#1}}
+                \pdfannot_dict_put:nne {link/Named}{A}{<<\pdfdict_use:n {l_hyp/annot/A/Named}>>}
+                \pdfannot_link:nnn { Named }
+                 {
+   %                /A
+   %                  <<
+   %                    \pdfdict_use:n { l_hyp/annot/A/Named }
+   %                  >>
+                 }
+                 {
+                   #2
+                   \Hy@xspace@end
+                   \Hy@VerboseLinkStop
+                 }
               }
               {
+                \msg_warning:nnn { hyp } { pdfa-no-named-action }{#1}
                 #2
-                \Hy@xspace@end
-                \Hy@VerboseLinkStop
               }
-           }
-           {
-             \msg_warning:nnn { hyp } { pdfa-no-named-action }{#1}
-             #2
-           }
-        \group_end:
+           \group_end:
+          } 
+          { \group_begin: #2 \group_end: }
+        \int_gdecr:N\g_@@_linknestlevel_int
       }
       {{\let\protect\relax#2}}
   }
@@ -2553,7 +2613,7 @@
 % \begin{hypkey}{colorlinks}
 % This key also resets the border and borderstyle.
 %    \begin{macrocode}
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
   {
     ,colorlinks .meta:n =
       {
@@ -2575,14 +2635,14 @@
 %    \begin{macrocode}
 \seq_map_inline:Nn \c_@@_annot_types_seq
   {
-     \keys_define:nn { hyp / setup }
+     \keys_define:nn { hyp }
        {
          ,color#1 .bool_set:c = { l_hyp_annot_color#1_bool }
          ,#1color .code:n =     { \@@_color_set:ne {hyp/color/#1}{##1} }
        }
   }
 
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
   {
     ,allcolors .meta:n =
       {
@@ -2604,7 +2664,7 @@
 % or cmyk (unusual). This can be set with the |bordercolormodel| key:
 %\begin{hypkey}{bordercolormodel}
 %    \begin{macrocode}
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
   {
     ,bordercolormodel .choices:nn =
      {rgb,cmyk}
@@ -2616,7 +2676,7 @@
 %    \begin{macrocode}
 \prop_map_inline:Nn \c_@@_map_hyp_annot_prop
   {
-    \keys_define:nn { hyp / setup }
+    \keys_define:nn { hyp }
       {
         #1bordercolor .code:n =
           {
@@ -2632,7 +2692,7 @@
                    {hyp/color/#1border}
                    \g_@@_bordercolormodel_str
                    \l_@@_tmpa_tl
-                 \pdfannot_dict_put:nnx
+                 \pdfannot_dict_put:nne
                    {link/#2}
                    { C }
                    { [\l_@@_tmpa_tl] }
@@ -2641,7 +2701,7 @@
       }
   }
 
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
   {
     ,allbordercolors .meta:n =
       {
@@ -2661,7 +2721,7 @@
 %    \begin{macrocode}
 \prop_map_inline:Nn \c_@@_map_hyp_annot_prop
   {
-    \keys_define:nn { hyp / setup }
+    \keys_define:nn { hyp }
       {
         #1border .code:n =
           {
@@ -2680,7 +2740,7 @@
           }
       }
   }
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
   {
     ,pdfborder  .code:n =
       {
@@ -2714,7 +2774,7 @@
 %    \begin{macrocode}
 \prop_map_inline:Nn \c_@@_map_hyp_annot_prop
   {
-    \keys_define:nn { hyp / setup }
+    \keys_define:nn { hyp }
       {
         #1borderstyle .code:n =
           {
@@ -2733,7 +2793,7 @@
           }
       }
   }
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
   {
     ,pdfborderstyle  .code:n =
       {
@@ -2775,7 +2835,7 @@
      \pdf_object_new:n   { @@/OCG/Print }
      \pdf_object_new:n   { @@/OCG/config }
      \pdf_object_new:n   { @@/OCG/refarray }
-        \pdf_object_write:nnx { @@/OCG/refarray } { array }
+        \pdf_object_write:nne { @@/OCG/refarray } { array }
           {
             \pdf_object_ref:n { @@/OCG/View }
             \c_space_tl
@@ -2801,9 +2861,9 @@
               /View  <</ViewState/OFF>>~
              >>
           }
-       \pdfmanagement_add:nnx { Catalog / OCProperties }{OCGs }{ \pdf_object_ref:n {@@/OCG/View} }
-       \pdfmanagement_add:nnx { Catalog / OCProperties }{OCGs }{ \pdf_object_ref:n {@@/OCG/Print} }
-       \pdf_object_write:nnx { @@/OCG/config } { dict }
+       \pdfmanagement_add:nne { Catalog / OCProperties }{OCGs }{ \pdf_object_ref:n {@@/OCG/View} }
+       \pdfmanagement_add:nne { Catalog / OCProperties }{OCGs }{ \pdf_object_ref:n {@@/OCG/Print} }
+       \pdf_object_write:nne { @@/OCG/config } { dict }
          {
            /OFF[\pdf_object_ref:n { @@/OCG/Print }]
            /AS[
@@ -2824,7 +2884,7 @@
              >>
               ]
          }
-       \pdfmanagement_add:nnx { Catalog / OCProperties }{ D }{ \pdf_object_ref:n { @@/OCG/config} }
+       \pdfmanagement_add:nne { Catalog / OCProperties }{ D }{ \pdf_object_ref:n { @@/OCG/config} }
        \cs_gset:Npn \@@_ocg_init: {}
   }
 %    \end{macrocode}
@@ -2886,7 +2946,7 @@
   { \pdf_version_compare_p:Nn > {1.4} }
   { \str_if_eq_p:ee{\pdf_version_major:}{-1} }
   {
-     \keys_define:nn { hyp / setup }
+     \keys_define:nn { hyp }
        {
          ,_ocgcolorlinks .meta:n =
             {
@@ -2900,11 +2960,11 @@
        }
   }
   {
-    \keys_define:nn { hyp / setup }
+    \keys_define:nn { hyp }
       {
         ,_ocgcolorlinks .code:n =
           {
-            \msg_warning:nnxx
+            \msg_warning:nnee
               { hyp }
               { ignore-deprecated-or-unknown-option-in-pdf-version }
               { ocgcolorlinks } { \pdf_version_major:.\pdf_version_minor: }
@@ -2912,7 +2972,7 @@
       }
   }
 
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
   {
     ,ocgcolorlinks .choice:
     ,ocgcolorlinks / true .meta:n =
@@ -2935,17 +2995,17 @@
       { \pdf_version_compare_p:Nn > {1.4} }
       { \str_if_eq_p:ee{\pdf_version_major:}{-1} }
       {
-        \keys_define:nn { hyp / setup }
+        \keys_define:nn { hyp }
           {
             ,ocgcolor#1 .bool_set:c = { l_hyp_annot_ocgcolor#1_bool }
           }
       }
       {
-        \keys_define:nn { hyp / setup }
+        \keys_define:nn { hyp }
           {
             ,ocgcolor#1 .code:n=
               {
-                \msg_warning:nnxx
+                \msg_warning:nnee
                   { hyp }
                   { ignore-deprecated-or-unknown-option-in-pdf-version }
                   { ocgcolor#1 }
@@ -2961,7 +3021,7 @@
 %    \begin{macrocode}
 \prop_map_inline:Nn \c_@@_map_hyp_annot_prop
   {
-    \keys_define:nn { hyp / setup }
+    \keys_define:nn { hyp }
       {
         ,#1highlight .choices:nn =
           { /I, /N, /O, /P}
@@ -2981,7 +3041,7 @@
           }
         ,#1highlight / unknown .code:n =
           {
-           \msg_warning:nnxxx { hyp } { unknown-choice+empty }
+           \msg_warning:nneee { hyp } { unknown-choice+empty }
              { pdfhighlight }
              { /I~(inverse), /N~(no effect), /O~(outline), /P~(inset) }
              { \exp_not:n {##1} }
@@ -2990,7 +3050,7 @@
   }
 
 
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
   {
     ,pdfhighlight .choices:nn =
       { /I, /N, /O, /P}
@@ -3015,7 +3075,7 @@
     ,pdfhighlight .initial:n = {/I},
     ,pdfhighlight / unknown .code:n =
       {
-       \msg_warning:nnxxx { hyp } { unknown-choice+empty }
+       \msg_warning:nneee { hyp } { unknown-choice+empty }
          { pdfhighlight }
          { /I~(inverse), /N~(no effect), /O~(outline), /P~(inset) }
          { \exp_not:n {#1} }
@@ -3027,7 +3087,7 @@
 % This key disable all appearance keys. The link themselves are still there.
 % \begin{hypkey}{hidelinks,hidelink,hideurl,hidefile,hiderun,hidemenu}
 %    \begin{macrocode}
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
   {
     hidelinks .meta:n =
       {
@@ -3040,7 +3100,7 @@
 
 \seq_map_inline:Nn \c_@@_annot_types_seq
   {
-    \keys_define:nn { hyp / setup }
+    \keys_define:nn { hyp }
       {
         hide#1 .meta:n =
           {
@@ -3057,20 +3117,20 @@
 % This define the key for the color schemes and sets the default colors.
 % \begin{hypkey}{colorscheme}
 %    \begin{macrocode}
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
   {
     colorscheme .code:n =
       {
         \prop_map_inline:cn { c_@@_colorscheme_#1_prop }
           {
-            \keys_set:nn { hyp /setup }
+            \keys_set:nn { hyp  }
               {
                  ##1 = ##2
               }
           }
       }
   }
-\keys_set:nn { hyp / setup } {colorscheme=phelype}
+\keys_set:nn { hyp } {colorscheme=phelype}
 %    \end{macrocode}
 % \end{hypkey}
 %
@@ -3080,7 +3140,7 @@
 % The following are ignored (with or without warnings)
 % \begin{hypkey}{unicode,pdfencoding,pdfversion}
 %    \begin{macrocode}
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
   {
     ,unicode     .code:n = {}
     ,pdfencoding .code:n = {}
@@ -3098,12 +3158,12 @@
 %
 % \begin{hypkey}{verbose,debug,draft,final}
 %    \begin{macrocode}
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
  {
    ,verbose   .legacy_if_set:n  = {Hy@verbose}
    ,debug     .legacy_if_set:n  = {Hy@verbose}
  }
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
   {
    ,draft .code:n =
      {
@@ -3122,7 +3182,7 @@
 %   pageanchor,linktoc,linktocpage,plainpages,localanchorname,
 %   linkfileprefix}
 %    \begin{macrocode}
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
  {
    ,extension .tl_set:N = \XR@ext
    ,extension .initial:n= pdf
@@ -3134,7 +3194,7 @@
    ,plainpages   .legacy_if_set:n = {Hy@plainpages}
  }
 
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
  {
    ,linktoc .choices:nn = { none, section, all, page }
      {
@@ -3142,7 +3202,7 @@
      }
    ,linktoc / unknown .code:n =
      {
-       \msg_warning:nnxxx { hyp } { unknown-choice }
+       \msg_warning:nneee { hyp } { unknown-choice }
          { linktoc }
          { none, section, all, page }
          { \exp_not:n {#1} }
@@ -3160,7 +3220,7 @@
 %    \begin{macrocode}
 \prop_map_inline:Nn \c_@@_map_hyp_annot_prop
   {
-    \keys_define:nn { hyp / setup }
+    \keys_define:nn { hyp }
      {
        ,#1 .bool_set:c = {l_@@_annot_#2_bool}
      }
@@ -3169,7 +3229,7 @@
 % \end{hypkey}
 %
 %    \begin{macrocode}
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
  {
    ,baseurl       .code:n =
      {
@@ -3179,7 +3239,7 @@
              \pdfmanagement_remove:nn {Catalog} { URI }
           }
           {
-             \pdfmanagement_add:nnx {Catalog} { URI }{ <</Base \l_@@_tmpa_tl>> }
+             \pdfmanagement_add:nne {Catalog} { URI }{ <</Base \l_@@_tmpa_tl>> }
           }
         \@@_store_metadata:nn {baseurl}{#1}
      }
@@ -3207,7 +3267,7 @@
      }
    ,pdfcenterwindow / unknown .code:n =
      {
-       \msg_warning:nnxx { hyp } { no-bool }
+       \msg_warning:nnee { hyp } { no-bool }
          { pdfcenterwindow }
          { \exp_not:n {#1} }
      }
@@ -3227,7 +3287,7 @@
      }
    ,pdfdirection / unknown .code:n =
      {
-       \msg_warning:nnxxx { hyp } { unknown-choice+empty }
+       \msg_warning:nneee { hyp } { unknown-choice+empty }
          { pdfdirection }
          { L2R , R2L }
          { \exp_not:n {#1} }
@@ -3251,7 +3311,7 @@
              { PrintDuplex } { /#1 }
          }
          {
-           \msg_warning:nnxx
+           \msg_warning:nnee
              {hyp}
              {ignore-deprecated-or-unknown-option-in-pdf-version}
              {pdfduplex}
@@ -3264,7 +3324,7 @@
      }
    ,pdfduplex / unknown .code:n =
      {
-       \msg_warning:nnxxx { hyp } { unknown-choice+empty }
+       \msg_warning:nneee { hyp } { unknown-choice+empty }
          { pdfduplex }
          { Simplex, DuplexFlipShortEdge, DuplexFlipLongEdge }
          { \exp_not:n {#1} }
@@ -3285,7 +3345,7 @@
    ,pdffitwindow    .default:n = true
    ,pdffitwindow / unknown .code:n =
      {
-       \msg_warning:nnxx { hyp } { no-bool }
+       \msg_warning:nnee { hyp } { no-bool }
          { pdffitwindow }
          { \exp_not:n {#1} }
      }
@@ -3308,7 +3368,7 @@
    ,pdfmenubar    .default:n = true
    ,pdfmenubar / unknown .code:n =
      {
-       \msg_warning:nnxx { hyp } { no-bool }
+       \msg_warning:nnee { hyp } { no-bool }
          { pdfmenubar }
          { \exp_not:n {#1} }
      }
@@ -3331,7 +3391,7 @@
    ,pdfnonfullscreenpagemode   .choices:nn =
      { UseNone, UseOutlines, UseThumbs, FullScreen, UseOC } %pdf 1.5
      {
-       \pdfmanagement_add:nnx {Catalog / ViewerPreferences }
+       \pdfmanagement_add:nne {Catalog / ViewerPreferences }
          { NonFullScreenPageMode} {/#1}
      }
    ,pdfnonfullscreenpagemode / UseAttachments .code:n =
@@ -3341,7 +3401,7 @@
            %message
          }
          {
-           \pdfmanagement_add:nnx {Catalog / ViewerPreferences }
+           \pdfmanagement_add:nne {Catalog / ViewerPreferences }
              {NonFullScreenPageMode}{/UseAttachments}
          }
      }
@@ -3351,7 +3411,7 @@
      }
    ,pdfnonfullscreenpagemode / unknown .code:n =
      {
-       \msg_warning:nnxxx { hyp } { unknown-choice+empty }
+       \msg_warning:nneee { hyp } { unknown-choice+empty }
          { pdfnonfullscreenpagemode }
          { UseNone, UseOutlines, UseThumbs, FullScreen, UseOC, UseAttachments (PDF 1.6) }
          { \exp_not:n {#1} }
@@ -3365,12 +3425,12 @@
                \pdfmanagement_remove:nn {Catalog / ViewerPreferences } { NumCopies }
              }
              {
-               \pdfmanagement_add:nnx {Catalog / ViewerPreferences }
+               \pdfmanagement_add:nne {Catalog / ViewerPreferences }
                  {NumCopies}{#1}
              }
          }
          {
-           \msg_warning:nnxx
+           \msg_warning:nnee
              {hyp}
              {ignore-deprecated-or-unknown-option-in-pdf-version}
              {pdfnumcopies}
@@ -3379,27 +3439,27 @@
      }
    ,pdfpagelayout .choices:nn =
      { SinglePage, OneColumn, TwoColumnLeft, TwoColumnRight, TwoPageLeft, TwoPageRight}
-     { \pdfmanagement_add:nnx {Catalog} { PageLayout }{ /#1 } }
+     { \pdfmanagement_add:nne {Catalog} { PageLayout }{ /#1 } }
    ,pdfpagelayout / .code:n =
      { \pdfmanagement_remove:nn {Catalog} { PageLayout } }
    ,pdfpagelayout / unknown .code:n =
      {
-       \msg_warning:nnxxx { hyp } { unknown-choice+empty }
+       \msg_warning:nneee { hyp } { unknown-choice+empty }
          { pdfpagelayout }
          { SinglePage, OneColumn, TwoColumnLeft, TwoColumnRight, TwoPageLeft, TwoPageRight }
          { \exp_not:n {#1} }
      }
    ,pdfpagemode   .choices:nn =
      { UseNone, UseOutlines, UseThumbs, FullScreen, UseOC } %pdf 1.5
-     { \pdfmanagement_add:nnx {Catalog} { PageMode }{ /#1 } }
+     { \pdfmanagement_add:nne {Catalog} { PageMode }{ /#1 } }
    ,pdfpagemode / UseAttachments .code:n =
      {
        \pdf_version_compare:NnTF > {1.5}
          {
-           \pdfmanagement_add:nnx {Catalog} { PageMode }{ /UseAttachments }
+           \pdfmanagement_add:nne {Catalog} { PageMode }{ /UseAttachments }
          }
          {
-           \msg_warning:nnxx
+           \msg_warning:nnee
              {hyp}
              {ignore-deprecated-or-unknown-value-in-pdf-version}
              {UseAttachments}
@@ -3409,7 +3469,7 @@
    ,pdfpagemode   .initial:n  = { UseOutlines } %for now ...
    ,pdfpagemode / unknown .code:n =
      {
-       \msg_warning:nnxxx { hyp } { unknown-choice+empty }
+       \msg_warning:nneee { hyp } { unknown-choice+empty }
          { pdfpagemode }
          { UseNone, UseOutlines, UseThumbs, FullScreen, UseOC, UseAttachments (PDF 1.6) }
          { \exp_not:n {#1} }
@@ -3421,7 +3481,7 @@
            \pdfmanagement_remove:nn {Pages} { CropBox }
          }
          {
-           \pdfmanagement_add:nnx {Pages} { CropBox } { [#1] }
+           \pdfmanagement_add:nne {Pages} { CropBox } { [#1] }
          }
      }
    ,pdfpicktraybypdfsize    .choice:
@@ -3433,7 +3493,7 @@
              { PickTrayByPDFSize } { true }
          }
          {
-           \msg_warning:nnxx
+           \msg_warning:nnee
              {hyp}
              {ignore-deprecated-or-unknown-option-in-pdf-version}
              {pdfpicktraybypdfsize}
@@ -3448,7 +3508,7 @@
              { PickTrayByPDFSize } { false }
          }
          {
-           \msg_warning:nnxx
+           \msg_warning:nnee
              {hyp}
              {ignore-deprecated-or-unknown-option-in-pdf-version}
              {pdfpicktraybypdfsize}
@@ -3461,7 +3521,7 @@
      }
    ,pdfpicktraybypdfsize / unknown .code:n =
      {
-       \msg_warning:nnxx { hyp } { no-bool }
+       \msg_warning:nnee { hyp } { no-bool }
          { picktraybypdfsize }
          { \exp_not:n {#1} }
      }
@@ -3470,11 +3530,11 @@
      {
        \pdf_version_compare:NnTF < {2.0}
          {
-           \pdfmanagement_add:nnx {Catalog / ViewerPreferences }
+           \pdfmanagement_add:nne {Catalog / ViewerPreferences }
              { PrintArea } { /#1 }
          }
          {
-           \msg_warning:nnxx
+           \msg_warning:nnee
              {hyp}
              {ignore-deprecated-or-unknown-option-in-pdf-version}
              {pdfprintarea}
@@ -3485,7 +3545,7 @@
      { \pdfmanagement_remove:nn {Catalog / ViewerPreferences } { PrintArea } }
    ,pdfprintarea / unknown .code:n =
      {
-       \msg_warning:nnxxx { hyp } { unknown-choice+empty }
+       \msg_warning:nneee { hyp } { unknown-choice+empty }
          { pdfprintarea }
          { MediaBox, CropBox, BleedBox, TrimBox, ArtBox }
          { \exp_not:n {#1} }
@@ -3495,11 +3555,11 @@
      {
        \pdf_version_compare:NnTF < {2.0}
          {
-           \pdfmanagement_add:nnx {Catalog / ViewerPreferences }
+           \pdfmanagement_add:nne {Catalog / ViewerPreferences }
              { PrintClip } { /#1 }
          }
          {
-           \msg_warning:nnxx
+           \msg_warning:nnee
              {hyp}
              {ignore-deprecated-or-unknown-option-in-pdf-version}
              {pdfprintclip}
@@ -3512,7 +3572,9 @@
      }
    ,pdfprintclip / unknown .code:n =
      {
-       \msg_warning:nnxxx { hyp } { unknown-choice+empty }
+       \msg_warning:nneee 
+         { hyp } 
+         { unknown-choice+empty }
          { pdfprintclip }
          { MediaBox, CropBox, BleedBox, TrimBox, ArtBox }
          { \exp_not:n {#1} }
@@ -3527,12 +3589,12 @@
                  { PrintPageRange }
              }
              {
-              \pdfmanagement_add:nnx {Catalog / ViewerPreferences }
+              \pdfmanagement_add:nne {Catalog / ViewerPreferences }
                  {PrintPageRange}{[#1]}
              }
          }
          {
-            \msg_warning:nnxx
+            \msg_warning:nnee
               {hyp}
               {ignore-deprecated-or-unknown-option-in-pdf-version}
               {pdfprintpagerange}
@@ -3544,11 +3606,11 @@
      {
        \pdf_version_compare:NnTF > {1.5}
          {
-           \pdfmanagement_add:nnx {Catalog / ViewerPreferences }
+           \pdfmanagement_add:nne {Catalog / ViewerPreferences }
              { PrintScaling } { /#1 }
          }
          {
-           \msg_warning:nnxx
+           \msg_warning:nnee
              {hyp}
              {ignore-deprecated-or-unknown-option-in-pdf-version}
              {pdfprintscaling}
@@ -3561,18 +3623,18 @@
      }
    ,pdfprintscaling / unknown .code:n =
      {
-       \msg_warning:nnxxx { hyp } { unknown-choice+empty }
+       \msg_warning:nneee { hyp } { unknown-choice+empty }
          { pdfprintarea }
          { None, AppDefault }
          { \exp_not:n {#1} }
      }
    ,pdfremotestartview .code:n =
      {
-       \tl_set:Nx \l_@@_tmpa_tl {#1~null~null~null~}
+       \tl_set:Ne \l_@@_tmpa_tl {#1~null~null~null~}
        \exp_args:NNV
        \regex_extract_once:NnNTF \c_@@_dest_startview_regex \l_@@_tmpa_tl  \l_@@_tmpa_seq
          {
-           \tl_set:Nx \l_@@_dest_pdfremotestartview_tl {\seq_item:Nn \l_@@_tmpa_seq {1}}
+           \tl_set:Ne \l_@@_dest_pdfremotestartview_tl {\seq_item:Nn \l_@@_tmpa_seq {1}}
          }
          {
            \msg_warning:nnnn {hyp}{invalid-destination-value}{#1}{pdfremotestartview}
@@ -3583,14 +3645,14 @@
    % pdfstartpage is special as it shares code with pdfstartview
    ,pdfstartpage .code:n =
      {
-       \tl_gset:Nx \g_@@_dest_pdfstartpage_tl { #1 }
+       \tl_gset:Ne \g_@@_dest_pdfstartpage_tl { #1 }
        \bool_if:nTF
          { \tl_if_empty_p:N \g_@@_dest_pdfstartpage_tl || \tl_if_empty_p:N \g_@@_dest_pdfstartview_tl }
          {
            \pdfmanagement_remove:nn {Catalog} { OpenAction }
          }
          {
-           \pdfmanagement_add:nnx {Catalog} { OpenAction }
+           \pdfmanagement_add:nne {Catalog} { OpenAction }
              {
                [\pdf_pageobject_ref:n {\g_@@_dest_pdfstartpage_tl}~/\g_@@_dest_pdfstartview_tl]
              }
@@ -3599,11 +3661,11 @@
    ,pdfstartpage .initial:n =1
    ,pdfstartview .code:n =
      {
-       \tl_set:Nx \l_@@_tmpa_tl {#1~null~null~null~}
+       \tl_set:Ne \l_@@_tmpa_tl {#1~null~null~null~}
        \exp_args:NNV
        \regex_extract_once:NnNTF \c_@@_dest_startview_regex \l_@@_tmpa_tl  \l_@@_tmpa_seq
          {
-           \tl_gset:Nx \g_@@_dest_pdfstartview_tl {\seq_item:Nn \l_@@_tmpa_seq {1}}
+           \tl_gset:Ne \g_@@_dest_pdfstartview_tl {\seq_item:Nn \l_@@_tmpa_seq {1}}
          }
          {
            \msg_warning:nnnn {hyp}{invalid-destination-value}{#1}{pdfstartview}
@@ -3615,7 +3677,7 @@
            \pdfmanagement_remove:nn {Catalog} { OpenAction }
          }
          {
-           \pdfmanagement_add:nnx {Catalog} { OpenAction }
+           \pdfmanagement_add:nne {Catalog} { OpenAction }
              {
                [\pdf_pageobject_ref:n {\g_@@_dest_pdfstartpage_tl}~/\g_@@_dest_pdfstartview_tl]
              }
@@ -3639,7 +3701,7 @@
    ,pdftoolbar    .default:n = true
    ,pdftoolbar / unknown .code:n =
      {
-       \msg_warning:nnxx { hyp } { no-bool }
+       \msg_warning:nnee { hyp } { no-bool }
          { pdftoolbar }
          { \exp_not:n {#1} }
      }
@@ -3653,7 +3715,7 @@
              { ViewArea } { /#1 }
          }
          {
-           \msg_warning:nnxx
+           \msg_warning:nnee
              {hyp}
              {ignore-deprecated-or-unknown-option-in-pdf-version}
              {pdfviewarea}
@@ -3666,7 +3728,7 @@
      }
    ,pdfviewarea / unknown .code:n =
      {
-       \msg_warning:nnxxx { hyp } { unknown-choice+empty }
+       \msg_warning:nneee { hyp } { unknown-choice+empty }
          { pdfviewarea }
          { MediaBox, CropBox, BleedBox, TrimBox, ArtBox }
          { \exp_not:n {#1} }
@@ -3680,7 +3742,7 @@
              { ViewClip } { /#1 }
          }
          {
-           \msg_warning:nnxx
+           \msg_warning:nnee
              {hyp}
              {ignore-deprecated-or-unknown-option-in-pdf-version}
              {pdfviewclip}
@@ -3693,7 +3755,7 @@
      }
    ,pdfviewclip / unknown .code:n =
      {
-       \msg_warning:nnxxx { hyp } { unknown-choice+empty }
+       \msg_warning:nneee { hyp } { unknown-choice+empty }
          { pdfviewclip }
          { MediaBox, CropBox, BleedBox, TrimBox, ArtBox }
          { \exp_not:n {#1} }
@@ -3714,7 +3776,7 @@
      }
    ,pdfwindowui / unknown .code:n =
      {
-       \msg_warning:nnxx { hyp } { no-bool }
+       \msg_warning:nnee { hyp } { no-bool }
          { pdfwindowui }
          { \exp_not:n {#1} }
      }
@@ -3725,7 +3787,7 @@
 % \begin{hypkey}{pdfview}
 % Destination keys. pdfview is a bit more complicated so extra.
 %    \begin{macrocode}
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
   {
     ,pdfview .code:n =
       {
@@ -3742,7 +3804,7 @@
                          \tl_set:Nn \l_@@_dest_pdfview_tl {xyz}
                        }
                        {
-                         \tl_set:Nx \l_@@_dest_pdfview_tl
+                         \tl_set:Ne \l_@@_dest_pdfview_tl
                             {
                                \fp_eval:n { \l_@@_tmpa_tl * 100 }
                             }
@@ -3815,13 +3877,13 @@
 % \begin{hypkey}{pdflang}
 % |pdflang| should be deprecated.
 %    \begin{macrocode}
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
   {
    ,pdflang       .code:n =
           {
             \tl_if_empty:nF { #1 }
               {
-                \pdfmanagement_add:nnx {Catalog} { Lang } { (#1) }
+                \pdfmanagement_add:nne {Catalog} { Lang } { (#1) }
                 \AddToDocumentProperties[document]{lang}{#1}
               }
           }
@@ -3841,7 +3903,7 @@
 \regex_set:Nn\l_@@_optlang_regex {\A\[([A-Za-z\-]+)\](.*)}
 \cs_new_protected:Npn \@@_setup_info_key:nn #1 #2
   {
-    \keys_define:nn { hyp / setup }
+    \keys_define:nn { hyp }
       {
         pdf#1  .code:n =
           {
@@ -3852,12 +3914,12 @@
                    {creator}
                    {
                      \msg_info:nnn { hyp }{ empty-info-value } { pdfcreator }
-                     \pdfmanagement_add:nnx {Info}{Creator}{()}
+                     \pdfmanagement_add:nne {Info}{Creator}{()}
                    }
                    {producer}
                    {
                      \msg_info:nnn { hyp }{ empty-info-value } { pdfproducer }
-                     \pdfmanagement_add:nnx {Info}{Producer}{()}
+                     \pdfmanagement_add:nne {Info}{Producer}{()}
                    }
                  }
                  {
@@ -3865,7 +3927,7 @@
                  }
               }
               {
-                \tl_set:Nx\l_@@_tmpa_tl {\clist_item:nn{##1}{1}}
+                \tl_set:Ne\l_@@_tmpa_tl {\clist_item:nn{##1}{1}}
                 \exp_args:NNV
                  \regex_extract_once:NnN \l_@@_optlang_regex \l_@@_tmpa_tl\l_@@_tmpa_seq
                 \seq_if_empty:NTF\l_@@_tmpa_seq
@@ -3873,12 +3935,12 @@
                    \@@_text_pdfstring_info:nN {##1}\l_@@_tmpa_str
                  }
                  {
-                   \exp_args:Nx
+                   \exp_args:Ne
                    \@@_text_pdfstring_info:nN {\seq_item:Nn \l_@@_tmpa_seq{3}}\l_@@_tmpa_str
                  }
                 \str_if_eq:VnF\l_@@_tmpa_str{<FEFF>}
                   {
-                    \pdfmanagement_add:nnx {Info}{#2}{\l_@@_tmpa_str}
+                    \pdfmanagement_add:nne {Info}{#2}{\l_@@_tmpa_str}
                   }
               }
              \@@_store_metadata:nn {pdf#1}{##1}
@@ -3896,10 +3958,10 @@
                 \@@_text_pdfstring_info:nN {##1}\l_@@_tmpa_str
                 \str_if_eq:VnF\l_@@_tmpa_str{<FEFF>}
                   {
-                    \pdfmanagement_add:nnx {Info}{#2}{\l_@@_tmpa_str}
+                    \pdfmanagement_add:nne {Info}{#2}{\l_@@_tmpa_str}
                   }
               }
-            \exp_args:Nx \@@_store_metadata:nn {pdf\str_lowercase:n{#1}}{##1}
+            \exp_args:Ne \@@_store_metadata:nn {pdf\str_lowercase:n{#1}}{##1}
           }
         ,unknown .code:n =
          {
@@ -3907,7 +3969,7 @@
             \str_if_eq:VnF\l_@@_tmpa_str{<FEFF>}
               {
                 \exp_args:Nno
-                \pdfmanagement_add:nnx {Info}
+                \pdfmanagement_add:nne {Info}
                     { \l_keys_key_str } {\l_@@_tmpa_str}
               }
          }
@@ -3928,7 +3990,7 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_setup_info_date_key:nn #1 #2
   {
-    \keys_define:nn { hyp / setup }
+    \keys_define:nn { hyp }
       {
         pdf#1  .code:n =
           {
@@ -3937,10 +3999,10 @@
                 \pdfmanagement_remove:nn {Info}{#2}
               }
               {
-                \pdfmanagement_add:nnx {Info}{#2}{(##1)}
+                \pdfmanagement_add:nne {Info}{#2}{(##1)}
               }
              \@@_store_metadata:nn {pdf#1}{##1}
-             \AddToDocumentProperties[document]{#1}{#2}
+             \AddToDocumentProperties[document]{#1}{##1}
           }
       }
     \keys_define:nn { hyp / info }
@@ -3952,16 +4014,16 @@
                 \pdfmanagement_remove:nn {Info}{#2}
               }
               {
-                \pdfmanagement_add:nnx {Info}{#2}{(##1)}
+                \pdfmanagement_add:nne {Info}{#2}{(##1)}
               }
-            \exp_args:Nx \@@_store_metadata:nn {pdf\str_lowercase:n{#1}}{##1}
+            \exp_args:Ne \@@_store_metadata:nn {pdf\str_lowercase:n{#1}}{##1}
           }
       }
   }
 
 \@@_setup_info_date_key:nn {creationdate}  {CreationDate}
 \@@_setup_info_date_key:nn {moddate}  {ModDate}
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
       {
         pdfmetadate  .code:n = { \@@_store_metadata:nn {pdfmetadate}{#1} }
       }
@@ -3970,21 +4032,21 @@
 % \begin{hypkey}{pdftrapped}
 % Trapped is a bit curious, it has an value "unknown", and one can't suppress it ...
 %    \begin{macrocode}
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
   {
     ,pdftrapped .code:n =
       {
         \exp_args:Nne
-          \keys_set:nn { hyp / setup } { _pdftrapped = \str_uppercase:n { #1 } }
+          \keys_set:nn { hyp } { _pdftrapped = \str_uppercase:n { #1 } }
       }
     ,_pdftrapped  .choices:nn = {TRUE,FALSE,UNKNOWN}
        {
-         \pdfmanagement_add:nnx {Info}{Trapped}
+         \pdfmanagement_add:nne {Info}{Trapped}
            {/
              \str_uppercase:f { \str_head:n { #1 } }
              \str_lowercase:f { \str_tail:n { #1 } }
            }
-         \@@_store_metadata:nx {pdftrapped}
+         \@@_store_metadata:ne {pdftrapped}
            {
              \str_uppercase:f { \str_head:n { #1 } }
              \str_lowercase:f { \str_tail:n { #1 } }
@@ -3992,7 +4054,7 @@
        }
     ,_pdftrapped / unknown .code:n =
        {
-         \msg_warning:nnxxx { hyp } { unknown-choice }
+         \msg_warning:nneee { hyp } { unknown-choice }
            { pdftrapped }
            { true~(case~insensitive), false~(case~insensitive), unknown~(case~insensitive) }
            { \exp_not:n {#1} }
@@ -4003,7 +4065,7 @@
 % \begin{hypkey}{pdfinfo}
 %  pdfinfo allows to set the info keys with keyval ...
 %    \begin{macrocode}
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
   {
     pdfinfo .code:n =
       {
@@ -4014,10 +4076,10 @@
 % \end{hypkey}
 % Now we set some default values
 %    \begin{macrocode}
-\keys_set:nn { hyp / setup} {pdfcreator = LaTeX~with~hyperref}
-\keys_set:nn { hyp / setup} {pdfauthor  = }
-\keys_set:nn { hyp / setup} {pdftitle   = }
-\keys_set:nn { hyp / setup} {pdfsubject  = }
+\keys_set:nn { hyp} {pdfcreator = LaTeX~with~hyperref}
+\keys_set:nn { hyp} {pdfauthor  = }
+\keys_set:nn { hyp} {pdftitle   = }
+\keys_set:nn { hyp} {pdfsubject  = }
 %    \end{macrocode}
 %
 % \subsection{hyperxmp keys}
@@ -4066,7 +4128,7 @@
    ,pdfdate
   }
   {
-    \keys_define:nn { hyp / setup }
+    \keys_define:nn { hyp }
       {
         #1 .code:n= { \@@_store_metadata:nn {#1}{##1}}
       }
@@ -4077,7 +4139,7 @@
 % \subsection{Transitions}
 %  pdfpageduration sets the duration a page is shown in full screen mode.
 %    \begin{macrocode}
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
   {
     pdfpageduration .code:n =
      {
@@ -4122,7 +4184,7 @@
 % opaque   & true or false, only relevant for Fly style
 % \end{tabular}
 %    \begin{macrocode}
-\keys_define:nn { hyp / setup }
+\keys_define:nn { hyp }
   {
     pdfpagetransition .code:n =
      {
@@ -4133,11 +4195,11 @@
          {
            \group_begin:
            \keys_set:nn { hyp / trans }{style=R,#1}
-           \pdf_object_unnamed_write:nx { dict }
+           \pdf_object_unnamed_write:ne { dict }
              {
                \pdfdict_use:n {l_@@_page/Trans}
              }
-           \pdfmanagement_add:nnx {Page}{Trans}{\pdf_object_ref_last:}
+           \pdfmanagement_add:nne {Page}{Trans}{\pdf_object_ref_last:}
            \group_end:
          }
      }
@@ -4149,7 +4211,7 @@
       { \pdfdict_put:nnn {l_@@_page/Trans}{ S }{/#1} }
     ,style / unknown .code:n =
       {
-        \msg_warning:nnxxx { hyp } { unknown-choice }
+        \msg_warning:nneee { hyp } { unknown-choice }
            { trans / style }
            { Split,Blinds,Box,Wipe,Dissolve,Glitter,R,Fly,Push,Cover,Uncover,Fade }
            { \exp_not:n {#1} }
@@ -4168,7 +4230,7 @@
       { \pdfdict_put:nnn {l_@@_page/Trans}{ Di }{ /None } }
     ,direction / unknown .code:n =
       {
-        \msg_warning:nnxxx { hyp } { unknown-choice }
+        \msg_warning:nneee { hyp } { unknown-choice }
            { trans / direction }
            {
              H~(horizontal,~only~Split,~Blinds),
@@ -4187,7 +4249,7 @@
      { \pdfdict_put:nnn {l_@@_page/Trans}{ M }{/#1} }
     ,motion / unknown .code:n =
       {
-        \msg_warning:nnxxx { hyp } { unknown-choice }
+        \msg_warning:nneee { hyp } { unknown-choice }
            { trans / motion }
            { I~(inwards) , O~(outwards) }
            { \exp_not:n {#1} }
@@ -4198,7 +4260,7 @@
        { \pdfdict_put:nnn { l_@@_page/Trans }{ B } { #1} }
      ,opaque / unknown .code:n =
        {
-          \msg_warning:nnxxx { hyp } { unknown-choice }
+          \msg_warning:nneee { hyp } { unknown-choice }
            { trans / B }
            { true~(opaque~back,~only~Fly), false~(opaque~back,~only~Fly) }
            { \exp_not:n {#1} }
@@ -4207,14 +4269,14 @@
      ,unknown .code:n =
        {
          % warning ...
-         \exp_args:Nnx\keys_set:nn {hyp/trans}{ style=\l_keys_key_str }
+         \exp_args:Nne\keys_set:nn {hyp/trans}{ style=\l_keys_key_str }
        }
   }
 %    \end{macrocode}
 %
 % Finally we process the package option list, to get most keys working
 %    \begin{macrocode}
-\keys_set_known:nv{hyp/setup}{opt@hyperref.sty}
+\keys_set_known:nv{ hyp }{opt@hyperref.sty}
 %    \end{macrocode}
 %
 %  Unfinished
@@ -4229,11 +4291,8 @@
 \prop_new:N   \g_@@_AcroForm_CoFields_prop
 \prop_new:N   \g_@@_AcroForm_Fields_prop
 
-\let\HyField@afields\ltx@empty
-\let\HyField@cofields\ltx@empty
-%% UF test for old pdftex removed
-%\let\HyField@AuxAddToFields\ltx@gobble
-%\let\HyField@AuxAddToCoFields\ltx@gobbletwo
+\let\HyField@afields\@empty
+\let\HyField@cofields\@empty
 \def\HyField@AfterAuxOpen{\Hy@AtBeginDocument}%
 
 % the value doesn't matter, but with a prop we avoid duplicates and it is
@@ -4265,11 +4324,11 @@
 
 \def\HyField@AddToFields
   {
-    \exp_args:Nx\HyField@@AddToFields
+    \exp_args:Ne\HyField@@AddToFields
       {
         \pdfannot_box_ref_last:
       }
-    \ifx\Fld@calculate@code\ltx@empty
+    \ifx\Fld@calculate@code\@empty
     \else
       \begingroup
         \Hy@safe@activestrue
@@ -4313,7 +4372,7 @@
         \Hy@FormObjects
         \prop_map_inline:Nn \g_@@_AcroForm_Fields_prop
           {
-            \pdfmanagement_add:nnx { Catalog / AcroForm } { Fields }{##1}
+            \pdfmanagement_add:nne { Catalog / AcroForm } { Fields }{##1}
             %\pdfmanagement_show:n { Catalog / AcroForm }
           }
         \prop_if_empty:NF \g_@@_AcroForm_CoFields_prop
@@ -4330,18 +4389,18 @@
               }
             \seq_map_inline:Nn \l_@@_tmpa_seq
              {
-                \pdfmanagement_add:nnx { Catalog / AcroForm }
+                \pdfmanagement_add:nne { Catalog / AcroForm }
                   { CO }
                   {
                     \prop_item:Nn \g_@@_AcroForm_CoFields_prop {##1}
                   }
              }
           }
-       \pdfmanagement_add:nnx {Catalog / AcroForm/DR/Font }
+       \pdfmanagement_add:nne {Catalog / AcroForm/DR/Font }
          {ZaDb} {\pdf_object_ref:n {@@/Font/ZaDb} }
-       \pdfmanagement_add:nnx {Catalog / AcroForm/DR/Font }
+       \pdfmanagement_add:nne {Catalog / AcroForm/DR/Font }
          {Helv} {\pdf_object_ref:n {@@/Font/Helv} }
-       \pdfmanagement_add:nnx {Catalog /AcroForm}
+       \pdfmanagement_add:nne {Catalog /AcroForm}
          {DA}{(/Helv~10~Tf~0~g)}
        \pdfmeta_standard_verify:nTF {form_no_NeedAppearance}
          {
@@ -4356,29 +4415,30 @@
        }
   }
 \ExplSyntaxOff
-\let\@endForm\ltx@empty
-\let\HyAnn@AbsPageLabel\ltx@empty
-\let\Fld@pageobjref\ltx@empty
+\let\@endForm\@empty
+\let\HyAnn@AbsPageLabel\@empty
+\let\Fld@pageobjref\@empty
 
 \ExplSyntaxOn
 \newcount\HyAnn@Count
-\HyAnn@Count=\ltx@zero
+\HyAnn@Count=\z@
 \def\HyAnn@AbsPageLabel
   {
-    \global\advance\HyAnn@Count by\ltx@one
+    \global\advance\HyAnn@Count by\@ne
     %\zref@labelbyprops{HyAnn@\the\HyAnn@Count}{abspage}%
     %\zref@labelbylist {HyAnn@\the\HyAnn@Count} {l3pdf}
     %\zref@refused{HyAnn@\the\HyAnn@Count}%
-    \@@_ref_label:en {HyAnn@\the\HyAnn@Count}{abspage}
-    \@@_ref_check:en {HyAnn@\the\HyAnn@Count}{abspage}
+    \@@_property_record:ee {HyAnn@\the\HyAnn@Count}{abspage}
+    \property_ref_undefined_warn:ee {HyAnn@\the\HyAnn@Count}{abspage}
   }%
+\prg_generate_conditional_variant:Nnn \property_if_recorded:nn {ee} {T}  
 \def\Fld@pageobjref
   {
-    \@@_ref_if_exist:enT {HyAnn@\the\HyAnn@Count}{abspage}
+    \property_if_recorded:eeT {HyAnn@\the\HyAnn@Count}{abspage}
       {
-        /P~\pdf_pageobject_ref:n
+        /P~\pdf_pageobject_ref:e
           {
-            \@@_ref_value:en{HyAnn@\the\HyAnn@Count}{abspage}
+            \property_ref:ee{HyAnn@\the\HyAnn@Count}{abspage}
           }
       }
   }
@@ -4389,7 +4449,7 @@
 %% check if options are missing.
 \def\@TextField[#1]#2{% parameters, label
   \def\Fld@name{#2}%
-  \let\Fld@default\ltx@empty
+  \let\Fld@default\@empty
   \let\Fld@value\@empty
   \def\Fld@width{\DefaultWidthofText}%
   \def\Fld@height{%
@@ -4522,7 +4582,7 @@
            \group_end:
          }
       }
-    \pdfannot_box:nnnx
+    \pdfannot_box:nnne
       {\Fld@width}
       {\Fld@height}
       {0pt} %is this correct?
@@ -4749,7 +4809,7 @@
     \pdf_object_new:n   {@@/Encoding/pdfdoc }
     \pdf_object_new:n   {@@/Font/ZaDb }
     \pdf_object_new:n   {@@/Font/Helv }
-    \pdf_object_write:nnx {@@/Encoding/pdfdoc } { dict }
+    \pdf_object_write:nne {@@/Encoding/pdfdoc } { dict }
       {
         /Type/Encoding
         /Differences[
@@ -4798,7 +4858,7 @@
         /Name/ZaDb
         /BaseFont/ZapfDingbats
       }
-    \pdf_object_write:nnx {@@/Font/Helv } { dict }
+    \pdf_object_write:nne {@@/Font/Helv } { dict }
       {
         /Type/Font
         /Subtype/Type1
@@ -4845,7 +4905,7 @@
     \else
       \expandafter
       \Hy@pstringdef\csname Hy@esc@\string#2\endcsname{#2}% probably string-hex
-      \ltx@ReturnAfterFi{%
+      \Hy@ReturnAfterFi{%
         \Hy@@escapeform#3\@nil
       }%
     \fi
@@ -5315,7 +5375,7 @@
   \endgroup
   \H@old@schapter{#1}%
 }
-\ltx@IfUndefined{@chapter}{}{%
+\@ifundefined{@chapter}{}{%
   \let\Hy@org@chapter\@chapter
   \def\@chapter{%
     \def\Hy@next{%
@@ -5325,7 +5385,7 @@
       }%
     }%
     \ifnum\c@secnumdepth>\m@ne
-      \ltx@IfUndefined{if@mainmatter}%
+      \@ifundefined{if@mainmatter}%
       \iftrue{\csname if@mainmatter\endcsname}%
         \let\Hy@next\relax
       \fi

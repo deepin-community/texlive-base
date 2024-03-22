@@ -1,5 +1,5 @@
 .PS
-# `Conn.m4'
+# `ConnMan.m4'
 cct_init
 
 T:[
@@ -31,39 +31,44 @@ C: [
   C1: ccoax
     `"\tt ccoax\vphantom{(}"' ht 11 pt__ at C1.s below
     thinlines_
-    arrow <- up 0.1 right 0.1 from C1.C.ne; "C" ljust
-    arrow <- down 0.05 right 0.1 from C1.S.e; "S" wid 0.1 ht 11pt__ ljust
+    arrow <- down 0.05 left 0.15 from C1.C.w; "\sl C" rjust
+    arrow <- down 0.05 right 0.1 from C1.S.e; "\sl S" wid 0.1 ht 11pt__ ljust
     thicklines_
-  C2: ccoax(at C1+(0,0.3),F)
-    `"\tt ccoax(,F)"' ht 11 pt__ wid 0.65 at C2.ne ljust 
-  ] with .C1.sw at T.S2.se+(0.6,0.0)
-
-Y: [
-  tconn(,O)
-  {`"\tt tconn(,O)"' at last line.c+(0,-0.2) wid 43 pt__ }
-  move to Here+(0.3,0)
-  P1: tconn(,>)
-  {`"\tt (,>)"' at last line.c+(0,-0.2)}
-  move to P1.end+(0.3,0)
-  tconn(,>>)
-  {`"\tt (,>{}>)"' at last line.c+(0,-0.2)}
-  move to P1.start+(0,linewid)
-  P3: tconn(,<)
-  {`"\tt tconn(,<)"' at last line.c+(0,-0.2)}
-  move to P3.end+(0.3,0)
-  tconn(,<<)
-  {`"\tt (,<{}<)"' at last line.c+(0,-0.2)}
-
-] with .sw at (C.e.x-0.4,T.s.y)
+  C2: ccoax(at C1+(0,0.4),F)
+    `"\tt ccoax(,F)"' ht 11 pt__ at C2.s below
+  ] with .w at T.e+(0.6,0.0)
 
 B: [
   tbox(V_2)
-  { `"\tt tbox(V\_2)"' at last [].sw below ljust }
-  tbox(V_1,,,<) with .sw at last [].se+(0.75,0)
+  { `"\tt tbox(V\_2)"' at last [].s below }
+  tbox(V_1,,,<) at last []+(0,-0.4)
   { `"\tt tbox(V\_1,{,},<)"' at last [].s below }
-  tbox(V_1,,,<>) with .sw at last [].se+(0.75,0)
+  tbox(V_1,,,<>) at last []+(0,-0.4)
   { `"\tt tbox(V\_1,{,},<>)"' at last [].s below }
-] with .nw at T.sw+(0,-0.2)
+] with .w at C.e + (0.5,-0.1)
 
+Y: [
+  P1: tconn(,O)
+  {`"\tt tconn(,O)"' at last line.c+(0,-0.2) wid 43 pt__ }
+  move to Here+(0.3,0)
+  P2: tconn(,>)
+  {`"\tt $\ldots$(,>)"' at last line.c+(0,-0.2)}
+  move to P2.end+(0.3,0)
+  P3: tconn(,>>)
+  {`"\tt $\ldots$(,>{}>)"' at last line.c+(0,-0.2)}
+  move to P3.end+(0.3,0)
+  P4: tconn(,<)
+  {`"\tt $\ldots$(,<)"' at last line.c+(0,-0.2)}
+  move to P4.end+(0.3,0)
+  P5: tconn(,<<)
+  {`"\tt $\ldots$(,<{}<)"' at last line.c+(0,-0.2)}
+  move to P5.end+(0.3,0)
+  P6: tconn(,A)
+  {`"\tt $\ldots$(,A)"' at last line.c+(0,-0.2)}
+  move to P6.end+(0.3,0)
+  P7: tconn(,M)
+  {`"\tt $\ldots$(,M)"' at last line.c+(0,-0.2)}
+
+] with .nw at T.sw+(0,-0.35)
 
 .PE

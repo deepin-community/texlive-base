@@ -1,6 +1,6 @@
-%#!xelatex
+%#!texfot xelatex
 % Texdoc user manual
-% Copyright 2008-2022 Manuel Pégourié-Gonnard and Takuto Asakura
+% Copyright 2008-2024 Manuel Pégourié-Gonnard and Takuto Asakura
 % distributed under the terms of GPL v3 or later
 \documentclass{texdoc-doc}
 
@@ -8,7 +8,7 @@
 \subtitle{Find \& view documentation in \TL}
 \pkgurl{https://tug.org/texdoc/}
 \author{Manuel Pégourié-Gonnard\and Takuto Asakura}
-\date{v3.4.1\quad \today}
+\date{v4.0.2\quad \today}
 
 \begin{document}
 
@@ -151,6 +151,12 @@ but rather intended to be used from another program, like a GUI front-end to
 Texdoc.
 \end{clopt}
 
+\begin{clopt}{\code{\lopt{print-completion} \meta{shell}}}
+Print |«shell»| completion. For the time being, it only supports
+zsh\footnote{Your contributions are welcome!}. See
+Section~\ref{sec:completion} for the details.
+\end{clopt}
+
 Some normal options such as \sopt{v} are effective for some actions but note
 that you have to specify such options \emph{before} the action option. Options
 after an action option will be ignored.
@@ -257,8 +263,8 @@ Variable & Use for & Configuration item \\ \hline
 \end{tabular}
 \end{center}
 
-Third, on Unix systems, locale-related variables such as |LANG| and |LC_ALL|
-are used for the default value of \ci{lang}.
+Third, locale-related variables |LANGUAGE_texdoc|, |LANGUAGE|, |LC_ALL|, and
+|LANG| are used to set \ci{lang}.
 
 \subsection{Precedence of configuration sources}
 \label{sec:prec}
@@ -504,6 +510,25 @@ allowance by using the configuration item \ci{fuzzy\_level}. Results of fuzzy
 search could be different among executions if multiple package names have the
 same Levenshtein distance to the input.
 
+\subsection{Online Search}
+\label{sec:online}
+
+If Texdoc cannot find any good matches for a document, it may sometimes prompt
+you to search online.
+
+If you use the |view| option, there are no ``good'' matches (|score|${}\ge{}$0),
+but you have some local documentation installed, Texdoc will show you the three
+best locally-installed documents while also prompting you to search online.
+
+If you use the |view| option when you have no local documentation installed,
+Texdoc will skip showing any fuzzy matches, and will instead prompt you to
+search online immediately.
+
+Texdoc checks to see if the |kpathsea| documentation as a heuristic for if
+\emph{any} documentation is installed. If the documentation for Texdoc is
+installed, but no other documentation is installed, the online search prompt
+may produce unexpected results.
+
 \section{Configuration items}
 \label{sec:conf}
 
@@ -511,7 +536,7 @@ Configuration files are line-oriented text files. Comments begin with a |#|
 and run to the end of line. Lines containing only space are ignored. Space at
 the beginning or end of a line, as well as around an |=| sign, is ignored.
 Apart from comments and empty lines, each line must be of one of the following
-forms.
+forms:
 %
 \begin{htcode}
 «configuration item» = «value»
@@ -521,6 +546,9 @@ stopalias «original keyword»
 adjscore «pattern» = «score adjustment»
 adjscore(«keyword») «pattern» = «score adjustment»
 \end{htcode}
+%
+You can put a backslash (\code{\char`\\}) at the end of a line to indicate that
+the line is continued on the following line.
 
 We will concentrate on the |«configuration item»| part here, since other
 directives have already been presented (Section~\ref{sec:alias} and
@@ -727,11 +755,47 @@ Texdoc within a {\TL}-based {\TeX} distribution which does not ship
 |texlive.tlpdb|.
 \end{confitem}
 
+\begin{confitem}{online\_url}{\meta{url}}
+  [default: \code{https://texdoc.org/serve/PKGNAME/0}]
+Sets the \meta{url} to use for online documentation. Texdoc will replace
+|PKGNAME| with the name of the package to search for.
+\end{confitem}
+
+\section{Shell Completion}
+\label{sec:completion}
+
+Shell completion can be used to receive assistance in entering command-line
+options and arguments (typically package names) for the |texdoc| command.
+Texdoc can provide shell completion functions via the \lopt{print-completion}
+action. Configuring the appropriate per-shell setting described below can
+enable this shell completion function.
+
+%\subsection{Bash}
+
+\subsection{Zsh}
+
+To enable completion for zsh, you need to put
+%
+\begin{htcode}
+autoload -Uz compinit && compinit
+\end{htcode}
+%
+in your zsh configuration file (such as \code{\$HOME/.zshrc}). You can install
+our completion function with either of the following two ways:
+%
+\begin{itemize}
+\item adding \code{eval "\$(texdoc \lopt{print-completion} zsh)"} to your
+  zsh configuration file.
+
+\item creating a file named \code{\_texdoc} in \code{\$fpath} whose content is
+  the output of \code{texdoc \lopt{print-completion} zsh}.
+\end{itemize}
+
 \section{Licence}
 \label{sec:licence}
 
 The current version of Texdoc program and its documentation are copyright
-2008--2022 Manuel Pégourié-Gonnard, Takuto Asakura, the {\TL} Team.
+2008--2024 Manuel Pégourié-Gonnard, Takuto Asakura, the {\TL} Team.
 
 They are free software: you can redistribute it and/or modify it under the
 terms of the GNU General Public License as published by the Free Software

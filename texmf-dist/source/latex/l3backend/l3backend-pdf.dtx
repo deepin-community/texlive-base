@@ -2,7 +2,7 @@
 %
 %% File: l3backend-pdf.dtx
 %
-% Copyright (C) 2019-2023 The LaTeX Project
+% Copyright (C) 2019-2024 The LaTeX Project
 %
 % It may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -31,7 +31,7 @@
 % \fi
 %
 % \title{^^A
-%   The \textsf{l3backend-pdf} package\\ Backend PDF features^^A
+%   The \pkg{l3backend-pdf} module\\ Backend PDF features^^A
 % }
 %
 % \author{^^A
@@ -43,7 +43,7 @@
 %    }^^A
 % }
 %
-% \date{Released 2023-01-16}
+% \date{Released 2024-01-04}
 %
 % \maketitle
 %
@@ -53,7 +53,7 @@
 %
 % \begin{implementation}
 %
-% \section{\pkg{l3backend-pdf} Implementation}
+% \section{\pkg{l3backend-pdf} implementation}
 %
 %    \begin{macrocode}
 %<*package>
@@ -69,7 +69,11 @@
 % \subsection{Shared code}
 %
 % A very small number of items that belong at the backend level but which
-% are common to all backends.
+% are common to most backends.
+%
+%    \begin{macrocode}
+%<*!dvisvgm>
+%    \end{macrocode}
 %
 % \begin{variable}{\l_@@_internal_box}
 %    \begin{macrocode}
@@ -77,18 +81,22 @@
 %    \end{macrocode}
 % \end{variable}
 %
+%    \begin{macrocode}
+%</!dvisvgm>
+%    \end{macrocode}
+%
 % \subsection{\texttt{dvips} backend}
 %
 %    \begin{macrocode}
 %<*dvips>
 %    \end{macrocode}
 %
-% \begin{macro}{\@@_backend_pdfmark:n, \@@_backend_pdfmark:x}
+% \begin{macro}{\@@_backend_pdfmark:n, \@@_backend_pdfmark:e}
 %   Used often enough it should be a separate function.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_backend_pdfmark:n #1
   { \__kernel_backend_postscript:n { mark #1 ~ pdfmark } }
-\cs_generate_variant:Nn \@@_backend_pdfmark:n { x }
+\cs_generate_variant:Nn \@@_backend_pdfmark:n { e }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -130,7 +138,7 @@
 %
 % \begin{macro}
 %   {
-%     \@@_backend_object_write:nnn, \@@_backend_object_write:nnx,
+%     \@@_backend_object_write:nnn, \@@_backend_object_write:nne,
 %     \@@_backend_object_write_aux:nnn
 %   }
 % \begin{macro}
@@ -151,10 +159,10 @@
       { \@@_backend_object_ref:n {#1} }
       {#2} {#3}
   }
-\cs_generate_variant:Nn \@@_backend_object_write:nnn { nnx }
+\cs_generate_variant:Nn \@@_backend_object_write:nnn { nne }
 \cs_new_protected:Npn \@@_backend_object_write_aux:nnn #1#2#3
   {
-    \@@_backend_pdfmark:x
+    \@@_backend_pdfmark:e
       {
         /_objdef ~ #1
         /type
@@ -171,17 +179,17 @@
   }
 \cs_new_protected:Npn \@@_backend_object_write_array:nn #1#2
   {
-    \@@_backend_pdfmark:x
+    \@@_backend_pdfmark:e
       { #1 ~0~ [ ~ \exp_not:n {#2} ~ ] ~ /PUTINTERVAL }
   }
 \cs_new_protected:Npn \@@_backend_object_write_dict:nn #1#2
   {
-    \@@_backend_pdfmark:x
+    \@@_backend_pdfmark:e
       { #1 << \exp_not:n {#2} >> /PUT }
   }
 \cs_new_protected:Npn \@@_backend_object_write_fstream:nn #1#2
   {
-    \exp_args:Nx
+    \exp_args:Ne
       \@@_backend_object_write_fstream:nnn {#1} #2
   }
 \cs_new_protected:Npn \@@_backend_object_write_fstream:nnn #1#2#3
@@ -196,7 +204,7 @@
   }
 \cs_new_protected:Npn \@@_backend_object_write_stream:nn #1#2
   {
-    \exp_args:Nx
+    \exp_args:Ne
       \@@_backend_object_write_stream:nnn {#1} #2
   }
 \cs_new_protected:Npn \@@_backend_object_write_stream:nnn #1#2#3
@@ -212,7 +220,7 @@
 % \end{macro}
 % \end{macro}
 %
-% \begin{macro}{\@@_backend_object_now:nn, \@@_backend_object_now:nx}
+% \begin{macro}{\@@_backend_object_now:nn, \@@_backend_object_now:ne}
 %   No anonymous objects, so things are done manually.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_backend_object_now:nn #1#2
@@ -222,7 +230,7 @@
       { { pdf.obj \int_use:N \g_@@_backend_object_int } }
       {#1} {#2}
   }
-\cs_generate_variant:Nn \@@_backend_object_now:nn { nx }
+\cs_generate_variant:Nn \@@_backend_object_now:nn { ne }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -296,7 +304,7 @@
       }
     \int_gincr:N \g_@@_backend_object_int
     \int_gset_eq:NN \g_@@_backend_annotation_int \g_@@_backend_object_int
-    \@@_backend_pdfmark:x
+    \@@_backend_pdfmark:e
       {
         /_objdef { pdf.obj \int_use:N \g_@@_backend_object_int }
         pdf.rect
@@ -380,16 +388,6 @@
 % \begin{macro}{\@@_backend_link_minima:}
 % \begin{macro}{\@@_backend_link_outerbox:n}
 % \begin{macro}{\@@_backend_link_sf_save:, \@@_backend_link_sf_restore:}
-% \begin{macro}
-%   {
-%     pdf.linkdp.pad      ,
-%     pdf.linkht.pad      ,
-%     pdf.llx, pdf.lly    ,
-%     pdf.ury, pdf.ury    ,
-%     pdf.link.dict       ,
-%     pdf.outerbox        ,
-%     pdf.baselineskip
-%   }
 %   Links are crated like annotations but with dedicated code to allow for
 %   adjusting the size of the rectangle. In contrast to \pkg{hyperref}, we
 %   grab the link content as a box which can then unbox: this allows the same
@@ -460,11 +458,11 @@
     \hbox_set_end:
     \@@_backend_link_minima:
     \hbox_set:Nn \l_@@_backend_model_box { Gg }
-    \exp_args:Nx \@@_backend_link_outerbox:n
+    \exp_args:Ne \@@_backend_link_outerbox:n
       {
-         \int_if_odd:nTF { \value { page } }
-           { \oddsidemargin }
-           { \evensidemargin }
+        \int_if_odd:nTF { \value { page } }
+          { \oddsidemargin }
+          { \evensidemargin }
       }
     \box_move_down:nn { \box_dp:N \l_@@_backend_content_box }
       { \hbox:n { \__kernel_backend_postscript:n { pdf.save.linkll } } }
@@ -478,7 +476,7 @@
       }
     \int_gincr:N \g_@@_backend_object_int
     \int_gset_eq:NN \g_@@_backend_link_int \g_@@_backend_object_int
-    \__kernel_backend_postscript:x
+    \__kernel_backend_postscript:e
       {
         mark
         /_objdef { pdf.obj \int_use:N \g_@@_backend_link_int }
@@ -492,7 +490,7 @@
 \cs_new_protected:Npn \@@_backend_link_minima:
   {
     \hbox_set:Nn \l_@@_backend_model_box { Gg }
-    \__kernel_backend_postscript:x
+    \__kernel_backend_postscript:e
       {
         /pdf.linkdp.pad ~
           \dim_to_decimal:n
@@ -520,7 +518,7 @@
   }
 \cs_new_protected:Npn \@@_backend_link_outerbox:n #1
   {
-    \__kernel_backend_postscript:x
+    \__kernel_backend_postscript:e
       {
         /pdf.outerbox
           [
@@ -561,9 +559,7 @@
 % \end{macro}
 % \end{macro}
 % \end{macro}
-% \end{macro}
 %
-% \begin{macro}{\@makecol@hook}
 %   Hooks to allow link breaking: something will be needed in format mode
 %   at some stage. At present this code is disabled as there is an open
 %   question about the name of the hook: to be resolved at the \LaTeXe{}
@@ -575,9 +571,9 @@
       {
         \tl_put_right:Nn \@makecol@hook
           {
-            \box_if_empty:NF \@cclv
+            \box_if_empty:NF \l_shipout_box
               {
-                \vbox_set:Nn \@cclv
+                \vbox_set:Nn \l_shipout_box
                   {
                     \__kernel_backend_postscript:n
                       {
@@ -585,7 +581,7 @@
                           { pdf.bordertracking.continue }
                         if
                       }
-                    \vbox_unpack_drop:N \@cclv
+                    \vbox_unpack_drop:N \l_shipout_box
                     \__kernel_backend_postscript:n
                       { pdf.bordertracking.endpage }
                   }
@@ -597,7 +593,6 @@
       }
   }
 %    \end{macrocode}
-% \end{macro}
 %
 % \begin{macro}{\@@_backend_link_last:}
 %   The same as annotations, but with a custom integer.
@@ -612,7 +607,7 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_backend_link_margin:n #1
   {
-    \__kernel_backend_postscript:x
+    \__kernel_backend_postscript:e
       {
         /pdf.linkmargin { \dim_to_decimal:n {#1} ~ pdf.pt.dvi } def
       }
@@ -630,7 +625,7 @@
 \cs_new_protected:Npn \@@_backend_destination:nn #1#2
   {
     \__kernel_backend_postscript:n { pdf.dest.anchor }
-    \@@_backend_pdfmark:x
+    \@@_backend_pdfmark:e
       {
         /View
         [
@@ -703,7 +698,7 @@
         \__kernel_backend_literal_postscript:n
           {
             /setdistillerparams ~ where
-             { pop << /CompressPages ~ false >> setdistillerparams }
+              { pop << /CompressPages ~ false >> setdistillerparams }
             if
           }
       }
@@ -715,7 +710,7 @@
         \__kernel_backend_literal_postscript:n
           {
             /setdistillerparams ~ where
-             { pop << /CompressStreams ~ false >> setdistillerparams }
+              { pop << /CompressStreams ~ false >> setdistillerparams }
             if
           }
       }
@@ -729,11 +724,11 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_backend_version_major_gset:n #1
   {
-    \cs_gset:Npx \@@_backend_version_major: { \int_eval:n {#1} }
+    \cs_gset:Npe \@@_backend_version_major: { \int_eval:n {#1} }
   }
 \cs_new_protected:Npn \@@_backend_version_minor_gset:n #1
   {
-    \cs_gset:Npx \@@_backend_version_minor: { \int_eval:n {#1} }
+    \cs_gset:Npe \@@_backend_version_minor: { \int_eval:n {#1} }
   }
 %    \end{macrocode}
 % \end{macro}
@@ -797,7 +792,7 @@
 %   space in the \LuaTeX{} version is \emph{required} as it is consumed in
 %   finding the end of the keyword.
 %    \begin{macrocode}
-\cs_new:Npx \@@_backend_annotation_last:
+\cs_new:Npe \@@_backend_annotation_last:
   {
     \exp_not:N \int_value:w
 %<*luatex>
@@ -849,7 +844,7 @@
 % \begin{macro}{\@@_backend_link_last:}
 %   Formatted for direct use.
 %    \begin{macrocode}
-\cs_new:Npx \@@_backend_link_last:
+\cs_new:Npe \@@_backend_link_last:
   {
     \exp_not:N \int_value:w
 %<*luatex>
@@ -992,7 +987,7 @@
 % \end{macro}
 % \end{macro}
 %
-% \begin{macro}{\@@_backend_object_write:nnn, \@@_backend_object_write:nnx}
+% \begin{macro}{\@@_backend_object_write:nnn, \@@_backend_object_write:nne}
 % \begin{macro}[EXP]{\@@_backend_object_write:nn}
 % \begin{macro}[EXP]{\@@_exp_not_i:nn, \@@_exp_not_ii:nn}
 %   Writing the data needs a little information about the structure of the
@@ -1029,7 +1024,7 @@
             }
         }
   }
-\cs_generate_variant:Nn \@@_backend_object_write:nnn { nnx }
+\cs_generate_variant:Nn \@@_backend_object_write:nnn { nne }
 \cs_new:Npn \@@_exp_not_i:nn #1#2 { \exp_not:n {#1} }
 \cs_new:Npn \@@_exp_not_ii:nn #1#2 { \exp_not:n {#2} }
 %    \end{macrocode}
@@ -1037,7 +1032,7 @@
 % \end{macro}
 % \end{macro}
 %
-% \begin{macro}{\@@_backend_object_now:nn, \@@_backend_object_now:nx}
+% \begin{macro}{\@@_backend_object_now:nn, \@@_backend_object_now:ne}
 %   Much like writing, but direct creation.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_backend_object_now:nn #1#2
@@ -1050,14 +1045,14 @@
 %</pdftex>
       \@@_backend_object_write:nn {#1} {#2}
   }
-\cs_generate_variant:Nn \@@_backend_object_now:nn { nx }
+\cs_generate_variant:Nn \@@_backend_object_now:nn { ne }
 %    \end{macrocode}
 % \end{macro}
 %
 % \begin{macro}[EXP]{\@@_backend_object_last:}
 %   Much like annotation.
 %    \begin{macrocode}
-\cs_new:Npx \@@_backend_object_last:
+\cs_new:Npe \@@_backend_object_last:
   {
     \exp_not:N \int_value:w
 %<*luatex>
@@ -1074,7 +1069,7 @@
 % \begin{macro}[EXP]{\@@_backend_pageobject_ref:n}
 %   The usual wrapper situation; the three spaces here are essential.
 %    \begin{macrocode}
-\cs_new:Npx \@@_backend_pageobject_ref:n #1
+\cs_new:Npe \@@_backend_pageobject_ref:n #1
   {
     \exp_not:N \int_value:w
 %<*luatex>
@@ -1133,7 +1128,7 @@
 %   The availability of the primitive is not universal, so we have to test
 %   at load time.
 %    \begin{macrocode}
-\cs_new_protected:Npx \@@_backend_version_major_gset:n #1
+\cs_new_protected:Npe \@@_backend_version_major_gset:n #1
   {
 %<*luatex>
     \int_compare:nNnT \tex_luatexversion:D > { 106 }
@@ -1167,7 +1162,7 @@
 % \begin{macro}[EXP]{\@@_backend_version_major:, \@@_backend_version_minor:}
 %   As above.
 %    \begin{macrocode}
-\cs_new:Npx \@@_backend_version_major:
+\cs_new:Npe \@@_backend_version_major:
   {
 %<*luatex>
     \int_compare:nNnTF \tex_luatexversion:D > { 106 }
@@ -1218,12 +1213,12 @@
 %<*dvipdfmx|xetex>
 %    \end{macrocode}
 %
-% \begin{macro}{\@@_backend:n, \@@_backend:x}
+% \begin{macro}{\@@_backend:n, \@@_backend:e}
 %   A generic function for the backend PDF specials: used where we can.
 %    \begin{macrocode}
-\cs_new_protected:Npx \@@_backend:n #1
+\cs_new_protected:Npe \@@_backend:n #1
   { \__kernel_backend_literal:n { pdf: #1 } }
-\cs_generate_variant:Nn \@@_backend:n { x }
+\cs_generate_variant:Nn \@@_backend:n { e }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1266,7 +1261,7 @@
 % \end{macro}
 % \end{macro}
 %
-% \begin{macro}{\@@_backend_object_write:nnn, \@@_backend_object_write:nnx}
+% \begin{macro}{\@@_backend_object_write:nnn, \@@_backend_object_write:nne}
 % \begin{macro}
 %   {
 %     \@@_backend_object_write_array:nn   ,
@@ -1282,15 +1277,15 @@
     \use:c { @@_backend_object_write_ #2 :nn }
       { \@@_backend_object_ref:n {#1} } {#3}
   }
-\cs_generate_variant:Nn \@@_backend_object_write:nnn { nnx }
+\cs_generate_variant:Nn \@@_backend_object_write:nnn { nne }
 \cs_new_protected:Npn \@@_backend_object_write_array:nn #1#2
   {
-    \@@_backend:x
+    \@@_backend:e
       { obj ~ #1 ~ [ ~ \exp_not:n {#2} ~ ] }
   }
 \cs_new_protected:Npn \@@_backend_object_write_dict:nn #1#2
   {
-    \@@_backend:x
+    \@@_backend:e
       { obj ~ #1 ~ << ~ \exp_not:n {#2} ~ >> }
   }
 \cs_new_protected:Npn \@@_backend_object_write_fstream:nn #1#2
@@ -1299,7 +1294,7 @@
   { \@@_backend_object_write_stream:nnnn { } {#1} #2 }
 \cs_new_protected:Npn \@@_backend_object_write_stream:nnnn #1#2#3#4
   {
-    \@@_backend:x
+    \@@_backend:e
       {
         #1 stream ~ #2 ~
           ( \exp_not:n {#4} ) ~ << \exp_not:n {#3} >>
@@ -1310,25 +1305,25 @@
 % \end{macro}
 % \end{macro}
 %
-% \begin{macro}{\@@_backend_object_now:nn, \@@_backend_object_now:nx}
+% \begin{macro}{\@@_backend_object_now:nn, \@@_backend_object_now:ne}
 %   No anonymous objects with \texttt{dvipdfmx} so we have to give an
 %   object name.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_backend_object_now:nn #1#2
   {
     \int_gincr:N \g_@@_backend_object_int
-    \exp_args:Nnx \use:c { @@_backend_object_write_ #1 :nn }
+    \exp_args:Nne \use:c { @@_backend_object_write_ #1 :nn }
       { @pdf.obj \int_use:N \g_@@_backend_object_int }
       {#2}
   }
-\cs_generate_variant:Nn \@@_backend_object_now:nn { nx }
+\cs_generate_variant:Nn \@@_backend_object_now:nn { ne }
 %    \end{macrocode}
 % \end{macro}
 %
 % \begin{macro}{\@@_backend_object_last:}
 %    \begin{macrocode}
 \cs_new:Npn \@@_backend_object_last:
- { @pdf.obj \int_use:N \g_@@_backend_object_int }
+  { @pdf.obj \int_use:N \g_@@_backend_object_int }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1356,7 +1351,7 @@
   {
     \int_gincr:N \g_@@_backend_object_int
     \int_gset_eq:NN \g_@@_backend_annotation_int \g_@@_backend_object_int
-    \@@_backend:x
+    \@@_backend:e
       {
         ann ~ @pdf.obj \int_use:N \g_@@_backend_object_int \c_space_tl
         width  ~ \dim_eval:n {#1} ~
@@ -1371,7 +1366,7 @@
 % \begin{macro}{\@@_backend_annotation_last:}
 %    \begin{macrocode}
 \cs_new:Npn \@@_backend_annotation_last:
- { @pdf.obj \int_use:N \g_@@_backend_annotation_int }
+  { @pdf.obj \int_use:N \g_@@_backend_annotation_int }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1392,19 +1387,19 @@
   { \@@_backend_link_begin:n { #1 /Subtype /Link /A << /S /GoTo /D ( #2 ) >> } }
 \cs_new_protected:Npn \@@_backend_link_begin_user:nnw #1#2
   { \@@_backend_link_begin:n {#1#2} }
-\cs_new_protected:Npx \@@_backend_link_begin:n #1
+\cs_new_protected:Npe \@@_backend_link_begin:n #1
   {
     \exp_not:N \int_gincr:N \exp_not:N  \g_@@_backend_link_int
-    \@@_backend:x
+    \@@_backend:e
       {
-         bann ~
-         @pdf.lnk
-         \exp_not:N \int_use:N \exp_not:N  \g_@@_backend_link_int
-         \c_space_tl
-         <<
-           /Type /Annot
-           #1
-         >>
+        bann ~
+        @pdf.lnk
+        \exp_not:N \int_use:N \exp_not:N  \g_@@_backend_link_int
+        \c_space_tl
+        <<
+          /Type /Annot
+          #1
+        >>
       }
   }
 \cs_new_protected:Npn \@@_backend_link_end:
@@ -1427,7 +1422,7 @@
 %   Pass to \texttt{dvipdfmx}.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_backend_link_margin:n #1
-  { \__kernel_backend_literal:x { dvipdfmx:config~g~ \dim_eval:n {#1} } }
+  { \__kernel_backend_literal:e { dvipdfmx:config~g~ \dim_eval:n {#1} } }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1441,7 +1436,7 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_backend_destination:nn #1#2
   {
-    \@@_backend:x
+    \@@_backend:e
       {
         dest ~ ( \exp_not:n {#1} )
         [
@@ -1510,7 +1505,7 @@
 %   Pass data to the backend: these are a one-shot.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_backend_compresslevel:n #1
-  { \__kernel_backend_literal:x { dvipdfmx:config~z~ \int_eval:n {#1} } }
+  { \__kernel_backend_literal:e { dvipdfmx:config~z~ \int_eval:n {#1} } }
 \cs_new_protected:Npn \@@_backend_compress_objects:n #1
   {
     \bool_if:nF {#1}
@@ -1526,13 +1521,13 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_backend_version_major_gset:n #1
   {
-    \cs_gset:Npx \@@_backend_version_major: { \int_eval:n {#1} }
-    \__kernel_backend_literal:x { pdf:majorversion~ \@@_backend_version_major: }
+    \cs_gset:Npe \@@_backend_version_major: { \int_eval:n {#1} }
+    \__kernel_backend_literal:e { pdf:majorversion~ \@@_backend_version_major: }
   }
 \cs_new_protected:Npn \@@_backend_version_minor_gset:n #1
   {
-    \cs_gset:Npx \@@_backend_version_minor: { \int_eval:n {#1} }
-    \__kernel_backend_literal:x { pdf:minorversion~ \@@_backend_version_minor: }
+    \cs_gset:Npe \@@_backend_version_minor: { \int_eval:n {#1} }
+    \__kernel_backend_literal:e { pdf:minorversion~ \@@_backend_version_minor: }
   }
 %    \end{macrocode}
 % \end{macro}
@@ -1600,7 +1595,7 @@
 %
 % \begin{macro}{\@@_backend_link_last:}
 %    \begin{macrocode}
-\cs_new:Npx \@@_backend_link_last: { }
+\cs_new:Npe \@@_backend_link_last: { }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1634,8 +1629,8 @@
 %
 % \begin{macro}{\@@_backend_object_new:n}
 % \begin{macro}[EXP]{\@@_backend_object_ref:n}
-% \begin{macro}{\@@_backend_object_write:nnn, \@@_backend_object_write:nx}
-% \begin{macro}{\@@_backend_object_now:nn, , \@@_backend_object_now:nx}
+% \begin{macro}{\@@_backend_object_write:nnn, \@@_backend_object_write:ne}
+% \begin{macro}{\@@_backend_object_now:nn, , \@@_backend_object_now:ne}
 % \begin{macro}{\@@_backend_object_last:}
 % \begin{macro}[EXP]{\@@_backend_pageobject_ref:n}
 %   All no-ops here.
@@ -1643,9 +1638,9 @@
 \cs_new_protected:Npn \@@_backend_object_new:nn #1 { }
 \cs_new:Npn \@@_backend_object_ref:n #1 { }
 \cs_new_protected:Npn \@@_backend_object_write:nnn #1#2#3 { }
-\cs_new_protected:Npn \@@_backend_object_write:nnx #1#2#3 { }
+\cs_new_protected:Npn \@@_backend_object_write:nne #1#2#3 { }
 \cs_new_protected:Npn \@@_backend_object_now:nn #1#2 { }
-\cs_new_protected:Npn \@@_backend_object_now:nx #1#2 { }
+\cs_new_protected:Npn \@@_backend_object_now:ne #1#2 { }
 \cs_new:Npn \@@_backend_object_last: { }
 \cs_new:Npn \@@_backend_pageobject_ref:n #1 { }
 %    \end{macrocode}

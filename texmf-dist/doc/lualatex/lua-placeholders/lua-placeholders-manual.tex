@@ -1,0 +1,216 @@
+%% lua-placeholders-manual.tex
+%% Copyright 2024 E. Nijenhuis
+%
+% This work may be distributed and/or modified under the
+% conditions of the LaTeX Project Public License, either version 1.3c
+% of this license or (at your option) any later version.
+% The latest version of this license is in
+% http://www.latex-project.org/lppl.txt
+% and version 1.3c or later is part of all distributions of LaTeX
+% version 2005/12/01 or later.
+%
+% This work has the LPPL maintenance status ‘maintained’.
+%
+% The Current Maintainer of this work is E. Nijenhuis.
+%
+% This work consists of the files lua-placeholders.sty
+% lua-placeholders-manual.pdf lua-placeholders.lua
+% lua-placeholders-common.lua lua-placeholders-namespace.lua
+% lua-placeholders-parser.lua and lua-placeholders-types.lua
+
+\documentclass{ltxdoc}
+\usepackage[english]{babel}
+\usepackage[titlepage,authors]{gitinfo-lua}
+\usepackage{listings}
+\usepackage{lua-placeholders}
+\usepackage{multicol}
+\usepackage{calc}
+\usepackage{fmtcount}
+\usepackage[nodayofweek]{datetime}
+\usepackage{hyperref,embedfile}
+\usepackage{textcomp}
+\usepackage{attachfile2}
+\usepackage{enumitem}
+\usepackage{biblatex}
+
+\DefineBibliographyStrings{english}{%
+  bibliography = {References},
+}
+
+%! suppress = MissingBibliographystyle
+\bibliography{lua-placeholders-deps}
+
+\embedfile[desc={Parameter Specification Example},filespec=example.pdf]{lua-placeholders-example/example.pdf}
+\embedfile[desc={Parameter Specification Example (YAML)},filespec=example-specification.yaml]{lua-placeholders-example/example-specification.yaml}
+\embedfile[desc={Values Specification Example},filespec=example.yaml]{lua-placeholders-example/example.yaml}
+\embedfile[desc={Values Fallback Specification Example},filespec=example.json]{lua-placeholders-example/example.json}
+
+\def\projecturl{https://github.com/Xerdi/lua-placeholders}
+
+\newcommand\showexample[5][15pt]{%
+\begin{minipage}[t]{.5\linewidth - .5 \columnsep}%
+\lstinputlisting[firstnumber={#2},linerange={#3},style=YAML,frame=single,numbers=left,xleftmargin=0pt,numbersep=10pt,columns=fullflexible]{lua-placeholders-example/example-specification.yaml}
+\end{minipage}\hspace*{\columnsep}%
+\begin{minipage}[t]{.5\linewidth - .5 \columnsep}%
+\lstinputlisting[firstnumber={#4},linerange={#5},style=YAML,frame=single,numbers=left,xleftmargin={#1},numbersep=10pt,columns=fullflexible]{lua-placeholders-example/example.yaml}
+\end{minipage}\\%
+}
+
+\begin{document}
+    \title{Lua \paramplaceholder{placeholders}\thanks{This document corresponds to \texttt{lua-placeholders} version \gitversion, written on \gitdate}}
+    \maketitle
+    \begin{abstract}
+        A package for creating `example' documents, which show parameters as placeholders and `actual copy' documents, which show parameters with the real data, written in Lua\TeX{}.
+    \end{abstract}
+
+    \tableofcontents
+
+    \clearpage
+
+    \section{Introduction}
+    This package is meant for setting parameters in a Lua\LaTeX{} document in a more programmatically way with YAML\@.
+    Parameters can be specified by adding a `recipe' file.
+    These recipe files describe the parameter's type, placeholders and/or default values.
+    From thereon, the placeholders can be displayed in the document and an `\textit{example}' document can be created.
+    An `\textit{actual copy}' document can be created by loading additional payload files, which all must correspond to a recipe file.
+
+    \subsection{Pros}
+    \begin{enumerate}[align=left]
+        \item Create an `\textit{example}' or `\textit{actual copy}' document with the same \LaTeX{} source and YAML recipe.
+        \item Integration within systems is as easy as compiling a normal \LaTeX{} document, especially thanks to the fallback support to JSON, which is quite renown in programming languages.
+        \item Supports multiple data types and formatting macros which work in most \TeX{} environments, like \texttt{enumerate} or \texttt{tabular}.
+    \end{enumerate}
+
+    \subsection{Cons}
+    \begin{enumerate}[align=left]
+        \item The package only works with Lua\LaTeX{}.
+        \item In order for the files to be loaded, commandline option `\texttt{--shell-escape}' is required.
+    \end{enumerate}
+
+    \subsection{Prerequisites}
+    If you're using JSON as \meta{recipe} and \meta{payload} format, the following requirements are no longer needed, since Lua\TeX{} already supports JSON formats out of the box.
+
+    For YAML support, however, this package requires the \texttt{lyaml}\cite{lyaml} Lua module for parsing the YAML files.
+    This also includes the \texttt{libYAML}\cite{libYAML} platform dependent library and optionally LuaRocks for installing \texttt{lyaml}.
+    Another requirement is Lua, which version meets the Lua version used by Lua\TeX{}.
+    If no \texttt{LUA\_PATH} is set, and you use LuaRocks, this package tries to call the LuaRocks executable to find the \texttt{LUA\_PATH}.
+    If \texttt{lyaml} can't be loaded, this package will first try to fall back with \texttt{lua-tinyyaml}\cite{tiny} for lesser YAML support and secondly fall back on accepting JSON files only.
+
+    \clearpage
+    \section{Usage}
+    This section describes the basic commands of \texttt{lua-placeholders}.
+    For more detail about type specific commands or the behavior of types with commands described here, see section~\ref{sec:spec}.\\
+
+    \subsection{Configuration}
+    \DescribeMacro{\strictparams} In order to give an error when values are missing, the \cmd{\strictparams}\footnote{The \cmd{\strictparams} command is still under development.} command can be used.
+    Make sure to do it before loading any \meta{recipe} and \meta{payload} files.
+    \DescribeMacro{\loadrecipe}
+    In order to load a recipe the macro \cmd{\loadrecipe}\oarg{namespace}\marg{filename} can be used.
+    Where the \meta{filename} is a YAML file with its corresponding extension.
+    The optional \meta{namespace} is only a placeholder in order to prevent any conflicts between duplicate \meta{key}s.
+    If left out, the \meta{namespace} defaults to the base name of the filename.
+    \DescribeMacro{\loadpayload} The same behaviour counts for \cmd{\loadpayload}\oarg{namespace}\marg{filename}.
+    The order of loading \meta{recipe} and \meta{payload} files doesn't matter.
+    If the \meta{payload} file got loaded first, it will be yielded until the corresponding \meta{recipe} file is loaded.
+
+    All other macros of this package also take the optional \meta{namespace}, which by default is equal to \cmd{\jobname}.
+    \DescribeMacro{\setnamespace} This default \meta{namespace} can be changed with \cmd{\setnamespace}\marg{new default namespace}.\\
+
+    \subsection{Displaying Parameters}
+    For displaying variables, the commands \cmd{\param} and \cmd{\PARAM} share the same interface.
+    \DescribeMacro{\param} The most trivial, displaying the variable as-is, is \cmd{\param}\oarg{namespace}\marg{key}.
+    \DescribeMacro{\PARAM} The \cmd{\PARAM} however, shows the value as upper case.
+
+    In some cases, it's required to output the text without any \TeX{} related functionality.
+    Another case is that some environments don't take macros with optional arguments well.
+    \DescribeMacro{\rawparam} For these cases there is \cmd{\rawparam}\marg{namespace}\marg{key}, which takes the namespace as mandatory argument, instead of optional, and doesn't output fancy \TeX{} placeholders.\\
+
+    \DescribeMacro{\hasparam} To check whether a parameter is set, the \cmd{\hasparam}\oarg{namespace}\marg{key}\marg{true case}\marg{false case} command is used.
+    However, a more robust way is using \LaTeX{} hooks.
+    For recipes being loaded, the hook \texttt{namespace/}\meta{name} is triggered once.
+    For payloads being loaded, the hook \texttt{namespace/}\meta{name}\texttt{loaded} is triggered once.
+    For more information on \LaTeX{} hooks, read the \texttt{lthooks} manual.
+
+    \clearpage
+
+    \section{Parameter Specification}\label{sec:spec}
+    Every parameter specified has a \meta{type} set.
+    Optionally there is a choice between setting a \meta{default} or a \meta{placeholder} for the parameter.
+    \begin{description}
+        \item[bool] Next to the textual representation of \textit{true} and \textit{false}, it provides a \LaTeX{} command using the \texttt{ifthen} package.
+        Therefore, only the \meta{default} setting makes sense.\\[5pt]
+        \hspace*{5pt}\parbox{\linewidth-5pt}{%
+            \hfill\texttt{Recipe}\hfill\hspace*{\columnsep}%
+            \hfill\texttt{Payload}\hfill\hspace*{\columnsep}}\\%
+        \showexample{1}{1-3}{1}{1-1}
+        \DescribeMacro{\param}
+        With a boolean type the \cmd{\param}\oarg{namespace}\marg{name} returns either \textit{true} or \textit{false}.
+        \DescribeMacro{\ifparam}
+        Additionally, it provides the \cmd{\ifparam}\oarg{namespace}\marg{name}\marg{true code}\marg{false code} command for top level boolean types.
+        The macro is just a wrapper for the boolean package \texttt{ifthen}, which supports spaces in names.
+        \item[string] representing a piece of text.
+        All \TeX{} related symbols in the text, like \textbackslash, \% and \#, are escaped.\\
+        \showexample{4}{4-6}{2}{2-2}
+        \DescribeMacro{\param} A string type can easily be placed in \LaTeX{} using the \cmd{\param} command.
+        \item[number] representing a number, like the number type of Lua.
+        In most cases it's necessary to use \meta{default} instead of \meta{placeholder}, especially when the number is used in calculations, since a placeholder will cause errors in \LaTeX{} calculations.\\
+        \showexample{7}{7-9}{3}{3-3}
+        A number type can be used with \cmd{\param}, just like the string type.
+        \DescribeMacro{\numparam} However, the \cmd{\numparam}\oarg{namespace}\marg{name} command uses \cmd{\numprint} to properly format the number according to the selected language.
+        Read the documentation of package \texttt{numprint} for more information.
+        \item[list] representing a list of values.
+        The value type is specified by \meta{value type}.
+        A \meta{default} setting can be set.
+        Due to its structure, a \meta{placeholder} would be somewhat incompatible with the corresponding macros.
+        However, a placeholder can be simulated by setting the placeholders as children of the \meta{default} list, as demonstrated in the example.\\
+        \showexample{10}{10-15}{4}{4-6}
+        \DescribeMacro{\param}
+        Command \cmd{\param} concatenates every item with command \cmd{\paramlistconjunction}.
+        \DescribeMacro{\paramlistconjunction}
+        By default, the conjunction is set to `\texttt{,\textasciitilde}'.
+
+        \DescribeMacro{\forlistitem}
+        There's also the \cmd{\forlistitem}\oarg{namespace}\marg{name}\marg{csname} command, which takes an additional \meta{csname} and will execute it for every item in the list.
+        This command doesn't handle advanced features like altering the conjunction.
+        Though, some utility commands will be set, which are only available in the \meta{csname}s implementation, in order to achieve the same goal.
+        \item[object] representing a list of key value pairs.
+        This parameter type requires a \meta{fields} specification to be set.
+        Any field must be of type \texttt{bool}, \texttt{number} or \texttt{string}.\\
+        \showexample{16}{16-24}{7}{7-9}
+        There is no support for the \cmd{\param} command.
+        \DescribeMacro{\paramfield}
+        In order to show to contents there is the \cmd{\paramfield}\oarg{namespace}\marg{name}\marg{field} command.
+        However, unlike the common command \cmd{\param}, the command \cmd{\hasparam} does work with object types.
+
+        \DescribeEnv{paramobject} There's also the \texttt{paramobject} environment, which takes an optional \meta{namespace} and takes the \meta{name} of the object as arguments and then defines for every field name a corresponding command.
+        Every command is appended with the \cmd{\xspace} command to prevent gobbling a space.
+        In other words, the author doesn't have to end the command with accolades `\{\}' to get the expected output.
+
+        \item[table] representing a table.
+        This parameter type requires a \meta{columns} specification to be set.
+        The \meta{columns} describes each column by name with its own type specification.
+        Like the object field, only the types \texttt{bool}, \texttt{number} and \texttt{string} are supported column types.\\
+        \showexample[20pt]{25}{25}{10}{10}
+        \DescribeMacro{\fortablerow}
+        Like the object, the table has no support for \cmd{\param}, but comes with a table specific command \cmd{\fortablerow}\oarg{namespace}\marg{name}\marg{csname}.
+        The control sequence name \meta{csname} is a user-defined command with no arguments, containing any of the column names in a command form.
+        For example, the name \texttt{example} would be accessible as \cmd{\example} in the user-defined command body.
+
+        Like the object field, a table cell doesn't require accolades, though, this is due to the Lua implementation behind it.
+        Technically every command in the user-defined command body is replaced with the variable in Lua, instead of redefining the command itself for every row, preventing issues with macro expansion between table rows and also column separators in \TeX{}.
+
+    \end{description}
+
+    \clearpage
+
+    \printbibliography[heading=bibnumbered]
+
+    \clearpage
+    \section{Example}
+
+    The source file \texttt{example.tex} is a perfect demonstration of all macros in action.
+    It shows perfectly what happens when there's a \meta{payload} file loaded and when not.
+    The result of this example \attachfile[icon=Paperclip,description={Lua Parameters Example v\gitversion}]{lua-placeholders-example/example.pdf} is attached in the digital version of this document.
+
+    \lstinputlisting[language={[LaTeX]TeX},frame=single,caption={\ttfamily example.tex},captionpos=t,numbers=left,keywordsprefix={\\},firstnumber=20,firstline=20,columns=fullflexible]{lua-placeholders-example/example.tex}
+\end{document}

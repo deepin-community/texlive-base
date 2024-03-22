@@ -1,4 +1,4 @@
-# $Id: xetex.pl 40301 2016-04-07 12:25:35Z siepo $
+# $Id: xetex.pl 65953 2023-02-20 12:26:39Z siepo $
 # post action for xetex to handle system font stuff.
 # Copyright 2008, 2009, 2011 Norbert Preining
 # This file is licensed under the GNU General Public License version 2
@@ -20,7 +20,7 @@ BEGIN {
   # make Perl find our packages first:
   unshift (@INC, "$texdir/tlpkg");
 }
-use TeXLive::TLUtils qw(win32 mkdirhier conv_to_w32_path log info);
+use TeXLive::TLUtils qw(wndws mkdirhier conv_to_w32_path log info);
 
 if ($mode eq 'install') {
   do_install();
@@ -38,14 +38,14 @@ sub do_install {
   # fontconfig-related stuff.
   chomp( my $fcache = `kpsewhich -var-value=FC_CACHEDIR` ) ;
   chomp( my $fconf = `kpsewhich -var-value=FONTCONFIG_PATH` ) ;
-  if (-r "$texdir/bin/win32/xetex.exe") {
+  if (-r "$texdir/bin/windows/xetex.exe") {
     # we have installed w32, so put it into texmfsysvar.
     mkdirhier($fcache);
     mkdirhier($fconf);
     TeXLive::TLUtils::rmtree($fcache);
     TeXLive::TLUtils::rmtree($fconf);
     my @cpycmd = ();
-    if (win32()) {
+    if (wndws()) {
       push @cpycmd, "xcopy", "/e", "/i", "/q", "/y";
     } else {
       push @cpycmd, "cp", "-R";
@@ -54,24 +54,24 @@ sub do_install {
     # copy trees from install area.
     my $postxetex = "$texdir/tlpkg/tlpostcode/xetex";
     system(@cpycmd,
-         (win32() ? conv_to_w32_path("$postxetex/conf") : "$postxetex/conf"),
-         (win32() ? conv_to_w32_path($fconf) : $fconf));
+         (wndws() ? conv_to_w32_path("$postxetex/conf") : "$postxetex/conf"),
+         (wndws() ? conv_to_w32_path($fconf) : $fconf));
     system(@cpycmd,
-         (win32() ? conv_to_w32_path("$postxetex/cache") : "$postxetex/cache"),
-         (win32() ? conv_to_w32_path($fcache) : $fcache));
+         (wndws() ? conv_to_w32_path("$postxetex/cache") : "$postxetex/cache"),
+         (wndws() ? conv_to_w32_path($fcache) : $fcache));
  
     if (open(FONTSCONF, "<$texdir/tlpkg/tlpostcode/xetex/conf/fonts.conf")) {
       my @lines = <FONTSCONF>;
       close(FONTSCONF);
       if (open(FONTSCONF, ">$fconf/fonts.conf")) {
         my $winfontdir;
-        if (win32()) {
+        if (wndws()) {
           $winfontdir = $ENV{'SystemRoot'}.'/fonts';
           $winfontdir =~ s!\\!/!g;
         }
         foreach (@lines) {
           $_ =~ s!c:/Program Files/texlive/YYYY!$texdir!;
-          $_ =~ s!c:/windows/fonts!$winfontdir! if win32();
+          $_ =~ s!c:/windows/fonts!$winfontdir! if wndws();
           print FONTSCONF;
         }
         close(FONTSCONF);
@@ -82,7 +82,7 @@ sub do_install {
       warn("open($texdir/tlpkg/tlpostcode/xetex/conf/fonts.conf) failed: $!");
     }
   }
-  if (win32() && !$skip_gen) {
+  if (wndws() && !$skip_gen) {
     # call fc-cache but only when we install on w32!
     info("Running fc-cache -v -r\n");
     log( `fc-cache -v -r 2>&1` );  # run it, log output

@@ -35,7 +35,7 @@ $\sqrt{371} = \py{math.sqrt(371)}$
 
 2\. Compile using LuaLaTeX (shell escape is required)
 ```
-lualatex -shell-escape example.tex
+lualatex --shell-escape example.tex
 ```
 
 **Note:** PyLuaTeX starts Python 3 using the command `python3` by default.
@@ -53,7 +53,7 @@ executed. For this reason, it is recommended to compile trusted documents only.
 
 ## License
 [LPPL 1.3c](http://www.latex-project.org/lppl.txt) for LaTeX code and
-[MIT license](https://opensource.org/licenses/MIT) for Python and Lua code.
+[MIT license](https://opensource.org/licenses/MIT) for Python and Lua code and other files.
 
 ## Further Information
 Author: Tobias Enderle

@@ -1,0 +1,1158 @@
+divert(-1)
+% Lettering.defs
+% Lettering definitions
+
+define(`Letter_init',
+ `# Letter grid parameters
+  lu = 0.07
+  define(`grthick',`0.4')
+  define(`letterlinethick',`(lu/0.07)*1.2')
+  define(`ft2',`(linethick/2)pt__')
+  linethick_(letterlinethick)
+
+  ifelse(m4postprocessor,pstricks,
+    ` \newgray{gridgray}{0.75}
+      \newgray{lightgridgray}{0.80}
+      \newgray{linegray}{0.40}',
+  m4postprocessor,pgf,
+    ` \definecolor{gridgray}{rgb}{0.433,0.433,0.433}
+      \definecolor{lightgridgray}{rgb}{0.8,0.8,0.8}
+      \definecolor{linegray}{rgb}{0.231,0.231,0.231}',
+  m4postprocessor,mpost,
+    ` define(`gridgray',`0.433,0.433,0.433')
+      define(`lightgridgray',`0.8,0.8,0.8')
+      define(`linegray',`0.231,0.231,0.231')',
+# else
+    ` define(`gridgray',`0.5 0.5 0.5')
+      define(`lightgridgray',`0.8 0.8 0.8')
+      define(`linegray',`0.3 0.3 0.3')')
+  ifpstricks(`command `"\makeatletter \def\psas@@c{setlinecap 0 0 moveto"'
+  command `"   0 0.1 L stroke 0 0 moveto } \makeatother"'')
+`# Letter_init end'
+  ')
+
+# graph coordinate system
+define(`gco',`(vscal_(lu,$1,$2))')
+
+%                              `Stroke arrow
+%                               stroke(linespec,vert offset,label,<-,linelabel)'
+define(`setstroke',`ifmpost(
+ `setrgb(0,0,0)',
+ `psset_(linecolor=black,arrows=-)')dnl
+  linethick_(0.3); arrowwid = 1.6pt__ ; arrowht = 3pt__')
+
+define(`stroke',`rpoint_(`$1') ; { setstroke
+  m4lth = linethick
+  ifelse((`$2'),(),,`if (`$2') != 0 then { move to rvec_(0,`$2') }')
+  ifelse(`$3',,,`ifelse(index(`$3',"),0,`{$3}',{"`$3'"})')
+  ifelse(`$5',,,`$5':)line ifelse(`$4',,->,`$4') to rvec_(rp_len,0) dnl
+    chop 3pt__ chop 0
+  linethick_(m4lth) }
+')
+
+# non-normalized line at 90 deg to line argument
+define(`perp',`(`$1'.start.y-`$1'.end.y),(`$1'.end.x-`$1'.start.x) ')
+
+define(`grid',
+` lthtmp = linethick; linethick = grthick
+  ifmpost(`setrgb(gridgray)',`psset_(linecolor=gridgray)')
+  for i=0 to $1 do {
+   { line up ($2)*lu from gco(i,0) } }
+  for j=0 to $2 do {
+   { line right ($1)*lu from gco(0,j) } }
+  psset_(`linecolor=black')
+  linethick = lthtmp ')
+
+define(`elarrow',`i = ifelse(`$7',,-1,`$7')
+  for theta = `$1' to `$2' by `$3' do { i = i+1
+    V[i]: `$4'+((`$5')*cosd(theta),(`$6')*sind(theta)) }
+  fitcurve(V,i,->) ')
+
+define(`charA',
+`[Origin: gco(0,0) `#' `charA'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(3,6)+(0,-ft2) to gco(0,0)+(ft2,ft2)
+ L2: line from gco(3,6)+(0,-ft2) to gco(6,0)+(-ft2,ft2)
+  L3t: line invis from gco(0,2)+(0,ft2) right lu
+ L3: line from Intersect_(L1,L3t) to Intersect_(L2,L3t)
+  ifelse(`$1',,,`
+  stroke(from L1.start to L1.end chop lu  ,-lu*0.75,1)
+  stroke(from L2.start to L2.end chop lu  , lu*0.75,2)
+  stroke(from L3.start to L3.end chop lu/3,-lu*0.75,3) ')
+  box invis wid 6*lu ht 6*lu with .sw at Origin]')
+
+define(`charB',
+`[Origin: gco(0,0) `#' `charB'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,6)+(ft2,-ft2) to gco(0,0)+(ft2,ft2)
+  mid = 3.3*lu-ft2
+  topht = 6*lu-2*ft2-mid
+ L2: line right_ 5*lu-2*ft2-mid/2
+ L5: arc ccw to Here+(0,mid) with .c at Here+(0,mid/2)
+ L3: line from (L1,Here) to Here
+  l4l = 4.5*lu-2*ft2-topht/2
+ L4: line from L1.start right_ l4l
+ L7: arc cw to Here+(0,-topht) with .c at Here+(0,-topht/2)
+  ifelse(`$1',,,`
+  stroke(from L1.start to L1.end chop lu/3,-lu*0.75,1)
+  stroke(from L2.start to L2.end chop lu/3,-lu*0.75,2)
+  stroke(from L3.start to L3.end chop lu*.75 chop 0,-lu*0.75,3)
+  move to L4.start+(0,.75*lu)
+  {"4"}; line right l4l chop 3pt__ chop 0
+  arcd(Here-(0,.75*lu+topht/2),.75*lu+topht/2,90,-30) cw ->
+  "5" below ljust
+  arcd(L2.end+(0,mid/2),mid/2+0.75*lu,15,-90) cw -> ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`charC',
+`[Origin: gco(0,0) `#' `charC'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+  ifelse(`$1',,,`circle rad 3*lu-ft2 thick 0.3 dashed at gco(3,3)')
+  arcr(gco(3,3),3*lu-ft2,atan2(2.5,1.5),atan2(-2,2.0))
+  ifelse(`$1',,,`
+  setstroke
+  "1" at gco(3,6) above rjust
+  arcd(gco(3,3),3.75*lu,105,atan2(-2,2.1)*rtod_) ->
+  "2" at gco(3,6) above ljust
+  arcd(gco(3,3),3.75*lu,75,atan2(2.5,1.5)*rtod_) cw -> ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`charD',
+`[Origin: gco(0,0) `#' `charD'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,6)+(ft2,-ft2) to gco(0,0)+(ft2,ft2)
+  lr = 3*lu-ft2
+ L2: line right 5*lu-ft2-lr
+  arcd(Here+(0,lr),lr,-90,90)
+  line to L1.start
+  ifelse(`$1',,,`
+  stroke(from L1.start to L1.end chop lu/3,-lu*0.75,1)
+  stroke(from L2.start to L2.end chop lu/3 chop lu/8,-lu*0.75,2)
+  move to L1.start+(0,.75*lu)
+  {"3"}; line right 5*lu-ft2-lr chop 3pt__ chop 0
+  arcd(Here-(0,.75*lu+lr),.75*lu+lr,90,-90) cw -> ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`charE',
+`[Origin: gco(0,0) `#' `charE'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,6)+(ft2,-ft2) to gco(0,0)+(ft2,ft2)
+ L2: line right 5*lu-2*ft2
+ L3: line from L1.start right 4.5*lu-2*ft2
+ L4: line from gco(0,3.2)+(ft2,0) right 3*lu-2*ft2
+  ifelse(`$1',,,`
+  stroke(from L1.start to L1.end chop lu/3,-lu*0.75,1)
+  stroke(from L2.start to L2.end chop lu/2 chop lu/3,-lu*0.75,2)
+  stroke(from L3.start to L3.end chop lu*.75 chop lu/3,-lu*0.75,3)
+  stroke(from L4.start to L4.end chop lu*.75 chop lu/3,-lu*0.75,4) ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`charF',
+`[Origin: gco(0,0) `#' `charF'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,6)+(ft2,-ft2) to gco(0,0)+(ft2,ft2)
+ L2: line from L1.start right 5*lu-2*ft2
+ L3: line from gco(0,3.2)+(ft2,0) right 3*lu-2*ft2
+  ifelse(`$1',,,`
+  stroke(from L1.start to L1.end chop lu/3,-lu*0.75,1)
+  stroke(from L2.start to L2.end chop lu*.75 chop lu/3,-lu*0.75,2)
+  stroke(from L3.start to L3.end chop lu*.75 chop lu/3,-lu*0.75,3) ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`charG',
+`[Origin: gco(0,0) `#' `charG'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+  ifelse(`$1',,,`circle rad 3*lu-ft2 thick 0.3 dashed at gco(3,3)')
+  L3: line from gco(3,3) to gco(5,3) then to gco(5,1)
+  arcr(gco(3,3),3*lu-ft2,atan2(2.5,1.5),atan2(-2,2.0))
+  ifelse(`$1',,,`
+  setstroke
+  "1" at gco(3,6) above rjust
+  arcd(gco(3,3),3.75*lu,105,atan2(-2,2.1)*rtod_) ->
+  "2" at gco(3,6) above ljust
+  arcd(gco(3,3),3.75*lu,75,atan2(2.5,1.5)*rtod_) cw ->
+  line from L3.start+(0,-.75*lu) right 1.2*lu chop .5*lu chop 0
+  { "3" at last line.start rjust }
+  arrow down 1.2*lu ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`charH',
+`[Origin: gco(0,0) `#' `charH'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,6)+(ft2,-ft2) to gco(0,0)+(ft2,ft2)
+ L2: line from gco(5,6)+(0,-ft2) to gco(5,0)+(0,ft2)
+ L3: line from gco(0,3.2)+(ft2,0) to gco(5,3.2)
+  ifelse(`$1',,,`
+  stroke(from L1.start to L1.end chop lu/3,-lu*0.75,1)
+  stroke(from L2.start to L2.end chop lu/3, lu*0.75,2)
+  stroke(from L3.start to L3.end chop lu*.75 chop lu/3,-lu*0.75,3) ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`charI',
+`[Origin: gco(0,0) `#' `charI'
+  ifelse(`$1',,,`grid(1,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,6)+(ft2,-ft2) to gco(0,0)+(ft2,ft2)
+  ifelse(`$1',,,`
+  stroke(from L1.start to L1.end chop lu/3, lu*0.75,1) ')
+  box invis wid 2*ft2 ht 6*lu with .sw at Origin]')
+
+define(`charJ',
+`[Origin: gco(0,0) `#' `charJ'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+  v = (sqrt(2)-1)*4/3
+  al = 2.5*lu-ft2
+  bl = 2.0*lu-ft2/2
+  CL: gco(2.5,4.0)+(0,-bl)
+  E: ellipse ht 2*bl wid 2*al thick 0.3 ifelse(`$1',,invis,dashed) at CL
+ L1: line from (E.e,gco(0,6)+(ft2,-ft2)) to E.e
+  spline v to (E.e,E.s) then to (E.w,E.s) then to E.w
+  ifelse(`$1',,,`
+  stroke(from L1.start to L1.end chop lu/3, lu*0.75,1)
+  "2" at gco(-.5,1.5)
+  spline v -> from gco(-0.4,0.75) to gco(-0.2,-0.65) then to gco(5.65,-0.65) \
+    then to gco(5.65,2) ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`charK',
+`[Origin: gco(0,0) `#' `charK'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,6)+(ft2,-ft2) to gco(0,0)+(ft2,ft2)
+ L3t:line ifelse(`$1',,invis,dashed) thick 0.3 from L1.start \
+  to gco(5,0)+(-ft2,ft2)
+ L2: line from gco(4.5,6)+(0,-ft2) to gco(0,2)+(ft2,0)
+ L3: line from Intersect_(L3t,L2) to L3t.end
+  ifelse(`$1',,,`
+  stroke(from L1.start to L1.end chop lu/3,-lu*0.75,1)
+  stroke(from L2.start to L2.end chop lu*4/3 chop lu,-lu*0.75,2)
+  stroke(from L3.start to L3.end chop lu*.75 chop lu/3, lu*0.75,3) ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`charL',
+`[Origin: gco(0,0) `#' `charL'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,6)+(ft2,-ft2) to gco(0,0)+(ft2,ft2)
+ L2: line to gco(5,0)+(-ft2,ft2)
+  ifelse(`$1',,,`
+  stroke(from L1.start to L1.end chop lu/3,-lu*0.75,1)
+  stroke(from L2.start to L2.end chop lu/3,-lu*0.75,2) ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`charM',
+`[Origin: gco(0,0) `#' `charM'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,6)+(ft2,-ft2) to gco(0,0)+(ft2,ft2)
+ L2: line from gco(6,6)+(-ft2,-ft2) to gco(6,0)+(-ft2,ft2)
+ L3: line from L1.start to gco(3,0)+(0,ft2)
+ L4: line from L2.start to gco(3,0)+(0,ft2)
+  ifelse(`$1',,,`
+  stroke(from L1.start to L1.end chop lu/3,-lu*0.75,1)
+  stroke(from L2.start to L2.end chop lu/3, lu*0.75,2)
+  stroke(from L3.start to L3.end chop lu*.75 chop lu*2, lu*0.75,3)
+  stroke(from L4.start to L4.end chop lu*.75 chop lu*2,-lu*0.75,4) ')
+  box invis wid 6*lu ht 6*lu with .sw at Origin]')
+
+define(`charN',
+`[Origin: gco(0,0) `#' `charN'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,6)+(ft2,-ft2) to gco(0,0)+(ft2,ft2)
+ L2: line from gco(5,6)+(0,-ft2) to gco(5,0)+(0,ft2)
+ L3: line from L1.start to L2.end
+  ifelse(`$1',,,`
+  stroke(from L1.start to L1.end chop lu/3,-lu*0.75,1)
+  stroke(from L2.start to L2.end chop lu/3, lu*0.75,2)
+  stroke(from L3.start to L3.end chop lu*1.0 chop lu*1.5, lu*0.75,3) ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`charO',
+`[Origin: gco(0,0) `#' `charO'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+  circle rad 3*lu-ft2 at gco(3,3)
+  ifelse(`$1',,,`
+  setstroke
+  "1" at gco(3,6) above rjust
+  arcd(gco(3,3),3.75*lu,105,atan2(-2,2.1)*rtod_) ->
+  "2" at gco(3,6) above ljust
+  arcd(gco(3,3),3.75*lu,75,atan2(-2,2.1)*rtod_+5) cw -> ')
+  box invis wid 6*lu ht 6*lu with .sw at Origin]')
+
+define(`charP',
+`[Origin: gco(0,0) `#' `charP'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,6)+(ft2,-ft2) to gco(0,0)+(ft2,ft2)
+ L2: line from gco(0,3)+(ft2,0) right 5*lu-ft2-(3*lu-ft2)/2
+ L3: line from L1.start right 5*lu-ft2-(3*lu-ft2)/2
+  arcd(Here+(0,-(3*lu-ft2)/2),(3*lu-ft2)/2,-90,90)
+  ifelse(`$1',,,`
+  stroke(from L1.start to L1.end chop lu/3,-lu*0.75,1)
+  stroke(from L2.start to L2.end chop lu*.75 chop lu/3,-lu*0.75,2)
+  "3" at gco(0,6)+(0,lu*.75)
+  line to (L3.end,Here) chop lu/2 chop 0
+  arcd(Here+(0,-4.5*lu/2),4.5*lu/2,90,-90) cw -> ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`charQ',
+`[Origin: gco(0,0) `#' `charQ'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+  circle rad 3*lu-ft2 at gco(3,3)
+  rpoint_(from gco(3,3) to gco(5,0))
+  ifelse(`$1',,,`{line dashed dashwid*0.8 thick 0.3 to rvec_(2*lu-ft2,0)}')
+  L3: line from rvec_(2*lu-ft2,0) to rvec_(4*lu-ft2,0)
+  ifelse(`$1',,,`
+  setstroke
+  "1" at gco(3,6) above rjust
+  arcd(gco(3,3),3.75*lu,105,atan2(-2,2.1)*rtod_) ->
+  "2" at gco(3,6) above ljust
+  arcd(gco(3,3),3.75*lu,75,atan2(-2,2.1)*rtod_+5) cw ->
+  stroke(from L3.start to L3.end chop -lu/3 chop lu/3,-lu*0.75,3) ')
+  box invis wid 6*lu ht 6*lu with .sw at Origin]')
+
+define(`charR',
+`[Origin: gco(0,0) `#' `charR'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,6)+(ft2,-ft2) to gco(0,0)+(ft2,ft2)
+ L2: line from gco(0,3)+(ft2,0) right 5*lu-ft2-(3*lu-ft2)/2
+ Lt4: line thick 0.3 ifelse(`$1',,invis,dashed) from gco(1,6)+(-ft2,-ft2) \
+  to gco(5,0)+(-ft2,ft2)
+ L4: line from Intersect_(Lt4,L2) to Lt4.end
+ L3: line from L1.start right 5*lu-ft2-(3*lu-ft2)/2
+  arcd(Here+(0,-(3*lu-ft2)/2),(3*lu-ft2)/2,-90,90)
+  ifelse(`$1',,,`
+  stroke(from L1.start to L1.end chop lu/3,-lu*0.75,1)
+  stroke(from L2.start to L2.end chop lu*.75 chop lu,-lu*0.75,2)
+  stroke(from L4.start to L4.end chop lu chop lu*.5,-lu*0.75,4)
+  "3" at gco(0,6)+(0,lu*.75)
+  line to (L3.end,Here) chop lu/2 chop 0
+  arcd(Here+(0,-4.5*lu/2),4.5*lu/2,90,-80) cw -> ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`charS',
+`[Origin: gco(0,0) `#' `charS'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+  ah = 2.0*lu-ft2
+  bh = 1.4*lu-ft2/2
+  CH: gco(2.5,3.2)+(0,bh)
+  ifelse(`$1',,,`ellipse ht 2*bh wid 2*ah thick 0.3 dashed at CH')
+  al = 2.5*lu-ft2
+  bl = 1.6*lu-ft2/2
+  CL: gco(2.5,3.2)+(0,-bl)
+  ifelse(`$1',,,`ellipse ht 2*bl wid 2*al thick 0.3 dashed at CL')
+  i = 0
+  V[i]: CH+(ah*cosd(20),bh*sind(20))
+  for theta = 30 to 270 by 22.5 do { i = i+1
+    V[i]: CH+(ah*cosd(theta),bh*sind(theta)) }
+  for theta = 90-22.5 to -135 by -22.5 do { i = i+1
+    V[i]: CL+(al*cosd(theta),bl*sind(theta)) }
+  i = i+1
+  V[i]: gco(0,1)+(ft2,0)
+  fitcurve(V,i)
+  ifelse(`$1',,,`
+  setstroke
+  "1" at gco(1,5.5) above rjust
+  elarrow(120,40,-20,CH,2.75*lu,2.15*lu)
+  "2" at gco(2.0,4.5) above
+  i = -1
+  for theta = 150 to 270 by 30 do { i = i+1
+    V[i]: CH+(1.25*cosd(theta),0.65*sind(theta))*lu }
+  elarrow(60,-80,-20,CL,3.25*lu,2.35*lu,i)
+  "3" at gco(0,0) above rjust
+  elarrow(225,270,15,CL,3.25*lu,2.35*lu) ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`charT',
+`[Origin: gco(0,0) `#' `charT'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,6)+(ft2,-ft2) to gco(6,6)+(-ft2,-ft2)
+ L2: line from gco(3,6)+(0,-ft2) to gco(3,0)+(0,ft2)
+  ifelse(`$1',,,`
+  stroke(from L1.start to L1.end chop lu/3, lu*0.75,1)
+  stroke(from L2.start to L2.end chop lu*2/3 chop lu/3,-lu*0.75,2) ')
+  box invis wid 6*lu ht 6*lu with .sw at Origin]')
+
+define(`charU',
+`[Origin: gco(0,0) `#' `charU'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+  v = (sqrt(2)-1)*4/3
+  al = 2.5*lu-ft2
+  bl = 2.0*lu-ft2/2
+  CL: gco(2.5,4.0)+(0,-bl)
+  E: ellipse ht 2*bl wid 2*al thick 0.3 ifelse(`$1',,invis,dashed) at CL
+ L1: line from (E.w,gco(0,6)+(ft2,-ft2)) to E.w
+ L2: line from (E.e,L1.start) to E.e
+  spline v to (E.e,E.s) then to (E.w,E.s) then to E.w
+  ifelse(`$1',,,`
+  stroke(from L2.start to L2.end chop lu/3, lu*0.75,2)
+  stroke(from L1.start to L1.end chop lu/3,-lu*0.75,1)
+  "3" at gco(-.5,1.5)
+  spline v -> from gco(-0.4,0.75) to gco(-0.2,-0.65) then to gco(5.65,-0.65) \
+    then to gco(5.65,2) ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`charV',
+`[Origin: gco(0,0) `#' `charV'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,6)+(ft2,-ft2) to gco(3,0)+(0,ft2)
+ L2: line to gco(6,6)+(-ft2,-ft2)
+  ifelse(`$1',,,`
+  stroke(from L1.start to L1.end chop lu,-lu*0.75,1)
+  stroke(from L2.end to L2.start chop lu, lu*0.75,2) ')
+  box invis wid 6*lu ht 6*lu with .sw at Origin]')
+
+define(`charW',
+`[Origin: gco(0,0) `#' `charW'
+  ifelse(`$1',,,`grid(8,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,6)+(ft2,-ft2) to gco(2,0)+(0,ft2)
+ L2: line from gco(4,6)+(0,-ft2) to L1.end
+ L3: line from L2.start to gco(6,0)+(0,ft2)
+ L4: line from gco(8,6)+(-ft2,-ft2) to L3.end
+  ifelse(`$1',,,`
+  stroke(from L1.start to L1.end chop lu*1.5 chop lu*.5,-lu*0.75,1)
+  stroke(from L2.start to L2.end chop lu*.75 chop lu*1.5,-lu*0.75,2)
+  stroke(from L3.start to L3.end chop lu*2 chop lu*.5,-lu*0.75,3)
+  stroke(from L4.start to L4.end chop lu*.75 chop lu*1.5,-lu*0.75,4) ')
+  box invis wid 8*lu ht 6*lu with .sw at Origin]')
+
+define(`charX',
+`[Origin: gco(0,0) `#' `charX'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0.5,6)+(ft2,-ft2) to gco(6,0)+(-ft2,ft2)
+ L2: line from gco(5.5,6)+(-ft2,-ft2) to gco(0,0)+(ft2,ft2)
+  ifelse(`$1',,,`
+  stroke(from L1.start to L1.end chop lu, lu*0.75,1)
+  stroke(from L2.start to L2.end chop lu,-lu*0.75,2) ')
+  box invis wid 6*lu ht 6*lu with .sw at Origin]')
+
+define(`charY',
+`[Origin: gco(0,0) `#' `charY'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,6)+(ft2,-ft2) to gco(3,3)+(0,ft2)
+ L2: line from gco(6,6)+(-ft2,-ft2) to L1.end
+ L3: line to gco(3,0)+(0,ft2)
+  ifelse(`$1',,,`
+  stroke(from L1.start to L1.end chop lu, lu*0.75,1)
+  stroke(from L2.start to L2.end chop lu,-lu*0.75,2)
+  stroke(from L3.start to L3.end chop lu/3,-lu*0.75,3) ')
+  box invis wid 6*lu ht 6*lu with .sw at Origin]')
+
+define(`charZ',
+`[Origin: gco(0,0) `#' `charZ'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0.5,6)+(ft2,-ft2) to gco(5,6)+(-ft2,-ft2)
+ L2: line to gco(0,0)+(ft2,ft2)
+ L3: line to gco(5,0)+(-ft2,ft2)
+  ifelse(`$1',,,`
+  stroke(from L1.start to L1.end chop lu/3, lu*0.75,1)
+  stroke(from L2.start to L2.end chop 1.5*lu chop lu,-lu*0.75,2)
+  stroke(from L3.start to L3.end chop lu/3,-lu*0.75,3) ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`char1',
+`[Origin: gco(0,0) `#' `char1'
+  ifelse(`$1',,,`grid(1,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,6)+(ft2,-ft2) to gco(0,0)+(ft2,ft2)
+  ifelse(`$1',,,`
+  stroke(from L1.start to L1.end chop lu/3, lu*0.75,1) ')
+  box invis wid 2*ft2 ht 6*lu with .sw at Origin]')
+
+define(`char2',
+`[Origin: gco(0,0) `#' `char2'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+  ah = 2.0*lu-ft2
+  bh = 1.4*lu-ft2/2
+  CH: gco(2.5,3.2)+(0,bh)
+  ifelse(`$1',,,`ellipse ht 2*bh wid 2*ah thick 0.3 dashed at CH')
+  al = 2.5*lu-ft2
+  bl = 1.6*lu-ft2/2
+  CL: gco(2.5,3.2)+(0,-bl)
+  ifelse(`$1',,,`ellipse ht 2*bl wid 2*al thick 0.3 dashed at CL')
+  i = 0
+  V[i]: CH+(ah*cosd(160),bh*sind(160))
+  for theta = 150 to -90+22.5 by -22.5 do { i = i+1
+    V[i]: CH+(ah*cosd(theta),bh*sind(theta)) }
+  fitcurve(V,i)
+  v = (sqrt(2)-1)*4/3
+  spline v from V[i] to gco(2.8,3.0) then \
+    to gco(1.5,2.6) then to gco(0,1.2)+(ft2,0) then to gco(0,0)+(ft2,ft2)
+  psset_(`arrows=c-c') dnl
+  L2: line to gco(5,0)+(-ft2,ft2)
+  ifelse(`$1',,,`
+  setstroke
+  "1" at gco(1,5.5) above rjust
+  i = -1
+  for theta = 120 to -60 by -20 do { i = i+1
+    V[i]: CH+(2.75*cosd(theta),2.15*sind(theta))*lu }
+  i=i+1; V[i]: gco(2.6,2.1)
+  i=i+1; V[i]: gco(1.3,1.6)
+  i=i+1; V[i]: gco(0.95,0.5)
+  v = (sqrt(2)-1)*4/3
+  spline v -> from V[0] to V[1]
+  for n = 2 to i do { continue to V[n] }
+  stroke(from L2.start to L2.end chop lu/3,-lu*0.75,2) ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`char3',
+`[Origin: gco(0,0) `#' `char3'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+  ah = 2.0*lu-ft2
+  bh = 1.4*lu-ft2/2
+  CH: gco(2.5,3.2)+(0,bh)
+  H: ellipse ht 2*bh wid 2*ah thick 0.3 ifelse(`$1',,invis,dashed) at CH
+  al = 2.5*lu-ft2
+  bl = 1.6*lu-ft2/2
+  CL: gco(2.5,3.2)+(0,-bl)
+  L: ellipse ht 2*bl wid 2*al thick 0.3 ifelse(`$1',,invis,dashed) at CL
+  i = 0
+  V[i]: CH+(ah*cosd(160),bh*sind(160))
+  for theta = 150 to -90 by -20 do { i = i+1
+    V[i]: CH+(ah*cosd(theta),bh*sind(theta)) }
+  fitcurve(V,i)
+  line from H.s to (gco(2,3)+(ft2,0),H.s)
+  i = -1
+  for theta = 90 to -135 by -22.5 do { i = i+1
+    V[i]: CL+(al*cosd(theta),bl*sind(theta)) }
+  i = i+1
+  V[i]: gco(0,1)+(ft2,0)
+  fitcurve(V,i)
+  ifelse(`$1',,,`
+  setstroke
+  "1" at gco(1,5.5) above rjust
+  elarrow(120,-20,-20,CH,2.75*lu,2.15*lu)
+  "2" at gco(4.6,3.5)
+  elarrow(40,-80,-10,CL,3.25*lu,2.35*lu)
+  "3" at gco(0,0) above rjust
+  i = 0
+  V[i]: CL+(3.25*cosd(220),2.35*sind(220))*lu
+  elarrow(240,270,15,CL,3.25*lu,2.35*lu,0) ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`char4',
+`[Origin: gco(0,0) `#' `char4'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(4,6)+(-ft2,-ft2) to gco(4,0)+(-ft2,ft2)
+ L2: line from L1.start to gco(0,1.5)+(ft2,-ft2)
+ L3: line to (gco(5,1.5)+(-ft2,0),Here)
+  ifelse(`$1',,,`
+  stroke(from L1.start to L1.end chop lu/3 chop 0, lu*.75,1)
+  stroke(from L2.start to L2.end chop lu chop lu/3,-lu*.75,2)
+  stroke(from L3.start to L3.end chop lu/3 chop lu/2,-lu*.75,3) ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`char5',
+`[Origin: gco(0,0) `#' `char5'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+  L1: line from gco(.5,6)+(0,-ft2) to gco(.5,3)
+  L4: line from L1.start to gco(4.5,6)+(-ft2,-ft2)
+  al = 2.5*lu-ft2
+  bl = 2.0*lu-ft2/2
+  CL: gco(2.5,4.0)+(0,-bl)
+  i = 0
+  V[i]: L1.end
+  for theta = 125 to -135 by -25 do { i = i+1
+    V[i]: CL+(al*cosd(theta),bl*sind(theta)) }
+  i = i+1
+  V[i]: gco(0,1)+(ft2,0)
+  fitcurve(V,i)
+  ifelse(`$1',,,`
+  stroke(from L1.start to L1.end chop lu/3 chop 0,-lu*.75,1)
+  stroke(from L4.start to L4.end chop lu/3 chop 0, lu*.75,4)
+  v = (sqrt(2)-1)*4/3
+  "2" at gco(1.0,4.0) above
+  elarrow(110,-80,-10,CL,al+lu*.75,bl+lu*.75)
+  "3" at gco(0,0) above rjust
+  i = 0
+  V[i]: CL+((al+0.75*lu)*cosd(220),(bl+.75*lu)*sind(220))
+  elarrow(240,270,15,CL,al+lu*.75,bl+lu*.75,0) ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`char6',
+`[Origin: gco(0,0) `#' `char6'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+  ab = 2.5*lu-ft2
+  bb = 3.0*lu-ft2
+  Cb: gco(2.5,3.0)
+  ifelse(`$1',,,`ellipse ht 2*bb wid 2*ab thick 0.3 dashed at Cb')
+  i = -1
+  for theta = -315 to 180-22.5 by 22.5 do { i = i+1
+    if (theta<=-90) then {X:Cb; x=ab; y=bb } \
+    else {X: gco(2.5,2); x=ab; y=2*lu-ft2 }
+    V[i]: X+(x*cosd(theta),y*sind(theta)) }
+  fitcurve(V,i)
+  v = (sqrt(2)-1)*4/3
+  ifelse(`$1',,,`
+  setstroke
+  "1" at gco(2,6) above
+  x = ab+lu*.75; y = bb+lu*.75
+  elarrow(90+22.5,270+22.5,22.5,Cb,x,y)
+  "3" at gco(3,6) above
+  elarrow(70,45,-12.5,Cb,x,y)
+  "2" at gco(1.2,3.8) above
+  elarrow(100,-50,-10,gco(2.5,2),ab+lu*.65,2*lu+lu*.65) ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`char7',
+`[Origin: gco(0,0) `#' `char7'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,6)+(ft2,-ft2) to gco(5,6)+(-ft2,-ft2)
+  { L1t: line invis to gco(1.3,0)
+  L2t: line invis up lu from gco(2,0)+(-ft2,0) }
+  psset_(`arrows=-') dnl
+  arcto(Intersect_(L1t,L2t),L2t.start,2.5*lu)
+  line to (Here,gco(2,0))
+  ifelse(`$1',,,`
+  stroke(from L1.start to L1.end chop lu/3, lu*0.75,1)
+  stroke(from L1t.start to 4th last line.end chop lu/3 chop 0,
+    lu*.75,2,thick 0.3,L1)
+  L2: line <- up arrowht from gco(2.75,0)+(-ft2,ft2) 
+  move to L1.end
+  arcto(Intersect_(L1,L2),L2.start,(2.5-0.75)*lu,thick 0.3) ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`char8',
+`[Origin: gco(0,0) `#' `char8'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+  ah = 2.0*lu
+  bh = 1.4*lu
+  CH: gco(2.5,6)+(0,-bh)
+  H: ellipse ht 2*bh wid 2*ah at CH
+  al = 2.5*lu
+  bl = 1.6*lu+ft2/2
+  CL: gco(2.5,3.2)+(0,ft2)+(0,-bl)
+  L: ellipse ht 2*bl wid 2*al at CL
+  ifelse(`$1',,,`
+  setstroke
+  x = ah+lu*.75; y = bh+lu*.75
+  "1" at gco(2,6) above
+  elarrow(110,205,15,CH,x,y)
+  "2" at gco(3,6) above
+  elarrow(70,-25,-15,CH,x,y)
+  x = al+lu*.75; y = bl+lu*.75
+  "3" at gco(0.2,2.6) above
+  elarrow(150,260,10,CL,x,y)
+  "4" at gco(4.8,2.6) above
+  elarrow(30,-80,-10,CL,x,y) ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`char9',
+`[Origin: gco(0,0) `#' `char9'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+  ab = 2.5*lu-ft2
+  bb = 3.0*lu-ft2
+  Cb: gco(2.5,3.0)
+  ifelse(`$1',,,`ellipse ht 2*bb wid 2*ab thick 0.3 dashed at Cb')
+  i = -1
+  for theta = -135 to 360-22.5 by 22.5 do { i = i+1
+    if (theta<=90) then {X:Cb; x=ab; y=bb } \
+    else {X: gco(2.5,4); x=ab; y=2*lu-ft2 }
+    V[i]: X+(x*cosd(theta),y*sind(theta)) }
+  fitcurve(V,i)
+  ifelse(`$1',,,`
+  setstroke
+  "1" at gco(2,6) above
+  elarrow(90+22.5,270+22.5,22.5,X,3.15*lu-ft2,2.65*lu-ft2)
+  "2" at gco(3,6) above
+  elarrow(80,-80,-10,Cb,ab+lu*.65,bb+lu*.65)
+  "3" at gco(0,1)
+  elarrow(225,270,15,Cb,3.15*lu,3.65*lu) ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`char0',
+`[Origin: gco(0,0) `#' `char0'
+  ifelse(`$1',,,`grid(6,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+  ab = 2.5*lu-ft2
+  bb = 3.0*lu-ft2
+  Cb: gco(2.5,3.0)
+  ellipse ht 2*bb wid 2*ab at Cb
+  ifelse(`$1',,,`
+  setstroke
+  "1" at gco(2,6) above
+  elarrow(90+22.5,270,22.5,Cb,.65*lu+ab,.65*lu+bb)
+  "2" at gco(3,6) above
+  elarrow(70,-80,-10,Cb,ab+lu*.65,bb+lu*.65) ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`charAnd',
+`[Origin: gco(0,0) `#' `fAnd'
+  ifelse(`$1',,,`grid(5,6)')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+  v = (sqrt(2)-1)*4/3
+  spline v from gco(5,0)+(-ft2,ft2) \
+   to gco(4.605,0.312) to gco(1.443,4.038) \
+   to gco(1.335,4.198) to gco(1.134,4.597) to gco(1.103,4.938) \
+   to gco(1.143,5.252) to gco(1.358,5.605) to gco(1.702,5.797) \
+   to gco(2.236,5.857) to gco(2.637,5.772) to gco(2.981,5.499) \
+   to gco(3.157,5.132) to gco(3.087,4.565) to gco(2.746,4.189) \
+   to gco(2.415,3.895) to gco(2.009,3.621) to gco(1.522,3.339) \
+   to gco(1.157,3.095) to gco(0.671,2.769) to gco(0.435,2.520) \
+   to gco(0.227,2.215) to gco(0.101,1.636) to gco(0.234,1.165) \
+   to gco(0.373,0.926) to gco(0.512,0.738) to gco(0.918,0.443) \
+   to gco(1.190,0.340) to gco(1.427,0.274) to gco(2.140,0.166) \
+   to gco(2.617,0.164) to gco(3.031,0.216) to gco(3.616,0.395) \
+   to gco(4.017,0.600) to gco(4.121,0.676) to gco(4.482,1.017) \
+   to gco(4.637,1.302) to gco(4.753,1.532) to gco(4.863,1.875)
+  ifelse(`$1',,,`
+  setstroke
+  "1" at gco(1.4,6) above
+  spline -> from gco(1.0,6.2) to gco(.35,5.5) then to gco(.35,4) \
+    then to gco(4.0,0)
+  "2" at gco(2.6,6) above
+  spline -> from gco(3.0,6.2) to gco(3.75,5.5) then to gco(3.75,3.9) \
+    then to gco(1,2.4) then to gco(1,1.1) then to gco(2,.9)
+  "3" at gco(4.2,2.4)
+  spline -> from gco(4.1,1.8) to gco(3.8,1.3) then to gco(3,.9) \
+    then to gco(2.2,.9) ')
+  box invis wid 5*lu ht 6*lu with .sw at Origin]')
+
+define(`charComma',
+` circle fill_(0) rad ft2 at Here+(0,-3*lu+ft2)
+  move to last circle.c
+  arc cw from Here+(0,ft2) to Here+(0,-4*ft2) \
+    with .c at Here+(-ft2,-1.5*ft2)
+  move to last circle+(ft2,-ft2+3*lu)')
+
+define(`charPeriod',
+` circle fill_(0) rad ft2 at Here+(0,-3*lu+ft2)
+  move to last circle+(ft2,-ft2+3*lu)')
+
+define(`chara',
+`[Origin: gco(0,0) `#' `chara'
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+  circle rad 2*lu-ft2 with .c at gco(2,2)
+ L3: line from gco(4,4)+(-ft2,-ft2) to gco(4,0)+(-ft2,ft2)
+  ifelse(`$1',,,`
+  setstroke
+  "1" at gco(1.5,3.0)
+  arcd(gco(2,2),1.2*lu,130,265) ->
+  "2" at gco(2.5,3.0)
+  arcd(gco(2,2),1.2*lu,50,-85) -> cw
+  stroke(from L3.start to L3.end chop lu/3 chop 0,lu*0.5,3) ')
+  box invis wid 4*lu ht 4*lu with .sw at Origin]')
+
+define(`charb',
+`[Origin: gco(0,0) `#' `charb'
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+  circle rad 2*lu-ft2 with .c at gco(2,2)
+ L1: line from gco(0,6)+(ft2,-ft2) to gco(0,0)+(ft2,ft2)
+  ifelse(`$1',,,`
+  setstroke
+  stroke(from L1.start to L1.end chop lu/3 chop 0,lu*0.5,1)
+  "2" at gco(1.5,3.0)
+  arcd(gco(2,2),1.2*lu,130,265) ->
+  "3" at gco(2.5,3.0)
+  arcd(gco(2,2),1.2*lu,50,-85) -> cw ')
+  box invis wid 4*lu ht 6*lu with .sw at Origin]')
+
+define(`charc',
+`[Origin: gco(0,0) `#' `charc'
+  ifelse(`$1',,,
+   `circle outlined "linegray" rad 2*lu-ft2 thick 0.3 dashed lu/2 at gco(2,2)')
+  psset_(`linecolor=linegray') dnl
+  arcr(gco(2,2),2*lu-ft2,atan2(1.7,1),atan2(-1,1.6))
+  ifelse(`$1',,,`
+  setstroke
+  "1" at gco(1.5,3.0)
+  arcd(gco(2,2),1.2*lu,130,-45) ->
+  "2" at gco(2.5,3.0)
+  arcd(gco(2,2),1.2*lu,50,20) -> cw ht 0.75 * arrowht ')
+  box invis wid 4*lu ht 4*lu with .sw at Origin]')
+
+define(`chard',
+`[Origin: gco(0,0) `#' `chard'
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+  circle rad 2*lu-ft2 with .c at gco(2,2)
+ L3: line from gco(4,6)+(-ft2,-ft2) to gco(4,0)+(-ft2,ft2)
+  ifelse(`$1',,,`
+  setstroke
+  "1" at gco(1.5,3.0)
+  arcd(gco(2,2),1.2*lu,130,265) ->
+  "2" at gco(2.5,3.0)
+  arcd(gco(2,2),1.2*lu,50,-85) -> cw
+  stroke(from L3.start to L3.end chop lu/3 chop 0,lu*0.5,3) ')
+  box invis wid 4*lu ht 6*lu with .sw at Origin]')
+
+define(`chare',
+`[Origin: gco(0,0) `#' `chare'
+  ifelse(`$1',,,
+   `circle outlined "linegray" rad 2*lu-ft2 thick 0.3 dashed lu/2 at gco(2,2)')
+  psset_(`linecolor=linegray') dnl
+  arcr(gco(2,2),2*lu-ft2,atan2(0.2,2),atan2(-1,1.6))
+ L3: line from last arc.start to (gco(0.2,0).x, last arc.start.y)
+  ifelse(`$1',,,`
+  setstroke
+  "1" at gco(1.5,3.0)
+  arcd(gco(2,2),1.2*lu,130,-45) ->
+  "2" at gco(2.5,3.0)
+  arcd(gco(2,2),1.2*lu,50,20) -> cw ht 0.75 * arrowht ')
+  stroke(from L3.end to L3.start chop lu*1.5 chop lu/3,-lu*0.5,3)
+  box invis wid 4*lu ht 4*lu with .sw at Origin]')
+
+define(`charf',
+`[Origin: gco(0,0) `#' `charf'
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L3: line from gco(0,4)+(ft2,0) to gco(2,4)+(-ft2,0)
+ L1: line from gco(1,0)+(0,ft2) to gco(1,4.8)
+  psset_(`linecolor=linegray') dnl
+  arc cw to gco(3,5.5)+(0,0) with .c at gco(2.12,4.8)
+  ifelse(`$1',,,`
+  setstroke
+  stroke(from L1.end to L1.start chop -lu/5 chop lu/3,-lu*0.75,1)
+  "2" at gco(1.5,4.6)
+  arcd(gco(2.12,4.8),0.6*lu,140,40) -> cw ht 0.75 * arrowht
+  stroke(from L3.start to L3.end chop lu*.5 chop 0,-lu*0.75,3) ')
+  box invis wid 3*lu ht 6*lu with .sw at Origin]')
+
+define(`charg',
+`[Origin: gco(0,0) `#' `charg'
+  ifelse(`$1',,,
+   `circle outlined "linegray" rad 2*lu-ft2 thick 0.3 dashed lu/2 at gco(2,0) ')
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+  circle rad 2*lu-ft2 with .c at gco(2,2)
+ L3: line from gco(4,4)+(-ft2,-ft2) to gco(4,0)+(-ft2,0)
+  psset_(`linecolor=linegray') dnl
+  arcr(gco(2,0),2*lu-ft2,0,atan2(-1,-1.5)) cw
+  ifelse(`$1',,,`
+  setstroke
+  "1" at gco(1.5,3.0)
+  arcd(gco(2,2),1.2*lu,130,265) ->
+  "2" at gco(2.5,3.0)
+  arcd(gco(2,2),1.2*lu,50,-85) -> cw
+  "4" at gco(0.7,-0.6)
+  arcd(gco(2,0),1.2*lu,-135,-45) -> ht 0.75 * arrowht
+  stroke(from L3.start to L3.end chop lu*0 chop 0,lu*0.5,3) ')
+  box invis wid 4*lu ht 6*lu with .sw at gco(0,-2)]')
+
+define(`charh',
+`[Origin: gco(0,0) `#' `charh'
+  ifelse(`$1',,,
+   `circle outlined "linegray" rad 2*lu-ft2 thick 0.3 dashed lu/2 at gco(2,2) ')
+  psset_(`linecolor=linegray') dnl
+  arcd(gco(2,2),2*lu-ft2,180,0) cw
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+  line to gco(4,0)+(-ft2,ft2)
+ L1: line from gco(0,6)+(ft2,-ft2) to gco(0,0)+(ft2,ft2)
+  ifelse(`$1',,,`
+  setstroke
+  stroke(from L1.start to L1.end chop lu/3 chop 0,lu*0.5,1)
+  "2" at gco(1.0,2.4)
+  arcd(gco(2,2),1.2*lu,130,0) cw
+  stroke(to (Here,gco(0,0)) chop -3pt__ chop lu/4) ')
+  box invis wid 4*lu ht 6*lu with .sw at Origin]')
+
+define(`chari',
+`[Origin: gco(0,0) `#' `chari'
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,0)+(ft2,ft2) to gco(0,4)+(ft2,-ft2)
+ L2: line from gco(0,6)+(ft2,-ft2) to gco(0,5.5)+(ft2,0)
+  ifelse(`$1',,,`
+  setstroke
+  stroke(from L2.start to L2.end+(0,-lu*.2) chop -lu*.7 chop 0,-lu*0.5,)
+  "2" at last line.c+(0.1*lu,-0.2*lu) rjust
+  stroke(from L1.end to L1.start chop lu/3 chop 0,-lu*0.5,1) ')
+  box invis wid ft2*2 ht 6*lu with .sw at Origin]')
+
+define(`charj',
+`[Origin: gco(0,0) `#' `charj'
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L2: line from gco(2,6)+(0,-ft2) to gco(2,5.5)
+ L1: line from gco(2,4)+(0,-ft2) to gco(2,-0.8)
+  psset_(`linecolor=linegray') dnl
+  arc cw to gco(0,-1.5) with .c at gco(0.88,-0.8)
+  ifelse(`$1',,,`
+  setstroke
+  stroke(from L1.start to L1.end chop lu/3 chop 0,-lu*0.5,1,solid)
+  arcd(gco(0.88,-0.8),.62*lu,0,-135) cw -> ht 0.75*arrowht
+  stroke(from L2.start to L2.end+(0,-lu*.2) chop -lu*.7 chop 0,-lu*0.5,)
+  "2" at last line.c+(0.1*lu,-0.2*lu) rjust ')
+  box invis wid 2*lu ht 6*lu with .sw at Origin+(0,-2*lu)]')
+
+define(`chark',
+`[Origin: gco(0,0) `#' `chark'
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,6)+(ft2,-ft2) to gco(0,0)+(ft2,ft2)
+ L2: line from gco(3.4,4)+(0,-ft2) to gco(0,1.6)+(ft2,ft2)
+ L3t:line ifelse(`$1',,invis,dashed lu/2) thick 0.3 from gco(0,4)+(ft2,0) \
+    to gco(4,0)+(-ft2,ft2)
+ L3: line from Intersect_(L2,L3t) to L3t.end
+  ifelse(`$1',,,`
+  setstroke
+  stroke(from L1.start to L1.end chop lu/3 chop 0,-lu*0.5,1)
+  stroke(from L2.start to L2.end chop lu/2 ,-lu*0.6,2)
+  stroke(from L3.start to L3.end chop lu/2 ,-lu*0.6,3) ')
+  box invis wid 4*lu ht 6*lu with .sw at Origin]')
+
+define(`charl',
+`[Origin: gco(0,0) `#' `charl'
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,6)+(ft2,-ft2) to gco(0,0)+(ft2,ft2)
+  ifelse(`$1',,,`
+  setstroke
+  stroke(from L1.start to L1.end chop lu/3 chop 0,-lu*0.5,1) ')
+  box invis wid 2*ft2 ht 6*lu with .sw at Origin]')
+
+define(`charm',
+`[Origin: gco(0,0) `#' `charm'
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,4)+(ft2,-ft2) to gco(0,0)+(ft2,ft2)
+  ifelse(`$1',,,
+   `circle outlined "linegray" rad 1.5*lu-ft2/2 thick 0.3 dashed lu/2 \
+      at gco(1.5,2.5)+(ft2/2,0)
+    circle outlined "linegray" rad 1.5*lu-ft2/2 thick 0.3 dashed lu/2 \
+      at gco(4.5,2.5)+(-ft2/2,0) ')
+  psset_(`linecolor=linegray') dnl
+  arcd(gco(1.5,2.5)+(ft2/2,0),1.5*lu-ft2/2,180,0) cw
+  arcd(gco(4.5,2.5)+(-ft2/2,0),1.5*lu-ft2/2,180,0) cw
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+  line from gco(3,2.5) to gco(3,0)+(0,ft2)
+  line from gco(6,2.5)+(-ft2,0) to gco(6,0)+(-ft2,ft2)
+  ifelse(`$1',,,`
+  setstroke
+  stroke(from L1.start to L1.end chop lu/3 chop 0,-lu*0.5,1)
+  "2" at gco(0.9,2.2)
+  arcd(gco(1.5,2.5)+(ft2/2,0),0.75*lu-ft2/2,160,0) cw
+  stroke(to (Here,gco(0,0)) chop -3pt__ chop lu/3)
+  "3" at gco(3.9,2.2)
+  arcd(gco(4.5,2.5)+(-ft2/2,0),0.75*lu-ft2/2,160,0) cw
+  stroke(to (Here,gco(0,0)) chop -3pt__ chop lu/3) ')
+  box invis wid 6*lu ht 4*lu with .sw at Origin]')
+
+define(`charn',
+`[Origin: gco(0,0) `#' `charn'
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,4)+(ft2,-ft2) to gco(0,0)+(ft2,ft2)
+  ifelse(`$1',,,
+   `circle outlined "linegray" rad 2*lu-ft2 thick 0.3 dashed lu/2 at gco(2,2) ')
+  psset_(`linecolor=linegray') dnl
+  arcd(gco(2,2),2*lu-ft2,180,0) cw
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+  line from gco(4,2)+(-ft2,0) to gco(4,0)+(-ft2,ft2)
+  ifelse(`$1',,,`
+  setstroke
+  stroke(from L1.start to L1.end chop lu/3 chop 0,-lu*0.5,1)
+  "2" at gco(0.9,2.0)
+  arcd(gco(2,2),1.25*lu,150,0) cw
+  stroke(to (Here,gco(0,0)) chop -3pt__ chop lu/3) ')
+  box invis wid 4*lu ht 4*lu with .sw at Origin]')
+
+define(`charo',
+`[Origin: gco(0,0) `#' `charo'
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+  circle rad 2*lu-ft2 with .c at gco(2,2)
+  ifelse(`$1',,,`
+  setstroke
+  "1" at gco(1.5,3.0)
+  arcd(gco(2,2),1.2*lu,130,265) ->
+  "2" at gco(2.5,3.0)
+  arcd(gco(2,2),1.2*lu,50,-85) -> cw ')
+  box invis wid 4*lu ht 4*lu with .sw at Origin]')
+
+define(`charp',
+`[Origin: gco(0,0) `#' `charp'
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,4)+(ft2,-ft2) to gco(0,-2)+(ft2,ft2)
+  circle rad 2*lu-ft2 with .c at gco(2,2)
+  ifelse(`$1',,,`
+  setstroke
+  stroke(from L1.start to L1.end chop lu/3 chop 0,-lu*0.5,1)
+  "2" at gco(1.5,3.0)
+  arcd(gco(2,2),1.2*lu,130,265) ->
+  "3" at gco(2.5,3.0)
+  arcd(gco(2,2),1.2*lu,50,-85) -> cw ')
+  box invis wid 4*lu ht 6*lu with .sw at Origin+(0,-2*lu)]')
+
+define(`charq',
+`[Origin: gco(0,0) `#' `charq'
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(4,4)+(-ft2,-ft2) to gco(4,-2)+(-ft2,ft2)
+  circle rad 2*lu-ft2 with .c at gco(2,2)
+  ifelse(`$1',,,`
+  setstroke
+  stroke(from L1.start to L1.end chop lu/3 chop 0,lu*0.5,3)
+  "1" at gco(1.5,3.0)
+  arcd(gco(2,2),1.2*lu,130,265) ->
+  "2" at gco(2.5,3.0)
+  arcd(gco(2,2),1.2*lu,50,-85) -> cw ')
+  box invis wid 4*lu ht 6*lu with .sw at Origin+(0,-2*lu)]')
+
+define(`charr',
+`[Origin: gco(0,0) `#' `charr'
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,4)+(ft2,-ft2) to gco(0,0)+(ft2,ft2)
+  psset_(`linecolor=linegray') dnl
+  arc cw from gco(0,3)+(ft2,0) to gco(2,3.85) rad 1.2*lu with .c at gco(1.5,2.5)
+  ifelse(`$1',,,`
+  setstroke
+  stroke(from L1.start to L1.end chop lu/3,-lu*0.5,1)
+  "2" at gco(.6,2) above
+  arcd(gco(1.5,2.5),0.75*lu,140,60) -> cw ht 0.75 * arrowht ')
+  box invis wid 2*lu ht 4*lu with .sw at Origin]')
+
+define(`chars',
+`[Origin: gco(0,0) `#' `chars'
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+  ah = 1.6*lu
+  bh = (4*lu-ft2-2.1*lu)/2 #0.95*lu-ft2/2
+  CH: gco(2.0,2.1)+(0,bh)
+  ifelse(`$1',,,`ellipse ht 2*bh wid 2*ah thick 0.3 dashed lu/2 at CH')
+  al = 2.0*lu-ft2
+  bl = (2.1*lu-ft2)/2
+  CL: gco(2.0,2.1)+(0,-bl)
+  ifelse(`$1',,,`ellipse ht 2*bl wid 2*al thick 0.3 dashed lu/2 at CL')
+  i = -1
+  for theta = 0 to 270 by 22.5 do { i = i+1
+    V[i]: CH+(ah*cosd(theta),bh*sind(theta)) }
+  for theta = 90-22.5 to -180 by -22.5 do { i = i+1
+    V[i]: CL+(al*cosd(theta),bl*sind(theta)) }
+  fitcurve(V,i)
+  ifelse(`$1',,,`
+  setstroke
+  "1" at gco(0.5,3.5) above
+  elarrow(120,40,-20,CH,(ah+.6*lu),(bh+.6*lu))
+  "2" at gco(1.5,3.2)
+  i = -1
+  for theta = 150 to 270 by 30 do { i = i+1
+    V[i]: CH+(lu*cosd(theta),lu*0.5*sind(theta)) }
+  fitcurve(V,i)
+  r = V[i].y-CL.y
+  elarrow(60,-80,-20,CL,2.5*lu,r,i)
+  "3" at gco(-.3,.9)
+  elarrow(210,270,15,CL,2.5*lu,r) ')
+  box invis wid 4*lu ht 4*lu with .sw at Origin]')
+
+define(`chart',
+`[Origin: gco(0,0) `#' `chart'
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(1,0)+(0,ft2) to gco(1,6)+(0,-ft2)
+ L2: line from gco(0,4)+(ft2,0) to gco(2,4)+(-ft2,0)
+  ifelse(`$1',,,`
+  setstroke
+  stroke(from L1.end to L1.start chop lu/3,-lu*0.75,1)
+  stroke(from L2.start to L2.end chop lu*.5 chop 0,-lu*0.75,2) ')
+  box invis wid 2*lu ht 6*lu with .sw at Origin]')
+
+define(`charu',
+`[Origin: gco(0,0) `#' `charu'
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L2: line from gco(4,4)+(-ft2,-ft2) to gco(4,0)+(-ft2,ft2)
+  ifelse(`$1',,,
+   `circle outlined "linegray" rad 2*lu-ft2 thick 0.3 dashed lu/2 at gco(2,2) ')
+  line from gco(0,4)+(ft2,-ft2) to gco(0,2)+(ft2,0)
+  psset_(`linecolor=linegray') dnl
+  arcd(gco(2,2),2*lu-ft2,180,0)
+  ifelse(`$1',,,`
+  setstroke
+  stroke(from L2.start to L2.end chop lu/3 chop 0,lu*0.5,2)
+  "1" at gco(.9,2.0)
+  arcd(gco(2,2),1.25*lu,210,-30) -> ')
+  box invis wid 4*lu ht 4*lu with .sw at Origin]')
+
+define(`charv',
+`[Origin: gco(0,0) `#' `charv'
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,4)+(ft2,-ft2) to gco(2,0)+(0,ft2)
+ L2: line to gco(4,4)+(-ft2,-ft2)
+  ifelse(`$1',,,`
+  setstroke
+  stroke(from L1.start to L1.end chop lu chop lu/3,-lu*0.5,1)
+  stroke(from L2.end to L2.start chop lu*.6,-lu*0.5,2) ')
+  box invis wid 4*lu ht 4*lu with .sw at Origin]')
+
+define(`charw',
+`[Origin: gco(0,0) `#' `charw'
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,4)+(ft2,-ft2) to gco(1.5,0)+(0,ft2)
+ L2: line to gco(3,4)+(0,-ft2)
+ L3: line to gco(4.5,0)+(0,ft2)
+ L4: line to gco(6,4)+(-ft2,-ft2)
+  ifelse(`$1',,,`
+  setstroke
+  stroke(from L1.start to L1.end chop lu chop lu/3,-lu*0.5,1)
+  stroke(from L2.end to L2.start chop lu*.6 chop lu,-lu*0.5,2)
+  stroke(from L3.start to L3.end chop lu*1.5 chop lu/3,-lu*0.5,3)
+  stroke(from L4.end to L4.start chop lu*.6 chop lu,-lu*0.5,4) ')
+  box invis wid 6*lu ht 4*lu with .sw at Origin]')
+
+define(`charx',
+`[Origin: gco(0,0) `#' `charx'
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0.5,4)+(0,-ft2) to gco(4,0)+(-ft2,ft2)
+ L2: line from gco(3.5,4)+(0,-ft2) to gco(0,0)+(ft2,ft2)
+  ifelse(`$1',,,`
+  setstroke
+  stroke(from L1.start to L1.end chop lu/3,-lu*0.6,1)
+  stroke(from L2.start to L2.end chop lu/3,lu*0.6,2) ')
+  box invis wid 4*lu ht 4*lu with .sw at Origin]')
+
+define(`chary',
+`[Origin: gco(0,0) `#' `chary'
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0,4)+(ft2,-ft2) to gco(2,0)+(0,ft2)
+ L2x: gco(4,4)+(-ft2,-ft2)
+ L2: line from L2x to 1.37<L2x,L1.end>
+  C: Here-(perp(L2))/lin_leng(L2)*lu*1.1
+  psset_(`linecolor=linegray') dnl
+  arcd(C,lu*1.1,-30,-105) cw
+  ifelse(`$1',,,`
+  setstroke
+  stroke(from L1.start to L1.end chop lu chop lu/2,-lu*0.5,1)
+  stroke(from L2.start to L2.end chop lu*.6 chop 0,-lu*0.5,2,solid)
+  arcd(C,lu*.6,-30,-110) cw -> ht 0.75*arrowht ')
+  box invis wid 4*lu ht 6*lu with .sw at Origin+(0,-2*lu)]')
+
+define(`charz',
+`[Origin: gco(0,0) `#' `charz'
+  psset_(`arrows=c-c,linecolor=linegray') dnl
+ L1: line from gco(0.5,4)+(ft2,-ft2) to gco(4,4)+(-ft2,-ft2)
+ L2: line to gco(0,0)+(ft2,ft2)
+ L3: line to gco(4,0)+(-ft2,ft2)
+  ifelse(`$1',,,`
+  setstroke
+  stroke(from L1.start to L1.end chop lu/3 chop lu,-lu*0.6,1)
+  stroke(from L2.start to L2.end chop lu,lu*0.6,2)
+  stroke(from L3.start to L3.end chop lu/3,-lu*0.6,3) ')
+  box invis wid 4*lu ht 4*lu with .sw at Origin]')
+
+define(`xpnd',$*)
+define(`Letters',
+ `ifelse(`$1',,,`
+    ifelse(substr(`$1',0,1),|,`charComma',substr(`$1',0,1),.,`charPeriod',
+     `xpnd(char`'substr(`$1',0,1))')
+    ifelse(substr(`$1',1,1),,,`move lu*.75/2*(')ifelse(substr(`$1',1,1),,,
+      substr(`$1',1,1),8,17,substr(`$1',1,1),6,16,A`'substr(`$1',1,1),A ,3,
+      substr(`$1',1,1))ifelse(substr(`$1',1,1),,,`-1)')
+    Letters(substr(`$1',2)) ') ')
+
+divert(0)dnl

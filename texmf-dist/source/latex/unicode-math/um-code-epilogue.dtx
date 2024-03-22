@@ -41,61 +41,6 @@
 %
 %
 %
-% \subsection{Unicode radicals}
-%
-% Make sure \cs{Uroot} is defined in the case where the \LaTeX{}
-% kernel doesn't make it available with its native name.
-%
-% \begin{macro}{\@@_redefine_radical:}
-%    \begin{macrocode}
-\AtBeginDocument{ \@ifpackageloaded { amsmath } { } { \@@_redefine_radical: } }
-%    \end{macrocode}
-%
-% \begin{macro}{\r@@t}
-% \darg{A mathstyle (for \cmd\mathpalette)}
-% \darg{Leading superscript for the sqrt sign}
-% A re-implementation of \LaTeX's hard-coded n-root sign using the appropriate \cmd\fontdimen s.
-%    \begin{macrocode}
-%<*XE>
-\cs_new:Nn \@@_redefine_radical:
-  {
-    \cs_set_nopar:Npn \r@@@@t ##1 ##2
-      {
-        \hbox_set:Nn \l_tmpa_box
-          {
-            \c_math_toggle_token \m@th
-            ##1 \sqrtsign { ##2 }
-            \c_math_toggle_token
-          }
-        \@@_mathstyle_scale:NnnN ##1 { \kern } { \fontdimen 63 \g_@@_sqrt_font_cmd_tl } \g_@@_sqrt_font_cmd_tl
-        \box_move_up:nn
-          {
-            (\box_ht:N \l_tmpa_box - \box_dp:N \l_tmpa_box) * \number \fontdimen 65 \g_@@_sqrt_font_cmd_tl / 100
-          }
-          { \box_use:N \rootbox }
-        \@@_mathstyle_scale:NnnN ##1 { \kern } { \fontdimen 64 \g_@@_sqrt_font_cmd_tl } \g_@@_sqrt_font_cmd_tl
-        \box_use_drop:N \l_tmpa_box
-      }
-  }
-%</XE>
-%    \end{macrocode}
-% \end{macro}
-%
-% \begin{macro}{\root}
-% Redefine this macro for \LuaTeX, which provides us a nice primitive to use.
-%    \begin{macrocode}
-%<*LU>
-\cs_new:Nn \@@_redefine_radical:
-  {
-    \cs_set:Npn \root ##1 \of ##2
-      {
-        \Uroot \c_@@_radical_sqrt_tl { ##1 } { ##2 }
-      }
-  }
-%</LU>
-%    \end{macrocode}
-% \end{macro}
-% \end{macro}
 %
 %
 % \subsubsection{Active fractions}
@@ -197,21 +142,10 @@
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{\colon}
-% Define \cs{colon} as a mathpunct `|:|'.
-% This is wrong: it should be \unichar{003A} {colon} instead!
-% We hope no-one will notice.
+% \begin{macro}{\smallsetminus}
 %    \begin{macrocode}
-\@ifpackageloaded{amsmath}
-  {
-    % define their own colon, perhaps I should just steal it. (It does look much better.)
-  }
-  {
-    \cs_set_protected:Npn \colon
-      {
-        \bool_if:NTF \g_@@_literal_colon_bool {:} { \mathpunct{:} }
-      }
-  }
+\cs_set_protected:Npn \smallsetminus { \mathbin{ \mathpalette \@@_smallsetminus: \relax} }
+\cs_set:Npn \__um_smallsetminus: #1 { \rotatebox{135}{ \smash{ \raisebox{-\height}{$#1\minus$} } }}
 %    \end{macrocode}
 % \end{macro}
 %
@@ -219,8 +153,8 @@
 % \begin{macro}{\Digamma}
 % I might end up just changing these in the table.
 %    \begin{macrocode}
-\protected\def\digamma{\updigamma}
-\protected\def\Digamma{\upDigamma}
+\cs_set_protected:Npn \digamma {\updigamma}
+\cs_set_protected:Npn \Digamma {\upDigamma}
 %    \end{macrocode}
 % \end{macro}
 % \end{macro}
@@ -381,12 +315,6 @@
 \@@_undeclare_symbol:N \arrowvert
 \@@_undeclare_symbol:N \Arrowvert
 \@@_undeclare_symbol:N \bracevert
-%    \end{macrocode}
-%
-% \section{A secret hook}
-% This will be executed after most if not all of the standard unicode-math setup.
-%    \begin{macrocode}
-\AtBeginDocument{\g_@@_secret_hook_tl}
 %    \end{macrocode}
 %
 %    \begin{macrocode}

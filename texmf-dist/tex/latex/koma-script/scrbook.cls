@@ -84,7 +84,7 @@
 %% find a complete unmodified copy of LaTeX2e at
 %% <http://mirror.ctan.org/tex-archive/macros/latex/base/>.
 %% 
-%%% From File: $Id: scrkernel-version.dtx 3962 2022-10-12 06:33:06Z kohm $
+%%% From File: $Id: scrkernel-version.dtx 4070 2023-07-07 07:08:40Z kohm $
 \begingroup
   \catcode`\@11\relax
   \ifx\KOMAScriptVersion\undefined
@@ -106,31 +106,29 @@
       \fi
     }
   \fi
-  \@CheckKOMAScriptVersion{2022/10/12 v3.38 KOMA-Script}%
+  \@CheckKOMAScriptVersion{2023/07/07 v3.41 KOMA-Script}%
 \endgroup
 \providecommand*{\scr@clsextension}{\@clsextension}
 \AtBeginDocument{%
   \let\scr@clsextension\@clsextension
 }
-\newcommand*{\KOMAClassName}{%
-  scrbook%
-}
+\newcommand*{\KOMAClassName}{scrbook}
 \newcommand*{\KOMAClassFileName}{\KOMAClassName.\@clsextension}
 \edef\KOMAClassFileName{\KOMAClassFileName}
 \newcommand*{\ClassName}{%
   book%
 }
 \ProvidesClass{\KOMAClassName}[%
-  2022/10/12 v3.38 KOMA-Script
+  2023/07/07 v3.41 KOMA-Script
   document class (\ClassName)%
 ]
-%%% From File: $Id: scrkernel-basics.dtx 3913 2022-06-28 07:45:49Z kohm $
+%%% From File: $Id: scrkernel-basics.dtx 4051 2023-04-26 16:01:28Z kohm $
 %%%            (run: load)
 \RequirePackage{scrkbase}[\KOMAScriptVersion]
-%%% From File: $Id: scrkernel-listsof.dtx 3892 2022-06-17 16:26:06Z kohm $
+%%% From File: $Id: scrkernel-listsof.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: prepare)
 \RequirePackage{tocbasic}[%
-  2022/10/12 v3.38 KOMA-Script
+  2023/07/07 v3.41 KOMA-Script
 ]
 \AtAddToTocList[\@currname.\@currext]{\setuptoc{\@currext}{onecolumn}}%
 \AtAddToTocList[ToC]{\setuptoc{\@currext}{onecolumn}}%
@@ -141,9 +139,9 @@
   \expandafter{\ext@toc}%
 }
 \AtAddToTocList[float]{\setuptoc{\@currext}{onecolumn}}%
-%%% From File: $Id: scrkernel-tocstyle.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-tocstyle.dtx 4060 2023-06-20 08:59:01Z kohm $
 %%%            (run: prepare)
-%%% From File: $Id: scrkernel-sections.dtx 3954 2022-10-04 09:20:19Z kohm $
+%%% From File: $Id: scrkernel-sections.dtx 4069 2023-06-29 08:55:54Z kohm $
 %%%            (run: prepare)
 \newif\if@openright
 \@openrighttrue
@@ -229,8 +227,8 @@
 \newcommand*{\scr@fnt@paragraph}{\size@paragraph}
 \newcommand*{\size@subparagraph}{}
 \newcommand*{\scr@fnt@subparagraph}{\size@subparagraph}
-\newcommand*{\sectfont}{\normalcolor\@gr@gsffamily\bfseries}
-%%% From File: $Id: scrkernel-compatibility.dtx 3949 2022-08-09 10:05:50Z kohm $
+\newcommand*{\sectfont}{\normalcolor\maybesffamily\bfseries}
+%%% From File: $Id: scrkernel-compatibility.dtx 4054 2023-05-10 14:35:36Z kohm $
 %%%            (run: init)
 \newcommand*
   {\scr@compatibility}{\scr@v@last}
@@ -316,10 +314,13 @@
 \@namedef{scr@v@3.36}{20}
 \@namedef{scr@v@3.37}{20}
 \@namedef{scr@v@3.38}{20}
-\@namedef{scr@v@last}{20}
-%%% From File: $Id: scrkernel-typearea.dtx 3889 2022-06-09 12:11:14Z kohm $
+\@namedef{scr@v@3.39}{20}
+\@namedef{scr@v@3.40}{20}
+\@namedef{scr@v@3.41}{21}
+\@namedef{scr@v@last}{21}
+%%% From File: $Id: scrkernel-typearea.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: init)
-%%% From File: $Id: scrkernel-compatibility.dtx 3949 2022-08-09 10:05:50Z kohm $
+%%% From File: $Id: scrkernel-compatibility.dtx 4054 2023-05-10 14:35:36Z kohm $
 %%%            (run: option)
 \newif\if@scr@emulatestandardclasses
 \let\scr@emulatestandardclassestrue\relax
@@ -354,7 +355,7 @@
       Because of this, version was set to `first'%
     }%
     \FamilyKeyStateProcessed
-    \KOMA@kav@replacevalue{.%
+    \KOMA@kav@replacevalue{%
       \KOMAClassFileName
     }{version}{first}%
   }{%
@@ -363,7 +364,7 @@
     }%
  \edef\scr@compatibility{\@nameuse{scr@v@#1}}%
     \FamilyKeyStateProcessed
-    \KOMA@kav@xreplacevalue{.%
+    \KOMA@kav@xreplacevalue{%
       \KOMAClassFileName
     }{version}{#1}%
     \ifnum\scr@compatibility<\scr@v@last
@@ -384,7 +385,7 @@
     \fi
   }%
 }
-\KOMA@kav@add{.\KOMAClassFileName}{version}{last}
+\KOMA@kav@add{\KOMAClassFileName}{version}{last}
 \AtEndOfClass{%
   \KOMA@key{version}[]{%
     \ClassError{\KOMAClassName}{%
@@ -409,65 +410,64 @@
 \newcommand*{\scr@v@is@ge}[1]{%
   \numexpr\scr@compatibility+\@ne\relax>\@nameuse{scr@v@#1}
 }
-%%% From File: $Id: scrkernel-miscellaneous.dtx 3874 2022-06-05 10:38:02Z kohm $
+\newcommand*{\scr@v@is@eq}[1]{%
+  \scr@compatibility=\@nameuse{scr@v@#1}
+}
+%%% From File: $Id: scrkernel-miscellaneous.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: option)
 \KOMA@key{draft}[true]{%
   \KOMA@set@ifkey{draft}{@tempswa}{#1}%
   \ifx\FamilyKeyState\FamilyKeyStateProcessed
     \if@tempswa
-      \KOMA@kav@replacebool{.%
+      \KOMA@kav@replacebool{%
         \KOMAClassFileName
       }{draft}{@tempswa}%
-      \KOMA@kav@replacebool{.%
+      \KOMA@kav@replacebool{%
         \KOMAClassFileName
       }{overfullrule}{@tempswa}%
       \setlength{\overfullrule}{5pt}%
     \else
-      \KOMA@kav@replacebool{.%
+      \KOMA@kav@replacebool{%
         \KOMAClassFileName
       }{draft}{@tempswa}%
-      \KOMA@kav@replacebool{.%
+      \KOMA@kav@replacebool{%
         \KOMAClassFileName
       }{overfullrule}{@tempswa}%
       \setlength{\overfullrule}{\z@}%
     \fi
   \fi
 }
-\KOMA@kav@add{.\KOMAClassFileName}{draft}{false}
+\KOMA@kav@add{\KOMAClassFileName}{draft}{false}
 \KOMA@DeclareStandardOption
 {final}{draft=false}
 \KOMA@key{overfullrule}[true]{%
   \KOMA@set@ifkey{overfullrule}{@tempswa}{#1}%
   \ifx\FamilyKeyState\FamilyKeyStateProcessed
     \if@tempswa
-      \KOMA@kav@replacebool{.%
+      \KOMA@kav@replacebool{%
         \KOMAClassFileName
       }{draft}{@tempswa}%
-      \KOMA@kav@replacebool{.%
+      \KOMA@kav@replacebool{%
         \KOMAClassFileName
       }{overfullrule}{@tempswa}%
       \setlength{\overfullrule}{5pt}%
     \else
-      \KOMA@kav@replacebool{.%
+      \KOMA@kav@replacebool{%
         \KOMAClassFileName
       }{draft}{@tempswa}%
-      \KOMA@kav@replacebool{.%
+      \KOMA@kav@replacebool{%
         \KOMAClassFileName
       }{overfullrule}{@tempswa}%
       \setlength{\overfullrule}{\z@}%
     \fi
   \fi
 }
-\KOMA@kav@add{.\KOMAClassFileName}{overfullrule}{false}
+\KOMA@kav@add{\KOMAClassFileName}{overfullrule}{false}
 \DeclareOption{leqno}{\input{leqno.clo}}
 \DeclareOption{fleqn}{\input{fleqn.clo}}
-\KOMA@ifkey{egregdoesnotlikesansseriftitles}{@egregdoesnotlikesansseriftitles}
-\newcommand*{\@gr@gsffamily}{%
-  \if@egregdoesnotlikesansseriftitles\else\sffamily\fi
-}
-%%% From File: $Id: scrkernel-language.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-language.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: option)
-%%% From File: $Id: scrkernel-fonts.dtx 3958 2022-10-06 12:44:28Z kohm $
+%%% From File: $Id: scrkernel-fonts.dtx 4034 2023-04-20 08:03:46Z kohm $
 %%%            (run: option)
 \providecommand*\@ptsize{%
   11%
@@ -556,7 +556,7 @@
     \@tempa
   }%
   \FamilyKeyStateProcessed
-  \KOMA@kav@xreplacevalue{.%
+  \KOMA@kav@xreplacevalue{%
     \KOMAClassFileName
   }{fontsize}{#1}%
 }
@@ -578,7 +578,53 @@
 \BeforePackage{tex4ht}{%
   \let\scr@defineobsoletefonts\thr@@
 }
-%%% From File: $Id: scrkernel-typearea.dtx 3889 2022-06-09 12:11:14Z kohm $
+\newif\if@sfdefaults\@sfdefaultstrue
+\KOMA@ifkey{sfdefaults}{@sfdefaults}
+\newcommand*{\maybesffamily}{\if@sfdefaults \sffamily \fi}
+\newcommand*{\textmaybesf}{%
+  \if@sfdefaults \expandafter\textsf \else \expandafter\@firstofone \fi
+}
+%% \begin{option}{egegdoesnotlikesansseriftitles}
+\KOMA@key{egregdoesnotlikesansseriftitles}[true]{%
+  \ClassWarningNoLine{\KOMAClassName}%
+  {%
+    You've used deprecated option `egregdoesnotlikesansseriftitles'.\MessageBreak
+    In 2016 this option has been implemented as a joke\MessageBreak
+    answer to egreg's comment:\MessageBreak
+    \space\space ``In my opinion there should be a document class\MessageBreak
+    \space\space option for it, instead of the
+      \string\setkomafont\MessageBreak
+    \space\space statement. And yes, I find imposing sans serif
+      for\MessageBreak
+    \space\space titles is not the best choice (one of the
+      reasons\MessageBreak
+    \space\space why I don't use Koma-script classes).''\MessageBreak
+    to question https://tex.stackexchange.com/q/289853\MessageBreak
+    at TeX.SX.\MessageBreak
+    The option has never been documented in the official\MessageBreak
+    user manuals and therefore should never have been\MessageBreak
+    used in real live documents. It was intended to be\MessageBreak
+    removed after some month.\MessageBreak
+    However, it has been used and also almost forgotten\MessageBreak
+    by the author.\MessageBreak
+    For this the author apologizes both to users but\MessageBreak
+    especially to egreg.\MessageBreak
+    Rightly, egreg has criticized the permanent retention\MessageBreak
+    of the option as unfunny to inappropriate and has\MessageBreak
+    asked that it be removed or replaced.\MessageBreak
+    It will be removed soon!\MessageBreak
+    You should use `sfdefaults=false` instead%
+  }%
+  \KOMA@set@ifkey{egregdoesnotlikesansseriftitles}%
+                 {@sfdefaults}%
+                 {#1}%
+  \ifx\FamilyKeyState\FamilyKeyStateProcessed
+    \if@sfdefault \@sfdefaultsfalse \else \@sfdefaulttrue \fi
+    \KOMA@kav@xreplacevalue{\KOMAClassFileName}%
+                           {sfdefaults}{\if@sfdefaults true\else false\fi}%
+  \fi
+}
+%%% From File: $Id: scrkernel-typearea.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: options)
 \KOMA@key{twoside}[true]{%
   \if@atdocument\else\PassOptionsToPackage{twoside=#1}{typearea}\fi%
@@ -598,9 +644,9 @@
         \if@twocolumn\sloppy\flushbottom\else\raggedbottom\fi
       \fi
     \fi
-    \KOMA@kav@xreplacevalue{.%
-      \KOMAClassFileName
-    }{twoside}{#1}%
+    \KOMA@kav@xreplacevalue
+    {\KOMAClassFileName}%
+    {twoside}{#1}%
   \fi
 }
 \KOMAExecuteOptions{twoside=true}
@@ -610,21 +656,23 @@
   \if@atdocument\else\PassOptionsToPackage{twocolumn=#1}{typearea}\fi%
   \KOMA@set@ifkey{twocolumn}{@twocolumn}{#1}%
   \ifx\FamilyKeyState\FamilyKeyStateProcessed
-    \KOMA@kav@replacebool{.%
-      \KOMAClassFileName
-    }{twocolumn}{@twocolumn}%
+    \KOMA@kav@replacebool
+    {\KOMAClassFileName}%
+    {twocolumn}{@twocolumn}%
     \if@atdocument\expandafter\@firstofone
     \else\@ifpackageloaded{typearea}{\expandafter\@firstofone}
                                     {\expandafter\AtEndOfClass}\fi
-    {\expandafter\ifnum\scr@v@is@ge{3.17}%
-      \if@twocolumn\twocolumn\sloppy\flushbottom
-      \else
-        \onecolumn
-        \if@twoside\flushbottom\else
-          \raggedbottom
+    {%
+      \expandafter\ifnum\scr@v@is@ge{3.17}%
+        \if@twocolumn\twocolumn\sloppy\flushbottom
+        \else
+          \onecolumn
+          \if@twoside\flushbottom\else
+            \raggedbottom
+          \fi
         \fi
       \fi
-    \fi}%
+    }%
   \fi
 }
 \AtEndOfClass{%
@@ -705,7 +753,7 @@
 }
 \DeclareOption*{%
   \x@paper}
-%%% From File: $Id: scrkernel-paragraphs.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-paragraphs.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: option)
 \newcommand*{\setparsizes}[3]{%
   \edef\f@parindent{\the\parindent}%
@@ -718,16 +766,16 @@
     \if@atdocument\let\par@update\default@par@update\fi
     \par@updaterelative
   }%
-  \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{false}%
-  \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{never}%
-  \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{full}%
-  \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{full-}%
-  \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{full+}%
-  \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{full*}%
-  \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{half}%
-  \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{half-}%
-  \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{half+}%
-  \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{half*}%
+  \KOMA@kav@remove{\KOMAClassFileName}{parskip}{false}%
+  \KOMA@kav@remove{\KOMAClassFileName}{parskip}{never}%
+  \KOMA@kav@remove{\KOMAClassFileName}{parskip}{full}%
+  \KOMA@kav@remove{\KOMAClassFileName}{parskip}{full-}%
+  \KOMA@kav@remove{\KOMAClassFileName}{parskip}{full+}%
+  \KOMA@kav@remove{\KOMAClassFileName}{parskip}{full*}%
+  \KOMA@kav@remove{\KOMAClassFileName}{parskip}{half}%
+  \KOMA@kav@remove{\KOMAClassFileName}{parskip}{half-}%
+  \KOMA@kav@remove{\KOMAClassFileName}{parskip}{half+}%
+  \KOMA@kav@remove{\KOMAClassFileName}{parskip}{half*}%
 }
 \newcommand*{\f@parindent}{\the\parindent}
 \newcommand*{\f@parskip}{\the\parskip}
@@ -766,66 +814,66 @@
       \ifcase\number\@tempa% 0
         \endgroup
         \setparsizes{1em}{\z@}{\z@ \@plus 1fil}%
-        \KOMA@kav@add{.\KOMAClassFileName}{parskip}{never}%
+        \KOMA@kav@add{\KOMAClassFileName}{parskip}{never}%
         \if@atdocument\AfterKOMAoptions{\selectfont}\fi
       \or% 1
         \endgroup
         \setparsizes{1em}{\z@ \@plus \p@}{\z@ \@plus 1fil}%
-        \KOMA@kav@add{.\KOMAClassFileName}{parskip}{false}%
+        \KOMA@kav@add{\KOMAClassFileName}{parskip}{false}%
         \if@atdocument\AfterKOMAoptions{\selectfont}\fi
       \or% 2
         \endgroup
         \setparsizes{\z@}{1\baselineskip \@plus .1\baselineskip}{%
           \z@ \@plus 1fil}%
-        \KOMA@kav@add{.\KOMAClassFileName}{parskip}{full-}%
+        \KOMA@kav@add{\KOMAClassFileName}{parskip}{full-}%
         \if@atdocument\AfterKOMAoptions{\selectfont}\fi
       \or% 3
         \endgroup
         \setparsizes{\z@}{.5\baselineskip \@plus .5\baselineskip}{%
           \z@ \@plus 1fil}%
-        \KOMA@kav@add{.\KOMAClassFileName}{parskip}{half-}%
+        \KOMA@kav@add{\KOMAClassFileName}{parskip}{half-}%
         \if@atdocument\AfterKOMAoptions{\selectfont}\fi
       \or% 4
         \endgroup
         \setparsizes{\z@}{1\baselineskip \@plus .1\baselineskip}{%
           1em \@plus 1fil}%
-        \KOMA@kav@add{.\KOMAClassFileName}{parskip}{full}%
+        \KOMA@kav@add{\KOMAClassFileName}{parskip}{full}%
         \if@atdocument\AfterKOMAoptions{\selectfont}\fi
       \or% 5
         \endgroup
         \setparsizes{\z@}{.5\baselineskip \@plus .5\baselineskip}{%
           1em \@plus 1fil}%
-        \KOMA@kav@add{.\KOMAClassFileName}{parskip}{half}%
+        \KOMA@kav@add{\KOMAClassFileName}{parskip}{half}%
         \if@atdocument\AfterKOMAoptions{\selectfont}\fi
       \or% 6
         \endgroup
         \setparsizes{\z@}{1\baselineskip \@plus .1\baselineskip}{%
           .3333\linewidth\@plus 1fil}%
-        \KOMA@kav@add{.\KOMAClassFileName}{parskip}{full+}%
+        \KOMA@kav@add{\KOMAClassFileName}{parskip}{full+}%
         \if@atdocument\AfterKOMAoptions{\selectfont}\fi
       \or% 7
         \endgroup
         \setparsizes{\z@}{.5\baselineskip \@plus .5\baselineskip}{%
           .3333\linewidth \@plus 1fil}%
-        \KOMA@kav@add{.\KOMAClassFileName}{parskip}{half+}%
+        \KOMA@kav@add{\KOMAClassFileName}{parskip}{half+}%
         \if@atdocument\AfterKOMAoptions{\selectfont}\fi
       \or% 8
         \endgroup
         \setparsizes{\z@}{1\baselineskip \@plus .1\baselineskip}{%
           .25\linewidth \@plus 1fil}%
-        \KOMA@kav@add{.\KOMAClassFileName}{parskip}{full*}%
+        \KOMA@kav@add{\KOMAClassFileName}{parskip}{full*}%
         \if@atdocument\AfterKOMAoptions{\selectfont}\fi
       \or% 9
         \endgroup
         \setparsizes{\z@}{.5\baselineskip \@plus .5\baselineskip}{%
           .25\linewidth \@plus 1fil}%
-        \KOMA@kav@add{.\KOMAClassFileName}{parskip}{half*}%
+        \KOMA@kav@add{\KOMAClassFileName}{parskip}{half*}%
         \if@atdocument\AfterKOMAoptions{\selectfont}\fi
       \or% 10
         \endgroup
-        \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{absolute}%
-        \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{relative}%
-        \KOMA@kav@add{.\KOMAClassFileName}{parskip}{relative}%
+        \KOMA@kav@remove{\KOMAClassFileName}{parskip}{absolute}%
+        \KOMA@kav@remove{\KOMAClassFileName}{parskip}{relative}%
+        \KOMA@kav@add{\KOMAClassFileName}{parskip}{relative}%
         \ifx\par@updaterelative\undefined
           \expandafter\AtEndOfClass
         \else
@@ -839,9 +887,9 @@
         }%
       \or%11
         \endgroup
-        \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{absolute}%
-        \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{relative}%
-        \KOMA@kav@add{.\KOMAClassFileName}{parskip}{absolute}%
+        \KOMA@kav@remove{\KOMAClassFileName}{parskip}{absolute}%
+        \KOMA@kav@remove{\KOMAClassFileName}{parskip}{relative}%
+        \KOMA@kav@add{\KOMAClassFileName}{parskip}{absolute}%
         \ifx\par@updaterelative\undefined
           \expandafter\AtEndOfClass
         \else
@@ -869,9 +917,9 @@
 \KOMA@DeclareDeprecatedOption{halfparskip+}{parskip=half+}
 \KOMA@DeclareDeprecatedOption{halfparskip*}{parskip=half*}
 \KOMA@DeclareDeprecatedOption{parindent}{parskip=false}
-\KOMA@kav@add{.\KOMAClassFileName}{parskip}{false}
-\KOMA@kav@add{.\KOMAClassFileName}{parskip}{absolute}
-%%% From File: $Id: scrkernel-title.dtx 3874 2022-06-05 10:38:02Z kohm $
+\KOMA@kav@add{\KOMAClassFileName}{parskip}{false}
+\KOMA@kav@add{\KOMAClassFileName}{parskip}{absolute}
+%%% From File: $Id: scrkernel-title.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: option)
 \newif\if@titlepage
 \@titlepagetrue
@@ -881,31 +929,31 @@
     \@titlepagetrue
     \@titlepageiscoverpagetrue
     \FamilyKeyStateProcessed
-    \KOMA@kav@replacevalue{.%
+    \KOMA@kav@replacevalue{%
       \KOMAClassFileName
     }{titlepage}{firstiscover}%
   }{%
     \def\FamilyElseValue{, `firstiscover'}%
      \KOMA@set@ifkey{titlepage}{@titlepage}{#1}%
     \ifx\FamilyKeyState\FamilyKeyStateProcessed
-      \KOMA@kav@remove{.%
+      \KOMA@kav@remove{%
       \KOMAClassFileName
       }{titlepage}{firstiscover}%
-      \KOMA@kav@replacebool{.%
+      \KOMA@kav@replacebool{%
       \KOMAClassFileName
       }{titlepage}{@titlepage}%
       \@titlepageiscoverpagefalse
     \fi
   }%
 }
-\KOMA@kav@xadd{.%
+\KOMA@kav@xadd{%
   \KOMAClassFileName
 }{titlepage}{\if@titlepage true\else false\fi}
 \KOMA@DeclareStandardOption%
   {notitlepage}{titlepage=false}
-%%% From File: $Id: scrkernel-tocstyle.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-tocstyle.dtx 4060 2023-06-20 08:59:01Z kohm $
 %%%            (run: option)
-%%% From File: $Id: scrkernel-sections.dtx 3954 2022-10-04 09:20:19Z kohm $
+%%% From File: $Id: scrkernel-sections.dtx 4069 2023-06-29 08:55:54Z kohm $
 %%%            (run: option)
 \KOMA@key{open}{%
   \KOMA@set@ncmdkey{open}{@tempa}{%
@@ -914,20 +962,20 @@
     {left}{2}%
   }{#1}%
   \ifx\FamilyKeyState\FamilyKeyStateProcessed
-    \KOMA@kav@xreplacevalue{.\KOMAClassFileName}{open}{#1}%
-    \KOMA@kav@remove{.\KOMAClassFileName}{headings}{openany}%
-    \KOMA@kav@remove{.\KOMAClassFileName}{headings}{openright}%
-    \KOMA@kav@remove{.\KOMAClassFileName}{headings}{openleft}%
+    \KOMA@kav@xreplacevalue{\KOMAClassFileName}{open}{#1}%
+    \KOMA@kav@remove{\KOMAClassFileName}{headings}{openany}%
+    \KOMA@kav@remove{\KOMAClassFileName}{headings}{openright}%
+    \KOMA@kav@remove{\KOMAClassFileName}{headings}{openleft}%
     \ifcase \@tempa\relax
-      \KOMA@kav@add{.\KOMAClassFileName}{headings}{openany}%
+      \KOMA@kav@add{\KOMAClassFileName}{headings}{openany}%
       \@openrightfalse
       \renewcommand*{\cleardoublestandardpage}{\cleardoubleoddstandardpage}%
     \or
-      \KOMA@kav@add{.\KOMAClassFileName}{headings}{openright}%
+      \KOMA@kav@add{\KOMAClassFileName}{headings}{openright}%
       \@openrighttrue
       \renewcommand*{\cleardoublestandardpage}{\cleardoubleoddstandardpage}%
     \or
-      \KOMA@kav@add{.\KOMAClassFileName}{headings}{openleft}%
+      \KOMA@kav@add{\KOMAClassFileName}{headings}{openleft}%
       \@openrighttrue
       \renewcommand*{\cleardoublestandardpage}{\cleardoubleevenstandardpage}%
     \fi
@@ -944,7 +992,7 @@
     {noenddot}{2},{nodotatend}{2}%
   }{#1}%
   \ifx\FamilyKeyState\FamilyKeyStateProcessed
-    \KOMA@kav@xreplacevalue{.\KOMAClassFileName}{numbers}{#1}%
+    \KOMA@kav@xreplacevalue{\KOMAClassFileName}{numbers}{#1}%
     \ifcase \@tempa\relax
       \if@atdocument\scr@dotchangeatdocument{#1}\else
         \let\scr@altsecnumhook\@empty
@@ -964,7 +1012,7 @@
 \KOMA@DeclareDeprecatedOption{pointlessnumbers}{numbers=noenddot}
 \KOMA@ifkey{bookmarkpackage}{@scr@autoloadbookmarkpackage}
 \@scr@autoloadbookmarkpackagetrue
-\KOMA@kav@add{.\KOMAClassFileName}{bookmarkpackage}{true}
+\KOMA@kav@add{\KOMAClassFileName}{bookmarkpackage}{true}
 \AfterAtEndOfPackage{hyperref}{%
   \AtBeginDocument{%
     \@ifpackageloaded{bookmark}{}{%
@@ -1055,26 +1103,26 @@
 \KOMA@key{chapterprefix}[true]{%
   \KOMA@set@ifkey{chapterprefix}{@chapterprefix}{#1}%
   \ifx\FamilyKeyState\FamilyKeyStateProcessed
-    \KOMA@kav@replacebool{.\KOMAClassFileName}%
+    \KOMA@kav@replacebool{\KOMAClassFileName}%
                          {chapterprefix}{@chapterprefix}%
-    \KOMA@kav@remove{.\KOMAClassFileName}%
+    \KOMA@kav@remove{\KOMAClassFileName}%
                     {headings}{twolinechapter}%
-    \KOMA@kav@remove{.\KOMAClassFileName}%
+    \KOMA@kav@remove{\KOMAClassFileName}%
                     {headings}{onelinechapter}%
-    \KOMA@kav@xadd{.\KOMAClassFileName}%
+    \KOMA@kav@xadd{\KOMAClassFileName}%
                   {headings}{%
                     \if@chapterprefix twolinechapter\else onelinechapter\fi
                   }%
   \fi
 }
-\KOMA@kav@add{.\KOMAClassFileName}{headings}{onelinechapter}%
+\KOMA@kav@add{\KOMAClassFileName}{headings}{onelinechapter}%
 \KOMA@DeclareDeprecatedOption{nochapterprefix}{chapterprefix=false}
 \IfLTXAtLeastTF{2020/10/01}{%
   \KOMA@key{appendixprefix}[true]{%
     \Ifstr{#1}{default}{%
-      \KOMA@kav@removekey{.\KOMAClassFileName}{appendixprefix}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{twolineappendix}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{onelineappendix}%
+      \KOMA@kav@removekey{\KOMAClassFileName}{appendixprefix}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{twolineappendix}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{onelineappendix}%
       \IfHookEmptyTF{\KOMAClassName/appendix}{}{%
         \RemoveFromHook{\KOMAClassName/appendix}[appendixprefix]%
       }%
@@ -1082,18 +1130,18 @@
     }{%
       \KOMA@set@ifkey{appendixprefix}{@tempswa}{#1}%
       \ifx\FamilyKeyState\FamilyKeyStateProcessed
-        \KOMA@kav@xreplacevalue{.\KOMAClassFileName}{appendixprefix}{#1}%
-        \KOMA@kav@remove{.\KOMAClassFileName}{headings}{twolineappendix}%
-        \KOMA@kav@remove{.\KOMAClassFileName}{headings}{onelineappendix}%
+        \KOMA@kav@xreplacevalue{\KOMAClassFileName}{appendixprefix}{#1}%
+        \KOMA@kav@remove{\KOMAClassFileName}{headings}{twolineappendix}%
+        \KOMA@kav@remove{\KOMAClassFileName}{headings}{onelineappendix}%
         \IfHookEmptyTF{\KOMAClassName/appendix}{}{%
           \RemoveFromHook{\KOMAClassName/appendix}[appendixprefix]%
         }%
         \if@tempswa
-          \KOMA@kav@add{.\KOMAClassFileName}{headings}{twolineappendix}%
+          \KOMA@kav@add{\KOMAClassFileName}{headings}{twolineappendix}%
           \AddToHook{\KOMAClassName/appendix}[appendixprefix]%
                     {\@chapterprefixtrue}%
         \else
-          \KOMA@kav@add{.\KOMAClassFileName}{headings}{onelineappendix}%
+          \KOMA@kav@add{\KOMAClassFileName}{headings}{onelineappendix}%
           \AddToHook{\KOMAClassName/appendix}[appendixprefix]%
                     {\@chapterprefixfalse}%
         \fi
@@ -1104,18 +1152,18 @@
   \KOMA@key{appendixprefix}[true]{%
     \KOMA@set@ifkey{appendixprefix}{@tempswa}{#1}%
     \ifx\FamilyKeyState\FamilyKeyStateProcessed
-      \KOMA@kav@xreplacevalue{.\KOMAClassFileName}{appendixprefix}{#1}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{twolineappendix}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{onelineappendix}%
+      \KOMA@kav@xreplacevalue{\KOMAClassFileName}{appendixprefix}{#1}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{twolineappendix}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{onelineappendix}%
       \if@tempswa
-        \KOMA@kav@add{.\KOMAClassFileName}{headings}{twolineappendix}%
+        \KOMA@kav@add{\KOMAClassFileName}{headings}{twolineappendix}%
         \@ifundefined{appendixmore}{%
           \def\appendixmore{\@chapterprefixtrue}%
         }{%
           \l@addto@macro\appendixmore{\@chapterprefixtrue}%
         }%
       \else
-        \KOMA@kav@add{.\KOMAClassFileName}{headings}{onelineappendix}%
+        \KOMA@kav@add{\KOMAClassFileName}{headings}{onelineappendix}%
         \@ifundefined{appendixmore}{%
           \def\appendixmore{\@chapterprefixfalse}%
         }{%
@@ -1150,11 +1198,11 @@
   }{#1}%
   \ifx\FamilyKeyState\FamilyKeyStateProcessed
     \ifcase \@tempa\relax% big
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{big}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{normal}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{small}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{standardclasses}%
-      \KOMA@kav@add{.\KOMAClassFileName}{headings}{big}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{big}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{normal}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{small}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{standardclasses}%
+      \KOMA@kav@add{\KOMAClassFileName}{headings}{big}%
       \renewcommand*{\scr@chapter@beforeskip}{-3.3\baselineskip-\parskip}%
       \renewcommand*{\scr@chapter@afterskip}{%
         1.725\baselineskip \@plus .115\baselineskip \@minus .192\baselineskip
@@ -1162,8 +1210,9 @@
       \renewcommand*{\scr@chapter@innerskip}{.5\baselineskip}%
       \renewcommand*{\chapterheadstartvskip}{\vspace{\@tempskipa}}%
       \renewcommand*{\chapterheadendvskip}{%
-        \expandafter\ifnum\scr@v@is@lt{3.15}\vspace\@tempskipa
-        \else\vskip\@tempskipa\fi
+        \expandafter\ifnum\scr@v@is@lt{3.15}\vspace\@tempskipa\else
+          \vskip\@tempskipa
+        \fi
       }%
       \renewcommand*{\chapterheadmidvskip}{\par\nobreak\vskip\@tempskipa}%
       \setkomafont{part}{\Huge}%
@@ -1176,11 +1225,11 @@
       \setkomafont{paragraph}{\normalsize}%
       \setkomafont{subparagraph}{\normalsize}%
     \or % normal
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{big}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{normal}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{small}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{standardclasses}%
-      \KOMA@kav@add{.\KOMAClassFileName}{headings}{normal}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{big}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{normal}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{small}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{standardclasses}%
+      \KOMA@kav@add{\KOMAClassFileName}{headings}{normal}%
       \renewcommand*{\scr@chapter@beforeskip}{-3\baselineskip-\parskip}%
       \renewcommand*{\scr@chapter@afterskip}{%
         1.5\baselineskip \@plus .1\baselineskip \@minus .167\baselineskip
@@ -1188,8 +1237,9 @@
       \renewcommand*{\scr@chapter@innerskip}{.5\baselineskip}%
       \renewcommand*{\chapterheadstartvskip}{\vspace{\@tempskipa}}%
       \renewcommand*{\chapterheadendvskip}{%
-        \expandafter\ifnum\scr@v@is@lt{3.15}\vspace\@tempskipa
-        \else\vskip\@tempskipa\fi
+        \expandafter\ifnum\scr@v@is@lt{3.15}\vspace\@tempskipa\else
+          \vskip\@tempskipa
+        \fi
       }%
       \renewcommand*{\chapterheadmidvskip}{\par\nobreak\vskip\@tempskipa}%
       \setkomafont{part}{\huge}%
@@ -1202,11 +1252,11 @@
       \setkomafont{paragraph}{\normalsize}%
       \setkomafont{subparagraph}{\normalsize}%
     \or % small
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{big}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{normal}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{small}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{standardclasses}%
-      \KOMA@kav@add{.\KOMAClassFileName}{headings}{small}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{big}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{normal}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{small}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{standardclasses}%
+      \KOMA@kav@add{\KOMAClassFileName}{headings}{small}%
       \renewcommand*{\scr@chapter@beforeskip}{-2.8\baselineskip-\parskip}%
       \renewcommand*{\scr@chapter@afterskip}{%
         1.35\baselineskip \@plus 0.09\baselineskip \@minus .15\baselineskip
@@ -1214,8 +1264,9 @@
       \renewcommand*{\scr@chapter@innerskip}{.5\baselineskip}%
       \renewcommand*{\chapterheadstartvskip}{\vspace{\@tempskipa}}%
       \renewcommand*{\chapterheadendvskip}{%
-        \expandafter\ifnum\scr@v@is@lt{3.15}\vspace\@tempskipa
-        \else\vskip\@tempskipa\fi
+        \expandafter\ifnum\scr@v@is@lt{3.15}\vspace\@tempskipa\else
+          \vskip\@tempskipa
+        \fi
       }%
       \renewcommand*{\chapterheadmidvskip}{\par\nobreak\vskip\@tempskipa}%
       \setkomafont{part}{\LARGE}%
@@ -1242,29 +1293,29 @@
     \or % onelineappendix
       \KOMAoptions{appendixprefix=false}%
     \or % optiontotocandhead
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{optiontotocandhead}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{optiontotoc}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{optiontohead}%
-      \KOMA@kav@add{.\KOMAClassFileName}{headings}{optiontotocandhead}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{optiontotocandhead}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{optiontotoc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{optiontohead}%
+      \KOMA@kav@add{\KOMAClassFileName}{headings}{optiontotocandhead}%
       \scr@activate@xsection{3}%
     \or % optiontotoc
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{optiontotocandhead}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{optiontotoc}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{optiontohead}%
-      \KOMA@kav@add{.\KOMAClassFileName}{headings}{optiontotoc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{optiontotocandhead}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{optiontotoc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{optiontohead}%
+      \KOMA@kav@add{\KOMAClassFileName}{headings}{optiontotoc}%
       \scr@activate@xsection{2}%
     \or % optiontohead
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{optiontotocandhead}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{optiontotoc}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{optiontohead}%
-      \KOMA@kav@add{.\KOMAClassFileName}{headings}{optiontohead}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{optiontotocandhead}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{optiontotoc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{optiontohead}%
+      \KOMA@kav@add{\KOMAClassFileName}{headings}{optiontohead}%
       \scr@activate@xsection{1}%
     \or % standardclasses
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{big}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{normal}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{small}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{headings}{standardclasses}%
-      \KOMA@kav@add{.\KOMAClassFileName}{headings}{standardclasses}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{big}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{normal}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{small}%
+      \KOMA@kav@remove{\KOMAClassFileName}{headings}{standardclasses}%
+      \KOMA@kav@add{\KOMAClassFileName}{headings}{standardclasses}%
       \renewcommand*{\scr@chapter@beforeskip}{-50\p@}%
       \renewcommand*{\scr@chapter@afterskip}{40\p@}%
       \renewcommand*{\scr@chapter@innerskip}{20\p@}%
@@ -1285,18 +1336,18 @@
     \fi
   \fi
 }
-\KOMA@kav@add{.\KOMAClassFileName}{headings}{big}
-\KOMA@kav@add{.\KOMAClassFileName}{headings}{onelinechapter}
+\KOMA@kav@add{\KOMAClassFileName}{headings}{big}
+\KOMA@kav@add{\KOMAClassFileName}{headings}{onelinechapter}
 \KOMA@DeclareDeprecatedOption{bigheadings}{headings=big}
 \KOMA@DeclareDeprecatedOption{normalheadings}{headings=normal}
 \KOMA@DeclareDeprecatedOption{smallheadings}{headings=small}
-%%% From File: $Id: scrkernel-pagestyles.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-pagestyles.dtx 4058 2023-06-16 08:32:27Z kohm $
 %%%            (run: option)
 \KOMA@ifkey{headsepline}{@hsl}%
-\KOMA@kav@add{.\KOMAClassFileName}{headsepline}{false}
+\KOMA@kav@add{\KOMAClassFileName}{headsepline}{false}
 \KOMA@DeclareDeprecatedOption{headnosepline}{headsepline=false}
 \KOMA@ifkey{footsepline}{@fsl}%
-\KOMA@kav@add{.\KOMAClassFileName}{footsepline}{false}
+\KOMA@kav@add{\KOMAClassFileName}{footsepline}{false}
 \KOMA@DeclareDeprecatedOption{footnosepline}{footsepline=false}
 \KOMA@key{cleardoublepage}{%
   \begingroup
@@ -1311,7 +1362,7 @@
         \def\cleardoubleoddpage{\cleardoubleoddstandardpage}%
         \def\cleardoubleevenpage{\cleardoubleevenstandardpage}%
         \FamilyKeyStateProcessed
-        \KOMA@kav@replacevalue{.%
+        \KOMA@kav@replacevalue{%
           \KOMAClassFileName
         }{cleardoublepage}{current}%
       }%
@@ -1322,7 +1373,7 @@
           \def\cleardoubleoddpage{\cleardoubleoddpageusingstyle{#1}}%
           \def\cleardoubleevenpage{\cleardoubleevenpageusingstyle{#1}}%
           \FamilyKeyStateProcessed
-          \KOMA@kav@xreplacevalue{.%
+          \KOMA@kav@xreplacevalue{%
             \KOMAClassFileName
           }{cleardoublepage}{#1}%
         }%
@@ -1335,7 +1386,7 @@
                 \def\cleardoubleoddpage{\cleardoubleoddpageusingstyle{#1}}%
                 \def\cleardoubleevenpage{\cleardoubleevenpageusingstyle{#1}}%
                 \FamilyKeyStateProcessed
-                \KOMA@kav@xreplacevalue{.\KOMAClassFileName}%
+                \KOMA@kav@xreplacevalue{\KOMAClassFileName}%
                                        {cleardoublepage}{#1}%
               }%
             }{}%
@@ -1363,26 +1414,28 @@
 \newcommand*{\cleardoubleevenplainpage}{\cleardoubleevenpageusingstyle{plain}}
 \newcommand*{\cleardoublestandardpage}{\cleardoubleoddstandardpage}
 \renewcommand*{\cleardoublepage}{%
-  \expandafter\ifnum \@nameuse{scr@v@2.98c}<\scr@compatibility\relax
+  \expandafter\ifnum \scr@v@is@gt{2.98c}%
     \cleardoubleemptypage
   \else
     \cleardoublestandardpage
   \fi
 }
-\KOMA@kav@add{.%
+\KOMA@kav@add{%
   \KOMAClassFileName
 }{cleardoublepage}{%
-  \expandafter\ifnum \scr@v@is@gt{2.98c}empty\else current\fi
+  \expandafter\ifnum \scr@v@is@gt{2.98c}
+    empty%
+  \else current\fi
 }
 \AtEndOfClass{%
   \KOMAoptionOf[\expandafter\edef\expandafter\@tempa\@firstofone]%
                {%
                  \KOMAClassFileName
                }{cleardoublepage}%
-  \KOMA@kav@removekey{.%
+  \KOMA@kav@removekey{%
     \KOMAClassFileName
   }{cleardoublepage}%
-  \KOMA@kav@xadd{.%
+  \KOMA@kav@xadd{%
     \KOMAClassFileName
   }{cleardoublepage}{\@tempa}%
 }
@@ -1395,7 +1448,7 @@
 \KOMA@DeclareDeprecatedOption{cleardoubleempty}{cleardoublepage=empty}
 \KOMA@DeclareDeprecatedOption{cleardoubleplain}{cleardoublepage=plain}
 \KOMA@DeclareDeprecatedOption{cleardoublestandard}{cleardoublepage=current}
-%%% From File: $Id: scrkernel-floats.dtx 3946 2022-07-20 10:37:02Z kohm $
+%%% From File: $Id: scrkernel-floats.dtx 4054 2023-05-10 14:35:36Z kohm $
 %%%            (run: option)
 \newif\if@captionabove\@captionabovefalse
 \newif\if@tablecaptionabove\@tablecaptionabovefalse
@@ -1429,108 +1482,108 @@
       \@tablecaptionabovetrue
       \@figurecaptionabovetrue
       \@captionabovetrue
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{heading}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{signature}%
-      \KOMA@kav@add{.\KOMAClassFileName}{captions}{heading}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{heading}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{signature}%
+      \KOMA@kav@add{\KOMAClassFileName}{captions}{heading}%
    \or % signature
       \@tablecaptionabovefalse
       \@figurecaptionabovefalse
       \@captionabovefalse
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{heading}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{signature}%
-      \KOMA@kav@add{.\KOMAClassFileName}{captions}{signature}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{heading}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{signature}%
+      \KOMA@kav@add{\KOMAClassFileName}{captions}{signature}%
     \or % tableheading
       \@tablecaptionabovetrue
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{tableheading}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{tablesignature}%
-      \KOMA@kav@add{.\KOMAClassFileName}{captions}{tableheading}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{tableheading}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{tablesignature}%
+      \KOMA@kav@add{\KOMAClassFileName}{captions}{tableheading}%
     \or % tablesignature
       \@tablecaptionabovefalse
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{tableheading}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{tablesignature}%
-      \KOMA@kav@add{.\KOMAClassFileName}{captions}{tablesignature}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{tableheading}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{tablesignature}%
+      \KOMA@kav@add{\KOMAClassFileName}{captions}{tablesignature}%
     \or % figureheading
       \@figurecaptionabovetrue
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{figureheading}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{figuresignature}%
-      \KOMA@kav@add{.\KOMAClassFileName}{captions}{figureheading}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{figureheading}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{figuresignature}%
+      \KOMA@kav@add{\KOMAClassFileName}{captions}{figureheading}%
     \or % figuresignature
       \@figurecaptionabovefalse
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{figureheading}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{figuresignature}%
-      \KOMA@kav@add{.\KOMAClassFileName}{captions}{figuresignature}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{figureheading}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{figuresignature}%
+      \KOMA@kav@add{\KOMAClassFileName}{captions}{figuresignature}%
     \or % oneline
       \onelinecaptionstrue
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{oneline}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{nooneline}%
-      \KOMA@kav@add{.\KOMAClassFileName}{captions}{oneline}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{oneline}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{nooneline}%
+      \KOMA@kav@add{\KOMAClassFileName}{captions}{oneline}%
     \or % nooneline
       \onelinecaptionsfalse
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{oneline}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{nooneline}%
-      \KOMA@kav@add{.\KOMAClassFileName}{captions}{nooneline}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{oneline}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{nooneline}%
+      \KOMA@kav@add{\KOMAClassFileName}{captions}{nooneline}%
     \or % rightbeside
       \renewcommand*{\scap@pos}{r}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{rightbeside}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{leftbeside}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{innerbeside}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{outerbeside}%
-      \KOMA@kav@add{.\KOMAClassFileName}{captions}{rightbeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{rightbeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{leftbeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{innerbeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{outerbeside}%
+      \KOMA@kav@add{\KOMAClassFileName}{captions}{rightbeside}%
     \or % leftbeside
       \renewcommand*{\scap@pos}{l}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{rightbeside}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{leftbeside}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{innerbeside}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{outerbeside}%
-      \KOMA@kav@add{.\KOMAClassFileName}{captions}{leftbeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{rightbeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{leftbeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{innerbeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{outerbeside}%
+      \KOMA@kav@add{\KOMAClassFileName}{captions}{leftbeside}%
     \or % innerbeside
       \renewcommand*{\scap@pos}{i}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{rightbeside}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{leftbeside}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{innerbeside}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{outerbeside}%
-      \KOMA@kav@add{.\KOMAClassFileName}{captions}{innerbeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{rightbeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{leftbeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{innerbeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{outerbeside}%
+      \KOMA@kav@add{\KOMAClassFileName}{captions}{innerbeside}%
     \or % outerbeside
       \renewcommand*{\scap@pos}{o}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{rightbeside}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{leftbeside}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{innerbeside}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{outerbeside}%
-      \KOMA@kav@add{.\KOMAClassFileName}{captions}{outerbeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{rightbeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{leftbeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{innerbeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{outerbeside}%
+      \KOMA@kav@add{\KOMAClassFileName}{captions}{outerbeside}%
     \or % topbeside
       \renewcommand*{\scap@valign}{t}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{topbeside}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{centeredbeside}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{bottombeside}%
-      \KOMA@kav@add{.\KOMAClassFileName}{captions}{topbeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{topbeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{centeredbeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{bottombeside}%
+      \KOMA@kav@add{\KOMAClassFileName}{captions}{topbeside}%
     \or % centeredbeside
       \renewcommand*{\scap@valign}{c}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{topbeside}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{centeredbeside}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{bottombeside}%
-      \KOMA@kav@add{.\KOMAClassFileName}{captions}{centeredbeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{topbeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{centeredbeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{bottombeside}%
+      \KOMA@kav@add{\KOMAClassFileName}{captions}{centeredbeside}%
     \or % bottombeside
       \renewcommand*{\scap@valign}{b}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{topbeside}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{centeredbeside}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{captions}{bottombeside}%
-      \KOMA@kav@add{.\KOMAClassFileName}{captions}{bottombeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{topbeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{centeredbeside}%
+      \KOMA@kav@remove{\KOMAClassFileName}{captions}{bottombeside}%
+      \KOMA@kav@add{\KOMAClassFileName}{captions}{bottombeside}%
     \fi
   \fi
 }
-\KOMA@kav@add{.\KOMAClassFileName}{captions}{signature}
-\KOMA@kav@add{.\KOMAClassFileName}{captions}{tablesignature}
-\KOMA@kav@add{.\KOMAClassFileName}{captions}{figuresignature}
-\KOMA@kav@add{.\KOMAClassFileName}{captions}{oneline}
-\KOMA@kav@add{.\KOMAClassFileName}{captions}{rightbeside}
-\KOMA@kav@add{.\KOMAClassFileName}{captions}{bottombeside}
+\KOMA@kav@add{\KOMAClassFileName}{captions}{signature}
+\KOMA@kav@add{\KOMAClassFileName}{captions}{tablesignature}
+\KOMA@kav@add{\KOMAClassFileName}{captions}{figuresignature}
+\KOMA@kav@add{\KOMAClassFileName}{captions}{oneline}
+\KOMA@kav@add{\KOMAClassFileName}{captions}{rightbeside}
+\KOMA@kav@add{\KOMAClassFileName}{captions}{bottombeside}
 \KOMA@DeclareDeprecatedOption{tablecaptionabove}{captions=tableheading}
 \KOMA@DeclareDeprecatedOption{tablecaptionbelow}{captions=tablesignature}
 \newif\if@komalongtable\@komalongtabletrue
 \DeclareOption{origlongtable}{\@komalongtablefalse}
 \KOMA@DeclareDeprecatedOption{onelinecaption}{captions=oneline}
 \KOMA@DeclareDeprecatedOption{noonelinecaption}{captions=nooneline}
-%%% From File: $Id: scrkernel-footnotes.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-footnotes.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: option)
 \KOMA@key{footnotes}{%
   \ifx\@footnotemark\scr@saved@footnotemark
@@ -1550,7 +1603,7 @@
     \def\FN@mf@prepare{\scr@mf@prepare}%
     \def\scr@footmisc@options{multiple}%
     \FamilyKeyStateProcessed
-    \KOMA@kav@replacevalue{.%
+    \KOMA@kav@replacevalue{%
       \KOMAClassFileName
     }{footnotes}{multiple}%
   }{%
@@ -1559,7 +1612,7 @@
       \let\FN@mf@prepare\relax
       \let\scr@footmisc@options\@empty
       \FamilyKeyStateProcessed
-      \KOMA@kav@replacevalue{.%
+      \KOMA@kav@replacevalue{%
       \KOMAClassFileName
       }{footnotes}{nomultiple}%
     }{%
@@ -1569,17 +1622,17 @@
 }
 \AtBeginDocument{%
   \ifx\@footnotemark\scr@saved@footnotemark
-    \KOMA@kav@removekey{.%
+    \KOMA@kav@removekey{%
       \KOMAClassFileName
     }{footnotes}%
-    \KOMA@kav@add{.%
+    \KOMA@kav@add{%
     \KOMAClassFileName
     }{footnotes}{nomultiple}%
   \else\ifx\@footnotemark\scr@footnotemark
-    \KOMA@kav@removekey{.%
+    \KOMA@kav@removekey{%
       \KOMAClassFileName
     }{footnotes}%
-    \KOMA@kav@add{.%
+    \KOMA@kav@add{%
       \KOMAClassFileName
     }{footnotes}{multiple}%
   \fi\fi
@@ -1601,7 +1654,7 @@
   \csname FN@mf@prepare\endcsname
   \ifhmode\spacefactor\@x@sf\fi
   \relax}
-%%% From File: $Id: scrkernel-listsof.dtx 3892 2022-06-17 16:26:06Z kohm $
+%%% From File: $Id: scrkernel-listsof.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: option)
 \newif\if@tocleft
 \KOMA@key{toc}{%
@@ -1644,24 +1697,24 @@
     \or % bibliographynumbered
       \KOMAoptions{bibliography=totocnumbered}%
     \or % flat
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{flat}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{graduated}%
-      \KOMA@kav@add{.\KOMAClassFileName}{toc}{flat}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{flat}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{graduated}%
+      \KOMA@kav@add{\KOMAClassFileName}{toc}{flat}%
       \@toclefttrue
     \or % graduated
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{flat}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{graduated}%
-      \KOMA@kav@add{.\KOMAClassFileName}{toc}{graduated}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{flat}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{graduated}%
+      \KOMA@kav@add{\KOMAClassFileName}{toc}{graduated}%
       \@tocleftfalse
     \or % indenttextentries
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{indenttextentries}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{leftaligntextentries}%
-      \KOMA@kav@add{.\KOMAClassFileName}{toc}{indenttextentries}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{indenttextentries}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{leftaligntextentries}%
+      \KOMA@kav@add{\KOMAClassFileName}{toc}{indenttextentries}%
       \expandafter\setuptoc\expandafter{\ext@toc}{numberline}%
     \or % leftaligntextentries
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{indenttextentries}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{leftaligntextentries}%
-      \KOMA@kav@add{.\KOMAClassFileName}{toc}{leftaligntextentries}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{indenttextentries}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{leftaligntextentries}%
+      \KOMA@kav@add{\KOMAClassFileName}{toc}{leftaligntextentries}%
       \expandafter\unsettoc\expandafter{\ext@toc}{numberline}%
     \or % chapterentrywithdots/sectionentrywithdots
       \KOMAoptions{chapterentrydots=true}%
@@ -1696,14 +1749,14 @@
   }{#1}%
   \ifx\FamilyKeyState\FamilyKeyStateProcessed
     \ifcase \@tempa\relax % notoc
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{nolistof}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{listof}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{listofnumbered}%
-      \KOMA@kav@add{.\KOMAClassFileName}{toc}{nolistof}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{listof}{notoc}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{listof}{totoc}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{listof}{numbered}%
-      \KOMA@kav@add{.\KOMAClassFileName}{listof}{notoc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{nolistof}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{listof}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{listofnumbered}%
+      \KOMA@kav@add{\KOMAClassFileName}{toc}{nolistof}%
+      \KOMA@kav@remove{\KOMAClassFileName}{listof}{notoc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{listof}{totoc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{listof}{numbered}%
+      \KOMA@kav@add{\KOMAClassFileName}{listof}{notoc}%
       \renewcommand*{\float@@listhead}{%
       \chapter*
       }%
@@ -1716,14 +1769,14 @@
         \unsettoc{\@currext}{totoc}%
       }%
     \or% totoc
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{nolistof}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{listof}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{listofnumbered}%
-      \KOMA@kav@add{.\KOMAClassFileName}{toc}{listof}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{listof}{notoc}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{listof}{totoc}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{listof}{numbered}%
-      \KOMA@kav@add{.\KOMAClassFileName}{listof}{totoc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{nolistof}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{listof}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{listofnumbered}%
+      \KOMA@kav@add{\KOMAClassFileName}{toc}{listof}%
+      \KOMA@kav@remove{\KOMAClassFileName}{listof}{notoc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{listof}{totoc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{listof}{numbered}%
+      \KOMA@kav@add{\KOMAClassFileName}{listof}{totoc}%
       \renewcommand*{\float@@listhead}{%
       \addchap
       }%
@@ -1736,14 +1789,14 @@
         \setuptoc{\@currext}{totoc}%
       }%
     \or% numbered
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{nolistof}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{listof}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{listofnumbered}%
-      \KOMA@kav@add{.\KOMAClassFileName}{toc}{listofnumbered}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{listof}{notoc}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{listof}{totoc}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{listof}{numbered}%
-      \KOMA@kav@add{.\KOMAClassFileName}{listof}{numbered}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{nolistof}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{listof}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{listofnumbered}%
+      \KOMA@kav@add{\KOMAClassFileName}{toc}{listofnumbered}%
+      \KOMA@kav@remove{\KOMAClassFileName}{listof}{notoc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{listof}{totoc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{listof}{numbered}%
+      \KOMA@kav@add{\KOMAClassFileName}{listof}{numbered}%
       \renewcommand*{\float@@listhead}{%
       \chapter
       }%
@@ -1756,18 +1809,18 @@
         \setuptoc{\@currext}{totoc}%
       }%
     \or% flat
-      \KOMA@kav@remove{.\KOMAClassFileName}{listof}{flat}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{listof}{graduated}%
-      \KOMA@kav@add{.\KOMAClassFileName}{listof}{flat}%
+      \KOMA@kav@remove{\KOMAClassFileName}{listof}{flat}%
+      \KOMA@kav@remove{\KOMAClassFileName}{listof}{graduated}%
+      \KOMA@kav@add{\KOMAClassFileName}{listof}{flat}%
       \@dynlisttrue
     \or% graduated
-      \KOMA@kav@remove{.\KOMAClassFileName}{listof}{flat}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{listof}{graduated}%
-      \KOMA@kav@add{.\KOMAClassFileName}{listof}{graduated}%
+      \KOMA@kav@remove{\KOMAClassFileName}{listof}{flat}%
+      \KOMA@kav@remove{\KOMAClassFileName}{listof}{graduated}%
+      \KOMA@kav@add{\KOMAClassFileName}{listof}{graduated}%
       \@dynlistfalse
     \or% leveldown
-      \KOMA@kav@remove{.\KOMAClassFileName}{listof}{standardlevel}%
-      \KOMA@kav@add{.\KOMAClassFileName}{listof}{leveldown}%
+      \KOMA@kav@remove{\KOMAClassFileName}{listof}{standardlevel}%
+      \KOMA@kav@add{\KOMAClassFileName}{listof}{leveldown}%
       \doforeachtocfile[float]{%
         \setuptoc{\@currext}{leveldown}%
       }%
@@ -1775,8 +1828,8 @@
         \setuptoc{\@currext}{leveldown}%
       }%
     \or% standardlevel
-      \KOMA@kav@remove{.\KOMAClassFileName}{listof}{leveldown}%
-      \KOMA@kav@add{.\KOMAClassFileName}{listof}{standardlevel}%
+      \KOMA@kav@remove{\KOMAClassFileName}{listof}{leveldown}%
+      \KOMA@kav@add{\KOMAClassFileName}{listof}{standardlevel}%
       \doforeachtocfile[float]{%
         \unsettoc{\@currext}{leveldown}%
       }%
@@ -1784,7 +1837,7 @@
         \unsettoc{\@currext}{leveldown}%
       }%
     \or% entryprefix
-      \KOMA@kav@add{.\KOMAClassFileName}{listof}{entryprefix}%
+      \KOMA@kav@add{\KOMAClassFileName}{listof}{entryprefix}%
       \@dynlisttrue
       \doforeachtocfile[float]{%
         \BeforeStartingTOC[\@currext]{%
@@ -1805,9 +1858,9 @@
         }%
       }%
     \or% indenttextentries
-      \KOMA@kav@remove{.\KOMAClassFileName}{listof}{indenttextentries}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{listof}{leftaligntextentries}%
-      \KOMA@kav@add{.\KOMAClassFileName}{listof}{indenttextentries}%
+      \KOMA@kav@remove{\KOMAClassFileName}{listof}{indenttextentries}%
+      \KOMA@kav@remove{\KOMAClassFileName}{listof}{leftaligntextentries}%
+      \KOMA@kav@add{\KOMAClassFileName}{listof}{indenttextentries}%
       \doforeachtocfile[float]{%
         \setuptoc{\@currext}{numberline}%
       }%
@@ -1815,9 +1868,9 @@
         \setuptoc{\@currext}{numberline}%
       }
     \or% leftaligntextentries
-      \KOMA@kav@remove{.\KOMAClassFileName}{listof}{indenttextentries}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{listof}{leftaligntextentries}%
-      \KOMA@kav@add{.\KOMAClassFileName}{listof}{leftaligntextentries}%
+      \KOMA@kav@remove{\KOMAClassFileName}{listof}{indenttextentries}%
+      \KOMA@kav@remove{\KOMAClassFileName}{listof}{leftaligntextentries}%
+      \KOMA@kav@add{\KOMAClassFileName}{listof}{leftaligntextentries}%
       \doforeachtocfile[float]{%
         \unsettoc{\@currext}{numberline}%
       }%
@@ -1835,10 +1888,10 @@
     \fi
   \fi
 }
-\KOMA@kav@add{.\KOMAClassFileName}{toc}{nolistof}
-\KOMA@kav@add{.\KOMAClassFileName}{listof}{notoc}
-\KOMA@kav@add{.\KOMAClassFileName}{listof}{graduated}
-\KOMA@kav@add{.\KOMAClassFileName}{listof}{leftaligntextentries}
+\KOMA@kav@add{\KOMAClassFileName}{toc}{nolistof}
+\KOMA@kav@add{\KOMAClassFileName}{listof}{notoc}
+\KOMA@kav@add{\KOMAClassFileName}{listof}{graduated}
+\KOMA@kav@add{\KOMAClassFileName}{listof}{leftaligntextentries}
 \KOMA@DeclareDeprecatedOption{liststotoc}{listof=totoc}
 \KOMA@DeclareDeprecatedOption{liststotocnumbered}{listof=numbered}
 \KOMA@DeclareDeprecatedOption{listsleft}{listof=flat}
@@ -1847,38 +1900,38 @@
 \newif\if@chaptertolists\@chaptertolistsfalse
 \KOMA@key{chapteratlists}[entry]{%
   \FamilyKeyStateProcessed
-  \KOMA@kav@remove{.\KOMAClassFileName}{listof}{chapterentry}%
-  \KOMA@kav@remove{.\KOMAClassFileName}{listof}{chaptergap}%
-  \KOMA@kav@remove{.\KOMAClassFileName}{listof}{chaptergapsmall}%
-  \KOMA@kav@remove{.\KOMAClassFileName}{listof}{chaptergapline}%
+  \KOMA@kav@remove{\KOMAClassFileName}{listof}{chapterentry}%
+  \KOMA@kav@remove{\KOMAClassFileName}{listof}{chaptergap}%
+  \KOMA@kav@remove{\KOMAClassFileName}{listof}{chaptergapsmall}%
+  \KOMA@kav@remove{\KOMAClassFileName}{listof}{chaptergapline}%
   \Ifstr{#1}{entry}{%
     \@chaptertoliststrue\renewcommand*{\@chapterlistsgap}{\z@}%
-    \KOMA@kav@replacevalue{.\KOMAClassFileName}{chapteratlists}{entry}%
-    \KOMA@kav@add{.\KOMAClassFileName}{listof}{chapterentry}%
+    \KOMA@kav@replacevalue{\KOMAClassFileName}{chapteratlists}{entry}%
+    \KOMA@kav@add{\KOMAClassFileName}{listof}{chapterentry}%
   }{%
     \@chaptertolistsfalse\renewcommand*{\@chapterlistsgap}{#1}%
-    \KOMA@kav@replacevalue{.\KOMAClassFileName}{chapteratlists}%
+    \KOMA@kav@replacevalue{\KOMAClassFileName}{chapteratlists}%
                                                {\@chapterlistsgap}%
     \def\reserved@a{\z@}%
     \ifx\@chapterlistsgap\reserved@a
-      \KOMA@kav@add{.\KOMAClassFileName}{listof}{chaptergap}%
+      \KOMA@kav@add{\KOMAClassFileName}{listof}{chaptergap}%
     \else
       \def\reserved@a{10\p@}%
       \ifx\@chapterlistsgap\reserved@a
-        \KOMA@kav@add{.\KOMAClassFileName}{listof}{chaptergapsmall}%
+        \KOMA@kav@add{\KOMAClassFileName}{listof}{chaptergapsmall}%
       \else
         \def\reserved@a{\baselineskip}%
         \ifx\@chapterlistsgap\reserved@a
-          \KOMA@kav@add{.\KOMAClassFileName}{listof}{chaptergapline}%
+          \KOMA@kav@add{\KOMAClassFileName}{listof}{chaptergapline}%
         \fi
       \fi
     \fi
   }%
 }
 \BeforeTOCHead{\@chaptertolistsfalse}
-\KOMA@kav@add{.\KOMAClassFileName}{chapteratlists}{10\p@}%
-\KOMA@kav@add{.\KOMAClassFileName}{listof}{chaptergapsmall}%
-%%% From File: $Id: scrkernel-bibliography.dtx 3874 2022-06-05 10:38:02Z kohm $
+\KOMA@kav@add{\KOMAClassFileName}{chapteratlists}{10\p@}%
+\KOMA@kav@add{\KOMAClassFileName}{listof}{chaptergapsmall}%
+%%% From File: $Id: scrkernel-bibliography.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: option)
 \newcommand{\newbibstyle}[3][]{%
   \scr@ifundefinedorrelax{scr@bibstyle@#2}{%
@@ -1901,13 +1954,13 @@
         \@ifundefined{scr@current@bibstyle}{}{%
           \Ifstr{\scr@current@bibstyle}{}{}{%
             \edef\reserved@a{%
-              \noexpand\KOMA@kav@remove{.\KOMAClassFileName}{bibliography}%
+              \noexpand\KOMA@kav@remove{\KOMAClassFileName}{bibliography}%
                                        {\scr@current@bibstyle}%
             }\reserved@a
           }%
         }%
         \def\scr@current@bibstyle{#2}%
-        \KOMA@kav@xadd{.\KOMAClassFileName}{bibliography}{#2}%
+        \KOMA@kav@xadd{\KOMAClassFileName}{bibliography}{#2}%
         \csname scr@bibstyle@#1\endcsname
         #3%
       }%
@@ -1969,14 +2022,14 @@
       {standardlevel}{4}%
     }{#1}%
     \ifcase \@tempa\relax % notoc
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{nobibliography}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{bibliography}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{bibliographynumbered}%
-      \KOMA@kav@add{.\KOMAClassFileName}{toc}{nobibliography}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{bibliography}{notoc}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{bibliography}{totoc}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{bibliography}{numbered}%
-      \KOMA@kav@add{.\KOMAClassFileName}{bibliography}{notoc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{nobibliography}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{bibliography}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{bibliographynumbered}%
+      \KOMA@kav@add{\KOMAClassFileName}{toc}{nobibliography}%
+      \KOMA@kav@remove{\KOMAClassFileName}{bibliography}{notoc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{bibliography}{totoc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{bibliography}{numbered}%
+      \KOMA@kav@add{\KOMAClassFileName}{bibliography}{notoc}%
       \renewcommand*{\bibliography@heading}[1]{%
         \ifbib@leveldown
           \section*{##1}%
@@ -1987,14 +2040,14 @@
         \fi
       }%
     \or% totoc
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{nobibliography}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{bibliography}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{bibliographynumbered}%
-      \KOMA@kav@add{.\KOMAClassFileName}{toc}{bibliography}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{bibliography}{notoc}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{bibliography}{totoc}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{bibliography}{numbered}%
-      \KOMA@kav@add{.\KOMAClassFileName}{bibliography}{totoc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{nobibliography}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{bibliography}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{bibliographynumbered}%
+      \KOMA@kav@add{\KOMAClassFileName}{toc}{bibliography}%
+      \KOMA@kav@remove{\KOMAClassFileName}{bibliography}{notoc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{bibliography}{totoc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{bibliography}{numbered}%
+      \KOMA@kav@add{\KOMAClassFileName}{bibliography}{totoc}%
       \renewcommand*{\bibliography@heading}[1]{%
         \ifbib@leveldown
           \addsec{##1}%
@@ -2008,14 +2061,14 @@
         \fi
       }%
     \or% numbered
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{nobibliography}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{bibliography}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{bibliographynumbered}%
-      \KOMA@kav@add{.\KOMAClassFileName}{toc}{bibliographynumbered}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{bibliography}{notoc}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{bibliography}{totoc}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{bibliography}{numbered}%
-      \KOMA@kav@add{.\KOMAClassFileName}{bibliography}{numbered}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{nobibliography}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{bibliography}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{bibliographynumbered}%
+      \KOMA@kav@add{\KOMAClassFileName}{toc}{bibliographynumbered}%
+      \KOMA@kav@remove{\KOMAClassFileName}{bibliography}{notoc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{bibliography}{totoc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{bibliography}{numbered}%
+      \KOMA@kav@add{\KOMAClassFileName}{bibliography}{numbered}%
       \renewcommand*{\bibliography@heading}[1]{%
         \ifbib@leveldown
           \section{##1}%
@@ -2029,20 +2082,20 @@
         \fi
       }
     \or% leveldown
-      \KOMA@kav@remove{.\KOMAClassFileName}{bibliography}{leveldown}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{bibliography}{standardlevel}%
-      \KOMA@kav@add{.\KOMAClassFileName}{bibliography}{leveldown}%
+      \KOMA@kav@remove{\KOMAClassFileName}{bibliography}{leveldown}%
+      \KOMA@kav@remove{\KOMAClassFileName}{bibliography}{standardlevel}%
+      \KOMA@kav@add{\KOMAClassFileName}{bibliography}{leveldown}%
       \bib@leveldowntrue
     \or% standardlevel
-      \KOMA@kav@remove{.\KOMAClassFileName}{bibliography}{leveldown}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{bibliography}{standardlevel}%
-      \KOMA@kav@add{.\KOMAClassFileName}{bibliography}{standardlevel}%
+      \KOMA@kav@remove{\KOMAClassFileName}{bibliography}{leveldown}%
+      \KOMA@kav@remove{\KOMAClassFileName}{bibliography}{standardlevel}%
+      \KOMA@kav@add{\KOMAClassFileName}{bibliography}{standardlevel}%
       \bib@leveldownfalse
     \fi
   }{%
     \FamilyKeyStateProcessed
     \edef\reserved@a{%
-      \noexpand\KOMA@kav@remove{.\KOMAClassFileName}{bibliography}%
+      \noexpand\KOMA@kav@remove{\KOMAClassFileName}{bibliography}%
                                {\scr@current@bibstyle}%
     }\reserved@a
     \csname scr@bibstyle@#1\endcsname
@@ -2051,7 +2104,7 @@
 \KOMA@DeclareStandardOption{openbib}{bibliography=openstyle}
 \KOMA@DeclareDeprecatedOption{bibtotoc}{bibliography=totoc}
 \KOMA@DeclareDeprecatedOption{bibtotocnumbered}{bibliography=totocnumbered}
-%%% From File: $Id: scrkernel-index.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-index.dtx 4052 2023-05-05 11:41:51Z kohm $
 %%%            (run: option)
 \newcommand*{\idx@@heading}{%
   \ifidx@leveldown
@@ -2060,6 +2113,22 @@
     \expandafter\chapter
   \fi*%
 }
+\newcommand*{\idx@@forcemark}[1]{%
+  \ifidx@leveldown
+    \addsecmark{#1}%
+  \else
+    \@mkdouble{\MakeMarkcase{#1}}%
+  \fi
+}
+\newcommand*{\idx@@forcemarknumbered}[1]{%
+  \ifidx@leveldown
+    \sectionmark{#1}%
+  \else
+    \chaptermark{#1}%
+  \fi
+}
+\newcommand*{\idx@@mark}{}
+\let\idx@@mark\idx@@forcemark
 \newif\ifidx@leveldown
 \KOMA@key{index}{%
   \KOMA@set@ncmdkey{index}{@tempa}{%
@@ -2072,14 +2141,14 @@
   }{#1}%
   \ifx\FamilyKeyState\FamilyKeyStateProcessed
     \ifcase \@tempa\relax
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{noindex}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{indexnumbered}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{index}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{index}{notoc}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{index}{numbered}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{index}{toc}%
-      \KOMA@kav@add{.\KOMAClassFileName}{toc}{noindex}%
-      \KOMA@kav@add{.\KOMAClassFileName}{index}{notoc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{noindex}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{indexnumbered}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{index}%
+      \KOMA@kav@remove{\KOMAClassFileName}{index}{notoc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{index}{numbered}%
+      \KOMA@kav@remove{\KOMAClassFileName}{index}{toc}%
+      \KOMA@kav@add{\KOMAClassFileName}{toc}{noindex}%
+      \KOMA@kav@add{\KOMAClassFileName}{index}{notoc}%
       \renewcommand*{\idx@@heading}{%
         \ifidx@leveldown
         \expandafter\section
@@ -2087,15 +2156,16 @@
         \expandafter\chapter
         \fi*%
       }%
+      \let\idx@@mark\idx@@forcemark
     \or
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{noindex}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{indexnumbered}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{index}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{index}{notoc}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{index}{numbered}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{index}{toc}%
-      \KOMA@kav@add{.\KOMAClassFileName}{toc}{index}%
-      \KOMA@kav@add{.\KOMAClassFileName}{index}{toc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{noindex}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{indexnumbered}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{index}%
+      \KOMA@kav@remove{\KOMAClassFileName}{index}{notoc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{index}{numbered}%
+      \KOMA@kav@remove{\KOMAClassFileName}{index}{toc}%
+      \KOMA@kav@add{\KOMAClassFileName}{toc}{index}%
+      \KOMA@kav@add{\KOMAClassFileName}{index}{toc}%
       \renewcommand*{\idx@@heading}{%
         \ifidx@leveldown
         \expandafter\addsec
@@ -2103,15 +2173,16 @@
         \expandafter\addchap
         \fi
       }%
+      \let\idx@@mark\idx@@forcemark
     \or
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{noindex}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{indexnumbered}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{toc}{index}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{index}{notoc}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{index}{numbered}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{index}{toc}%
-      \KOMA@kav@add{.\KOMAClassFileName}{toc}{indexnumbered}%
-      \KOMA@kav@add{.\KOMAClassFileName}{index}{numbered}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{noindex}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{indexnumbered}%
+      \KOMA@kav@remove{\KOMAClassFileName}{toc}{index}%
+      \KOMA@kav@remove{\KOMAClassFileName}{index}{notoc}%
+      \KOMA@kav@remove{\KOMAClassFileName}{index}{numbered}%
+      \KOMA@kav@remove{\KOMAClassFileName}{index}{toc}%
+      \KOMA@kav@add{\KOMAClassFileName}{toc}{indexnumbered}%
+      \KOMA@kav@add{\KOMAClassFileName}{index}{numbered}%
       \renewcommand*{\idx@@heading}{%
         \ifidx@leveldown
         \expandafter\section
@@ -2119,37 +2190,38 @@
         \expandafter\chapter
         \fi
       }%
+      \let\idx@@mark\idx@@forcemarknumbered
     \or
-      \KOMA@kav@remove{.\KOMAClassFileName}{index}{leveldown}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{index}{standardlevel}%
-      \KOMA@kav@add{.\KOMAClassFileName}{index}{leveldown}%
+      \KOMA@kav@remove{\KOMAClassFileName}{index}{leveldown}%
+      \KOMA@kav@remove{\KOMAClassFileName}{index}{standardlevel}%
+      \KOMA@kav@add{\KOMAClassFileName}{index}{leveldown}%
       \idx@leveldowntrue
     \or
-      \KOMA@kav@remove{.\KOMAClassFileName}{index}{leveldown}%
-      \KOMA@kav@remove{.\KOMAClassFileName}{index}{standardlevel}%
-      \KOMA@kav@add{.\KOMAClassFileName}{index}{standardlevel}%
+      \KOMA@kav@remove{\KOMAClassFileName}{index}{leveldown}%
+      \KOMA@kav@remove{\KOMAClassFileName}{index}{standardlevel}%
+      \KOMA@kav@add{\KOMAClassFileName}{index}{standardlevel}%
       \idx@leveldownfalse
     \fi
   \fi
 }
-\KOMA@kav@add{.\KOMAClassFileName}{toc}{noindex}
-\KOMA@kav@add{.\KOMAClassFileName}{index}{notoc}
-\KOMA@kav@add{.\KOMAClassFileName}{index}{standardlevel}
+\KOMA@kav@add{\KOMAClassFileName}{toc}{noindex}
+\KOMA@kav@add{\KOMAClassFileName}{index}{notoc}
+\KOMA@kav@add{\KOMAClassFileName}{index}{standardlevel}
 \KOMA@DeclareDeprecatedOption{idxtotoc}{index=totoc}
-%%% From File: $Id: scrkernel-listsandtabulars.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-listsandtabulars.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: option)
-%%% From File: $Id: scrkernel-sections.dtx 3954 2022-10-04 09:20:19Z kohm $
+%%% From File: $Id: scrkernel-sections.dtx 4069 2023-06-29 08:55:54Z kohm $
 %%%            (run: execoption)
 \KOMAExecuteOptions{headings=openright}
 \KOMAExecuteOptions{numbers=autoendperiod}
-%%% From File: $Id: scrkernel-miscellaneous.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-miscellaneous.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: execoption)
 \KOMAExecuteOptions{%
   parskip=false,%
   headings=big%
 }
 \KOMAProcessOptions\relax
-%%% From File: $Id: scrkernel-compatibility.dtx 3949 2022-08-09 10:05:50Z kohm $
+%%% From File: $Id: scrkernel-compatibility.dtx 4054 2023-05-10 14:35:36Z kohm $
 %%%            (run: body)
 \AtBeginDocument{%
   \begingroup
@@ -2198,7 +2270,7 @@
     }%
   \endgroup
 }
-%%% From File: $Id: scrkernel-fonts.dtx 3958 2022-10-06 12:44:28Z kohm $
+%%% From File: $Id: scrkernel-fonts.dtx 4034 2023-04-20 08:03:46Z kohm $
 %%%            (run: body)
 \newcommand*\scr@setlength[4]{%
   \expandafter\ifnum\scr@v@is@lt{3.12}\relax
@@ -2236,7 +2308,7 @@
   \fi
 }
 \providecommand*{\simple@changefontsizes}[2][1.2\@tempdima]{%
-  \KOMA@kav@removekey{.%
+  \KOMA@kav@removekey{%
     \KOMAClassFileName
   }{fontsize}%
   \@defaultunits\@tempdima#2pt\relax\@nnil
@@ -2385,7 +2457,9 @@
   \let\Huge\@undefined
   \expandafter\DeclareRobustCommand\expandafter\Huge\expandafter{\reserved@a}%
   \normalsize
-  \expandafter\ifnum\scr@v@is@ge{3.17}\@nameuse{par@updaterelative}\fi
+  \expandafter\ifnum\scr@v@is@ge{3.17}
+    \@nameuse{par@updaterelative}%
+  \fi
   \expandafter\ifnum\scr@v@is@lt{3.12}\relax
     \setlength{\footnotesep}{.7\@tempdimc}%
     \setlength{\skip\footins}{.9\@tempdimc \@plus .3333\@tempdimc \@minus
@@ -2585,31 +2659,31 @@
 \InputIfFileExists{\@fontsizefilebase\@tempa.clo}{%
   \ClassInfo{\KOMAClassName}{%
     File `\@fontsizefilebase\@tempa.clo' used to setup font sizes}%
-  \KOMA@kav@removekey{.\KOMAClassFileName}{fontsize}%
-  \KOMA@kav@xadd{.\KOMAClassFileName}{fontsize}{\@tempa}%
+  \KOMA@kav@removekey{\KOMAClassFileName}{fontsize}%
+  \KOMA@kav@xadd{\KOMAClassFileName}{fontsize}{\@tempa}%
 }{%
   \InputIfFileExists{\@fontsizefilebase\@tempb pt.clo}{%
     \ClassInfo{\KOMAClassName}{%
       File `\@fontsizefilebase\@tempb pt.clo' used instead of\MessageBreak
       file `\@fontsizefilebase\@tempa.clo' to setup font sizes}%
-    \KOMA@kav@removekey{.\KOMAClassFileName}{fontsize}%
-    \KOMA@kav@xadd{.\KOMAClassFileName}{fontsize}{\@tempb pt}%
+    \KOMA@kav@removekey{\KOMAClassFileName}{fontsize}%
+    \KOMA@kav@xadd{\KOMAClassFileName}{fontsize}{\@tempb pt}%
   }{%
     \InputIfFileExists{bk\@tempb.clo}{%
       \ClassInfo{\KOMAClassName}{%
         File `bk\@tempb.clo' used to setup font sizes}%
-      \KOMA@kav@removekey{.\KOMAClassFileName}{fontsize}%
-      \KOMA@kav@xadd{.\KOMAClassFileName}{fontsize}{\@tempb}%
+      \KOMA@kav@removekey{\KOMAClassFileName}{fontsize}%
+      \KOMA@kav@xadd{\KOMAClassFileName}{fontsize}{\@tempb}%
     }{%
       \InputIfFileExists{size\@tempb.clo}{%
         \ClassInfo{\KOMAClassName}{%
           File `size\@tempb.clo' used to setup font sizes}%
-        \KOMA@kav@removekey{.\KOMAClassFileName}{fontsize}%
-        \KOMA@kav@xadd{.\KOMAClassFileName}{fontsize}{\@tempb}%
+        \KOMA@kav@removekey{\KOMAClassFileName}{fontsize}%
+        \KOMA@kav@xadd{\KOMAClassFileName}{fontsize}{\@tempb}%
       }{%
         \edef\@tempa{%
           \noexpand\changefontsizes{\@tempa}%
-          \noexpand\KOMA@kav@xadd{.\KOMAClassFileName}{fontsize}{\@tempa}%
+          \noexpand\KOMA@kav@xadd{\KOMAClassFileName}{fontsize}{\@tempa}%
         }\@tempa
       }%
     }%
@@ -2704,13 +2778,13 @@
   \@nomath\sfb}
 \DeclareRobustCommand*{\cal}{\@fontswitch\relax\mathcal}
 \DeclareRobustCommand*{\mit}{\@fontswitch\relax\mathnormal}
-%%% From File: $Id: scrkernel-language.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-language.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: body)
       \def\today{\ifcase\month\or
         January\or February\or March\or April\or May\or June\or
         July\or August\or September\or October\or November\or December\fi
         \space\number\day, \number\year}%
-%%% From File: $Id: scrkernel-typearea.dtx 3889 2022-06-09 12:11:14Z kohm $
+%%% From File: $Id: scrkernel-typearea.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: body)
 \let\@BCOR                =\relax
 \let\@@BCOR               =\relax
@@ -2757,7 +2831,7 @@
     \fi
   }%
 \fi
-%%% From File: $Id: scrkernel-paragraphs.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-paragraphs.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: body)
 \newcommand*{\par@updaterelative}{%
   \begingroup
@@ -2933,7 +3007,7 @@
 \@lowpenalty  = 51
 \@medpenalty  =151
 \@highpenalty =301
-%%% From File: $Id: scrkernel-title.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-title.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: body)
 \newcommand*{\@extratitle}{}%
 \newcommand{\extratitle}[1]{\gdef\@extratitle{%
@@ -2984,8 +3058,7 @@
   \next@tpage\if@twoside \ifodd\value{page}\else\null\next@tpage\fi\fi
 }
 \newcommand*\maketitle[1][1]{%
-  \expandafter\ifnum \csname scr@v@3.12\endcsname>\scr@compatibility\relax
-  \else
+  \expandafter\ifnum \scr@v@is@ge{3.12}%
     \def\and{%
       \end{tabular}%
       \hskip 1em \@plus.17fil%
@@ -3081,8 +3154,7 @@
       \vfill\null
       \if@twoside
         \@tempswatrue
-        \expandafter\ifnum \@nameuse{scr@v@3.12}>\scr@compatibility\relax
-        \else
+        \expandafter\ifnum \scr@v@is@ge{3.12}%
           \ifx\@uppertitleback\@empty\ifx\@lowertitleback\@empty
             \@tempswafalse
           \fi\fi
@@ -3100,14 +3172,16 @@
         \fi
       \else
         \ifx\@uppertitleback\@empty\else
-          \ClassWarning{\KOMAClassName}{%
+          \ClassWarning{\KOMAClassName}%
+          {%
             non empty \string\uppertitleback\space ignored
             by \string\maketitle\MessageBreak
             in `twoside=false' mode%
           }%
         \fi
         \ifx\@lowertitleback\@empty\else
-          \ClassWarning{\KOMAClassName}{%
+          \ClassWarning{\KOMAClassName}%
+          {%
             non empty \string\lowertitleback\space ignored
             by \string\maketitle\MessageBreak
             in `twoside=false' mode%
@@ -3129,20 +3203,23 @@
     \@tempcnta=%
     #1%
     \relax\ifnum\@tempcnta=1\else
-      \ClassWarning{\KOMAClassName}{%
+      \ClassWarning{\KOMAClassName}%
+      {%
         Optional argument of \string\maketitle\space ignored\MessageBreak
         in `titlepage=false' mode%
       }%
     \fi
     \ifx\@uppertitleback\@empty\else
-      \ClassWarning{\KOMAClassName}{%
+      \ClassWarning{\KOMAClassName}%
+      {%
         non empty \string\uppertitleback\space ignored
         by \string\maketitle\MessageBreak
         in `titlepage=false' mode%
       }%
     \fi
     \ifx\@lowertitleback\@empty\else
-      \ClassWarning{\KOMAClassName}{%
+      \ClassWarning{\KOMAClassName}%
+      {%
         non empty \string\lowertitleback\space ignored
         by \string\maketitle\MessageBreak
         in `titlepage=false' mode%
@@ -3204,7 +3281,7 @@
     \endgroup
   \fi
   \setcounter{footnote}{0}%
-  \expandafter\ifnum \csname scr@v@3.12\endcsname>\scr@compatibility\relax
+  \expandafter\ifnum \scr@v@is@lt{3.12}%
     \let\thanks\relax
     \let\maketitle\relax
     \let\@maketitle\relax
@@ -3301,9 +3378,6 @@
     \@restonecolfalse\newpage
   \fi
   \thispagestyle{empty}%
-  \if@compatibility
-    \setcounter{page}{0}%
-  \fi
 }{%
   \if@restonecol\twocolumn \else \newpage \fi
 }%
@@ -3317,10 +3391,10 @@
 \newcommand*{\scr@fnt@title}{\titlefont}%
 \newcommand*{\subject@font}{\normalfont\normalcolor\bfseries\Large}%
 \newcommand*{\scr@fnt@subject}{\subject@font}%
-%%% From File: $Id: scrkernel-tocstyle.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-tocstyle.dtx 4060 2023-06-20 08:59:01Z kohm $
 %%%            (run: body)
 \let\numberline\scr@numberline
-%%% From File: $Id: scrkernel-tocstyle.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-tocstyle.dtx 4060 2023-06-20 08:59:01Z kohm $
 %%%            (run: class,style,part)
 \CloneTOCEntryStyle{tocline}{part}
 \TOCEntryStyleStartInitCode{part}{%
@@ -3334,7 +3408,7 @@
   \expandafter\providecommand\expandafter*%
   \csname scr@tso@#1@beforeskip\endcsname{2.25em \@plus\p@}%
 }
-%%% From File: $Id: scrkernel-tocstyle.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-tocstyle.dtx 4060 2023-06-20 08:59:01Z kohm $
 %%%            (run: class,style,chapter)
 \CloneTOCEntryStyle{tocline}{chapter}
 \TOCEntryStyleStartInitCode{chapter}{%
@@ -3354,17 +3428,17 @@
   \expandafter\providecommand\expandafter*%
   \csname scr@tso@#1@beforeskip\endcsname{1.0em \@plus\p@}%
 }
-%%% From File: $Id: scrkernel-tocstyle.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-tocstyle.dtx 4060 2023-06-20 08:59:01Z kohm $
 %%%            (run: class,style,section)
 \CloneTOCEntryStyle{tocline}{section}
 \TOCEntryStyleStartInitCode{section}{%
   \expandafter\providecommand%
   \csname scr@tso@#1@linefill\endcsname{\TOCLineLeaderFill\relax}%
 }
-%%% From File: $Id: scrkernel-tocstyle.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-tocstyle.dtx 4060 2023-06-20 08:59:01Z kohm $
 %%%            (run: class,style,default)
 \CloneTOCEntryStyle{section}{default}
-%%% From File: $Id: scrkernel-sections.dtx 3954 2022-10-04 09:20:19Z kohm $
+%%% From File: $Id: scrkernel-sections.dtx 4069 2023-06-29 08:55:54Z kohm $
 %%%            (run: body)
 \BeforeClosingMainAux{%
   \if@autodot\if@filesw\immediate\write\@mainaux{%
@@ -3733,7 +3807,7 @@
       \z@
     \fi
     \let\@svsec\@empty
-    \expandafter\ifnum\scr@v@is@lt{3.31}\relax\else
+    \expandafter\ifnum\scr@v@is@ge{3.31}\relax
       \begingroup
         \let\@elt\@stpelt
         \csname cl@#1\endcsname
@@ -3827,10 +3901,23 @@
 \providecommand*\@currentlabelname{}
 \FamilyStringKey[.section]{KOMAarg}{tocentry}{\@currenttocentry}
 \FamilyStringKey[.section]{KOMAarg}{head}{\@currentheadentry}
+\IfLTXAtLeastTF{2020/10/01}{%
+  \NewHook{\KOMAClassName/option/section/reference/fallback}%
+}{}%
 \DefineFamilyKey[.section]{KOMAarg}{reference}{%
   \scr@ifundefinedorrelax{NR@gettitle}{%
     \scr@ifundefinedorrelax{GetTitleString}{%
-      \def\@currentlabelname{#1}%
+      \begingroup
+        \let\label\@gobble
+        \let\index\@gobble
+        \let\glossary\@gobble
+        \scr@ifundefinedorrelax{UseHook}{}{%
+          \UseHook{\KOMAClassName/option/section/reference/fallback}%
+        }%
+        \protected@edef\@currentlabelname{#1}%
+      \expandafter\expandafter\expandafter\endgroup
+      \expandafter\def\expandafter\@currentlabelname\expandafter{%
+        \@currentlabelname}%
     }{%
       \GetTitleString{#1}%
       \let\@currentlabelname\GetTitleStringResult
@@ -3891,7 +3978,7 @@
       This could result in several error messages}%
     \def\scr@s@ct@@nn@m@{\string\scr@s@ct@@nn@m@}%
   }{%
-    \expandafter\ifnum\scr@v@is@lt{3.31}\relax\else
+    \expandafter\ifnum\scr@v@is@ge{3.31}\relax
       \begingroup
         \let\@elt\@stpelt
         \csname cl@\scr@s@ct@@nn@m@\endcsname
@@ -5238,7 +5325,7 @@
       {\@currenttocentry}%
     \fi
   }{%
-    \expandafter\ifnum\scr@v@is@lt{3.18}\relax\else
+    \expandafter\ifnum\scr@v@is@ge{3.18}\relax
       \begingroup
         \let\@elt\@stpelt
         \csname cl@#1\endcsname
@@ -5448,7 +5535,7 @@
       {\@currenttocentry}%
     \fi
   \else
-    \expandafter\ifnum\scr@v@is@lt{3.15}\relax\else
+    \expandafter\ifnum\scr@v@is@ge{3.15}\relax
       \begingroup
         \let\@elt\@stpelt
         \csname cl@#1\endcsname
@@ -5571,7 +5658,9 @@
   \csname scr@#1@afterindent\endcsname
   {\@afterindenttrue}{\@afterindentfalse}{%
     \ifdim\@tempskipa<\z@\@tempskipa-\@tempskipa\else
-      \expandafter\ifnum\scr@v@is@ge{3.22}\@afterindenttrue\fi
+      \expandafter\ifnum\scr@v@is@ge{3.22}
+        \@afterindenttrue
+      \fi
     \fi
   }%
   \chapterheadstartvskip
@@ -5633,7 +5722,9 @@
   \csname scr@#1@afterindent\endcsname
   {\@afterindenttrue}{\@afterindentfalse}{%
     \ifdim\@tempskipa<\z@\@tempskipa-\@tempskipa\else
-      \expandafter\ifnum\scr@v@is@ge{3.22}\@afterindenttrue\fi
+      \expandafter\ifnum\scr@v@is@ge{3.22}
+        \@afterindenttrue
+      \fi
     \fi
   }%
   \chapterheadstartvskip
@@ -5830,7 +5921,8 @@
   \fi
   {\parindent \z@
     \expandafter\ifnum\scr@v@is@gt{2.96}\relax
-      \setlength{\parfillskip}{\z@ plus 1fil}\fi
+      \setlength{\parfillskip}{\z@ plus 1fil}%
+    \fi
     \raggedsection\normalfont\sectfont\nobreak
     \usekomafont{minisec}{\nobreak\interlinepenalty \@M #1\par\nobreak}%
   }\nobreak
@@ -5964,7 +6056,7 @@
 \fi
 \newcommand*{\scr@fnt@disposition}{\sectfont}
 \aliaskomafont{sectioning}{disposition}
-%%% From File: $Id: scrkernel-miscellaneous.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-miscellaneous.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: body)
 \@addtoreset{equation}{chapter}
 \renewcommand*{\theequation}{%
@@ -5996,7 +6088,7 @@
 \newcommand*{\dictumauthorformat}[1]{(#1)}
 \newcommand*{\raggeddictumtext}{\raggedright}
 \newcommand*{\raggeddictumauthor}{\raggedleft}
-\newkomafont{dictum}{\normalfont\normalcolor\@gr@gsffamily\small}
+\newkomafont{dictum}{\normalfont\normalcolor\maybesffamily\small}
 \newkomafont{dictumauthor}{\itshape}
 \aliaskomafont{dictumtext}{dictum}
 \setlength{\skip\@mpfootins}{\skip\footins}
@@ -6064,7 +6156,7 @@
   \fi
 }
 \newcommand\marginline[1]{%
-  \marginpar[\raggedleft{#1}]{\raggedright #1}%
+  \marginpar[{\raggedleft #1}]{\raggedright #1}%
 }
 \scr@ifundefinedorrelax{textsubscript}{%
   \DeclareRobustCommand*\textsubscript[1]{%
@@ -6283,7 +6375,7 @@
     \let\scr@mt@saved@sect\relax
   \fi
 }
-%%% From File: $Id: scrkernel-pagestyles.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-pagestyles.dtx 4058 2023-06-16 08:32:27Z kohm $
 %%%            (run: body)
 \newcommand*{\set@tempdima@hw}{%
   \setlength{\@tempdima}{\textwidth}%
@@ -6344,17 +6436,20 @@
             \if@twoside\else\hfil\fi}}}}\hss}%
   \renewcommand*{\chaptermark}[1]{%
     \if@twoside\expandafter\markboth\else\expandafter\markright\fi
-    {\MakeMarkcase{\Ifnumbered{chapter}{%
-        \if@mainmatter
-          \chaptermarkformat
-        \fi
-      }{}##1}%
+    {%
+      \Ifnumbered{chapter}{%
+      \if@mainmatter
+        \MakeMarkcase{\chaptermarkformat}%
+      \fi
+      }{}\MakeMarkcase{##1}%
     }{}%
   }%
   \renewcommand*{\sectionmark}[1]{%
     \if@twoside
-      \markright{\MakeMarkcase{\Ifnumbered{section}{\sectionmarkformat}{}%
-        ##1}}%
+      \markright{%
+        \Ifnumbered{section}{\MakeMarkcase{\sectionmarkformat}}{}%
+        \MakeMarkcase{##1}%
+      }%
     \fi
   }%
 }%
@@ -6384,7 +6479,7 @@
 \newcommand*{\indexpagestyle}{plain}
 \pagestyle{headings}
 \pagenumbering{arabic}
-%%% From File: $Id: scrlayer.dtx 3945 2022-07-19 09:16:17Z kohm $
+%%% From File: $Id: scrlayer.dtx 4058 2023-06-16 08:32:27Z kohm $
 %%%            (run: body)
 \providecommand*{\@mkleft}{%
   \IfActiveMkBoth{\markleft}{\@gobble}%
@@ -6395,7 +6490,7 @@
 \providecommand{\@mkdouble}[1]{%
   \@mkboth{#1}{#1}%
 }
-%%% From File: $Id: scrkernel-floats.dtx 3946 2022-07-20 10:37:02Z kohm $
+%%% From File: $Id: scrkernel-floats.dtx 4054 2023-05-10 14:35:36Z kohm $
 %%%            (run: body)
 \newlength{\abovecaptionskip}
 \newlength{\belowcaptionskip}
@@ -6549,15 +6644,20 @@
   \dofullc@pfalse\@capbreaktrue
 }
 \newcommand*{\setcaphanging}{\dofullc@ptrue\@capbreakfalse}
+\expandafter\ifnum\scr@v@is@ge{3.41}%
+  \newcommand*{\captionnopagebreak}{\nopagebreak}
+\else
+  \newcommand*{\captionnopagebreak}{}
+\fi
 \newcommand{\@makecaption}[2]{%
   \if@captionabove
     \vskip\belowcaptionskip
   \else
-    \vskip\abovecaptionskip
+    \captionnopagebreak\vskip\abovecaptionskip\captionnopagebreak
   \fi
   \@@makecaption\@firstofone{#1}{#2}%
   \if@captionabove
-    \vskip\abovecaptionskip
+    \captionnopagebreak\vskip\abovecaptionskip\captionnopagebreak
   \else
     \vskip\belowcaptionskip
   \fi
@@ -7160,7 +7260,7 @@
 \expandafter\ifnum\scr@v@is@le{2.97d}%
   \renewcommand*\thetable{\thechapter.\@arabic\c@table}
 \fi
-%%% From File: $Id: scrkernel-footnotes.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-footnotes.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: body)
 \renewcommand*\footnoterule{%
   \normalsize\ftn@rule@test@values
@@ -7322,7 +7422,7 @@
   \endgroup
   \@footnotemark
 }
-%%% From File: $Id: scrkernel-listsof.dtx 3892 2022-06-17 16:26:06Z kohm $
+%%% From File: $Id: scrkernel-listsof.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: body)
 \g@addto@macro{\numberline@numberpostfix}{\autodot}
 \usetocbasicnumberline[%
@@ -7472,7 +7572,7 @@
   UKenglish,ukenglish,USenglish,usenglish}\listtablename{List of Tables}
 \renewcommand*\listoflotname{\listtablename}
 \renewcommand*\listoflotentryname{\tablename}
-%%% From File: $Id: scrkernel-bibliography.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-bibliography.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: body)
 \newcommand*\bibname{Bibliography}
 \providecaptionname{american,australian,british,canadian,english,newzealand,%
@@ -7560,21 +7660,17 @@
 }
 \newcommand{\AfterBibliographyPreamble}{\g@addto@macro\bib@before@hook}
 \newcommand{\AtEndBibliography}{\g@addto@macro\bib@after@hook}
-%%% From File: $Id: scrkernel-index.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-index.dtx 4052 2023-05-05 11:41:51Z kohm $
 %%%            (run: body)
 \newcommand*{\index@preamble}{}
 \let\index@preamble=\relax
 \newcommand{\setindexpreamble}[1]{\def\index@preamble{#1}}
 \newcommand*{\idx@heading}{%
-  \if@openright\cleardoublepage\else\clearpage\fi%
+  \ifidx@leveldown\else\if@openright\cleardoublepage\else\clearpage\fi\fi
   \twocolumn[%
     \@chaptertolistsfalse
                   \idx@@heading{\indexname}]%
-  \ifidx@leveldown
-    \addsecmark{\indexname}%
-  \else
-    \@mkdouble{\MakeMarkcase{\indexname}}%
-  \fi
+  \idx@@mark{\indexname}%
 }
 \newenvironment{theindex}{%
   \if@twocolumn
@@ -7603,7 +7699,7 @@
 \newcommand*\indexname{Index}
 \providecaptionname{american,australian,british,canadian,english,newzealand,%
   UKenglish,ukenglish,USenglish,usenglish}\indexname{Index}
-%%% From File: $Id: scrkernel-listsandtabulars.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-listsandtabulars.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: body)
 \if@twocolumn
   \setlength{\leftmargini}{2em}
@@ -7754,7 +7850,7 @@
   \fi
   \item\is@thispageodd@setlabel\nobreak\ignorespaces
 }
-\newcommand*\descfont{\@gr@gsffamily\bfseries}
+\newcommand*\descfont{\maybesffamily\bfseries}
 \newcommand*{\scr@fnt@descriptionlabel}{\descfont}
 \newcommand*{\labelitemfont}{\normalfont}
 \newcommand*\scr@fnt@itemizelabel{\labelitemfont}
@@ -7769,7 +7865,7 @@
 \setlength\arrayrulewidth{.4\p@}
 \setlength\doublerulesep{2\p@}
 \setlength\tabbingsep{\labelsep}
-%%% From File: $Id: scrlogo.dtx 3688 2022-02-10 08:26:37Z kohm $
+%%% From File: $Id: scrlogo.dtx 4032 2023-04-17 09:45:11Z kohm $
 \RequirePackage{scrlogo}
 \endinput
 %%

@@ -1,0 +1,247 @@
+\newpage
+\section{Presentation}
+
+\subsection{With Lua} % (fold)
+\label{sub:with_lua}
+
+The purpose of tkz-elements is simply to calculate dimensions and define points. This is done in Lua. You can think of tkz-elements as a kernel that will be used either by tkz-euclide or by TikZ, see MetaPost.
+Definitions and calculations are done inside the environment \tkzNameEnv{tkzelements}, this environment is based on \tkzNameEnv{luacode}.
+
+\begin{minipage}[t]{.52\textwidth}\vspace{0pt}%
+   The key points are: 
+   \begin{itemize}
+      \item the source file must be \tkzEHand\ {\color{red}\uline{ \color{black}utf8}}  encoded;
+      \item compilation is done with \tkzEHand\ {\color{red}\uline{ \color{black}Lua\LATEX{}}};
+      \item you need to load \tkzimp{\TIKZ}{} ou \tkzimp{tkz-euclide} and \tkzimp{tkz-elements};
+      \item definitions and calculations are performed in an orthonormal sytem of reference, using Lua, and are carried out in an environment of  \tkzimp{tkzelements}.
+   \end{itemize}
+   
+ To the right, see the minimum template.
+  
+The code is divided into two parts, which are two environments \tkzNameEnv{tkzelements} and \tkzNameEnv{tikzpicture}. In the first environment, you place your Lua code, and in the second, tkz-euclide commands.
+
+\vspace*{4.1 cm}%
+\end{minipage}\hspace*{\fill}
+\begin{minipage}[t]{.45\textwidth}\vspace{0pt}%
+\begin{mybox}
+\begin{verbatim}
+% !TEX TS-program = lualatex
+% Created by Alain Matthes
+\documentclass{standalone} 
+\usepackage{tkz-euclide}
+% or simply TikZ
+\usepackage{tkz-elements}
+begin{document} 
+    
+\begin{tkzelements}
+   scale = 1
+% definition of some points
+z.A = point : new (   ,   )
+z.B = point : new (   ,   )
+
+ ...code...
+\end{tkzelements}
+
+\begin{tikzpicture}
+% point transfer to Nodes
+\tkzGetNodes
+
+\end{tikzpicture}
+\end{document}
+\end{verbatim}
+\end{mybox}
+\end{minipage}
+% subsection with_lua (end)
+
+\subsection{The main process} % (fold)
+\label{sub:the_main_process}
+
+\tikzset{concept/.append style={fill={none}}}
+\tikzset{root concept/.style=   {minimum size=3cm,text width=2.8cm}}%
+\tikzset{level 1 concept/.append style={minimum size=4cm, font=\large, text width=3cm}}%
+\begin{tikzpicture}
+  \path[mindmap,concept color=orange,text=black]
+    node[concept] {Transfers\\\textcolor{orange}{ \textbackslash{tkzGetNodes}}}
+    child[concept color=red,grow=right] {
+      node[concept] {Drawings\\\textcolor{red}{tkz-euclide}\\\textcolor{red}{\TIKZ}} }
+    child[concept color=purple,grow=left] { 
+    node[concept] {Definitions\\Calculations\\\textcolor{purple}{tkz-elements}} };
+\end{tikzpicture}
+
+When all the points necessary for the drawing are obtained, they must be transformed into \tkzname{nodes} so that \pkg{TikZ} or \pkg{tkz-euclide} can draw the figure. This is done through the macro \tkzcname{tkzGetNodes}. This macro browse all the elements of the table |z| using the key (in fact the name of the point) and retrieves the values associated with it, i.e. the coordinates of the point (node).
+% subsection the_main_process (end)
+
+\newpage
+\subsection{Complete example: Pappus circle} % (fold)
+\label{sub:the_figure_pappus_circle}
+
+\subsubsection{The figure} 
+
+\begin{tkzelements}
+ scale = 1.2
+  z.A  = point: new (0 , 0)
+  z.B  = point: new (10 , 0)
+  L.AB = line:  new ( z.A, z.B)
+  z.C  = L.AB:  gold_ratio () 
+  L.AC = line:  new ( z.A, z.C)
+  L.CB = line:  new ( z.C, z.B)
+  L.AB = line:  new ( z.A, z.B)
+  z.O_0    = L.AB.mid
+  z.O_1    = L.AC.mid
+  z.O_2    = L.CB.mid
+  C.AB = circle: new ( z.O_0, z.B) 
+  C.AC = circle: new ( z.O_1, z.C) 
+  C.CB = circle: new ( z.O_2, z.B)
+  z.P  = C.CB.north  
+  z.Q  = C.AC.north
+  z.O  = C.AB.south
+  z.c  = z.C : north (2)
+  C.PC = circle: new ( z.P, z.C) 
+  C.QA = circle: new ( z.Q, z.A)  
+  z.P_0    = intersection (C.PC,C.AB)
+  z.P_1    = intersection (C.PC,C.AC)
+  _,z.P_2  = intersection (C.QA,C.CB)
+  z.O_3 = triangle: new ( z.P_0, z.P_1, z.P_2).circumcenter
+\end{tkzelements}
+\hspace*{\fill}
+   \begin{tikzpicture}
+  \tkzGetNodes
+  \tkzDrawCircle[black,fill=yellow!20,opacity=.4](O_0,B)
+  \tkzDrawCircles[teal,fill=teal!40,opacity=.6](O_1,C O_2,B)
+  \tkzDrawCircle[purple,fill=purple!20,opacity=.4](O_3,P_0)
+  \tkzDrawArc[cyan,delta=10](Q,A)(P_0)
+  \tkzDrawArc[cyan,delta=10](P,P_0)(B)
+  \tkzDrawArc[cyan,delta=10](O,B)(A)
+  \tkzDrawPoints(A,B,C,O_0,O_1,O_2,P,Q,P_0,P_0,P_1,P_2,O)
+  \tkzLabelPoints(A,B,C,O_0,O_1,O_2,P,Q,P_0,P_0,P_1,P_2,O)
+   \end{tikzpicture}
+\hspace*{\fill}
+% subsection the_figure_pappus_circle (end)
+
+\subsubsection{The code} % (fold)
+\label{ssub:the_code}
+
+\begin{tkzexample}[small, code only,num]
+% !TEX TS-program = lualatex
+\documentclass{article}
+\usepackage{tkz-euclide}
+\usepackage{tkz-elements}
+\begin{document}
+
+\begin{tkzelements}
+z.A     = point: new (0 , 0)
+z.B     = point: new (10 , 0)        --  creation of two fixed points $A$ and $B$
+L.AB    = line:  new ( z.A, z.B)
+z.C     = L.AB:  gold_ratio ()       --  use of a method linked to “line”
+z.O_0   = line:  new ( z.A, z.B).mid  -- midpoint of segment with an attribute of “line”
+z.O_1   = line:  new ( z.A, z.C).mid --  objects are not stored and cannot be reused.
+z.O_2   = line:  new ( z.C, z.B).mid   
+C.AB    = circle: new ( z.O_0, z.B)  --  new object “circle” stored and reused
+C.AC    = circle: new ( z.O_1, z.C) 
+C.CB    = circle: new ( z.O_2, z.B)
+z.P     = C.CB.north                 --  no“rth atrributes of a circle
+z.Q     = C.AC.north
+z.O     = C.AB.south
+z.c     = z.C : north (2)           --   “north” method of a point (needs a parameter)
+C.PC    = circle: new ( z.P, z.C) 
+C.QA    = circle: new ( z.Q, z.A)  
+z.P_0   = intersection (C.PC,C.AB)   --  search for intersections of two circles.
+z.P_1   = intersection (C.PC,C.AC)  --   idem
+_,z.P_2 = intersection (C.QA,C.CB)   --  idem
+z.O_3   = triangle: new ( z.P_0, z.P_1, z.P_2).circumcenter -- circumcenter attribute of “triangle”
+\end{tkzelements}
+
+\begin{tikzpicture}
+  \tkzGetNodes
+  \tkzDrawCircle[black,fill=yellow!20,opacity=.4](O_0,B)
+  \tkzDrawCircles[teal,fill=teal!40,opacity=.6](O_1,C O_2,B)
+  \tkzDrawCircle[purple,fill=purple!20,opacity=.4](O_3,P_0)
+  \tkzDrawArc[cyan,delta=10](Q,A)(P_0)
+  \tkzDrawArc[cyan,delta=10](P,P_0)(B)
+  \tkzDrawArc[cyan,delta=10](O,B)(A)
+  \tkzDrawPoints(A,B,C,O_0,O_1,O_2,P,Q,P_0,P_0,P_1,P_2,O)
+  \tkzLabelPoints(A,B,C,O_0,O_1,O_2,P,Q,P_0,P_0,P_1,P_2,O)
+\end{tikzpicture}
+\end{document}
+\end{tkzexample}
+% subsubsection the_code (end)
+
+\subsection{Another example with comments: South Pole} % (fold)
+\label{sub:south_pole}
+
+Here's another example with comments
+
+\begin{verbatim}
+% !TEX TS-program = lualatex
+\documentclass{standalone}
+\usepackage{tkz-euclide,tkz-elements}
+\begin{document}
+\begin{tkzelements}                       
+   z.A      = point: new (2 , 4)          -- we create environment tkzelements
+   z.B      = point: new (0 , 0)          -- three fixed points are used
+   z.C      = point: new (8 , 0)
+   T.ABC    = triangle: new (z.A,z.B,z.C) -- we create a new triangle object
+   C.ins    = T.ABC: in_circle ()         -- we get the incircle of this triangle
+   z.I      = C.ins.center                -- center is an attribute of the circle
+   z.T      = C.ins.through               -- through is also an attribute
+   -- z.I,z.T  = get_points (C.ins)       -- get_points is a shortcut
+   C.cir    = T.ABC : circum_circle ()    -- we get the  circumscribed circle
+   z.W      = C.cir.center                -- we get the center of this circle   
+   z.O      = C.cir.south                 -- now we get the south pole of this circle
+   L.AO     = line: new (z.A,z.O)         -- we create an object "line"
+   L.BC     = T.ABC.bc                    -- we get the line (BC)
+   z.I_A    = intersection (L.AO,L.BC)    --  we search the intersection of the last lines
+\end{tkzelements}
+\end{verbatim}
+\begin{tkzelements}
+   scale    = 1.2
+   z.A      = point: new (2 , 4)
+   z.B      = point: new (0 , 0)
+   z.C      = point: new (8 , 0)
+   T.ABC    = triangle: new (z.A,z.B,z.C)
+   C.ins    = T.ABC: in_circle ()
+   z.I      = C.ins.center
+   z.T      = C.ins.through
+-- z.I,z.T  = get_points (C.ins)
+   C.cir    = T.ABC : circum_circle ()
+   z.W      = C.cir.center
+   z.O      = C.cir.south
+   L.AO     = line: new (z.A,z.O)
+   L.BC     = T.ABC.bc
+   z.I_A    = intersection (L.AO,L.BC)
+\end{tkzelements}
+
+\hspace*{\fill}
+\begin{tikzpicture}
+\tkzGetNodes
+\tkzDrawCircles(W,A I,T)
+\tkzDrawArc(O,C)(B)
+\tkzDrawPolygon(A,B,C)
+\tkzDrawSegments[new](A,O B,O C,O)
+\tkzDrawLine(B,I)
+\tkzDrawPoints(A,B,C,I,I_A,W,O)
+\tkzFillAngles[green!20,opacity=.3](A,O,B A,C,B)
+\tkzFillAngles[teal!20,opacity=.3](O,B,C B,C,O B,A,O O,A,C)
+\tkzLabelPoints(I,I_A,W,B,C,O)
+\tkzLabelPoints[above](A)
+\end{tikzpicture}
+\hspace*{\fill}
+
+Here's the tikzpicture environment to obtain the drawing:
+\begin{verbatim}
+\begin{tikzpicture}
+\tkzGetNodes
+\tkzDrawCircles(W,A I,T)
+\tkzDrawArc(O,C)(B)
+\tkzDrawPolygon(A,B,C)
+\tkzDrawSegments[new](A,O B,O C,O)
+\tkzDrawLine(B,I)
+\tkzDrawPoints(A,B,C,I,I_A,W,O)
+\tkzFillAngles[green!20,opacity=.3](A,O,B A,C,B)
+\tkzFillAngles[teal!20,opacity=.3](O,B,C B,C,O B,A,O O,A,C)
+\tkzLabelPoints(I,I_A,W,B,C,O)
+\tkzLabelPoints[above](A)
+\end{tikzpicture}
+\end{verbatim}
+% subsection south_pole (end)
+\endinput

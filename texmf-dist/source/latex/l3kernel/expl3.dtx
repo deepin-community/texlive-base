@@ -2,7 +2,7 @@
 %
 %% File: expl3.dtx
 %
-% Copyright (C) 1990-2023 The LaTeX Project
+% Copyright (C) 1990-2024 The LaTeX Project
 %
 % It may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -24,7 +24,7 @@
 %
 %<*driver|generic|package|2ekernel>
 %</driver|generic|package|2ekernel>
-\def\ExplFileDate{2023-01-16}%
+\def\ExplFileDate{2024-01-22}%
 %<*driver>
 \documentclass[full]{l3doc}
 \usepackage{graphicx}
@@ -39,7 +39,7 @@
 %   \begin{itemize}\def\makelabel##1{\hss\llap{\bfseries##1}}}{\end{itemize}}
 %
 % \title{^^A
-%   The \textsf{expl3} package and \LaTeX3 programming^^A
+%   The \pkg{expl3} package and \LaTeX3 programming^^A
 % }
 %
 % \author{^^A
@@ -51,7 +51,7 @@
 %    }^^A
 % }
 %
-% \date{Released 2023-01-16}
+% \date{Released 2024-01-22}
 %
 % \maketitle
 %
@@ -311,8 +311,8 @@
 % or private.
 %
 % To allow clear separation of these two cases, the following convention
-% is used. Private functions should be defined with |__| added to the beginning
-% of the module name. Thus
+% is used. To denote a private function or a private variable (of the module),
+% two |_| characters are used in front of the module name, e.g.
 % \begin{verbatim}
 %   \module_foo:nnn
 % \end{verbatim}
@@ -323,8 +323,9 @@
 % is private to the module, and should \emph{not} be used outside of that
 % module.
 %
-% In the same way, private variables should use two "__" at the start of the
-% module name, such that
+% For variables, to avoid three |_| in a row, the separator for the variable
+% scope and any leading |_| for a private interface in the module part are
+% combined. Thus
 % \begin{verbatim}
 %   \l_module_foo_tl
 % \end{verbatim}
@@ -334,12 +335,12 @@
 % \end{verbatim}
 % is private.
 %
-% \subsubsection{Using \texttt{@@} and \pkg{l3docstrip} to mark private code}
+% \subsubsection{Using \texttt{@@} and \pkg{DocStrip} to mark private code}
 %
 % The formal syntax for internal functions allows clear separation of public
 % and private code, but includes redundant information (every internal function
 % or variable includes \texttt{__\meta{module}}). To aid programmers, the
-% \pkg{l3docstrip} program introduces the syntax
+% \pkg{DocStrip} program introduces the syntax
 % \begin{quote}
 %   \ttfamily
 %   |%<@@=|\meta{module}|>|
@@ -354,7 +355,7 @@
 %   \tl_new:N \l_@@_my_tl
 %   %    \end{macrocode}
 % \end{verbatim}
-% is converted by \pkg{l3docstrip} to
+% is converted by \pkg{DocStrip} to
 % \begin{verbatim}
 %   \cs_new:Npn \__foo_function:n #1
 %     ...
@@ -364,13 +365,6 @@
 % \texttt{__\meta{module}}, because we think that this helps to
 % distinguish variables from functions in the source when the |@@|
 % convention is used.
-%
-% Please note that you have to use the \pkg{l3docstrip} and
-% \textbf{not} the \pkg{docstrip} program in your \texttt{.ins} files
-% to make this work---the original \LaTeXe{} \pkg{docstrip} doesn't
-% understand the \texttt{@@} and will just copy it into your code
-% unmodified!
-%
 %
 % \subsubsection{Variables: declaration}
 %
@@ -420,6 +414,8 @@
 %
 % The data types in \LaTeX3 are:
 % \begin{description}
+%   \item[bitset] a string of bits (\texttt{0} and \texttt{1} tokens) that are
+%                 accessed by position or by name;
 %   \item[bool]   either true or false (the \LaTeX3 implementation does
 %                 not use \tn{iftrue} or \tn{iffalse});
 %   \item[box]    box register;
@@ -429,11 +425,14 @@
 %                 type for carrying out |box| alignment operations;
 %   \item[dim]    \enquote{rigid} lengths;
 %   \item[fp]     floating-point values;
+%   \item[fparray] fixed-size vector of floating-point values;
+%   \item[int]    integer-valued count register;
+%   \item[intarray] fixed-size vector of integer values;
 %   \item[ior]    an input stream (for reading from a file);
 %   \item[iow]    an output stream (for writing to a file);
-%   \item[int]    integer-valued count register;
 %   \item[muskip] math mode \enquote{rubber} lengths;
 %   \item[prop]   property list;
+%   \item[regex]  regular expression;
 %   \item[seq]    sequence: a data-type used to implement lists (with
 %                 access at both ends) and stacks;
 %   \item[skip]   \enquote{rubber} lengths;
@@ -441,6 +440,7 @@
 %                 characters have category \enquote{other} (catcode~$12$),
 %                 other than spaces which are category \enquote{space}
 %                 (catcode~$10$);
+%   \item[token]  equal to a single arbitrary token;
 %   \item[tl]     \enquote{token list variables}: placeholders for token lists.
 % \end{description}
 % When the \meta{type} and \meta{module} are identical (as often happens in
@@ -643,31 +643,20 @@
 %     as the argument, be it an integer, a length-type register, a token
 %     list variable or similar. The value is passed to the function as a
 %     braced token list.  Can be applied to variables which have a
-%     \cs{\meta{var}_use:N} function (other than floating points and
-%     boxes), and which therefore deliver a single \enquote{value}.
+%     \cs{\meta{var}_use:N} function (other than boxes),
+%     and which therefore deliver a single \enquote{value}.
 %   \item[v] Value of a register, constructed from a character string
 %     used as a command name.\\
 %     This is a combination of |c| and |V| which first constructs a
 %     control sequence from the argument and then passes the value of
 %     the resulting register to the function.  Can be applied to
 %     variables which have a \cs{\meta{var}_use:N} function (other than
-%     floating points and boxes), and which therefore deliver a single
+%     boxes), and which therefore deliver a single
 %     \enquote{value}.
-%   \item[x]  Fully-expanded token or braced token list.\\
+%   \item[e]  Fully-expanded token or braced token list.\\
 %     This means that the argument is expanded as in the replacement
-%     text of an~\tn{edef}, and the expansion is passed to the function as
-%     a braced token list.  Expansion takes place until only unexpandable
-%     tokens are left.  |x|-type arguments cannot be nested.
-%   \item[e]  Fully-expanded token or braced token list which does
-%     not require doubled |#| tokens. This expansions is very similar
-%     to |x|-type but may be nested and does not require that |#|
-%     tokens are doubled.
-%   \item[f] Expanding the first token recursively in a braced token
-%     list.\\ Almost the same as the |x| type except here the token list
-%     is expanded fully until the first unexpandable token is found and
-%     the rest is left unchanged. Note that if this function finds a
-%     space at the beginning of the argument it gobbles it and does not
-%     expand the next token.
+%     text of a~\tn{message}, and the expansion is passed to the function as
+%     a braced token list.
 %   \item[o]  One-level-expanded token or braced token list.\\
 %     This means that the argument is expanded one level, as by
 %     \tn{expandafter}, and the expansion is passed to the function as a
@@ -675,6 +664,19 @@
 %     token list then only the first token in that list is expanded.
 %     In general, using \texttt{V} should be preferred to using
 %     \texttt{o} for simple variable retrieval.
+%   \item[f] Expanding the first token recursively in a braced token
+%     list.\\ Almost the same as the |e| type except here the token list
+%     is expanded fully until the first unexpandable token is found and
+%     the rest is left unchanged. Note that if this function finds a
+%     space at the beginning of the argument it gobbles it and does not
+%     expand the next token.
+%   \item[x]  Fully-expanded token or braced token list.\\
+%     This expansion is very similar to |e|-type but is not nestable,
+%     can only be used to create non-expandable functions, and requires
+%     that |#| tokens are doubled in the argument. In almost all cases,
+%     |e|-type should be preferred: retained largely for historical
+%     reasons, and should where possible be replaced by the |e|-type
+%     equivalent.
 % \end{description}
 %
 % \subsection{Simpler means better}
@@ -762,17 +764,17 @@
 %
 % To illustrate this let us suppose you have a \enquote{base function}
 % |\demo_cmd:Nnn| that takes three normal arguments, and that you need
-% to construct the variant |\demo_cmd:cnx|, for which the first argument
+% to construct the variant |\demo_cmd:cne|, for which the first argument
 % is used to construct the \emph{name} of a command, whilst the third
 % argument must be fully expanded before being passed to
 % |\demo_cmd:Nnn|.
 % To produce the variant form from the base form, simply use this:
 % \begin{verbatim}
-%   \cs_generate_variant:Nn \demo_cmd:Nnn { cnx }
+%   \cs_generate_variant:Nn \demo_cmd:Nnn { cne }
 % \end{verbatim}
 % This defines the variant form so that you can then write, for example:
 % \begin{verbatim}
-%   \demo_cmd:cnx { abc } { pq } { \rst \xyz }
+%   \demo_cmd:cne { abc } { pq } { \rst \xyz }
 % \end{verbatim}
 % rather than \ldots\ well, something like this!
 % \begin{verbatim}
@@ -794,13 +796,13 @@
 % \end{verbatim}
 %
 % Another example: you may wish to declare a function
-% |\demo_cmd_b:xcxcx|, a variant of an existing function
+% |\demo_cmd_b:enene|, a variant of an existing function
 % |\demo_cmd_b:nnnnn|, that fully
 % expands arguments 1,~3 and~5, and produces commands to pass as
 % arguments 2 and~4 using~\tn{csname}.
 % The definition you need is simply
 % \begin{verbatim}
-%   \cs_generate_variant:Nn \demo_cmd_b:nnnnn { xcxcx }
+%   \cs_generate_variant:Nn \demo_cmd_b:nnnnn { enene }
 % \end{verbatim}
 %
 % This extension mechanism is written so that if the same new form of
@@ -821,22 +823,22 @@
 %
 % The distribution of \pkg{expl3} is split up into three packages on
 % CTAN: \pkg{l3kernel}, \pkg{l3packages} and \pkg{l3experimental}.
-% For historical reasons, 
+% The core programming layer provided by \pkg{l3kernel} has been loaded
+% as part of the \LaTeX{} since 2020-02-02. For historical reasons, in
+% older kernel releases
 % \begin{verbatim}
 %   \RequirePackage{expl3}
 % \end{verbatim}
-% loads the code now distributed as \pkg{l3kernel}. This monolithic
+% loads the code distributed as \pkg{l3kernel}. This monolithic
 % package contains all of the modules regarded by the team as stable,
 % and any changes in this code are very limited. This material is
 % therefore suitable for use in third-party packages without concern
 % about changes in support. All of this code is documented in
-% \texttt{interface3.pdf}. With an up-to-date \LaTeXe{} kernel, this
-% code is built into the format file and therefore can be used
-% without any further steps.
+% \texttt{interface3.pdf}.
 %
-% The material in \pkg{l3packages} is also stable, but is not always
-% at a programming level: most notably, \pkg{xparse} is stable and
-% suitable for wider use.
+% The material in \pkg{l3packages} is also stable; this bundle provides
+% user-level commands, some of which have been integrated in the
+% \LaTeX{} kernel.
 %
 % Finally, \pkg{l3experimental} contains modules ready for public use
 % but not yet integrated into \pkg{l3kernel}. These modules have to
@@ -855,11 +857,11 @@
 % \begin{itemize}
 %   \item \pkg{expl3} is mainly focused on programming. This means that
 %     some areas still require the use of \LaTeXe{} internal macros.
-%     For example, you may well need \tn{@ifpackageloaded}, as there
+%     For example, you may well need \tn{IfPackageLoadedTF}, as there
 %     is currently no native \pkg{expl3} package loading module.
 %   \item User level macros should be generated using the mechanism
-%     available in the \pkg{xparse} package, which is part of the
-%     \texttt{l3package} bundle.
+%     available in the \pkg{ltcmd} module, which is part of the
+%     the \LaTeX{} kernel since 2020-10-01.
 %   \item At an internal level, most functions should be generated
 %     \tn{long} (using \cs{cs_new:Npn}) rather than \enquote{short} (using
 %     \cs{cs_new_nopar:Npn}).
@@ -904,7 +906,7 @@
 % \texttt{check-declarations} option enables checking for all variable
 % assignments, issuing an error if any variables are assigned without being
 % initialised.  See also \cs{debug_on:n} \texttt{\{check-declarations\}}
-% in \pkg{l3candidates} for finer control.
+% in \pkg{interface3} for finer control.
 %
 % \DescribeOption{log-functions}
 % The \texttt{log-functions} option is used to enable recording of every new
@@ -912,15 +914,7 @@
 % purposes, as it means that there is a complete list of all functions
 % created by each module loaded (with the exceptions of a very small number
 % required by the bootstrap code).  See also \cs{debug_on:n}
-% \texttt{\{log-functions\}} in \pkg{l3candidates} for finer control.
-%
-% \DescribeOption{enable-debug}
-% To allow more localized checking and logging than provided by
-% \texttt{check-declarations} and \texttt{log-functions}, \pkg{expl3}
-% provides a few \cs[no-index]{debug_\ldots{}} functions (described
-% elsewhere) that turn on the corresponding checks within a group.
-% These functions can only be used if \pkg{expl3} is loaded with the
-% \texttt{enable-debug} option.
+% \texttt{\{log-functions\}} in \pkg{interface3} for finer control.
 %
 % \DescribeOption{backend}
 % Selects the backend to be used for color, graphics and related operations that
@@ -970,30 +964,29 @@
 % loadable: package loading is dependent on the \LaTeXe{} package-management
 % mechanism.
 %
+% \section{Getting the version of \pkg{expl3}}
+%
+% \begin{function}{\ExplLoaderFileDate}
+%   Once the programming layer is loaded by one of the loaders, you can access
+%   its version in the ISO date format \meta{year}-\meta{month}-\meta{day},
+%   through \cs{ExplLoaderFileDate}.
+%
+%   The current version of \pkg{expl3} is \ExplLoaderFileDate.
+% \end{function}
+%
 % \section{Engine/primitive requirements}
 %
 % To use \pkg{expl3} and the higher level packages provided by the
-% team, the minimal set of primitive requirements is currently
-% \begin{itemize}
-%    \item All of those from \TeX90.
-%    \item All of those from \eTeX{} \emph{excluding} |\TeXXeTstate|,
-%      |\beginL|, |\beginR|, |\endL| and |\endR| (\emph{i.e.}~excluding
-%      \TeX{}-\kern0pt-\reflectbox{\TeX{}}).
-%    \item Functionality equivalent to the \pdfTeX{} primitive
-%      |\pdfstrcmp|.
-% \end{itemize}
-% Any engine which defines |\pdfoutput| (\emph{i.e.}~allows direct production
-% of a PDF file without a DVI intermediate) must also provide |\pdfcolorstack|,
-% |\pdfliteral|, |\pdfmatrix|, |\pdfrestore| and |\pdfsave| or equivalent
-% functionality. Fully Unicode engines must provide a method for producing
-% character tokens in an expandable manner.
+% team, the minimal set of primitive requirements is currently described
+% in \href{README.md}{README.md}.
 %
 % Practically, these requirements are met by the engines
 % \begin{itemize}
-%    \item \pdfTeX{} v1.40 or later.
-%    \item \XeTeX{} v0.99992 or later.
-%    \item \LuaTeX{} v0.95 or later.
-%    \item e-(u)\pTeX{} mid-2012 or later.
+%    \item \pdfTeX{} v1.40.20 or later.
+%    \item \XeTeX{} v0.999991 or later.
+%    \item \LuaTeX{} v1.10 or later.
+%    \item e-(u)\pTeX{} v3.8.2 or later.
+%    \item Prote (2021) or later.
 % \end{itemize}
 %
 % Additional modules beyond the core of \pkg{expl3} may require additional
@@ -1215,10 +1208,15 @@
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{\@expl@provides@file@@Nnnnnn, \@expl@provides@generic@@wnnw}
+% \begin{macro}{\@expl@provides@file@@Nnnnnn}
+% \begin{macro}{\@expl@provides@file@@N}
+% \begin{macro}{\@expl@provides@generic@@wnnw}
 %   We need to check the existence of the
 %   \cs[no-index]{Provides\meta{thing}}, since we need to load this very
-%   early in the \LaTeXe{} kernel.
+%   early in the \LaTeXe{} kernel. The gymnastics with the version identifier
+%   argument allow for the case where it starts with a \texttt{v} and the one
+%   where it does not: formally the \texttt{v} is not part of the version,
+%   but a lot of people include it.
 %    \begin{macrocode}
 \protected\long\def\@expl@provides@file@@Nnnnnn#1#2#3#4#5#6%
   {%
@@ -1230,14 +1228,17 @@
     \else
       \@expl@provides@generic@@wnnw{#2}%
     \fi
-      {#3}[{#4 \ifx\relax#5\relax\else v#5\space\fi #6}]%
+      {#3}[{#4 \ifx\relax#5\relax\else\@expl@provides@file@@N#5\space\fi #6}]%
     \ExplSyntaxOn
   }
+\long\def\@expl@provides@file@@N#1{v\if#1v\else#1\fi}
 \protected\long\def\@expl@provides@generic@@wnnw#1\fi#2[#3]%
   {%
     \immediate\write-1{#1: #2 #3}%
   }
 %    \end{macrocode}
+% \end{macro}
+% \end{macro}
 % \end{macro}
 %
 %  Load the business end: this leaves \cs{expl3} syntax on.
@@ -1392,19 +1393,28 @@
     backend .choices:nn =
       { dvipdfmx , dvips , dvisvgm , luatex , pdftex , pdfmode , xdvipdfmx , xetex }
       { \sys_load_backend:n {#1} } ,
-    check-declarations .code:n =
+    check-declarations .choice: ,
+    check-declarations / true .code:n =
+      { \debug_on:n { check-declarations } } ,
+    check-declarations / false .code:n =
       {
-        \sys_load_debug:
-        \debug_on:n { check-declarations }
+        \__kernel_if_debug:TF
+          { \debug_off:n { check-declarations } }
+          { }
       } ,
+    check-declarations .default:n = true ,
     driver .meta:n = { backend = #1 } ,
-    enable-debug .code:n =
-      \sys_load_debug: ,
-    log-functions .code:n =
+    enable-debug .code:n = {} , % A stub
+    log-functions .choice: ,
+    log-functions / true .code:n =
+      { \debug_on:n { log-functions } } ,
+    log-functions / false .code:n =
       {
-        \sys_load_debug:
-        \debug_on:n { log-functions }
+        \__kernel_if_debug:TF
+          { \debug_off:n { log-functions } }
+          { }
       } ,
+    log-functions .default:n = true ,
     suppress-backend-headers .bool_gset_inverse:N
       = \g__kernel_backend_header_bool ,
     suppress-backend-headers .initial:n = false ,
@@ -1431,12 +1441,12 @@
 %   an older version of the kernel, so we \emph{must} patch.
 %
 %   In \texttt{package} mode, if these commands exist, then we are using
-%   a version of \LaTeXe{} with \textsf{expl3} preloaded (any version)
+%   a version of \LaTeXe{} with \pkg{expl3} preloaded (any version)
 %   and in any case patching is already done or the macros are in the
 %   format itself, so nothing to do.
 %   But if in \texttt{package} mode these macros don't exist, we have an
 %   even older version of \LaTeXe{} which doesn't even have
-%   \textsf{expl3} preloaded, so patching is necessary.
+%   \pkg{expl3} preloaded, so patching is necessary.
 %
 %   All this means that in both \texttt{2ekernel} and \texttt{package}
 %   mode we have to check whether \cs{@expl@sys@load@backend@@@@}
@@ -1506,10 +1516,10 @@
     \tex_everyjob:D \exp_after:wN
       {
         \tex_the:D \tex_everyjob:D
-        \sys_everyjob:
+        \__kernel_sys_everyjob:
       }
   }
-  { \sys_everyjob: }
+  { \__kernel_sys_everyjob: }
 %    \end{macrocode}
 %
 % \begin{variable}{\s_@@_stop}
@@ -1544,12 +1554,12 @@
   }
 \cs_gset_protected:Npn \@expl@push@filename@@@@
   {
-    \exp_args:Nx \__kernel_file_input_push:n
+    \exp_args:Ne \__kernel_file_input_push:n
       {
         \tl_to_str:N \@currname .
         \tl_to_str:N \@currext
       }
-    \tl_put_left:Nx \l_@@_status_stack_tl
+    \tl_put_left:Ne \l_@@_status_stack_tl
       {
         \bool_if:NTF \l__kernel_expl_bool
           { 1 }
@@ -1745,7 +1755,7 @@
     \cs_set_protected:Npn \ProvidesExplFileAux ##1##2##3##4
       {
         \group_end:
-        \iow_log:x { File:~##1~##2~v##3~##4 }
+        \iow_log:e { File:~##1~##2~v##3~##4 }
       }
     \tex_input:D #1 .def \scan_stop:
   }
@@ -1755,7 +1765,7 @@
 % \begin{macro}{\g__kernel_backend_header_bool}
 % Load the dynamic code and standard back-end.
 %    \begin{macrocode}
-\sys_everyjob:
+\__kernel_sys_everyjob:
 \bool_new:N \g__kernel_backend_header_bool
 \bool_gset_true:N \g__kernel_backend_header_bool
 \sys_load_backend:n { }

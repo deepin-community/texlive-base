@@ -6,7 +6,7 @@ their size adjusts to the font size. By option the markers
 can be placed behind or in front of the glyphs.
 The package requires LuaLaTeX.
 
-Copyright (c) 2022 Thomas Kelkel kelkel@emaileon.de
+Copyright (c) 2022-2023 Thomas Kelkel kelkel@emaileon.de
 
 The files of this package may be distributed and/or
 modified under the conditions of the LaTeX Project

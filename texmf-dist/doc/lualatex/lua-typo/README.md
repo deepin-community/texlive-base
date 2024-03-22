@@ -28,15 +28,15 @@ Installation
 ------------
 
 This bundle is meant to be included in most TeX distributions,
-but if you need to install it by yourself
+but if you really need to install it by yourself
 1. run "luatex lua-typo.dtx" to strip the comments and create
    lua-typo.sty, lua-typo.cfg, lua-typo.ltx and lua-typo-fr.ltx;
 2. run "lualatex lua-typo.ltx" to get the full documentation
    (lua-typo.pdf) in English;
-2. run "lualatex lua-typo-fr.ltx" to get the French documentation
-   (lua-typo-fr.pdf, code not included).
+3. run "lualatex lua-typo-fr.ltx" to get the French documentation
+   (lua-typo-fr.pdf, without documented code).
 
-Recommended loactions for installation:
+Recommended locations for installation:
 - TDS:tex/lualatex/lua-typo/lua-typo.sty
 - TDS:tex/lualatex/lua-typo/lua-typo.cfg
 - TDS:doc/lualatex/lua-typo/lua-typo.pdf
@@ -44,6 +44,9 @@ Recommended loactions for installation:
 - TDS:doc/lualatex/lua-typo/demo.tex
 - TDS:doc/lualatex/lua-typo/README.md
 - TDS:source/lualatex/lua-typo/lua-typo.dtx
+
+On Debian based systems, the "TDS:" prefix can be replaced by "$HOME/texmf/"
+for a single user installation.
 
 Changes
 -------
@@ -69,6 +72,43 @@ Changes
   - coloration of faulty lines improved;
   - all flaws found are now recorded into file "`\jobname`.typo".
 
+* v.0.51 (not released): bug fix
+  - in some cases orphans were not detected.
+
+* v.0.60: new implementation, Feb. 2023
+  - this version should do a better job on two columns documents;
+  - debugging stuff added.
+
+* v.0.61: 
+  - bug fixes and documentation enhanced;
+  - colours `mygrey` and `myred` renamed as `LTgrey` and `LTred`.
+
+* v.0.65: 
+  - new option `ShortFinalWord` to detect short end-of-sentence word
+    on top of next page;
+  - code cleaning.
+
+* v.0.70: 
+  - options handled via `ltkeys` instead of `kvoptions`;
+  - Code cleaning, bug fixes.
+
+* v.0.80: 
+  - config file `lua-typo.cfg` changed (new colours added,  all colour 
+    numbers are shifted by 1);
+  - colours no longer override each other, a special colour has been 
+    added for lines affected by multiple flaws (f.i. widow+overfull);
+  - bug fix (file `.typo`): in footnotes, line numbers for homeoarchy 
+    were not reset.
+
+* v.0.85: 
+  - a warning is issued if some pages fail to be checked properly;
+  - margin notes checking added (over/underfull lines, position);
+  - code cleaning, bug fixes.
+
+* v.0.86: 
+  - corrected typo in the `signature` function;
+  - compatibility with package `stfloats` added.
+  
 --
-Copyright 2020--2021 Daniel Flipo
+Copyright 2020--2024 Daniel Flipo 
 E-mail: daniel (dot) flipo (at) free (dot) fr

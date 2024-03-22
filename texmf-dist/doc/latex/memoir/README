@@ -16,16 +16,185 @@ more popular packages.
 Lars Madsen <daleif@math.au.dk> is maintaining memoir.
 
 
-    NOTE: The full User Manual (memman.pdf) is a large document of about
-550 pages in total. You do not need to print all of it, especially if you 
-already have an earlier edition. Roughly speaking, the main portions are:
-o Frontmatter: Preface, Toc, Introduction, Terminology  ~  40 pages
-o Mainmatter: 
-    Class commands and environments, etc.               ~ 380 pages
-o Appendices: (La)Tex programming, Errors and warnings  ~  40 pages
-o Backmatter:
-    Command glossary                                    ~  40 pages
-    Bibliography, indexes                               ~  50 pages
+WORD OF ADVISE: It is not recommended to manually update memoir into
+an old LaTeX installation. Not all changes are compatible with older
+un-updated LaTeX systems and we often make no attempt to be backwards
+compatible. Instead we assume that users use updated memoir with an
+updated LaTeX installation.
+
+Changes (2024/01/26)
+
+o memoir v3.8.2
+
+-- In v3.8 I forgot to add some internal testing code related to
+   \@startsection. The code experiment has now been added, but is not
+   enabled by default.
+
+-- Axel Sommerfeldt suggested a useful macro abstraction for
+   sidecaption and sidecontcaption that simplifies his adjustments
+   whenever the caption package is loaded. 
+
+-- Fixed a small (but important) typo in my maintainers note (Peter started
+   memoir in 2001, not 2021)
+
+-- The Nov-2023 kernel update gave issued with our version of \verb.
+   Now fixed by un-embedding the verbatim package. Issue first
+   reported by Andrew Swann.
+
+-- Fixed a typo in \m@make@footnotetext where ##1 got interpreted as a
+   macro name, not contents. Reported by Richard Zach.
+
+-- Replaced the embedded copy of the shortvrb package by loading the
+   package instead.
+
+-- Replaced the embedded and modified copy of the verbatim package by
+   just loading the package.
+
+   Have chosen to *not* patch in the modification back in. Primarily
+   because they are (1) disabled by default, (2) unknown how many
+   users actually use them, (3) the implementation had errors.
+
+   \setverbatimfont and the system to make comment-like envs of course
+   stayed.
+
+   The features removed are
+
+   - marking tabs using several spaces
+   - wrapping webatim text at white space
+
+   Macros disabled
+
+   - \tabson  (\tabsoff redef to do nothing)
+   - \wrappingon (\wrappingoff redef to do nothing)
+
+   No longer used
+
+   - \verbatimbreakchar
+   - \verbatimindent
+
+   Removing the embedded verbatim copy also fixes the issue with
+   \verb+a b+ behaving like \verb*+a b+.
+
+   Many of the other verbatim-like creations have had tabs support
+   removed
+
+-- In verbatim 1.5x the macro \verbatiminput* has been altered
+   slightly such that it also marks tabs as spaces (just like \verb*
+   now also does via a kernel update). If 1.5x has not been released
+   yet, we automatically apply that patch.
+
+-- Updated \readverbatim* with the same patch as \verbatiminput* so it
+   also marks tabs as spaces.
+
+
+
+o memhfixc v1.22
+
+-- The change Axel S. suggested in memoir removes the need for
+   memhfixc to redefine \endsidecaption and \endsidecaption, thus
+   those redefinitions have been removed.
+
+
+Changes (2023/08/21)
+
+o memoir v3.8.1
+
+-- The new additions to \@xfloat via AddToHook is too fragile (the
+   float package changes \@xfloat in an incompatible way). We've moved
+   the additions to the \@floatboxreset.
+
+
+Changes (2023/08/14)
+
+o memoir v3.8a
+
+-- forgot to enable the announced stop if the LaTeX format is to old.
+-- updated the bibliography to more recent years.
+
+Changes (2023/08/08)
+
+o memoir v3.8
+
+-- now requires a LaTeX format from 2021/06/01 or newer.
+
+   The class will halt compilation (in all interaction modes) if the
+   format is too old.
+
+-- \titleref is now an alias for \nameref (autoloaded).
+   The class have been adjusted to provide info for sectionals and
+   normal captions.
+
+   The titleref package will remain marked as being emulated
+   as it shouldn't be used with the class (and haven't been updated in
+   20+ years).
+
+-- nameref paches in the class are no longer needed
+
+-- label handling for subcaptions and friends have been reimplemented.
+
+-- no longer re-defines \label as per request of the LaTeX Team.
+
+-- booktabs is now loaded as a required package instead of being
+   embedded
+
+-- Fixed typo in the caption of figure 2.13. Thanks to Vladimir
+   G. Ivanović for the report.
+
+-- removed etex loading (was only loaded for kernels from before
+   2015). The noetex class option removed as well.
+
+-- reimplemented \pagenumbering(*) as a single macro
+
+-- additions to \@xfloat is now done via a cmd/after hook if the
+   format version supports it.
+
+-- Definition of \theHpoem changed to \providecommand
+
+-- The \theH<counter> macros defined in memoir was modified to use
+   \the\value{counter} instead of just \arabic{counter} as some
+   packages change \arabic.
+
+-- \toclevel@part was actually never fixed in v3.7.19, now it is
+
+-- added \@currentcounter in various places that manually
+   set \@currentlabel (primarily footnote constructions). Reported by
+   Gustavo Barros.
+
+-- replaced hardcoded \footnotesize in \verbfootnote by \foottextfont 
+
+-- made a small change to footnote formatting. Now one can use
+   \raggedright in \footnotetext to get raggedright footnotes. Use
+   with care as \raggedright does change various paragraph settings
+
+-- replaced etoolbox loading by xpatch (which loads etoolbox) as it
+   can patch more.
+
+-- Added a Hook named memoir/subcaption/aftercounter which is executed
+   after \refstepcounter in \subcaption, \subbottom, \subtop
+   etc. Requested by Gustavo Barros.
+
+-- Redefinition of \@setsize removed, was copied from setspace.sty
+   which states that it was only needed for some 209 packages.
+
+
+The following macros have been disabled (to either give a warning or
+an error).
+
+-- \namerefon and \namerefoff => warning (now always on)
+
+-- \currenttitle => error (given that many things are now "titled",
+   relying on this to get the current "title" is too risky, use proper
+   \label+\titleref instead)
+
+-- \theTitleReference => warning (was used in the old implementation
+   of \titleref and \currenttitle)   
+
+
+o memhfixc v1.21
+
+-- All nameref patches have been removed
+-- provided \subfigureautorefname
+
 
 Changes (2022/11/17)
 
@@ -44,12 +213,6 @@ o memhfixc v1.20
 -- removed patch for \@starttoc and thus \Hy@AtBeginDocument is no
    longer used in memhfixc
 
-
-WORD OF ADVISE: It is not recommended to manually update memoir into
-an old LaTeX installation. Not all changes are compatible with older
-un-updated LaTeX systems and we often make no attempt to be backwards
-compatible. Instead we assume that users use updated memoir with an
-updated LaTeX installation.
 
 
 

@@ -1,6 +1,6 @@
 -- luatexko.lua
 --
--- Copyright (c) 2013-2022 Dohyun Kim <nomos at ktug org>
+-- Copyright (c) 2013-2023 Dohyun Kim <nomos at ktug org>
 --                         Soojin Nam <jsunam at gmail com>
 --
 -- This work may be distributed and/or modified under the
@@ -13,8 +13,8 @@
 
 luatexbase.provides_module {
   name        = 'luatexko',
-  date        = '2022/11/01',
-  version     = '3.5',
+  date        = '2023/09/11',
+  version     = '3.6',
   description = 'typesetting Korean with LuaTeX',
   author      = 'Dohyun Kim, Soojin Nam',
   license     = 'LPPL v1.3+',
@@ -304,7 +304,7 @@ local fontoptions = {
       if has_harf_data(fid) then
         newwd = getparameters(fid) or false
         if newwd then
-          newwd = { newwd.space, newwd.space_stretch, newwd.space_shrink }
+          newwd = { newwd.space, newwd.space_stretch, newwd.space_shrink, newwd.extra_space }
         end
       else
         local newsp = nodenew(glyphid)
@@ -312,7 +312,7 @@ local fontoptions = {
         newsp = nodes.simple_font_handler(newsp)
         newwd = newsp and newsp.width or false
         if newwd then
-          newwd = { texsp(newwd), texsp(newwd/2), texsp(newwd/3) }
+          newwd = { texsp(newwd), texsp(newwd/2), texsp(newwd/3), texsp(newwd/3) }
         end
         if newsp then nodefree(newsp) end
       end
@@ -668,40 +668,12 @@ function luatexko.updateforcehangul (value)
   nodewrite(what)
 end
 
-local function hangul_space_skip (curr, newfont)
-  if curr.lang ~= nohyphen and curr.font ~= newfont then
-    -- fontloader's "node" mode sets space_stretch to zero
-    -- when the font is a monospaced font (fontspec's \setmonofont
-    -- command does the same thing), which we will bypass here
-    -- for alignment of CJK and Latin glyphs in verbatim environment.
-    -- See http://www.ktug.org/xe/index.php?document_srl=249772
-    if not fontoptions.monospaced[curr.font] then
-      local n = getnext(curr)
-      if n and n.id == glueid and n.subtype == spaceskip then
-        local params = getparameters(curr.font)
-        local oldwd, oldst, oldsh, oldsto, oldsho = getglue(n)
-        if params
-          and oldwd == params.space
-          and oldst == params.space_stretch
-          and oldsh == params.space_shrink
-          and oldsto == 0
-          and oldsho == 0 then -- not user's spaceskip
-
-          local newwd = fontoptions.hangulspaceskip[newfont]
-          if newwd then
-            setglue(n, newwd[1], newwd[2], newwd[3])
-          end
-        end
-      end
-    end
-  end
-end
-
 local function process_fonts (head)
-  local curr = head
+  local curr, currfont, currlang, newfont = head, 0, nohyphen, 0
   while curr do
     local id = curr.id
     if id == glyphid then
+      currfont, currlang = curr.font, curr.lang
       if curr.font ~= 0 -- exclude nullfont
         and not has_attribute(curr, unicodeattr) then
 
@@ -712,7 +684,6 @@ local function process_fonts (head)
           local p = getprev(curr)
           if p and p.id == glyphid then
             if curr.font ~= p.font then
-              hangul_space_skip(curr, p.font)
               curr.font = p.font
             end
             curr.lang = p.lang
@@ -747,22 +718,59 @@ local function process_fonts (head)
             then
             curr.font = hf
           elseif hf and has_attribute(curr, hangulbyhangulattr) and is_hangul_jamo(c) then
-            hangul_space_skip(curr, hf)
             curr.font = hf
           elseif hjf and has_attribute(curr, hanjabyhanjaattr) and is_hanja(c) then
-            hangul_space_skip(curr, hjf)
             curr.font = hjf
           elseif not char_in_font(curr.font, c) then
             local fbf = has_attribute(curr, fallbackfontattr) or false
             for _,f in ipairs{ hf, hjf, fbf } do
               if f and char_in_font(f, c) then
-                hangul_space_skip(curr, f)
                 curr.font = f
                 break
               end
             end
           end
           set_attribute(curr, unicodeattr, c)
+        end
+      end
+      newfont = curr.font
+    elseif id == glueid
+      and currfont ~= 0
+      and currfont ~= newfont
+      and currlang ~= nohyphen
+      and curr.subtype == spaceskip
+      -- fontloader's "node" mode sets space_stretch to zero
+      -- when the font is a monospaced font (fontspec's \setmonofont
+      -- command does the same thing), which we will bypass here
+      -- for alignment of CJK and Latin glyphs in verbatim environment.
+      -- See http://www.ktug.org/xe/index.php?document_srl=249772
+      and not fontoptions.monospaced[currfont] then
+
+      local params = getparameters(currfont)
+      local oldwd, oldst, oldsh, oldsto, oldsho = getglue(curr)
+      if params and oldsto == 0 and oldsho == 0 then
+        local p = getprev(curr)
+        local sf = p and p.char and tex.getsfcode(p.char) or 1000
+        if sf == 0 or sf > 1000 then
+          local p, pf = getprev(p), 0
+          while p and pf == 0 do
+            pf = p.char and tex.getsfcode(p.char) or 1000
+            p = getprev(p)
+          end
+          if sf == 0 then sf = pf end
+          if pf < 1000 then sf = 1000 end
+        end
+        if oldwd == (sf < 2000 and params.space or params.space+params.extra_space)
+          and oldst == texsp(params.space_stretch * (sf/1000))
+          and oldsh == texsp(params.space_shrink * (1000/sf)) then
+
+          local newwd = fontoptions.hangulspaceskip[newfont]
+          if newwd then
+            setglue(curr,
+                    sf < 2000 and newwd[1] or newwd[1]+newwd[4],
+                    texsp(newwd[2] * (sf/1000)),
+                    texsp(newwd[3] * (1000/sf)))
+          end
         end
       end
     elseif id == discid then
@@ -1911,7 +1919,7 @@ local function process_vertical_font (fontdata)
     local voff = goffset - (v.width or 0)/2
     local bbox = descriptions[i] and descriptions[i].boundingbox or {0,0,0,0}
     local gid  = v.index
-    local tsb  = tsb_tab[gid].tsb
+    local tsb  = tsb_tab[gid] and tsb_tab[gid].tsb
     local hoff = tsb and (bbox[4] + tsb) * scale or ascender
     v.commands = {
       { "down", -voff },
@@ -1922,7 +1930,7 @@ local function process_vertical_font (fontdata)
       { "pop" },
       { "pdf", "Q" },
     }
-    local vw = tsb_tab[gid].ht
+    local vw = tsb_tab[gid] and tsb_tab[gid].ht
     v.width  = vw and vw * scale or quad
     local ht = bbox[3] * scale + voff
     local dp = bbox[1] * scale + voff

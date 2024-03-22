@@ -8,11 +8,53 @@ a major and minor version only.
 
 ## [Unreleased]
 
+## [v3.71]
+
+### Changed
+
+- scale height of tree and split headlines with fontsize of `section in head/foot`
+
+### Fixed
+
+- ensure that shadows of rounded blocks use proper black for their shadow
+- using correct template for `\structure` in article mode (see #862)
+
+## [v3.70]
+
+### Added
+
+- making the aspect ratio available to the user via `\insertaspectratio`
+- adding `title`, `author`, `institute`, `date` and `titlegraphic` templates to make title page easier to customise
+
+### Changed
+
+- smoothbars outer theme: moved the shading between headline and frametitle a bit down to avoid the miniframe appearing clipped off in some pdf viewers
+- made top shading of Singapore theme transparent (see #782)
+- scale height of infolines headline with fontsize of `section in head/foot`
+- calculate the head/footheight at the start of each frame instead of only at the start of the document
+- making `\part` compatible with `\nameref`
+
+### Fixed
+
+- adding strut to the `frame number` and `page number` footlines to avoid jumping (see #840)
+- fixed bug in `inmargin` inner theme which would show the author indicator even if the author was empty
+
+## [v3.69]
+
+### Fixed
+
+- protect the frametitle continuation so it can be used with \MakeUppercase (see #802)
+- first aid for metropolis theme (see #802)
+- fixed indentation of multiline section titles in `square` and `ball unnumbered` toc templates (see #817)
+- using `bibliography entry ...` font in biblatex generated bibliographies
+
 ## [v3.68]
 
 ### Changed
 
 - simplified non-text links for navigation symbols and framezoom
+- doc: re-organised section about navigation symbols
+- moved parts of `beamerbasenavigation.sty` to `beamerbasenavigationsymbols.tex`
 
 ### Fixed
 - fixed height of non-text links to prevent overlaps in vertically stacked miniframes (see #780)
@@ -49,7 +91,7 @@ a major and minor version only.
 - fixed bullet colour of alerted items for custom item colour (see #735)
 - workaround to make miniframes clickable in xelatex (see #332)
 - added missing encoding value to multimedia sound macro (see #607)
-- imporoved problem with shadow of blocks without title (see #647)
+- improved problem with shadow of blocks without title (see #647)
 - reduced artefacts in poppler based viewers for shadow blocks (see #647)
 - workaround to make `\framezoom` clickable in xelatex (see #619)
 - exclude invisible frames from being counted (see #592)
@@ -60,13 +102,13 @@ a major and minor version only.
 ### Added
 
 - new continuation count template "singleframecheck" which will only show the continuation count if a break actually occurs (see #423)
-- new templated for lined note pages (#704)
+- new template for lined note pages (#704)
 
 ### Changed
 
 - added `aspectratio=2013` class option setting the frames' aspect ratio to 20:13 (see #497)
 - Remove redefinition of `\addtocontents` (see #698)
-- patched macros from the `pdfpages` package to automaticlly remove the frame background for the included pages
+- patched macros from the `pdfpages` package to automatically remove the frame background for the included pages
 - transparent shadows for smoothbars outer theme (see #717)
 - transparent shadows for smoothtree outer theme (see #720) 
 - added new beamer option "show only slides with notes", the old class option "notes=onlyslideswithnotes" now gives an obsolete warning like all the other note options (see #724)
@@ -86,7 +128,7 @@ a major and minor version only.
 
 ### Fixed
 
-- Removed superflous period in combination with the `firstsection` option (#674)
+- Removed superfluous period in combination with the `firstsection` option (#674)
 - Behaviour of `\label` in article mode (#685)
 - Problem with date position in infolines theme (#684)
 
@@ -102,7 +144,7 @@ a major and minor version only.
 
 - `\beamer@bibiconwidth` already defined bug (see #652)
 - shadowboxes and transparent overlays (see #654)
-- workaround for misaligment of biblatex with sidebar theme (see #645)
+- workaround for misalignment of biblatex with sidebar theme (see #645)
 - bug with nonshadow rounded boxed (see #660)
 
 ## [v3.60]
@@ -132,7 +174,7 @@ a major and minor version only.
 - re-introduced `\strut` after the frametitle (see #535)
 - Promote bookmark level for index (see #554)
 - clip `\insertslideintonotes` to show only visible area
-- using biblatex filehooks to make adjustments to the bibliography appearence (see #581)
+- using biblatex filehooks to make adjustments to the bibliography appearance (see #581)
 
 ### Fixed
 
@@ -160,7 +202,7 @@ a major and minor version only.
 
 - Add missing commands with overlay specification (see #525)
 - Replace fixed text width in `inmargin` theme (see #529)
-- Treatment of `+` and `.` overlay specifiations (see #538)
+- Treatment of `+` and `.` overlay specifications (see #538)
 
 ## [v3.55]
 
@@ -212,7 +254,10 @@ a major and minor version only.
 - Support for `noxcolor` with `beamerarticle` (see #483)
 - Treatment of mixed overlay/alert specifications
 
-[Unreleased]: https://github.com/josephwright/beamer/compare/v3.68...HEAD
+[Unreleased]: https://github.com/josephwright/beamer/compare/v3.71...HEAD
+[v3.71]: https://github.com/josephwright/beamer/compare/v3.70...v3.71
+[v3.70]: https://github.com/josephwright/beamer/compare/v3.69...v3.70
+[v3.69]: https://github.com/josephwright/beamer/compare/v3.68...v3.69
 [v3.68]: https://github.com/josephwright/beamer/compare/v3.67...v3.68
 [v3.67]: https://github.com/josephwright/beamer/compare/v3.66...v3.67
 [v3.66]: https://github.com/josephwright/beamer/compare/v3.65...v3.66

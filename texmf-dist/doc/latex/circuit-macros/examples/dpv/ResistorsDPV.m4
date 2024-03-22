@@ -25,7 +25,7 @@ vm = 0.28
 }
    move down vm; right_
 {
-   {resistor(,,B) ; move ; "`resistor(,,B) '" ljust}
+   {resistor(,5,B) ; move ; "`resistor(,5,B) '" ljust}
    move right_ hm
    {resistor(,,E) ; move 
     "`resistor(,,E)'" ljust " svg_equiv `ebox'" ljust}

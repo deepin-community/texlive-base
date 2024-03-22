@@ -28,11 +28,11 @@ divert(0)dnl
   T1: transformer
       trlabels(,`transformer',T1,0.3)
   T2: transformer(down_ 0.6,,2,P,8) with .w at T1.e+(1,0)
-      trlabels(,`...(down\_ 0.6,,2,P,8)',T2,0.3)
-  T3: transformer(,,8,WD12,4) with .w at T2.e+(1,0)
-      trlabels(,`...(,,8,WD12,4)',T3,0.21)
-  T4: transformer(,,9,AL) with .sw at T3.se+(1,0)
-      trlabels(,`...(,,9,AL)',T4,0.3)
+      trlabels(,`...(down\_ 0.6,{},2,P,8)',T2,0.3)
+  T3: transformer(,{},8,WD12,4) with .w at T2.e+(1,0)
+      trlabels(,`...(,{},8,WD12,4)',T3,0.21)
+  T4: transformer(,{},9,AL) with .sw at T3.se+(1,0)
+      trlabels(,`...(,{},9,AL)',T4,0.3)
   T5: transformer(,R,8,AW) with .sw at T4.se+(1,0)
       trlabels(R,`...(,R,8,AW)',T5,0.3)
 

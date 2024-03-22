@@ -3,6 +3,7 @@
 # This diagram can be produced using, e.g.
 # m4 pdf.m4 Dini.m4 | dpic -d > Dini.pdf
 
+# https://tex.stackexchange.com/questions/516734/plot-dinis-surface
 threeD_init
 NeedDpicTools
 scale = 1.5

@@ -25,9 +25,9 @@ log_init
     `"\tt BUFFER\_gate(,N,bd,bd,NN)"' at B2.s+(0,-18bp__) }
   thicklines_
 
-  B3: BUFFER_gen(ITNOC,bd,bd,PN,,N,LH_symbol at C) \
+  B3: BUFFER_gen(ITNOC,bd,bd,PN,,N,,LH_symbol at C) \
       with .sw at last [].se+(esep,0)
-  { `"\tt BUFFER\_gen(ITNOC,bd,bd,PN,{,}N,"' ljust \
+  { `"\tt BUFFER\_gen(ITNOC,bd,bd,PN,{,}N,{,}"' ljust \
     `"\tt $\;\;$LH\_symbol at C)"' ljust at B3.s+(-60bp__,-30bp__) }
   thinlines_
   { arrow <- left 0.2 up 0.2 from B3.In1; "\sl In1" rjust
@@ -41,9 +41,10 @@ log_init
   B4: BUFFER_gate(right_ elen_ from last [].sw+(0,-0.35),,bd,bd)
   { `"\tt BUFFER\_gate(right\_ elen\_,{,}bd,bd)"' ljust at B4.end }
   move to B4.start+(0,-dimen_)
-  B6: BUFFER_gate(right_ elen_,N,bd,bd,,N,LH_symbol(I) at C)
+  B6: BUFFER_gate(right_ elen_,N,bd,bd,,N,,LH_symbol(I) at C)
    line down dimen_/4 from last [].N_SE1.s then left dimen_*2/3
-  {`"\tt BUFFER\_gate(right\_ elen\_,N,bd,bd,{,}N,LH\_symbol(I) at C)"' ljust \
+  {`"\tt BUFFER\_gate(right\_ elen\_,N,bd,bd,{,}N,{,}LH\_symbol(I) at C)"' \
+    ljust \
    `"\tt line down dimen\_/3 from last [].N\_SE1.s then left dimen\_*2/3"' \
     ljust at B6.end }
 

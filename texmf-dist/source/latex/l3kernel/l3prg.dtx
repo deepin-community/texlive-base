@@ -2,7 +2,7 @@
 %
 %% File: l3prg.dtx
 %
-% Copyright (C) 2005-2023 The LaTeX Project
+% Copyright (C) 2005-2024 The LaTeX Project
 %
 % It may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -31,7 +31,7 @@
 % \fi
 %
 % \title{^^A
-%   The \pkg{l3prg} package\\ Control structures^^A
+%   The \pkg{l3prg} module\\ Control structures^^A
 % }
 %
 % \author{^^A
@@ -43,7 +43,7 @@
 %    }^^A
 % }
 %
-% \date{Released 2023-01-16}
+% \date{Released 2024-01-22}
 %
 % \maketitle
 %
@@ -171,7 +171,16 @@
 % state. There must be a return statement for each branch; failing to do
 % so will result in erroneous output if that branch is executed.
 %
-% \begin{function}{\prg_new_eq_conditional:NNn, \prg_set_eq_conditional:NNn}
+% The special case where the code of a conditional ends with
+% \cs{prg_return_true:} \cs{else:} \cs{prg_return_false:} \cs{fi:} is
+% optimized.
+%
+% \begin{function}[updated = 2023-05-26]
+%   {
+%     \prg_new_eq_conditional:NNn,
+%     \prg_set_eq_conditional:NNn,
+%     \prg_gset_eq_conditional:NNn
+%   }
 %   \begin{syntax}
 %     \cs{prg_new_eq_conditional:NNn} \cs[no-index]{\meta{name_1}:\meta{arg spec_1}} \cs[no-index]{\meta{name_2}:\meta{arg spec_2}} \Arg{conditions}
 %   \end{syntax}
@@ -304,6 +313,18 @@
 %   the logical truth of this evaluation.
 % \end{function}
 %
+% \begin{function}[added = 2018-05-10]
+%   {
+%     \bool_set_inverse:N , \bool_set_inverse:c ,
+%     \bool_gset_inverse:N, \bool_gset_inverse:c
+%   }
+%   \begin{syntax}
+%     \cs{bool_set_inverse:N} \meta{boolean}
+%   \end{syntax}
+%   Toggles the \meta{boolean} from \texttt{true} to \texttt{false} and
+%   conversely: sets it to the inverse of its current value.
+% \end{function}
+%
 % \begin{function}[EXP,pTF, updated = 2017-07-15]{\bool_if:N, \bool_if:c}
 %   \begin{syntax}
 %     \cs{bool_if_p:N} \meta{boolean}
@@ -313,12 +334,13 @@
 %   based on this result.
 % \end{function}
 %
-% \begin{function}[EXP, added = 2021-11-01]{\bool_to_str:N, \bool_to_str:c, \bool_to_str:n}
+% \begin{function}[EXP, added = 2021-11-01, updated = 2023-11-14]
+%   {\bool_to_str:N, \bool_to_str:c, \bool_to_str:n}
 %   \begin{syntax}
 %     \cs{bool_to_str:N} \meta{boolean}
 %     \cs{bool_to_str:n} \meta{boolean expression}
 %   \end{syntax}
-%   Expands to the letters \texttt{true} or \texttt{false} depending on
+%   Expands to the string \texttt{true} or \texttt{false} depending on
 %   the logical truth of the \meta{boolean} or \meta{boolean
 %   expression}.
 % \end{function}
@@ -363,7 +385,12 @@
 %   check that the \meta{boolean} really is a boolean variable.
 % \end{function}
 %
-% \subsection{Scratch booleans}
+% \subsection{Constant and scratch booleans}
+%
+% \begin{variable}{\c_true_bool, \c_false_bool}
+%   Constants that represent |true| and |false|, respectively. Used to
+%   implement predicates.
+% \end{variable}
 %
 % \begin{variable}{\l_tmpa_bool, \l_tmpb_bool}
 %   A scratch boolean for local assignment. It is never used by
@@ -559,7 +586,7 @@
 %   \begin{syntax}
 %     \cs{bool_until_do:Nn} \meta{boolean} \Arg{code}
 %   \end{syntax}
-%   This function firsts checks the logical value of the \meta{boolean}.
+%   This function first checks the logical value of the \meta{boolean}.
 %   If it is \texttt{false} the \meta{code} is placed in the input stream
 %   and expanded. After the completion of the \meta{code} the truth
 %   of the \meta{boolean} is re-evaluated. The process then loops
@@ -570,7 +597,7 @@
 %   \begin{syntax}
 %     \cs{bool_while_do:Nn} \meta{boolean} \Arg{code}
 %   \end{syntax}
-%   This function firsts checks the logical value of the \meta{boolean}.
+%   This function first checks the logical value of the \meta{boolean}.
 %   If it is \texttt{true} the \meta{code} is placed in the input stream
 %   and expanded. After the completion of the \meta{code} the truth
 %   of the \meta{boolean} is re-evaluated. The process then loops
@@ -605,7 +632,7 @@
 %   \begin{syntax}
 %     \cs{bool_until_do:nn} \Arg{boolean expression} \Arg{code}
 %   \end{syntax}
-%   This function firsts checks the logical value of the
+%   This function first checks the logical value of the
 %   \meta{boolean expression} (as described for \cs{bool_if:nTF}).
 %   If it is \texttt{false} the \meta{code} is placed in the input stream
 %   and expanded. After the completion of the \meta{code} the truth
@@ -617,12 +644,51 @@
 %   \begin{syntax}
 %     \cs{bool_while_do:nn} \Arg{boolean expression} \Arg{code}
 %   \end{syntax}
-%   This function firsts checks the logical value of the
+%   This function first checks the logical value of the
 %   \meta{boolean expression} (as described for \cs{bool_if:nTF}).
 %   If it is \texttt{true} the \meta{code} is placed in the input stream
 %   and expanded. After the completion of the \meta{code} the truth
 %   of the \meta{boolean expression} is re-evaluated. The process
 %   then loops until the \meta{boolean expression} is \texttt{false}.
+% \end{function}
+%
+% \begin{function}[added = 2023-05-03, EXP, noTF]{\bool_case:n}
+%   \begin{syntax}
+%     \cs{bool_case:nTF} \\
+%     ~~|{| \\
+%     ~~~~\Arg{boolexpr case_1} \Arg{code case_1} \\
+%     ~~~~\Arg{boolexpr case_2} \Arg{code case_2} \\
+%     ~~~~\ldots \\
+%     ~~~~\Arg{boolexpr case_n} \Arg{code case_n} \\
+%     ~~|}| \\
+%     ~~\Arg{true code}
+%     ~~\Arg{false code}
+%   \end{syntax}
+%   Evaluates in turn each of the \meta{boolean expression cases} until
+%   the first one that evaluates to \texttt{true}.
+%   The \meta{code} associated to this first case is left in the input
+%   stream, followed by the \meta{true code}, and other cases are
+%   discarded.  If none of the cases match then only the \meta{false
+%   code} is inserted. The function \cs{bool_case:n},
+%   which does nothing if there is no match, is
+%   also available. For example
+%   \begin{verbatim}
+%     \bool_case:nF
+%       {
+%         { \dim_compare_p:n { \l__mypkg_wd_dim <= 10pt } }
+%             { Fits }
+%         { \int_compare_p:n { \l__mypkg_total_int >= 10 } }
+%             { Many }
+%         { \l__mypkg_special_bool }
+%             { Special }
+%       }
+%       { No idea! }
+%   \end{verbatim}
+%   leaves \enquote{\texttt{Fits}} or \enquote{\texttt{Many}} or
+%   \enquote{\texttt{Special}} or \enquote{\texttt{No idea!}} in the
+%   input stream, in a way similar to some other language's
+%   \enquote{\texttt{if} \ldots\ \texttt{elseif} \ldots\ \texttt{elseif} \ldots\
+%   \texttt{else} \ldots}.
 % \end{function}
 %
 % \section{Producing multiple copies}
@@ -657,6 +723,7 @@
 %
 % \begin{function}[updated = 2011-09-05, EXP,pTF]{\mode_if_math:}
 %   \begin{syntax}
+%     \cs{mode_if_math_p:}
 %     \cs{mode_if_math:TF} \Arg{true code} \Arg{false code}
 %   \end{syntax}
 %   Detects if \TeX{} is currently in maths mode.
@@ -746,7 +813,8 @@
 %     \cs{prg_break:n} \Arg{code} \ldots{} \cs{prg_break_point:}
 %   \end{syntax}
 %   Breaks a recursion which has no \meta{ending code} and which is not
-%   a user-breakable mapping (see for instance \cs{prop_get:Nn}), and
+%   a user-breakable mapping (see for instance
+%   implementation of \cs{int_step_function:nnnN}), and
 %   inserts the \meta{code} in the input stream.
 % \end{function}
 %
@@ -929,6 +997,19 @@
 % \end{macro}
 % \end{macro}
 %
+% \begin{macro}[added = 2018-05-10]
+%   {\bool_set_inverse:N, \bool_set_inverse:c, \bool_gset_inverse:N, \bool_gset_inverse:c}
+%   Set to \texttt{false} or \texttt{true} locally or globally.
+%    \begin{macrocode}
+\cs_new_protected:Npn \bool_set_inverse:N #1
+  { \bool_if:NTF #1 { \bool_set_false:N } { \bool_set_true:N } #1 }
+\cs_generate_variant:Nn \bool_set_inverse:N { c }
+\cs_new_protected:Npn \bool_gset_inverse:N #1
+  { \bool_if:NTF #1 { \bool_gset_false:N } { \bool_gset_true:N } #1 }
+\cs_generate_variant:Nn \bool_gset_inverse:N { c }
+%    \end{macrocode}
+% \end{macro}
+%
 % \subsection{Internal auxiliaries}
 %
 % \begin{variable}{\q_@@_recursion_tail,\q_@@_recursion_stop}
@@ -972,11 +1053,19 @@
 % \end{macro}
 %
 % \begin{macro}[EXP]{\bool_to_str:N, \bool_to_str:c, \bool_to_str:n}
-%   Expands to \texttt{true} or \texttt{false} with category code letter.
+%   Expands to string literal \texttt{true} or \texttt{false}.
 %    \begin{macrocode}
-\cs_new:Npn \bool_to_str:N #1 { \bool_if:NTF #1 { true } { false } }
+\cs_new:Npe \bool_to_str:N #1
+  {
+    \exp_not:N \bool_if:NTF #1
+      { \tl_to_str:n { true } } { \tl_to_str:n { false } }
+  }
 \cs_generate_variant:Nn \bool_to_str:N { c }
-\cs_new:Npn \bool_to_str:n #1 { \bool_if:nTF {#1} { true } { false } }
+\cs_new:Npe \bool_to_str:n #1
+  {
+    \exp_not:N \bool_if:nTF {#1}
+      { \tl_to_str:n { true } } { \tl_to_str:n { false } }
+  }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -984,9 +1073,9 @@
 %   Show the truth value of the boolean.
 %    \begin{macrocode}
 \cs_new_protected:Npn \bool_show:n
-  { \msg_show_eval:Nn \bool_to_str:n }
+  { \__kernel_msg_show_eval:Nn \bool_to_str:n }
 \cs_new_protected:Npn \bool_log:n
-  { \msg_log_eval:Nn \bool_to_str:n }
+  { \__kernel_msg_log_eval:Nn \bool_to_str:n }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1004,11 +1093,11 @@
       {
         \token_case_meaning:NnF #2
           {
-            \c_true_bool { \exp_args:Nx #1 { \token_to_str:N #2 = true } }
-            \c_false_bool { \exp_args:Nx #1 { \token_to_str:N #2 = false } }
+            \c_true_bool { \exp_args:Ne #1 { \token_to_str:N #2 = true } }
+            \c_false_bool { \exp_args:Ne #1 { \token_to_str:N #2 = false } }
           }
           {
-            \msg_error:nnxxx { kernel } { bad-type }
+            \msg_error:nneee { kernel } { bad-type }
               { \token_to_str:N #2 } { \token_to_meaning:N #2 } { bool }
           }
       }
@@ -1458,6 +1547,46 @@
 %    \end{macrocode}
 % \end{macro}
 %
+% \begin{variable}{\s_@@_mark,\s_@@_stop}
+%   Internal scan marks.
+%    \begin{macrocode}
+\scan_new:N \s_@@_mark
+\scan_new:N \s_@@_stop
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{macro}[EXP, noTF]{\bool_case:n}
+% \begin{macro}{\@@_case:NnTF}
+% \begin{macro}{\@@_case:w,a\@@_case_end:nw}
+%   For boolean cases the overall idea is the same as for
+%   \cs{str_case:nnTF} as described in \pkg{l3str}.
+%    \begin{macrocode}
+\cs_new:Npn \bool_case:nTF
+  { \exp:w \@@_case:nTF }
+\cs_new:Npn \bool_case:nT #1#2
+  { \exp:w \@@_case:nTF {#1} {#2} { } }
+\cs_new:Npn \bool_case:nF #1
+  { \exp:w \@@_case:nTF {#1} { } }
+\cs_new:Npn \bool_case:n #1
+  { \exp:w \@@_case:nTF {#1} { } { } }
+\cs_new:Npn \@@_case:nTF #1#2#3
+  {
+    \@@_case:w
+    #1 \c_true_bool { } \s_@@_mark {#2} \s_@@_mark {#3} \s_@@_stop
+  }
+\cs_new:Npn \@@_case:w #1#2
+  {
+    \bool_if:nTF {#1}
+      { \@@_case_end:nw {#2} }
+      { \@@_case:w }
+  }
+\cs_new:Npn \@@_case_end:nw #1#2#3 \s_@@_mark #4#5 \s_@@_stop
+  { \exp_end: #1 #4 }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
 % \subsection{Producing multiple copies}
 %
 %    \begin{macrocode}
@@ -1664,9 +1793,10 @@
 \tex_catcode:D `\^^@ = 2 \exp_stop_f:
 \cs_new:Npn \group_align_safe_begin:
   { \exp:w \if_false: { \fi: `^^@ \exp_stop_f: }
-\group_end:
+\tex_catcode:D `\^^@ = 1 \exp_stop_f:
 \cs_new:Npn \group_align_safe_end:
-  { \if_int_compare:w `{ = \c_zero_int } \fi: }
+  { \exp:w `^^@ \if_false: } \fi: \exp_stop_f: }
+\group_end:
 %    \end{macrocode}
 % \end{macro}
 %

@@ -50,7 +50,7 @@ function M.use_resource(kind, name)
     return res._entry_
 end
 
--- global resources are mainly for pgf compatibility: contains adds entries to 
+-- global resources are mainly for pgf compatibility: it contains entries to 
 -- the resource dictionaries that will be added for every page.
 --
 local global_resources = init_resources() -- name ↦ '/Key <value>'
@@ -73,7 +73,7 @@ if not M.self_destruct then
     pdf.add_page_resource = M.add_global_resource
 end
 
--- for nonglobal resources, every use must be markes with a late_lua node. from 
+-- for nonglobal resources, every use must be marked with a late_lua node. from 
 -- those, the M.use_resouce() function will be called automatically.
 --
 local page_resources = init_resources() -- name ↦ '/Key <value>'
@@ -86,6 +86,10 @@ function M.use_resource_node(kind, name)
     n.data = string.format('_with_pdf_resource_("%s", "%s")', kind, name)
     return n
 end
+
+alloc.luadef('withpdfresource', function()
+    node.write(M.use_resource_node(token.scan_string(), token.scan_string()))
+end, 'protected')
 
 -- construction and caching of resource dictionaries.
 --

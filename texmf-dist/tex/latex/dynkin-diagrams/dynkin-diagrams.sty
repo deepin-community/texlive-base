@@ -1,10 +1,10 @@
 % The Dynkin Diagrams package.
 %
-% Version 3.141 592 653 589 793 2
+% Version 3.141 592 653 589 793 238 4
 %
 % This package draws Dynkin diagrams in LaTeX 
 % documents, using the TikZ package.
-% Please see the file dynkin-diagrams.tex 
+% Please see the file dynkin-diagrams.tex
 % for examples of use of this package.
 %
 % Benjamin McKay
@@ -13,12 +13,10 @@
 % Released under the LaTeX Project Public License v1.3c or later, see 
 % http://www.latex-project.org/lppl.txt
 \NeedsTeXFormat{LaTeX2e}[1994/06/01]
-\ProvidesPackage{dynkin-diagrams}[2021/04/04 Dynkin diagrams]
+\ProvidesPackage{dynkin-diagrams}[2023/06/02 Dynkin diagrams]
 \RequirePackage{tikz}
 \RequirePackage{xstring}
-\RequirePackage{xparse}
 \RequirePackage{etoolbox}
-\RequirePackage{expl3}
 \RequirePackage{pgfkeys}
 \RequirePackage{pgfopts}
 \RequirePackage{amsmath}
@@ -130,15 +128,21 @@
 	\xdef\dynkin@string{#4}%
 	\xdef\dynkin@series{#2}%
 	\dynkin@grok@series%
-	\IfSubStr{ABCDEFGHI}{\dynkin@series}{}{\dynkin@error@series}%
-	\IfInteger{\dynkin@string}%
-	{%
+	\expandafter\expandafter%
+	\ifx\csname dynkin\dynkin@series \endcsname\relax%
+	% Undefined series
+	\dynkin@error@series%
+	\fi	
+%%	\IfSubStr{ABCDEFGHI}{\dynkin@series}{}{\dynkin@error@series}%
+%%	\IfInteger{\dynkin@string}%
+	\if!\ifnum9<1\dynkin@string!\fi%
+%%	{%
 		\dynkin@integer@rank%
-	}%
-	{%
+%%	}%
+%%	{%
 		% Turn Satake codes into Dynkin diagram expressions in \dynkin@string.
-		\dynkin@grok@Satake@codes%
-	}%
+\else\dynkin@grok@Satake@codes\fi%
+%%	}%
 	% Expand out any digits in \dynkin@string into multiples of the various root marks.
 	\expand@Dynkin@Roots@Digits%
 	% Assign to \dynkin@roots the input string \dynkin@string with all . symbols removed,
@@ -535,18 +539,30 @@
 
 %% \dynkinEdgeLabel{<n1>}{<n2>}{<s>}
 %% Prints <s> between root <n1> and <n2> on the current Dynkin diagram in the current root ordering.
-\NewDocumentCommand\dynkinEdgeLabel{mmm}%
+\NewDocumentCommand\dynkinEdgeLabel{smmm}%
 {%
-	\convertRootPair{#1}{#2}%
-	\node[inner sep=\dynkin@root@radius,%
-		label={%
-			[/Dynkin diagram/text style,/Dynkin diagram/edge label]%
-			above:
-			\(\pgfkeys{/Dynkin diagram/label macro*=#3}\)%
-			}%
-		]
-		at ($.5*(\dynkin@root@name \the\@dynkin@from@root)+.5*(\dynkin@root@name \the\@dynkin@to@root)$) 
-		{};
+	\convertRootPair{#2}{#3}%
+	\IfBooleanTF{#1}%
+	{%
+		\draw[draw=none] 
+		(\dynkin@root@name \the\@dynkin@from@root) to 
+		node[auto,%
+		swap,%
+		inner sep=\dynkin@root@radius,%
+		/Dynkin diagram/text style,%
+		/Dynkin diagram/edge label]
+		{\(\pgfkeys{/Dynkin diagram/label macro*=#4}\)}%
+		(\dynkin@root@name \the\@dynkin@to@root);%
+	}%
+	{%
+		\draw[draw=none] (\dynkin@root@name \the\@dynkin@from@root) to 
+		node[auto,%
+		inner sep=\dynkin@root@radius,%
+		/Dynkin diagram/text style,%
+		/Dynkin diagram/edge label] 
+		{\(\pgfkeys{/Dynkin diagram/label macro*=#4}\)}%
+		(\dynkin@root@name \the\@dynkin@to@root);%
+	}%
 }%
 
 
@@ -2141,7 +2157,11 @@
 	 	},
 	double-fold-right/.forward to=/Dynkin diagram/double fold right/.style,
 	doublefoldright/.forward to=/Dynkin diagram/double fold right/.style,
-	edge label/.style={text height=0,text depth=0,label distance=-4pt},
+	edge label/.style={
+		text height=1.5ex,
+		text depth=.25ex,
+		label distance=4pt
+	},
 	edgelabel/.forward to=/Dynkin diagram/edge label/.style,
 	edge length/.estore in = \dynkin@edge@length,
 	edge-length/.forward to=/Dynkin diagram/edge length,
@@ -2201,6 +2221,7 @@
 	involution/.style={latex-latex,black},
 	involutions/.default = {},
  	involutions/.store in = \dynkin@involution@list,
+ 	expand involutions/.estore in = \dynkin@involution@list,
 	Kac arrows/.is if = dynkin@Kac@arrows,
 	Kac-arrows/.forward to = /Dynkin diagram/Kac arrows,
 	Kacarrows/.forward to = /Dynkin diagram/Kac arrows,
@@ -2251,8 +2272,10 @@
 	labeldepth/.forward to = /Dynkin diagram/label depth, 
 	label directions/.default = {},
 	label directions/.store in = \dynkin@label@directions@override,
+	expand label directions/.estore in = \dynkin@label@directions@override,
 	label* directions/.default = {},
 	label* directions/.store in = \dynkin@label@star@directions@override,
+	expand label* directions/.estore in = \dynkin@label@star@directions@override,
 	label height/.style={/tikz/every label/.append style={text height={height("#1"}}},
 	label height/.default=b,
 	label height,
@@ -2266,8 +2289,12 @@
 	labelmacro*/.forward to=/Dynkin diagram/label macro*,
 	labels/.default = {},
  	labels/.store in = \dynkin@label@list,
+	expand labels/.default = {},
+ 	expand labels/.estore in = \dynkin@label@list,
 	labels*/.default = {},
  	labels*/.store in = \dynkin@label@list@star,
+	expand labels*/.default = {},
+ 	expand labels*/.estore in = \dynkin@label@list,
 	make indefinite edge/.code={\dynkin@set@edge@indefinite@pair{#1}},
 	make-indefinite-edge/.forward to=/Dynkin diagram/make indefinite edge,
 	makeindefiniteedge/.forward to=/Dynkin diagram/make indefinite edge,
@@ -2291,6 +2318,10 @@
 	root-radius/.forward to=/Dynkin diagram/root radius,
 	rootradius/.forward to=/Dynkin diagram/root radius,
 	root radius=.05cm,
+	separator length/.estore in = \dynkin@separator@length,
+	separator-length/.forward to=/Dynkin diagram/separator length,
+	separatorlength/.forward to=/Dynkin diagram/separator length,
+	separator length = .35cm,
 	text style/.style={#1},
 	text style/.default={black,scale=.7},
 	text-style/.forward to=text style/.style,
@@ -2647,8 +2678,9 @@
 \newif\ifdynkin@is@indefinite@edge%
 \NewDocumentCommand\dynkin@typeout@indefinite@edge@list{}%
 {%
-	\renewcommand*{\do}[1]{\typeout{##1}}%
-	\typeout{Indefinite edges: [}\dolistloop{\dynkin@indefinite@edge@list}\typeout{]}%
+\providecommand\do{}%
+\renewcommand*{\do}[1]{\typeout{##1}}%
+\typeout{Indefinite edges: [}\dolistloop{\dynkin@indefinite@edge@list}\typeout{]}%
 }%
 
 
@@ -2673,8 +2705,9 @@
 		\global\dynkin@second@root@no=\@dynkin@from@root\relax%
 	\fi%
 	\global\dynkin@is@indefinite@edgefalse\relax%
-	\renewcommand*{\do}[1]{%
-	\IfStrEq{##1}{\the\dynkin@first@root@no,\the\dynkin@second@root@no}%
+\providecommand\do{}%
+\renewcommand*{\do}[1]{%
+\IfStrEq{##1}{\the\dynkin@first@root@no,\the\dynkin@second@root@no}%
 		{\global\dynkin@is@indefinite@edgetrue\listbreak}%
 		{}}%
 	\dolistloop{\dynkin@indefinite@edge@list}%
@@ -4258,6 +4291,12 @@
 	\fi
 	\dynkin@pipe{\the\dynkin@afterfold}%
 		{#2}{west}{below}{above right}
+	\ifodd\dynkin@nrts%
+		\dynkinMoveToRoot{\the\dynkin@hpo}%
+	\else%
+		\dynkinMoveToRoot{\the\dynkin@h}%
+		\dynkinSouthEastFold{}%
+	\fi%
 	\ifdynkin@arrows%
 		\dynkin@countdown=#2\relax%
 		\foreach \dynkin@b in {#1,...,\the\dynkin@h}%
@@ -4703,6 +4742,11 @@
 			\Ddynkin@roots%
 			\Ddynkin@edges%
 		\fi%
+		\dynkinMoveToRoot{\the\dynkin@rank@minus@two}%
+		\ifnum\dynkin@ply>1\relax%
+			\dynkinMoveToRoot{\the\dynkin@rank@minus@two}%
+			\dynkinEast%
+		\fi%
 	\else%
 		\gdef\dynkin@series{A}%
 		\Adynkin%
@@ -4781,6 +4825,7 @@
 			\fi%
 		\fi%
 	\fi%
+	\dynkinMoveToRoot{\the\dynkin@rank}%
 }%
 %% \Edynkin@unfolded
 %% Draws an E series Dynkin diagram not folded.
@@ -4928,19 +4973,33 @@
 %% Draws an F series Dynkin diagram.
 \newcommand*{\Fdynkin}%
 {%
-	\dynkinPlaceRootHere*{1}{below}{above}%
-	\dynkinPlaceRootRelativeTo*{2}{1}{east}{below}{above}%
-	\dynkinPlaceRootRelativeTo*{3}{2}{east}{below}{above}%
-	\dynkinPlaceRootRelativeTo*{4}{3}{east}{below}{above}%
-	\ifdynkin@Coxeter%
+	\ifnum\dynkin@ply>1\relax%
+		\dynkin@jump{1}%
+		\dynkinPlaceRootHere*{1}{left}{above}%
+		\dynkinPlaceRootRelativeTo*{2}{1}{east}{below}{above}%
+		\dynkinPlaceRootRelativeTo*{3}{2}{southfold}{left}{below}%
+		\dynkinEdge*{DoubleDownRightSemiCircle}{2}{3}%
+		\dynkinPlaceRootRelativeTo*{4}{3}{west}{below}{above}%
+		\ifdynkin@arrows%
+			\dynkinLeftFold*{1}{4}%
+		\fi%
 		\dynkinEdge*{SingleEdge}{1}{2}%
-		\dynkinEdge*{SingleEdge}{2}{3}%
 		\dynkinEdge*{SingleEdge}{3}{4}%
-		\dynkinEdgeLabel{2}{3}{4}%
 	\else%
-		\dynkinEdge*{SingleEdge}{1}{2}%
-		\dynkinEdge*{SingleEdge}{3}{4}%
-		\dynkinEdge*{DoubleEdge}{2}{3}%
+		\dynkinPlaceRootHere*{1}{below}{above}%
+		\dynkinPlaceRootRelativeTo*{2}{1}{east}{below}{above}%
+		\dynkinPlaceRootRelativeTo*{3}{2}{east}{below}{above}%
+		\dynkinPlaceRootRelativeTo*{4}{3}{east}{below}{above}%
+		\ifdynkin@Coxeter%
+			\dynkinEdge*{SingleEdge}{1}{2}%
+			\dynkinEdge*{SingleEdge}{2}{3}%
+			\dynkinEdge*{SingleEdge}{3}{4}%
+			\dynkinEdgeLabel{2}{3}{4}%
+		\else%
+			\dynkinEdge*{SingleEdge}{1}{2}%
+			\dynkinEdge*{SingleEdge}{3}{4}%
+			\dynkinEdge*{DoubleEdge}{2}{3}%
+		\fi%
 	\fi%
 }%
 %% \Gdynkin 
@@ -5032,6 +5091,7 @@
 			\dynkinRootMark*{}{0}%
 		\fi%
 	\fi%
+	\dynkinMoveToRoot{\the\dynkin@rank}%
 }%
 
 \NewDocumentCommand\extendedBthreePly{}%
@@ -5204,6 +5264,7 @@
 	\xdef\dynkin@fold@radius{\pgfmathresult pt}%
 	\dynkin@fold{2}{\the\dynkin@rank@minus@two}%
 	% We place the root number rank-2 once again (it is already placed in the \dynkin@fold):
+	\dynkinMoveToRoot*{\the\dynkin@rank@minus@two}% 
 	\dynkinPlaceRootHere*%
 		{\the\dynkin@rank@minus@two}%
 		{below right}{above right}%
@@ -5632,5 +5693,54 @@ drawing code = {
 },
 defaults = { length = 1.25*\dynkin@root@radius }
 }
+
+
+%% Here are the changes I made in May 2023 to accommodate Dynkin diagrams of products of Lie algebras:
+
+\newcommand{\dynkinSkip}
+{
+\node (current) at ($(Dynkin current)+(\dynkin@separator@length,0)$) {};
+}
+\NewDocumentCommand\next@dynkin{O{}mO{0}m}%
+{%
+\dynkinSkip
+\dynkin[at=(current),#1]{#2}[#3]{#4}
+}%
+\newcount\dynkin@diagram@list@item@number
+\providecommand\do@dynkin@diagram@list@item{}
+\renewcommand*{\do@dynkin@diagram@list@item}[1]{
+	\ifnum\dynkin@diagram@list@item@number<2\relax%
+		{\dynkin #1}%
+	\else%
+		{\next@dynkin #1}%
+	\fi%
+	\advance\dynkin@diagram@list@item@number by 1\relax%
+}
+\DeclareListParser*{\for@dynkin@diagram@list}{|}%
+\NewDocumentCommand\dynkin@diagram@reducible{m}%
+{%
+\dynkin@diagram@list@item@number1\relax%
+\for@dynkin@diagram@list{\do@dynkin@diagram@list@item}{#1}%
+}%
+\NewDocumentEnvironment{DynkinDiagrams}{m}%
+{%
+\dynkin@save{}%
+\begin{tikzpicture}
+\dynkin@diagram@reducible{#1}%
+}%
+{%
+\end{tikzpicture}%
+\dynkin@restore{}%
+}%
+\NewDocumentCommand\dynkins{m}%
+{%
+%\dynkin@save{}%
+\ifdefined\filldraw\relax%
+\dynkin@diagram@reducible{#1}%
+\else%
+\tikz[anchor=base]{\dynkin@diagram@reducible{#1}}%
+\fi%
+%\dynkin@restore{}%
+}%
 
 \endinput

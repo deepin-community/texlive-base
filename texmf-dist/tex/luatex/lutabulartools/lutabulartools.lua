@@ -1,6 +1,6 @@
 --% Kale Ewasiuk (kalekje@gmail.com)
---% 2022-11-29
---% Copyright (C) 2021-2022 Kale Ewasiuk
+--% 2023-07-22
+--% Copyright (C) 2021-2023 Kale Ewasiuk
 --%
 --% Permission is hereby granted, free of charge, to any person obtaining a copy
 --% of this software and associated documentation files (the "Software"), to deal
@@ -23,14 +23,15 @@
 --% OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-local pl = _G['penlight'] or _G['pl'] -- penlight for this namespace is pl
-if (__PL_EXTRAS__ == nil) or  (__PENLIGHT__ == nil) then
-    tex.sprint('\\PackageError{yamlvars}{penlight package with extras (or extrasglobals) option must be loaded before this package}{}')
-    tex.print('\\stop')
-end
-local T = pl.tablex
+
 
 local lutabt = {}
+
+local pl = penlight
+local T = pl.tablex
+
+lutabt.luakeys = require'luakeys'()  -- note: YAMLvars.sty will have checked existence of this already
+
 
 lutabt.tablelevel = 0
 
@@ -93,13 +94,12 @@ function lutabt.debugtalk(s, ss)
 end
 
 function __lutabt__debugprtall()
-    --pl.help_wrt(pl.tablex.filter({ lutabt }, function(v) return type(v) ~= 'function' end), '(lutabulartools state)')
     pl.help_wrt(lutabt, '(lutabulartools state)')
 end
 
 
 function lutabt.set_tabular(sett)
-    sett = luakeys.parse(sett)
+    sett = lutabt.luakeys.parse(sett)
     local trim = ''
     for k, v in pairs(sett) do
         if k == 'tbrule' then
@@ -420,10 +420,10 @@ end
 -----
 
 lutabt.mrX = {}
-lutabt.mrX.resets = {long=false, longhead=0, cntr=0, head=nil, longx=false, on=true} -- settings that reset when \setmidruleX used
+lutabt.mrX.resets = {long=false, cntr=0, head=nil, longx=false, on=true} -- settings that reset when \setmidruleX used
 lutabt.mrX.resets['head*'] = nil
 lutabt.mrX.settings = T.update(T.copy(lutabt.mrX.resets), {pgcntr=0, step=5, rule='midrule'}) -- current settings, not overwritten with each call
-
+lutabt.mrX.settings.on = false
 
 function lutabt.mrX.reset_midruleX(n)
     lutabt.mrX.settings.cntr = tonumber(n)
@@ -436,7 +436,7 @@ function lutabt.mrX.off()
 end
 
 function lutabt.mrX.set_midruleX(new_sett, def)
-    lutabt.mrX.settings = T.update(lutabt.mrX.settings, T.union(lutabt.mrX.resets, luakeys.parse(new_sett)))
+    lutabt.mrX.settings = T.update(lutabt.mrX.settings, T.union(lutabt.mrX.resets, lutabt.luakeys.parse(new_sett)))
     lutabt.debugtalk(lutabt.mrX.settings, 'new midruleX settings')
     if lutabt.mrX.settings.head ~= nil then
         lutabt.mrX.settings.cntr = -1*tonumber(lutabt.mrX.settings.head)
@@ -459,7 +459,7 @@ function lutabt.mrX.midruleX(n)
     lutabt.debugtalk(lutabt.mrX.settings, 'midruleX here')
     local s = lutabt.mrX.settings
     local rule = s.rule
-    if pl.hasval(s.long) and lutabt.mrX.add_label_and_check_page_change() then lutabt.mrX.settings.cntr = -1*s.longhead end -- reset to number on page change
+    if pl.hasval(s.long) and lutabt.mrX.add_label_and_check_page_change() then lutabt.mrX.settings.cntr = 0 end -- reset to number on page change --  longhead not used anymore
     lutabt.mrX.settings.cntr = lutabt.mrX.settings.cntr + 1
     if lutabt.mrX.settings.cntr == s.step then
         if not rule:startswith('\\') then  rule = '\\'..rule end -- todo consider allowing \gmidrule syntax, possible issue with expansion
@@ -498,45 +498,3 @@ return lutabt -- lutabulartools
 
 
 
-
---
---lutabt.tabular_row_pages_cntr = 0
---function lutabt.reset_midruleX_on_newpage(n)
---    local n = n or 0
---    lutabt.tabular_row_pages_cntr = lutabt.tabular_row_pages_cntr + 1
---    tex.print('\\noalign{\\label{tabular@row@'..lutabt.tabular_row_pages_cntr..'}}')
---    if lutabt.get_ref_page('tabular@row@'..lutabt.tabular_row_pages_cntr) -
---            lutabt.get_ref_page('tabular@row@'..(lutabt.tabular_row_pages_cntr-1)) == 1 then
---      tex.print('\\setcounter{midruleX}{'..n..'}')
---    end
---end
-
-
---help_wrt('TEST COL ')
---for _, s in ipairs{ 'll', '*{6}{s}', 'l*{6}{l}', 'lll', 'll[]', 'll[]*{6}{l}', '*{6}{l}', 'y*{6}{sq}x', } do
---    lutabt. set_col_spec(s)
---    help_wrt(lutabt.col_spec,s)
---end
-
-
--- todo move mrX mechanim to avoid @{}
---function lutabt.mrX.set_midruleX(new_sett, def)
---    def = def or ''
---    local curr_sett = {}
---    if def == pl.tex._xTrue then  -- default flag, if true, reset all non-used keys to default
---        curr_sett = lutabt.mrX.defaults
---    else
---        curr_sett = lutabt.mrX.settings
---    end
---    new_sett = luakeys.parse(new_sett)
---    lutabt.mrX.settings = T.union(curr_sett, new_sett)
---
---    lutabt.debugtalk(lutabt.mrX.settings, 'new midruleX settings')
---    lutabt.mrX.settings.cntr = tonumber(curr_sett.cntr) -- todo this needs to be a settings var
---    if new_sett.cntr ~= nil then -- todo fix the counter
---        lutabt.mrX.settings.cntr = tonumber(new_sett.cntr)
---    end
---    if new_sett.head ~= nil then -- todo fix the counter
---        lutabt.mrX.settings.cntr = -1*tonumber(new_sett.head)
---    end
---end

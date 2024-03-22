@@ -1,0 +1,344 @@
+%% gitinfo-lua.tex
+%% Copyright 2023 E. Nijenhuis
+%
+% This work may be distributed and/or modified under the
+% conditions of the LaTeX Project Public License, either version 1.3c
+% of this license or (at your option) any later version.
+% The latest version of this license is in
+% http://www.latex-project.org/lppl.txt
+% and version 1.3c or later is part of all distributions of LaTeX
+% version 2005/12/01 or later.
+%
+% This work has the LPPL maintenance status ‘maintained’.
+%
+% The Current Maintainer of this work is E. Nijenhuis.
+%
+% This work consists of the files gitinfo-lua.sty gitinfo-lua.pdf
+% gitinfo-cmd.lua and gitinfo-lua.lua
+\documentclass{ltxdoc}
+\usepackage[english]{babel}
+\usepackage[titlepage]{gitinfo-lua}
+
+\usepackage{listings}
+
+\usepackage{calc}
+\usepackage{multicol}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{textcomp}
+
+\usepackage[orig,english]{isodate}
+
+\def\projecturl{https://github.com/Xerdi/gitinfo-lua}
+\title{\textbf{Gitinfo Lua} package\thanks{This document corresponds to package \texttt{gitinfo-lua} version \gitversion{} written on \gitdate{}.}}
+
+\def\cmd{\lstinline[language={[LaTeX]TeX},keywordsprefix={\\}]}
+
+\usepackage{hyperref}
+\usepackage[nonewpage]{imakeidx}
+
+\CodelineIndex
+\EnableCrossrefs
+
+\makeindex[columns=1]
+
+\newlength\xample
+\newlength\xamplesep
+\setlength\xample{6cm-5pt}
+\setlength\xamplesep{5pt}
+
+\begin{document}
+    \RecordChanges
+
+    \maketitle
+
+    \begin{abstract}
+        This project aims to display git project information in PDF documents.
+        It's mostly written in Lua for executing the \texttt{git} commands, therefore making this package only applicable for \texttt{lualatex} with \texttt{shell escape} enabled.
+        If \texttt{lualatex} isn't working for you, you could try \href{https://ctan.org/pkg/gitinfo2}{gitinfo2} instead.
+        For \LaTeX{} it provides a set of standard macros for displaying basic information or setting the project directory, and a set of advanced macros for formatting commits and tags.
+    \end{abstract}
+
+    \begin{multicols}{2}
+        \tableofcontents
+%    \lstlistoflistings
+        \printindex
+    \end{multicols}
+    \clearpage
+
+
+    \section{Usage}
+    For the package to work one should work, and only work, with Lua\TeX{}.
+    Another prerequisite is that there is an available git repository either in the working directory, or somewhere else on your machine (see section~\ref{sub:tex-basic}).
+
+    \subsection{Git}
+    For this package to work at a minimum, there has to be an initialized Git repository, and preferably, at least with one commit.
+    For example, the following minimal example should do the trick already:
+    \begin{lstlisting}[language=bash,frame=single,caption={Minimal Git setup},morekeywords={mkdir,git}]
+mkdir my_project
+cd my_project
+echo "# My Project" > README.md
+git init && git commit -am "Init"
+    \end{lstlisting}
+
+    Then in order for the changelog to work, the project needs to contain either `lightweight-' or `annotated' tags.
+    The main difference is that a lightweight tag takes no extra options, for example: \texttt{git tag 0.1}.
+    See listing~\ref{lst:scenario} for more examples on authoring and versioning with \texttt{git}.
+
+    \subsection{Lua\LaTeX{}}
+
+    For generating the document with \LaTeX{} one must make use of \texttt{lualatex}.
+    For example, when having the main file `\texttt{main.tex}':
+    \begin{lstlisting}[language=bash,frame=single,caption={Generating the document with \LaTeX{}},morekeywords={lualatex,latexmk}]
+# Generate once
+lualatex -shell-escape main
+# Generate and keep watching with LaTeXMK
+latexmk -pvc -lualatex -shell-escape main
+    \end{lstlisting}
+    Note that in both cases option \texttt{-shell-escape} is required.
+    This is required for issuing \texttt{git} via the commandline.
+
+
+    \section{LaTeX Interface}
+
+    \subsection{Package Options}
+
+    \cmd{\usepackage}%
+    \oarg{opts...}%
+    \texttt{\textbraceleft gitinfo-lua\textbraceright}\index[pkgopts]{gitinfo-lua(.sty)}
+    This package provides some options for default formatting purposes.
+    The author sorting is one of them.
+    If the options contain \meta{contrib} the authors will be sorted based on their contributions, otherwise the authors will be sorted alphabetically, which is the default option \meta{alpha}.
+    Another option is the \meta{titlepage} option, which sets the \cmd{\author} and \cmd{\date} macros accordingly.
+    By default, it sets the local git author, equivalent to option \meta{author}.
+    Pass option \meta{authors} to set all git authors of the project instead.
+
+    \subsection{Basic macros}\label{sub:tex-basic}
+    By default the main file's directory is used as git project directory.
+    This directory can be manipulated with \DescribeMacro{\gitdirectory}\cmd{\gitdirectory}\marg{path}.
+    This is only tested with relative paths on Linux.
+    \DescribeMacro{\gitunsetdirectory} To undo this operation and switch back to the main file's directory use \cmd{\gitunsetdirectory}.\\
+
+    \noindent
+    \DescribeMacro{\gitversion} The current version can be display by using \cmd{\gitversion} and is equivalent to \texttt{git describe --tags --always}, working for both lightweight and annotated tags.
+    For this project \cmd{\gitversion} results in \gitversion.
+    When the version is dirty it will be post fixed with \texttt{-<commit count>-<short ref>}.
+    For example, when this paragraph was written, the version was displaying 0.0.1-14-gcc2bc30.\\
+
+    The \DescribeMacro{\gitdate}\cmd{\gitdate} macro gets the most recent date from the git log.
+    Meaning, the last `short date' variant is picked from the last commit.
+    This short date is formatted ISO based and is already suitable for use in packages like \texttt{isodate} for more advanced date formatting.\\
+
+
+    The author's name and email can be accessed using \cmd{\gitauthor} and \cmd{\gitemail}\DescribeMacro{\gitauthor}\DescribeMacro{\gitemail}.
+    These values are based on \texttt{git config user.name} and \texttt{git config user.email}.
+
+    \subsection{Multiple Authors}
+    When projects having multiple authors this package can help with the \DescribeMacro{\dogitauthors}\break\cmd{\dogitauthors}\oarg{conj} and \DescribeMacro{\forgitauthors}\cmd{\forgitauthors}\oarg{conj}\marg{csname} macro.
+    Where \cmd{\dogitauthors} executes a default formatting implementation of \break\cmd{\git@format@author} and \cmd{\forgitauthors} executes the given \meta{csname} for every author available.
+    The optional \meta{conj} conjunction makes it possible to even integrate it further.
+    For example, when setting the authors in pdfx, the conjunction would be \texttt{[\textbackslash\textbackslash sep\textasciitilde]}, so that the authors are properly separated in the document properties\footnote{See package documentation of \texttt{pdfx}: \url{https://ctan.org/pkg/pdfx}}.
+
+    \gitdirectory{../../git-test-project}%
+    \setlength\xample{4.6cm-5pt}%
+    \setlength\xamplesep{5pt}%
+    \noindent%
+    \begin{minipage}[t]{\linewidth-\xample-\xamplesep}%
+        \begin{lstlisting}[language={[LaTeX]TeX},numbers=left,caption={Formatting authors},captionpos=t,morekeywords={myauthorformat,href,forgitauthors,dogitauthors}]
+\newcommand{\myauthorformat}[2]{#1 \href{mailto:#2}{#2}}
+\forgitauthors[\\]{myauthorformat}
+% Or using standard format
+\dogitauthors[\\]
+        \end{lstlisting}
+    \end{minipage}\hfill%
+    \begin{minipage}[t]{\xample}
+        \noindent
+        \begin{center}
+            Results in
+        \end{center}
+
+        \noindent
+        \setlength{\fboxsep}{5pt}%
+        \fbox{\parbox{\linewidth-2\fboxsep}{\dogitauthors[\\\\]}}
+    \end{minipage}\\
+
+    This example is generated with the history of the \texttt{git-test-project} (see section~\ref{sec:project}) and is alphabetically sorted with package option \texttt{alpha}.
+    \gitunsetdirectory
+
+    \subsection{Commits}
+    For this section the git project of this document is used due to the fact that there are references to revisions.
+    The test project's revisions change for every user, since they get recreated every time \texttt{test-scenario.sh} is executed (see section~\ref{sec:project}).\\
+
+    \noindent
+    \DescribeMacro{\gitcommit}\oarg{format}\marg{csname}\marg{revision}\\
+    For displaying commit data \cmd{\gitcommit} can be used.
+    The optional \texttt{format} takes variables separated by a comma.
+    The default \texttt{format} is \texttt{h,an,ae,as,s,b}.
+    The \texttt{csname} is a user defined command accepting every variable as argument.
+    \setlength\xample{3.5cm}%
+    \setlength\xamplesep{0pt}%
+    \noindent%
+    \begin{minipage}[t]{\linewidth-\xample-\xamplesep}
+        \begin{lstlisting}[language={[LaTeX]TeX},numbers=left,caption={Formatting a commit},captionpos=t,morekeywords={formatcommit,printdate,gitcommit}]
+\newcommand{\formatcommit}[3]{#1, by #2 on \printdate{#3}}
+
+\gitcommit[s,an,as]{formatcommit}{75dc036}
+        \end{lstlisting}
+    \end{minipage}\hfill%
+    \begin{minipage}[t]{\xample}
+        \noindent
+        \begin{center}
+            Results in
+        \end{center}
+
+        \noindent
+        \setlength{\fboxsep}{5pt}%
+        \newcommand\formatcommit[3]{#1, by #2 on \printdate{#3}}%
+        \fbox{\parbox{\linewidth-2\fboxsep}{\gitcommit[s,an,as]{formatcommit}{75dc036}\footnotemark}}
+    \end{minipage}\\
+    \footnotetext{\cs{printdate} from \texttt{isodate}: \url{https://www.ctan.org/pkg/isodate}}
+
+    Consult \texttt{man git-log} for possible format variables and omit the \% for every variable.\\
+
+    \noindent
+    \DescribeMacro{\forgitcommit}\oarg{format}\marg{csname}\marg{rev\_spec}\\
+    For displaying multiple commits the~\cmd{\forgitcommit} is used, which has the same arguments as \cmd{\gitcommit}, but only this time the \texttt{csname} is executed for every commit.
+    The last argument \texttt{rev\_spec} this time, however, can have no argument or a sequence.
+
+    \noindent\setlength\xample{4.5cm}\setlength\xamplesep{0pt}
+    \begin{minipage}[t]{\linewidth-\xample-\xamplesep}
+        \noindent
+        \begin{lstlisting}[language={[LaTeX]TeX},numbers=left,captionpos=t,caption={Formatting commits},morekeywords={formatcommits,forgitcommit}]
+\newcommand{\formatcommits}[2]{\item #1\\\quad —#2}
+
+\begin{itemize}
+    \forgitcommit[s,an]{formatcommits}{75dc036...e51c481}
+\end{itemize}
+        \end{lstlisting}
+    \end{minipage}\hfill%
+    \begin{minipage}[t]{\xample}
+        \noindent
+        \begin{center}
+            Results in
+        \end{center}
+
+        \noindent
+        \newcommand\formatcommits[2]{\item #1\\\quad —#2}%
+        \setlength{\fboxsep}{0pt}%
+        \fbox{\parbox{\linewidth}{%
+            \begin{itemize}
+                \forgitcommit[s,an]
+                {formatcommits}
+                {75dc036...e51c481}
+            \end{itemize}
+        }}
+    \end{minipage}\\
+    \gitdirectory{../../git-test-project}
+
+    \clearpage
+    \subsection{Tags}
+    In this section the \texttt{git-test-project} is used.
+
+    The tags are mostly useful for generating changelogs.
+    For formatting tags, there's a \DescribeMacro{\forgittag}\cmd{\forgittag}\oarg{format}\marg{csname}.
+    Again, like \cmd{\forgitcommit} it takes a format, however, this time more complex, since the formatting options differ between \texttt{git log} and \texttt{git for-each-ref}.
+    For more info regarding these formatting options consult the man page of \texttt{git-for-each-ref}.
+
+    \noindent\setlength\xample{3.5cm}\setlength\xamplesep{0pt}
+    \begin{minipage}[t]{\linewidth-\xample-\xamplesep}
+        \noindent
+        \begin{lstlisting}[language={[LaTeX]TeX},numbers=left,captionpos=t,caption={Formatting tags},morekeywords={formattags,forgittag}]
+\newcommand{\formattags}[2]{\item Version #1\\type: #2}
+
+\begin{itemize}
+    \forgittag[refname:short,objecttype]{formattags}
+\end{itemize}
+        \end{lstlisting}
+    \end{minipage}\hfill%
+    \begin{minipage}[t]{\xample}
+        \noindent
+        \begin{center}
+            Results in
+        \end{center}
+
+        \noindent
+        \newcommand\formattags[2]{\item Version #1\\type: #2}%
+        \setlength{\fboxsep}{0pt}%
+        \fbox{\parbox{\linewidth}{%
+            \begin{itemize}
+                \forgittag[refname:short,objecttype]
+                {formattags}
+            \end{itemize}
+        }}
+    \end{minipage}\\
+    This example shows that the versions used are mixed.
+    This is, of course, a horrible way to manage a project's version, though, we'll continue on with this hard objective.
+    For example, if we wish to display the author of the lightweight and annotated tag, we can do so by specifying a format using the if-then-else feature of the format specification.
+    The format would be: \texttt{(taggername)(taggername)(authorname)}.
+    Here the \texttt{taggername} will show up, or if not present, the \texttt{authorname} will be shown instead.
+
+    The default format specification is like the \cmd{\forgitcommit} format, but then again, some bit more complex:\\
+    \texttt{refname:short,(taggername)(taggername,taggeremail,taggerdate:short)\\(authorname,authoremail,authordate:short),subject,body}.
+    This is a robust example of getting all information, being it a lightweight- or annotated tag.\\
+
+    For displaying commits in between tags, there's a \DescribeMacro{\forgittagseq}\cmd{\forgittagseq}\marg{csname}.
+    The \meta{csname} takes exactly three arguments, namely, the \meta{current}, \meta{next tag} and \meta{rev spec}.
+    The last iteration gives an empty value for \meta{next tag} and the \meta{rev spec} is identical to \meta{current}.
+
+    Afterward tag info get be fetched using the \DescribeMacro{\gittag} \cmd{\gittag}\oarg{format}\marg{csname}\marg{tag}.
+    This macro takes the same formatting specification as \cmd{\fotgittag}.
+    Beware of using \cmd{\gittag} for the \meta{next tag} parameter in \cmd{\forgittagseq}.
+
+    All these macros put together are demonstrated in listing~\ref{lst:changelog} (see next page).
+    \clearpage
+    \subsection{Changelog}
+    This example demonstrates the generation of a changelog.
+    For simplicity’s sake, every tag is displayed in a \texttt{description} environment's item and within an \texttt{enumerate} environment displaying commits in between.
+    \begin{lstlisting}[language={[LaTeX]TeX},numbers=left,captionpos=t,caption={Formatting a changelog},label={lst:changelog},morekeywords={commitline,formatversion,gittag,forgitcommit,forgittagseq,printdate}]
+\section*{Changelog}
+\newcommand{\commitline}[1]{\item #1}
+\newcommand{\formatversion}[3]{%
+    \item[#1]
+    \gittag[(taggerdate)(taggerdate:short)(authordate:short)]{printdate}{#1}
+    \begin{itemize}
+        \forgitcommit[s]{commitline}{#3}
+    \end{itemize}
+}%
+\begin{description}
+    \forgittagseq{formatversion}
+\end{description}
+    \end{lstlisting}
+    \noindent
+    \newcommand\commitline[1]{\item #1}
+    \newcommand\formatversion[3]{%
+        \item[#1] \gittag[(taggerdate)(taggerdate:short)(authordate:short)]{printdate}{#1}
+        \begin{itemize}
+            \forgitcommit[s]{commitline}{#3}
+        \end{itemize}%
+    }%
+    \setlength{\fboxsep}{16pt}%
+    \begin{center}Results in\end{center}
+
+    \noindent
+    \fbox{
+        \parbox{\linewidth-8pt-2\fboxsep}{
+        {\bfseries\Large Changelog}
+            \begin{description}
+                \forgittagseq{formatversion}%
+            \end{description}
+        }
+    }\\
+
+    For displaying the tagline (see line 5) we use the existing \cmd{\printdate} macro of package \texttt{isodate}, which also takes exactly one argument
+    For every version sequence the commits in between are displayed (see line 7), where the last sequence having the initial commit as second argument plays well with the \cmd{\forgitcommit} macro and makes it possible to show the whole sequence of history.
+
+    \clearpage
+    \section{Project Example}\label{sec:project}
+    This documentation uses an example \texttt{project} which gets created by the \texttt{git-scenario.sh} script (see listing~\ref{lst:scenario}).
+    It creates some commits having dates in the past and different authors set.
+    Lastly it creates a `lightweight-' and `annotated' tag.
+
+    To set up this scenario either do \texttt{make scenario} or \texttt{bash scenario.sh}.
+
+    \lstinputlisting[language=bash,numbers=left,frame=single,label={lst:scenario},caption={git-scenario.sh},captionpos=t,morekeywords={git,alice,bob,charlie,mkdir,rm,curl,set\_author}]{git-scenario.sh}
+\end{document}

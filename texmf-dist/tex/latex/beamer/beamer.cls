@@ -3,16 +3,17 @@
 % Copyright 2011--2013,2015 by Vedran Mileti\'c, Joseph Wright
 % Copyright 2016 by Joseph Wright
 % Copyright 2017,2018 by Louis Stuart, Joseph Wright
+% Copyright 2020--2024 by Joseph Wright, samcarter
 %
 % This file may be distributed and/or modified
 %
 % 1. under the LaTeX Project Public License and/or
 % 2. under the GNU Public License.
 %
-% See the file doc/licenses/LICENSE for more details.
+% See the file LICENSE.md for more details.
 
 \ProvidesClass{beamer}
-  [2022/09/13 v3.68 A class for typesetting presentations]
+  [2024/01/06 v3.71 A class for typesetting presentations]
 
 % Setup modes and check for article option
 % Also loads packages required by both beamer and beamerarticle
@@ -301,7 +302,9 @@
 \newlength\beamer@paperheight
 \setlength\beamer@paperheight{9.60cm}
 
+\def\insertaspectratio{43}%
 \DeclareOptionBeamer{aspectratio}[43]{%
+  \def\insertaspectratio{#1}%
   \ifnum#1=2013 %
     \setlength\beamer@paperwidth{14.00cm}%
     \setlength\beamer@paperheight{9.10cm}%

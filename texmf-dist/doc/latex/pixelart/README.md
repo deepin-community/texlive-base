@@ -1,7 +1,7 @@
 pixelart 🎨 A LaTeX package to draw pixel-art pictures
 ======================================================
 
-![Example](https://framagit.org/spalax/pixelart/-/raw/v1.0.0/pixelart.png)
+![Example](https://framagit.org/spalax/pixelart/-/raw/v1.0.2/pixelart.png)
 
 - [Usage and installation instruction](http://mirrors.ctan.org/graphics/pgf/contrib/pixelart/pixelart.pdf).
 - Example: The heart of the picture above was produced using the following code.
@@ -30,7 +30,7 @@ pixelart 🎨 A LaTeX package to draw pixel-art pictures
 License
 -------
 
-*Copyright 2018-2022 Louis Paternault*
+*Copyright 2017-2023 Louis Paternault*
 
 This work may be distributed and/or modified under the conditions of the LaTeX
 Project Public License, either version 1.3 of this license or (at your option)

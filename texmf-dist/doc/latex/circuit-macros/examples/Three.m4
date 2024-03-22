@@ -2,15 +2,12 @@
 # Three.m4: three-phase oscillator
   cct_init
 
+definergbcolor(Dandelion,0.825,0.825,0)
 define(`section',`[ I: Here
   resistor(right elen_*0.75); llabel(,R/2)
 T: dot
   line down dimen_/2 then right_ dimen_/4
-  Amp: opamp(,,,,,
-    rgbfill(0.9,0.6,0.1,line to N then to E then to S then to Here)
-    "{\scriptsize$-$}" at In1 ljust
-    "{\scriptsize$+$}" at In2 ljust
-    ) with .In1 at Here 
+  Amp: opamp(,,,body=shaded "Dandelion") with .In1 at Here 
   line left dimen_/4 from Amp.In2 then down dimen_/4; G: ground
   resistor(from T to (Amp.Out,T)); llabel(,R)
 O: dot

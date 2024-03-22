@@ -1,6 +1,8 @@
 .PS
 # `Flowdiag.m4'
 gen_init
+ellipsewid = ellipsewid*1.2
+ellipseht = ellipseht*1.2
 
 define(`shadellipse',`{ellipse $1 fill invis
   define(`m4h',`1.0 pt__')dnl
@@ -8,11 +10,14 @@ define(`shadellipse',`{ellipse $1 fill invis
     ht last ellipse .ht + linethick pt__ at last ellipse+(m4h,-m4h)}
   ellipse fill 1 $1')
 
-  shadellipse "{\tt .m4}" "diagram" 
-  arrow right linewid*2/3
+  shadellipse "{\tt .m4}" "diagram" "source" 
+  arrow right linewid*0.6
+
+  shadellipse "configuration"
+  arrow right linewid*0.6
 
   {shadellipse(with .b at Here+(-linewid*0.5,boxht/3+linewid/3)) \
-    "{\tt .m4}" "macros"}
+    "{\tt .m4}" "library" "macros"}
   arrow from last ellipse.b down linewid/3 then right linewid*0.5
   move down boxht/6; right
 
@@ -27,8 +32,8 @@ define(`shadellipse',`{ellipse $1 fill invis
   {arrow from last ellipse.b down linewid/3 then right linewid*0.5}
   move up boxht/6; right
 
-  shadebox(box "\LaTeX" "or" "PDFlatex")
-  arrow right linewid*2/3
+  shadebox(box "\LaTeX" "PDFlatex" "etc.")
+  arrow right linewid*0.6
 
   shadebox(box wid boxht "{\tt .dvi}" "or" "{\tt .pdf}")
 

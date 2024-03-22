@@ -1,4 +1,4 @@
-#The Linebreaker package, version v0.1a (2022-03-12)
+#The Linebreaker package, version v0.1c (2023-03-21)
 
 This package tries to prevent overflow lines in paragraphs or boxes.
 It changes the LuaTeX's `linebreak` callback, and it re-typesets the paragraph 
@@ -14,6 +14,8 @@ with the lowest badness.
 
 
 ## License
+
+Author: Michal Hoftich <michal.h21@gmail.com>
 
 Permission is granted to copy, distribute and/or modify this software
 under the terms of the LaTeX Project Public License, version 1.3.

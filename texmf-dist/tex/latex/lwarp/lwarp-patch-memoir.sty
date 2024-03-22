@@ -48,18 +48,21 @@
 \RequirePackage{lwarp-titling}% req'd
 \RequirePackage{lwarp-tocloft}% req'd
 \RequirePackage{lwarp-verse}% req'd
-\LetLtxMacro\LWR@orig@label\@mem@old@label
-\LetLtxMacro\@mem@old@label\LWR@new@label
 \AtBeginDocument{
     \renewcommand*{\sf@@memsub@label}[1]{%
         \@bsphack
-        \sf@@memsub@label@hook{#1}%
-        \cref@label{#1}%                    lwarp
+        \cref@label{#1}%                        lwarp
         \LWR@label@createtag{sub@#1}%           lwarp
         \protected@write\@auxout{}{%
             \string\newlabel{sub@#1}%
-            {{\@nameuse{@@thesub\@captype}}%
-            {\thepage}}}%
+            {%
+                {\@nameuse{@@thesub\@captype}}%
+                {\thepage}%
+                {\detokenize\expandafter{\@currentlabelname}}% name
+                {#1}% Href
+                {}% reserved
+            }%
+        }%
         \LWR@write@lwarplabel{sub@#1}%          lwarp
         \@esphack
     }
@@ -749,11 +752,13 @@
 \renewcommand*{\shortsubcaption}{}
 \renewcommand*{\normalsubcaption}{}
 
+\AfterEndPreamble{%
 \RenewDocumentEnvironment{sidecaption}{o m o}
 {}
 {%
     \IfValueTF{#1}{\caption[#1]{#2}}{\caption{#2}}%
     \IfValueT{#3}{\label{#3}}%
+}
 }
 
 \renewcommand*{\setsidecaps}[2]{}
@@ -866,11 +871,15 @@
 \LetLtxMacro\printpageinnoteshyperref\printpageinnotes
 \renewcommand*{\foottopagenote}{}
 \renewcommand*{\pagetofootnote}{}
+\VerifyCommand[lwarp][lwarp-patch-memoir]{\m@m@wrpnote}{D2AE41FE9A265B639F7074AB2AF29976}
+
 \xpatchcmd{\m@m@wrpnote}
     {\string\startnoteentry{\thepagenote}}
     {\string\startnoteentry{{\thepagenote}{\arabic{pagenote}}}}
     {}
     {\LWR@patcherror{memoir}{m@m@wrpnote}}
+
+\VerifyCommand[lwarp][lwarp-patch-memoir]{\startnoteentrystart}{2A595EA1DC483451337C33072604EDD6}
 
 \renewcommand\startnoteentrystart[4]{%
   \prenoteinnotes%
@@ -917,12 +926,12 @@
 \renewenvironment{qframe}{\framed}{\endframed}
 \renewenvironment{qshade}{\shaded}{\endshaded}
 \renewcommand*{\setverbatimfont}[1]{}
-\renewcommand*{\tabson}[1]{}
-\renewcommand*{\tabsoff}{}
-\renewcommand*{\wrappingon}{}
-\renewcommand*{\wrappingoff}{}
-\renewcommand*{\verbatimindent}{}
-\renewcommand*{\verbatimbreakchar}[1]{}
+\renewcommand*{\tabson}[1]{}% disabled as of 3.8.2
+\renewcommand*{\tabsoff}{}% disabled as of 3.8.2
+\renewcommand*{\wrappingon}{}% disabled as of 3.8.2
+\renewcommand*{\wrappingoff}{}% disabled as of 3.8.2
+\renewcommand*{\verbatimindent}{}% no longer used as of 3.8.2
+\renewcommand*{\verbatimbreakchar}[1]{}% no longer used as of 3.8.2
 \DefineVerbatimEnvironment{fboxverbatim}{Verbatim}{frame=single}
 \renewcommand*{\bvbox}{}
 \renewcommand*{\bvtopandtail}{}
@@ -962,18 +971,12 @@
 \renewcommand*{\headnameref}{}
 \renewcommand*{\tocnameref}{}
 
-\providecounter{LWR@currenttitle}
-
-\renewcommand*{\currenttitle}{%
-    \addtocounter{LWR@currenttitle}{1}%
-    \label{currenttitle\arabic{LWR@currenttitle}}%
-    \nameref{currenttitle\arabic{LWR@currenttitle}}%
-}
-
 \renewcommand*{\theTitleReference}[2]{}
 \renewcommand*{\namerefon}{}
 \renewcommand*{\namerefoff}{}
 \AtBeginDocument{
+
+\VerifyCommand[lwarp][lwarp-patch-memoir]{\@@wrindexhyp}{8DA7E3C8BE7A830442D98EA033147F63}
 
 \def\@@wrindexhyp#1||\\{%
     \addtocounter{LWR@autoindex}{1}%            lwarp

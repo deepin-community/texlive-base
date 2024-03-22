@@ -1,6 +1,6 @@
 % \iffalse meta-comment -- by the way, this file contains UTF-8
 %
-% Copyright (C) 2008-2022 by Hans Hagen, Taco Hoekwater, Elie Roux,
+% Copyright (C) 2008-2024 by Hans Hagen, Taco Hoekwater, Elie Roux,
 % Manuel Pégourié-Gonnard, Philipp Gesang and Kim Dohyun.
 % Currently maintained by the LuaLaTeX development team.
 % Support: <lualatex-dev@tug.org>
@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2022/01/12 v2.23.0 Interface for using the mplib library]%
+  [2024/01/25 v2.25.3 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2022/01/12 v2.23.0}
+% \date{2024/01/25 v2.25.3}
 %
 % \maketitle
 %
@@ -446,8 +446,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.23.0",
-  date          = "2022/01/12",
+  version       = "2.25.3",
+  date          = "2024/01/25",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -516,9 +516,6 @@ local ioopen        = io.open
 local file = file or { }
 local replacesuffix = file.replacesuffix or function(filename, suffix)
   return (filename:gsub("%.[%a%d]+$","")) .. "." .. suffix
-end
-local stripsuffix = file.stripsuffix or function(filename)
-  return (filename:gsub("%.[%a%d]+$",""))
 end
 
 local is_writable = file.is_writable or function(name)
@@ -720,17 +717,24 @@ local special_ftype = {
 
 local function finder(name, mode, ftype)
   if mode == "w" then
+    if name and name ~= "mpout.log" then
+      kpse.record_output_file(name) -- recorder
+    end
     return name
   else
     ftype = special_ftype[ftype] or ftype
     local file = mpkpse:find_file(name,ftype)
     if file then
-      if not lfstouch or ftype ~= "mp" or noneedtoreplace[name] then
-        return file
+      if lfstouch and ftype == "mp" and not noneedtoreplace[name] then
+        file = replaceinputmpfile(name,file)
       end
-      return replaceinputmpfile(name,file)
+    else
+      file = mpkpse:find_file(name, name:match("%a+$"))
     end
-    return mpkpse:find_file(name, name:match("%a+$"))
+    if file then
+      kpse.record_input_file(file) -- recorder
+    end
+    return file
   end
 end
 luamplib.finder = finder
@@ -813,6 +817,7 @@ local function luamplibload (name)
     make_text   = luamplib.maketext,
     run_script  = luamplib.runscript,
     math_mode   = luamplib.numbersystem,
+    job_name    = tex.jobname,
     random_seed = math.random(4095),
     extensions  = 1,
   }
@@ -1539,7 +1544,7 @@ local pdf_objs = {}
 local token, getpageres, setpageres = newtoken or token
 local pgf = { bye = "pgfutil@everybye", extgs = "pgf@sys@addpdfresource@extgs@plain" }
 
-if pdfmode then -- repect luaotfload-colors
+if pdfmode then -- respect luaotfload-colors
   getpageres = pdf.getpageresources or function() return pdf.pageresources end
   setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
 else
@@ -2056,7 +2061,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2022/01/12 v2.23.0 mplib package for LuaTeX]
+    [2024/01/25 v2.25.3 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
@@ -2092,17 +2097,17 @@ luamplib.colorconverter = colorconverter
 %
 %    luamplib works in both PDF and DVI mode,
 %    but only DVIPDFMx is supported currently among a number of DVI tools.
-%    So we output a warning.
+%    So we output a info.
 %    \begin{macrocode}
 \ifnum\pdfoutput>0
   \let\mplibtoPDF\pdfliteral
 \else
   \def\mplibtoPDF#1{\special{pdf:literal direct #1}}
-  \ifcsname PackageWarning\endcsname
-    \PackageWarning{luamplib}{take dvipdfmx path, no support for other dvi tools currently.}
+  \ifcsname PackageInfo\endcsname
+    \PackageInfo{luamplib}{take dvipdfmx path, no support for other dvi tools currently.}
   \else
     \write128{}
-    \write128{luamplib Warning: take dvipdfmx path, no support for other dvi tools currently.}
+    \write128{luamplib Info: take dvipdfmx path, no support for other dvi tools currently.}
     \write128{}
   \fi
 \fi
@@ -2341,6 +2346,7 @@ luamplib.colorconverter = colorconverter
   \noindent
 }
 \def\mplibstoptoPDF{%
+  \par
   \egroup %
   \setbox\mplibscratchbox\hbox %
     {\hskip-\MPllx bp%

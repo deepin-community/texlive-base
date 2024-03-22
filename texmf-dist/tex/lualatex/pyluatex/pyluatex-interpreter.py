@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2021-2023 Tobias Enderle
+Copyright (c) 2021-2024 Tobias Enderle
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -82,7 +82,7 @@ class Interpreter(InteractiveInterpreter):
                     self.success = False
                 output += out.getvalue()
             if not ignore_errors and not self.success:
-                return False, output
+                return False, output, self.tex._log_message()
         return self.success, output, self.tex._log_message()
 
     def execute(self, code):

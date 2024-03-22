@@ -11,7 +11,7 @@
 %% 
 \NeedsTeXFormat{LaTeX2e}[2019/01/01]
 \ProvidesPackage{curve2e}%
-        [2023-01-01 v.2.2.22 Extension package for pict2e]
+        [2023-07-04 v.2.3.1 Extension package for pict2e]
 \IfFileExists{xfp.sty}{%
   \RequirePackage{graphicx,color}
   \RequirePackageWithOptions{pict2e}[2014/01/01]
@@ -45,6 +45,7 @@
 
 \def\TRON{\tracingcommands\tw@ \tracingmacros\tw@}%
 \def\TROF{\tracingcommands\z@ \tracingmacros\z@}%
+\newif\ifCV@polare \let\ifCV@polare\iffalse
 \ifx\undefined\@tdA \newdimen\@tdA \fi
 \ifx\undefined\@tdB \newdimen\@tdB \fi
 \ifx\undefined\@tdC \newdimen\@tdC \fi
@@ -140,8 +141,11 @@
 \fi
 \AtBeginDocument{\@ifpackageloaded{eso-pic}{%
 \renewcommand\LenToUnit[1]{\strip@pt\dimexpr#1*\p@/\unitlength}}{}}%
-\def\GetCoord(#1)#2#3{\bgroup\edef\x{\egroup\noexpand\IsPolar#1:?}\x
+\def\GetCoord(#1)#2#3{\let\ifCV@polare\iffalse
+\bgroup\edef\x{\egroup
+\noexpand\IsPolar#1:?}\x
 {% Polar
+  \let\ifCV@polare\iftrue
   \bgroup\edef\x{\egroup\noexpand\SplitPolar(#1)}\x\SCt@X\SCt@Y}%
 {% Cartesian
   \bgroup\edef\x{\egroup\noexpand\SplitCartesian(#1)}\x\SCt@X\SCt@Y}%
@@ -418,9 +422,17 @@ Computations go on, but the results may be meaningless}}{%
       to the range 0--360 taking the sign into consideration}%
  \@whiledim\@tdA>360\p@\do{\advance\@tdA-360\p@}%
 \fi
-\SubVect#2from#1to\@V \ModOfVect\@V to\@Raggio
-\CopyVect#2to\@pPun
-\CopyVect#1to\@Cent \GetCoord(\@pPun)\@pPunX\@pPunY
+\GetCoord(#2)\@pPunX\@pPunY
+\ifCV@polare
+  \ModOfVect#2to\@Raggio
+  \CopyVect#1to\@Cent
+  \AddVect#2and#1to\@pPun% punto da cui parte l'arco
+  \GetCoord(\@pPun)\@pPunX\@pPunY
+\else
+  \SubVect#2from#1to\@V \ModOfVect\@V to\@Raggio
+  \CopyVect#2to\@pPun
+  \CopyVect#1to\@Cent \GetCoord(\@pPun)\@pPunX\@pPunY
+\fi
 \@@Arc\strokepath\ignorespaces}%
 \def\@@Arc{\pIIe@moveto{\@pPunX\unitlength}{\@pPunY\unitlength}%
 \ifdim\@tdA>180\p@
@@ -497,7 +509,17 @@ Computations go on, but the results may be meaningless}}{%
       to the range 0--360 taking the sign into consideration}%
  \@whiledim\@tdA>360\p@\do{\advance\@tdA-360\p@}%
 \fi
-\SubVect#1from#2to\@V \ModOfVect\@V to\@Raggio \CopyVect#2to\@pPun
+\GetCoord(#2)\@pPunX\@pPunY
+\ifCV@polare
+  \ModOfVect#2to\@Raggio \CopyVect#2to\@V
+  \CopyVect#1to\@Cent
+  \AddVect#2and#1to\@pPun% punto da cui parte l'arco
+  \GetCoord(\@pPun)\@pPunX\@pPunY
+\else
+  \SubVect#1from#2to\@V \ModOfVect\@V to\@Raggio
+  \CopyVect#2to\@pPun
+  \CopyVect#1to\@Cent \GetCoord(\@pPun)\@pPunX\@pPunY
+\fi
 \@tdE=\pIIe@FAW\@wholewidth \@tdE=\pIIe@FAL\@tdE
 \DividE\@tdE by \@Raggio\unitlength to\DeltaGradi
 \@tdD=\DeltaGradi\p@
@@ -533,10 +555,21 @@ Computations go on, but the results may be meaningless}}{%
       to the range 0--360 taking the sign into consideration}%
  \@whiledim\@tdA>360\p@\do{\advance\@tdA-360\p@}%
 \fi
-\SubVect#1from#2to\@V \ModOfVect\@V to\@Raggio \CopyVect#2to\@pPun
-\@tdE=\pIIe@FAW\@wholewidth \@tdE=0.8\@tdE
+\GetCoord(#2)\@pPunX\@pPunY
+\ifCV@polare
+  \ModOfVect#2to\@Raggio \CopyVect#2to\@V
+  \CopyVect#1to\@Cent
+  \AddVect#2and#1to\@pPun% punto da cui parte l'arco
+  \GetCoord(\@pPun)\@pPunX\@pPunY
+\else
+  \SubVect#1from#2to\@V \ModOfVect\@V to\@Raggio
+  \CopyVect#2to\@pPun
+  \CopyVect#1to\@Cent \GetCoord(\@pPun)\@pPunX\@pPunY
+\fi
+\@tdE=\pIIe@FAW\@wholewidth \@tdE=\pIIe@FAL\@tdE
 \DividE\@tdE by \@Raggio\unitlength to\DeltaGradi
-\@tdD=\DeltaGradi\p@ \@tdD=57.29578\@tdD \Numero\DeltaGradi\@tdD
+\@tdD=\DeltaGradi\p@
+\@tdD=57.29578\@tdD \Numero\DeltaGradi\@tdD
 \@tdD=\if\Segno--\fi\@gradi\p@ \Numero\@tempa\@tdD
 \DirFromAngle\@tempa to\@Dir
 \Multvect{\@V}{\@Dir}\@sPun% corrects the end point
@@ -571,6 +604,7 @@ Computations go on, but the results may be meaningless}}{%
 \GetCoord(\@pPun)\@pPunX\@pPunY
 \@@Arc
 \strokepath\ignorespaces}%
+
 \def\CurveBetween#1and#2WithDirs#3and#4{%
   \StartCurveAt#1WithDir{#3}\relax
   \CurveTo#2WithDir{#4}\CurveFinish\ignorespaces

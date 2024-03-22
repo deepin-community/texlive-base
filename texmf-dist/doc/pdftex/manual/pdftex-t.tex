@@ -1,7 +1,7 @@
 % interface=english modes=letter,screen output=pdftex
 % vim: tw=79
 
-% $Id: pdftex-t.tex 875 2022-03-01 02:08:10Z karl $
+% $Id: pdftex-t.tex 905 2023-02-28 01:23:10Z karl $
 
 % The number of lines on the title page depends on exactly
 % what \PDF\ code is generated.
@@ -38,9 +38,10 @@
     August\or September\or October\or November\or December\else ERROR\fi}
 }
 
-\svnscan $Id: pdftex-t.tex 875 2022-03-01 02:08:10Z karl $
+\svnscan $Id: pdftex-t.tex 905 2023-02-28 01:23:10Z karl $
 
-\def\currentpdftex{1.40.22}
+\def\versplit#1#2#3{#1.#2#3}% 140 -> 1.40
+\def\currentpdftex{\expandafter\versplit\the\pdftexversion.\pdftexrevision}
 
 %***********************************************************************
 
@@ -181,6 +182,7 @@
 
 % introduced
 \def\introduced#1{The primitive was introduced in \PDFTEX\ #1.}
+\def\introducedplural#1{The primitives were introduced in \PDFTEX\ #1.}
 
 % to get bookmarks for primitives like \ifpdfprimitive
 \appendtoks\def\tex#1{\string\\#1}\to\simplifiedcommands
@@ -729,9 +731,9 @@ unused). The actual starting point of the file's object structure is
 defined after the \type{trailer}: the \type{/Root} entry points to the
 \type{/Catalog} object (no.~9). In this object the viewer can find the
 pointer \type{/Pages} to the page list object (no.~5). In our example we
-have only one page. The trailer also holds an \type{/Info} entry, which
-points to an object (no.~10) with a bit more about the document. Just
-follow the thread:
+have only one page. The trailer also usually holds an \type{/Info}
+entry, which points to an object (no.~10) with a bit more about the
+document. We can follow the thread:
 
 \startnarrower
 \type{/Root}     $\longrightarrow$ object~9 $\longrightarrow$
@@ -771,18 +773,19 @@ example only a \type{/Font} object (no.~4) is referenced, which in turn
 tells that the text is typeset in \type{/Font} \type{/Times-Roman}. The
 \type{/Font} object points also to a \type{/Widths} array (object no.~7)
 that tells for each character by how much the viewer must move forward
-horizontally after typesetting a glyph. More details about the font
-can be found in the \type{/FontDescriptor} object (no.~8); if a font
-file is embedded, this object points to the font program stream. But as
-the Times-Roman font used for our example is one of the 14 so||called
-standard fonts that should always be present in any \PDF\ viewer and
-therefore need not be embedded in the \PDF\ file, it is left out here
-for brevity. However, when we use for instance a Computer Modern Roman
-font, we have to make sure that this font is later available to the \PDF\
-viewer, and the best way to do this is to embed the font.
-It's highly recommended nowadays to embed even the standard fonts;
-you can't know how it looks exactly at the viewer side unless you embed
-every font.
+horizontally after typesetting a glyph.
+
+More details about the font can be found in the \type{/FontDescriptor}
+object (no.~8); if a font file is embedded, this object points to the
+font program stream. But as the Times-Roman font used for our example is
+one of the 14 so||called standard fonts that should always be present in
+any \PDF\ viewer and therefore need not be embedded in the \PDF\ file,
+it is left out here for brevity. However, when we use for instance a
+Computer Modern Roman font, we have to make sure that this font is later
+available to the \PDF\ viewer, and the best way to do this is to embed
+the font. It's highly recommended nowadays to embed even the standard
+fonts; you can't know how it looks exactly at the viewer side unless you
+embed every font.
 
 In this simple file we don't specify in what way the file should be opened,
 for instance full screen or clipped. A closer look at the page object no.~2
@@ -955,7 +958,7 @@ Some nice samples of \PDFTEX\ output can be found at
 
 \PDFTEX\ can work with Type~1 and TrueType fonts (and to some extent
 also with OpenType fonts). Font files should be available and embedded
-for all fonts used in the generated PDF. It is possible to use
+for all fonts used in the generated \PDF. It is possible to use
 \METAFONT||generated fonts in \PDFTEX\ --- but it is strongly
 recommended not to use these fonts if an equivalent is available in
 Type~1 or TrueType format, if only because bitmap Type~3 fonts render
@@ -1574,11 +1577,6 @@ new Didot (1\,nd~=~0.375\,mm) and the new Cicero (1\,nc~=~12\,nd)
 }
 
 \Syntax{
-\Something{pdfliteral spec} \Means %
-  \Literal{direct} \Or \Literal{page}
-}
-
-\Syntax{
 \Something{pdfspecial spec} \Means %
   \Lbrace \Optional{\Something{pdfspecial id} %
   \Optional{\Something{pdfspecial modifier}}} %
@@ -1782,7 +1780,7 @@ precision.  This parameter is read when \PDFTEX\ writes a real number to
 the \PDF\ output.
 
 When including huge \METAPOST\ images using \filename {supp-pdf.tex}, one can
-limit the accuracy to two digits by typing: \type{\twodigitMPoutput}.
+limit the accuracy to two digits with: \type{\twodigitMPoutput}.
 
 \pdftexprimitive{\Syntax{\Tex{\pdfhorigin} \Whatever{dimen}}}
 \bookmark{\tex{pdfhorigin}}
@@ -1837,6 +1835,12 @@ the wished true page height.
 %***********************************************************************
 
 \subsection[sec.docinfocatalog]{Document info and catalog}
+
+\pdftexprimitive{\Syntax{\Tex{\pdfomitinfodict} \Whatever{integer}}}
+\bookmark{\tex{pdfomitinfodict}}
+
+If nonzero, omit the \type{/Info} dictionary completely, as required by
+the \PDF\ A-4 standard. \introduced{1.40.25}
 
 \pdftexprimitive{\Syntax{\Tex{\pdfinfo} \Something{general text}}}
 \bookmark{\tex{pdfinfo}}
@@ -2631,23 +2635,78 @@ Minimal example:
 \bookmark{\tex{pdfinterwordspaceon}}
 \pdftexprimitive{\Syntax{\Tex{\pdfinterwordspaceoff}}}
 \bookmark{\tex{pdfinterwordspaceoff}}
+\pdftexprimitive{\Syntax{\Tex{\pdfspacefont} \Something{general text}}}
+\bookmark{\tex{pdfspacefont}}
 
-These commands create corresponding whatsit nodes which turn on/off
-generation of faked interword spaces in the output.  This allows for
-better reflowing of text on the fly by \PDF\ readers, better extraction
-of textual content, and is required by \PDF/A.  It does not affect the
-normal \TeX\ justification with glue.
+The first two commands insert corresponding whatsit nodes which turn
+on/off generation of faked interword spaces in the \PDF\ output (they
+cause errors in \DVI\ output). This allows for better reflowing of text
+on the fly by \PDF\ readers, better extraction of textual content, and
+is required by \PDF/A. It does not affect the normal \TeX\ justification
+with glue of the typeset output.
 
-This requires finding and reading font files \type{dummy-space.tfm} and
-\type{pfb}; the font is included in the \PDF\ output and character 32 is
-inserted from it as the ``fake'' space.
+This works roughly as follows: with \type{\pdfinterwordspaceon},
+\PDFTEX\ will guess when an interword space should be inserted, based on
+movement within some limits in horizontal direction. When found,
+\PDFTEX\ inserts a true space character into the \PDF\ page description
+for the viewers, and adjusts the next movement so that the next
+character will be in the expected position, according to normal \TEX\
+behavior.
+
+Where does that \quotation{true space character} come from?
+There are two possibilities.
+
+\startitemize
+\item If the current font has a real space character, it is used. 
+\PDFTEX\ considers a font to have such a space character if 1)~the font
+has an encoding vector (\type{.enc} file) specified in its map entry,
+and 2)~the encoding has a glyph named \type{space} (that is, the
+PostScript name \type{/space}) at slot 32. For example, the font
+\type{texnansi-lmr10} uses the encoding file \type{lm-texnansi.enc},
+which has such an entry.
+
+\item
+If the current font does not have such a space character (this is the
+case for most traditional \TEX\ fonts, such as \type{cmr10} and
+\type{ec-lmr10}), \PDFTEX\ will use the space character from a special
+fallback font named (by default) \type{pdftexspace}[\type{.tfm}].
+\PDFTEX\ automatically defines a map entry for this font which looks as
+follows:
+
+\starttyping
+\pdfmapline{=pdftexspace PdfTeX-Space <pdftexspace.pfb}
+\stoptyping
+
+The \type{pdftexspace.tfm} and \type{pdftexspace.pfb} files are expected
+to be available to \PDFTEX\ just like any other font. (They are
+distributed with \PDFTEX.) The \type{pdftexspace} font was constructed
+by hand; it has a space character that is .333em (and no other
+characters).
+
+It is possible to use a different fallback font for the space character
+by specifying \type{\pdfspacefont}\Lbrace \Something{somefont}\Rbrace.
+(This is most likely to be useful for testing or debugging.) In this
+case, \PDFTEX\ assumes that the given font has a real space character at
+slot 32, and that any necessary corresponding map entry exists. For
+example:
+
+\starttyping
+\pdfspacefont{texnansi-lmr10} % use space char from this font if
+                              % current font has no space char
+\stoptyping
+\stopitemize
+
+History: Before \PDFTEX\ version 1.40.25, no check was made for a
+\type{space} character in the current font, the fallback font was named
+\type{dummy-space}, and its space character was tiny, 0.001em. It turned
+out that \PDF\ viewers were unhappy with this tiny space, especially
+with tagged \PDF.
 
 Example of usage (see also the \type{fake-interword-space.tex} test file):
 
 \starttyping
 Text with no interword spaces.
 
-\pdfmapline{+dummy-space <dummy-space.pfb}
 \pdfglyphtounicode{space}{0020}
 \pdfinterwordspaceon
 
@@ -2657,7 +2716,7 @@ Switch to text with faked interword spaces.
 
 Back to text with no interword spaces.
 \stoptyping
-\introduced{1.40.15}
+\introducedplural{1.40.15, 1.40.25}
 
 \pdftexprimitive{\Syntax{\Tex{\pdffakespace}}}
 \bookmark{\tex{pdffakespace}}
@@ -2888,7 +2947,7 @@ page\_height}\type{]}).  (This behavior was introduced in version
 \bookmark{\tex{pdfpageresources}}
 
 These tokens are added to the resource dictionary for all pages, before
-the font, XOBject, and other resources.
+the font, XOBject, and ProcSet resources.
 
 \starttyping
 \pdfpageresources{/MyPageResourceAttribute /MyValue}
@@ -2906,6 +2965,20 @@ will expand to that object number.
 
 \Eg, if the dictionary for page~5 of the \TEX\ document is contained in
 \PDF\ object no.~18, \tex{pdfpageref5} expands to the number 18.
+
+\pdftexprimitive{\Syntax{\Tex{\pdfomitprocset} \Whatever{integer}}}
+\bookmark{\tex{pdfomitprocset}}
+
+If this primitive parameter is zero (the default), the \type{/ProcSet}
+array is included if \type{\pdfmajorversion} is~1, and omitted if
+\type{\pdfmajorversion}$\,\ge\,2$. If this parameter is $>0$,
+\type{/ProcSet} is always omitted. And if it is $<0$, \type{/ProcSet} is
+always included. For information about what \type{/ProcSet} is, see the
+\PDFReference\ or other documentation.
+
+\type{\ProcSet} was considered obsolete as of \PDF~1.4, but conforming
+writers should continue to output it. It was formally deprecated in
+\PDF~2.0.\introduced{1.40.25}
 
 %***********************************************************************
 
@@ -3424,7 +3497,7 @@ While all graphics and text in a \PDF\ document have relative positions,
 annotations have internally hard||coded absolute positions. Again this
 is for the sake of speed optimization. The main disadvantage is that these
 annotations do {\em not} obey transformations issued by \type
-{\pdfliteral}'s.
+{\pdfliteral}s.
 
 The \Something{action spec} specifies the action that should be
 performed when the hyperlink is activated, one of (see the syntax
@@ -3627,33 +3700,39 @@ an article thread.
 \subsection{Literals and specials}
 
 \pdftexprimitive{\Syntax{\Tex{\pdfliteral}
-  \Optional{\Something{pdfliteral spec}}
+  \Optional{\Literal{shipout}}
+  \Optional{\Literal{direct} \Or \Literal{page}}
   \Something{general text}
   \Modelist{h, v, m}
   }}
 \bookmark{\tex{pdfliteral}}
 
-Like \type{\special} in normal \TEX, this command inserts raw
-\PDF\ code into the output. This allows support of color and text
-transformation. This primitive is heavily used in the \METAPOST\
-inclusion macros. Normally \PDFTEX\ ends a text section in the \PDF\
-output and sets the transformation matrix to the current location on the
-page before inserting \Something{general text}\unkern, however this can be
-turned off by giving the optional keyword \Literal{direct}. This command
-appends a whatsit node to the list being built. \Something{general text}
-is expanded when the whatsit node is created and not when it is shipped
-out, as with \type{\special}.
+Analogous to \type{\special} in the original \TEX, this command inserts
+raw \PDF\ code into the output, appending a whatsit node to the list
+being built. This allows support of color and text transformation, among
+other things.
 
-Starting with version 1.30.0, \PDFTEX\ allows to use a new keyword
-\type{page} instead of \type{direct}. Both modify the default behavior
-of \type{\pdfliteral}, avoiding translation of the coordinates space
-before inserting the literal code. The difference is that the \type{page}
+By default, \Something{general text} is expanded immediately, when the
+whatsit node is created, as with \type{\special}. Starting with version
+1.40.25, the optional keyword \Literal{shipout} can be used to delay
+expansion of \Something{general text} until the whatsit node is shipped
+out, as with non-\type{\immediate} \type{\write}.
+
+Normally, \PDFTEX\ ends a text section in the \PDF\ output and sets the
+transformation matrix to the current location on the page before
+inserting \Something{general text}\unkern; this can be turned off by
+giving the optional keyword \Literal{direct}.
+
+Starting with version 1.30.0, \PDFTEX\ supports the keyword \type{page}
+in addition to \type{direct}. Both modify the default behavior of
+\type{\pdfliteral}, avoiding translation of the coordinate space before
+inserting the literal code. The difference is that the \type{page}
 keyword instructs \PDFTEX\ to close a \type{BT ET} text block before
-inserting anything. It means that the literal code inserted refers to the
-origin (lower||left corner of the page) and can be safely enclosed with
-\type{q Q}. Note, that in most cases using \type{q Q} operators inside
-\type{\pdfliteral} with \type{direct} keyword will produce corrupted
-\PDF\ output, as the \PDF\ standard doesn't allow to do anything like
+inserting anything. This means that the literal code inserted refers to
+the \PDF\ origin (lower-left corner of the page) and can be safely
+enclosed with \type{q Q}. In contrast, using \type{q Q} operators inside
+\type{\pdfliteral} with the \type{direct} keyword will produce corrupted
+\PDF\ output, as the \PDF\ standard doesn't allow doing anything like
 this within a \type{BT ET} block.
 
 % HE: \unkern is a kludge here; wanted to have tight "{pdf:"
@@ -3677,6 +3756,20 @@ This is equivalent to \Syntax{\Tex{\pdfliteral} \Literal{direct} \Lbrace
 
 This is equivalent to \Syntax{\Tex{\pdfliteral} \Literal{page} \Lbrace
 \Something{text} \Rbrace}.
+
+\pdftexprimitive{\Syntax{\Tex{\special} \Optional{\Literal{shipout}}
+  \Lbrace\unkern \Something{general text} \Rbrace}}
+\bookmark{\tex{special\ shipout}}
+
+Starting with version 1.40.25, \PDFTEX\ extends the \type{\special}
+primitive to support the optional keyword \Literal{shipout}. This delays
+expansion of \Something{general text} until the page is shipped out, as
+with non-\type{\immediate} \type{\write}. By default, \Something{general
+text} is expanded immediately.
+
+\Syntax{\Tex{\special} \Literal{shipout} \Lbrace \unkern\Literal{pdf:}
+\Something{text} \Rbrace} is equivalent to \Syntax{\Tex{\pdfliteral}
+\Literal{shipout} \Lbrace \Something{text} \Rbrace}.
 
 %***********************************************************************
 
@@ -3907,8 +4000,8 @@ example, the first ten bytes of the source of this manual are {\tt
 
 As of \TEXLIVE\ 2020, the \type{\input} primitive in all \TEX\ engines,
 including \PDFTEX, now also accepts a group-delimited filename argument,
-as a system-dependent extension, as in \type{\input\Lbrace
-foo.tex\Rbrace}. The usage of \type{\input} with a standard
+as a system-dependent extension, as in \type{\input} \Lbrace
+\type{foo.tex} \Rbrace. The usage of \type{\input} with a standard
 space/token-delimited filename is completely unchanged.
 
 This group-delimited argument was previously implemented in Lua\TEX; now
@@ -4315,11 +4408,10 @@ Now the \type{\b} expansion is not logged either, since the expansion
 depth is higher than the \type{\tracingstacklevels} value.
 
 The intended use of \type{\tracingstacklevels} is not so much to
-truncate logging as to indicate the expansion levels for detailed
-debugging. Thus normally it would be set to a large number
-(\type{\maxdimen}, say), so that everything is fully logged, with the
-addition of the expansion level indication with the number of dots in
-the prefix.
+truncate logging as to indicate expansion levels for detailed debugging.
+Thus normally it would be set to a large number (\type{\maxdimen}, say),
+so that everything is fully logged, with the addition of the expansion
+level indication with the number of dots in the prefix.
 
 The behavior is the same in all \TeX\ engines except the original \TEX\
 and \eTeX, where \type{\tracingstacklevels} remains undefined.
@@ -4331,8 +4423,8 @@ and \eTeX, where \type{\tracingstacklevels} remains undefined.
 If this primitive parameter has a value corresponding to an open output
 stream (which has been opened with \type{\openout}), then any
 \type{\show}, \type{\showthe}, \type{\showbox} or \type{\showlists}
-commands do not write output to the terminal, but instead write to only
-the referenced output stream, as if they were written with
+commands do not write output to the terminal, but instead write to the
+referenced output stream only, as if they were written with
 \type{\immediate\write}.
 
 For example:
@@ -4397,19 +4489,17 @@ Returns the \PDFTEX\ banner message, \eg\ for the version used here:
 \pdftexprimitive{\Syntax{\Tex{\pdftexrevision} \Whatever{expandable}}}
 \bookmark{\tex{pdftexrevision}}
 
-\def\versplit#1#2#3{#1.#2#3}
-
 Returns the revision number of \PDFTEX, \eg\ for \PDFTEX\ version
-\expandafter\versplit\the\pdftexversion.\pdftexrevision\ (used to produce
-this document), it returns the number {\tt \pdftexrevision}.
+\currentpdftex\ (used to produce this document), it returns the number
+{\tt \pdftexrevision}.
 
 
 \pdftexprimitive{\Syntax{\Tex{\pdftexversion} \Whatever{read||only integer}}}
 \bookmark{\tex{pdftexversion}}
 
 Returns the version of \PDFTEX\ multiplied by 100, \eg\ for \PDFTEX\
-version \expandafter\versplit\the\pdftexversion.\pdftexrevision\ (used to
-produce this document), it returns {\tt \number\pdftexversion}.
+version \currentpdftex\ (used to produce this document), it returns {\tt
+\number\pdftexversion}.
 
 %***********************************************************************
 
@@ -4494,19 +4584,16 @@ uses its own Type~1 fonts, and needs no special attention.
 macro packages) can be redefined to produce literal \PDF, using some macros
 written by Hans Hagen.
 
-\description {\METAPOST} Although the output of \METAPOST\ is \POSTSCRIPT,
-it is in a highly simplified form, and a \METAPOST\ to \PDF\ conversion
-(\MPTOPDF, written by Hans Hagen and Tanmoy Bhattacharya) is implemented
-as a set of macros which reads \METAPOST\ output and supports all of
-its features.
-
-For new work, the \METAPOST\ route is highly recommended. For the future,
-Adobe has announced that they will define a specification for \quote
-{encapsulated \PDF}.
+\description {\METAPOST} Although the output of \METAPOST\ is
+\POSTSCRIPT, it is in a highly simplified form, and a \METAPOST\ to
+\PDF\ conversion (\MPTOPDF, available as \type{supp-pdf.tex} and
+\type{supp-pdf.mkii}, written by Hans Hagen and Tanmoy Bhattacharya) is
+implemented as a set of macros which reads \METAPOST\ output and
+supports all of its features.
 
 The inclusion of raw \POSTSCRIPT\ commands |<|a technique utilized
 by for instance the \type{pstricks} package|>| cannot directly be
-supported. Although \PDF\ is direct a descendant of \POSTSCRIPT, it
+supported. Although \PDF\ is a direct descendant of \POSTSCRIPT, it
 lacks any programming language commands, and cannot deal with arbitrary
 \POSTSCRIPT.
 
@@ -5155,7 +5242,7 @@ the source code by typing:
 texexec --result=pdftex-a.pdf pdftex-t
 \stoptyping
 
-Or in letter size:
+Or for letter size:
 
 \starttyping
 texexec  --mode=letter --result=pdftex-l.pdf pdftex-t

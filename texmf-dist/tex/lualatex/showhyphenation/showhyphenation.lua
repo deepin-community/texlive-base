@@ -1,4 +1,4 @@
--- Copyright (c) 2022 Thomas Kelkel kelkel@emaileon.de
+-- Copyright (c) 2022-2023 Thomas Kelkel kelkel@emaileon.de
 
 -- This file may be distributed and/or modified under the
 -- conditions of the LaTeX Project Public License, either
@@ -10,39 +10,44 @@
 -- and version 1.3c or later is part of all distributions of
 -- LaTeX version 2009/09/24 or later.
 
--- Version: 0.1a
-
-local FLOOR = math.floor
-
-local function round ( num, dec )
-    return FLOOR ( num * 10^dec + 0.5 ) / 10^dec
-end
+-- Version: 0.3
 
 local ID = node.id
 local GLYPH = ID ( "glyph" )
 local DISC = ID ( "disc" )
-local KERN = ID ( "kern" )
 local GLUE = ID ( "glue" )
+local KERN = ID ( "kern" )
 local WI = ID ( "whatsit" )
 local HLIST = ID ( "hlist" )
 local VLIST = ID ( "vlist" )
-local RIGHTSKIP = table.swapped ( node.subtypes ("glue") )["rightskip"]
+local INS = ID ( "ins" )
+
+local SWAPPED = table.swapped
+local SUBTYPES = node.subtypes
+local WIS = node.whatsits
+local PDF_LITERAL = SWAPPED ( WIS () )["pdf_literal"]
+local LEADERS = SWAPPED ( SUBTYPES ("glue") )["leaders"]
+local RIGHTSKIP = SWAPPED ( SUBTYPES ("glue") )["rightskip"]
+
 local NEW = node.new
 local COPY = node.copy
 local REM = node.remove
 local PREV = node.prev
 local NEXT = node.next
-local HAS_GLYPH = node.has_glyph
 local INS_B = node.insert_before
 local INS_A = node.insert_after
+local HAS_GLYPH = node.has_glyph
 local T = node.traverse
 local T_ID = node.traverse_id
 local T_GLYPH = node.traverse_glyph
-local WIS = node.whatsits()
-local pdfliteral
-local pairs = pairs
+
+local FLOOR = math.floor
+
 local GET_FONT = font.getfont
+
 local ATC = luatexbase.add_to_callback
+
+-----
 
 local make = false
 local on_top = false
@@ -67,12 +72,6 @@ end
 
 local in_use = make_not_on_top
 
-for key, value in pairs ( WIS ) do
-    if value == "pdf_literal" then
-        pdfliteral = key
-    end
-end
-
 function showhyphenation_make ()
     make = true
 end
@@ -86,16 +85,24 @@ function showhyphenation_lime ()
     color = ".75 1 .25"
 end
 
+local function round ( num, dec )
+    return FLOOR ( num * 10^dec + 0.5 ) / 10^dec
+end
+
 local function calc_value ( value )
-    value = round ( value / 65536, 3 )
+    value = round ( value / 65781, 3 )
     return value
 end
 
-local function get_x_value ( n, x_value, minus )
+local function get_x_value ( n, x_value, minus, half )
     local exp_fac = 1
     local f = 1
     if minus then
         f = - 1
+    end
+    local ff = 1
+    if half then
+        ff = 0.5
     end
     if n.expansion_factor then
         exp_fac = n.expansion_factor / 1000000 + 1
@@ -103,23 +110,36 @@ local function get_x_value ( n, x_value, minus )
     if n.id == GLYPH then
         x_value = x_value + calc_value ( n.width ) * exp_fac * f
     elseif n.id == KERN then
-        x_value = x_value + calc_value ( n.kern ) * exp_fac * f
+        x_value = x_value + calc_value ( n.kern ) * exp_fac * f * ff
     end
     return x_value
 end
 
 local line_end_count = 0
 
-local function find_glyph ( n, d, kern_value )
+local function find_glyph ( n, d, kern_value, linebreak, lig )
     local line_end = nil
     local ligtype_mark = nil
+    local kern_at_disc = 0
     if d ( n ) then
         n = d ( n )
-        while not ( ( n.id == GLYPH and n.char ~= 45 ) or ( n.id == DISC and n.replace and HAS_GLYPH ( n.replace ) ) ) do
+        while not ( n.id == GLYPH and n.char ~= 45 or n.replace and HAS_GLYPH ( n.replace ) ) do
+            if n.id == GLUE or n.subtype == LEADERS or n.id == INS then
+                return false
+            end
             if n.width and not ( n.char and n.char == 45 ) then
                 kern_value = get_x_value ( n, kern_value ) -- rules, etc.
             elseif n.kern then
-                kern_value = get_x_value ( n, kern_value ) * 0.5 -- hyphen kern
+                local factor = 1
+                if linebreak or not lig then
+                    factor = 0.5 -- hyphen kern
+                    kern_at_disc = get_x_value ( n, kern_at_disc ) * factor
+                end
+                kern_value = get_x_value ( n, kern_value ) * factor
+            elseif n.replace then
+                for kern_node in T_ID ( KERN, n.replace ) do
+                    kern_value = get_x_value ( kern_node, kern_value )
+                end
             end
             if n.char == 45 then
                 line_end = true
@@ -149,7 +169,7 @@ local function find_glyph ( n, d, kern_value )
             end
         end
     end
-    return n, kern_value, ligtype_mark
+    return n, kern_value, ligtype_mark, kern_at_disc
 end
 
 local function check_linebreak ( n, d )
@@ -158,7 +178,7 @@ local function check_linebreak ( n, d )
             n = d ( n )
         else break end
     end
-    if ( n.char == 45 and d == PREV ) or ( n.id == GLUE and n.subtype == RIGHTSKIP and d == NEXT ) then
+    if n.char == 45 and d == PREV or n.id == GLUE and n.subtype == RIGHTSKIP and d == NEXT then
         make_not_on_top()
         return true
     end
@@ -174,20 +194,40 @@ local function hyphenation_points ( head )
             local lig_add = 0
             local prev_next_kern = 0
             local prev_next_kern_lig = 0
+            local pre_kerns = 0
+            local second_pre_glyph = 0
+            local lig = false
             if n.replace then
                 if not HAS_GLYPH ( n.replace ) then
                     local REPLACE = n.replace
                     for some_node in T ( REPLACE ) do
-                        if some_node.kern and not ( check_linebreak ( n, DIR ) ) then
+                        if some_node.kern and not check_linebreak ( n, DIR ) then
                             prev_next_kern_lig = get_x_value ( some_node, prev_next_kern_lig ) * 0.5
                         end
                     end
                 else
+                    local gn_counter = 0
+                    for glyph_node in T_GLYPH ( n.replace ) do
+                        if glyph_node.components then
+                            lig = true
+                        end
+                    end
                     if n.post then
+                        for _ in T_ID ( KERN, n.pre ) do
+                            pre_kerns = pre_kerns + 1
+                        end
                         for glyph_node in T_GLYPH ( n.pre ) do
                             if glyph_node.width then
                                 lig_add = get_x_value ( glyph_node, lig_add )
                                 break -- hyphen!
+                            end
+                        end
+                        for glyph_node in T_GLYPH ( n.replace ) do
+                            if glyph_node.width then
+                                gn_counter = gn_counter + 1
+                                if gn_counter == 2 then
+                                    second_pre_glyph = get_x_value ( glyph_node, second_pre_glyph, true )
+                                end
                             end
                         end
                         if not on_top then
@@ -214,14 +254,56 @@ local function hyphenation_points ( head )
                             end
                         end
                     end
+                    if gn_counter > 1 then
+                        local counter = 0
+                        if not on_top then
+                            for kern_node in T_ID ( KERN, n.replace ) do
+                                counter = counter + 1
+                                if counter > 1 then
+                                    if pre_kerns > 1 then
+                                        if pre_kerns > 2 then
+                                            prev_next_kern_lig = get_x_value ( kern_node, prev_next_kern_lig ) + lig_add
+                                        else
+                                            prev_next_kern_lig = get_x_value ( kern_node, prev_next_kern_lig, false, true )
+                                        end
+                                        pre_kerns = pre_kerns - 1
+                                    end
+                                end
+                            end
+                        else
+                            for kern_node in T_ID ( KERN, n.replace ) do
+                                counter = counter + 1
+                                if counter > 1 then
+                                    if pre_kerns > 1 then
+                                        if pre_kerns > 2 then
+                                            prev_next_kern_lig = get_x_value ( kern_node, prev_next_kern_lig, true ) + second_pre_glyph
+                                        else
+                                            prev_next_kern_lig = get_x_value ( kern_node, prev_next_kern_lig, true, true )
+                                        end
+                                        pre_kerns = pre_kerns - 1
+                                    end
+                                end
+                            end
+                        end
+                    end
                 end
             end
             local prev_next_glyph = n
             local ligtype_mark = nil
             if find_glyph ( prev_next_glyph, DIR, 0 ) then
-                prev_next_glyph, prev_next_kern, ligtype_mark = find_glyph ( prev_next_glyph, DIR, 0 )
+                prev_next_glyph, prev_next_kern, ligtype_mark = find_glyph ( prev_next_glyph, DIR, 0, check_linebreak ( n, PREV ) or check_linebreak ( n, NEXT ), lig )
             end
-            head = AB ( head, prev_next_glyph, NEW ( WI, pdfliteral ) )
+            local reverse = PREV
+            if DIR == PREV then
+                reverse = NEXT
+            end
+            if find_glyph ( n, reverse, 0 ) then
+                local _, __, ___, kern_at_disc  = find_glyph ( n, reverse, 0, check_linebreak ( n, PREV ) or check_linebreak ( n, NEXT ), lig )
+                if kern_at_disc then
+                    prev_next_kern = prev_next_kern + kern_at_disc
+                end
+            end
+            head = AB ( head, prev_next_glyph, NEW ( WI, PDF_LITERAL ) )
             lig_add = lig_add + ( prev_next_kern + prev_next_kern_lig ) * f
             DIR ( prev_next_glyph ).mode = 0
             local size_factor = 1
@@ -229,8 +311,8 @@ local function hyphenation_points ( head )
                 size_factor = calc_value ( GET_FONT ( font.current() ).size / 10 )
             end
             local DATA
-            if ( PREV ( n ) and PREV ( n ).user_id and PREV ( n ).user_id == 848485 ) or ligtype_mark then
-                DATA = "q " .. ( lig_add - 2 * size_factor ) ..  " " .. -3 * size_factor .. " m " .. ( lig_add + 2 * size_factor ) ..  " " .. -3 * size_factor .. " l " .. ( lig_add + 2 * size_factor ) .. " " .. -4 * size_factor .. " l " .. ( lig_add - 2 * size_factor ) ..  " " .. -4 * size_factor .. " l " .. color .. " rg f Q"
+            if PREV ( n ) and PREV ( n ).user_id and PREV ( n ).user_id == 848485 or ligtype_mark then
+                DATA = "q " .. lig_add - 2 * size_factor ..  " " .. -3 * size_factor .. " m " .. lig_add + 2 * size_factor ..  " " .. -3 * size_factor .. " l " .. lig_add + 2 * size_factor .. " " .. -4 * size_factor .. " l " .. lig_add - 2 * size_factor ..  " " .. -4 * size_factor .. " l " .. color .. " rg f Q"
             else
                 DATA = "q " .. lig_add ..  " 0 m " .. lig_add + 2 * size_factor ..  " " .. -3 * size_factor .. " l " .. lig_add - 2 * size_factor .. " " .. -3 * size_factor .. " l " .. color .. " rg f Q"
             end

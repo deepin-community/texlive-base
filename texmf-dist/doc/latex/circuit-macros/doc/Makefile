@@ -5,8 +5,9 @@ DOC = Circuit_macros
 DOCSRC = Circuit_macros.tex body.tex defines.tex
 
 PICTEX = \
-  ACsymbol.tex \
-  AmpTableMan.tex AntennasMan.tex ArrestersMan.tex AudioMan.tex Axes.tex \
+  ACsymbol.tex AlogixMan.tex \
+  AmpTableMan.tex AntennasMan.tex ArrestersMan.tex AudioMan.tex \
+  AutologixMan.tex Axes.tex \
   Buffer.tex BigResistor.tex BipMan.tex \
   CapacitorsMan.tex Composite.tex ConfigA.tex ConfigB.tex \
   ConfigC.tex ConnMan.tex Corners.tex ContactMan.tex ContactsMan.tex \
@@ -16,15 +17,16 @@ PICTEX = \
   JackMan.tex LogicMan.tex \
   Loop.tex MultiplexerMan.tex NPDTMan.tex NLGMan.tex NportMan.tex \
   Oblique.tex OpampMan.tex Opto.tex ParSeries.tex PconnMan.tex \
-  Potentiometers.tex RelayMan.tex relaycoilMan.tex ResistorsMan.tex \
+  Potentiometers.tex QTrans.tex \
+  RelayMan.tex relaycoilMan.tex ResistorsMan.tex \
   Series.tex ShiftRMan.tex Sinus.tex SLDsMan.tex SourcesMan.tex \
-  SwitchesMan.tex \
+  SRffMan.tex SwitchesMan.tex \
   Taps.tex TgateMan.tex Thermal.tex Tline.tex \
   VariableMan.tex WindingsMan.tex Workflow.tex XformMan.tex \
   arrowex.tex \
   bitr.tex bi_trans.tex bistableMan.tex \
-  currents.tex eboxdims.tex fbfilter.tex fetMan.tex lrarrows.tex \
-  MoreTableMan.tex mplex.tex opampex.tex quick.tex \
+  currents.tex eboxdims.tex fbfilter.tex fetMan.tex heaterMan.tex \
+  lrarrows.tex MoreTableMan.tex mplex.tex opampex.tex quick.tex \
   sampleIC.tex stringdims.tex thyristorMan.tex ujtMan.tex \
   woodchips.tex
 
@@ -37,6 +39,7 @@ BOXDIMS = AntennasMan.tex bi_trans.tex ConfigA.tex ConfigB.tex ConfigC.tex \
 # BOXDIMS = $(PICTEX)
 
 LATEX = latex
+LATEX = latex --quiet
 M4 = m4 -I $(LIBDIR)
 # If M4PATH has been set:
 M4 = m4
@@ -72,7 +75,7 @@ $(DOC).pdf:
 	touch mode.tex
 	-if grep -q tikz mode.tex ; then true ; else \
            rm mode.tex; make MODE=tikz clean mode.tex ; fi
-	make MODE=pgf PIC="dpic -g" LATEX=pdflatex SFX=pdf \
+	make MODE=pgf PIC="dpic -g" LATEX="pdflatex --quiet" SFX=pdf \
          POST="; printf '\\\\vspace*{-0.5\\\\baselineskip}\\n'" \
          $(DOC).pdf
 #  This breaks internal links:
@@ -81,7 +84,8 @@ $(DOC).pdf:
 	
 $(DOC).ps:
 	printf "\n $(DOC).ps:\n\n"
-	make MODE=pstricks PIC="dpic -p" LATEX=latex SFX=dvi POST="" $(DOC).dvi
+	make MODE=pstricks PIC="dpic -p" LATEX="latex --quiet" \
+      SFX=dvi POST="" $(DOC).dvi
 	dvips -t letter $(DOC) -o
 
 $(DOC).$(SFX): mode.tex citations $(PICTEX)

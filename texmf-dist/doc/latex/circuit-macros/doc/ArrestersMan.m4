@@ -54,11 +54,12 @@ R2: [
 [
   arrester(,E)
   {`"\tt \ldots(,E)"' at last line.c+(0,-0.25)}
-  move sep
-  A: arrester(,DE)
-  {`"\tt \ldots(,DE)"' at last [].s+(0,-0.1)}
+  move up_ 0.1 then right_ sep
+  A: arrester(,DE,,,fill_(0.95))
+  {`"\tt \ldots(,DE,{,},"' wid 61bp__ at A.A+(-0.1,-0.40) ljust \
+   `"\tt fill\_(0.95))"' ljust }
   Dlabels
-  move sep*3
+  move down_ 0.1 then right_ sep*3
   A: arrester(,DS)
   {`"\tt \ldots(,DS)"' at last [].s+(0,-0.1)}
   Dlabels

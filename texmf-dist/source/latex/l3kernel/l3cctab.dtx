@@ -2,7 +2,7 @@
 %
 %% File: l3cctab.dtx
 %
-% Copyright (C) 2018-2023 The LaTeX Project
+% Copyright (C) 2018-2024 The LaTeX Project
 %
 % It may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -31,7 +31,7 @@
 % \fi
 %
 % \title{^^A
-%   The \pkg{l3cctab} package\\ Category code tables^^A
+%   The \pkg{l3cctab} module\\ Category code tables^^A
 % }
 %
 % \author{^^A
@@ -43,7 +43,7 @@
 %    }^^A
 % }
 %
-% \date{Released 2023-01-16}
+% \date{Released 2024-01-22}
 %
 % \maketitle
 %
@@ -52,7 +52,9 @@
 % A category code table enables rapid switching of all category codes in
 % one operation. For \LuaTeX{}, this is possible over the entire Unicode
 % range. For other engines, only the $8$-bit range ($0$--$255$) is covered by
-% such tables.
+% such tables. The implementation of category code tables in \pkg{expl3}
+% also saves and restores the \TeX{} \tn{endlinechar} primitive value, meaning
+% they could be used for example to implement \cs{ExplSyntaxOn}.
 %
 % \section{Creating and initialising category code tables}
 %
@@ -85,6 +87,15 @@
 %   applies (in a group) the \meta{category code set up}, then saves them
 %   globally in the \meta{category code table}.  The \meta{category code set up}
 %   can include a call to \cs{cctab_select:N}.
+% \end{function}
+%
+% \begin{function}[added = 2023-05-26]
+%   {\cctab_gsave_current:N,\cctab_gsave_current:c}
+%   \begin{syntax}
+%     \cs{cctab_gsave_current:N} \meta{category code table}
+%   \end{syntax}
+%   Saves the current prevailing category codes in the
+%   \meta{category code table}.
 % \end{function}
 %
 % \section{Using category code tables}
@@ -122,10 +133,10 @@
 %
 % \begin{function}[EXP, added = 2021-05-10]{\cctab_item:Nn, \cctab_item:cn}
 %   \begin{syntax}
-%     \cs{cctab_item:Nn} \meta{category code table} \Arg{integer expression}
+%     \cs{cctab_item:Nn} \meta{category code table} \Arg{int expr}
 %   \end{syntax}
 %   Determines the \meta{character} with character code given by the
-%   \meta{integer expression} and expands to its category code specified
+%   \meta{int expr} and expands to its category code specified
 %   by the \meta{category code table}.
 % \end{function}
 %
@@ -141,19 +152,20 @@
 %   category code table.
 % \end{function}
 %
-% \section{Constant category code tables}
+% \section{Constant and scratch category code tables}
 %
 % \begin{variable}[updated = 2020-07-10]{\c_code_cctab}
 %   Category code table for the \pkg{expl3} code environment; this does
 %   \emph{not} include \texttt{@}, which is retained as an \enquote{other}
-%   character.
+%   character.  Sets the \tn{endlinechar} value to $32$ (a space).
 % \end{variable}
 %
 % \begin{variable}[updated = 2020-07-08]{\c_document_cctab}
 %   Category code table for a standard \LaTeX{} document, as set by the \LaTeX{}
 %   kernel. In particular, the upper-half of the $8$-bit range will be set to
 %   \enquote{active} with \pdfTeX{} \emph{only}. No \pkg{babel} shorthands
-%   will be activated.
+%   will be activated.  Sets the \tn{endlinechar} value to $13$ (normal
+%   line ending).
 % \end{variable}
 %
 % \begin{variable}[updated = 2020-07-02]{\c_initex_cctab}
@@ -162,13 +174,17 @@
 %
 % \begin{variable}[updated = 2020-07-02]{\c_other_cctab}
 %   Category code table where all characters have category code $12$
-%   (other).
+%   (other). Sets the \tn{endlinechar} value to $-1$.
 % \end{variable}
 %
 % \begin{variable}[updated = 2020-07-02]{\c_str_cctab}
 %   Category code table where all characters have category code $12$
 %   (other) with the exception of spaces, which have category code
-%   $10$ (space).
+%   $10$ (space).  Sets the \tn{endlinechar} value to $-1$.
+% \end{variable}
+%
+% \begin{variable}[added = 2023-05-26]{\g_tmpa_cctab, \g_tmpb_cctab}
+%   Scratch category code tables.
 % \end{variable}
 %
 % \end{documentation}
@@ -363,6 +379,18 @@
 %    \end{macrocode}
 % \end{macro}
 %
+% \begin{macro}{\cctab_gsave_current:N, \cctab_gsave_current:c}
+%   Very simple.
+%    \begin{macrocode}
+\cs_new_protected:Npn \cctab_gsave_current:N #1
+  {
+    \@@_chk_if_valid:NT #1
+      { \@@_gset:n {#1} }
+  }
+\cs_generate_variant:Nn \cctab_gsave_current:N { c }
+%    \end{macrocode}
+% \end{macro}
+%
 % \subsection{Using category code tables}
 %
 % \begin{variable}{\g_@@_internal_cctab}
@@ -515,7 +543,7 @@
       {
         \seq_gpop:NNF \g_@@_unused_seq \l_@@_internal_a_tl
           { \@@_begin_aux: }
-        \exp_args:Nx \@@_chk_group_begin:n
+        \@@_chk_group_begin:e
           { \@@_nesting_number:N \l_@@_internal_a_tl }
         \seq_gpush:NV \g_@@_stack_seq \l_@@_internal_a_tl
         \exp_args:NV \@@_gset:n \l_@@_internal_a_tl
@@ -538,7 +566,7 @@
     \seq_gpop:NNTF \g_@@_stack_seq \l_@@_internal_a_tl
       {
         \seq_gpush:NV \g_@@_unused_seq \l_@@_internal_a_tl
-        \exp_args:Nx \@@_chk_group_end:n
+        \exp_args:Ne \@@_chk_group_end:n
           { \@@_nesting_number:N \l_@@_internal_a_tl }
         \@@_select:N \l_@@_internal_a_tl
       }
@@ -547,7 +575,8 @@
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{\@@_chk_group_begin:n,\@@_chk_group_end:n}
+% \begin{macro}
+%   {\@@_chk_group_begin:n,\@@_chk_group_begin:e, \@@_chk_group_end:n}
 %   Catcode tables are not allowed to be intermixed with groups, so here
 %   we check that they are properly nested regarding \TeX{} groups.
 %   \cs{@@_chk_group_begin:n} stores the current group level in a stack,
@@ -608,10 +637,11 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_chk_group_begin:n #1
   {
-    \seq_gpush:Nx \g_@@_group_seq
+    \seq_gpush:Ne \g_@@_group_seq
       { \int_use:N \tex_currentgrouplevel:D }
     \cs_set_eq:cN { @@_group_ #1 _chk: } \prg_do_nothing:
   }
+\cs_generate_variant:Nn \@@_chk_group_begin:n { e }
 \cs_new_protected:Npn \@@_chk_group_end:n #1
   {
     \seq_gpop:NN \g_@@_group_seq \l_@@_internal_b_tl
@@ -622,7 +652,7 @@
       }
       { \cs_if_exist_p:c { @@_group_ #1 _chk: } }
       {
-        \msg_error:nnx { cctab } { group-mismatch }
+        \msg_error:nne { cctab } { group-mismatch }
           {
             \int_sign:n
               { \tex_currentgrouplevel:D - \l_@@_internal_b_tl }
@@ -647,10 +677,10 @@
         \exp_after:wN \exp_after:wN \exp_after:wN \@@_nesting_number:w
           \exp_after:wN \token_to_str:N #1
       }
-    \use:x
+    \use:e
       {
         \cs_new:Npn \exp_not:N \@@_nesting_number:w
-          ##1 \tl_to_str:n { g_@@_ } ##2 \tl_to_str:n { _cctab } {##2}
+          #1 \tl_to_str:n { g_@@_ } #2 \tl_to_str:n { _cctab } {#2}
       }
   }
 %    \end{macrocode}
@@ -726,13 +756,13 @@
         \@@_chk_if_valid_aux:NTF #1
           { \prg_return_true: }
           {
-            \msg_error:nnx { cctab } { invalid-cctab }
+            \msg_error:nne { cctab } { invalid-cctab }
               { \token_to_str:N #1 }
             \prg_return_false:
           }
       }
       {
-        \msg_error:nnx { kernel } { command-not-defined }
+        \msg_error:nne { kernel } { command-not-defined }
           { \token_to_str:N #1 }
         \prg_return_false:
       }
@@ -861,6 +891,13 @@
         \char_set_catcode_active:n         { 126 }
       }
   }
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{variable}{\g_tmpa_cctab, \g_tmpb_cctab}
+%    \begin{macrocode}
+\cctab_new:N \g_tmpa_cctab
+\cctab_new:N \g_tmpb_cctab
 %    \end{macrocode}
 % \end{variable}
 %

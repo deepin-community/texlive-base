@@ -1,2 +1,2 @@
 set table "gnuplot/bodegraph/64.table"; set format "%.5f"
-set samples 100; set parametric; plot [t=-3:2] -180/3.1415957*atan(3*10**t),20*log10(abs(5/sqrt(1+(3*10**t)**2)))
+set samples 50.0; set parametric; plot [t=-1:4] [] [] log10(10**t),180/3.1415957*(atan((15**2-(10**t)**2)/(2*0.3*15*10**t))-3.1415957/2) --180/3.1415957*atan(0.01*10**t)
