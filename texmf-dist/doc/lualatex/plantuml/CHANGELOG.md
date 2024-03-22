@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.2] – 2023-05-12
+
+### Changed
+
+- Updated file extension for including diagrams to `.tex` to align with changes
+  introduced in PlantUML v1.2023.0. This change is not backwards compatible with
+  older versions of PlantUML.
+
 ## [0.3.1] – 2020-05-19
 
 ### Fixed
@@ -14,24 +22,24 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [0.3.0] – 2019-09-23
 
-## Added
+### Added
 
 - Added support for UTF-8 filenames.
 - Added `example-component-diagram.tex`. Refs [#9](https://github.com/koppor/plantuml/issues/9).
 
 ## [0.2.3] – 2018-06-04
 
-## Added
+### Added
 
 - Add `release.sh` to CTAN upload
 
-## Removed
+### Removed
 
 - Removed `\usepackage{aeguill}` as 1) PlantUML seems not to rely on it any more and 2) [it is obsolete and should not be used anymore](https://tex.stackexchange.com/a/5901/9075).
 
 ## [0.2.2] – 2018-03-22
 
-## Changed
+### Changed
 
 - Added version number in generated `plantuml.pdf`.
 - Do not strip down `README.md` for CTAN anymore and provide "*.png" for generation of `plantuml.pdf`.
@@ -58,7 +66,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 Initial public release
 
-[unreleased]: https://github.com/koppor/plantuml/compare/0.3.1...HEAD
+[unreleased]: https://github.com/koppor/plantuml/compare/0.3.2...HEAD
+[0.3.2]: https://github.com/koppor/plantuml/compare/0.3.1...0.3.2
 [0.3.1]: https://github.com/koppor/plantuml/compare/0.3.0...0.3.1
 [0.3.0]: https://github.com/koppor/plantuml/compare/0.2.3...0.3.0
 [0.2.3]: https://github.com/koppor/plantuml/compare/0.2.2...0.2.3

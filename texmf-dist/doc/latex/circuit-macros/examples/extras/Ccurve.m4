@@ -1,0 +1,14 @@
+.PS
+# Ccurve.m4
+gen_init
+scale = 1.5
+# Gosper C curve
+
+`define' c_curve {if $3==0 then { continue by ($1,$2) } else {
+    c_curve( ($1-$2)/2, ($1+$2)/2, $3-1)
+    c_curve( ($1+$2)/2, ($2-$1)/2, $3-1)}}
+
+line from 0,4 to 0,4
+c_curve(0,4,10)
+
+.PE

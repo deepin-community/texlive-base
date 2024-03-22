@@ -1,7 +1,7 @@
-% Copyright 2018-2022 by Romano Giannetti
-% Copyright 2015-2022 by Stefan Lindner
-% Copyright 2013-2022 by Stefan Erhardt
-% Copyright 2007-2022 by Massimo Redaelli
+% Copyright 2018-2023 by Romano Giannetti
+% Copyright 2015-2023 by Stefan Lindner
+% Copyright 2013-2023 by Stefan Erhardt
+% Copyright 2007-2023 by Massimo Redaelli
 %
 % This file may be distributed and/or modified
 %
@@ -27,6 +27,9 @@
 \ctikzset{quadpoles/transformer core/height/.initial=1.5}
 \ctikzset{quadpoles/transformer core/core height/.initial=.5}
 \ctikzset{quadpoles/transformer core/core width/.initial=.05}
+\ctikzset{transformer core/relative thickness/.initial=1}
+\ctikzset{transformer core/color/.initial=default}
+\ctikzset{transformer core/dash/.initial=default}
 \ctikzset{quadpoles/gyrator/inner/.initial=0.4}
 \ctikzset{quadpoles/gyrator/width/.initial=1.5}
 \ctikzset{quadpoles/gyrator/height/.initial=1.5}
@@ -291,7 +294,8 @@
     \pgf@circ@drawtransformerbasicbody
 
     % use the chocke line thickness
-    \pgfsetlinewidth{\ctikzvalof{bipoles/cutechoke/cthick}\pgflinewidth}
+    \pgfsetlinewidth{\ctikzvalof{bipoles/cutechoke/cthick}*\ctikzvalof{transformer core/relative thickness}*\pgflinewidth}
+    \pgf@circ@subset@color@dash{transformer core}
 
     % Find the distance from center for the lines representing the core
     % the 2.5 is for backward compatibility --- the distance was calculated as a fraction
@@ -1065,12 +1069,30 @@
 }
 
 %% converters help function
+%% definition for styling the DC symbols (GitHub issue #680)
+\ctikzset{blocks dc in segments/.initial=1}
+\ctikzset{blocks dc out segments/.initial=1}
+\ctikzset{blocks dc segments/.code={%
+        \ctikzset{blocks dc in segments=#1}%
+        \ctikzset{blocks dc out segments=#1}%
+    }
+}
 \def\pgf@circ@twoport@converter@dc#1#2{%
     \pgfscope
     \pgftransformshift{\pgfpoint{#1\pgf@circ@res@step}{#2\pgf@circ@res@step}}
     \pgfpathmoveto{\pgfpoint{-0.25\pgf@circ@res@step}{0.125\pgf@circ@res@step}}
     \pgfpathlineto{\pgfpoint{0.25\pgf@circ@res@step}{0.125\pgf@circ@res@step}}
     \pgfusepath{draw}
+    \ifpgf@circuit@full@dashed\else % do not apply the specific dash if fully dashing
+        \edef\@@up{\ctikzvalof{blocks dc in segments}}
+        \edef\@@down{\ctikzvalof{blocks dc out segments}}
+        \ifdim\dimexpr#1\pgf@circ@res@step\relax<0pt
+            \pgfmathsetlength{\pgf@circ@res@other}{\pgf@circ@res@step/(4*\@@up-2)}
+        \else
+            \pgfmathsetlength{\pgf@circ@res@other}{\pgf@circ@res@step/(4*\@@down-2)}
+        \fi
+        \pgfsetdash{{\pgf@circ@res@other}{\pgf@circ@res@other}}{0pt}
+    \fi
     \pgfpathmoveto{\pgfpoint{-0.25\pgf@circ@res@step}{-0.125\pgf@circ@res@step}}
     \pgfpathlineto{\pgfpoint{0.25\pgf@circ@res@step}{-0.125\pgf@circ@res@step}}
     \pgfusepath{draw}

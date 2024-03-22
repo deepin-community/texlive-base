@@ -26,11 +26,22 @@
 %% 
 %%   This work consists of the files listed in the README file.
 %% 
-\NeedsTeXFormat{LaTeX2e}
+\def\mem@atleast@kernel{2021/06/01}
+\NeedsTeXFormat{LaTeX2e}[\mem@atleast@kernel]
 \ProvidesClass{memoir}%
-  [2022/11/17 v3.7.19 configurable book, report, article document class]
-\newcommand\memversion{v3.7.19, 2022/11/17}
-\RequirePackage{etoolbox}
+  [2024/01/26 v3.8.2 configurable book, report, article document class]
+\newcommand\memversion{v3.8.2, 2024/01/26}
+\providecommand\IfFormatAtLeastTF{\@ifl@t@r\fmtversion}
+\IfFormatAtLeastTF{\mem@atleast@kernel}{}{
+  \ClassError{memoir}{%
+    Your LaTeX release is too old.\MessageBreak
+    The memoir class requires at LaTeX format\MessageBreak
+    from at least \mem@atleast@kernel\space  onwards. Please update your\MessageBreak
+    entire LaTeX installation instead of manually updating\MessageBreak
+    just memoir}{}
+    \batchmode\read-1to\@tempa% evil mode engaged
+}
+\RequirePackage{xpatch}
 \newcommand*{\@ptsize}{}
 \newcommand*{\@memptsize}{}
 \newlength{\onelineskip}
@@ -56,8 +67,6 @@
 
 \newcommand*{\@memerror}{\ClassError{memoir}}
 \newcommand*{\@memwarn}{\ClassWarning{memoir}}
-
-\providecommand\IfFormatAtLeastTF{\@ifl@t@r\fmtversion}
 
 \newif\ifsamename
 \newcommand{\nametest}[2]{%
@@ -107,6 +116,26 @@
 
 \newcommand\memsetlengthmin[3]{\ifdim#2<#3\setlength{#1}{#2}\else\setlength{#1}{#3}\fi}
 \newcommand\memsetlengthmax[3]{\ifdim#2>#3\setlength{#1}{#2}\else\setlength{#1}{#3}\fi}
+
+\ExplSyntaxOn
+\IfFormatAtLeastTF{ 2022-06-01 }
+{}
+{
+  \RequirePackage { xparse }
+  \providecommand \ExpandArgs [1]
+  { \cs_if_exist_use:c { exp_args:N #1 } }
+}
+\ExplSyntaxOff
+
+\providecommand\NewHookWithArguments[2]{}
+\ExplSyntaxOn
+\@ifundefined{UseHookWithArguments}{
+  \cs_new:Npn \UseHookWithArguments #1 #2 {
+    \cs:w use_none: \prg_replicate:nn {#2} { n } \cs_end:
+  }
+}{}
+\ExplSyntaxOff
+\NewHook{memoir/subcaption/aftercounter}
 
 \newcommand*{\@memfakeusepackage}[1]{%
   \@namelet{ver@#1.sty}\@empty}
@@ -217,7 +246,10 @@
     \@ifclassloaded{#1}{#2}%
     {\AtEndFile{#1.\@clsextension}{#2}}}
 
-} % end of els part of format check
+
+ % end of else part of format check
+}
+
 \newcommand{\phantomsection}{}
 
  \renewcommand*{\nofiles}{%
@@ -405,6 +437,16 @@
 \newcommand*{\memRTLraggedleft}{\raggedleft}
 \newcommand*{\memRTLmainraggedright}{\raggedright}
 \newcommand*{\memRTLmainraggedleft}{\raggedleft}
+
+ % secret extra option for testing stuff in the wild
+ % caution 1: patching inside \ifmem@devmode ... \fi requires that all
+ % if statements in the patch are blanced
+ % caution 2: pathing inside \mem@devmode@run{ ... }{} does not work
+ % if the search pattern contains #<num>
+ % thus added both variants
+\newif\ifmem@devmode
+\let\mem@devmode@run\@secondoftwo
+\DeclareOption{dev-mode}{\let\mem@devmode@run\@firstoftwo\mem@devmodetrue}
 
 \@ifundefined{stockwidth}{\newdimen{\stockheight}}{}
 \@ifundefined{stockwidth}{\newdimen{\stockwidth}}{}
@@ -633,24 +675,17 @@
 \newcommand\mem@settopoint[1]{\@settopoint{#1}}
 \DeclareOption{fullptlayout}{\renewcommand\mem@settopoint{\@gobble}}
 
-\newif\ifmem@noetex
-  \mem@noetexfalse
-\DeclareOption{noetex}{\mem@noetextrue}
-
 \ExecuteOptions{final,letterpaper,10pt,onecolumn,openright,twoside,
                 portrait}
 \ProcessOptions*
-  \ifmemlandscape
-    \setlength\@tempdima  {\stockheight}
-    \setlength\stockheight{\stockwidth}
-    \setlength\stockwidth {\@tempdima}
-  \fi
 
-\ifmem@noetex\relax\else
-  \ifx\e@alloc\@undefined
-    \IfFileExists{etex.sty}{\RequirePackage{etex}}{}
-  \fi
+\ifmemlandscape
+  \setlength\@tempdima  {\stockheight}
+  \setlength\stockheight{\stockwidth}
+  \setlength\stockwidth {\@tempdima}
 \fi
+
+
 \providecommand*{\memoirpostopthook}{}
   \memoirpostopthook
 
@@ -2243,12 +2278,10 @@
   \makefootrule{companion}{\textwidth}{\footruleheight}{\footruleskip}
 }
 
-\renewcommand{\pagenumbering}{%
-  \@ifstar{\@smempnum}{\@mempnum}}
-\newcommand{\@smempnum}[1]{%
-  \gdef\thepage{\csname @#1\endcsname \c@page}}
-\newcommand{\@mempnum}[1]{%
-  \@smempnum{#1}\global\c@page \@ne}
+\RenewDocumentCommand\pagenumbering{sm}{%
+  \gdef\thepage{\csname @#2\endcsname \c@page}%
+  \IfBooleanF{#1}{\global\c@page \@ne}% reset counter unless starred
+}
 
 \newcounter{storedpagenumber}
   \setcounter{storedpagenumber}{1}
@@ -2328,18 +2361,18 @@
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% check what this does!!!!!!!!
-\renewcommand*{\@setsize}[4]{%
-  \@nomath#1%
-  \let\@currsize#1%
-  \baselineskip #2%
-  \baselineskip \baselinestretch\baselineskip
-  \parskip \baselinestretch\parskip
-  \setbox\strutbox \hbox{%
-    \vrule height.7\baselineskip
-           depth .3\baselineskip
-           width \z@}%
-  \skip\footins \baselinestretch\skip\footins
-  \normalbaselineskip\baselineskip#3#4}
+ % \renewcommand*{\@setsize}[4]{%
+ %   \@nomath#1%
+ %   \let\@currsize#1%
+ %   \baselineskip #2%
+ %   \baselineskip \baselinestretch\baselineskip
+ %   \parskip \baselinestretch\parskip
+ %   \setbox\strutbox \hbox{%
+ %     \vrule height.7\baselineskip
+ %            depth .3\baselineskip
+ %            width \z@}%
+ %   \skip\footins \baselinestretch\skip\footins
+ %   \normalbaselineskip\baselineskip#3#4}
 
 \newenvironment{SingleSpace}{%
   \vskip\baselineskip
@@ -2394,14 +2427,23 @@
   \the\everydisplay
   \memdskips}
 
-\AtBeginDocument{
-  \let\m@m@xfloat\@xfloat
-  \def\@xfloat #1[#2]{%
-    \m@m@xfloat #1[#2]%
+\IfFormatAtLeastTF{2021/04/20}{%
+  \AddToHook{cmd/@floatboxreset/after}{%
     \def\baselinestretch{\m@m@float@spacing}%
     \normalsize%
-    \@nameuse{#1adjustment}%
+    \@nameuse{\@captype adjustment}%
   }
+}{%
+  \AtBeginDocument{%
+    % \typeout{Old kernel, redefining \string\@xfloat\ instead of using a hook}
+    \let\m@m@xfloat\@xfloat%
+    \def\@xfloat #1[#2]{%
+      \m@m@xfloat #1[#2]%
+      \def\baselinestretch{\m@m@float@spacing}%
+      \normalsize%
+      \@nameuse{#1adjustment}%
+    }%
+  }%
 }
 
 \newdimen\memPD
@@ -2491,11 +2533,8 @@
 \newcommand{\makethanksmark}{%
   \leavevmode%
   \parindent 1em\noindent
-%%%  \leftskip\thanksmarksep\relax
   \memRTLleftskip\thanksmarksep\relax
-%%%  \advance\leftskip\thanksmarkwidth
   \advance\memRTLleftskip\thanksmarkwidth
-%%%  \null\nobreak\hskip-\leftskip\relax
   \null\nobreak\hskip-\memRTLleftskip\relax
   \makethanksmarkhook\relax
   \thanksfootmark}
@@ -2664,8 +2703,8 @@
 \newcommand*{\glossarymark}{}
 
 \setcounter{secnumdepth}{2}
-\newcounter{book} \setcounter{book}{0}
-\newcounter{part} \setcounter{part}{0}
+\newcounter{book}    \setcounter{book}{0}
+\newcounter{part}    \setcounter{part}{0}
 \newcounter{chapter} \setcounter{chapter}{0}
 \newcounter{section}[chapter]
 \newcounter{subsection}[section]
@@ -2745,7 +2784,7 @@
     \@memback@floats
   \fi}
 
-\def\theHbook{\arabic{book}}
+\def\theHbook{\the\value{book}}
 \def\toclevel@book{-2}
 
 \newcommand*{\book}{%
@@ -3035,7 +3074,7 @@
     \fi
   \fi
   \mempostaddchaptertotochook%
-  \ifheadnameref\M@gettitle{\f@rhdr}\else\M@gettitle{\f@rtoc}\fi%
+  \ifheadnameref\ExpandArgs{V}\M@gettitle\f@rhdr\else\ExpandArgs{V}\M@gettitle\f@rtoc\fi%
   \memendofchapterhook%
 }
 
@@ -3064,9 +3103,9 @@
   \addtocontents{lof}{\protect\addvspace{10pt}}%
   \addtocontents{lot}{\protect\addvspace{10pt}}}
 
-\newlength{\beforechapskip}\setlength{\beforechapskip}{50pt}
-\newlength{\midchapskip}\setlength{\midchapskip}{20pt}
-\newlength{\afterchapskip}\setlength{\afterchapskip}{40pt}
+\newlength{\beforechapskip} \setlength{\beforechapskip}{50pt}
+\newlength{\midchapskip}    \setlength{\midchapskip}{20pt}
+\newlength{\afterchapskip}  \setlength{\afterchapskip}{40pt}
 
 \newcommand{\@chs@def@ult}{%
   \def\chapterheadstart{\vspace*{\beforechapskip}}%
@@ -3099,7 +3138,7 @@
   \else
     \memchapstarinfo{\f@rhdr}{#2}%
   \fi
-  \ifheadnameref\M@gettitle{\f@rhdr}\else\M@gettitle{#2}\fi}
+  \ifheadnameref\ExpandArgs\M@gettitle\f@rhdr\else\M@gettitle{#2}\fi}
 
 \newcommand{\@schapter}[1]{%
   \m@mpn@new@schaptrue%
@@ -3607,30 +3646,72 @@
 \newcommand{\memsecinfo}[5]{}
 \newcommand{\memsecstarinfo}[2]{}
 
-\renewcommand{\@startsection}[6]{%
-  \@nameuse{#1block}%
-  \ifraggedbottomsection\if@nobreak\else
-    \vskip\z@\@plus\bottomsectionskip
-    \penalty\bottomsectionpenalty
-    \vskip\z@\@plus -\bottomsectionskip
-  \fi\fi
-  \def\m@msecn@me{#1}%
-  \if@noskipsec \leavevmode \fi
-  \par
-  \@tempskipa #4\relax
-  \@afterindenttrue
-  \ifdim \@tempskipa <\z@
-    \@tempskipa -\@tempskipa \@afterindentfalse
-  \fi
-  \if@nobreak
-    \everypar{}%
-  \else
+\ifmem@devmode
+
+  \patchcmd\@startsection{%
+    \if@noskipsec \leavevmode \fi%
+  }{%
+    \@nameuse{#1block}%
+    \ifraggedbottomsection\if@nobreak\else
+        \vskip\z@\@plus\bottomsectionskip
+        \penalty\bottomsectionpenalty
+        \vskip\z@\@plus -\bottomsectionskip
+      \fi\fi
+    \def\m@msecn@me{#1}%
+    \if@noskipsec \leavevmode \fi%
+  }%
+  {\typeout{\string\@startsection\space patch 1 success}}
+  {\typeout{\string\@startsection\space patch 1 failed}}
+
+  \patchcmd\@startsection{%
+    \addpenalty\@secpenalty\addvspace\@tempskipa%
+  }{%
     \addpenalty\@secpenalty\addvspace\@tempskipa
     \addvspace{-\parskip}% <--- added 2011/03/02
-  \fi
-  \@ifstar
+  }%
+  {\typeout{\string\@startsection\space patch 2 success}}
+  {\typeout{\string\@startsection\space patch 2 failed}}
+
+  \patchcmd\@startsection{%
+     \@ifstar%
+     {\@ssect{#3}{#4}{#5}{#6}}%
+     {\@dblarg{\@sect{#1}{#2}{#3}{#4}{#5}{#6}}}%
+   }{%
+     \@ifstar%
     {\@ssect{#3}{#4}{#5}{#6}}%
-    {\@trplargoom{\M@sect{#1}{#2}{#3}{#4}{#5}{#6}}}}
+    {\@trplargoom{\M@sect{#1}{#2}{#3}{#4}{#5}{#6}}}%
+  }%
+  {\typeout{\string\@startsection\space patch 3 success}}
+  {\typeout{\string\@startsection\space patch 3 failed}}
+
+\else % standard branch for dev-mode false
+  \renewcommand{\@startsection}[6]{%
+    \@nameuse{#1block}%
+    \ifraggedbottomsection\if@nobreak\else
+      \vskip\z@\@plus\bottomsectionskip
+      \penalty\bottomsectionpenalty
+      \vskip\z@\@plus -\bottomsectionskip
+    \fi\fi
+    \def\m@msecn@me{#1}%
+    \if@noskipsec \leavevmode \fi
+    \par
+    \@tempskipa #4\relax
+    \@afterindenttrue
+    \ifdim \@tempskipa <\z@
+      \@tempskipa -\@tempskipa \@afterindentfalse
+    \fi
+    \if@nobreak
+      \everypar{}%
+    \else
+      \addpenalty\@secpenalty\addvspace\@tempskipa
+      \addvspace{-\parskip}% <--- added 2011/03/02
+    \fi
+    \@ifstar
+      {\@ssect{#3}{#4}{#5}{#6}}%
+      {\@trplargoom{\M@sect{#1}{#2}{#3}{#4}{#5}{#6}}}}
+
+
+\fi % en dev-mode else branch
 
 \def\@xsect#1{%
   \@tempskipa #1\relax
@@ -3693,6 +3774,8 @@
        #7}}%
   \fi
   \@xsect{#5}}
+
+\def\@sect#1#2#3#4#5#6[#7]#8{\M@sect{#1}{#2}{#3}{#4}{#5}{#6}[{#7}][{#7}]{#8}}
 
 \let\@mem@old@ssect\@ssect
 \def\@ssect#1#2#3#4#5{%
@@ -4291,7 +4374,7 @@
         \csname the##1\endcsname\quad}
   \fi
 }{%
-  \def\theHsection{\theHchapter.\arabic{section}}
+  \def\theHsection{\theHchapter.\the\value{section}}
 }
 
 \newcommand*{\leadpagetoclevel}{chapter}
@@ -4384,9 +4467,7 @@
   \vadjust{}{\parfillskip\z@\memorigpar}}
 
 \newcommand*{\centerlastline}{%
-%%%  \leftskip\@flushglue
   \memRTLleftskip\@flushglue
-%%%  \rightskip=\z@ plus -1fil
   \memRTLrightskip=\z@ plus -1fil
   \parfillskip=\z@ plus 2fil}
 
@@ -4408,16 +4489,12 @@
   \setlength{\ragrparindent}{\parindent}
 \newcommand{\raggedyright}[1][2em]{%
   \let\\\@centercr\@rightskip \z@ \@plus #1\relax
-%%%  \rightskip\@rightskip
   \memRTLrightskip\@rightskip
-%%%  \leftskip\z@skip
   \memRTLleftskip\z@skip
   \parindent\ragrparindent}
 
 \newcommand*{\justlastraggedleft}{%
-%%%  \leftskip\@flushglue
   \memRTLleftskip\@flushglue
-%%%  \rightskip-\leftskip
   \memRTLrightskip-\memRTLleftskip
   \parfillskip\leftskip
   \parindent \z@}
@@ -4428,6 +4505,14 @@
   \memRTLrightskip\@flushglue
   \parfillskip \z@
   \everypar{\hskip \z@ \@plus -1fill}}
+
+\newcommand*{\raggedwrap}{%
+  \@rightskip\@flushglue
+%%%  \rightskip\@rightskip
+  \memRTLrightskip\@rightskip
+%%%  \leftskip\@totalleftmargin
+  \memRTLleftskip\@totalleftmargin
+  \parindent\ragrparindent}
 
 \newcommand{\hangfrom}[1]{%
   \setbox\@tempboxa\hbox{{#1}}%
@@ -5198,8 +5283,8 @@
 \NumberPoemTitle
 
 \newcounter{poem}\setcounter{poem}{0}
-  \renewcommand*{\thepoem}{\@arabic\c@poem}
-\newcommand*{\theHpoem}{\arabic{poem}}
+\renewcommand*{\thepoem}{\@arabic\c@poem}
+\providecommand*{\theHpoem}{\the\value{poem}}
 
 \newcommand*{\poemtitlestarmark}[1]{}
 \newcommand*{\poemtitlepstyle}{}
@@ -5252,7 +5337,7 @@
     \addcontentsline{toc}{\poemtoc}{\poemf@rtoc}%
     \memPoemTitleinfo{}{\poemf@rtoc}{\poemf@rhdr}{#2}%
   \fi
-  \ifheadnameref\M@gettitle{\poemf@rhdr}\else\M@gettitle{\poemf@rtoc}\fi}
+  \ifheadnameref\ExpandArgs{V}\M@gettitle\poemf@rhdr\else\ExpandArgs{V}\M@gettitle\poemf@rtoc\fi}
 
 \def\@makePoemTitlehead#1{{%
   \PoemTitleheadstart
@@ -5330,336 +5415,6 @@
   \ifnum \c@chapter>\z@ \thechapter.\fi \@arabic\c@equation}
 
 \RequirePackage{array}[2018/04/30]
- %
- % %%%%%%%%%% Array package code %%%%%%%%%%%%%%%%%%%%%
- % %%%%%%%%%% With acknowledgements to %%%%%%%%%%%%%%%%%%%%%
- % %%%%%%%%%% Frank Mittelbach & David Carlisle %%%%%%%%%%%%%%%%%%%%%
- %
- % %%%%%%%%%% Copy corresponds to array.sty 2016/10/06 v2.4d %%%%%%%%%
- % % \newcount \@chclass
- % % \newcount \@chnum
- % % \newcount \@lastchclass
- % \def\@addtopreamble#1{\xdef\@preamble{\@preamble #1}}
- % \def\@testpach{\@chclass
- %  \ifnum \@lastchclass=6 \@ne \@chnum \@ne \else
- %   \ifnum \@lastchclass=7 5 \else
- %    \ifnum \@lastchclass=8 \tw@ \else
- %     \ifnum \@lastchclass=9 \thr@@
- %    \else \z@
- %    \ifnum \@lastchclass = 10 \else
- %    \edef\@nextchar{\expandafter\string\@nextchar}%
- %    \@chnum
- %    \if \@nextchar c\z@ \else
- %     \if \@nextchar l\@ne \else
- %      \if \@nextchar r\tw@ \else
- %    \z@ \@chclass
- %    \if\@nextchar |\@ne \else
- %     \if \@nextchar !6 \else
- %      \if \@nextchar @7 \else
- %       \if \@nextchar <8 \else
- %        \if \@nextchar >9 \else
- %   10
- %   \@chnum
- %   \if \@nextchar m\thr@@\else
- %    \if \@nextchar p4 \else
- %     \if \@nextchar b5 \else
- %    \z@ \@chclass \z@ \@preamerr \z@ \fi \fi \fi \fi
- %    \fi \fi  \fi  \fi  \fi  \fi  \fi \fi \fi \fi \fi \fi}
- % \def\@xexpast#1*#2#3#4\@@{%
- %    \@tempcnta #2
- %    \toks@={#1}\@temptokena={#3}%
- %    \let\the@toksz\relax \let\the@toks\relax
- %    \def\@tempa{\the@toksz}%
- %    \ifnum\@tempcnta >0 \@whilenum\@tempcnta >0\do
- %      {\edef\@tempa{\@tempa\the@toks}\advance \@tempcnta \m@ne}%
- %        \let \@tempb \@xexpast \else
- %        \let \@tempb \@xexnoop \fi
- %    \def\the@toksz{\the\toks@}\def\the@toks{\the\@temptokena}%
- %    \edef\@tempa{\@tempa}%
- %    \expandafter \@tempb \@tempa #4\@@}
- % %  \def\@xexnoop#1\@@{}
- % \def\prepnext@tok{\advance \count@ \@ne
- %    \toks\count@{}}
- % \def\save@decl{\toks\count@ \expandafter{\@nextchar}}
- % \def\insert@column{%
- %    \the@toks \the \@tempcnta
- %    \ignorespaces \@sharp \unskip
- %    \the@toks \the \count@ \relax}
- % %    \newif \@iffirstamp
- % %    \def\@addamp{\if@firstamp \@firstampfalse
- % %                 \else \@addtopreamble &\fi}
- % \newdimen\col@sep
- % \def\@acol{\@addtopreamble{\hskip\col@sep}}
- % %    \def\@acolampacol{\@acol\@addamp\@acol}
- % \def\@mkpream#1{\gdef\@preamble{}\@lastchclass 4 \@firstamptrue
- %    \let\@sharp\relax \let\@startpbox\relax \let\@endpbox\relax
- %    \@xexpast #1*0x\@@
- %    \count@\m@ne
- %    \let\the@toks\relax
- %    \prepnext@tok
- %    \expandafter \@tfor \expandafter \@nextchar
- %     \expandafter :\expandafter =\@tempa \do
- %    {\@testpach
- %    \ifcase \@chclass \@classz \or \@classi \or \@classii
- %      \or \save@decl \or \or \@classv \or \@classvi
- %      \or \@classvii \or \@classviii  \or \@classix
- %      \or \@classx \fi
- %    \@lastchclass\@chclass}%
- %    \ifcase\@lastchclass
- %    \@acol \or
- %    \or
- %    \@acol \or
- %    \@preamerr \thr@@ \or
- %    \@preamerr \tw@ \@addtopreamble\@sharp \or
- %    \or
- %    \else  \@preamerr \@ne \fi
- %    \def\the@toks{\the\toks}}
- % \def\@classx{%
- %   \ifcase \@lastchclass
- %   \@acolampacol \or
- %   \@addamp \@acol \or
- %   \@acolampacol \or
- %   \or
- %   \@acol \@firstampfalse \or
- %   \@addamp
- %   \fi}
- % \def\@classz{\@classx
- %    \@tempcnta \count@
- %    \prepnext@tok
- %    \@addtopreamble{\ifcase \@chnum
- %       \hfil
- %       \d@llarbegin
- %       \insert@column
- %       \d@llarend \hfil \or
- %       \hskip1sp\d@llarbegin \insert@column \d@llarend \hfil \or
- %       \hfil\hskip1sp\d@llarbegin \insert@column \d@llarend \or
- %    $\vcenter%$ emacs
- %    \@startpbox{\@nextchar}\insert@column \@endpbox $\or%$ emacs
- %    \vtop \@startpbox{\@nextchar}\insert@column \@endpbox \or
- %    \vbox \@startpbox{\@nextchar}\insert@column \@endpbox
- %   \fi}\prepnext@tok}
- % \def\@classix{\ifnum \@lastchclass = \thr@@
- %        \@preamerr \thr@@ \fi
- %        \@classx}
- % \def\@classviii{\ifnum \@lastchclass >\z@
- %       \@preamerr 4\@chclass 6 \@classvi \fi}
- % \def\@arrayrule{\@addtopreamble \vline}
- % \def\@classvii{\ifnum \@lastchclass = \thr@@
- %    \@preamerr \thr@@ \fi}
- % \def\@classvi{\ifcase \@lastchclass
- %       \@acol \or
- %       \@addtopreamble{\hskip \doublerulesep}\or
- %       \@acol \or
- %       \@classvii
- %       \fi}
- % \def\@classii{\advance \count@ \m@ne
- %    \save@decl\prepnext@tok}
- % \def\@classv{\save@decl
- %    \@addtopreamble{\d@llarbegin\the@toks\the\count@\relax\d@llarend}%
- %    \prepnext@tok}
- % \def\@classi{\@classvi
- %    \ifcase \@chnum \@arrayrule \or
- %       \@classv \fi}
- % \def\@startpbox#1{\bgroup
- %   \setlength\hsize{#1}\@arrayparboxrestore
- %    \everypar{%
- %       \vrule \@height \ht\@arstrutbox \@width \z@
- %       \everypar{}}%
- %    }
- % \def\@endpbox{\@finalstrut\@arstrutbox \egroup\hfil}
- % \def\@array[#1]#2{%
- %   \@tempdima \ht \strutbox
- %   \advance \@tempdima by\extrarowheight
- %   \setbox \@arstrutbox \hbox{\vrule
- %              \@height \arraystretch \@tempdima
- %              \@depth \arraystretch \dp \strutbox
- %              \@width \z@}%
- %   \begingroup
- %   \@mkpream{#2}%
- %   \xdef\@preamble{\noexpand \ialign \@halignto
- %                   \bgroup \@arstrut \@preamble
- %                           \tabskip \z@ \cr}%
- %   \endgroup
- %   \@arrayleft
- %   \if #1t\vtop \else \if#1b\vbox \else \vcenter \fi \fi
- %   \bgroup
- %   \let \@sharp ##\let \protect \relax
- %   \lineskip \z@
- %   \baselineskip \z@
- %   \m@th
- %   \let\\\@arraycr \let\tabularnewline\\\let\par\@empty \@preamble}
- % \def\arraybackslash{\let\\\tabularnewline}
- % \newdimen \extrarowheight
- % \extrarowheight=0pt
- % \def\@arstrut{\unhcopy\@arstrutbox}
- % \def\@arraycr{\relax\iffalse{\fi\ifnum 0=`}\fi
- %   \@ifstar \@xarraycr \@xarraycr}
- % \def\@xarraycr{\@ifnextchar [%
- %   \@argarraycr {\ifnum 0=`{}\fi\cr}}
- % \def\@argarraycr[#1]{\ifnum0=`{}\fi\ifdim #1>\z@
- %   \expandafter\@xargarraycr\else
- %   \expandafter\@yargarraycr\fi{#1}}
- % \def\@xargarraycr#1{\unskip
- %   \@tempdima #1\advance\@tempdima \dp\@arstrutbox
- %   \vrule \@depth\@tempdima \@width\z@ \cr}
- % \def\@yargarraycr#1{\cr\noalign{\vskip #1}}
- % \long\def\multicolumn#1#2#3{%
- %    \multispan{#1}\begingroup
- %    \def\@addamp{\if@firstamp \@firstampfalse \else
- %                 \@preamerr 5\fi}%
- %    \@mkpream{#2}\@addtopreamble\@empty
- %    \endgroup
- %    \def\@sharp{#3}%
- %    \@arstrut \@preamble
- %    \null
- %    \ignorespaces}
- % \let\d@llarbegin\begingroup
- % \let\d@llarend\endgroup
- % \def\array{\col@sep\arraycolsep
- %   \def\d@llarbegin{$}\let\d@llarend\d@llarbegin\def\@halignto{}%$ emacs
- %   \@tabarray}
- % \def\@tabarray{\@ifnextchar[{\@array}{\@array[c]}}
- % \def\tabular{\def\@halignto{}\@tabular}
- % \expandafter\def\csname tabular*\endcsname#1{%
- %        \setlength\dimen@{#1}%
- %        \edef\@halignto{to\the\dimen@}\@tabular}
- % \def\@tabular{%
- %   \leavevmode
- %   \hbox \bgroup $\col@sep\tabcolsep \let\d@llarbegin\begingroup% $ emacs
- %                                     \let\d@llarend\endgroup
- %   \@tabarray}
- % \def\endarray{\crcr \egroup \egroup \gdef\@preamble{}}
- % \def\endtabular{\endarray $\egroup}%$ emacs
- % \expandafter\let\csname endtabular*\endcsname=\endtabular
- % \let\@ampacol=\relax        \let\@expast=\relax
- % \let\@arrayclassiv=\relax   \let\@arrayclassz=\relax
- % \let\@tabclassiv=\relax     \let\@tabclassz=\relax
- % \let\@arrayacol=\relax      \let\@tabacol=\relax
- % \let\@tabularcr=\relax      \let\@@endpbox=\relax
- % \let\@argtabularcr=\relax   \let\@xtabularcr=\relax
- % \def\@preamerr#1{\def\@tempd{{..} at wrong position: }%
- %    %\PackageError{array}{%
- %    \ClassError{memoir}{% changed in menoir
- %    \ifcase #1 Illegal pream-token (\@nextchar): `c' used\or %0
- %     Missing arg: token ignored\or                           %1
- %     Empty preamble: `l' used\or                             %2
- %     >\@tempd token ignored\or                               %3
- %     <\@tempd changed to !{..}\or                            %4
- %     Only one column-spec. allowed.\fi}\@ehc}                %5
- % \def\newcolumntype#1{%
- %   \edef\NC@char{\string#1}%
- %   \@ifundefined{NC@find@\NC@char}%
- %     {\@tfor\next:=<>clrmbp@!|\do{\if\noexpand\next\NC@char
- %         %\PackageWarning{array}%
- %           \@memwarn{Redefining primitive column \NC@char}\fi}% memoir change
- %      \NC@list\expandafter{\the\NC@list\NC@do#1}}%
- %    {%\PackageWarning{array}
- %       \@memwarn{Column \NC@char\space is already defined}}% memoir change
- %   \@namedef{NC@find@\NC@char}##1#1{\NC@{##1}}%
- %   \@ifnextchar[{\newcol@{\NC@char}}{\newcol@{\NC@char}[0]}}
- % \def\newcol@#1[#2]#3{\expandafter\@reargdef
- %      \csname NC@rewrite@#1\endcsname[#2]{\NC@find#3}}
- % \def\NC@#1{%
- %   \@temptokena\expandafter{\the\@temptokena#1}\futurelet\next\NC@ifend}
- % \def\NC@ifend{%
- %   \ifx\next\relax
- %     \else\@tempswatrue\expandafter\NC@rewrite\fi}
- % \def\NC@do#1{%
- %   \expandafter\let\expandafter\NC@rewrite
- %     \csname NC@rewrite@\string#1\endcsname
- %   \expandafter\let\expandafter\NC@find
- %     \csname NC@find@\string#1\endcsname
- %   \expandafter\@temptokena\expandafter{\expandafter}%
- %         \expandafter\NC@find\the\@temptokena#1\relax}
- % \def\showcols{{\def\NC@do##1{\let\NC@do\NC@show}\the\NC@list}}
- % \def\NC@show#1{%
- %   \typeout{Column #1\expandafter\expandafter\expandafter\NC@strip
- %   \expandafter\meaning\csname NC@rewrite@#1\endcsname\@@}}
- % \def\NC@strip#1:#2->#3 #4\@@{#2 -> #4}
- % \newtoks\NC@list
- % \newcolumntype{*}[2]{}
- % \long\@namedef{NC@rewrite@*}#1#2{%
- %   \count@#1\relax
- %   \loop
- %   \ifnum\count@>\z@
- %   \advance\count@\m@ne
- %   \@temptokena\expandafter{\the\@temptokena#2}%
- %   \repeat
- %   \NC@find}
- % \let\@xexpast\relax
- % \let\@xexnoop\relax
- % \def\save@decl{\toks \count@ = \expandafter\expandafter\expandafter
- %                   {\expandafter\@nextchar\the\toks\count@}}
- % \def\@mkpream#1{\gdef\@preamble{}\@lastchclass 4 \@firstamptrue
- %    \let\@sharp\relax \let\@startpbox\relax \let\@endpbox\relax
- %    \@temptokena{#1}\@tempswatrue
- %    \@whilesw\if@tempswa\fi{\@tempswafalse\the\NC@list}%
- %    \count@\m@ne
- %    \let\the@toks\relax
- %    \prepnext@tok
- %    \expandafter \@tfor \expandafter \@nextchar
- %     \expandafter :\expandafter =\the\@temptokena \do
- %    {\@testpach
- %    \ifcase \@chclass \@classz \or \@classi \or \@classii
- %      \or \save@decl \or \or \@classv \or \@classvi
- %      \or \@classvii \or \@classviii
- %      \or \@classx
- %      \or \@classx \fi
- %    \@lastchclass\@chclass}%
- %    \ifcase\@lastchclass
- %    \@acol \or
- %    \or
- %    \@acol \or
- %    \@preamerr \thr@@ \or
- %    \@preamerr \tw@ \@addtopreamble\@sharp \or
- %    \or
- %    \else  \@preamerr \@ne \fi
- %    \def\the@toks{\the\toks}}
- % \let\@classix\relax
- % \def\@classviii{\ifnum \@lastchclass >\z@\ifnum\@lastchclass=\tw@\else
- %       \@preamerr 4\@chclass 6 \@classvi \fi\fi}
- % \def\@classv{\save@decl
- %    \expandafter\NC@ecs\@nextchar\extracolsep{}\extracolsep\@@@
- %    \@addtopreamble{\d@llarbegin\the@toks\the\count@\relax\d@llarend}%
- %    \prepnext@tok}
- % \def\NC@ecs#1\extracolsep#2#3\extracolsep#4\@@@{\def\@tempa{#2}%
- %   \ifx\@tempa\@empty\else\toks\count@={#1\tabskip#2\relax#3}\fi}
- % \def\@tabarray{\@ifnextchar[{\@@array}{\@@array[c]}}
- % \let\@@array\@array
- % \def\endarray{\crcr \egroup \egroup \@arrayright \gdef\@preamble{}}
- % \let\@arrayleft\@empty
- % \let\@arrayright\@empty
- % \newlength{\extratabsurround}
- % \setlength{\extratabsurround}{2pt}
- % \newlength{\backup@length}
- % \newcommand{\firsthline}{%}} emacs
- %   \multicolumn1c{%
- %     \global\backup@length\ht\@arstrutbox
- %     \global\advance\backup@length\dp\@arstrutbox
- %     \global\advance\backup@length\arrayrulewidth
- %      \raise\extratabsurround\copy\@arstrutbox
- %     }\\[-\backup@length]\hline
- % }
- % \newcommand{\lasthline}{\hline\multicolumn1c{%}} emacs
- %     \global\backup@length2\ht\@arstrutbox
- %     \global\advance\backup@length2\dp\@arstrutbox
- %     \global\advance\backup@length\arrayrulewidth
- %     }\\[-\backup@length]%
- %     \multicolumn1c{%
- %        \lower\extratabsurround\copy\@arstrutbox
- %        }%
- % }
- % \CheckCommand*\@xhline{\ifx\reserved@a\hline
- %                \vskip\doublerulesep
- %                \vskip-\arrayrulewidth
- %              \fi
- %       \ifnum0=`{\fi}}
- % \renewcommand*\@xhline{\ifx\reserved@a\hline
- %                \vskip\doublerulesep
- %              \fi
- %       \ifnum0=`{\fi}}
- % %%%%%%%%%% end array.sty 2016/10/06 v2.4d %%%%%%%%%
- %
 \newif \@iffirstamp
 \let\m@mold@addamp\@addamp
 \newcommand*{\m@m@addamp}{%
@@ -5674,450 +5429,12 @@
 
 
 \RequirePackage{dcolumn}[2014/10/28]
- % %%%%%%%%%% Dcolumn package code %%%%%%%%%%%%%%%%%%%%%
- % %%%%%%%%%% With acknowledgements to David Carlisle %%%%%%%%%%%%%%%%%%%%%
- %
- % \def\DC@#1#2#3{%
- %   \uccode`\~=`#1\relax
- %   \m@th
- %   \afterassignment\DC@x\count@#3\relax{#1}{#2}}
- % \def\DC@x#1\relax#2#3{%
- %   \ifnum\z@>\count@
- %     \expandafter\DC@centre
- %   \else
- %     \expandafter\DC@right
- %   \fi
- %   {#2}{#3}{#1}}
- % \def\DC@centre#1#2#3{%
- %   \let\DC@end\DC@endcentre
- %   \uppercase{\def~}{$\egroup\setbox\tw@=\hbox\bgroup${#2}}%$
- %   \setbox\tw@=\hbox{${\phantom{{#2}}}$}%
- %   \setbox\z@=\hbox\bgroup$\mathcode`#1="8000 }%$
- % \def\DC@endcentre{$\egroup%$
- %     \ifdim \wd\z@>\wd\tw@
- %       \setbox\tw@=\hbox to\wd\z@{\unhbox\tw@\hfill}%
- %     \else
- %       \setbox\z@=\hbox to\wd\tw@{\hfill\unhbox\z@}\fi
- %     \box\z@\box\tw@}
- % \def\DC@right#1#2#3{%
- %   \ifx\relax#3\relax
- %     \hfill
- %     \let\DC@rl\bgroup
- %   \else
- %     \edef\DC@rl{to\the\count@\dimen@ii\bgroup\hss\hfill}%
- %     \count@\@gobble#3\relax
- %   \fi
- %   \let\DC@end\DC@endright
- %   \uppercase{\def~}{$\egroup\setbox\tw@\hbox to\dimen@\bgroup${#2}}%
- %    \setbox\z@\hbox{$1$}\dimen@ii\wd\z@
- %    \dimen@\count@\dimen@ii
- %    \setbox\z@\hbox{${#2}$}\advance\dimen@\wd\z@
- %    \setbox\tw@\hbox to\dimen@{}%
- %    \setbox\z@\hbox\DC@rl$\mathcode`#1="8000 }%$
- % \def\DC@endright{$\hfil\egroup\box\z@\box\tw@}%$
- % \newcolumntype{D}[3]{>{\DC@{#1}{#2}{#3}}c<{\DC@end}}
- %
- % %%%%%%%%%% end Dcolumn package code %%%%%%%%%%%%%%%%%%%%%
- %
 \RequirePackage{delarray}[2014/10/28]
- % %%%%%%%%%% Delarray package code %%%%%%%%%%%%%%%%%%%%%
- % %%%%%%%%%% With acknowledgements to David Carlisle %%%%%%%%%%%%%%%%%%%%%
- %
- % \def\@@array[#1]{\@ifnextchar\bgroup
- %   {\let\@arrayleft\relax\let\@arrayright\relax\@array[#1]}%
- %   {\@del@array[#1]}}
- % \def\@del@array[#1]#2#3#4{%
- %   \setbox\z@\hbox{$\left#2\right#4$}%
- %   \if#1c\def\@arrayleft{\left#2}\def\@arrayright{\right#4}%
- %   \else\def\@arrayleft{\setbox\z@}%
- %   \def\@arrayright{%
- %      \dimen@=\dp\z@
- %      \advance\dimen@-\ht\z@
- %      \divide \dimen@ by \tw@
- %      \advance\dimen@ by\fontdimen22 \textfont\tw@
- %      \lower\dimen@\hbox{$\left#2\vcenter{\unvbox\z@}\right#4$}}%
- %   \fi
- %   \@array[#1]{#3}}
- % %%%%%%%%%% end Delarray package code %%%%%%%%%%%%%%%%%%%%%
- %
 \RequirePackage{tabularx}[2016/02/03]
-
- % %%%%%%%%%% Tabularx package code %%%%%%%%%%%%%%%%%%%%%
- % %%%%%%%%%% With acknowledgements to David Carlisle %%%%%%%%%%%%%%%%%%%%%
- %
- % %%% This is a carbon copy of the tabularx dtx sources for v2.11,
- % %%% 2016/02/03 with two changes: error messages mention the class
- % %%% instead of tabularx.
- %
- % %%%%%%%%%% Tabularx package code v2.11 2016/02/03 %%%%%%%%%%%%%%%%%%%%%
- %
- % \newdimen\TX@col@width
- % \newdimen\TX@old@table
- % \newdimen\TX@old@col
- % \newdimen\TX@target
- % \newdimen\TX@delta
- % \newcount\TX@cols
- % \newif\ifTX@
- % \def\tabularx#1{%
- % \edef\TX@{\@currenvir}%
- %   {\ifnum0=`}\fi
- %   \setlength\TX@target{#1}%
- %   \TX@typeout{Target width: #1 = \the\TX@target.}%
- %   \toks@{}\TX@get@body}
- % \let\endtabularx\relax
- % \long\def\TX@get@body#1\end
- %   {\toks@\expandafter{\the\toks@#1}\TX@find@end}
- % \def\TX@find@end#1{%
- %   \def\@tempa{#1}%
- %   \ifx\@tempa\TX@\expandafter\TX@endtabularx
- %   \else\toks@\expandafter
- %     {\the\toks@\end{#1}}\expandafter\TX@get@body\fi}
- % \long\def\TX@find@endtabularxa
- %        #1\endtabularx#2\endtabularx#3\TX@find@endtabularxa{%
- %   \ifx\TX@#2\relax\else
- %   \toks@\expandafter{\the\toks@#1}%
- %   \fi}
- % \long\def\TX@find@endtabularxb
- %        #1\endtabularx#2\endtabularx#3\TX@find@endtabularxb{%
- %   \ifx\TX@#2%
- %     \expandafter\@firstoftwo
- %   \else
- %      \expandafter\@secondoftwo
- %   \fi
- %   {#1}{#2}}
- % \def\TX@find@endtabularxbb{%
- %   \expandafter\expandafter\expandafter
- %   \TX@find@endtabularxb
- % }
- % \def\TX@{tabularx}
- % \def\TX@endtabularx{%
- %    \expandafter\expandafter\expandafter
- %      \TX@find@endtabularxa\csname end\TX@\endcsname
- %      \endtabularx\TX@\endtabularx\TX@find@endtabularxa
- %   \expandafter\TX@newcol\expandafter{\tabularxcolumn{\TX@col@width}}%
- %   \let\verb\TX@verb
- %   \def\@elt##1{\global\value{##1}\the\value{##1}\relax}%
- %   \edef\TX@ckpt{\cl@@ckpt}%
- %   \let\@elt\relax
- %   \TX@old@table\maxdimen
- %   \TX@col@width\TX@target
- %   \global\TX@cols\@ne
- %   \TX@typeout@
- %     {\@spaces Table Width\@spaces Column Width\@spaces X Columns}%
- %   \TX@trial{\def\NC@rewrite@X{%
- %           \global\advance\TX@cols\@ne\NC@find p{\TX@col@width}}}%
- %   \loop
- %     \TX@arith
- %     \ifTX@
- %     \TX@trial{}%
- %   \repeat
- %   {\let\@footnotetext\TX@ftntext\let\@xfootnotenext\TX@xftntext
- %     \csname tabular*\expandafter\endcsname\expandafter\TX@target
- %       \the\toks@
- %     \csname endtabular*\endcsname}%
- %   \global\TX@ftn\expandafter{\expandafter}\the\TX@ftn
- %   \ifnum0=`{\fi}%
- %    \expandafter\expandafter\expandafter
- %    \TX@find@endtabularxbb
- %     \expandafter\end\expandafter{\TX@}%
- %     \endtabularx\TX@\endtabularx\TX@find@endtabularxb
- % }
- % \def\TX@arith{%
- %   \TX@false
- %   \@tempdimb\maxdimen
- %   \divide\@tempdimb\TX@cols
- %   \ifdim\TX@col@width>\@tempdimb
- %     \TX@typeout@{Don't exceed \maxdimen}%
- %     \wd\@tempboxa\maxdimen
- %   \fi
- %   \ifdim\TX@old@table=\wd\@tempboxa
- %     \TX@col@width\TX@old@col
- %     \TX@typeout@{Reached minimum width, backing up.}%
- %   \else
- %     \dimen@\wd\@tempboxa
- %     \advance\dimen@ -\TX@target
- %     \ifdim\dimen@<\TX@delta
- %       \TX@typeout@{Reached target.}%
- %     \else
- %       \ifnum\TX@cols>\@ne
- %         \advance\TX@cols\m@ne
- %       \fi
- %       \divide\dimen@\TX@cols
- %       \advance\dimen@ -\TX@col@width
- %       \ifdim \dimen@ >\z@
- %         %\PackageWarning{tabularx}%
- %          \@memwarn{X Columns too narrow (table too wide)\MessageBreak}% <-- change here
- %         \TX@col@width\TX@error@width\relax
- %       \else
- %         \TX@old@col\TX@col@width
- %         \TX@old@table\wd\@tempboxa
- %         \TX@col@width-\dimen@
- %         \TX@true
- %       \fi
- %     \fi
- %   \fi}
- % \def\TX@error@width{1em}
- % \TX@delta\hfuzz
- % \newcolumntype{X}{}
- % \def\tabularxcolumn#1{p{#1}}
- % \def\TX@newcol{\newcol@{X}[0]}
- % \def\TX@trial#1{%
- %   \setbox\@tempboxa\hbox{%
- %     #1\relax
- %   \let\@footnotetext\TX@trial@ftn
- %   \let\TX@vwarn\@empty
- %    \expandafter\let\expandafter\tabularx\csname tabular*\endcsname
- %    \expandafter\let\expandafter\endtabularx\csname endtabular*\endcsname
- %    \def\write{\begingroup
- %      \def\let{\afterassignment\endgroup\toks@}%
- %         \afterassignment\let\count@}%
- %     \hbadness\@M
- %     \hfuzz\maxdimen
- %     \let\hbadness\@tempcnta
- %     \let\hfuzz\@tempdima
- %     \expandafter\tabular\the\toks@
- %     \endtabular}%
- %   \TX@ckpt
- %   \TX@typeout@{\@spaces
- %      \expandafter\TX@align
- %         \the\wd\@tempboxa\space\space\space\space\space\@@
- %      \expandafter\TX@align
- %         \the\TX@col@width\space\space\space\space\space\@@
- %      \@spaces\the\TX@cols}}
- % \def\TX@align#1.#2#3#4#5#6#7#8#9\@@{%
- %   \ifnum#1<10 \space\fi
- %   \ifnum#1<100 \space\fi
- %   \ifnum#1<\@m\space\fi
- %   \ifnum#1<\@M\space\fi
- %   #1.#2#3#4#5#6#7#8\space\space}
- % \ifx\arraybackslash\@undefined
- % \def\arraybackslash{\let\\\tabularnewline}
- % \fi
- % \def\tracingtabularx{%
- %   %\def\TX@typeout{\PackageWarningNoLine{tabularx}}%
- %   \def\TX@typeout{\ClassWarningNoLine{memoir}}% <--- changed
- %   \def\TX@typeout@##1{\typeout{(tabularx) ##1}}}
- % \let\TX@typeout\@gobble
- % \let\TX@typeout@\@gobble
- % \newtoks\TX@ftn
- % \long\def\TX@ftntext#1{%
- %   \edef\@tempa{\the\TX@ftn\noexpand\footnotetext
- %                     [\the\csname c@\@mpfn\endcsname]}%
- %   \global\TX@ftn\expandafter{\@tempa{#1}}}%
- % \long\def\TX@xftntext[#1]#2{%
- %   \global\TX@ftn\expandafter{\the\TX@ftn\footnotetext[#1]{#2}}}
- % \long\def\TX@trial@ftn#1{}
- % {\uccode`\*=`\ %
- % \uppercase{\gdef\TX@verb{%
- %   \leavevmode\null\TX@vwarn
- %   {\ifnum0=`}\fi\ttfamily\let\\\ignorespaces
- %   \@ifstar{\let~*\TX@vb}{\TX@vb}}}}
- % \def\TX@vb#1{\def\@tempa##1#1{\toks@{##1}\edef\@tempa{\the\toks@}%
- %     \expandafter\TX@v\meaning\@tempa\\ \\\ifnum0=`{\fi}}\@tempa!}
- % \def\TX@v#1!{\afterassignment\TX@vfirst\let\@tempa= }
- % \begingroup
- % \catcode`\*=\catcode`\#
- % \catcode`\#=12
- % \gdef\TX@vfirst{%
- %   \if\@tempa#%
- %     \def\@tempb{\TX@v@#}%
- %   \else
- %     \let\@tempb\TX@v@
- %     \if\@tempa\space~\else\@tempa\fi
- %   \fi
- %   \@tempb}
- % \gdef\TX@v@*1 *2{%
- %   \TX@v@hash*1##\relax\if*2\\\else~\expandafter\TX@v@\fi*2}
- % \gdef\TX@v@hash*1##*2{*1\ifx*2\relax\else#\expandafter\TX@v@hash\fi*2}
- % \endgroup
- % \def\TX@vwarn{%
- %   \@warning{\noexpand\verb may be unreliable inside tabularx}%
- %   \global\let\TX@vwarn\@empty}
- %
- % %%%%%%%%%% end Tabularx package code v2.11 %%%%%%%%%%%%%%%%%%%%%
- %
- %
- %
- %
- % %%\@memfakeusepackage{array}
- % %%\@memfakeusepackage{dcolumn}
- % %%\@memfakeusepackage{delarray}
- % %%\@memfakeusepackage{tabularx}
- %
 \newcommand*{\bktabrule}[1]{%
   \hrule \@height#1}
 
-%%%%%%%%%% Booktabs package code       %%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%% slightly modified by PRW    %%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%% by permission of Simon Fear %%%%%%%%%%%%%%%%%%%%%
-
-\AtBeginDocument{%
-  \providecommand*{\CT@arc@}{}}
-
-\newdimen\heavyrulewidth
-\newdimen\lightrulewidth
-\newdimen\cmidrulewidth
-\newdimen\belowrulesep
-\newdimen\belowbottomsep
-\newdimen\aboverulesep
-\newdimen\abovetopsep
-\newdimen\cmidrulesep
-\newdimen\cmidrulekern
-\newdimen\defaultaddspace
-\heavyrulewidth=.08em
-\lightrulewidth=.05em
-\cmidrulewidth=.03em
-\belowrulesep=.65ex
-\belowbottomsep=\z@
-\aboverulesep=.4ex
-\abovetopsep=\z@
-\cmidrulesep=\doublerulesep
-\cmidrulekern=.5em
-\defaultaddspace=.5em
-
-\newcount\@cmidla
-\newcount\@cmidlb
-\newdimen\@aboverulesep
-\newdimen\@belowrulesep
-\newcount\@thisruleclass
-\newcount\@lastruleclass
-\@lastruleclass=0
-\newdimen\@thisrulewidth
-
-\def\futurenonspacelet#1{\def\@BTcs{#1}%
- \afterassignment\@BTfnslone\let\nexttoken= }
-\def\@BTfnslone{\expandafter\futurelet\@BTcs\@BTfnsltwo}
-\def\@BTfnsltwo{\expandafter\ifx\@BTcs\@sptoken\let\next=\@BTfnslthree
- \else\let\next=\nexttoken\fi \next}
-\def\@BTfnslthree{\afterassignment\@BTfnslone\let\next= }
-
-
-
-
-\def\toprule{\noalign{\ifnum0=`}\fi
-  \@aboverulesep=\abovetopsep
-  \global\@belowrulesep=\belowrulesep
-  \global\@thisruleclass=\@ne
-  \@ifnextchar[{\@BTrule}{\@BTrule[\heavyrulewidth]}}
-
-\def\midrule{\noalign{\ifnum0=`}\fi
-  \@aboverulesep=\aboverulesep
-  \global\@belowrulesep=\belowrulesep
-  \global\@thisruleclass=\@ne
-  \@ifnextchar[{\@BTrule}{\@BTrule[\lightrulewidth]}}
-
-\def\bottomrule{\noalign{\ifnum0=`}\fi
-  \@aboverulesep=\aboverulesep
-  \global\@belowrulesep=\belowbottomsep
-  \global\@thisruleclass=\@ne
-  \@ifnextchar[{\@BTrule}{\@BTrule[\heavyrulewidth]}}
-
-\def\specialrule#1#2#3{\noalign{\ifnum0=`}\fi
-  \@aboverulesep=#2\global\@belowrulesep=#3\global\@thisruleclass=\tw@
-  \@BTrule[#1]}
-
-\def\addlinespace{\noalign{\ifnum0=`}\fi
-  \@ifnextchar[{\@addspace}{\@addspace[\defaultaddspace]}}
-\def\@addspace[#1]{\global\@belowrulesep=#1\global\@thisruleclass=\tw@
-  \futurelet\@tempa\@BTendrule}
-
-\def\@BTrule[#1]{%
-  \ifx\longtable\undefined
-    \let\@BTswitch\@BTnormal
-  \else\ifx\hline\LT@hline
-    \nobreak
-    \let\@BTswitch\@BLTrule
-  \else
-    \let\@BTswitch\@BTnormal
-  \fi\fi
-  \global\@thisrulewidth=#1\relax
-  \ifnum\@thisruleclass=\tw@\vskip\@aboverulesep\else
-  \ifnum\@lastruleclass=\z@\vskip\@aboverulesep\else
-  \ifnum\@lastruleclass=\@ne\vskip\doublerulesep\fi\fi\fi
-  \@BTswitch}
-
-\def\@BTnormal{%
-%%  \bktabrule{\@thisrulewidth}
-  {\CT@arc@\bktabrule{\@thisrulewidth}}%
-  \futurenonspacelet\@tempa\@BTendrule}
-\def\@BLTrule{\@ifnextchar({\@@BLTrule}{\@@BLTrule()}}
-\def\@@BLTrule(#1){\@setrulekerning{#1}%
-\global\@cmidlb\LT@cols
-\ifnum0=`{\fi}%
-\@cmidruleb
-\noalign{\ifnum0=`}\fi
-\futurenonspacelet\@tempa\@BTendrule}
-
-\def\@BTendrule{%
-  \ifx\@tempa\toprule\global\@lastruleclass=\@thisruleclass
-  \else\ifx\@tempa\midrule\global\@lastruleclass=\@thisruleclass
-  \else\ifx\@tempa\bottomrule\global\@lastruleclass=\@thisruleclass
-  \else\ifx\@tempa\cmidrule\global\@lastruleclass=\@thisruleclass
-  \else\ifx\@tempa\specialrule\global\@lastruleclass=\@thisruleclass
-  \else\ifx\@tempa\addlinespace\global\@lastruleclass=\@thisruleclass
-  \else\global\@lastruleclass=\z@\fi\fi\fi\fi\fi\fi
-  \ifnum\@lastruleclass=\@ne\relax\else\vskip\@belowrulesep\fi
-  \ifnum0=`{\fi}}
-\def\@setrulekerning#1{%
-  \global\let\cmrkern@l\z@
-  \global\let\cmrkern@r\z@
-  \@tfor\@tempa :=#1\do
-  {\def\@tempb{r}%
-   \ifx\@tempa\@tempb
-     \global\let\cmrkern@r\cmidrulekern
-      \def\cmrsideswitch{\cmrkern@r}%
-   \else
-     \def\@tempb{l}%
-     \ifx\@tempa\@tempb
-       \global\let\cmrkern@l\cmidrulekern
-       \def\cmrsideswitch{\cmrkern@l}%
-     \else
-       \global\expandafter\let\cmrsideswitch\@tempa
-     \fi
-   \fi}}
-
-\def\cmidrule{\noalign{\ifnum0=`}\fi
-    \@ifnextchar[{\@cmidrule}{\@cmidrule[\cmidrulewidth]}}
-\def\@cmidrule[#1]{\@ifnextchar({\@@cmidrule[#1]}{\@@cmidrule[#1]()}}
-\def\@@cmidrule[#1](#2)#3{\@@@cmidrule[#3]{#1}{#2}}
-
-\def\@@@cmidrule[#1-#2]#3#4{\global\@cmidla#1\relax
-    \global\advance\@cmidla\m@ne
-    \ifnum\@cmidla>0\global\let\@gtempa\@cmidrulea\else
-    \global\let\@gtempa\@cmidruleb\fi
-    \global\@cmidlb#2\relax
-    \global\advance\@cmidlb-\@cmidla
-    \global\@thisrulewidth=#3
-    \@setrulekerning{#4}
-    \ifnum\@lastruleclass=\z@\vskip \aboverulesep\fi
-    \ifnum0=`{\fi}\@gtempa
-    \noalign{\ifnum0=`}\fi\futurenonspacelet\@tempa\@xcmidrule}
-\def\@xcmidrule{\ifx\@tempa\cmidrule\vskip-\@thisrulewidth
-    \global\@lastruleclass=\@ne\else
-    \ifx\@tempa\morecmidrules\vskip \cmidrulesep
-    \global\@lastruleclass=\@ne\else
-    \vskip \belowrulesep\global\@lastruleclass=\z@\fi\fi
-    \ifnum0=`{\fi}}
-
-\def\@cmidrulea{%
-  \multispan\@cmidla&\multispan\@cmidlb
-%%    \unskip\hskip \cmrkern@l\leaders\bktabrule{\@thisrulewidth}\hfill
-    \unskip\hskip \cmrkern@l{%
-    \CT@arc@\leaders\bktabrule{\@thisrulewidth}\hfill\kern\z@}%
-    \hskip \cmrkern@r\cr}
-\def\@cmidruleb{%
-  \multispan\@cmidlb
-%%    \unskip\hskip \cmrkern@l\leaders\bktabrule{\@thisrulewidth}\hfill
-  \unskip\hskip \cmrkern@l{%
-    \CT@arc@\leaders\bktabrule{\@thisrulewidth}\hfill\kern\z@}%
-    \hskip \cmrkern@r\cr}
-
-\def\morecmidrules{\noalign{\relax}}
-
-%%%%%%%%%% end of Booktabs package code %%%%%%%%%%%%%%%%%%%%%
-
-%%\@memfakeusepackage{booktabs}
-
+\RequirePackage{booktabs}[2020/01/12]
 \newskip\ctableftskip \ctableftskip=\fill
 \newskip\ctabrightskip \ctabrightskip=\fill
 
@@ -6442,8 +5759,6 @@
   \newenvironment{#2*}{\@dblfloat{#2}}{\end@dblfloat}
 } % end \newfloat
 
-  %\let\mem@old@xfloat\@xfloat
-  %\def\@xfloat#1[#2]{\mem@old@xfloat{#1}[#2]\@nameuse{#1adjustment}}
 \newcommand*{\setfloatlocations}[2]{\@namedef{fps@#1}{#2}}
 
 \newcommand*\setfloatadjustment[2]{\@namedef{#1adjustment}{#2}}
@@ -6880,7 +6195,7 @@
     \ifdonemaincaption\else
       \advance\csname c@\@captype\endcsname\@ne
     \fi
-    \refstepcounter{sub\@captype}\@contkeep
+    \mem@step@subcounter%
     \@ifnextchar [%
       {\@memsubcap{sub\@captype}}%
       {\@memsubcap{sub\@captype}[\@empty]}}
@@ -6908,10 +6223,10 @@
   \@makesubfloatcaption{\@nameuse{@the#1}}{#3}}
 
 \newcommand{\contsubcaption}{%
-  \bgroup
+  \bgroup%
     \let\label=\memsub@label
-    \@contset
-    \refstepcounter{sub\@captype}\@contkeep
+    \@contset%
+    \mem@step@subcounter%
     \@ifnextchar [%
       {\@memsubcap{sub\@captype}}%
       {\@memsubcap{sub\@captype}[\@empty]}}
@@ -6919,6 +6234,7 @@
 
 \newcommand\mem@step@subcounter{%
   \refstepcounter{sub\@captype}\@contkeep%
+  \UseHook{memoir/subcaption/aftercounter}%
 }
 \newcommand{\subbottom}{%
   \@contbotsubtrue
@@ -7072,68 +6388,25 @@
                      \@nameuse{p@sub\@captype}%
                      \@nameuse{thesub\@captype})}}
 \def\sf@memsub@label(#1)#2{%
-  \protected@edef\mem@currentlabelname{#1}%
+  \protected@edef\@currentlabelname{#1}%
+  % if available we can also use %  \ExpandArgs{x}\mem@set@cln{#1}
   \sf@@memsub@label{#2}}
 
-\newcommand\sf@@memsub@label@hook[1]{}
+\AtBeginDocument{
+  \let\mem@kernel@label\label
+}
 
-\AtBeginDocument{%
-  \@ifpackageloaded{nameref}{%
-    \newcommand*{\sf@@memsub@label}[1]{%
-      \@bsphack
-      \sf@@memsub@label@hook{#1}%
-      \protected@write\@auxout{}{%
-        \string\newlabel{#1}%
-          {{\@nameuse{p@sub\@captype}\@nameuse{@@thesub\@captype}}%
-          {\thepage}%
-          {\mem@currentlabelname\relax}%
-          {\@currentHref}{}}}%
-      \protected@write\@auxout{}{%
-        \string\newlabel{sub@#1}%
-          {{\@nameuse{@@thesub\@captype}}%
-          {\thepage}%
-          {\mem@currentlabelname\relax}%
-          {\@currentHref}{}}}%
-  \@esphack}
-  }{% no nameref
-    \@ifpackageloaded{hyperref}{%
-      \newcommand*{\sf@@memsub@label}[1]{%
-        \@bsphack
-        \sf@@memsub@label@hook{#1}%
-        \protected@write\@auxout{}{%
-          \string\newlabel{#1}%
-            {{\@nameuse{p@sub\@captype}\@nameuse{@@thesub\@captype}}%
-            {\thepage}%
-            {\mem@currentlabelname\relax}%
-            {\@currentHref}{}}}%
-        \protected@write\@auxout{}{%
-          \string\newlabel{sub@#1}%
-            {{\@nameuse{@@thesub\@captype}}%
-            {\thepage}%
-            {\mem@currentlabelname\relax}%
-            {\@currentHref}{}}}%
-    \@esphack}
-    }{% no hyperref
-      \let\@memoldlabel\label
-      \newcommand*{\sf@@memsub@label}[1]{%
-        \@bsphack
-        \sf@@memsub@label@hook{#1}%
-        \@memoldlabel{#1}%
-        \protected@write\@auxout{}{%
-          \string\newlabel{sub@#1}%
-            {{\@nameuse{@@thesub\@captype}}%
-            {\thepage}}}%
-    \@esphack}
-    }{}%
-  }% end no nameref
-   \@ifpackageloaded{showkeys}{%
-     \ifdefined\SK@\relax
-       \renewcommand\sf@@memsub@label@hook[1]{%
-        \SK@\SK@@label{#1}%
-      }
-     \fi
-  }{}
-} % end AtBeginDocument
+\newcommand\sf@@memsub@label[1]{%
+  \@bsphack%
+  \mem@kernel@label{#1}% normal label
+  \begingroup%
+  % \ExpandArgs{x}\mem@set@cln{\@nameuse{@@thesub\@captype}}
+  \protected@edef\@currentlabel{\@nameuse{@@thesub\@captype}}% sub@label
+  \def\showkeyslabelformat##1{}% disable showkeys for this extra label
+  \mem@kernel@label{sub@#1}% internally generated sub@label
+  \endgroup%
+  \@esphack%
+}
 
 \DeclareRobustCommand{\subcaptionref}{%
   \@ifstar{\ssc@ref}{\sc@ref}}
@@ -7249,11 +6522,13 @@
     \end{minipage}%
   \end{lrbox}}
 
+
+\newcommand*\sidecaption@refstepcounter[2]{\refstepcounter{#1}}
 \def\endsidecaption{%
   \m@mscapend@fbox
-  \refstepcounter\@captype
+  \sidecaption@refstepcounter\@captype\@captype
   \m@mscaplabel
-  \m@mscapcheckside %<--- added 2012/08/19
+  \m@mscapcheckside%
   \begin{lrbox}{\m@mscap@capbox}%
     \begin{minipage}[c]{\sidecapwidth}%
       \sidecapstyle
@@ -7381,7 +6656,9 @@
 
 \def\endsidecontcaption{%
   \m@mscapend@fbox
-  \addtocounter{\@captype}{\m@ne}\refstepcounter\@captype
+  \addtocounter{\@captype}{\m@ne}
+  \sidecaption@refstepcounter\@captype{memhycontfloat}
+  %\refstepcounter\@captype
   \m@mscaplabel
   \m@mscapcheckside %<--- added 2013/05/30
   \begin{lrbox}{\m@mscap@capbox}%
@@ -7671,54 +6948,34 @@
 \newcommand*{\Cref}[1]{\chapterrefname\ref{#1}}
 \newcommand*{\Sref}[1]{\sectionrefname\ref{#1}}
 
+\def\NR@nopatch@sectioning{set}
+\def\NR@nopatch@caption{set}
+\RequirePackage{nameref}
+\newcommand\titleref{\nameref}
+
+\def\mem@set@cln{\NR@gettitle}
+\newcommand\M@gettitle[1]{\mem@set@cln{#1}}
 \newif\ifheadnameref
 \newcommand*{\headnameref}{\headnamereftrue}
 \newcommand*{\tocnameref}{\headnamereffalse}
   \tocnameref
-\newcommand{\theTitleReference}[2]{#2}
-
-\let\@mem@old@label\label
-\def\label#1{\@bsphack\begingroup
-  \protected@edef\@currentlabel{\protect\M@TitleReference
-      {\@currentlabel}{\M@currentTitle}}%
-  \@mem@old@label{#1}%
-  \endgroup \@esphack}%
-
-\def\@mem@@gettitle#1{\begingroup \let\protect\@unexpandable@protect
-    \let\label\@mem@nestwarn
-    \let\index\@gobble \let\glossary\@gobble
-    \let\markboth\@gobbletwo \let\@mkboth\@gobbletwo
-    \let\markright\@gobble
-    \edef\@tempa{\noexpand\def\noexpand\M@currentTitle{#1}}%
-  \expandafter\endgroup\@tempa}
-
-\let\@mem@nestwarn\@gobble
-\let\M@TitleReference\@firstoftwo
-
-\newcommand*\@mem@titleref[1]{\begingroup
-  \let\numberline\@gobble
-  \let\M@TitleReference\@mem@theTR % interrupt recursion of \ref
-  \ref{#1}\endgroup}
-\let\@mem@titlerefnolink\@mem@titleref
-
-\DeclareRobustCommand\titleref{\@ifstar{\@mem@titlerefnolink}{\@mem@titleref}}
-
-\DeclareRobustCommand{\currenttitle}{\begingroup
-  \let\numberline\@gobble
-  \theTitleReference\@currentlabel\M@currentTitle\endgroup}
-
-\let\M@currentTitle\@empty
-
-\def\@mem@theTR{\let\M@TitleReference\@firstoftwo \theTitleReference}
-
-\newcommand*{\namerefon}{\let\M@gettitle\@mem@@gettitle}
-\newcommand*{\namerefoff}{\let\M@gettitle\@gobble}
-  \namerefon
+\providecommand\namerefon{\@memwarn{\protect\namerefon\space no longer does anything}}
+\providecommand\namerefoff{\@memwarn{\protect\namerefoff\space no longer does anything}}
+\providecommand\currenttitle{%
+  \@memerror{The \protect\currenttitle\space command is no longer\MessageBreak
+    available}{%
+    Place a label and use \protect\titleref{label} instead
+  }
+}
+\providecommand\theTitleReference[2]{%
+  \@memwarn{\protect\theTitleReference\space is no longer available}
+}
+\let\M@TitleReference\@gobbletwo
 \newcommand{\@pnumwidth}{1.55em}
 \newcommand{\@tocrmarg} {2.55em}
 \newcommand{\@dotsep}{4.5}
 \newlength{\tocentryskip} \setlength{\tocentryskip}{1em}
-\newlength{\tocbaseline} \setlength{\tocbaseline}{20pt}
+\newlength{\tocbaseline}  \setlength{\tocbaseline}{20pt}
 \newcommand{\tocskip}[1]{%
     \addtocontents{toc}{\protect\vspace{#1}}}
 \newcommand*{\onecoltocetc}{%
@@ -8008,7 +7265,7 @@
     \endgroup
   \fi}
 
-\newcommand*{\toclevel@part}{-1}
+\def\toclevel@part{-1}
 
 \newcommand*\partnumberlinehook[1]{}
 \newcommand{\partnumberline}[1]{%
@@ -8675,11 +7932,11 @@
   }%
   \vss}}
 
-\renewcommand{\raggedbottom}{%
+\DeclareRobustCommand{\raggedbottom}{%
   \def\mem@flshbot{01}%
   \def\@textbottom{\vskip\z@ plus.0001fil}%
   \let\@texttop\@mkidx}
-\renewcommand{\flushbottom}{%
+\DeclareRobustCommand{\flushbottom}{%
   \def\mem@flshbot{00}%
   \let\@textbottom\relax
   \let\@texttop\@mkidx}
@@ -9285,11 +8542,12 @@
 
 \long\def\@verbfootnotetext{%
   \insert\footins\bgroup
-    \footnotesize
+    \foottextfont%
     \interlinepenalty\interfootnotelinepenalty
     \splittopskip\footnotesep
     \splitmaxdepth \dp\strutbox \floatingpenalty \@MM
     \hsize\columnwidth \@parboxrestore
+    \def\@currentcounter{footnote}%
     \edef\@currentlabel{\csname p@footnote\endcsname\@thefnmark}%
 %%%%    \color@begingroup
     \@makefntext{\rule{\z@}{\footnotesep}\ignorespaces}%
@@ -9310,11 +8568,12 @@
 
 \long\def\@verbmpfootnotetext{%
   \global\setbox\@mpfootins\vbox{%
-    \reset@font\footnotesize
+    \reset@font\foottextfont
     \unvbox\@mpfootins
     \bgroup
     \hsize\columnwidth
     \@parboxrestore
+    \def\@currentcounter{mpfootnote}%
     \edef\@currentlabel{\csname p@mpfootnote\endcsname\@thefnmark}%
     \color@begingroup
     \@makefntext{\rule{\z@}{\footnotesep}\ignorespaces}%
@@ -9360,12 +8619,13 @@
     \unvbox\@mpfootins
     \def\baselinestretch{\m@m@footnote@spacing}%
     \foottextfont \hsize\columnwidth \@parboxrestore
+    \def\@currentcounter{mpfootnote}%
     \protected@edef\@currentlabel{%
       \csname p@mpfootnote\endcsname\@thefnmark}%
   \color@begingroup
   \reset@font%
     \@makefntext{%
-      \rule\z@\footnotesep\ignorespaces{\foottextfont #1}%
+      \rule\z@\footnotesep\ignorespaces\foottextfont #1%
       \@finalstrut\strutbox}%
   \color@endgroup}}
 
@@ -9477,19 +8737,21 @@
 
 \newcommand{\m@make@footnotetext}[1]{%
   \@namelongdef{@footnotetext#1}##1{%
-  \insert\@nameuse{footins#1}{%
-  \def\baselinestretch{\m@m@footnote@spacing}%
-  \reset@font\@nameuse{foottextfont#1}%
-  \@preamfntext
-  \hsize\columnwidth
-  \protected@edef\@currentlabel{%
-    \csname p@footnote#1\endcsname\@nameuse{@thefnmark#1}}%
-  \color@begingroup
-    \@nameuse{@makefntext#1}{%
-      \rule\z@\footnotesep\ignorespaces{\@nameuse{foottextfont#1}##1}% <- v1.6180339a
-      \@finalstrut\strutbox}%
+    \insert\@nameuse{footins#1}{%
+      \def\baselinestretch{\m@m@footnote@spacing}%
+      \reset@font\@nameuse{foottextfont#1}%
+      \@preamfntext
+      \hsize\columnwidth
+      \def\@currentcounter{footnote}%
+      \protected@edef\@currentlabel{%
+        \csname p@footnote#1\endcsname\@nameuse{@thefnmark#1}}%
+      \color@begingroup
+      \@nameuse{@makefntext#1}{%
+        \rule\z@\footnotesep\ignorespaces\@nameuse{foottextfont#1}##1%
+        \@finalstrut\strutbox}%
   \color@endgroup}%
-  \m@mmf@prepare}}
+  \m@mmf@prepare}%
+}
 
 \newcommand{\m@make@mpfootnotetext}[1]{%
   \@namelongdef{@mpfootnotetext#1}##1{%
@@ -9498,11 +8760,12 @@
       \def\baselinestretch{\m@m@footnote@spacing}%
       \reset@font\@nameuse{foottextfont#1}%
       \hsize\columnwidth \@parboxrestore
+      \def\@currentcounter{mpfootnote}%
       \protected@edef\@currentlabel{%
         \csname p@mpfootnote#1\endcsname\@nameuse{@thefnmark#1}}%
     \color@begingroup
       \@nameuse{@makefntext#1}{%
-        \rule\z@\footnotesep\ignorespaces{\@nameuse{foottextfont#1}##1}% <- v1.6180339a
+        \rule\z@\footnotesep\ignorespaces\@nameuse{foottextfont#1}##1%
         \@finalstrut\strutbox}%
     \color@endgroup}%
     \m@mmf@prepare}}
@@ -9659,6 +8922,7 @@
   \def\baselinestretch{\m@m@footnote@spacing}%
   \reset@font\foottextfont
   \@preamfntext
+  \def\@currentcounter{footnote}%
   \protected@edef\@currentlabel{%
     \csname p@footnote\endcsname\@thefnmark}%
   \color@begingroup
@@ -9675,7 +8939,7 @@
 
 \newcommand{\@twocolfootfmt}[1]{%
   \@preamtwofmt
-  {\footfootmark\strut {\foottextfont #1}\strut\par}\allowbreak}
+  {\footfootmark\strut \foottextfont #1\strut\par}\allowbreak}
 
 \newcommand{\@mptwocolfootnotetext}[1]{%
   \global\setbox\@mpfootinsv@r\vbox{%
@@ -9683,6 +8947,7 @@
     \def\baselinestretch{\m@m@footnote@spacing}%
     \reset@font\foottextfont
     \hsize\columnwidth \@parboxrestore
+    \def\@currentcounter{mpfootnote}%
     \protected@edef\@currentlabel{%
       \csname p@mpfootnote\endcsname\@thefnmark}%
   \color@begingroup
@@ -9712,6 +8977,7 @@
     \def\baselinestretch{\m@m@footnote@spacing}%
     \reset@font\@nameuse{foottextfont#1}%
     \@preamfntext
+    \def\@currentcounter{footnote}%
     \protected@edef\@currentlabel{%
       \csname p@footnote#1\endcsname \@nameuse{@thefnmark#1}}%
     \color@begingroup
@@ -9726,6 +8992,7 @@
     \def\baselinestretch{\m@m@footnote@spacing}%
     \reset@font\@nameuse{foottextfont#1}%
     \hsize\columnwidth \@parboxrestore
+    \def\@currentcounter{mpfootnote}%
     \protected@edef\@currentlabel{%
       \csname p@mpfootnote#1\endcsname\@nameuse{@thefnmark#1}}%
   \color@begingroup
@@ -9736,7 +9003,7 @@
   \@namedef{@twocolfootfmt#1}##1{%
     \@preamtwofmt
     {\@nameuse{footfootmark#1}\strut
-     {\@nameuse{foottextfont#1}##1}\strut\par}\allowbreak}}
+      \@nameuse{foottextfont#1}##1\strut\par}\allowbreak}}
 
 \newcommand{\m@make@twocol@footgroup}[1]{%
   \@namedef{@twocol@footgroup#1}{{%
@@ -9763,6 +9030,7 @@
   \def\baselinestretch{\m@m@footnote@spacing}%
   \reset@font\foottextfont
   \@preamfntext
+  \def\@currentcounter{footnote}%
   \protected@edef\@currentlabel{%
     \csname p@footnote\endcsname\@thefnmark}%
   \color@begingroup
@@ -9778,7 +9046,7 @@
 
 \newcommand{\@threecolfootfmt}[1]{%
   \@preamthreefmt
-  {\footfootmark\strut {\foottextfont #1}\strut\par}\allowbreak}
+  {\footfootmark\strut \foottextfont #1\strut\par}\allowbreak}
 
 \newcommand{\@mpthreecolfootnotetext}[1]{%
   \global\setbox\@mpfootinsv@r\vbox{%
@@ -9786,6 +9054,7 @@
     \def\baselinestretch{\m@m@footnote@spacing}%
     \reset@font\foottextfont
     \hsize\columnwidth \@parboxrestore
+    \def\@currentcounter{mpfootnote}%
     \protected@edef\@currentlabel{%
       \csname p@mpfootnote\endcsname\@thefnmark}%
   \color@begingroup
@@ -9814,6 +9083,7 @@
   \def\baselinestretch{\m@m@footnote@spacing}%
   \reset@font\@nameuse{foottextfont#1}%
   \@preamfntext
+  \def\@currentcounter{footnote}%
   \protected@edef\@currentlabel{%
     \csname p@footnote#1\endcsname \@nameuse{@thefnmark#1}}%
   \color@begingroup
@@ -9827,6 +9097,7 @@
     \def\baselinestretch{\m@m@footnote@spacing}%
     \reset@font\@nameuse{foottextfont#1}%
     \hsize\columnwidth \@parboxrestore
+    \def\@currentcounter{mpfootnote}%
     \protected@edef\@currentlabel{%
       \csname p@mpfootnote#1\endcsname\@nameuse{@thefnmark#1}}%
   \color@begingroup
@@ -9837,7 +9108,7 @@
 \@namelongdef{@threecolfootfmt#1}##1{%
   \@preamthreefmt
   {\@nameuse{footfootmark#1}\strut
-   {\@nameuse{foottextfont#1}##1}\strut\par}\allowbreak}}
+    \@nameuse{foottextfont#1}##1\strut\par}\allowbreak}}
 
 \newcommand{\m@make@threecol@footgroup}[1]{%
 \@namedef{@threecol@footgroup#1}{{%
@@ -9906,6 +9177,7 @@
   \def\baselinestretch{\m@m@footnote@spacing}%
   \reset@font\foottextfont
   \@preamfntext
+  \def\@currentcounter{footnote}%
   \protected@edef\@currentlabel{%
     \csname p@footnote\endcsname\@thefnmark}%
   \setbox0=\vbox{\hsize=\maxdimen
@@ -9917,7 +9189,7 @@
 \newcommand{\@parafootfmt}[1]{%
   \parindent=\z@
   \parfillskip=0pt \@plus 1fil
-  {\footfootmark\strut {\foottextfont #1}\penalty-10}}
+  {\footfootmark\strut \foottextfont #1\penalty-10}}
 
 \newcommand{\@mpparafootnotetext}[1]{%
   \global\setbox\@mpfootinsv@r\vbox{%
@@ -9925,6 +9197,7 @@
     \def\baselinestretch{\m@m@footnote@spacing}%
     \reset@font\foottextfont
     \hsize\columnwidth \@parboxrestore
+    \def\@currentcounter{mpfootnote}%
     \protected@edef\@currentlabel{%
       \csname p@mpfootnote\endcsname\@thefnmark}%
     \setbox0=\vbox{\hsize=\maxdimen
@@ -9964,6 +9237,7 @@
   \def\baselinestretch{\m@m@footnote@spacing}%
   \reset@font\@nameuse{foottextfont#1}%
   \@preamfntext
+  \def\@currentcounter{footnote}%
   \protected@edef\@currentlabel{%
     \csname p@footnote#1\endcsname \@nameuse{@thefnmark#1}}%
   \setbox0=\vbox{\hsize=\maxdimen
@@ -9979,6 +9253,7 @@
     \def\baselinestretch{\m@m@footnote@spacing}%
     \reset@font\@nameuse{foottextfont#1}%
     \hsize\columnwidth \@parboxrestore
+    \def\@currentcounter{mpfootnote}%
     \protected@edef\@currentlabel{%
       \csname p@mpfootnote#1\endcsname\@nameuse{@thefnmark#1}}%
     \setbox0=\vbox{\hsize=\maxdimen
@@ -9992,7 +9267,7 @@
   \parindent=\z@
   \parfillskip=0pt \@plus 1fil
   {\@nameuse{footfootmark#1}\strut
-   {\@nameuse{foottextfont#1}##1}\penalty-10}}}
+   \@nameuse{foottextfont#1}##1\penalty-10}}}
 
 \newcommand{\m@make@para@footgroup}[1]{%
 \@namedef{@para@footgroup#1}{%
@@ -10220,6 +9495,7 @@
     \def\baselinestretch{\m@m@footnote@spacing}%
     \reset@font
     \foottextfont
+    \def\@currentcounter{footnote}%
     \protected@edef\@currentlabel{%
       \csname p@footnote\endcsname\@thefnmark}%
     \color@begingroup
@@ -10232,11 +9508,12 @@
     \foottextfont
     \@preamfntext
     \hsize\columnwidth
+    \def\@currentcounter{footnote}%
     \protected@edef\@currentlabel{%
       \csname p@footnote\endcsname\@thefnmark}%
     \color@begingroup
       \@makefntext{%
-        \rule\z@\footnotesep\ignorespaces{\foottextfont #1}%
+        \rule\z@\footnotesep\ignorespaces\foottextfont #1%
         \@finalstrut\strutbox}%
     \color@endgroup}%
   \fi%
@@ -10426,6 +9703,7 @@
   \allowbreak
   \prevdepth=\dp\strutbox
   \vskip-\parskip
+  \def\@currentcounter{sidefootnote}%
   \protected@edef\@currentlabel{%
     \csname p@sidefootnote\endcsname\@thesidefnmark}%
 \color@begingroup
@@ -10692,10 +9970,12 @@
 \newcommand*{\mempnofilewarn}{%
   \ClassWarning{memoir}{There is no .ent file}}
 
-\newcommand\startnoteentrystart[4]{%
+\newcommand\startnoteentrystart[4]{% number; manual id; auto label; href anchor
   \prenoteinnotes%
   \noteidinnotes{#1}{#2}%
-  \@ifmtarg{#2}{\phantomsection\def\@currentlabel{#1}}{}%
+  \phantomsection%
+  \@ifmtarg{#2}{\def\@currentlabel{#1}}{\def\@currentlabel{#2}}%
+  \def\@currentcounter{pagenote}%
   \pagenoteanchor{#4}%
   \pageinnotes{#3}%
   \prenotetext%
@@ -11028,113 +10308,19 @@
   \fi
 } % end format check, else part
 
-\newtoks\every@verbatim
-  \every@verbatim={}
-\newtoks\afterevery@verbatim
-  \afterevery@verbatim={}
-
-\def\@makeother#1{\catcode`#112\relax}
-\begingroup
- \catcode`\ =\active%
- \def\x{\def\@vobeyspaces{\catcode`\ \active\let \@xobeysp}}
- \expandafter\endgroup\x
-\def\@xobeysp{\leavevmode\penalty\@M\ }
-\newtoks\verbatim@line
-\newcount\tab@position
-\def\@xobeytab{%
-  \loop
-    \toks@\expandafter{\the\toks@\@xobeysp}%
-    \advance\tab@position-1
-  \ifnum\tab@position>0 \repeat
-}
-\begingroup
-  \catcode`\^^I=\active
-  \gdef\@vobeytabs{\catcode`\^^I\active\let^^I\@xobeytab}%
-\endgroup
-\def\verbatim@tabexpand#1{%
-  \ifx#1\@nil
-    \the\toks@
-    \expandafter\par
-  \else
-    \ifx#1\@xobeytab
-      \@xobeytab
-    \else
-      \toks@\expandafter{\the\toks@#1}%
-      \advance\tab@position\m@ne
-    \fi
-    \ifnum\tab@position=0 \tab@position\tab@size \fi
-    \expandafter\verbatim@tabexpand
-  \fi
+\RequirePackage{verbatim}
+\@ifpackagelater{verbatim}{2024/01/21}{}{
+  \def\verbatiminput{\begingroup
+    \@ifstar{\verbatim@input{\@setupverbvisiblespace\@vobeyspaces}}%
+            {\verbatim@input{\frenchspacing\@vobeyspaces}}}
 }
 
-\newif\ift@bs
-\newcommand{\tabson}[1][4]{%
-  \ifnum\@ne > #1\relax
-    \tabsoff
-  \else
-    \t@bstrue
-    \def\tab@size{#1\relax}%
-    \def\@maybeobeytabs{\@vobeytabs}%
-  \fi
-}
-\newcommand{\tabsoff}{%
-  \t@bsfalse
-  \def\tab@size{\z@}%
-  \def\@maybeobeytabs{}%
-}
-\tabsoff
-
-\def\tabverbatim@processline{\tab@position\tab@size
-  \toks@{}%
-  \expandafter\verbatim@tabexpand\the\verbatim@line\@nil}
-\def\notabverbatim@processline{\the\verbatim@line\par}
-
-\def\verbatim@startline{\verbatim@line{}}
-\def\verbatim@addtoline#1{%
-  \verbatim@line\expandafter{\the\verbatim@line#1}}
-\def\verbatim@processline{\notabverbatim@processline}
-\def\verbatim@finish{\ifcat$\the\verbatim@line$\else
-  \verbatim@processline\fi}
 \newcommand{\setverbatimfont}[1]{\def\m@mverbfont{#1}}
 \setverbatimfont{\normalfont\ttfamily}
-
-\def\verbatim@font{\m@mverbfont
-                   \hyphenchar\font\m@ne
-                   \@noligs}
-
-\def\@verbatim{\the\every@verbatim
-  \trivlist \item \relax
-  \if@minipage\else\vskip\parskip\fi
-  \@beginparpenalty \predisplaypenalty
-%%%  \leftskip\@totalleftmargin\rightskip\z@
-  \memRTLleftskip\@totalleftmargin\memRTLrightskip\z@
-  \parindent\z@\parfillskip\@flushglue\parskip\z@
-  \@@par
-  \def\par{%
-    \if@tempswa
-      \leavevmode\null\@@par\penalty\interlinepenalty
-    \else
-      \@tempswatrue
-      \ifhmode\@@par\penalty\interlinepenalty\fi
-    \fi}%
-  \def\@noitemerr{\@warning{No verbatim text}}%
-  \obeylines
-  \let\do\@makeother \dospecials
-  \verbatim@font
-  \everypar \expandafter{\the\everypar \unpenalty}%
-  \wrapright\the\afterevery@verbatim}
-\def\verbatim{\begingroup
-  \ift@bs
-    \def\verbatim@processline{\tabverbatim@processline}%
-  \fi
-  \@verbatim \frenchspacing\@vobeyspaces\@maybeobeytabs\verbatim@start}
-\@namedef{verbatim*}{\begingroup
-  \ift@bs
-    \def\verbatim@processline{\tabverbatim@processline}%
-  \fi
-  \@verbatim\@maybeobeytabs\verbatim@start}
-\def\endverbatim{\endtrivlist\endgroup\@doendpe}
-\@namelet{endverbatim*}\endverbatim
+\patchcmd\verbatim@font{\normalfont\ttfamily}%
+  {\m@mverbfont}%
+  {}%
+  {\typeout{Paching \string\verbatim@font\space failed}}
 
 \newcommand{\setupcomment}{%
   \let\do\@makeother\dospecials\catcode`\^^M\active
@@ -11150,152 +10336,20 @@
   \expandafter\def\csname end#1\endcsname{}}
 \newcommand{\commentson}[1]{\newcomment{#1}}
 
-\newcomment{comment}
-
-\@ifundefined{vrb@catcodes}%
-  {\def\vrb@catcodes{%
-     \catcode`\!12\catcode`\[12\catcode`\]12}}{}
-\begingroup
- \vrb@catcodes
- \lccode`\!=`\\ \lccode`\[=`\{ \lccode`\]=`\}
- \catcode`\~=\active \lccode`\~=`\^^M
- \lccode`\C=`\C
- \lowercase{\endgroup
-    \def\verbatim@start#1{%
-      \verbatim@startline
-      \if\noexpand#1\noexpand~%
-        \let\next\verbatim@
-      \else \def\next{\verbatim@#1}\fi
-      \next}%
-    \def\verbatim@#1~{\verbatim@@#1!end\@nil}%
-    \def\verbatim@@#1!end{%
-       \verbatim@addtoline{#1}%
-       \futurelet\next\verbatim@@@}%
-    \def\verbatim@@@#1\@nil{%
-       \ifx\next\@nil
-         \verbatim@processline
-         \verbatim@startline
-         \let\next\verbatim@
-       \else
-         \def\@tempa##1!end\@nil{##1}%
-         \@temptokena{!end}%
-         \def\next{\expandafter\verbatim@test\@tempa#1\@nil~}%
-       \fi \next}%
-    \def\verbatim@test#1{%
-           \let\next\verbatim@test
-           \if\noexpand#1\noexpand~%
-             \expandafter\verbatim@addtoline
-               \expandafter{\the\@temptokena}%
-             \verbatim@processline
-             \verbatim@startline
-             \let\next\verbatim@
-           \else \if\noexpand#1
-             \@temptokena\expandafter{\the\@temptokena#1}%
-           \else \if\noexpand#1\noexpand[%
-             \let\@tempc\@empty
-             \let\next\verbatim@testend
-           \else
-             \expandafter\verbatim@addtoline
-               \expandafter{\the\@temptokena}%
-             \def\next{\verbatim@#1}%
-           \fi\fi\fi
-           \next}%
-    \def\verbatim@testend#1{%
-         \if\noexpand#1\noexpand~%
-           \expandafter\verbatim@addtoline
-             \expandafter{\the\@temptokena[}%
-           \expandafter\verbatim@addtoline
-             \expandafter{\@tempc}%
-           \verbatim@processline
-           \verbatim@startline
-           \let\next\verbatim@
-         \else\if\noexpand#1\noexpand]%
-           \let\next\verbatim@@testend
-         \else\if\noexpand#1\noexpand!%
-           \expandafter\verbatim@addtoline
-             \expandafter{\the\@temptokena[}%
-           \expandafter\verbatim@addtoline
-             \expandafter{\@tempc}%
-           \def\next{\verbatim@!}%
-         \else \expandafter\def\expandafter\@tempc\expandafter
-           {\@tempc#1}\fi\fi\fi
-         \next}%
-    \def\verbatim@@testend{%
-       \ifx\@tempc\@currenvir
-         \verbatim@finish
-         \edef\next{\noexpand\end{\@currenvir}%
-                    \noexpand\verbatim@rescan{\@currenvir}}%
-       \else
-         \expandafter\verbatim@addtoline
-           \expandafter{\the\@temptokena[}%
-           \expandafter\verbatim@addtoline
-             \expandafter{\@tempc]}%
-         \let\next\verbatim@
-       \fi
-       \next}%
-    \def\verbatim@rescan#1#2~{\if\noexpand~\noexpand#2~\else
-        \@warning{Characters dropped after `\string\end{#1}'}\fi}}
-\newread\verbatim@in@stream
-\def\verbatim@readfile#1{%
-  \verbatim@startline
-  \openin\verbatim@in@stream #1\relax
-  \ifeof\verbatim@in@stream
-    \typeout{No file #1.}%
-  \else
-    \@addtofilelist{#1}%
-    \ProvidesFile{#1}[(verbatim)]%
-    \expandafter\endlinechar\expandafter\m@ne
-    \expandafter\verbatim@read@file
-    \expandafter\endlinechar\the\endlinechar\relax
-    \closein\verbatim@in@stream
-  \fi
-  \verbatim@finish
-}
-\def\verbatim@read@file{%
-  \read\verbatim@in@stream to\next
-  \ifeof\verbatim@in@stream
-  \else
-    \expandafter\verbatim@addtoline\expandafter{\next}%
-    \verbatim@processline
-    \verbatim@startline
-    \expandafter\verbatim@read@file
-  \fi
-}
-\def\verbatiminput{\begingroup
-  \ift@bs
-    \def\verbatim@processline{\tabverbatim@processline}%
-  \fi
-  \@ifstar{\verbatim@input{\@maybeobeytabs}}%
-          {\verbatim@input{\frenchspacing\@vobeyspaces\@maybeobeytabs}}}
-\def\verbatim@input#1#2{%
-   \IfFileExists {#2}{\@verbatim #1\relax
-    \verbatim@readfile{\@filef@und}\endtrivlist\endgroup\@doendpe}%
-   {\typeout {No file #2.}\endgroup}}
-\newlength{\verbatimindent}
-  \setlength{\verbatimindent}{3em}
-\newcommand*{\verbatimbreakchar}{\char`\%}
-\newcommand*{\setverbatimbreak}{%
-  \vspace*{-\baselineskip}%
-  \def\@xobeysp{~\discretionary{\verbatimbreakchar}%
-    {\kern\verbatimindent}{}}%
+\newcommand*\tabsoff{} % defined to do nothing
+\newcommand*\tabson{
+  \@memwarn{As of January 2024, \string\tabson\space has been discontinued.}
 }
 
-\newcommand*{\raggedwrap}{%
-  \@rightskip\@flushglue
-%%%  \rightskip\@rightskip
-  \memRTLrightskip\@rightskip
-%%%  \leftskip\@totalleftmargin
-  \memRTLleftskip\@totalleftmargin
-  \parindent\ragrparindent}
-\newcommand*{\wrappingon}{%
-  \def\@xobeysp{~\discretionary{\verbatimbreakchar}%
-    {\kern\verbatimindent}{}}%
-  \def\wrapright{\raggedwrap}}
-\newcommand*{\wrappingoff}{%
-  \def\@xobeysp{\leavevmode\penalty\@M\ }%
-  \def\wrapright{}}
-\wrappingoff
-
+\newlength\verbatimindent
+\newcommand*\verbatimbreakchar{} % silently does nothing as it
+                                 % needs \wrappingon to be enabled
+\newcommand*\setverbatimbreak{} % never used
+\newcommand*\wrappingon{
+  \@memwarn{As of January 2024, \string\wrappingon\space has been discontinued.}
+}
+\newcommand*\wrappingoff{} % defined to do nothing
+\def\wrapright{} % internal macro no longer used
 \newwrite \verbatim@out
 \def\verbatimoutput#1{%
   \@bsphack
@@ -11324,56 +10378,10 @@
   \egroup
   \fbox{\box0}% <<<=== change here for centering,...
 \endgroup}
-\def\MakeShortVerb#1{%
-  \expandafter\ifx\csname cc\string#1\endcsname\relax
-    \@shortvrbinfo{Made }{#1}%
-    \add@special{#1}%
-    \expandafter
-    \xdef\csname cc\string#1\endcsname{\the\catcode`#1}%
-    \begingroup
-      \catcode`\~\active  \lccode`\~`#1%
-      \lowercase{%
-      \global\expandafter\let
-         \csname ac\string#1\endcsname~%
-      \gdef~{\verb~}}%
-    \endgroup
-    \global\catcode`#1\active
-  \else
-    \@shortvrbinfo\@empty{#1 already}%
-  \fi}
-\def\DeleteShortVerb#1{%
-  \expandafter\ifx\csname cc\string#1\endcsname\relax
-  \else
-    \@shortvrbinfo{Deleted }{#1 as}%
-    \rem@special{#1}%
-    \global\catcode`#1\csname cc\string#1\endcsname
-    \global \expandafter\let \csname cc\string#1\endcsname \relax
-    \ifnum\catcode`#1=\active
-      \begingroup
-        \catcode`\~\active   \lccode`\~`#1%
-        \lowercase{%
-          \global\expandafter\let\expandafter~%
-          \csname ac\string#1\endcsname}%
-      \endgroup \fi \fi}
-\def\@shortvrbinfo#1#2{%
-  \ClassInfo{memoir}{%
-     #1\expandafter\@gobble\string#2 a short reference
-                                          for \string\verb}}
-\def\add@special#1{%
-  \rem@special{#1}%
-  \expandafter\gdef\expandafter\dospecials\expandafter
-    {\dospecials \do #1}%
-  \expandafter\gdef\expandafter\@sanitize\expandafter
-    {\@sanitize \@makeother #1}}
-\def\rem@special#1{%
-  \def\do##1{%
-    \ifnum`#1=`##1 \else \noexpand\do\noexpand##1\fi}%
-  \xdef\dospecials{\dospecials}%
-  \begingroup
-    \def\@makeother##1{%
-      \ifnum`#1=`##1 \else \noexpand\@makeother\noexpand##1\fi}%
-    \xdef\@sanitize{\@sanitize}%
-  \endgroup}
+
+ % load shortvrb instead of embedding it
+\RequirePackage{shortvrb}
+
 \def\boxverbflag{14 }
 \newlength{\bvboxsep}      % user can change this
 \setlength{\bvboxsep}{1em}
@@ -11436,11 +10444,11 @@
                                  \linewidth-.8\p@ \@@line
       {\b@vdooutside\strut\kern\bvboxsep%
        \b@vdoinside%
-       \ift@bs
-         \tabverbatim@processline
-       \else
+       %\ift@bs
+       %  \tabverbatim@processline
+       %\else
          \the\verbatim@line
-       \fi
+       %\fi
        \hss}%
      \kern\bvboxsep}\bvrightsidehook\par}}
 
@@ -11449,7 +10457,7 @@
   \interlinepenalty\boxverbflag
   \parfillskip\z@ plus\p@ minus\p@
   \lineskip-\bvboxsep \baselineskip\z@skip
-  \frenchspacing\@vobeyspaces\@maybeobeytabs
+  \frenchspacing\@vobeyspaces%\@maybeobeytabs
   \boxverb@toprule}
 
 \def\boxedverbatim{\begingroup
@@ -11926,11 +10934,11 @@
     \fi}}
 
 \def\readverbatim{\begingroup
-  \ift@bs
-    \def\verbatim@processline{\tabverbatim@processline}%
-  \fi
-  \@ifstar{\stre@mverb@input{\@maybeobeytabs}}%
-     {\stre@mverb@input{\frenchspacing\@vobeyspaces\@maybeobeytabs}}}
+  %\ift@bs
+  %  \def\verbatim@processline{\tabverbatim@processline}%
+  %\fi
+  \@ifstar{\stre@mverb@input{\@setupverbvisiblespace\@vobeyspaces}}%{\@maybeobeytabs}}%
+     {\stre@mverb@input{\frenchspacing\@vobeyspaces}}}%\@maybeobeytabs}}}
 
 \newcommand{\stre@mverb@input}[2]{%
   \IfStreamOpen{#2}%
@@ -13136,7 +12144,7 @@
 \EmulatedPackage{abstract}[2008/07/23]
 \EmulatedPackage{appendix}[2008/07/23]
  % \EmulatedPackage{array}[2016/10/06]
-\EmulatedPackage{booktabs}[2016/05/16]
+ % \EmulatedPackage{booktabs}[2016/05/16]
 \EmulatedPackage{ccaption}[2008/07/23]
 \EmulatedPackage{changepage}[2008/07/23]
 \EmulatedPackage{chngcntr}[2008/07/23]

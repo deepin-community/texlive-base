@@ -5,7 +5,100 @@ first release 0.95a, 2021-02-23 will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 this project uses date-based 'snapshot' version identifiers.
 
-## [2022-11-03]
+## [2023-11-17]
+Version: 2023-12-09, 0.96d
+
+### Removed
+
+ - l3bitset is now provided by l3kernel.
+ 
+### Added
+ - 2023-11-20: l3pdfmeta.dtx: support for PDF declarations in XMP metadata, issue #58
+ - hyperref-generic.dtx: option nested-links key to suppress nested links.
+ 
+### Changed
+ - key family in hyperref-generic is now hyp and not hyp/setup
+ - do not use pdfuaid:rev with pdf/UA-1
+   
+## [2023-11-17]
+Version: 2023-11-17, 0.96c
+
+ - remove dependency to ltxcmds in the hyperref driver
+ - correct a local/global assigment
+ - remove l3ref-tmp.sty 
+ - l3pdffile.dtx: change mimetype of xml to application/xml
+ 
+ 
+## [2023-11-05]
+Version: 2023-11-05, 0.96b
+
+- switch to e-type 
+- correct fontspec firstaid and spotcolor support
+
+## [2023-10-09]
+Version: 2023-10-09, 0.96a
+
+### Changed
+ - prepare for kernel switch to e-types 
+ - use properties instead of l3ref-tmp.sty if format is new enough
+ - improve xcolor firstaid patch
+
+## [2023-08-29]
+Version: 2023-08-29, 0.95z
+
+### Changed
+ - a SOURCE_DATE_EPOCH setting is honored. This requires a l3backend version from XXXX
+ - \pdfmeta_set_regression_data: not longer sets dates manually, but expects that if 
+   SOURCE_DATE_EPOCH is honored that it is used.
+ 
+## [2023-08-20]
+Version: 2023-08-20, 0.95y
+
+### Added 
+ - l3pdftools: \pdf_bdc_shipout:ee which makes use of the new shipout keyword
+   of \special and \pdfliteral
+ - key for the (not yet released) standard pdf/UA-2
+
+### Fixed
+ - expansion behaviour of \pdf_bdc:nn
+ - faulty error command in \pdf_string_from_unicode:nnN
+ 
+## Removed
+ - patches of the output routine. These are now provided by latex-lab
+  
+## [2023-03-09]
+
+Version: 2023-03-09, 0.95x
+
+### Fixed
+ - regression data producer in xmp
+ 
+### Changed
+ - removed/reduced fontspec firstaid to avoid clash with new l3backend and with option parsing (issue #47)
+ 
+## [2023-02-20]
+
+### Added
+ - schema declaration for xmpMM:OriginalDocumentID added to xmp-Metadata.
+
+## [2023-02-14]
+ 
+### Added
+ - l3pdffile: \pdffile_embed_stream:nnN to embed a stream without creating a named
+   object. 
+
+### Changed 
+ - l3pdffile: default mime type of tex-files changed to application/x-tex. 
+
+## [2023-02-07]
+### Fixed
+ - pdf A4 uses pdfaid:rev not pdfaid:year.
+ - pdfcreationdate and pdfmoddate key 
+ 
+### Added
+ - firstaid support for luacolor  (pdfmode)
+
+## [2022-11-03] 
 
 ### Added 
  - ltdocinit: expl3 functions to retrieve values from the document properties.

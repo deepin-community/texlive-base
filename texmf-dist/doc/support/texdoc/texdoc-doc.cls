@@ -1,9 +1,9 @@
 % Document style for Texdoc user manual
-% Copyright 2008-2020 Manuel Pégourié-Gonnard and Takuto Asakura
+% Copyright 2008-2023 Manuel Pégourié-Gonnard and Takuto Asakura
 % distributed under the terms of GPL v3 or later
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{texdoc-doc}
-  [2020/02/02 Document class for Texdoc user manual]
+  [2023-02-17 Document class for Texdoc user manual]
 
 % class options
 \DeclareOption{draft}{\setlength\overfullrule{5pt}}
@@ -163,7 +163,7 @@
   \@for\@item:=#1\do{\@delim\@item}%
   \egroup}
 \newcommand*{\code}[1]{\bgroup
-  \chardef\_=`\_\code@font #1\egroup}
+  \chardef\_=`\_\chardef\~=`\~\code@font #1\egroup}
 \newcommand*{\sopt}[1]{\hyperlink{cl:#1}{\code{\hyph#1}}}
 \newcommand*{\lopt}[1]{\hyperlink{cl:#1}{\code{\hyph{}\hyph#1}}}
 \newcommand*{\ci}[1]{\bgroup
@@ -219,6 +219,12 @@
     \hypertarget{\@tmp@hyname}{\code{#1 = #2}}%
     \IfNoValueF{#3}{\hfill (#3)}%
     \begin{manual@entry}%
+    \bgroup%
+      \def\meta##1{##1}%
+      \def\_{\string_}%
+      \edef\conf@title{#1}%
+      \belowpdfbookmark{\conf@title}{\conf@title}%
+    \egroup%
   }
   {\ifvmode\else\unskip\fi\end{manual@entry}}
 

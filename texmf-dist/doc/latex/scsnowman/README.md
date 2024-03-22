@@ -27,5 +27,5 @@ Then, execute mktexlsr.
 This package is distributed under the BSD 2-Clause License.
 See [LICENSE](./LICENSE).
 
-Copyright (c) 2015-2018 Hironobu Yamashita
+Copyright (c) 2015-2023 Hironobu Yamashita
 http://acetaminophen.hatenablog.com/

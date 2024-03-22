@@ -7,17 +7,17 @@ It defines commands to draw the `Casio Graph 35 / fx-9750GII` calculator (and ot
 [![Documentation](https://img.shields.io/badge/Doc-Français-brightgreen.svg)](http://mirrors.ctan.org/graphics/graph35/graph35-fr.pdf)
 Ce paquet définit des macros pour dessiner les touches et des éléments d'écran de la calculatrice `Casio Graph 35` (ainsi que pour quelques modèles similaires). Il permet de dessiner toute la     calculatrice, ou seulement quelques éléments (touches, éléments de menu, etc.). Il a été créé pour rédiger des documents expliquant à mes élèves comment utiliser leur calculatrice.
 
-- Version 0.1.3 (2022-11-29)
+- Version 0.1.4 (2023-04-04)
 - Usage and installation instruction are available at CTAN:
   [English](http://mirrors.ctan.org/graphics/graph35/graph35-en.pdf).
   [French](http://mirrors.ctan.org/graphics/graph35/graph35-fr.pdf).
 
-![Graph35+E](http://framagit.org/spalax/graph35/raw/main/graph35plusE.png)
+![Graph35+E](https://framagit.org/spalax/graph35/-/raw/v0.1.4/graph35plusE.png)
 
 License
 -------
 
-*Copyright 2018-2022 Louis Paternault*
+*Copyright 2018-2023 Louis Paternault*
 
 This work may be distributed and/or modified under the conditions of the LaTeX
 Project Public License, either version 1.3 of this license or (at your option)

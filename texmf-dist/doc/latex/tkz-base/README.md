@@ -1,6 +1,6 @@
 # tkz-base — for Cartesian coordinate system 
 
-Release 4.2c 2022/07/14
+Release 4.21c 2024/01/16
 
 ## Description
 The package `tkz-base` provides some tools like a Cartesian (rectangular) coordinate system to other packages like `tkz-euclide` or `tkz-fct`.
@@ -60,6 +60,9 @@ Other examples, in French, are on my site.
 The new version of `tkz-base`  is *not* fully compatible with the version 3 but the differences are minor
 
 ## History
+- 4.21c Correction of bug tkz-obj-axes line 35, missing a symbol `%` (thanks Pascal Nuns)
+
+   Replace in TKZdoc-base-points.tex p 462 tkzDefCentroid(A,B,C,O) by tkzDefBarycentric(A,B,C,O)
 - 4.2c adaptation to the new version of tkz-euclide.
 - 4.05b Correction of an option (tkzDrawY).
      Removing axesmin.tex  Move from \newif\iftkz@integer to base.sty

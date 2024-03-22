@@ -1,6 +1,6 @@
 %% This is part of the OpTeX project, see http://petr.olsak.net/optex
 
-\_codedecl \fontfam {Fonts selection system <2022-12-01>} % preloaded in format
+\_codedecl \fontfam {Fonts selection system <2023-06-16>} % preloaded in format
 
    \_doc -----------------------------
    The main principle of the Font Selection System is: run one or more
@@ -130,7 +130,9 @@
    \_initunifonts \_unichars \_uniaccents
    \_unless\_ifcsname _f:\_csstring#2:main.fam\_endcsname
       \_isfont{#7}\_iffalse
-         \_opwarning{Family [#1] skipped, font "#7" not found}\_ea\_ea\_ea\_endinput \_else
+         \_opwarning{Family [#1] skipped, font "#7" not found}\_endinput
+         \_ifcsname _fams:\_famfile\_endcsname \_famsubstitute \_fi
+      \_else
          \_edef\_currfamily {\_csstring #2}\_def\_mathfaminfo{#6}%
          \_wterm {FONT: [#1] -- \_string#2 \_detokenize{(#3)^^J mods:{#4} vars:{#5} math:{#6}}}%
          \_unless \_ifx #2\_undefined
@@ -138,7 +140,7 @@
          \_protected\_edef#2{\_def\_noexpand\_currfamily{\_csstring #2}\_unexpanded{#8\_resetfam}}%
          \_ea \_let \_csname _f:\_currfamily:main.fam\_endcsname =#2%
       \_fi
-   \_else \_csname _f:\_csstring#2:main.fam\_endcsname \_rm \_ea \_endinput \_fi
+   \_else \_csname _f:\_csstring#2:main.fam\_endcsname \_rm \_endinput \_empty\_fi
 }
 \_def\_initfontfamily{%
    \_csname _f:\_currfamily:main.fam\_endcsname \_rm
@@ -308,18 +310,21 @@
    \_cod -----------------------------
 
 \_protected\_def \_fontfam [#1]{%
-   \_lowercase{\_edef\_famname{\_ea\_removespaces #1 {} }}%
-   \_isfile {f-\_famname.opm}\_iftrue \_opinput {f-\_famname.opm}%
+   \_lowercase{\_edef\_famname{\_ea\_removespaces \_expanded{#1} {} }}%
+   \_isfile {f-\_famname.opm}\_iftrue \_edef\_famfile{f-\_famname}\_opinput {f-\_famname.opm}%
    \_else
        \_tryloadfamslocal
        \_edef\_famfile{\_trycs{_famf:\_famname}{}}%
-       \_ifx\_famfile\_empty \_listfamnames
+       \_ifx\_famfile\_empty
+           \_ifcsname _fams:f-\_famname \_endcsname \_edef\_famfile{f-\_famname}\_famsubstitute
+           \_else \_listfamnames
+           \_fi
        \_else \_opinput {\_famfile.opm}%
-   \_fi\_fi
+   \_fi\_empty\_fi
 }
 \_def\_tryloadfamslocal{%
    \_isfile {fams-local.opm}\_iftrue
-      \_opinput {fams-local.opm}\_famfrom={}%
+      \_opinput {fams-local.opm}\_famfrom={}\_famsrc={}%
    \_fi
    \_let \_tryloadfamslocal=\_relax  % need not to load fams-local.opm twice
 }
@@ -341,6 +346,29 @@
 \_public \fontfam ;
 
    \_doc -----------------------------
+   \`\fontfamsub` `[<Family>][<byFamily>]` declares automatic substitution of
+   <Family> by <byFamily> which is done when <Family> is not installed. I.e.
+   if there is no `f-<family>.opm` file or there is no regular font of the
+   family installed.
+   \`\_famsubstitute` is internal macro used in \^`\fontfam` and \^`\_famdecl` macros.
+   It consumes the rest of the macro, runs \^`\nospacefuturelet` in order to
+   do `\endinput` to the current `f-file` and runs \^`\fontfam` again.
+   The table of such substutitions are saved in the macros `\_fams:<family-file>`.
+   \_cod -----------------------------
+
+\_def \_fontfamsub [#1]#2[#3]{\_tryloadfamslocal
+   \_lowercase{\_edef\_tmp{\_removespaces #1 {} }}%
+   \_sxdef{_fams:\_trycs{_famf:\_tmp}{f-\_tmp}}{#3}%
+}
+\_def\_famsubstitute #1\_empty\_fi{\_fi\_fi\_fi
+   \_wterm {FONT-SUB: \_famfile\_space -> [\_cs{_fams:\_famfile}]}%
+   \_nospacefuturelet\_tmp\_famsubstituteA  % we want to \endinput current f-file
+}
+\_def\_famsubstituteA{\_fontfam[\_cs{_fams:\_famfile}]}
+
+\_public \fontfamsub ;
+
+   \_doc -----------------------------
    When the `fams-ini.opm` or `fams-local.opm` files are read then we need
    to save only a mapping from family names or alias names to the font family file
    names. All other information is ignored in this case. But if these files
@@ -360,6 +388,9 @@
    \`\_famfrom` declares type foundry or owner or designer of the font family.
    It can be used in `fams-ini.opm` or `fams-local.opm` and it is printed
    in the font catalog.
+   \nl
+   \`\_famsrc` declares the source, where is the font family from (used in `fams-ini.opm`
+   and if the font isn't found when the fonts catalog is printed).
    \_cod -----------------------------
 
 \_def\_famtext #1{}
@@ -372,10 +403,10 @@
    \_lowercase{\_edef\_tmpa{\_ea\_removespaces #1 {} }}%
    \_sdef{_famf:\_tmpa\_ea}\_ea{\_famfile}%
 }
-\_newtoks\_famfrom
+\_newtoks\_famfrom  \_newtoks\_famsrc
 \_input fams-ini.opm
 \_let\_famfile=\_undefined
-\_famfrom={}
+\_famfrom={} \_famsrc={}
 
    \_doc -----------------------------
    When the \^`\fontfam``[catalog]` is used then the file
@@ -384,17 +415,19 @@
    pairs. The user can declare different samples and different behavior of
    the catalog, see the end of catalog listing for more information.
    The default parameters
-   \`\catalogsample`, \`\catalogmathsample`, \`\catalogonly` and
-   \`\catalogexclude` of the catalog are declared here.
+   \`\catalogsample`, \`\catalogmathsample`, \`\catalogonly`,
+   \`\catalogexclude` and \`\catalognextfam` of the catalog are declared here.
    \_cod -----------------------------
 
 \_newtoks \_catalogsample
 \_newtoks \_catalogmathsample
 \_newtoks \_catalogonly
 \_newtoks \_catalogexclude
+\_newtoks \_catalognextfam
 \_catalogsample={ABCDabcd Qsty fi fl áéíóúüů řžč ÁÉÍÓÚ ŘŽČ 0123456789}
+\_catalognextfam={\_bigskip}
 
-\_public \catalogonly \catalogexclude \catalogsample \catalogmathsample ;
+\_public \catalogonly \catalogexclude \catalogsample \catalogmathsample \catalognextfam ;
 
    \_doc -----------------------------
    The font features are managed in the \`\_fontfeatures` macro.
@@ -429,12 +462,15 @@
 
    \_doc -----------------------------
    \`\setletterspace` is based on the
-   special font features provided by `luaotfload` package.
+   special font features provided by `luaotfload` package.\nl
    The \`\setwordspace` recalculates the `\fontdimen2,3,4`
    of the font using the \`\setwsp` macro which is used by the
    \^`\_fontselA` macro. It activates a dummy font feature `+Ws` too in
    order the font is reloded by the `\font` primitive (with independent
    `\fontdimen` registers).
+   If the \^`\setwordspace` is used again to the same font then we need to
+   reset `\fondimen` registers first. It is done by `\_sws:<fontname>`
+   macro which keeps the original values of the `\fontdimen`s.\nl
    \`\setfontcolor` is kept here only for backward compatibility but not
    recommended. Use real color switches and the \^`\transparency` instead.
    \_cod -----------------------------
@@ -452,7 +488,11 @@
 }
 \_def\_setwsp #1{}
 \_def\_setwspA #1{\_ifx/#1\_ea\_setwspB \_else\_afterfi{\_setwspC#1}\_fi}
-\_def\_setwspB #1/#2/#3/#4{\_fontdimen2#4=#1\_fontdimen2#4%
+\_def\_setwspB #1/#2/#3/#4{%
+   \_csname _sws:\_fontname#4\_endcsname \_relax
+   \_ea\_xdef \_csname _sws:\_fontname#4\_endcsname
+      {\_foreach 234\_do{\_fontdimen##1#4=\_the\_fontdimen##1#4}}%
+   \_fontdimen2#4=#1\_fontdimen2#4%
    \_fontdimen3#4=#2\_fontdimen3#4\_fontdimen4#4=#3\_fontdimen4#4}
 \_def\_setwspC #1/{\_setwspB #1/#1/#1/}
 
@@ -550,6 +590,12 @@ the `<Font Family>` is declared. The family selector is defined here by rules
 described in the section~\ref[fontfamfiles]. Font modifiers and variant
 selectors may be declared here.
 The loaded family is set as current and `\rm` variant selector is processed.
+
+When \^`\fontfam` `[<Font Family>]` is used and the given
+family isn't found in the current \TeX/ system and
+the <Font Family> is previously declared by
+\^`\fontfamsub``[<Font Family>][<Other Family>]`
+then \OpTeX/ does the given substitution and runs \^`\fontfam``[<Other Family>]`.
 
 The available declared font modifiers and declared variant selectors are
 listed in the log file when the font family is load. Or you can print
@@ -733,10 +779,10 @@ Compare ex-height of Termes \rmsans with Heros \rm and Termes.
 \endtt
 
 The variant selectors (declared by \~`\famvardef`) or font
-modifiers (declared by \~`\moddef`) are (typically) control sequences in user name
-space (`\mf`, `\caps`). They are most often declared in font family files and
+modifiers (declared by \~`\moddef`) are (typically) control sequences in the public
+namespace (`\mf`, `\caps`). They are most often declared in font family files and
 they are loaded by \^`\fontfam`. A conflict with such names in
-user namespace can be here. For example: if `\mf` is defined by a user and then
+the public namespace can be here. For example: if `\mf` is defined by a user and then
 `\fontfam[Roboto]` is used then `\famvardef\mf` is performed for Roboto
 family and the original meaning of `\mf` is lost. But \OpTeX/ prints warning
 about it. There are two cases:
@@ -899,6 +945,10 @@ with Unicode fonts loaded by \^`\fontfam`.
 
 \endinput
 
+2023-06-16  \fontfamsub improved.
+2023-05-30  \catalognextfam introduced.
+2023-04-22  \setwordspace: \fontdimens reset, bug fixed.
+2023-03-09  \_famsrc, \fontfamsub introduced
 2022-12-01  \faminfo saves f-<filename> to the format only when needed
 2022-11-08  \protected: \fontdef, \famvardef, \fontfam
 2022-02-22  Font Selection System reimplemented, \fontsel introduced

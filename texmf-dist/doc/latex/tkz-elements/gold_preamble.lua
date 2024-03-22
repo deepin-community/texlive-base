@@ -1,0 +1,46 @@
+z.A            = point: new (0 , 0)
+z.B            = point: new (10 , 0)
+L.AB           = line:  new ( z.A, z.B)
+z.C            = L.AB : gold_ratio ()
+L.AC           = line:  new ( z.A, z.C)
+L.CB           = line:  new ( z.C, z.B)
+z.O_0          = L.AB.mid
+z.O_1          = L.AC.mid
+z.O_2          = L.CB.mid
+C.O0B          = circle: new ( z.O_0, z.B)
+C.O1C          = circle: new ( z.O_1, z.C)
+C.O2B          = circle: new ( z.O_2, z.B)
+z.M_0          = C.O1C : external_similitude (C.O2B)
+z.M_1          = C.O0B : internal_similitude (C.O1C)
+z.M_2          = C.O0B : internal_similitude (C.O2B)
+z.Q            = C.O2B.north
+z.P            = C.O1C.north
+z.O            = C.O0B.south
+z.W            = C.O0B.north
+L.O1Q          = line   :  new (z.O_1,z.Q)
+L.O2P          = line   :  new (z.O_2,z.P)
+z.O_4          = intersection (L.O1Q,L.O2P)
+L.CO4          = line  :  new (z.C,z.O_4)
+z.D            = intersection (L.CO4,C.O0B)
+L.CD           = line   :  new (z.C,z.D)
+L.PQ           = line   :  new (z.P,z.Q)
+L.CQ           = line   :  new (z.C,z.Q)
+z.O_5          = intersection (L.CD,L.PQ)
+C.QC           = circle: new ( z.Q, z.C)
+C.PA           = circle: new ( z.P, z.A)
+z.P_0          = intersection (C.QC,C.O0B)
+z.P_1          = intersection (C.QC,C.O1C)
+_,z.P_2        = intersection (C.PA,C.O2B)
+T.P            = triangle: new ( z.P_0, z.P_1, z.P_2)
+z.O_3          = T.P.circumcenter
+L.AQ           = line   :  new (z.A,z.Q)
+L.BP           = line   :  new (z.B,z.P)
+z.T            = intersection(L.BP,L.AQ)
+z.O_6          = L.CD.mid
+C.DC           = circle :  new   (z.D,z.C)
+z.U,z.V        = intersection (C.DC,C.O0B)
+L.UV           = line :  new (z.U,z.V)
+z.R,z.S        = L.UV : projection (z.O_1,z.O_2)
+
+
+

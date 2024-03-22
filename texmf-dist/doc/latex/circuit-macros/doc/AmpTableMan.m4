@@ -1,22 +1,23 @@
 .PS
-# `Amptable.m4'
+# `AmptableMan.m4'
 cct_init
 movewid = 2pt__
 {  
    {amp ; move ; "{\tt `amp'}" ljust}
    move down 0.4; right_
-   {amp(,0.3) ; move ; "{\tt `amp'(,0.3)}" ljust}
+   {amp(,0.3) ; move ; "\tt `amp'(,0.3)" ljust}
    }
    move right_ 2.0
-{  {delay ; move ; "{\tt `delay'}" ljust}
+{  {delay(,,fill_(0.9)) ; move ;
+    "`\tt\shortstack[l]{delay(,{,}\\ fill\_(0.9))}'" ljust}
    move down 0.4; right_
    {delay(,0.2) ; move ; "{\tt `delay'(,0.2)}" ljust}
    }
 
    move right_ 2.0
-{  {integrator ; move ; "{\tt `integrator'}" ljust}
+{  {integrator ; move ; "\tt `integrator'" ljust}
    move down 0.5; right_
-   {integrator(,0.3) ; move ; "{\tt `integrator'(,0.3)}" wid 82pt__ ljust}
+   {integrator(,0.3) ; move ; "\tt `integrator'(,0.3)" wid 82pt__ ljust}
    }
 
 .PE

@@ -1,6 +1,6 @@
 % Package odsfile. Author Michal Hoftich <michal.h21@gmail.com>
 % This package is subject of LPPL license, version 1.3c
-\ProvidesPackage{odsfile}[2022/12/13 v0.7 odsfile package to select cells from ODS sheets and
+\ProvidesPackage{odsfile}[2023/09/07 v0.8 odsfile package to select cells from ODS sheets and
       typeset them as LaTeX tables]
 \RequirePackage{luacode,xkeyval,xparse}
 
@@ -13,6 +13,7 @@
 \define@key{includespread}{rowtemplate}{\luaexec{rowtemplate="\luatexluaescapestring{\detokenize{#1}}"}}%
 \define@key{includespread}{celltemplate}{\luaexec{celltpl="\luatexluaescapestring{\detokenize{#1}}"}}%
 \define@key{includespread}{multicoltemplate}{\luaexec{multicoltpl="\luatexluaescapestring{\unexpanded{#1}}"}}%
+\define@key{includespread}{escape}{\luaexec{latexescape="\luatexluaescapestring{\unexpanded{#1}}"}}%
 
 \newcommand\OdsNl{\\}
 \newcommand\OdsLastNl{\\}
@@ -72,6 +73,7 @@ currenttemplate = nil
 rowtemplate = nil
 celltpl   = "-{value}"
 multicoltpl = "\\multicolumn{-{count}}{l}{-{value}}"
+latexescape = "true"
 \end{luacode*}
 
 \newcommand\loadodsfile[2][]{%
@@ -112,6 +114,7 @@ multicoltpl = "\\multicolumn{-{count}}{l}{-{value}}"
     celltpl = "-{value}"
     columnbreak = "\\linebreak{}"
     coltypes    = nil
+    latexescape = "true"
   }%
   \setkeys{includespread}{#1}%
   \luaexec{%
@@ -142,7 +145,8 @@ multicoltpl = "\\multicolumn{-{count}}{l}{-{value}}"
         else
           value = odsreader.interp(celltpl, {value = value})
         end
-        table.insert(t,value)
+        % table.insert(t,value)
+        t[i] = value
         headings[i] = br
         i = i + x
       end
@@ -251,6 +255,8 @@ if pos == "" then pos = nil end; row = odsreader.newRow()%
 \luaexec{%
 body = body or odsreader.getTable(odsfile)
 row:insert(body,pos)%
+% we must save the updated table to the original table
+odsfile.root["office:document-content"]["office:body"]["office:spreadsheet"]["table:table"] = body%
 }%
 }
 

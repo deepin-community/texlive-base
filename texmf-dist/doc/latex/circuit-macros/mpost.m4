@@ -1,7 +1,7 @@
 divert(-1)
    mpost.m4                     Initialization for metapost.
 
-* Circuit_macros Version 10.1, copyright (c) 2022 J. D. Aplevich under     *
+* Circuit_macros Version 10.5, copyright (c) 2024 J. D. Aplevich under     *
 * the LaTeX Project Public Licence in file Licence.txt. The files of       *
 * this distribution may be redistributed or modified provided that this    *
 * copyright notice is included and provided that modifications are clearly *
@@ -22,7 +22,7 @@ define(`linethick_',`linethick = ifelse(`$1',,`0.8',`$1')
    arrowwid = ifelse(`$1',,`0.05',linethick/16)*scale; dnl
    arrowht = ifelse(`$1',,`0.1',linethick/8)*scale;')
 
-                                Define some primary colors
+                                xcolor predefined colors
 define(`defineRGBprimaries',`
 define(`white',`(1,1,1)')dnl
 define(`lightgrey',`(0.75,0.75,0.75)')dnl
@@ -38,6 +38,14 @@ define(`blue',`(0,0,1)')dnl
 define(`cyan',`(0,1,1)')dnl
 define(`magenta',`(1,0,1)')dnl
 define(`yellow',`(1,1,0)')dnl
+define(`brown',`(0.59,0.29,0)')dnl
+define(`lime',`(0.8,1,0)')dnl
+define(`olive',`(0.5,0.5,0)')dnl
+define(`orange',`(1,0.5,0)')dnl
+define(`pink',`(1,0.75,0.8)')dnl
+define(`purple',`(0.5,0,0.5)')dnl
+define(`teal',`(0,0.5,0.5)')dnl
+define(`violet',`(0.56,0,1)')dnl
 ')
 
 divert(0)dnl

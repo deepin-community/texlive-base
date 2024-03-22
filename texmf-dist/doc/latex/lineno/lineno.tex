@@ -1,4 +1,4 @@
-\def\fileversion{v5.1}  \def\filedate{2023/01/19}                     
+\def\fileversion{v5.3}  \def\filedate{2023/05/20}                     
 
 \title{\texttt{\itshape
 lineno.sty \ \fileversion\ \filedate
@@ -214,6 +214,8 @@ available since December 1994.
 \NeedsTeXFormat{LaTeX2e}[1994/12/01]
 \ProvidesPackage{lineno}
   [\filedate\space line numbers on paragraphs \fileversion]
+\RequirePackage{etoolbox}
+\RequirePackage{kvoptions}
 \end{verbatim}
 \end{code}
 
@@ -414,7 +416,7 @@ we get doubled line numbers on every float placed in
 horizontal mode, e.g, from ~\linelabel~.
 
 Sorry, neither a ~\linelabel~ nor a ~\marginpar~ should
-insert a penalty, else the following linenumber
+insert a penalty, else the following line number
 could go to the next page. Nor should any other
 float.  So let us suppress the ~\interlinepenalty~
 altogether with the ~\@nobreak~ switch.
@@ -718,10 +720,18 @@ For reason, see use above. (/New v4.00)
 (New v4.4)   The depth preserving trick is drawn here from
 ~\MakeLineNo~ because it will be used again in
 section_\ref{ss:calls}.
+(v5.3) Handle special value of ~\prevdepth=-1000pt~. (/v5.3)
 \begin{code}\begin{verbatim}
 \def\@LN@depthbox{%
-  \dp\@tempboxa=\@tempdima
-  \nointerlineskip \kern-\@tempdima \box\@tempboxa}
+  \ifdim\@tempdima=-1000pt
+  % \nointerlineskip is already set so we don't need set it again
+  % (and we shouldn't back up)
+  \else
+    \dp\@tempboxa=\@tempdima
+    \nointerlineskip
+    \kern-\@tempdima
+  \fi
+  \box\@tempboxa}
 \end{verbatim}
 \end{code}
 (/New v4.4)
@@ -1347,8 +1357,8 @@ right of the text, or . . .
 \newdimen\linenumbersep
 \newdimen\linenumberwidth
  
-\linenumberwidth=10pt
 \linenumbersep=10pt
+\linenumberwidth=10pt
 \end{verbatim}
 \end{code}
 Margin switching requires ~pagewise~ numbering mode, but
@@ -1588,7 +1598,7 @@ themselves in an ~\xdef~
 \begin{code}\begin{verbatim}
 \let\lastLN\relax  % compare to last line on this page
 \let\firstLN\relax % compare to first line on this page
-\let\pageLN\relax  % get the page number, compute the linenumber
+\let\pageLN\relax  % get the page number, compute the line number
 \let\nextLN\relax  % move to the next page
 \end{verbatim}
 \end{code}
@@ -1707,8 +1717,7 @@ If there is another page, we iterate the search.
 \def\testNextNumberedPage#1{\ifx#1\relax
      \global\def\NumberedPageCache{\gotNumberedPage0000}%
      \PackageWarningNoLine{lineno}%
-                    {Linenumber reference failed,
-      \MessageBreak  rerun to get it right}%
+       {Line number reference failed, re-run to get it right}%
    \else
      \global\let\NumberedPageCache#1%
    \fi
@@ -2125,7 +2134,7 @@ this case.
 
 ~addpageno~ is due to a suggestion by Sergei Mariev.
 \begin{code}\begin{verbatim}
-\DeclareOption{addpageno}{%
+\DeclareVoidOption{addpageno}{%
   \AtEndOfPackage{\RequirePackage{vplref}[2005/04/25]}}
 \end{verbatim}
 \end{code}
@@ -2149,7 +2158,7 @@ allowing ~ednotes.sty~ commands in math mode. Loading the package
 is postponed to ~\AtBeginDocument~ when we know whether these
 adjustments are needed.
 \begin{code}\begin{verbatim}
-\DeclareOption{mathrefs}{\AtBeginDocument
+\DeclareVoidOption{mathrefs}{\AtBeginDocument
   {\RequirePackage{ednmath0}[2004/08/20]}}
 \end{verbatim}
 \end{code}
@@ -2216,12 +2225,12 @@ at one place only.)
 \begin{code}\begin{verbatim}
 \let\if@LN@edtable\iffalse
  
-\DeclareOption{edtable}{\let\if@LN@edtable\iftrue}
+\DeclareVoidOption{edtable}{\let\if@LN@edtable\iftrue}
  
-\DeclareOption{longtable}{\let\if@LN@edtable\iftrue
+\DeclareVoidOption{longtable}{\let\if@LN@edtable\iftrue
   \PassOptionsToPackage{longtable}{edtable}}
  
-\DeclareOption{nolongtablepatch}{%
+\DeclareVoidOption{nolongtablepatch}{%
   \PassOptionsToPackage{nolongtablepatch}{edtable}}
 \end{verbatim}
 \end{code}
@@ -2238,9 +2247,9 @@ Options ~left~ (~right~) put the line numbers on the left
 (right) margin.  This works in all modes.  ~left~ is the
 default.
 \begin{code}\begin{verbatim}
-\DeclareOption{left}{\leftlinenumbers*}
+\DeclareVoidOption{left}{\leftlinenumbers*}
  
-\DeclareOption{right}{\rightlinenumbers*}
+\DeclareVoidOption{right}{\rightlinenumbers*}
 \end{verbatim}
 \end{code}
 Option ~switch~ (~switch*~) puts the line numbers on the
@@ -2249,13 +2258,13 @@ the pagewise mode,  but we turn off the page offset
 subtraction, getting sort of running numbers again.  The
 ~pagewise~ option may restore true pagewise mode later.
 \begin{code}\begin{verbatim}
-\DeclareOption{switch}{\setpagewiselinenumbers
-                       \switchlinenumbers
-                       \runningpagewiselinenumbers}
+\DeclareVoidOption{switch}{\setpagewiselinenumbers
+                           \switchlinenumbers
+                           \runningpagewiselinenumbers}
  
-\DeclareOption{switch*}{\setpagewiselinenumbers
-                        \switchlinenumbers*%
-                        \runningpagewiselinenumbers}
+\DeclareVoidOption{switch*}{\setpagewiselinenumbers
+                            \switchlinenumbers*%
+                            \runningpagewiselinenumbers}
 \end{verbatim}
 \end{code}
 In twocolumn mode, we can switch the line numbers to
@@ -2263,13 +2272,13 @@ the outer margin, and/or start with number 1 in each
 column.  Margin switching is covered by the ~switch~
 options.
 \begin{code}\begin{verbatim}
-\DeclareOption{columnwise}{\setpagewiselinenumbers
-                           \columnwiselinenumberstrue
-                           \realpagewiselinenumbers}
+\DeclareVoidOption{columnwise}{\setpagewiselinenumbers
+                               \columnwiselinenumberstrue
+                               \realpagewiselinenumbers}
 \end{verbatim}
 \end{code}
 The options ~pagewise~ and ~running~ select the major
-linenumber mechanism.  ~running~ line numbers refer to a real
+line number mechanism.  ~running~ line numbers refer to a real
 counter value, which can be reset for any paragraph,
 even getting  multiple paragraphs on one page starting
 with line number one.  ~pagewise~ line numbers get a
@@ -2291,22 +2300,22 @@ result is almost nothing, but if you later say
 real pagewise line numbers.
 
 \begin{code}\begin{verbatim}
-\DeclareOption{pagewise}{\setpagewiselinenumbers
-                         \realpagewiselinenumbers}
+\DeclareVoidOption{pagewise}{\setpagewiselinenumbers
+                             \realpagewiselinenumbers}
  
-\DeclareOption{running}{\setrunninglinenumbers}
+\DeclareVoidOption{running}{\setrunninglinenumbers}
 \end{verbatim}
 \end{code}
 The option ~modulo~ causes only those linenumbers to be
 printed which are multiples of five.
 \begin{code}\begin{verbatim}
-\DeclareOption{modulo}{\modulolinenumbers\relax}
+\DeclareVoidOption{modulo}{\modulolinenumbers\relax}
 \end{verbatim}
 \end{code}
 Option ~modulo*~ modifies ~modulo~ in working like
 ~\modulolinenumbers*~---see section_\ref{s:UserCmds}.
 \begin{code}\begin{verbatim}
-\DeclareOption{modulo*}{\modulolinenumbers*\relax}
+\DeclareVoidOption{modulo*}{\modulolinenumbers*\relax}
 \end{verbatim}
 \end{code}
 The package option ~mathlines~ switches the behavior of
@@ -2316,7 +2325,7 @@ not number the lines of the display, while the star-form
 does.  With this option, its just the opposite.
 
 \begin{code}\begin{verbatim}
-\DeclareOption{mathlines}{\linenumberdisplaymath}
+\DeclareVoidOption{mathlines}{\linenumberdisplaymath}
 \end{verbatim}
 \end{code}
 ~displaymath~ now calls for wrappers of the standard
@@ -2330,11 +2339,25 @@ number above ~\begin{linenomath}~ (subsection_\ref{ss:DM}).
 ~\endlinenomath~ provides ~\ignorespaces~, so what could go
 wrong now?
 \begin{code}\begin{verbatim}
-\DeclareOption{displaymath}{\PackageWarningNoLine{lineno}{%
-                Option [displaymath] is obsolete -- default now!}}
+\DeclareVoidOption{displaymath}{%
+  \PackageWarningNoLine{lineno}{Option [displaymath] is obsolete}}
 \end{verbatim}
 \end{code}
 (/New v4.3)
+
+(New v5.3) Options `sep' and `width' set ~\linenumbersep~ (the separation of
+the line number to the text) and ~\linenumberwidth~ (the width of the line
+number box on the right margin) respectively; see section_\ref{s:CustHooks}.
+\begin{code}\begin{verbatim}
+\DeclareStringOption[\linenumbersep]{sep}
+\DeclareStringOption[\linenumberwidth]{width}
+\AtBeginDocument{%
+  \linenumbersep=\lineno@sep%
+  \linenumberwidth=\lineno@width%
+}
+\end{verbatim}
+\end{code}
+(/New v5.3)
 
 \subsection{%
 Compatibility with \texttt{hyperref}      %% own subsec. v4.3.
@@ -2356,9 +2379,8 @@ now, since ~\@LN@linelabel~ may change its meaning after the
 first ~\linenumbers~ and before a next one (if there is some).
 (/New v4.3)
 \begin{code}\begin{verbatim}
-\DeclareOption{hyperref}{\PackageWarningNoLine{lineno}{%
-                Option [hyperref] is obsolete.
-  \MessageBreak The hyperref package is detected automatically.}}
+\DeclareVoidOption{hyperref}{%
+  \PackageWarningNoLine{lineno}{Option [hyperref] is obsolete}}
  
 \AtBeginDocument{%
   \@ifpackageloaded{nameref}{%
@@ -2413,7 +2435,7 @@ Execute options
 We stop declaring options and execute the ones that are
 called by the user.       (/New v4.1)
 \begin{code}\begin{verbatim}
-\ProcessOptions
+\ProcessKeyvalOptions*
 \end{verbatim}
 \end{code}
 (New v4.1)        Now we know whether ~edtable.sty~ is wanted
@@ -2538,10 +2560,16 @@ And I use ~\newcommand~.)     (v4.22)
      \begingroup
         \c@internallinenumbers\prevgraf
         \setbox\@tempboxa\hbox{\vbox{\makeinternalLinenumbers}}%
-        \dp\@tempboxa\prevdepth
         \ht\@tempboxa\z@
-        \nobreak\vskip-\prevdepth
-        \nointerlineskip\box\@tempboxa
+        \ifdim\prevdepth=-1000pt
+        % \nointerlineskip is already set so we don't need set it again
+        % (and we shouldn't back up)
+        \else
+          \dp\@tempboxa\prevdepth
+          \nobreak\vskip-\prevdepth
+          \nointerlineskip
+        \fi
+        \box\@tempboxa
      \endgroup
      \fi\fi
      }
@@ -2662,9 +2690,9 @@ without special height lines. All lines must be
 \begin{code}\begin{verbatim}
 \newenvironment{bframe}
   {\par
-   \@tempdima\textwidth
+   \@tempdima\columnwidth
    \advance\@tempdima 2\bframesep
-   \setbox\bframebox\hb@xt@\textwidth{%
+   \setbox\bframebox\hb@xt@\columnwidth{%
       \hskip-\bframesep
       \vrule\@width\bframerule\@height\baselineskip\@depth\bframesep
       \advance\@tempdima-2\bframerule
@@ -2682,10 +2710,12 @@ without special height lines. All lines must be
    \def\makeLineNumber{\copy\bframebox\hss}%
   }
   {\par
-   \kern-\prevdepth
+   \ifdim\prevdepth=-1000pt \else
+     \kern-\prevdepth
+   \fi
    \kern\bframesep
    \nointerlineskip
-   \@tempdima\textwidth
+   \@tempdima\columnwidth
    \advance\@tempdima 2\bframesep
    \hbox{\hskip-\bframesep
          \vrule\@width\@tempdima\@height\bframerule\@depth\z@}%
@@ -2710,7 +2740,7 @@ supplied by the ~linenoamsmath~ package. See ~linenoamsmathdemo.pdf~ for a
 demonstration.
 (/New v5.0)
 
-(/New v5.1) ~lineno~ tries to use \LaTeX's hook management system to patch
+(New v5.1) ~lineno~ tries to use \LaTeX's hook management system to patch
 ~amsmath~, so that the two packages may be loaded independently. This requires
 the October 2020 release of \LaTeX. As a fallback for older releases, ~lineno~
 tests whether ~amsmath~ had already been loaded (by testing for the presence
@@ -2718,17 +2748,22 @@ of the ~gather~ command) and if so applies the patches; otherwise if ~amsmath~
 has not been loaded, no patches are applied, and a warning is issued.
 (/New v5.1)
 
+(New v5.2) Fix ~lineno~ to work with ~amsmath~'s ~\allowdisplaybreaks~
+option. A side effect is that now ~\\*~ suppresses a line number on that
+line. This is because ~\\*~ prohibits a page break after a given line, and
+~lineno~ basically works by hijacking page breaks. It's probably not possible
+to fix this without losing the behaviour of ~\\*~.
+(/New v5.2)
+
 \begin{code}\begin{verbatim}
-\RequirePackage{etoolbox}
- 
 \ifdefined\AddToHook
   \def\linenoamsmath@patches#1{\AddToHook{package/amsmath/after}{#1}}
 \else
   \ifdefined\endgather
     \def\linenoamsmath@patches#1{#1}
   \else
-    \PackageWarning{lineno}{%
-      `amsmath' must be loaded before `lineno' for patches to be applied}
+    \PackageWarningNoLine{lineno}%
+      {`amsmath' must be loaded before `lineno' for patches to be applied}
     \def\linenoamsmath@patches#1{\relax}
   \fi
 \fi
@@ -2741,7 +2776,14 @@ has not been loaded, no patches are applied, and a warning is issued.
     \csappto{end#1*}{\endlinenomath}%
   }
   \newcount\linenoamsmath@ams@eqpen
-  \cspreto{math@cr@}{\global\@eqpen\numexpr\@eqpen+\linenoamsmath@ams@eqpen\relax}
+  \cspreto{math@cr@}{%
+    %%% Uncommenting the following 2 lines restores the line number on a line
+    %%% ended with \\*, by making \\* act just like \\. This is probably
+    %%% undesirable, however, so these lines are disabled.
+    % \global\@eqpen%
+    % \ifnum\dspbrk@lvl <\z@ \interdisplaylinepenalty \else -\@getpen\dspbrk@lvl \fi%
+    \advance\@eqpen\linenoamsmath@ams@eqpen\relax%
+  }
   \newcommand*\linenoamsmath@patch@ams[1]{%
     \cspreto{#1}{%
       \linenomath%
@@ -2986,8 +3028,8 @@ Reminder on obsoleteness
 \unskip}
 
 (New v4.1)    We have completed inclusion of the earlier
-extension packages ~linenox0.sty~, ~linenox1.sty~, and
-~lnopatch.sty~. If one of them is loaded, though,
+extension packages ~linenox0.sty~, ~linenox1.sty~, ~lnopatch.sty~,
+and ~linenoamsmath~. If one of them is loaded, though,
 we produce an error message before something weird happens.
 We avoid ~\newif~ because the switchings occur so rarely.
 \begin{code}\begin{verbatim}
@@ -2996,10 +3038,12 @@ We avoid ~\newif~ because the switchings occur so rarely.
   \@ifpackageloaded{linenox0}{\let\if@LN@obsolete\iftrue}\relax
   \@ifpackageloaded{linenox1}{\let\if@LN@obsolete\iftrue}\relax
   \@ifpackageloaded{lnopatch}{\let\if@LN@obsolete\iftrue}\relax
+  \@ifpackageloaded{linenoamsmath}{\let\if@LN@obsolete\iftrue}\relax
   \if@LN@obsolete
     \PackageError{lineno}{Obsolete extension package(s)}{%
-    With lineno.sty version 4.00 or later,\MessageBreak
-    linenox0/linenox1/lnopatch.sty must no longer be loaded.}%
+      As of \fileversion, `lineno' includes the functionality of \MessageBreak
+      `linenox0', `linenox1', `lnopatch', and `linenoamsmath'; \MessageBreak
+      these packages are therefore obsolete and must not be loaded.}%
   \fi
 }
 \end{verbatim}
@@ -3177,7 +3221,7 @@ and ~{linenomath*}~.
 
 \subsection{%
 Customization hooks
-\unskip}
+\unskip}\label{s:CustHooks}
 
 There are several hooks to customize the appearance of the
 line numbers, and some low level hooks for special
@@ -3205,7 +3249,7 @@ Like ~\makeLineNumberLeft~, but for line numbers on
 the right margin.
 
 The default definition is                                   \par$\qquad$
-~\linenumberfont\hskip\linenumbersep\hskip\textwidth~    \par$\qquad$
+~\linenumberfont\hskip\linenumbersep\hskip\columnwidth~  \par$\qquad$
 ~\hbox to\linenumberwidth{\hss\LineNumber}\hss~
 \item
 [|\linenumberfont]                                                    \ \par
@@ -3214,7 +3258,7 @@ This macro is initialized to                                \par$\qquad$
 \item
 [|\linenumbersep]                                                     \ \par
 This dimension register sets the separation of the
-linenumber to the text. Default value is ~10pt~.
+line number to the text. Default value is ~10pt~.
 \item
 [|\linenumberwidth]                                                   \ \par
 This dimension register sets the width of the line

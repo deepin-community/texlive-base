@@ -9,11 +9,11 @@
 --  This is a generated file.
 --  
 --  Project: luacolor
---  Version: 2021-02-17 v1.17
+--  Version: 2023-08-18 v1.18
 --  
 --  Copyright (C)
 --     2007, 2009-2011 Heiko Oberdiek
---     2016-2021 Oberdiek Package Support Group
+--     2016-2023 Oberdiek Package Support Group
 --  
 --  This work may be distributed and/or modified under the
 --  conditions of the LaTeX Project Public License, either
@@ -31,7 +31,6 @@
 --  Heiko Oberdiek and the Oberdiek Package Support Group
 --  https://github.com/ho-tex/luacolor/issues
 --  
---  
 --  This work consists of the main source file luacolor.dtx
 --  and the derived files
 --     luacolor.sty, luacolor.pdf, luacolor.ins, luacolor.drv,
@@ -41,7 +40,7 @@ oberdiek = oberdiek or {}
 local luacolor = oberdiek.luacolor or {}
 oberdiek.luacolor = luacolor
 function luacolor.getversion()
-  tex.write("2021-02-17 v1.17")
+  tex.write("2023-08-18 v1.18")
 end
 local ifpdf = tonumber(tex.outputmode or tex.pdfoutput) > 0
 local prefix

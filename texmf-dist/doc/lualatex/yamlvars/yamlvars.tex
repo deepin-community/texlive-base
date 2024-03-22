@@ -1,6 +1,6 @@
 % Kale Ewasiuk (kalekje@gmail.com)
-% 2022-11-06
-% Copyright (C) 2021-2022 Kale Ewasiuk
+% 2023-12-08
+% Copyright (C) 2021-2023 Kale Ewasiuk
 %
 % Permission is hereby granted, free of charge, to any person obtaining a copy
 % of this software and associated documentation files (the "Software"), to deal
@@ -53,8 +53,8 @@
 \date{\today}
 
 
-\usepackage[pl,extrasnoglobals]{penlight}
-\usepackage[overwritedefs]{YAMLvars}
+\usepackage[overwritedefs]{yamlvars}
+\yamlvarsdebugon
 \title{YAMLvars}
 \subtitle{a YAML variable parser for LuaLaTeX}
 
@@ -81,13 +81,6 @@ or just find it easier to read document metadata from a YAML file compared to th
 standard title, author, etc. commands.
 
 \section{Package Options}
-\leavevmode\llap{\texttt{useyv}\ \ \ }By default, when you specify a YAML variable, it will be defined using \texttt{gdef}
-(only if it wasn't defined previously).
-If you use this setting, unless otherwise specified, YAML variables will be accessible under
-the \texttt{\textbackslash yv\{<var>\}} command.
-This also allows numbers and symbols in the variable names.
-Note that internally, the variables are stored in the command sequence
-\texttt{yv--<var>}.
 
 \leavevmode\llap{\texttt{parseCLI}\ \ \ }If this option is enabled, any arguments passed to your lualatex compile
 command that end in ``.yaml'' will be used, separated by a space.
@@ -106,24 +99,43 @@ will br thrown if the name exists. Alternatively, you can use the commands \cmd{
 
 \llcmd{overwritedefs}Danger! This will allow you to \cmd{gdef} commands with YAML. Caution should be taken to not set definitions like \cmd{begin}, \cmd{section}, etc.
 
+\leavevmode\llap{\texttt{useyv}\ \ \ }By default, when you specify a YAML variable, it will be defined using \texttt{gdef}
+(only if it wasn't defined previously).
+If you use this setting, unless otherwise specified, YAML variables will be accessible under
+the \texttt{\textbackslash yv\{<var>\}} command.
+Note that internally, the variables are stored in the command sequence
+\cmd{\yv<var>}.
+
 \section{Dependencies}
-%This package contains the \texttt{tinyyaml} Lua package.
-\llcmd{Note:}This package requires that the \cmd{markdown} (\url{https://ctan.org/pkg/markdown}) be installed. This package does not use the package in its entirety, but rather depends on the YAML interpreter it comes with: \cmd{markdown-tinyyaml.lua}. This dependency is chosen to avoid redundancy in your TeX installation and align development of the \cmd{tinyyaml} Lua package.
-If you want to use the YAML interpreter for other purposes, you can bring it into Lua by either:
-\begin{verbatim}
-\directlua{yaml = YAMLvars.yaml}           or
-\directlua{yaml = require'markdown-tinyyaml'}
-\end{verbatim}
+\llcmd{Note:}This package requires the \cmd{tinyyaml} package, available on CTAN.
+
 The distribution: \url{https://github.com/api7/lua-tinyyaml}\\
+\ \ \ \ \url{https://ctan.org/pkg/lua-tinyyaml}\\
 The YAML specification: \url{https://yaml.org/spec/}\\
 
 Many of the ``transform'' and ``processing'' functions built-in to this package rely on other packages,
 like
-\texttt{hyperref}, for example, but it is not loaded, and this package will only load
-\cmd{penlight},
-\cmd{luacode},
-\cmd{xspace}, and
+\texttt{hyperref}, or \texttt{xspace} for example, but they are not loaded, and this package will only load
+\cmd{penlightplus},
+\cmd{luacode}, \cmd{luakeys}, and
 \cmd{etoolbox}.
+
+\section{Settings}
+\cmd{\setdefYAMLvars{kv}} changes the default settings of key-vals.\\
+\cmd{\setYAMLvars*{kv}} changes the current settings from key-vals. Use \cmd{*} if you want to first restore to defaults.
+  
+  The \cmd{YAMLvars.setts} lua table contains the settings, which are:\\
+\cmd{parseopts} table passed to YAML parser options  (default is \cmd{{timestamps=false}})       \\
+\cmd{decstr}   in the declaration YAML text, if a value is a string, how should it be treated (\cmd{xfm, dft, or prc})       \\
+\cmd{undeclared} boolean  for allowing parsing of undeclared vars        \\
+\cmd{overwrite}  boolean for allowing overwriting of previous definitions     \\
+\cmd{lowercase}  boolean for auto-changing vars to lowercase       \\
+\cmd{prcstring}  boolean for auto-converting final value before processing (sometimes) numbers can have odd effects       \\
+%\cmd{tabmidrule} type of rule for tabu          \\
+\cmd{xfm}    default xfm function(s) if none passed to declared key, separated by space     \\
+\cmd{prc}    default prc function if none passed to declared key     \\
+\cmd{dft}    default dft function if none passed to declared key     \\
+
 
 \section{Declaring variables}
 A declaration file can either be parsed with the command \texttt{declareYAMLvarsFile} command,
@@ -391,7 +403,34 @@ Items:
 \clearpage
 \section{xfm, dec, prc functions (from yamlvars.lua)}
 
-\lstinputlisting[linerange=113-296]{yamlvars.lua}
+\lstinputlisting[linerange=111-315]{yamlvars.lua}
+
+%
+%\AllowUndeclaredYV
+%\luadirect{YAMLvars.xfmDefault={'lb2nl','addxspace'}}
+
+%
+%\luadirect{YAMLvars.debug = true}
+%\setYAMLvars{undeclared, xfm= lb2nl addxspace}
+%\begin{parseYAMLvars}
+%kale: |-
+%  kale
+%  eee
+%\end{parseYAMLvars}
+%
+%\kale ee
+%
+%\setYAMLvars{undeclared, xfm=list2items}
+%\begin{parseYAMLvars}
+%lllist:
+%  - one
+%  - two
+%  - three
+%\end{parseYAMLvars}
+%
+%\begin{itemize}
+%  \lllist
+%\end{itemize}
 
 \end{document}
 

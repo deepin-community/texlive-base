@@ -4,7 +4,7 @@
 # See the ASME Y14.5 standard, Figure 6-30. 
 scale = 100/3
 cct_init
-include(../ASME_Y14-5.m4)
+include(../ASME_Y14-5.m4def)
 ifsvg(`svg_font(sans-serif,9.5bp__)',
 `textht = 10bp__*2/3
  iflatex(`command "{\sf"')')

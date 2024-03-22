@@ -3,7 +3,7 @@
 # m4 macro NeedDpicTools or the pic statement copy "HOMELIB_/dpictools.pic"
 # when HOMELIB_ is defined or, generically, copy "<path>dpictools.pic"
 
-# Circuit_macros Version 10.1, copyright (c) 2022 J. D. Aplevich under     #
+# Circuit_macros Version 10.5, copyright (c) 2024 J. D. Aplevich under     #
 # the LaTeX Project Public Licence in file Licence.txt. The files of       #
 # this distribution may be redistributed or modified provided that this    #
 # copyright notice is included and provided that modifications are clearly #
@@ -65,17 +65,17 @@ define array {
 define array2 { for i_array=3 to $+ do {
   exec sprintf("$1[%g,%g]=$%g",$2,i_array-2,i_array);}}
 
-#                               posarray(Var,Position1,Position2,...)
-#                               Var[1]:Position1; Var[2]:Position2,...
+#                               posarray(Name,Position1,Position2,...)
+#                               Name[1]:Position1; Name[2]:Position2,...
 define posarray {
  for i_array=2 to $+ do { exec sprintf("$1[%g] : $%g",i_array-1,i_array); }}
 
-#                               posarray2(Var,expr,position1,position2,...)
+#                               posarray2(Var,expr,Position1,Position2,...)
 #                               Var[expr,1]:position1; Var[expr,2]:Position2,...
 define posarray2 { for i_array=3 to $+ do {
   exec sprintf("$1[%g,%g] : $%g",$2,i_array-2,i_array); }}
 
-#                               Operations on 3-d vectors (could be generalized
+#                               Operations on 3D vectors (could be generalized
 #                               except for cross):
 #                               $3 = $1 + $2
 define sum3 {
@@ -322,8 +322,10 @@ define rgbtocmyk {
 #                               Define dpic macro colorname according to the
 #                               postprocessor specified by dpic command-line
 #                               option; colorname then evaluates to a string
+#                               See m4 macro definergbcolor which gives a
+#                               color name
 define DefineRGBColor {
-case(dpicopt,  # The order of the following is defined in dpic source:
+case(abs(dpicopt),  # The order of the following is defined in dpic source:
 # MFpic:
   command sprintf("\mfpdefinecolor{_$1__}{rgb}{%g,%g,%g}",$2,$3,$4)
   define $1 {"_$1__"} ,
@@ -388,7 +390,6 @@ define ShadeObject { [ Origin: Here; nSteps = abs($2)
   nextP = $3; nextR = $4; nextG = $5; nextB = $6
   nextarg = 7
   thisP = nextP
-#                               Creates [] wid 0 ht 0 at (0,0):
   if $2 < 0 then { rgbtohsv(nextR,nextG,nextB,nextH,nextS,nextV) } \
   else { rgbtohsv(nextR^2,nextG^2,nextB^2,nextH,nextS,nextV) }
   if nextP*nSteps >= 1 then { nextP = 0 }
@@ -451,7 +452,7 @@ define rnd {int($1+sign($1)/2)} # round function
 #                               Operations on complex numbers (x,y)
 define Zsum {($1+($2))}
 define Zdiff{($1-($2))}
-define Zprod {($1.x*$2.x-$1.y*$2.y,$1.y*$2.x+$1.x*$2.y)}
+define Zprod{($1.x*$2.x-$1.y*$2.y,$1.y*$2.x+$1.x*$2.y)}
 define Zinv {($1.x/($1.x^2+$1.y^2),-$1.y/($1.x^2+$1.y^2))}
 define Zexp {((cos($1.y),sin($1.y))*expe($1.x))}
 define Zcos {(cos($1.x)*cosh($1.y),-sin($1.x)*sinh($1.y))}
@@ -484,6 +485,8 @@ if dpicopt==optSVG then { define px__ {*(scale/dpPPI)} } \
 else { define px__ {*(scale/96)} } # Absolute pixels
 
 define assign_dpicvars {
+# print " *** dpic: dpictools.pic processed"
+ define dpictools_ {1}
  ld__ = 0
  rtod_ = 57.295779513082323
  dtor_ = 0.017453292519943295
@@ -507,11 +510,20 @@ define Intersect_ {intersect_($1.start,$1.end,$2.start,$2.end)}
 #                               Nearest multiple of 90
 define drawdir_ {(int(pmod($1+45,360)/90)*90)}
 
-#                               vlength(x,y) 2-D vector length
+#                               vlength(x,y) 2-D length
 define vlength {sqrt(abs(($1)^2+($2)^2))}
 
 #                               distance(Pos1,Pos2) distance between positions
 define distance {vlength(($1).x-($2).x,($1).y-($2).y)}
+
+#                               linang(linear obj) angle of linear object
+define linang {atan2($1.end.y-$1.start.y,$1.end.x-$1.start.x)}
+
+#                               posang(Position) angle of position wrt (0,0)
+define posang {atan2(($1).y,($1).x)}
+
+#                               cangle(A,B,C) angle at B of line A to B to C
+define cangle { (posang(($1-($2)))-posang(($3-($2)))) }
 
 # For PGF, PSTricks, or SVG only:
 define dpshade { beginshade($1); $2; endshade } # like libgen shade()
@@ -554,21 +566,5 @@ else { if dpicopt==optSVG then {
 #######################################################################
 
 assign_dpicvars()
-# print " *** dpic: dpictools.pic processed"
-define dpictools_ {1}
-  case(abs(dpicopt),
-    optMFpic := -abs(optMFpic),
-    optMpost := -abs(optMFpic),
-    optPDF := -abs(optPDF),
-    optPGF := -abs(optPGF),
-    optPict2e := -abs(optPict2e),
-    optPS := -abs(optPS),
-    optPSfrag := -abs(optPSfrag),
-    optPSTricks := -abs(optPSTricks),
-    optSVG := -abs(optSVG),
-    optTeX := -abs(optTeX),
-    opttTeX := -abs(opttTeX),
-    optxfig := -abs(optxfig) )
-  dpicopt := -abs(dpicopt)
 
 # dpictools end

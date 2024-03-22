@@ -1,6 +1,6 @@
 %% This is part of the OpTeX project, see http://petr.olsak.net/optex
 
-\_codedecl \normalbaselineskip {Parameter settings <2021-04-13>} % preloaded in format
+\_codedecl \normalbaselineskip {Parameter settings <2023-09-19>} % preloaded in format
 
    \_doc -----------------------------
    \secc Primitive registers
@@ -55,6 +55,17 @@
 
 \_topskip=10pt       % top edge of page-box to first baseline distance
 \_splittopskip=10pt
+
+   \_doc -----------------------------
+   The following two registers were introduced to fix a couple of bugs
+   in the \LuaTeX/ engine. When `\matheqdirmode` is positive short
+   skip detection around display equations will work with right to left 
+   typesetting. When `\breakafterdirmode` is set to 1 a glue after a dir
+   node will not be ignored.
+   \_cod -----------------------------
+
+\_matheqdirmode=1
+\_breakafterdirmode=1
 
    \_doc -----------------------------
    \secc Plain \TeX/ registers
@@ -197,12 +208,24 @@
    parameters locally in the group where \^`\inspic` is used in order to not
    influence the dimensions of other images. But there exist many
    situations you need to put the same dimensions to more images,
-   so you can set this parameter only once before more \^`\inspic` macros.
+   so you can set this parameter only once before more \^`\inspic` macros.\nl
+   More parameters accepted by `\pdfximage` primitive can be set in the
+   \`\picparams` tokens list. For example `\picparams={page3}`
+   selects page 3 from included PDF file.
    \_cod -----------------------------
 
 \_newdimen\_picwidth   \_picwidth=0pt   \_let\picw=\_picwidth
 \_newdimen\_picheight  \_picheight=0pt
-\_public \picwidth \picheight ;
+\_newtoks\_picparams
+\_public \picwidth \picheight \picparams ;
+
+   \_doc -----------------------------
+   \`\kvdict` is dictionary name when \~`\readkv`, \~`\kvx`, \~`\kv`, and \~`\iskv` are
+   processed. The default is empty.
+   \_cod -----------------------------
+
+\_newtoks \_kvdict
+\_public \kvdict ;
 
    \_doc -----------------------------
    The \`\everytt` is the token list used in
@@ -302,16 +325,25 @@
    \nl
    The \`\ilevel` keeps the value of the current nesting level of the items list.
    \nl
-   The \`\listskipamount` gives vertical skip above and below the items list
-   if `\ilevel=1`.
+   The \`\olistskipamount` is vertical skip above and below the items list
+   if `\ilevel=1`.\nl
+   The \`\ilistskipamount` is vertical skip above and below the items list
+   if `\ilevel>1`.\nl
+   The \`\itemskipamount` is vertical skip between list items, but not above the firts
+   and below the last.
    \_cod -----------------------------
 
-\_newtoks\_defaultitem  \_defaultitem={$\_bullet$\_enspace}
+\_newtoks\_defaultitem     \_defaultitem={$\_bullet$\_enspace}
 \_newtoks\_everyitem
 \_newtoks\_everylist
-\_newskip \_listskipamount  \_listskipamount=\_medskipamount
 \_newcount \_ilevel
-\_public \defaultitem \everyitem \everylist \listskipamount \ilevel ;
+\_newskip\_olistskipamount \_olistskipamount=\_medskipamount
+\_newskip\_ilistskipamount \_ilistskipamount=0pt plus.5\_smallskipamount
+\_newskip\_itemskipamount  \_itemskipamount=0pt
+
+\_public \defaultitem \everyitem \everylist \ilevel
+         \olistskipamount \ilistskipamount \itemskipamount ;
+\_let \listskipamount = \_olistskipamount  % for backward compatibility
 
    \_doc -----------------------------
    The \^`\tit` macro includes `\vglue`\`\titskip` above the title of the document.
@@ -472,7 +504,7 @@
    \_cod -----------------------------
 
 \_newtoks\_headline   \_headline={}
-\_newtoks\_footline   \_footline={\_hss\_rmfixed \_folio \_hss}
+\_newtoks\_footline   \_footline={\_hss\_rmfixed \_numprint\_folio \_hss}
 \_public \headline \footline ;
 
    \_doc -----------------------------
@@ -542,12 +574,10 @@
 %                \_shadow=N \_overlapmargins=N \_hhkern=3pt \_vvkern=3pt}
 
 \_newdimen \_roundness    \_roundness=5mm % used in \clippingoval macro
-
 \_public \ovalparams \circleparams \roundness ;
 
    \_doc -----------------------------
-   \OpTeX/ defines \"Standard \OpTeX/ markup language"%
-   \fnote{Will be developed in 2021.}
+   \OpTeX/ defines \"Standard \OpTeX/ markup language"
    which lists selected commands from chapter~1 and gives their behavior when a
    converter from \OpTeX/ document to HTML or Markdown or \LaTeX/ is used.
    The structure-oriented commands are selected here, but the commands which
@@ -599,6 +629,7 @@ a register then \OpTeX/ macros still work without change.
 \_endinput
 
 History:
+2023-09-19 ... \matheqdirmode and \breakafterdirmode set (relevant when RTR typesetting)
 2021-04-13 ... \bibpart added
 2021-04-07 ... \biboptions added, bug from iso690 fixed
 2020-04-04 ... \tabspaces added

@@ -1,6 +1,6 @@
 % \iffalse meta-comment
 %
-% File: pxpic.dtx Copyright (C) 2021 Jonathan P. Spratte
+% File: pxpic.dtx Copyright (C) 2021-2023 Jonathan P. Spratte
 %
 % This work  may be  distributed and/or  modified under  the conditions  of the
 % LaTeX Project Public License (LPPL),  either version 1.3c  of this license or
@@ -27,7 +27,7 @@ Released under the LaTeX Project Public License v1.3c or later
 See http://www.latex-project.org/lppl.txt
 --------------------------------------------------------------
 
-Copyright (C) 2021 Jonathan P. Spratte
+Copyright (C) 2021-2023 Jonathan P. Spratte
 
 This  work may be  distributed and/or  modified under  the conditions  of the
 LaTeX Project Public License (LPPL),  either version 1.3c  of this license or
@@ -54,7 +54,7 @@ and the derived files           pxpic.pdf
   \expandafter\endgroup
 \fi
 %
-\ProvidesFile{pxpic.dtx}[2021-12-12 v1.3 draw pixel pictures]
+\ProvidesFile{pxpic.dtx}[2023-08-16 v1.5 draw pixel pictures]
 \PassOptionsToPackage{full}{textcomp}
 \documentclass{l3doc}
 \RequirePackage[oldstylenums,nott]{kpfonts}
@@ -76,7 +76,7 @@ and the derived files           pxpic.pdf
     ,flexiblecolumns=false
     ,basewidth=.53em
     ,gobble=2
-    ,basicstyle=\fontfamily{jkp}\itshape
+    ,basicstyle=\fontfamily{txtt}\selectfont
     ,morekeywords=^^A
       {^^A
         \pxpic,\pxpicsetup,\pxpicnewmode,\pxpicsetmode,\pxpicnewcolorlist,
@@ -140,7 +140,8 @@ and the derived files           pxpic.pdf
 \DoNotIndex{\csname}
 \DoNotIndex{\def,\detokenize,\dimexpr}
 \DoNotIndex{\edef,\egroup,\ekvdef,\ekvdefNoVal,\ekvifdefinedNoVal,\ekvletkv}
-\DoNotIndex{\ekvparse,\ekvsetdef,\endcsname,\endgroup,\expandafter}
+\DoNotIndex{\ekvparse,\ekvsetdef,\ekvcompile,\ekvmorekv}
+\DoNotIndex{\endcsname,\endgroup,\expandafter}
 \DoNotIndex{\hbox,\hskip,\ht}
 \DoNotIndex{\iffalse,\fi}
 \DoNotIndex{\kern}
@@ -174,6 +175,9 @@ and the derived files           pxpic.pdf
           [
             style=nextline
             ,font=\normalfont\ttfamily
+            ,labelwidth=\dimexpr.25\marginparwidth-5pt\relax
+            ,labelsep*=5pt
+            ,leftmargin=!
             ,#1
           ]%
       }
@@ -236,7 +240,7 @@ and the derived files           pxpic.pdf
           \Large draw pixel pictures^^A
         }{pxpic - draw pixel pictures}^^A
     }
-  \date{2021-12-12 v1.3}
+  \date{2023-08-16 v1.5}
   \author{Jonathan P. Spratte\thanks{\protect\randomize{jspratte@yahoo.de}}}
   \DocInput{pxpic.dtx}
 \end{document}
@@ -265,15 +269,36 @@ and the derived files           pxpic.pdf
 %
 % \pxpicname\ supports different input modes, all of them have the same basic
 % parsing behaviour. A \meta{pixel list} contains the pixel colours. The image
-% is built line wise from top left to bottom right. Each row of pixels should be
-% a single \TeX\ argument (so either just one token, or a group delimited by
-% |{}|), and within each line each pixel in turn should be a single \TeX\
-% argument (so either just one token, or a group delimited by |{}|). Spaces and
-% hence single newlines in the sources between \meta{pixel list} elements are
-% ignored. The different modes are explained in \autoref{sec:modes}. The only
-% disallowed token in the \meta{pixel list} is the control sequence
-% \CS{pxpic@end} (plus the usual restrictions of \TeX\ so no unbalanced braces,
-% no macros defined as \CS{outer}).
+% is built line wise from top left to bottom right.
+% There are two different syntaxes how a single row is given (dependent on the
+% setting of the |lines|-key, see \autoref{sec:options}):
+% \begin{itemize}
+%   \item
+%     By default each row of pixels should be a single \TeX\ argument (so either
+%     just one token, or a group delimited by |{}|). (This is the behaviour for
+%     |lines=group|)
+%   \item
+%     Alternatively each row of pixels should be right delimited by a space (and
+%     since a newline is turned into a space in \TeX\ with default settings, a
+%     newline is also possible). (This is the behaviour for |lines=space| and
+%     |lines=csv|)
+% \end{itemize}
+% Inside each line there are also two different parsing modes:
+% \begin{itemize}
+%   \item
+%     By default within each line each pixel in turn should be a single \TeX\
+%     argument (so either just one token, or a group delimited by |{}|). (This
+%     is the behaviour for |lines=group| and |lines=space|)
+%   \item
+%     Each pixel except the last one is separated from the next pixel by a
+%     comma, no space trimming is applied. (This is the behaviour of
+%     |lines=csv|)
+% \end{itemize}
+%
+% The different modes that interpret a single pixel's input are explained in
+% \autoref{sec:modes}. The only disallowed token in the \meta{pixel list} is the
+% control sequence \CS{pxpic@end} (plus the usual restrictions of \TeX\ so no
+% unbalanced braces, no macros defined as \CS{outer}).
 %
 % There is a small caveat however: \pxpicname\ draws each pixel individually,
 % and there is really no space between them, however some \textsc{pdf} viewers
@@ -303,6 +328,9 @@ and the derived files           pxpic.pdf
 %   \cs{pxpic} will be bottom aligned by default (see the options |b|, |c|, and
 %   |t|), you can further tweak this using \CS{raisebox} (or, if you want,
 %   \TeX's \CS{raise} and \CS{lower} primitives).
+%
+%   If you used the |file| option the mandatory argument should be a file name
+%   containing a \meta{pixel list} instead of the \meta{pixel list} itself.
 % \end{function}
 %
 % \subsubsection{Examples}
@@ -362,18 +390,61 @@ and the derived files           pxpic.pdf
 % A heart (shamelessly copied example from \pixelart):\par\nobreak
 % \noindent
 % \codeexample$
-% \pxpic
+% \pxpic[lines=space]
 %   {
-%     {..rr.rr}
-%     {.rrrrrrr}
-%     {rrrrrrrrr}
-%     {rrrrrrrrr}
-%     {rrrrrrrrr}
-%     {.rrrrrrr}
-%     {..rrrrr}
-%     {...rrr}
-%     {....r}
+%     ..rr.rr
+%     .rrrrrrr
+%     rrrrrrrrr
+%     rrrrrrrrr
+%     rrrrrrrrr
+%     .rrrrrrr
+%     ..rrrrr
+%     ...rrr
+%     ....r
 %   }
+% $
+%
+% A parrot (shamelessly copied example from \pkg{PixelArtTikz}):\par\nobreak
+% \begingroup
+% \footnotesize
+% \begin{lstlisting}[belowskip=0pt]
+% \begin{filecontents*}{\jobname-parrot.csv}
+%     .,.,.,.,.,.,k,k,k,k,.,.,.,.,.,.
+%     .,.,.,.,k,k,r,r,r,r,k,k,.,.,.,.
+%     .,.,.,k,r,r,r,r,r,r,r,r,k,.,.,.
+%     .,.,k,r,r,r,r,r,r,r,r,r,r,k,.,.
+%     .,.,k,r,r,r,r,r,r,r,r,r,r,k,.,.
+%     .,k,r,.,.,r,r,r,r,r,r,.,.,r,k,.
+%     .,k,.,.,.,.,k,k,k,k,.,.,.,.,k,.
+%     .,k,.,k,.,.,k,k,k,k,.,k,.,.,k,.
+%     .,k,r,.,.,.,k,k,k,k,.,.,.,r,k,.
+%     .,.,k,r,r,.,k,k,k,k,.,r,r,k,.,.
+%     .,.,k,r,r,r,k,k,k,k,r,r,r,k,.,.
+%     .,.,.,k,r,r,r,k,k,r,r,r,k,.,.,.
+%     .,.,k,3,r,r,r,r,r,r,r,r,3,k,.,.
+%     .,k,b,3,r,r,r,r,r,r,r,r,3,b,k,.
+%     .,k,b,b,r,r,r,r,r,r,r,r,b,b,k,.
+%     .,k,b,b,r,r,r,r,r,r,r,r,b,b,k,.
+%     .,k,b,k,r,r,r,k,k,r,r,r,k,b,k,.
+%     2,2,k,2,k,k,k,2,2,k,k,k,2,k,2,2
+%     2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2
+%     2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2
+%     .,.,.,.,.,k,r,r,r,r,k,.,.,.,.,.
+%     .,.,.,.,.,.,k,r,r,k,.,.,.,.,.,.
+%     .,.,.,.,.,.,.,k,k,.,.,.,.,.,.,.
+% \end{filecontents*}
+% \end{lstlisting}
+% \endgroup
+% \noindent
+% \codeexample$
+% \pxpic
+%   [
+%     lines=csv,
+%     colours={2=brown,3=yellow},
+%     file,
+%     size=3pt
+%   ]
+%   {\jobname-parrot.csv}
 % $
 %
 % Using |mode=rgb| to draw a short coloured line:\par\nobreak
@@ -500,6 +571,25 @@ and the derived files           pxpic.pdf
 %     colour lists are defined by the package.
 %   \item[colour-list]
 %     \emph{see \texttt{color-list}.}
+%   \item[exp]
+%     \emph{see \texttt{expansion}}
+%   \item[expansion=\meta{choice}]
+%     This is a choice to control the expansion of the \meta{pixel list}. The
+%     choices are:
+%     \begin{options}
+%       \item[full]
+%         the \meta{pixel list} is subject to one full expansion via
+%         |\expanded|.
+%       \item[none]
+%         no expansion takes place, the \meta{pixel list} is used as it is.
+%     \end{options}
+%     The initial value is |none|, the default used if you don't provide a value
+%     is |full|.
+%   \item[file=\meta{bool}]
+%     If you pass in |true| the mandatory argument of \CS{pxpic} becomes a file
+%     name which's contents are used as a \meta{pixel list}. Using |false|
+%     results in the default behaviour of a \meta{pixel list}. If you omit the
+%     value the same as |true| is used.
 %   \item[gap-hack=\meta{dimen}]
 %     To fix the issues with visible gaps in \textsc{pdf} viewers you can
 %     introduce some negative kerns to make the pixels overlap (lines overlap to
@@ -510,6 +600,21 @@ and the derived files           pxpic.pdf
 %     babbling about this issue in \autoref{sec:misc}.
 %   \item[ht=\meta{dimen}]
 %     Set the height of the pixels.
+%   \item[lines=\meta{choice}]
+%     How the individual lines of a \meta{pixel list} are given. The choices
+%     are:
+%     \begin{options}
+%       \item[group]
+%         The default syntax in which each line is a single \TeX\ argument
+%         (group delimited by |{}|).
+%       \item[space]
+%         A different input syntax in which each line should be right-delimited
+%         by a space (or newline as, by default, a newline is the same as a
+%         space in \TeX).
+%       \item[csv]
+%         The same line-wise input as |space|, but in each line each pixel
+%         should be separated from the next with a comma.
+%     \end{options}
 %   \item[mode=\meta{choice}]
 %     Set the used mode, see \autoref{sec:modes} for available modes. Initial
 %     value is |px|.
@@ -646,12 +751,17 @@ and the derived files           pxpic.pdf
 % either open a ticket on Github (\url{https://github.com/Skillmon/ltx_pxpic})
 % or email me (see the first page).
 %
-% A similar package is \pixelart, which, as of writing this, is described as a
-% ``working draft'' by its author. \pxpicname\ wasn't intended as a direct
-% competitor (I already started coding \pxpicname\ when I learned about
-% \pixelart's existence), but I took inspiration from the ``Bugs, Ideas,
-% Undefined behaviours'' section of \pixelart's documentation for the syntax of
-% |mode=px|.
+% A similar package is \pixelart, which, at the time \pxpicname\ was created,
+% was described as a ``working draft'' by its author. \pxpicname\ wasn't
+% intended as a direct competitor (I already started coding \pxpicname\ when I
+% learned about \pixelart's existence), but I took inspiration from the ``Bugs,
+% Ideas, Undefined behaviours'' section of \pixelart's documentation for the
+% syntax of |mode=px|. Also the |lines=space| option is a copy of the syntax the
+% new stable version of \pixelart\ is using (so images created with it could be
+% processed with \pkg{pxpic} and vice versa). A third package that allows
+% drawing pixel art is \pkg{PixelArtTikz}, that uses a csv-syntax for its pixel
+% definition lists (you may have luck and the mode |lines=csv| works for lists
+% defined for \pkg{PixelArtTikz}).
 %
 % \paragraph{Regarding the gap issue:}
 % The pixels are output touching each other with no real gap, however some
@@ -666,11 +776,31 @@ and the derived files           pxpic.pdf
 % errors less obvious). You can play with the value and decide for yourself
 % what's the lesser evil. Or you do like me, don't use |gap-hack| and blame the
 % viewers. Here are examples in which you can compare (the |gap-hack| is chosen
-% way too big in this example and skips are used close to white pixels on
-% purpose, but it illustrates the effects; the third output, not shown in the
-% code, uses a more reasonable |gap-hack=.2pt|):\par\nobreak
+% way too big in the first example and skips are used close to white pixels on
+% purpose, but it illustrates the effects):\par\nobreak
+% \begingroup
+% \footnotesize
+% \def\mypxpic#1%
+%   {^^A
+%     \pxpic
+%       [
+%          gap-hack=#1
+%         ,colours={k=black,g=green,w=white}
+%         ,skip=.
+%         ,size=10pt
+%         ,t
+%       ]
+%       {
+%         {kkkkk}
+%         {kgggk}
+%         {kwg.k}
+%         {kg.gk}
+%         {kgwk}
+%         {kkkw}
+%       }^^A
+%   }^^A
 % \noindent
-% \begin{minipage}[c]{.5\linewidth}\footnotesize
+% \begin{minipage}[c]{.45\linewidth}^^A
 % \begin{lstlisting}
 % \pxpicsetup
 %   {
@@ -678,15 +808,6 @@ and the derived files           pxpic.pdf
 %     ,skip=.
 %     ,size=10pt
 %     ,t
-%   }
-% \pxpic[gap-hack=2pt]
-%   {
-%     {kkkkk}
-%     {kgggk}
-%     {kwg.k}
-%     {kg.gk}
-%     {kgwk}
-%     {kkkw}
 %   }
 % \pxpic
 %   {
@@ -699,37 +820,26 @@ and the derived files           pxpic.pdf
 %   }
 % \end{lstlisting}
 % \end{minipage}
-% \begin{minipage}[c]{.45\linewidth}
-% \pxpicsetup{colours={k=black,g=green,w=white},skip=.,size=10pt,t}
-% \leavevmode
-% \pxpic[gap-hack=2pt]
-%   {
-%     {kkkkk}
-%     {kgggk}
-%     {kwg.k}
-%     {kg.gk}
-%     {kgwk}
-%     {kkkw}
-%   }
-% \pxpic
-%   {
-%     {kkkkk}
-%     {kgggk}
-%     {kwg.k}
-%     {kg.gk}
-%     {kgwk}
-%     {kkkw}
-%   }
-% \pxpic[gap-hack=.2pt]
-%   {
-%     {kkkkk}
-%     {kgggk}
-%     {kwg.k}
-%     {kg.gk}
-%     {kgwk}
-%     {kkkw}
-%   }
-% \end{minipage}
+% \fontfamily{txtt}\selectfont
+% \begin{tabular}[c]{ccc}
+%   \texttt{gap-hack=2pt} & \texttt{gap-hack=0pt} & \texttt{gap-hack=.2pt} \\
+%   \mypxpic{2pt} & \mypxpic{0pt} & \mypxpic{.2pt} \\
+% \end{tabular}
+% \endgroup
+%
+% \paragraph{Exploiting the \texttt{gap-hack} to draw a grid:}
+% It is possible to exploit the |gap-hack| option to draw a grid around your
+% pixels (at least for a rectangular picture). For this we simply set a coloured
+% background and use a negative |gap-hack| value:\par
+% \noindent
+% \codeexample$
+% \newcommand\gridpxpic[3][]
+%   {{\setlength\fboxsep{#2}\colorbox{black}{\pxpic[gap-hack=-\fboxsep,#1]{#3}}}}
+% \gridpxpic
+%   [colours={g=green,w=white},size=8pt]
+%   {1pt}
+%   {{gwgw}{wgwg}}%
+% $
 %
 %
 % \end{documentation}^^A=<<
@@ -745,7 +855,7 @@ and the derived files           pxpic.pdf
 %
 % Report who we are
 %    \begin{macrocode}
-\ProvidesPackage{pxpic}[2021-12-12 v1.3 draw pixel pictures]
+\ProvidesPackage{pxpic}[2023-08-16 v1.5 draw pixel pictures]
 %    \end{macrocode}
 % and load dependencies
 %    \begin{macrocode}
@@ -770,6 +880,14 @@ and the derived files           pxpic.pdf
 \pxpic@kern=\z@
 %    \end{macrocode}
 % \end{variable}
+% \begin{macro}[internal]{\pxpic@@kern}
+%   For some simplification of the output box (removing unnecessary kerns) we
+%   don't directly use \CS{kern} but one step of indirection. This macro is
+%   locally turned into \CS{@gobble} if \CS{pxpic@kern} is equal to \CS{z@}.
+%    \begin{macrocode}
+\def\pxpic@@kern#1{\kern#1\pxpic@kern}
+%    \end{macrocode}
+% \end{macro}
 % \begin{macro}[internal]{\pxpic@inner@box,\pxpic@after@inner@box}
 %   To get different vertical alignments we nest one of |\vbox|, |\vtop|, and a
 %   lowered |\vbox| inside the outer |\hbox|. The macro \cs{pxpic@inner@box}
@@ -825,7 +943,7 @@ and the derived files           pxpic.pdf
 \protected\ekvdef{pxpic}{color-list}
   {%
     \@ifundefined{pxpic@colorlist@#1}%
-      {\pxpic@err@unknown@colorlist{#1}}
+      {\pxpic@err@unknown@colorlist{#1}}%
       {\csname pxpic@colorlist@#1\endcsname}%
   }
 \ekvletkv{pxpic}{colour-list}{pxpic}{color-list}
@@ -850,6 +968,74 @@ and the derived files           pxpic.pdf
   }
 %    \end{macrocode}
 %
+% The expansion related option will set an internal. It's yet another option
+% which will need to check for a defined internal, as it's a choice of |none| or
+% |full|. This is deliberately not defined |\protected| to allow expansion as
+% far as possible.
+%    \begin{macrocode}
+\ekvdef{pxpic}{expansion}
+  {%
+    \@ifundefined{pxpic@expansion@#1}%
+      {\pxpic@err@unknown@expansion{#1}}%
+      {\csname pxpic@expansion@#1\endcsname}%
+  }
+\ekvdefNoVal{pxpic}{expansion}{\pxpic@expansion@full}
+\ekvletkv     {pxpic}{exp}{pxpic}{expansion}
+\ekvletkvNoVal{pxpic}{exp}{pxpic}{expansion}
+%    \end{macrocode}
+% And we define the choices and the initial behaviour:
+%    \begin{macrocode}
+\protected\def\pxpic@expansion@none{\let\pxpic@expansion\@firstofone}
+\protected\def\pxpic@expansion@full{\let\pxpic@expansion\expanded}
+\pxpic@expansion@none
+%    \end{macrocode}
+%
+% Another key is the choice how lines are delimited, either as a single
+% group/argument or by spaces (or newlines). The code defining the choices'
+% behaviour is a bit down the road, here we only initialise the keys.
+%    \begin{macrocode}
+\ekvdef{pxpic}{lines}
+  {%
+    \@ifundefined{pxpic@@parse@#1}%
+      {\pxpic@err@unknown@lines{#1}}%
+      {\csname pxpic@@parse@#1\endcsname}%
+  }
+%    \end{macrocode}
+%
+% We also want to be able to grab the \meta{pixel list} from a file, and we need
+% a key to define this behaviour.
+%    \begin{macrocode}
+\ekvdef{pxpic}{file}
+  {%
+    \@ifundefined{pxpic@file@#1}%
+      {\pxpic@err@unknown@file{#1}}%
+      {\csname pxpic@file@#1\endcsname}%
+  }
+\ekvdefNoVal{pxpic}{file}{\pxpic@file@true}
+%    \end{macrocode}
+% The macro \CS{pxpic@@file@or@list} will get the argument in two sets of
+% braces. In the |false| case things are easy, we just directly go over to the
+% expansion step. In the |true| case we input the file.
+%    \begin{macrocode}
+\ExplSyntaxOn
+\protected\def\pxpic@file@true
+  {
+    \def\pxpic@@file@or@list ##1
+      {
+        \file_get:nnNTF ##1 {} \l_tmpa_tl
+          {
+            \ekv@exparg { \expandafter\pxpic@parse\pxpic@expansion }
+              { \expandafter { \l_tmpa_tl } }
+          }
+          { \pxpic@err@file@not@found ##1 }
+      }
+  }
+\ExplSyntaxOff
+\protected\def\pxpic@file@false
+  {\def\pxpic@@file@or@list{\expandafter\pxpic@parse\pxpic@expansion}}
+\pxpic@file@false
+%    \end{macrocode}
+%
 %
 % \subsection{User macros}\label{sec:implementation:pxpiclogo}
 %
@@ -872,11 +1058,21 @@ and the derived files           pxpic.pdf
       {%
         \let\px\pxpic@px
         \let\pxskip\pxpic@skip
-        \advance\pxpicHT\pxpic@kern
-        \advance\pxpicWD\pxpic@kern
+        \ifdim\pxpic@kern=\z@
+          \let\pxpic@@kern\@gobble
+        \else
+          \advance\pxpicHT\pxpic@kern
+          \advance\pxpicWD\pxpic@kern
+        \fi
         \baselineskip=\pxpicHT
+%    \end{macrocode}
+%   This here is the only spot we use \CS{kern} directly instead of the
+%   wrapping \CS{pxpic@@kern}. Even if this is effectively a |\kern0pt| the
+%   vertical alignment in top-aligned boxes is different this way (aligning at
+%   the top of the top row instead of the bottom).
+%    \begin{macrocode}
         \kern\pxpic@kern
-        \pxpic@parse#2\pxpic@end
+        \pxpic@@file@or@list{{#2}}%
       }%
     \pxpic@after@inner@box
     \egroup
@@ -899,15 +1095,17 @@ and the derived files           pxpic.pdf
 %   before it. Also we make sure that the |mode| and |px| definitions are
 %   correct and the output is bottom aligned.
 %    \begin{macrocode}
+\ekvcompile\pxpiclogo@settings#1{pxpic}
+  {
+     size=#1,gap-hack=\z@,b,mode=px,colours={o=[HTML]{9F393D},g=black!75},skip=.
+    ,lines=group
+  }
 \newcommand*\pxpiclogo[1][.13ex]
   {%
     \begingroup
-      \pxpicHT=\dimexpr#1\relax
-      \pxpicWD=\pxpicHT
-      \pxpic@kern=\z@
       \leavevmode
+      \pxpiclogo@settings{#1}%
       \lower3.2\pxpicHT\pxpic
-        [b,mode=px,colours={o=[HTML]{9F393D},g=black!75},skip=.]
         {
           {............................................g}
           {...........................................gggg}
@@ -966,8 +1164,8 @@ and the derived files           pxpic.pdf
 %    \begin{macrocode}
 \protected\def\pxpicnewcolorlist#1%
   {%
-    \@ifundefined{pxpic@colorlist@#1}
-      {\pxpicsetcolorlist{#1}}
+    \@ifundefined{pxpic@colorlist@#1}%
+      {\pxpicsetcolorlist{#1}}%
       {\pxpic@err@defined@colorlist{#1}\@gobble}%
   }
 \protected\def\pxpicsetcolorlist#1%
@@ -980,8 +1178,8 @@ and the derived files           pxpic.pdf
   }
 \protected\def\pxpicaddcolorlist#1%
   {%
-    \@ifundefined{pxpic@colorlist@#1}
-      {\pxpic@err@unknown@colorlist{#1}\@gobble}
+    \@ifundefined{pxpic@colorlist@#1}%
+      {\pxpic@err@unknown@colorlist{#1}\@gobble}%
       {\expandafter\pxpic@addcolorlist\csname pxpic@colorlist@#1\endcsname}%
   }
 \protected\long\def\pxpic@addcolorlist#1#2%
@@ -1025,7 +1223,10 @@ and the derived files           pxpic.pdf
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}[internal]{\pxpic@parse,\pxpic@done}
+% \begin{macro}[internal]
+%   {\pxpic@parse,\pxpic@@parse,\pxpic@parse@aux,\pxpic@done,\pxpic@parseline}
+% \begin{macro}[internal]
+%   {\pxpic@@parse@group,\pxpic@@parse@space,\pxpic@@parse@csv}
 %   The parsing loop is pretty simple, first check whether we're done, else open
 %   a new \CS{hbox} (which will form a row in the \CS{vbox} placed by
 %   \CS{pxpic@}) in which the inner parsing loop is run. Then call the next
@@ -1033,35 +1234,81 @@ and the derived files           pxpic.pdf
 %   First we introduce our \CS{kern} which might fix the gap issue. Another
 %   \CS{kern} is done at the start of each \CS{hbox} to compensate the
 %   unnecessary \CS{kern} done by the first \CS{pxpic@parseline}.
+%
+%   This parsing has one step of indirection, the first macro that is called is
+%   \CS{pxpic@parse}, that'll set things up with the end marker for the row
+%   parser \CS{pxpic@@parse}. Both the definition of \CS{pxpic@parse} and
+%   \CS{pxpic@@parse} is dependent on the setting of the |lines| key, hence they
+%   are set up with the two macros \CS{pxpic@@parse@group} and
+%   \CS{pxpic@@parse@space} that represent the choices of said key.
 %    \begin{macrocode}
-\newcommand\pxpic@parse[1]
+\protected\def\pxpic@parse@setarg#1#2%
   {%
-    \pxpic@ifend#1\pxpic@done\pxpic@end
-    \kern-\pxpic@kern
-    \hbox{\kern\pxpic@kern\pxpic@parseline#1\pxpic@end}%
-    \pxpic@parse
+    \long\def\pxpic@@parse##1#1%
+      {%
+        \pxpic@ifend##1\pxpic@done\pxpic@end
+        \pxpic@@kern-%
+        \hbox{\pxpic@@kern+\pxpic@parseline##1#2\pxpic@end#2}%
+        \pxpic@@parse
+      }%
+    \long\def\pxpic@parseline##1#2%
+      {%
+        \pxpic@ifend##1\pxpic@linedone\pxpic@end
+        \pxpic@@kern-%
+        \pxpic@parse@px{##1}%
+        \pxpic@parseline
+      }%
   }
-\long\def\pxpic@done\pxpic@end\kern-\pxpic@kern\hbox#1\pxpic@parse{}
+\protected\def\pxpic@@parse@group
+  {%
+    \long\def\pxpic@parse##1{\pxpic@@parse##1\pxpic@end}%
+    \pxpic@parse@setarg{}{}%
+  }
+%    \end{macrocode}
+%   In the |space| and |csv| case we need to make sure that there are no extra
+%   spaces that would result in empty lines. We borrow the space trimmer from
+%   \pkg{expl3} for this.
+%    \begin{macrocode}
+\ExplSyntaxOn
+\cs_new_protected:Npn \pxpic@@parse@space #1
+  {
+    \protected\def\pxpic@@parse@space
+      {
+        \protected\long\def\pxpic@parse ####1
+          { \tl_trim_spaces_apply:nN {####1} \pxpic@parse@aux #1 \pxpic@end #1 }
+        \pxpic@parse@setarg {#1} {}
+      }
+    \protected\def\pxpic@@parse@csv
+      {
+        \protected\long\def\pxpic@parse ####1
+          { \tl_trim_spaces_apply:nN {####1} \pxpic@parse@aux #1 \pxpic@end #1 }
+        \pxpic@parse@setarg {#1} { , }
+      }
+  }
+\ExplSyntaxOff
+\long\def\pxpic@parse@aux#1{\pxpic@@parse#1}
+\pxpic@@parse@space{ }
+%    \end{macrocode}
+%   Here we set up the default definition. Also the end of the parsing is
+%   defined here.
+%    \begin{macrocode}
+\pxpic@@parse@group
+\long\def\pxpic@done\pxpic@end\pxpic@@kern-\hbox#1\pxpic@@parse{}
 %    \end{macrocode}
 % \end{macro}
+% \end{macro}
 %
-% \begin{macro}[internal]{\pxpic@parseline,\pxpic@linedone}
-%   The line parsing loop also checks whether we're done, if not we place a
+% \begin{macro}[internal]{\pxpic@linedone}
+%   For \CS{pxpic@parseline}
+%   the line parsing loop also checks whether we're done, if not we place a
 %   pixel using the current definition of \CS{pxpic@parse@px} (which will be set
 %   by the current |mode|) and afterwards call the next iteration. If we're done
 %   we gobble the remainder of the current iteration and control goes back to
 %   \CS{pxpic@parse}. Before each pixel we introduce a negative \CS{kern} to
 %   maybe fix the gap issue by letting the pixels overlap a bit.
 %    \begin{macrocode}
-\newcommand\pxpic@parseline[1]
-  {%
-    \pxpic@ifend#1\pxpic@linedone\pxpic@end
-    \kern-\pxpic@kern
-    \pxpic@parse@px{#1}%
-    \pxpic@parseline
-  }
 \long\def\pxpic@linedone
-    \pxpic@end\kern-\pxpic@kern\pxpic@parse@px#1\pxpic@parseline
+    \pxpic@end\pxpic@@kern-\pxpic@parse@px#1\pxpic@parseline
   {}
 %    \end{macrocode}
 % \end{macro}
@@ -1079,7 +1326,7 @@ and the derived files           pxpic.pdf
 %    \begin{macrocode}
 \newcommand\pxpic@parse@px@px[1]
   {%
-    \ekvifdefinedNoVal{pxpic@px}{#1}
+    \ekvifdefinedNoVal{pxpic@px}{#1}%
       {\csname\ekv@name{pxpic@px}{#1}N\endcsname}%
       {%
         \pxpic@err@unknown@px{#1}%
@@ -1096,8 +1343,8 @@ and the derived files           pxpic.pdf
 %    \begin{macrocode}
 \newcommand\pxpic@parse@px@named[1]
   {%
-    \pxpic@ifempty{#1}
-      {\pxskip}
+    \pxpic@ifempty{#1}%
+      {\pxskip}%
       {{\@declaredcolor{#1}\px}}%
   }
 %    \end{macrocode}
@@ -1127,8 +1374,8 @@ and the derived files           pxpic.pdf
   {%
     \pxpicnewmode{#1}%
       {%
-        \pxpic@ifempty{##1}
-          {\pxskip}
+        \pxpic@ifempty{##1}%
+          {\pxskip}%
           {{\@undeclaredcolor[#1]{##1}\px}}%
       }%
   }
@@ -1205,8 +1452,8 @@ and the derived files           pxpic.pdf
   {%
     \unexpanded\iffalse{\fi
     \pxpic@ifbracket\pxpic@end#2.\pxpic@end[]\pxpic@end
-      {\expandafter\expandafter\expandafter\pxpic@openbrace\pxpic@setcolor@a}
-      {\expandafter\expandafter\expandafter\pxpic@openbrace\pxpic@setcolor@b}
+      {\expandafter\expandafter\expandafter\pxpic@openbrace\pxpic@setcolor@a}%
+      {\expandafter\expandafter\expandafter\pxpic@openbrace\pxpic@setcolor@b}%
       {#1}{#2}%
     }%
   }
@@ -1219,7 +1466,8 @@ and the derived files           pxpic.pdf
 % \begin{macro}[internal]
 %   {
 %     \pxpic@err@noval,\pxpic@err@unknown@px,\pxpic@err@unknown@mode,
-%     \pxpic@err@unknown@colorlist,\pxpic@err@defined@colorlist
+%     \pxpic@err@unknown@colorlist,\pxpic@err@defined@colorlist,
+%     \pxpic@err@unknown@expansion
 %   }
 %   These are just some macros throwing errors, nothing special here.
 %    \begin{macrocode}
@@ -1233,6 +1481,14 @@ and the derived files           pxpic.pdf
   {\PackageError{pxpic}{Unknown colour list `#1'}{}}
 \newcommand\pxpic@err@defined@colorlist[1]
   {\PackageError{pxpic}{Colour list `#1' already defined}{}}
+\newcommand\pxpic@err@unknown@expansion[1]
+  {\PackageError{pxpic}{Unknown expansion mode `#1'}{}}
+\newcommand\pxpic@err@unknown@lines[1]
+  {\PackageError{pxpic}{Unknown lines mode `#1'}{}}
+\newcommand\pxpic@err@unknown@file[1]
+  {\PackageError{pxpic}{Unknown file value `#1'}{}}
+\newcommand\pxpic@err@file@not@found[1]
+  {\PackageError{pxpic}{Couldn't find file #1}{}}
 %    \end{macrocode}
 % \end{macro}
 %

@@ -61,7 +61,7 @@ MPOST = mpost --tex=latex
 
 TR = | tr '=' '\134'
 
-LATEX = latex
+LATEX = latex --quiet
 DVIPS = dvips
 
 DIMFILE = tmp.dim
@@ -95,7 +95,8 @@ $(DOC).ps: $(DOC).dvi
 
 EXL = exlinks
 $(DOC).dvi: $(DOC).tex
-	-if test "$(DOC)" = "examplesmpost" ; then make exlinks dims; fi
+	-if test "$(DOC)" = "examplesmpost" ; then \
+       make exlinks dims; rose.pdf; fi
 	make $(FIGS)
 	$(LATEX) $(DOC)
 	-if test -n "$(BOXDIMS)" ; then rm -f dims; \
@@ -109,9 +110,17 @@ dims:
 
 figs: $(EXL) $(FIGS)
 
-exlinks:
+rose.pdf: ../rose.m4
+	m4 pdf.m4 ../rose.m4 | dpic -d > rose.pdf
+
+ignore:
 	@echo ""
-	@echo 'Ignore "cannot create ... exists" warnings.'
+	@echo ""
+	@echo 'Ignore "cannot create ... exists and file.1 not found" warnings.'
+	@echo ""
+	@echo ""
+
+exlinks: ignore
 	-@if test ! -f ex11.m4 ; then \
      ls ../*.m4 | sed -e 's/^/ln -s /' -e '/test.m4/d' | sh;\
      fi
@@ -122,10 +131,9 @@ exlinks:
 
 clobber: clean
 
-tst:
+tst: ignore
 	rm -f tst.ps tst.dvi test.1 test.mp
-	make EXL="" DPIC="$(DPIC)" CONFIGFILE="$(CONFIGFILE)" DOC=tstmpost \
-     FIGS=test.1 BOXDIMS=test
+	make EXL="" DPIC="$(DPIC)" DOC=tstmpost FIGS=test.1 BOXDIMS=test
 	rm -f *.frs
 
 tst1: test.1 tstmpost.tex
@@ -133,7 +141,7 @@ tst1: test.1 tstmpost.tex
 	dvips tstmpost
 
 clean:
-	rm -f stamp-* $(FIGS) *.pic mp*.tex
+	rm -f stamp-* $(FIGS) *.pic mp*.tex rose.pdf
 	-if /usr/bin/test -f exlinks ; then \
      ls -l *.m4 *.bb *.gz | grep '\->' | \
        sed -e 's/^.* \([^ ][^ ]*\) ->.*$$/rm -f \1/' | sh; fi

@@ -5,7 +5,9 @@
 # See the ASME Y14.5 standard, Figure 6-30. 
 scale = 100/3
 cct_init
-ifdef(`ASME_Y14-5_',,`include(ASME_Y14-5.m4)')
+ifdef(`ASME_Y14-5_',,
+ `sinclude(ASME_Y14-5.m4def)
+  sinclude(../ASME_Y14-5.m4def) ')
 ifsvg(`svg_font(sans-serif,10bp__)',
 `textht = 10bp__*2/3
  ifpostscript(,latexcommand({\sf\small))')
@@ -91,7 +93,7 @@ thicklines_(1)
 thinlines_
  dimension_(from T2 to (T2.x,-T2.y),30,
    dialabel("35.5" "36.0",12),textht*3)
- dimension_(from T0 to T0+(T1.x,0),-8," 6.1 " " 5.9 ",textht)
+ dimension_(from T0 to T0+(T1.x,0),-8,"6.1" "5.9",textht*3)
  dimension_(from S_dimen_.end to S_dimen_.end+(T2.x,0),-9,
    "15.4" "15.6",textht*4)
    line from E_dimen_.start to (T2,T1) chop 0 chop 1

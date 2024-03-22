@@ -1,6 +1,71 @@
 <!--- CircuiTikz - Changelog --->
 The major changes among the different CircuiTikZ versions are listed here. See <https://github.com/circuitikz/circuitikz/commits> for a full list of changes.
 
+* Version 1.6.6 (2023-12-09)
+
+    Several new components.
+
+    - Added the symbol for metal-oxide varistor `mov`
+    - Added another symbol for fuse (wiggly fuse `wfuse`)
+
+* Version 1.6.5 (2023-10-29)
+
+   This version features an important overhaul of the `muxdemux` configurable component/shape, making it much more flexible and powerful, by adding configurable labels and negation and clock symbols to the pins.
+   Also, a couple of minor fixes/workarounds.
+
+    - Added optional and configurable inner, outer and border labels to the `muxdemux` shapes
+    - Added optional clock wedge and negation signs to the pins of `muxdemux` shapes
+    - Added the possibility to add a background drawing to `muxdemux` shapes
+    - Fixed a [bug](https://github.com/circuitikz/circuitikz/issues/748) with `straightvoltages` and `open`
+    - Added an (ugly) workaround for a [voltage shift mismatch](https://github.com/circuitikz/circuitikz/issues/747) for sources
+
+* Version 1.6.4 (2023-10-10)
+
+    A bit of enhancement and fixes for the European-style logic ports, more switches (and a bit more configurabilityi for them), more option for some sources.
+
+    - The symbol in European logic ports is now rotation-invariant, and its font can be customized (suggested by [user `@sputeanus` on GitHub](https://github.com/circuitikz/circuitikz/issues/730))
+    - Added a couple of "blank" (no symbol) European logic ports
+    - Added new "traditional" switches (contributed by [Jakob "DraUX" on GitHub](https://github.com/circuitikz/circuitikz/issues/734))
+    - Added configurability (color, thickness, dash) to switch arrows
+    - Added "eyw"-symbol (reverse star) for "oo"-type sources (contributed by [Jakob "DraUX" on GitHub](https://github.com/circuitikz/circuitikz/pull/742))
+    - Added configurable open shape to the sinusoidal current source (contributed by [Maximilian Martin](https://github.com/circuitikz/circuitikz/pull/737))
+    - Documentation fixes
+
+* Version 1.6.3 (2023-06-23)
+
+    The main change is that the definition of the "plus" and "minus" symbols used in several parts of the library has changed in order to achieve better alignment of voltages and amplifier symbols when using fonts different from Computer Modern.
+    Additionally, internal connection dots in transistors are configurable and have a new default, and documentation has got several fixes and enhancements.
+
+    - Change the definition of the "minus" symbol (see [this issue](https://github.com/circuitikz/circuitikz/issues/721)) for details
+    - Add documentation on how to contact the border of the source symbols (suggested by [user `@Tipounk` on GitHub](https://github.com/circuitikz/circuitikz/issues/722))
+    - in transistors, solder dots and connection dots for body diodes [are now configurable](https://github.com/circuitikz/circuitikz/issues/720)
+    - Add anchors for the symbols on the `oo`-type sources, suggested by [user `@lapreindl` on GitHub](https://github.com/circuitikz/circuitikz/issues/725); the symbols have been slightly changed and repositioned in the process
+    - several documentation fixes
+
+* Version 1.6.2 (2023-05-13)
+
+    Several more styling options for elements (body diodes, transformers, crossing), a clock wedge shape for logical circuits, and documentation updates for ConTeXt, mainly noticing the (upstream) elimination of the thin `siunitx` layer compatibility macros.
+
+    - There is no `siunitx` support for ConTeXt, point to the `units` package
+    - `context` compatibility can have glitches: please see [this issue](https://github.com/circuitikz/circuitikz/issues/706)
+    - Add styling of `transform core` lines (suggested by [user `@myzinsky` on GitHub](https://github.com/circuitikz/circuitikz/issues/702))
+    - Add `scale` to the bodydiode options (suggested by [user `@sputeanus` on GitHub](https://github.com/circuitikz/circuitikz/issues/703))
+    - Add styling of crossing vertical line (suggested by [user `@lkjell` on GitHub](https://github.com/circuitikz/circuitikz/issues/704))
+    - Add `clockwedge` shape (suggested by [user `@Mario1159` on GitHub](https://github.com/circuitikz/circuitikz/issues/705))
+
+* Version 1.6.1 (2023-02-11)
+
+    New components: solder jumpers; a couple of small but very useful inversion markers for logical circuits, especially targeted at the mux-demux family; a new inline microphone; a much more versatile hemt; a better legacy `tline`. More tweaks to converters blocks, and a lot of typo/grammar fixes in the manual.
+
+    - Add configurable dashes to the dc symbols in converter blocks (suggested by [user `@dbstf` on GitHub](https://github.com/circuitikz/circuitikz/issues/680))
+    - Add solder jumpers (by Romano)
+    - Add a shape to mark european-style inversion (suggested by [user `yashpalgoyal1304` on GitHub](https://github.com/circuitikz/circuitikz/issues/679)), adjust European-style logic port triangle inversion symbols to match
+    - Add a tail-less mic (suggested by [Dr. Mathhias Jung](https://github.com/circuitikz/circuitikz/issues/689)) and an option to change the thickness of the microphone's bar
+    - Enhance the `hemt` shape with a GaN-hemt as example (suggested by [user `@epsilon-phi` on GitHub](https://github.com/circuitikz/circuitikz/issues/691))
+    - Add anchors and a "bare" option to `tline` (suggested by [Dr. Mathhias Jung](https://github.com/circuitikz/circuitikz/issues/694))
+    - subcircuits are no more experimental
+    - Correction of several typo/grammar errors in the documentation by [quark67](https://github.com/circuitikz/circuitikz/pull/686)
+
 * Version 1.6.0 (2022-12-10)
 
     The big change is the refactoring (and enhancement) of the block's code. In addition, double gate MOSes, several fixes all over the map, and quite a lot of anchors were added into the mix.

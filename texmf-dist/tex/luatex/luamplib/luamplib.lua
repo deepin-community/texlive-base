@@ -11,8 +11,8 @@
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.23.0",
-  date          = "2022/01/12",
+  version       = "2.25.3",
+  date          = "2024/01/25",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -59,9 +59,6 @@ local ioopen        = io.open
 local file = file or { }
 local replacesuffix = file.replacesuffix or function(filename, suffix)
   return (filename:gsub("%.[%a%d]+$","")) .. "." .. suffix
-end
-local stripsuffix = file.stripsuffix or function(filename)
-  return (filename:gsub("%.[%a%d]+$",""))
 end
 
 local is_writable = file.is_writable or function(name)
@@ -232,17 +229,24 @@ local special_ftype = {
 
 local function finder(name, mode, ftype)
   if mode == "w" then
+    if name and name ~= "mpout.log" then
+      kpse.record_output_file(name) -- recorder
+    end
     return name
   else
     ftype = special_ftype[ftype] or ftype
     local file = mpkpse:find_file(name,ftype)
     if file then
-      if not lfstouch or ftype ~= "mp" or noneedtoreplace[name] then
-        return file
+      if lfstouch and ftype == "mp" and not noneedtoreplace[name] then
+        file = replaceinputmpfile(name,file)
       end
-      return replaceinputmpfile(name,file)
+    else
+      file = mpkpse:find_file(name, name:match("%a+$"))
     end
-    return mpkpse:find_file(name, name:match("%a+$"))
+    if file then
+      kpse.record_input_file(file) -- recorder
+    end
+    return file
   end
 end
 luamplib.finder = finder
@@ -298,6 +302,7 @@ local function luamplibload (name)
     make_text   = luamplib.maketext,
     run_script  = luamplib.runscript,
     math_mode   = luamplib.numbersystem,
+    job_name    = tex.jobname,
     random_seed = math.random(4095),
     extensions  = 1,
   }
@@ -871,7 +876,7 @@ local pdf_objs = {}
 local token, getpageres, setpageres = newtoken or token
 local pgf = { bye = "pgfutil@everybye", extgs = "pgf@sys@addpdfresource@extgs@plain" }
 
-if pdfmode then -- repect luaotfload-colors
+if pdfmode then -- respect luaotfload-colors
   getpageres = pdf.getpageresources or function() return pdf.pageresources end
   setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
 else

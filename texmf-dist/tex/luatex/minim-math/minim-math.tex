@@ -9,12 +9,23 @@
 
 % \mathdef c {expansion}
 \protected\def\mathdef#1#2{%
-    \def\mathdef:tmp{#2}%
-    \mathlet{#1}\mathdef:tmp}
-% \mathlet c \csname
-\protected\def\mathlet#1#2{%
+    \protected\def\mathdef:tmp{#2}%
     \mathcode`#1="8000\relax
-    \letcharcode`#1=#2}
+    \letcharcode`#1=\mathdef:tmp}
+% \mathlet c \csname
+\let\mathlet = \mathdef
+
+% sensible defaults
+\matheqdirmode = 1 % short skips also in rtl
+\mathdisplayskipmode = 1
+%
+% not set here, but maybe relevant:
+%
+% \mathsurroundskip    = ...
+% \mathitalicsmode     = 1
+% \mathscriptboxmode   = 2
+% \matheqnogapstep     = 1000 % default value
+% \predisplaygapfactor = 2000 % default value
 
 % 1 Global style transformations
 
@@ -77,7 +88,7 @@
 \protected\def\mbb#1{{\mathstyle{bb}#1}}
 \protected\def\frak#1{{\mathstyle{frak}#1}}
 \protected\def\bffrak#1{{\mathstyle{bffrak}#1}}
-\protected\def\scr#1{{\mathstyle{scr}#1}}     \let\mcal  = \cal
+\protected\def\scr#1{{\mathstyle{scr}#1}}     \let\mcal  = \scr
 \protected\def\bfscr#1{{\mathstyle{bfscr}#1}} \let\bfcal = \bfscr
 
 % 1 Processing the character table
@@ -86,20 +97,20 @@
 \newcount \accentfam     \accentfam     = 0
 \newcount \extensiblefam \extensiblefam = 0
 
-\def\math:accent{\ifmmode% spec num char
+\protected\def\math:accent{\ifmmode% spec num char
     \expandafter\math:mathaccent\else
     \expandafter\math:textaccent\fi}
 \def\math:mathaccent#1#2#3{\Umathaccent #1"0 \accentfam #2 }
 \def\math:textaccent#1#2#3#4{#4#3}% might be a normal combining accent
 
-\def\math:stack#1#2#3{% spec num char
+\protected\def\math:stack#1#2#3{% spec num char
     \withoptions[]{\math:stack:{#1}{#2}{#3}}}
 \def\math:stack:#1#2#3[#4]#5{%
     {\mathop{\math:accent{#1}{#2}{#3}{#5}}%
         \ifx\math:stack#4\math:stack\else \limits
             \ifx\math:stack#1\math:stack^\else_\fi{#4}\fi}}
 
-\def\math:radical{\ifmmode% num char
+\protected\def\math:radical{\ifmmode% num char
     \expandafter\math:mathradical\else
     \expandafter\math:textradical\fi}
 \def\math:mathradical#1#2{\Uradical\radicalfam #1 }
@@ -137,8 +148,26 @@
 
 % decimal comma settings
 \explicitmathchar \comma
+\Umathchardef \ordcomma "0"0"2C
+\protected\def\smartcomma{%
+    \futurelet\smartcomma:next\smartcomma:do}
+\def\smartcomma:do{\let\smartcomma:c\comma
+    \ifx0\smartcomma:next\let\smartcomma:c\ordcomma\fi
+    \ifx1\smartcomma:next\let\smartcomma:c\ordcomma\fi
+    \ifx2\smartcomma:next\let\smartcomma:c\ordcomma\fi
+    \ifx3\smartcomma:next\let\smartcomma:c\ordcomma\fi
+    \ifx4\smartcomma:next\let\smartcomma:c\ordcomma\fi
+    \ifx5\smartcomma:next\let\smartcomma:c\ordcomma\fi
+    \ifx6\smartcomma:next\let\smartcomma:c\ordcomma\fi
+    \ifx7\smartcomma:next\let\smartcomma:c\ordcomma\fi
+    \ifx8\smartcomma:next\let\smartcomma:c\ordcomma\fi
+    \ifx9\smartcomma:next\let\smartcomma:c\ordcomma\fi
+    \smartcomma:c}
+
 \protected\def\decimalcomma  {\Umathcode`\, = 0 \Umathcharfam`\, `\,}
 \protected\def\nodecimalcomma{\Umathcode`\, = 6 \Umathcharfam`\, `\,}
+\protected\def\smartdecimalcomma{\mathlet,\smartcomma}
+
 
 % set the colon to how it used to be
 \Umathcode`\:="3"0"2236 % \ratio
@@ -237,6 +266,7 @@
 
 \normalroots
 
+\let\of=\relax
 \mathlet √ \sqrt
 \mathdef ∛ {\root3\of}
 \mathdef ∜ {\root4\of}
@@ -438,14 +468,21 @@
 \def\braket#1#2{\left⟨#1\middle\vert#2\right⟩}
 \def\norm#1{\left\vert#1\right\vert} \let \abs=\norm
 \def\Norm#1{\left\Vert#1\right\Vert}
+\def\ceil#1{\left⌈#1\right⌉}
+\def\floor#1{\left⌊#1\right⌋}
+
+% a slightly smaller unary minus
+\def\unaryminus{\mathord{\mathpalette\unaryminus:make{}}}
+\def\unaryminus:make#1#2{%
+    \setbox0 = \hbox{$#1-$}
+    \kern .75\wd0
+    \pdfextension save
+    \pdfextension setmatrix{.75 0 0 1} 
+    \kern -\wd0 \box0
+    \pdfextension restore}
 
 % a smaller inverse-function sign
-\protected\def\inv{^{\scriptscriptstyle
-    \mathbin{\setbox0=\hbox{$\scriptscriptstyle-$}
-    \kern.75\wd0 \pdfextension save
-    \pdfextension setmatrix{.75 0 0 1} 
-    \kern-\wd0\box0 \pdfextension restore}
-    \mkern-2mu 1}}
+\protected\def\inv{^{\scriptscriptstyle\unaryminus1}}%
 
 % upright multiletter symbols
 \def\mord#1{\mathord{\mathstyle{up}#1}}
@@ -503,6 +540,57 @@
 \newmathop {im}
 \newmathop {End} \newmathop {Aut}
 \newmathop {Dom} \newmathop {Codom}
+
+% 1 Displayed equations
+
+% \display
+\protected\def\display{\display:true}
+% \displaynr {nr}
+\protected\def\displaynr{\display:true\display:nrtrue
+    \nextifcat\bgroup\display:specialnr\relax}
+
+% \leftdisplaystrue
+\newif\ifleftdisplays
+% \setdisplaynr {...}
+\newtoks\setdisplaynr
+% \equationnumber
+\newcount\equationnumber \equationnumber = 0
+\setdisplaynr{\global\advance\equationnumber1(\the\equationnumber)}
+
+\newif\ifdisplay:
+\newif\ifdisplay:nr
+\newtoks\display:specialnr
+\display:specialnr{\the\setdisplaynr}
+
+% \[ ... \]
+\protected\def\[#1\]{%
+    \ifdisplay:\expandafter\startdisplay\else\Ustartmath\fi
+    \tagging:tagformula{#1}#1\relax
+    \global\expandafter\display:false
+    \ifdisplay:\expandafter\stopdisplay\else\Ustopmath\fi}
+\protected\def\]{\errmessage{Unmatched \string\]}}
+\ifdefined \tagging:tagformula \else
+    \let\tagging:tagformula=\ignore \fi
+
+\protected\def\startdisplay{%
+    % if the display starts a paragraph, omit baselineskip
+    % and ensure that the long \beforedisplayskip is used
+    \ifvmode \nointerlineskip
+        \noindent \hbox to .5\hsize{\hss}\fi
+    \Ustartdisplaymath
+    % compatibility with minim-pdf
+    \csname tagging:indisplaytrue\endcsname
+    % for left-aligned equations, force manual placement
+    \ifleftdisplays\muskip0mu\fi}
+\protected\def\stopdisplay{%
+    \ifleftdisplays
+        \hskip\displaywidth minus\displaywidth\fi
+    \global\expandafter\display:nrfalse
+        \ifdisplay:nr
+            \eqno\the\display:specialnr
+            \global\display:specialnr{\the\setdisplay:nr}\fi
+    \Ustopdisplaymath
+    \ignorespaces}
 
 
 %  standard mappings

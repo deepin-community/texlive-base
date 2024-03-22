@@ -20,7 +20,7 @@
 %
 % 
 % \fi
-% \CheckSum{610}
+% \CheckSum{549}
 %
 % \def\dtxfile{\texttt{mempatch.dtx}}
 % \def\fileversion{v1.0} \def\filedate{2003/10/04}
@@ -312,6 +312,9 @@
 %% With the new hooking system from 2020+ memhfixc is automatically
 %% added after loading hyperref with the memoir class
 %%
+%% Version 1.22  2023/09/10
+%% Version 1.21  2023/07/28
+%% Version 1.21  2023/07/28
 %% Version 1.20  2022/11/17
 %% Version 1.19  2021/06/16
 %% Version 1.18  2019/10/24
@@ -338,7 +341,7 @@
 % 
 %
 %    \begin{macrocode}
-\ProvidesPackage{memhfixc}[2022/11/17 v1.20 nameref/hyperref package fixes for memoir class]
+\ProvidesPackage{memhfixc}[2023/09/10 v1.22 hyperref package fixes for memoir class]
 %    \end{macrocode}
 %
 % \begin{macro}{\M@hfixcfinish}
@@ -355,86 +358,13 @@
 %
 % \subsection{Patches for nameref}
 %
-% \changes{v1.13}{2010/04/19}{Rewritten to help fix a race condition}
 % 
-% The nameref package changes \cs{@sect} and \cs{label} so we bring
-% back the memoir stuff. We have earlier been using
-% \verb?\AtBeginDocument? plus \verb?\@ifpackageloaded{nameref}? to
-% add our changes to \Lpack{nameref}. But this is not a good solution,
-% as \Lpack{hyperref} can delay \Lpack{nameref} loading using
-% \verb?\AtBeginDocument{\usepackage{nameref}}? \emph{and} add thiis
-% \emph{after} \Lpack{memhfixc} is loaded. A better solution is to use
-% \verb?\AtEndPackage?, then it does not matter how far after
-% \Lpack{memhfixc} \Lpack{nameref} is loaded.
+% \changes{v1.21}{2023/07/25}{Patches removed}
 %
-% \changes{v1.13}{2010/04/19}{Code in the next part have been changed
-% to match \cs{AtEndPackage}}
-%    \begin{macrocode}
-\AtEndPackage{nameref}{%
-%    \end{macrocode}
-
-% \begin{macro}{\M@sect}
-% \begin{macro}{\NR@sectm@m}
-% The \Lpack{nameref} package~\cite{NAMEREF} fiddles with \cs{@sect} (which memoir replaces
-%  by \cs{M@sect}). 
-%    \begin{macrocode}
-  \@ifundefined{NR@sectm@m}{% haven't fiddled with \M@sect
-    \typeout{Redoing nameref's sectioning}
-    \let\NR@sectm@m\M@sect
-    \def\M@sect##1##2##3##4##5##6[##7][##8]##9{%
-      \setcounter{section@level}{##2}%
-      \def\@currentlabelname{##7}%
-      \NR@sectm@m{##1}{##2}{##3}{##4}{##5}{##6}[{##7}][{##8}]{\Sectionformat{##9}{##2}}}%
-  }%
-  {% \NR@sectm@m has already been defined
-  }%
-%    \end{macrocode}
-% \end{macro}
-% \end{macro}
+% As of Summer 2023, memoir now autoloads \Lpack{nameref} and adjusts
+% it self to it. Thus no patches needed.
 %
 %
-%
-% \begin{macro}{\label}
-% \begin{macro}{\MNR@label}
-% The \Lpack{nameref} package replaces \cs{label}, which (which memoir has added to).
-%  Make the memoir addition again.
-%
-%    \begin{macrocode}
-  \@ifundefined{MNR@label}{% haven't fiddled with \label
-    \typeout{Redoing nameref's label}
-    \let\MNR@label\label
-    \def\label##1{\@bsphack\begingroup
-      \protected@edef\@currentlabel{\protect\M@TitleReference
-        {\@currentlabel}{\M@currentTitle}}%
-      \MNR@label{##1}%
-      \endgroup \@esphack}%
-    \let\MNR@old@caption\@caption
-    \long\def\@caption##1[##2]##3{%
-      \MNR@old@caption{##1}[{##2}]{##3}%
-      \def\@currentlabelname{##2}%
-      \M@gettitle{##2}%
-    }%
-  }%
-  {% \MNR@label has already been defined
-  }%
-%    \end{macrocode}
-% \end{macro}
-% \end{macro}
-%
-% \begin{macro}{\nameref}
-%   We use \cs{titleref} to provide the same functionality as
-%   \cs{nameref}, so as not to confuse users, we let \cs{nameref} be
-%   an alias for \cs{titleref}.
-%    \begin{macrocode}
-\DeclareRobustCommand\nameref{\@ifstar{\@mem@titlerefnolink}{\@mem@titleref}}
-%    \end{macrocode}
-% \end{macro}
-%
-%    \begin{macrocode}
-}% end of AtEndPackage
-%    \end{macrocode}
-
-
 %
 % We are done unless the \Lpack{hyperref} package has been loaded
 %    \begin{macrocode}
@@ -531,10 +461,14 @@
 % \end{macro}
 %
 % \begin{macro}{\bookautorefname}
+% \begin{macro}{\subfigureautorefname}
+% \changes{v1.21}{2023/07/28}{Added \cs{subfigureautorefname}}
 %    \begin{macrocode}
 \providecommand{\bookautorefname}{Book}
+\providecommand{\subfigureautorefname}{Subfigure}
 
 %    \end{macrocode}
+% \end{macro}
 % \end{macro}
 %
 % \begin{macro}{\@@writetorep}
@@ -715,56 +649,75 @@
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{\endsidecaption}
-% Tweak the \texttt{sidecaption} environment. I don't know why it 
-% works but it took a lot of time trying all sorts of combinations
-% of commands to get it to do so (if it really does).
+% \begin{macro}{\sidecaption@refstepcounter}
+%   Under \Lpack{hyperref} we redefine what
+%   \cs{sidecaption@refstepcounter} does. Here we use that it is
+%   called with two args.
+% \changes{v1.22}{2023/09/10}{Redef of new macro from memoir 3.8.2,
+% that makes sidecaption handling easier.}
 %    \begin{macrocode}
-\def\endsidecaption{%
-  \m@mscapend@fbox
-  \H@refstepcounter{\@captype}%
-  \hyper@makecurrent{\@captype}%
-  \m@mscaplabel
-%    \end{macrocode}
-% \changes{v1.17}{2013/05/30}{Forgot to add \cs{m@mscapcheckside}}
-%    \begin{macrocode}
-  \m@mscapcheckside %<--- added 2013/05/30
-  \begin{lrbox}{\m@mscap@capbox}%
-    \begin{minipage}[c]{\sidecapwidth}%
-      \sidecapstyle
-      \@caption\@captype[\m@mscap@fortoc]{\m@mscap@forcap}%
-    \end{minipage}%
-  \end{lrbox}%
-  \m@mscapopboxes}
+\renewcommand*\sidecaption@refstepcounter[2]{%
+  \H@refstepcounter{#1}%
+  \hyper@makecurrent{#2}%
+}
 
 %    \end{macrocode}
 % \end{macro}
+%
+% \changes{v1.22}{2023/09/10}{Because of the redef in memoir 3.8.2 we
+% no longer need this}
+% ^^A \begin{macro}{\endsidecaption}
+% ^^A % Tweak the \texttt{sidecaption} environment. I don't know why it 
+% ^^A works but it took a lot of time trying all sorts of combinations
+% ^^A of commands to get it to do so (if it really does).
+% ^^A    \begin{macrocode}
+ % \def\endsidecaption{%
+ % \m@mscapend@fbox
+ % \H@refstepcounter{\@captype}%
+ % \hyper@makecurrent{\@captype}%
+ % \m@mscaplabel
+% ^^A    \end{macrocode}
+% ^^A\changes{v1.17}{2013/05/30}{Forgot to add \cs{m@mscapcheckside}}
+% ^^A    \begin{macrocode}
+ % \m@mscapcheckside %<--- added 2013/05/30
+ % \begin{lrbox}{\m@mscap@capbox}%
+ %   \begin{minipage}[c]{\sidecapwidth}%
+ %     \sidecapstyle
+ %     \@caption\@captype[\m@mscap@fortoc]{\m@mscap@forcap}%
+ %   \end{minipage}%
+ % \end{lrbox}%
+ % \m@mscapopboxes}
+
+%  ^^A   \end{macrocode}
+% ^^A \end{macro}
 %
 % \begin{macro}{\sidecontcaption}
 % \begin{macro}{\endsidecontcaption}
 % Tweaks for the \texttt{sidecontcaption} environment. Again it was 
 % a miss, miss, \ldots hit method to get something that appears 
 % to work.
+% \changes{v1.22}{2023/09/10}{Because of the redef in memoir 3.8.2 we
+% no longer need the redef of \cs{endsidecontcaption}}
 %    \begin{macrocode}
 \renewcommand*{\sidecontcaption}{%
   \refstepcounter{memhycontfloat}%
   \@sidecontcaption}
-\def\endsidecontcaption{%
-  \m@mscapend@fbox
-  \addtocounter{\@captype}{\m@ne}\H@refstepcounter{\@captype}%
-  \hyper@makecurrent{memhycontfloat}%
-  \m@mscaplabel
-%    \end{macrocode}
-% \changes{v1.17}{2013/05/30}{Forgot to add \cs{m@mscapcheckside}}
-%    \begin{macrocode}
-  \m@mscapcheckside %<--- added 2013/05/30
-  \begin{lrbox}{\m@mscap@capbox}%
-    \begin{minipage}[c]{\sidecapwidth}%
-      \sidecapstyle
-      \@contcaption\@captype{\m@mscap@forcap}%
-    \end{minipage}%
-  \end{lrbox}%
-  \m@mscapopboxes}
+ % \def\endsidecontcaption{%
+ % \m@mscapend@fbox
+ % \addtocounter{\@captype}{\m@ne}\H@refstepcounter{\@captype}%
+ % \hyper@makecurrent{memhycontfloat}%
+ % \m@mscaplabel
+% ^^A    \end{macrocode}
+% ^^A \changes{v1.17}{2013/05/30}{Forgot to add \cs{m@mscapcheckside}}
+% ^^A    \begin{macrocode}
+ % \m@mscapcheckside %<--- added 2013/05/30
+ % \begin{lrbox}{\m@mscap@capbox}%
+ %   \begin{minipage}[c]{\sidecapwidth}%
+ %     \sidecapstyle
+ %     \@contcaption\@captype{\m@mscap@forcap}%
+ %   \end{minipage}%
+ % \end{lrbox}%
+ % \m@mscapopboxes}
 
 %    \end{macrocode}
 % \end{macro}
@@ -774,10 +727,11 @@
 %   \Lpack{hyperref} provide a \cs{ref*} command that does not give a
 %   hyperlink under \Lpack{hyperref}, we extend \cs{titleref} to
 %   support it.
+%   \changes{v1.21}{2023/08/07}{removed}
 %    \begin{macrocode}
-\def\@mem@titlerefnolink#1{\begingroup \let\numberline\@gobble
-  \let\M@TitleReference\@mem@theTR % interrupt recursion of \ref
-  \ref*{#1}\endgroup}
+ %\def\@mem@titlerefnolink#1{\begingroup \let\numberline\@gobble
+ % \let\M@TitleReference\@mem@theTR % interrupt recursion of \ref
+ % \ref*{#1}\endgroup}
 
 %    \end{macrocode}
 % \end{macro}
@@ -1027,26 +981,26 @@
 % \newblock \emph{The LaTeX Companion}.
 % \newblock Addison-Wesley Publishing Company, 1994.
 %
+% \bibitem[Rahtz23a]{NAMEREF}
+%  Sebastian Rahtz, Heiko Oberdiek, The \LaTeX3 Project.
+%  \newblock \emph{Section name references in LaTeX}.
+%  \newblock 2023. 
+%  \newblock (Available from CTAN (the \texttt{nameref} package) via 
+%            \texttt{/macros/latex/contrib/hyperref/})
 %
-% \bibitem[Rah01]{NAMEREF}
-% Sebastian Rahtz.
-% \newblock \emph{Section name references in LaTeX}.
-% \newblock January 2001.
-% \newblock (Available from CTAN in
-%            \texttt{/macros/latex/contrib/hyperref})
 %
-% \bibitem[Rah02]{HYPERREF}
-% Sebastian Rahtz.
-% \newblock \emph{Hypertext marks in LaTeX}.
-% \newblock March 2002.
-% \newblock (Available from CTAN in
-%            \texttt{/macros/latex/contrib/hyperref})
+% \bibitem[Rahtz23b]{HYPERREF}
+%  Sebastian Rahtz, Heiko Oberdiek, The \LaTeX3 Project.
+%  \newblock \emph{Hypertext marks in LaTeX}.
+%  \newblock 2023. 
+%  \newblock (Available from CTAN via 
+%            \texttt{/macros/latex/contrib/hyperref/})
 %
-% \bibitem[Wil08]{MEMOIR}
+% \bibitem[Wil23]{MEMOIR}
 % Peter Wilson.
 % \newblock \emph{The LaTeX \Lpack{memoir} class for configurable 
 %                 typesetting: Source code}.
-% \newblock July 2008.
+% \newblock July 2023.
 % \newblock (Available from CTAN in
 %            \texttt{macros/latex/contrib/memoir})
 %

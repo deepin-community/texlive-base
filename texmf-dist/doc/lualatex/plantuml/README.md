@@ -1,6 +1,6 @@
 # plantuml
 
-Version 0.3.1
+Version 
 
 > A LuaLaTeX package for PlantUML in LaTeX
 

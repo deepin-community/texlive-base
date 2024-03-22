@@ -2,7 +2,7 @@
 %
 %% File: l3backend-color.dtx
 %
-% Copyright (C) 2019-2023 The LaTeX Project
+% Copyright (C) 2019-2024 The LaTeX Project
 %
 % It may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -31,7 +31,7 @@
 % \fi
 %
 % \title{^^A
-%   The \textsf{l3backend-color} package\\ Backend color support^^A
+%   The \pkg{l3backend-color} module\\ Backend color support^^A
 % }
 %
 % \author{^^A
@@ -43,7 +43,7 @@
 %    }^^A
 % }
 %
-% \date{Released 2023-01-16}
+% \date{Released 2024-01-04}
 %
 % \maketitle
 %
@@ -53,7 +53,7 @@
 %
 % \begin{implementation}
 %
-% \section{\pkg{l3backend-color} Implementation}
+% \section{\pkg{l3backend-color} implementation}
 %
 %    \begin{macrocode}
 %<*package>
@@ -67,85 +67,6 @@
 % convenient to use the same approach in multiple backends, the fact that
 % \texttt{dvipdfmx}/\XeTeX{} is PDF-based means it (largely) sticks closer to
 % direct PDF output.
-%
-% \subsection{Collecting information from \LaTeXe{}}
-%
-% \subsubsection{\texttt{dvips}-style}
-%
-%    \begin{macrocode}
-%<*dvisvgm|dvipdfmx|dvips|xetex>
-%    \end{macrocode}
-%
-% \begin{macro}{\@@_backend_pickup:N}
-% \begin{macro}{\@@_backend_pickup:w}
-%   Allow for \LaTeXe{} color. Here, the possible input values are limited:
-%   \texttt{dvips}-style colors can be taken as-is. The \texttt{x}-type expansion
-%   is there to cover the case where \pkg{xcolor} is in use.
-%    \begin{macrocode}
-\cs_new_protected:Npn \@@_backend_pickup:N #1
-  {
-    \exp_args:NV \tl_if_head_is_space:nTF \current@color
-      {
-        \tl_set:Nn #1 { { gray } { 0 } }
-        \msg_warning:nnx { color } { unhandled }
-          { \current@color }
-      }
-      {
-        \exp_last_unbraced:Nx \@@_backend_pickup:w
-          { \current@color } \s_@@_stop #1
-      }
-  }
-\cs_new_protected:Npn \@@_backend_pickup:w #1 ~ #2 \s_@@_stop #3
-  { \tl_set:Nn #3 { {#1} {#2} } }
-%    \end{macrocode}
-% \end{macro}
-% \end{macro}
-%
-%    \begin{macrocode}
-%</dvisvgm|dvipdfmx|dvips|xetex>
-%    \end{macrocode}
-%
-% \subsubsection{\LuaTeX{} and \pdfTeX{}}
-%
-%    \begin{macrocode}
-%<*luatex|pdftex>
-%    \end{macrocode}
-%
-% \begin{macro}{\@@_backend_pickup:N}
-% \begin{macro}{\@@_backend_pickup:w}
-%  Same ideas, but with a different backend-dependent format.
-%    \begin{macrocode}
-\cs_new_protected:Npn \@@_backend_pickup:N #1
-  {
-    \exp_last_unbraced:Nx \@@_backend_pickup:w
-      { \current@color } ~ 0 ~ 0 ~ 0 \s_@@_stop #1
-  }
-\cs_new_protected:Npn \@@_backend_pickup:w
-  #1 ~ #2 ~ #3 ~ #4 ~ #5 ~ #6 \s_@@_stop #7
-  {
-    \str_if_eq:nnTF {#2} { g }
-      { \tl_set:Nn #7 { { gray } {#1} } }
-      {
-        \str_if_eq:nnTF {#4} { rg }
-          { \tl_set:Nn #7 { { rgb } { #1 ~ #2 ~ #3 } } }
-          {
-            \str_if_eq:nnTF {#5} { k }
-              { \tl_set:Nn #7 { { cmyk } { #1 ~ #2 ~ #3 ~ #4 } } }
-              {
-                \tl_set:Nn #1 { { gray } { 0 } }
-                \msg_warning:nnx { color } { unhandled }
-                  { \current@color }
-              }
-          }
-      }
-  }
-%    \end{macrocode}
-% \end{macro}
-% \end{macro}
-%
-%    \begin{macrocode}
-%</luatex|pdftex>
-%    \end{macrocode}
 %
 % \subsection{The color stack}
 %
@@ -248,7 +169,6 @@
 %     \@@_backend_select:n
 %   }
 % \begin{macro}{\@@_backend_reset:}
-% \begin{macro}{color.sc}
 %    Push the data to the stack. In the case of \texttt{dvips} also saves the
 %    drawing color in raw PostScript. The |spot| model is for handling data
 %    in classical format.
@@ -273,7 +193,6 @@
 %    \end{macrocode}
 % \end{macro}
 % \end{macro}
-% \end{macro}
 %
 %    \begin{macrocode}
 %</dvips|dvisvgm>
@@ -289,6 +208,8 @@
 %    \begin{macrocode}
 \tl_new:N \l_@@_backend_fill_tl
 \tl_new:N \l_@@_backend_stroke_tl
+\tl_set:Nn \l_@@_backend_fill_tl { 0 ~ g }
+\tl_set:Nn \l_@@_backend_stroke_tl { 0 ~ G }
 %    \end{macrocode}
 % \end{variable}
 %
@@ -399,7 +320,7 @@
 % \begin{macro}[EXP]{\@@_backend_devicen_colorants:n}
 % \begin{macro}[EXP]{\@@_backend_devicen_colorants:w}
 %    \begin{macrocode}
-\cs_new:Npx \@@_backend_devicen_colorants:n #1
+\cs_new:Npe \@@_backend_devicen_colorants:n #1
   {
     \exp_not:N \tl_if_blank:nF {#1}
       {
@@ -454,7 +375,7 @@
 % \begin{macro}
 %   {
 %     \@@_backend_separation_init:nnnnn,
-%     \@@_backend_separation_init:nxxnn
+%     \@@_backend_separation_init:neenn
 %   }
 % \begin{macro}
 %   {\@@_backend_separation_init_aux:nnnnnn}
@@ -479,17 +400,17 @@
 %   ideas from \url{https://tex.stackexchange.com/q/560093} plus using
 %   the PostScript manual for other aspects.
 %    \begin{macrocode}
-\cs_new_protected:Npx \@@_backend_separation_init:nnnnn #1#2#3#4#5
+\cs_new_protected:Npe \@@_backend_separation_init:nnnnn #1#2#3#4#5
   {
     \bool_if:NT \g__kernel_backend_header_bool
       {
-        \exp_args:Nx \__kernel_backend_first_shipout:n
+        \exp_not:N \exp_args:Ne \__kernel_backend_first_shipout:n
           {
             \exp_not:N \@@_backend_separation_init_aux:nnnnnn
               { \exp_not:N \int_use:N \g_@@_model_int }
               {#1} {#2} {#3} {#4} {#5}
           }
-        \prop_gput:Nxx \exp_not:N \g_@@_backend_colorant_prop
+        \prop_gput:Nee \exp_not:N \g_@@_backend_colorant_prop
           { / \exp_not:N \str_convert_pdfname:n {#1} }
           {
             << ~
@@ -500,7 +421,7 @@
           }
       }
   }
-\cs_generate_variant:Nn \@@_backend_separation_init:nnnnn { nxx }
+\cs_generate_variant:Nn \@@_backend_separation_init:nnnnn { nee }
 \cs_new_protected:Npn \@@_backend_separation_init_aux:nnnnnn #1#2#3#4#5#6
   {
     \__kernel_backend_literal:e
@@ -544,9 +465,9 @@
 %    \begin{macrocode}
 \cs_new:Npn \@@_backend_separation_init:nnn #1#2#3
   {
-   \exp_args:Ne \@@_backend_separation_init:nnnn
-     { \@@_backend_separation_init_count:n {#2} }
-     {#1} {#2} {#3}
+    \exp_args:Ne \@@_backend_separation_init:nnnn
+      { \@@_backend_separation_init_count:n {#2} }
+      {#1} {#2} {#3}
   }
 \cs_new:Npn \@@_backend_separation_init_count:n #1
   { \int_eval:n { 0 \@@_backend_separation_init_count:w #1 ~ \s_@@_stop } }
@@ -608,15 +529,15 @@
 %    \begin{macrocode}
 \cs_new:Npn \@@_backend_separation_init:nw #1#2 ~ #3 ~ #4 \s_@@_stop
   {
-     #2 ~ #3 ~
-     2 ~ index ~ 2 ~ index ~ lt ~
-       { ~ pop ~ exch ~ pop ~ } ~
-       { ~
-         2 ~ index ~ 1 ~ index ~ gt ~
-           { ~ exch ~ pop ~ exch ~ pop ~ } ~
-           { ~ pop ~ pop ~ } ~
-         ifelse ~
-       }
+    #2 ~ #3 ~
+    2 ~ index ~ 2 ~ index ~ lt ~
+      { ~ pop ~ exch ~ pop ~ } ~
+      { ~
+        2 ~ index ~ 1 ~ index ~ gt ~
+          { ~ exch ~ pop ~ exch ~ pop ~ } ~
+          { ~ pop ~ pop ~ } ~
+        ifelse ~
+      }
     ifelse ~
     #1 ~ 1 ~ roll ~
     \tl_if_blank:nF {#4}
@@ -629,7 +550,7 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_backend_separation_init_CIELAB:nnn #1#2#3
   {
-    \@@_backend_separation_init:nxxnn
+    \@@_backend_separation_init:neenn
       {#2}
       {
         /CIEBasedABC ~
@@ -755,7 +676,7 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_backend_select_iccbased:nn #1#2
   {
-    \__kernel_backend_literal_svg:x
+    \__kernel_backend_literal_svg:e
       {
         <style>
           @color-profile ~
@@ -789,7 +710,7 @@
 %    \begin{macrocode}
 %<*dvipdfmx|xetex>
 \cs_new_protected:Npn \@@_backend_select_separation:nn #1#2
-  { \__kernel_backend_literal:x { pdf : bc ~ \pdf_object_ref:n {#1} ~ [ #2 ] } }
+  { \__kernel_backend_literal:e { pdf : bc ~ \pdf_object_ref:n {#1} ~ [ #2 ] } }
 %</dvipdfmx|xetex>
 %<*luatex|pdftex>
 \cs_new_protected:Npn \@@_backend_select_separation:nn #1#2
@@ -811,7 +732,7 @@
       { \cs_if_exist_p:N \pdfmanagement_if_active_p: }
       { \pdfmanagement_if_active_p: }
       {
-        \use:x
+        \use:e
           {
             \pdfmanagement_add:nnn
               { Page / Resources / ColorSpace }
@@ -836,7 +757,7 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_backend_separation_init:nnnnn #1#2#3#4#5
   {
-    \pdf_object_unnamed_write:nx { dict }
+    \pdf_object_unnamed_write:ne { dict }
       {
         /FunctionType ~ 2
         /Domain ~ [0 ~ 1]
@@ -844,19 +765,19 @@
         /C0 ~ [#4] ~
         /C1 ~ [#5] /N ~ 1
       }
-    \exp_args:Nx \@@_backend_separation_init:nn
+    \exp_args:Ne \@@_backend_separation_init:nn
       { \str_convert_pdfname:n {#1} } {#2}
     \@@_backend_init_resource:n { color \int_use:N \g_@@_model_int }
   }
 \cs_new_protected:Npn \@@_backend_separation_init:nn #1#2
   {
-    \use:x
+    \use:e
       {
         \pdf_object_new:n { color \int_use:N \g_@@_model_int }
         \pdf_object_write:nnn { color \int_use:N \g_@@_model_int } { array }
           { /Separation /#1 ~ #2 ~ \pdf_object_ref_last: }
       }
-    \prop_gput:Nnx \g_@@_backend_colorant_prop { /#1 }
+    \prop_gput:Nne \g_@@_backend_colorant_prop { /#1 }
       { \pdf_object_ref_last: }
   }
 %    \end{macrocode}
@@ -868,13 +789,13 @@
     \pdf_object_if_exist:nF { @@_illuminant_CIELAB_ #1 }
       {
         \pdf_object_new:n { @@_illuminant_CIELAB_ #1 }
-        \pdf_object_write:nnx { @@_illuminant_CIELAB_ #1 } { array }
+        \pdf_object_write:nne { @@_illuminant_CIELAB_ #1 } { array }
           {
             /Lab ~
             <<
-             /WhitePoint ~
-               [ \tl_use:c { c_@@_model_whitepoint_CIELAB_ #1 _tl } ]
-             /Range ~ [ \c_@@_model_range_CIELAB_tl ]
+              /WhitePoint ~
+                [ \tl_use:c { c_@@_model_whitepoint_CIELAB_ #1 _tl } ]
+              /Range ~ [ \c_@@_model_range_CIELAB_tl ]
             >>
           }
       }
@@ -897,7 +818,7 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_backend_devicen_init:nnn #1#2#3
   {
-    \pdf_object_unnamed_write:nx { stream }
+    \pdf_object_unnamed_write:ne { stream }
       {
         {
           /FunctionType ~ 4 ~
@@ -918,8 +839,8 @@
             ]
         }
         { {#3} }
-     }
-    \use:x
+      }
+    \use:e
       {
         \pdf_object_new:n { color \int_use:N \g_@@_model_int }
         \pdf_object_write:nnn { color \int_use:N \g_@@_model_int } { array }
@@ -952,7 +873,7 @@
     \pdf_object_if_exist:nF { @@_icc_ #1 }
       {
         \pdf_object_new:n { @@_icc_ #1 }
-        \pdf_object_write:nnx { @@_icc_ #1 } { fstream }
+        \pdf_object_write:nne { @@_icc_ #1 } { fstream }
           {
             {
               /N ~ \exp_not:n { #2 } ~
@@ -961,7 +882,7 @@
             {#1}
           }
       }
-    \pdf_object_unnamed_write:nx { array }
+    \pdf_object_unnamed_write:ne { array }
       { /ICCBased ~ \pdf_object_ref:n { @@_icc_ #1 } }
     \@@_backend_init_resource:n { color \int_use:N \g_@@_model_int }
   }
@@ -983,7 +904,7 @@
             {#1}
           }
       }
-    \pdf_object_unnamed_write:nx { array }
+    \pdf_object_unnamed_write:ne { array }
       { /ICCBased ~ \pdf_object_ref:n { @@_icc_ #1 } }
     \@@_backend_init_resource:n { Default #2 }
   }
@@ -1042,12 +963,12 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_backend_fill_separation:nn #1#2
   {
-    \__kernel_backend_literal:x
+    \__kernel_backend_literal:e
       { pdf : bc ~ fill ~ \pdf_object_ref:n {#1} ~ [ #2 ] }
   }
 \cs_new_protected:Npn \@@_backend_stroke_separation:nn #1#2
   {
-    \__kernel_backend_literal:x
+    \__kernel_backend_literal:e
       { pdf : bc ~ stroke ~ \pdf_object_ref:n {#1} ~ [ #2 ] }
   }
 \cs_new_eq:NN \@@_backend_fill_devicen:nn \@@_backend_fill_separation:nn
@@ -1248,7 +1169,7 @@
 \cs_new_protected:Npn \@@_backend_stroke_cmyk:w
   #1 ~ #2 ~ #3 ~ #4 \s_@@_stop
   {
-    \use:x
+    \use:e
       {
         \@@_backend:nnn
           { \fp_eval:n { -100 * ( 1 - min ( 1 , #1 + #4 ) ) } }
@@ -1258,7 +1179,7 @@
   }
 \cs_new_protected:Npn \@@_backend_stroke_gray:n #1
   {
-    \use:x
+    \use:e
       {
         \@@_backend_stroke_gray_aux:n
           { \fp_eval:n { 100 * (#1) } }
@@ -1271,7 +1192,7 @@
 \cs_new_protected:Npn \@@_backend_stroke_rgb:w
   #1 ~ #2 ~ #3 \s_@@_stop
   {
-    \use:x
+    \use:e
       {
         \@@_backend:nnn
           { \fp_eval:n { 100 * (#1) } }
@@ -1279,19 +1200,19 @@
           { \fp_eval:n { 100 * (#3) } }
       }
   }
-\cs_new_protected:Npx \@@_backend:nnn #1#2#3
+\cs_new_protected:Npe \@@_backend:nnn #1#2#3
   {
     \__kernel_backend_scope:n
       {
         stroke =
-         "
-           rgb
-             (
-               #1 \c_percent_str ,
-               #2 \c_percent_str ,
-               #3 \c_percent_str
-             )
-         "
+          "
+            rgb
+              (
+                #1 \c_percent_str ,
+                #2 \c_percent_str ,
+                #3 \c_percent_str
+              )
+          "
       }
   }
 %    \end{macrocode}
@@ -1339,6 +1260,95 @@
 %
 %    \begin{macrocode}
 %</package>
+%    \end{macrocode}
+%
+% \subsection{Font handling integration}
+%
+% In \LuaTeX{} these colors should also be usable to color fonts, so
+% \texttt{luaotfload} color handling is extended to include these.
+%
+%    \begin{macrocode}
+%<*lua>
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+local l = lpeg
+local spaces = l.P' '^0
+local digit16 = l.R('09', 'af', 'AF')
+
+local octet = digit16 * digit16 / function(s)
+  return string.format('%.3g ', tonumber(s, 16) / 255)
+end
+
+if luaotfload and luaotfload.set_transparent_colorstack then
+  local htmlcolor = l.Cs(octet * octet * octet * -1 * l.Cc'rg')
+  local color_export = {
+    token.create'tex_endlocalcontrol:D',
+    token.create'tex_hpack:D',
+    token.new(0, 1),
+    token.create'color_export:nnN',
+    token.new(0, 1),
+    '',
+    token.new(0, 2),
+    token.new(0, 1),
+    'backend',
+    token.new(0, 2),
+    token.create'l_tmpa_tl',
+    token.create'exp_after:wN',
+    token.create'@@_select:nn',
+    token.create'l_tmpa_tl',
+    token.new(0, 2),
+  }
+  local group_end = token.create'group_end:'
+  local value = (1 - l.P'}')^0
+  luatexbase.add_to_callback('luaotfload.parse_color', function (value)
+% Also allow HTML colors to preserve compatibility
+    local html = htmlcolor:match(value)
+    if html then return html end
+
+% If no l3color named color with this name is known, check for defined xcolor colors
+    local l3color_prop = token.get_macro(string.format('l_@@_named_%s_prop', value))
+    if l3color_prop == nil or l3color_prop == '' then
+      local legacy_color_macro = token.create(string.format('\\color@%s', value))
+      if legacy_color_macro.cmdname ~= 'undefined_cs' then
+        token.put_next(legacy_color_macro)
+        return token.scan_argument()
+      end
+    end
+
+    tex.runtoks(function()
+      token.get_next()
+      color_export[6] = value
+      tex.sprint(-2, color_export)
+    end)
+    local list = token.scan_list()
+    if not list.head or list.head.next
+        or list.head.subtype ~= node.subtype'pdf_colorstack' then
+      error'Unexpected backend behavior'
+    end
+    local cmd = list.head.data
+    node.free(list)
+    return cmd
+  end, 'l3color')
+end
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+%</lua>
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+%<*luatex>
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+%<*package>
+\lua_load_module:n {l3backend-luatex}
+%</package>
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+%</luatex>
 %    \end{macrocode}
 %
 % \end{implementation}

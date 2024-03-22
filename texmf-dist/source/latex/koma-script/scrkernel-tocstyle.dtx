@@ -1,7 +1,7 @@
 % \iffalse meta-comment
 % ======================================================================
 % scrkernel-tocstyle.dtx
-% Copyright (c) Markus Kohm, 2015-2022
+% Copyright (c) Markus Kohm, 2015-2023
 %
 % This file is part of the LaTeX2e KOMA-Script bundle.
 %
@@ -18,7 +18,7 @@
 %
 % This work consists of all files listed in MANIFEST.md.
 % ======================================================================
-%%% From File: $Id: scrkernel-tocstyle.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-tocstyle.dtx 4060 2023-06-20 08:59:01Z kohm $
 % The runs of run-time file generation:
 %<preidentify>%%%            (run: preidentify)
 % - everything that is needed before selfidentification of resulting files
@@ -42,9 +42,9 @@
 \ifx\ProvidesFile\undefined\def\ProvidesFile#1[#2]{}\fi
 \begingroup
   \def\filedate$#1: #2-#3-#4 #5${\gdef\filedate{#2/#3/#4}}
-  \filedate$Date: 2022-06-05 12:38:02 +0200 (So, 05. Jun 2022) $
+  \filedate$Date: 2023-06-20 10:59:01 +0200 (Di, 20. Jun 2023) $
   \def\filerevision$#1: #2 ${\gdef\filerevision{r#2}}
-  \filerevision$Revision: 3874 $
+  \filerevision$Revision: 4060 $
   \edef\reserved@a{%
     \noexpand\endgroup
     \noexpand\ProvidesFile{scrkernel-tocstyle.dtx}%
@@ -65,6 +65,7 @@
 % \changes{v3.36}{2022/02/14}{switch over from \cls*{scrdoc} to
 %   \cls*{koma-script-source-doc}}
 % \changes{v3.36}{2022/02/14}{whole implementation documentation in English}
+% \changes{v3.40}{2023/04/17}{guide names changed}
 %
 % \GetFileInfo{scrkernel-tocstyle.dtx}
 % \title{The Predifined Directory Styles of
@@ -84,8 +85,8 @@
 % \section{User Manual}
 %
 % You can find the user documentation the commands implemented here in the
-% \KOMAScript{} manual, either the German \file{scrguide} or the English
-% \file{scrguien}.
+% \KOMAScript{} manual, either the German \file{scrguide-de.pdf} or the
+% English \file{scrguide-en.pdf}.
 % 
 % \MaybeStop{\PrintIndex}
 %
@@ -1009,8 +1010,10 @@
 %    \end{macrocode}
 % \end{macro}^^A \@TOCEntryStyleNeedsCommandByOption
 %
-% \begin{command}{\TOCEntryStyleInitCode,\TOCEntryStyleStartInitCode}
+% \begin{command}{\TOCEntryStyleInitCode,\TOCEntryStyleInitCode*,
+%                 \TOCEntryStyleStartInitCode}
 % \changes{v3.20}{2015/11/25}{added}
+% \changes{v3.41}{2023/06/20}{star variant \cs{TOCEntryStyleInitCode*} added}
 % Executes commands before a ToC entry level command of this style is defined
 % and before the \emph{needs} list will be executed. The parameters are:
 % \begin{description}
@@ -1021,12 +1024,13 @@
 % \end{description}
 %    \begin{macrocode}
 %<*body>
-\newcommand{\TOCEntryStyleInitCode}[1]{%
-  \scr@ifundefinedorrelax{scr@dte@#1@init}{%
-    \expandafter\providecommand\expandafter*%
-    \csname scr@dte@#1@init\endcsname[1]%
+\NewDocumentCommand\TOCEntryStyleInitCode{sm}{%
+  \IfBooleanT{#1}{\expandafter\let\csname scr@dte@#2@init\endcsname\relax}%
+  \scr@ifundefinedorrelax{scr@dte@#2@init}{%
+    \expandafter\newcommand\expandafter*%
+    \csname scr@dte@#2@init\endcsname[1]%
   }{%
-    \expandafter\l@addto@macro@a\csname scr@dte@#1@init\endcsname
+    \expandafter\l@addto@macro@a\csname scr@dte@#2@init\endcsname
   }%
 }
 \newcommand{\TOCEntryStyleStartInitCode}[1]{%
@@ -1038,7 +1042,7 @@
   }%
 }
 %    \end{macrocode}
-% \end{command}^^A \TOCEntryStyleInitCode,\TOCEntryStyleStartInitCode
+% \end{command}^^A \TOCEntryStyleInitCode … \TOCEntryStyleStartInitCode
 % \begin{macro}{\@ExecuteTOCEntryStyleInitCode}
 % \changes{v3.20}{2015/12/04}{added}
 % Executes the init code of one style. The first argument is the name of the
@@ -1094,6 +1098,8 @@
 %
 % \begin{command}{\DeclareTOCStyleEntry}
 % \changes{v3.20}{2015/11/13}{added}
+% \changes{v3.39}{2022/10/24}{error message about missing options improved}
+% \changes{v3.41}{2023/06/20}{usage of style definition files supported}
 % This user command defines a new ToC entry command. It tests, if all needed
 % style macros are already defined. Otherwise an error will be shown and the
 % ToC entry command will not be defined. The arguments are:
@@ -1109,6 +1115,16 @@
 %    \begin{macrocode}
 %<*body>
 \newcommand*{\DeclareTOCStyleEntry}[3][]{%
+  \scr@ifundefinedorrelax{scr@dte@def@l@#2}{%
+    \IfFileExists{tocbasic-tocstyle-#2.def}{%
+      \edef\reserved@a{%
+        \unexpanded{%
+          \makeatletter
+          \input{tocbasic-tocstyle-#2.def}%
+          \catcode`\@=}\the\catcode`\@\relax
+      }\reserved@a
+    }{}%
+  }{}%
   \scr@ifundefinedorrelax{scr@dte@def@l@#2}{%
     \PackageError{tocbasic}{toc entry style `#2' undefined}{%
       Somebody told me to define toc entry `#3' with style `#2',\MessageBreak
@@ -1141,7 +1157,8 @@
       \aftergroup\@tempswatrue
       \def\do##1##2##3##4{%
         \scr@ifundefinedorrelax{##1#3##2}{%
-          \PackageError{tocbasic}{toc style `#2' needs ##4}{%
+          \PackageError{tocbasic}{toc style `#2' needs ##4\MessageBreak
+            of `#3'}{%
             Usually the ##4 is defined using option `##3'.\MessageBreak
             In some cases it may be set defining command
             `\expandafter\string\csname ##1#3##2\endcsname'.\MessageBreak
@@ -1226,6 +1243,8 @@
 % \changes{v3.20}{2015/11/17}{added}
 % \begin{macro}{\@DeclareTOCEntryStyle}
 % \changes{v3.20}{2015/11/17}{added}
+% \changes{v3.41}{2023/06/20}{using \cs{TOCEntryStyleInitCode*} instead of
+%   \cs{TOCEntryStyleInitCode}}
 % The user command is used to define a new style for ToC entries. The
 % arguments are:
 % \begin{description}
@@ -1254,7 +1273,7 @@
       \TOC@EntryEndHook{##1}%
     }%
   }%
-  \TOCEntryStyleInitCode{#1}{%
+  \TOCEntryStyleInitCode*{#1}{%
     \DefineTOCEntryNumberOption{level}{}{tocdepth}{toc entry level}%
     #2%
   }%
@@ -1536,6 +1555,7 @@
 %    \end{macrocode}
 % or, if this cannot be used, by using a standard value analogues to the
 % values of the standard classes and the \KOMAScript{} classes.
+% \changes{v3.39}{2022/10/24}{default level for \texttt{lstlisting} added}
 %    \begin{macrocode}
   \@ifundefined{#1tocdepth}{%
     \Ifstr{#1}{part}{\@namedef{#1tocdepth}{-1}}{%
@@ -1547,12 +1567,14 @@
                 \Ifstr{#1}{subparagraph}{\@namedef{#1tocdepth}{5}}{%
                   \Ifstr{#1}{figure}{\@namedef{#1tocdepth}{1}}{%
                     \Ifstr{#1}{table}{\@namedef{#1tocdepth}{1}}{%
+                      \Ifstr{#1}{lstlisting}{\@namedef{#1tocdepth}{1}}{%
 %    \end{macrocode}
 % As last chance, we can use the same number already used for a headings level
 % with the same name.
 %    \begin{macrocode}
-                      \expandafter\let\csname #1tocdepth\expandafter\endcsname
-                      \csname #1numdepth\endcsname
+                        \expandafter\let\csname #1tocdepth\expandafter\endcsname
+                        \csname #1numdepth\endcsname
+                      }%
                     }%
                   }%
                 }%
@@ -1562,6 +1584,16 @@
         }%
       }%
     }%
+  }{}%
+%    \end{macrocode}
+% \changes{v3.39}{2022/10/24}{try also using \cs{toclevel@\meta{level name}} as
+%   default level}
+% Last but not least, if \cs{tocdepth@\meta{level name}} has been defined, we
+% can use this one.
+%    \begin{macrocode}
+  \@ifundefined{#1tocdepth}{%
+    \expandafter\let\csname #1tocdepth\expandafter\endcsname
+    \csname toclevel@#1\endcsname
   }{}%
 %    \end{macrocode}
 % The indent can also be defined automatically by a parent level.
@@ -1639,6 +1671,7 @@
 % If all the automatic setting methods were not successful, we try standard
 % values used from the standard classes or older versions of the \KOMAScript{}
 % classes.
+% \changes{v3.39}{2022/10/24}{default indent for \texttt{lstlisting} added}
 %    \begin{macrocode}
   \@ifundefined{scr@tso@#1@indent}{%
 %<*dottedtocline|undottedtocline|largetocline>
@@ -1646,48 +1679,50 @@
 %</dottedtocline|undottedtocline|largetocline>
       \Ifstr{#1}{figure}{\@namedef{scr@tso@#1@indent}{1.5em}}{%
         \Ifstr{#1}{table}{\@namedef{scr@tso@#1@indent}{1.5em}}{%
-          \Ifstr{#1}{part}{\@namedef{scr@tso@#1@indent}{0em}}{%
-            \Ifstr{#1}{chapter}{\@namedef{scr@tso@#1@indent}{0em}}{%
+          \Ifstr{#1}{lstlisting}{\@namedef{scr@tso@#1@indent}{1.5em}}{%
+            \Ifstr{#1}{part}{\@namedef{scr@tso@#1@indent}{0em}}{%
+              \Ifstr{#1}{chapter}{\@namedef{scr@tso@#1@indent}{0em}}{%
 %    \end{macrocode}
 % The follow code needs information about the existence of the chapter
 % level. So the chapter level should already be defined, before the first
 % usage!
 %    \begin{macrocode}
-              \scr@ifundefinedorrelax{l@chapter}{%
-                \Ifstr{#1}{section}{\@namedef{scr@tso@#1@indent}{0pt}}{%
-                  \Ifstr{#1}{subsection}{\@namedef{scr@tso@#1@indent}{1.5em}}{%
-                    \Ifstr{#1}{subsubsection}{%
-                      \@namedef{scr@tso@#1@indent}{3.8em}%
-                    }{%
-                      \Ifstr{#1}{paragraph}{%
-                        \@namedef{scr@tso@#1@indent}{7em}%
+                \scr@ifundefinedorrelax{l@chapter}{%
+                  \Ifstr{#1}{section}{\@namedef{scr@tso@#1@indent}{0pt}}{%
+                    \Ifstr{#1}{subsection}{\@namedef{scr@tso@#1@indent}{1.5em}}{%
+                      \Ifstr{#1}{subsubsection}{%
+                        \@namedef{scr@tso@#1@indent}{3.8em}%
                       }{%
-                        \Ifstr{#1}{subparagraph}{%
-                          \@namedef{scr@tso@#1@indent}{10em}%
+                        \Ifstr{#1}{paragraph}{%
+                          \@namedef{scr@tso@#1@indent}{7em}%
                         }{%
+                          \Ifstr{#1}{subparagraph}{%
+                            \@namedef{scr@tso@#1@indent}{10em}%
+                          }{%
 %    \end{macrocode}
 % If nothing helps, the user has to define the values.
 %    \begin{macrocode}
+                          }%
                         }%
                       }%
                     }%
                   }%
-                }%
-              }{%
-                \Ifstr{#1}{section}{\@namedef{scr@tso@#1@indent}{1.5em}}{%
-                  \Ifstr{#1}{subsection}{\@namedef{scr@tso@#1@indent}{3.8em}}{%
-                    \Ifstr{#1}{subsubsection}{%
-                      \@namedef{scr@tso@#1@indent}{7.0em}%
-                    }{%
-                      \Ifstr{#1}{paragraph}{%
-                        \@namedef{scr@tso@#1@indent}{10em}%
+                }{%
+                  \Ifstr{#1}{section}{\@namedef{scr@tso@#1@indent}{1.5em}}{%
+                    \Ifstr{#1}{subsection}{\@namedef{scr@tso@#1@indent}{3.8em}}{%
+                      \Ifstr{#1}{subsubsection}{%
+                        \@namedef{scr@tso@#1@indent}{7.0em}%
                       }{%
-                        \Ifstr{#1}{subparagraph}{%
-                          \@namedef{scr@tso@#1@indent}{12em}%
+                        \Ifstr{#1}{paragraph}{%
+                          \@namedef{scr@tso@#1@indent}{10em}%
                         }{%
+                          \Ifstr{#1}{subparagraph}{%
+                            \@namedef{scr@tso@#1@indent}{12em}%
+                          }{%
 %    \end{macrocode}
 % Once more: if nothing helps, the user has to define the values.
 %    \begin{macrocode}
+                          }%
                         }%
                       }%
                     }%
@@ -1709,6 +1744,7 @@
   }{}%
 %    \end{macrocode}
 % Almost the same for the number width:
+% \changes{v3.39}{2022/10/24}{default number width for \texttt{lstlisting} added}
 %    \begin{macrocode}
 %<*dottedtocline|undottedtocline|tocline>
 %<*tocline>
@@ -1734,45 +1770,47 @@
 %</dottedtocline|undottedtocline>
       \Ifstr{#1}{figure}{\@namedef{scr@tso@#1@numwidth}{2.3em}}{%
         \Ifstr{#1}{table}{\@namedef{scr@tso@#1@numwidth}{2.3em}}{%
-          \Ifstr{#1}{chapter}{\@namedef{scr@tso@#1@numwidth}{1.5em}}{%
+          \Ifstr{#1}{lstlisting}{\@namedef{scr@tso@#1@numwidth}{2.3em}}{%
+            \Ifstr{#1}{chapter}{\@namedef{scr@tso@#1@numwidth}{1.5em}}{%
 %    \end{macrocode}
 % Depending on existence of the chapter level:
 %    \begin{macrocode}
-            \scr@ifundefinedorrelax{chapter}{%
-              \Ifstr{#1}{section}{\@namedef{scr@tso@#1@numwidth}{1.5em}}{%
-                \Ifstr{#1}{subsection}{\@namedef{scr@tso@#1@numwidth}{2.3em}}{%
-                  \Ifstr{#1}{subsubsection}{%
-                    \@namedef{scr@tso@#1@numwidth}{3.2em}%
-                  }{%
-                    \Ifstr{#1}{paragraph}{%
-                      \@namedef{scr@tso@#1@numwidth}{4.1em}%
+              \scr@ifundefinedorrelax{chapter}{%
+                \Ifstr{#1}{section}{\@namedef{scr@tso@#1@numwidth}{1.5em}}{%
+                  \Ifstr{#1}{subsection}{\@namedef{scr@tso@#1@numwidth}{2.3em}}{%
+                    \Ifstr{#1}{subsubsection}{%
+                      \@namedef{scr@tso@#1@numwidth}{3.2em}%
                     }{%
-                      \Ifstr{#1}{subparagraph}{%
-                        \@namedef{scr@tso@#1@numwidth}{5m}%
+                      \Ifstr{#1}{paragraph}{%
+                        \@namedef{scr@tso@#1@numwidth}{4.1em}%
                       }{%
+                        \Ifstr{#1}{subparagraph}{%
+                          \@namedef{scr@tso@#1@numwidth}{5m}%
+                        }{%
 %    \end{macrocode}
 % Need option to be set.
 %    \begin{macrocode}
+                        }%
                       }%
                     }%
                   }%
                 }%
-              }%
-            }{%
-              \Ifstr{#1}{section}{\@namedef{scr@tso@#1@numwidth}{2.3em}}{%
-                \Ifstr{#1}{subsection}{\@namedef{scr@tso@#1@numwidth}{3.2em}}{%
-                  \Ifstr{#1}{subsubsection}{%
-                    \@namedef{scr@tso@#1@numwidth}{3.1em}%
-                  }{%
-                    \Ifstr{#1}{paragraph}{%
-                      \@namedef{scr@tso@#1@numwidth}{5em}%
+              }{%
+                \Ifstr{#1}{section}{\@namedef{scr@tso@#1@numwidth}{2.3em}}{%
+                  \Ifstr{#1}{subsection}{\@namedef{scr@tso@#1@numwidth}{3.2em}}{%
+                    \Ifstr{#1}{subsubsection}{%
+                      \@namedef{scr@tso@#1@numwidth}{3.1em}%
                     }{%
-                      \Ifstr{#1}{subparagraph}{%
-                        \@namedef{scr@tso@#1@numwidth}{6em}%
+                      \Ifstr{#1}{paragraph}{%
+                        \@namedef{scr@tso@#1@numwidth}{5em}%
                       }{%
+                        \Ifstr{#1}{subparagraph}{%
+                          \@namedef{scr@tso@#1@numwidth}{6em}%
+                        }{%
 %    \end{macrocode}
 % Need option to be set.
 %    \begin{macrocode}
+                        }%
                       }%
                     }%
                   }%

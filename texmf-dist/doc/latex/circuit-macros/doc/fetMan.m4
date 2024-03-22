@@ -151,7 +151,11 @@ Row3: [
   {`"{\tt $\;$ Fe\_fet(,,TEDSQuB)}"' at J.s+(0,-0.15) below
     "$G$" at J.G rjust
     "$S$" at J.S rjust
-    "$D$" at J.D ljust }
+    "$D$" at J.D ljust
+    thinlines_
+    arrow <- down .05 left .18 from (J.G.x,J.G.y-0.1)
+    "\tt T" rjust
+    thicklines_ }
   ] with .nw at last [].sw
 
 Row4: [

@@ -1,0 +1,1203 @@
+\documentclass{article}
+\usepackage{listings,color,parskip,booktabs,longtable,array,
+hyperref,multirow,multicol,url,amsmath,amssymb,framed,lualinalg,tikz,tikz-3dplot}
+\usepackage[top=1in, bottom=1in, left=1in, right=1in]{geometry}
+\usetikzlibrary{calc,3d,arrows}
+\hypersetup{colorlinks,urlcolor=blue}
+\lstset{frame=none,
+	language=[LaTeX]{TeX},
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=1,
+  upquote=true
+}
+\begin{document}
+\title{The lualinalg Package}
+\author{Chetan Shirore\thanks{Email id: mathsbeauty@gmail.com} \space and  Ajit Kumar}
+\maketitle
+
+\section{Introduction}
+
+The \verb|lualinalg| package is developed to perform operations on vectors and matrices defined over the field of real or complex numbers inside LaTeX documents. It provides flexible ways for defining and displaying vectors and matrices. No particular environment of LaTeX is required to use commands in the package. The package is written in Lua, and tex file is to be compiled with the LuaLaTeX engine. The time required for calculations is not an issue while compiling with LuaLaTeX. There is no need to install Lua on the user's system as TeX distributions (TeXLive or MikTeX) come bundled with LuaLaTeX. It may also save users' efforts to copy vectors and matrices from other software (which may not be in latex-compatible format) and to use them in a tex file. The vectors and matrices of reasonable size can be handled with ease. The package can be modified or extended by writing custom Lua programs (Section \ref{customuse}).
+
+The package supports fractions; numerators and denominators must be integers. A fraction can be specified with the Lua function: \verb|lfrac|. This function has the syntax \verb|lfrac(n,d,mode)|: \(n\) is an integer and \(d\) is a non-zero integer. The mode is optional. It can be \verb|fracs| or \verb|nofracs|. The default mode is \verb|fracs|. If fractions are input, the package will display vectors and matrices in fraction mode wherever possible. The package does not attempt to convert floats into fractions. If fractions are expected, then the input should contain fractions. If fractions are input and  answers are expected in numbers,  the mode can be specified as \verb|nofracs|. 
+
+The Lua function \verb|lcomplex| defines the complex numbers. It has the syntax \verb|lcomplex(x,y)|, where \(x\) is a real part, and  \(y\) is an imaginary part. \(x\) and \(y\) can also be fractions (numerators and denominators should be integers). The package has a command \verb|\imUnit| which provides typesetting for the imaginary unit. Its default value is \verb|\mathrm{i}|. It can be redefined. For example, one can redefine it as \verb|\renewcommand{\imUnit}{j}}|.
+
+
+\section{Installation and License}
+The installation of the \verb|lualinalg| package is similar to the plain latex package, where the \verb|.sty| file is in the LaTeX directory of the texmf tree. The package can be included with \verb|\usepackage{lualinalg}| command in the preamble of the LaTeX document.
+
+The \verb|lualinalg| package is released under the LaTeX Project Public License v1.3c or later. The complete license text is available at  \url{http://www.latex-project.org/lppl.txt}. It is developed in Lua. Lua is available as a certified open-source software. Its license is simple and liberal, which is compatible with GPL. The package makes use of \verb|complex.lua| file which is available on \url{https://github.com/davidm/lua-matrix/blob/master/lua/complex.lua}. It  is available under the same licensing as that of Lua. The package also loads the \href{https://ctan.org/pkg/luamaths}{luamaths} package, which is available under the LaTeX Project Public License v1.3c or later. This package is loaded to use the standard mathematical functions and for computations on real numbers while performing operations on vectors and matrices.
+
+\section{Defining vectors and performing operations on vectors} 
+\subsection{Defining Vectors} Vectors are defined with the \verb|\vectornew| command.
+\begin{lstlisting}
+\vectorNew{vector name}{coordinates}
+\end{lstlisting}
+
+ This command has two compulsory arguments: \verb|vector name| and \verb|coordinates|. Coordinates of vectors are enclosed in curly braces. A comma separates coordinates.  The following are a few valid ways of defining vectors.
+\begin{lstlisting}
+\vectorNew{v1}{{1,2,3,4,5,6}}
+\vectorNew{v2}{{3,6,lcomplex(6,6)}}
+\end{lstlisting}
+The standard vector of dimension \(n \) with \(i^{th}\)  coordinate \(1\) and zero vectors can also be produced by using the command \verb|\vectorNew|. For example, the following commands
+\begin{lstlisting}
+\vectorNew{e_1}{3,'e',1}
+\(e_1=\left(\vectorPrint{e}\right)\)
+\vectorNew{O}{3,'zero'}
+\(O=\left(\vectorPrint{O}\right)\)
+\end{lstlisting}
+output to \vectorNew{e_1}{3,'e',1}
+\(e_1=\left(\vectorPrint{e_1}\right)\)
+\vectorNew{O}{3,'zero'}
+\(O=\left(\vectorPrint{O}\right)\)
+\subsection{Commands for operations on vectors}
+Table \ref{tbl:luavector} lists commands for operations on vectors. 
+\begin{longtable}{m{7cm}m{8.2cm}}
+\toprule
+\multicolumn{1}{c}{\textcolor{blue}{Command Format}} & \multicolumn{1}{c}{\textcolor{blue}{Description}} \\
+\toprule
+\begin{lstlisting}
+\vectorPrint[truncate]{vector}
+\end{lstlisting} & Prints vector. Accepts one \emph{optional} argument: \verb|truncate|. It specifies the number of digits  up to which vector coordinates must be truncated. The value of \verb|truncate|  may be 0,1,2,\ldots\\
+\midrule
+\begin{lstlisting}
+\vectorGetCoordinate{vector}{i}
+\end{lstlisting}
+&
+Gives  the \(i\)th coordinate of vector. \\
+\midrule
+ \begin{lstlisting}
+\vectorSetCoordinate
+{vector}{i}{val}
+\end{lstlisting}
+&
+Sets  the \(i\)th coordinate of vector as \verb|val|. \\
+\midrule
+\begin{lstlisting}
+\vectorCopy{v}{w}
+\end{lstlisting}&
+Defines a new vector \(v\) obtained by copying coordinates of vector \(w\). \\
+\midrule
+
+\begin{lstlisting}
+\vectorEql{v}{w}
+\end{lstlisting}&
+Returns true if \(v = w\), otherwise returns false. \\
+\midrule
+
+\begin{lstlisting}
+\vectorAdd{vector}{v1}{v2}
+\end{lstlisting}&
+Defines a new vector as the addition of vectors \(v1\) and \(v2\). Both vectors \(v1\) and \(v2\) should be of the same dimension.  The addition is done coordinate-wise.\\
+\midrule
+ \begin{lstlisting}
+\vectorSub{vector}{v1}{v2}
+\end{lstlisting}&
+Defines a new vector as the subtraction  of vectors \(v1\) and \(v2\). Both vectors \(v1\) and \(v2\) should be of the same dimension. The subtraction is done coordinate-wise. \\
+\midrule
+ \begin{lstlisting}
+\vectorMulNum{vector}{v}{num}
+\end{lstlisting}&
+Defines a new vector obtained by multiplying each coordinate of a vector by number \verb|num|. It can be a real or complex number (scalar). \\
+\midrule
+\begin{lstlisting}
+\vectorDot{v}{w}
+\end{lstlisting}&
+Gives the dot product of two vectors: \(v\) and \(w\). If  \(v=\left(v_1, \ldots, v_n \right)\) and \(w =\left(w_1, \ldots, w_n \right)\) are defined over the field of real numbers, then it is evaluated as \(v_1\cdot w_1 + \cdots + v_n \cdot w_n\).  If they are defined over the field of complex numbers, then it is evaluated as \(v_1\cdot \bar{w_1} + \cdots + v_n \cdot \bar{w_n}\). \(\bar{w_i}\) denotes the complex conjugate of complex number \(w_i\).  \\
+\midrule
+\begin{lstlisting}
+\vectorCross{vector}{v}{w}
+\end{lstlisting}&
+Defines a new vector obtained by taking the cross product of vectors \(v\) and \(w\) of dimension 3.  If  \(v=\left(v_1, v_2, v_3 \right)\) and \(w =\left(w_1, w_2, w_3 \right)\), then the cross product of these two vectors is the vector \((v_2w_3-v_3w_2, v_3w_1-v_1w_3,\) \( v_1w_2-v_2w_1 ) \). \\
+\midrule
+ \begin{lstlisting}
+\vectorSumNorm{v}
+\end{lstlisting}&
+Calculates the sum norm of a vector \(v\).  If \(v=\left(v_1, \ldots, v_n \right)\) then it is given by \(|v_1| + \cdots + |v_n|  \). \\
+\midrule
+ \begin{lstlisting}
+\vectorEuclidNorm{v}
+\end{lstlisting}&
+Calculates the Euclidean norm of a vector \(v\).  If \(v=\left(v_1, \ldots, v_n \right)\) then it is given by \(\sqrt{|v_1|^2 + \cdots + |v_n|^2}  \). \\
+\midrule
+ \begin{lstlisting}
+\vectorpNorm{v}
+\end{lstlisting}&
+Calculates the \(p\) \((p > 1)\) norm of a vector \(v\).  If \(v=\left(v_1, \ldots, v_n \right)\) then it is given by \(\sqrt[\leftroot{-2}\uproot{2} p]{|v_1|^p + \cdots + |v_n|^p}  \).  \\
+\midrule
+\begin{lstlisting}
+\vectorSupNorm{v}
+\end{lstlisting}&
+Calculates the sup norm of a vector \(v\).  If \(v=\left(v_1, \ldots, v_n \right)\) then it is given by \(\max\{|v_1| , \ldots , |v_n| \} \). \\
+\midrule
+ \begin{lstlisting}
+\vectorCreateRandom{v}{n}{a}{b}
+\end{lstlisting}&
+Creates a new vector \(v\) of dimension \(n\) with coordinates as random numbers from the interval \([a,b]\).  \\
+\midrule
+\begin{lstlisting}
+\vectorOp{vector}{expression}
+\end{lstlisting}&
+Defines a new vector obtained by evaluating an expression. The expression supports all standard operations such as  \(+,-,* \). \\
+\midrule
+ \begin{lstlisting}
+ \vectorGetAngle{v}{w}
+\end{lstlisting}&
+Gives the angle between two vectors \(v\) and \(w\) in radians. If  \(v\) and \(w \) are defined over the field of real numbers, then it is evaluated as \(\cos^{-1}\left(\frac{v \cdot w}{|v| |w|}\right)\).  If they are defined over the field of complex numbers, then it is evaluated as \(\cos^{-1}\left(\frac{\Re (v \cdot w) }{|v| |w|}\right)\). Here \(v \cdot w\) denotes the dot product of vectors \(v\) and \(w\), \(\Re (v \cdot w)\) denotes real part of the dot product \(v \cdot w\), and \(|v|\) and \(|w|\) denote Euclidean norms of vectors \(v\) and \(w\) respectively. \\
+\midrule
+ \begin{lstlisting}
+\vectorParse{vector}
+\end{lstlisting}&
+Parses the coordinates of a vector defined over the field of real numbers. The command helps to plot vectors with different packages. \\
+\midrule
+\begin{lstlisting}
+\vectorGramSchmidt[brckt,
+truncate]{list of vectors}
+\end{lstlisting} & Performs Gram Schmidt orthogonalisation process on a list of vectors.  Accepts two \emph{optional} arguments: \verb|brckt| and \verb|truncate|. The \verb|brckt| is type of parenthesis to be used for displaying vectors. It can be `round', `square' or `curly'. The truncate is number of digits  up to which vector coordinates are to be truncated. The value of \verb|truncate|  can be 0,1,2,\ldots\\
+\midrule
+\begin{lstlisting}
+\vectorGramSchmidtSteps[brckt,
+truncate]{list of vectors}
+\end{lstlisting} & Performs Gram Schmidt orthogonalisation process on a list of vectors in a step-by-step manner.  Accepts two \emph{optional} arguments: \verb|brckt| and \verb|truncate|. The \verb|brckt| is type of parenthesis to be used for displaying vectors. It can be `round', `square' or `curly'. The truncate is number of digits  up to which vector coordinates are to be truncated. The value of \verb|truncate|  can be 0,1,2,\ldots\\
+\bottomrule \\
+\caption{Commands for operations on vectors}
+\label{tbl:luavector}
+\end{longtable}
+
+\subsection{Illustrations of commands for operations on vectors}
+The following commands define vectors \(v,w,x,\) and \(y\).
+\begin{lstlisting}
+\vectorNew{v}{{1,2,lcomplex(3,3)}}
+\vectorNew{w}{{3,6,lcomplex(6,6)}}
+\vectorNew{x}{{1.12345678,6,lcomplex(6,6)}}
+\vectorNew{y}{{1,2,3}}
+\end{lstlisting}
+Table \ref{tbl:illluavector} illustrates various operations on vectors \(v,w,x\) and \(y\).
+\vectorNew{v}{{1,2,lcomplex(3,3)}}
+\vectorNew{w}{{3,6,lcomplex(6,6)}}
+\vectorNew{x}{{1.12345678,6,lcomplex(6,6)}}
+\vectorNew{y}{{1,2,3}}
+\begin{longtable}{lp{6.5cm}}
+\toprule
+Commands & Output Produced\\
+\toprule
+\begin{lstlisting}
+\(v=\left(\vectorPrint{v}\right)\)
+\(w=\left(\vectorPrint{w}\right)\)
+\end{lstlisting} &
+\(v=\left(\vectorPrint{v}\right)\) \newline
+\(w=\left(\vectorPrint{w}\right)\)
+\\
+\midrule
+\begin{lstlisting}
+\(x=\left(\vectorPrint
+[truncate=3]{x}\right)\)
+\end{lstlisting} &
+\(x=\left(\vectorPrint
+[truncate=3]{x}\right)\)
+\\
+\midrule
+\begin{lstlisting}
+third coordinate of vector
+\(v = \vectorGetCoordinate{v}{3}\)
+\end{lstlisting} &
+third coordinate of vector
+\(v = \vectorGetCoordinate{v}{3}\)
+\\
+\midrule
+\begin{lstlisting}
+\(\vectorCopy{z}{w}\)
+\(z = \left(\vectorPrint{z}\right)\)
+\end{lstlisting} &
+\(\vectorCopy{z}{w}\)
+\(z = \left(\vectorPrint{z}\right)\)
+\\
+\midrule
+\begin{lstlisting}
+\vectorEql{z}{w}
+\end{lstlisting} &
+\vectorEql{z}{w}
+\\
+\midrule
+\begin{lstlisting}
+new third coordinate of vector
+\(z = \vectorSetCoordinate{z}{3}{9.3}\)
+\(z=\left(\vectorPrint{z}\right)\)
+\end{lstlisting} &
+new third coordinate of vector
+\(z = \vectorSetCoordinate{z}{3}{9.3}\) \newline
+\(z=\left(\vectorPrint{z}\right)\)
+\\
+\midrule
+\begin{lstlisting}
+\vectorAdd{v1}{v}{w}
+\(v1 = v+w =\left(\vectorPrint{v1}\right)\)
+\end{lstlisting} &
+\vectorAdd{v1}{v}{w}
+\(v1 = v+w =\left(\vectorPrint{v1}\right)\)
+\\
+\midrule
+\begin{lstlisting}
+\vectorSub{v2}{v}{w}
+\(v2 = v-w =\left(\vectorPrint{v2}\right)\)
+\end{lstlisting} &
+\vectorSub{v2}{v}{w}
+\(v2 = v-w =\left(\vectorPrint{v2}\right)\)
+\\
+\midrule
+\begin{lstlisting}
+\vectorMulNum{v3}{v}{complex('3+i')}
+\(v3 = 3v =\left(\vectorPrint{v3}\right)\)
+\end{lstlisting} &
+\vectorMulNum{v3}{v}{complex('3+i')}
+\(v3 = 3v =\left(\vectorPrint{v3}\right)\)
+\\
+\midrule
+\begin{lstlisting}
+\(v \cdot w =\vectorDot{v}{w}\)
+\end{lstlisting} &
+\(v \cdot w =\vectorDot{v}{w}\)
+\\
+\midrule
+\begin{lstlisting}
+\vectorCross{v4}{v}{w}
+\(v \times w =\left(\vectorPrint{v4}\right)\)
+\end{lstlisting} &
+\vectorCross{v4}{v}{w}
+\(v \times w =\left(\vectorPrint{v4}\right)\)
+\\
+\midrule
+\begin{lstlisting}
+ Sum norm of a vector \(v =  \vectorSumNorm{v}\)
+\end{lstlisting} &
+  Sum norm of a vector \(v =  \vectorSumNorm{v}\)
+\\
+\midrule
+\begin{lstlisting}
+Euclidean norm of a vector
+ \(v =  \vectorEuclidNorm{v}\)
+\end{lstlisting} &
+Euclidean norm of a vector
+ \(v =  \vectorEuclidNorm{v}\)
+\\
+\midrule
+\begin{lstlisting}
+p norm of a vector \(v =  \vectorpNorm{v}{3}\)
+\end{lstlisting} &
+p norm of a vector \(v =  \vectorpNorm{v}{3}\)
+\\
+\midrule
+\begin{lstlisting}
+Sup norm of a vector \(v =  \vectorSupNorm{v}\)
+\end{lstlisting} &
+Sup norm of a vector \(v =   4.2426406871193\)
+\\
+\midrule
+\begin{lstlisting}
+\vectorCreateRandom{v5}{3}{9}{90}
+\(v5  =\left(\vectorPrint{v5}\right)\)
+\end{lstlisting} &
+\vectorCreateRandom{v5}{3}{9}{90}
+\(v5  =\left(\vectorPrint{v5}\right)\)
+\\
+\midrule
+\begin{lstlisting}
+\vectorOp{v6}{v+w-2*v}
+\(v6  =\left(\vectorPrint{v6}\right)\)
+\end{lstlisting} &
+\vectorOp{v6}{v+w-2*v}
+\(v6  =\left(\vectorPrint{v6}\right)\)
+\\
+\midrule
+\begin{lstlisting}
+ angle between vector \(v\) and \(w\) is
+ \( \vectorGetAngle{v}{w}\).
+\end{lstlisting} &
+ angle between vector \(v\) and \(w\) is
+ \( \vectorGetAngle{v}{w}\).
+\\
+\midrule
+\begin{lstlisting}
+\vectorParse{y}
+\end{lstlisting} &
+\vectorParse{y}
+\\
+\bottomrule \\
+\caption{Illustration of commands for operations on vectors}
+\label{tbl:illluavector}
+\end{longtable}
+The package has commands for performing Gram Schmidt Orthogonalisation process. It can also produce the computations in a step-by step manner. 
+\begin{framed}
+\begin{lstlisting}[label={code:luavecgs},  caption={Gram Schmidt Orthogonalisation process in the lualinalgpackage}]
+\vectorNew{v1}{{1,2,3}}
+\vectorNew{v2}{{4,5,6}}
+\vectorNew{v3}{{7,8,90}}
+\[v1=\left(\vectorPrint{v1}\right)\]
+\[v2=\left(\vectorPrint{v2}\right)\]
+\[v3=\left(\vectorPrint{v3}\right)\]
+Gram Schmidt on \(v1,v2,v3\):  \vectorGramSchmidt[brckt=round,truncate=3]{{'v1','v2','v3'}}
+\vectorGramSchmidtSteps[brckt=round,truncate=3]{{'v1','v2','v3'}}
+\end{lstlisting}
+\end{framed}
+Listing \ref{code:luavecgs} outputs the following. 
+\begin{framed}
+\vectorNew{v1}{{1,2,3}}
+\vectorNew{v2}{{4,5,6}}
+\vectorNew{v3}{{7,8,90}}
+\[v1=\left(\vectorPrint{v1}\right)\]
+\[v2=\left(\vectorPrint{v2}\right)\]
+\[v3=\left(\vectorPrint{v3}\right)\]
+Gram Schmidt on \(v1,v2,v3\):  \vectorGramSchmidt[brckt=round,truncate=3]{{'v1','v2','v3'}}
+\vectorGramSchmidtSteps[brckt=round,truncate=3]{{'v1','v2','v3'}}
+\end{framed}
+
+In addition to \verb|\mathRound|, the command \verb|complexRound| is also available. It has the following syntax.
+\begin{verbatim}
+\complexRound{complex number}{number of decimal places}
+\end{verbatim}
+
+This command has two compulsory arguments. The complex number and number of decimal places to which number should be rounded off.  For example,
+ \verb| \complexRound{lcomplex(3.3333666, 6.777666)}{3}| outputs to \(\complexRound{lcomplex(3.3333666, 6.777666)}{3}\).  This command can be nested with other commands in the package.
+
+\subsection{Plotting  vectors}
+The \verb|lualinalg| package can be used with other packages that have facility to plot vectors defined over the field of real numbers in 2 or 3 dimensions. Listing \ref{code:luavecplot} illustrates plotting of vectors in 2-D plane by using \verb|lualinalg| and \verb|tikz| package.
+\begin{lstlisting}[label={code:luavecplot},  caption={Plotting vectors in 2-dimensions with the lualinalg and tikz packages}]
+\tdplotsetmaincoords{0}{0}
+\begin{tikzpicture}[scale=1,
+    tdplot_main_coords,
+    axis/.style={->,blue,thick},
+    vector/.style={-stealth,red,very thick},
+    vector guide/.style={dashed,red,thick}]
+\vectorNew{o}{{0,0}}
+\vectorNew{e1}{{4,0}}
+\vectorNew{e2}{{0,4}}
+\vectorNew{f}{{2,1}}
+\vectorNew{g}{{1,2}}
+% Axes
+\draw [axis] \vectorParse{o}-- \vectorParse{e1} node [below left] {$x$};
+\draw [axis] \vectorParse{o}-- \vectorParse{e2} node [right] {$y$};
+% Plotting Vectors
+\draw [vector]  \vectorParse{o} --\vectorParse{f};
+\draw [vector]  \vectorParse{o} --\vectorParse{g};
+\vectorOp{h}{f+g}
+\draw [vector]  \vectorParse{o} --\vectorParse{h};
+\draw [vector,dashed,black]  \vectorParse{f} --\vectorParse{h};
+\draw [vector,dashed,black]  \vectorParse{g} --\vectorParse{h};
+% Labels
+ \node [below right] at \vectorParse{f} {$f$};
+ \node [above  left] at \vectorParse{g} {$g$};
+\node [above  left] at \vectorParse{h} {$f+g$};
+ \draw[vector guide, black] \vectorParse{h} -- (\vectorGetCoordinate{h}{1},0) node [below] {$x=\vectorGetCoordinate{h}{1}$};
+  \draw[vector guide, black] \vectorParse{h} -- (0,\vectorGetCoordinate{h}{2}) node [left] {$y=\vectorGetCoordinate{h}{2}$};
+\end{tikzpicture}
+\end{lstlisting}
+Listing \ref{code:luavecplot} produces  figure \ref{fig:2dvecplot}.
+\begin{figure}
+  \centering
+  \tdplotsetmaincoords{0}{0}
+\begin{tikzpicture}[scale=1,
+    tdplot_main_coords,
+    axis/.style={->,blue,thick},
+    vector/.style={-stealth,red,very thick},
+    vector guide/.style={dashed,red,thick}]
+\vectorNew{o}{{0,0}}
+\vectorNew{e1}{{4,0}}
+\vectorNew{e2}{{0,4}}
+\vectorNew{f}{{2,1}}
+\vectorNew{g}{{1,2}}
+% Axes
+\draw [axis] \vectorParse{o}-- \vectorParse{e1} node [below left] {$x$};
+\draw [axis] \vectorParse{o}-- \vectorParse{e2} node [right] {$y$};
+% Plotting Vectors
+\draw [vector]  \vectorParse{o} --\vectorParse{f};
+\draw [vector]  \vectorParse{o} --\vectorParse{g};
+\vectorOp{h}{f+g}
+\draw [vector]  \vectorParse{o} --\vectorParse{h};
+\draw [vector,dashed,black]  \vectorParse{f} --\vectorParse{h};
+\draw [vector,dashed,black]  \vectorParse{g} --\vectorParse{h};
+% Labels
+ \node [below right] at \vectorParse{f} {$f$};
+ \node [above  left] at \vectorParse{g} {$g$};
+\node [above  left] at \vectorParse{h} {$f+g$};
+ \draw[vector guide, black] \vectorParse{h} -- (\vectorGetCoordinate{h}{1},0) node [below] {$x=\vectorGetCoordinate{h}{1}$};
+  \draw[vector guide, black] \vectorParse{h} -- (0,\vectorGetCoordinate{h}{2}) node [left] {$y=\vectorGetCoordinate{h}{2}$};
+\end{tikzpicture}
+  \caption{Plotting  2-D Vectors with lualinalg and tikz packages}
+  \label{fig:2dvecplot}
+\end{figure}
+
+
+Listing \ref{code:luavecplot2} illustrates plotting of vectors in 3-D plane by using \verb|lualinalg| and \verb|tikz| package.
+\begin{lstlisting}[label={code:luavecplot2},  caption={Plotting vectors in 3-dimensions with the lualinalg and tikz packages}]
+\documentclass{article}
+\usepackage{tikz,tikz-3dplot,lualinalg}
+\begin{document}
+\tdplotsetmaincoords{60}{120}
+\begin{tikzpicture}[scale=1,
+    tdplot_main_coords,
+    axis/.style={->,blue,thick},
+    vector/.style={-stealth,red,very thick},
+    vector guide/.style={dashed,red,thick}]
+\vectorNew{o}{{0,0,0}}
+\vectorNew{e1}{{3,0,0}}
+\vectorNew{e2}{{0,5,0}}
+\vectorNew{e3}{{0,0,4}}
+\vectorNew{f}{{2,2,0}}
+\vectorNew{g}{{-1,2,2}}
+% Axes
+\draw [axis] \vectorParse{o}-- \vectorParse{e1} node [below left] {$x$};
+\draw [axis] \vectorParse{o}-- \vectorParse{e2} node [right] {$y$};
+\draw [axis] \vectorParse{o}-- \vectorParse{e3} node [above] {$z$};
+% Plotting Vectors
+\draw [vector]  \vectorParse{o} --\vectorParse{f};
+\draw [vector]  \vectorParse{o} --\vectorParse{g};
+\vectorOp{h}{f+g}
+\draw [vector]  \vectorParse{o} --\vectorParse{h};
+% Labels
+ \node [below right] at \vectorParse{f} {$f$};
+ \node [above  left] at \vectorParse{g} {$g$};
+\node [right] at \vectorParse{h} {$f+g$};
+ \draw[vector guide, black] \vectorParse{h} -- (\vectorGetCoordinate{h}{1},0,0) node [left] {$x=\vectorGetCoordinate{h}{1}$};
+  \draw[vector guide, black] \vectorParse{h} -- (0,\vectorGetCoordinate{h}{2},0) node [below] {$y=\vectorGetCoordinate{h}{2}$};
+   \draw[vector guide, black] \vectorParse{h} -- (0,0,\vectorGetCoordinate{h}{3}) node [left] {$z=\vectorGetCoordinate{h}{3}$};
+\end{tikzpicture}
+\end{document}
+\end{lstlisting}
+
+Listing \ref{code:luavecplot2} produces  figure \ref{fig:3dvecplot}.
+\begin{figure}
+  \centering
+  \tdplotsetmaincoords{60}{120}
+\begin{tikzpicture}[scale=1,
+    tdplot_main_coords,
+    axis/.style={->,blue,thick},
+    vector/.style={-stealth,red,very thick},
+    vector guide/.style={dashed,red,thick}]
+\vectorNew{o}{{0,0,0}}
+\vectorNew{e1}{{3,0,0}}
+\vectorNew{e2}{{0,5,0}}
+\vectorNew{e3}{{0,0,4}}
+\vectorNew{f}{{2,2,0}}
+\vectorNew{g}{{-1,2,2}}
+% Axes
+\draw [axis] \vectorParse{o}-- \vectorParse{e1} node [below left] {$x$};
+\draw [axis] \vectorParse{o}-- \vectorParse{e2} node [right] {$y$};
+\draw [axis] \vectorParse{o}-- \vectorParse{e3} node [above] {$z$};
+% Plotting Vectors
+\draw [vector]  \vectorParse{o} --\vectorParse{f};
+\draw [vector]  \vectorParse{o} --\vectorParse{g};
+\vectorOp{h}{f+g}
+\draw [vector]  \vectorParse{o} --\vectorParse{h};
+% Labels
+ \node [below right] at \vectorParse{f} {$f$};
+ \node [above  left] at \vectorParse{g} {$g$};
+\node [right] at \vectorParse{h} {$f+g$};
+ \draw[vector guide, black] \vectorParse{h} -- (\vectorGetCoordinate{h}{1},0,0) node [left] {$x=\vectorGetCoordinate{h}{1}$};
+  \draw[vector guide, black] \vectorParse{h} -- (0,\vectorGetCoordinate{h}{2},0) node [below] {$y=\vectorGetCoordinate{h}{2}$};
+   \draw[vector guide, black] \vectorParse{h} -- (0,0,\vectorGetCoordinate{h}{3}) node [left] {$z=\vectorGetCoordinate{h}{3}$};
+\end{tikzpicture}
+  \caption{Plotting  3-D Vectors with lualinalg and tikz packages}
+  \label{fig:3dvecplot}
+\end{figure}
+
+\section{Defining matrices and operations on matrices} 
+Matrices are defined with the \verb|\matrixNew| command.
+\begin{lstlisting}
+\matrixNew{matrix name}{row entries}
+\end{lstlisting}
+This command has two compulsory arguments: \verb|matrix name| and \verb|row entries|. Each row of the matrix is enclosed in curly brackets. A comma separates numbers in rows. Rows are also separated by a comma. The whole matrix is then enclosed in curly brackets. The following are a few valid ways of defining matrices.
+
+\begin{lstlisting}
+\def\n{{{1,2,3},{4,5,6},{7,8,lcomplex(9,3)}}}
+\def\s{{{1,2,3},{4,5,6},{7,8,10}}}
+\matrixNew{m}{\n}
+\matrixNew{n}{\s}
+% an alternative way
+\matrixNew{m}{{{1,2,3},{4,5,6},{7,8,lcomplex(9,3)}}}
+\matrixNew{n}{{{1,2,3},{4,5,6},{7,8,10}}}
+\end{lstlisting}
+
+The identity and zero matrices can be defined as well  by using  the \verb|\matrixNew| command. For example, the following commands 
+\begin{lstlisting}
+\matrixNew{mtx}{3,'I'}
+I = \(\matrixPrint{mtx}\)
+\matrixNew{O}{3,4,'zero'}
+O = \(\matrixPrint{O}\)
+\end{lstlisting}
+output to 
+\matrixNew{mtx}{3,'I'}
+I = \(\matrixPrint{mtx}\) 
+\matrixNew{O}{3,4,'zero'}
+O = \(\matrixPrint{O}\)
+\subsection{Commands for operations on matrices}
+Table \ref{tbl:luamtxcmd} lists all commands for operations on matrices in the \verb|lualinalg| package. 
+\begin{longtable}{m{7cm}m{7.5cm}}
+\toprule
+ \multicolumn{1}{c}{\textcolor{blue}{Command Format}} & \multicolumn{1}{c}{\textcolor{blue}{Description}} \\
+\toprule
+\multicolumn{2}{c}{Printing Matrices}\\
+\midrule
+\begin{lstlisting}
+\matrixPrint[type,truncate]{mtx}
+\end{lstlisting} & Prints matrix. Accepts two \emph{optional} arguments: \verb|type| and \verb|truncate|. The \verb|type| may be one of the values  \verb|pmatrix,bmatrix, vmatrix,Vmatrix|.
+The default type is \verb|bmatrix|. The \verb|truncate| specifies the number of digits  up to which matrix entries are to be truncated. The value of \verb|truncate|  may be 0,1,2,\ldots.\\
+\midrule
+\multicolumn{2}{c}{Some parameters of defined matrices} \\
+\midrule
+\begin{lstlisting}
+\matrixNumRows{matrix}
+\end{lstlisting} &
+Gives the number of rows in a matrix.\\
+\midrule
+\begin{lstlisting}
+\matrixNumCols{matrix}
+\end{lstlisting}&
+Gives the number of columns in a matrix.\\
+\midrule
+\begin{lstlisting}
+\matrixGetElement{matrix}{i}{j}
+\end{lstlisting}
+&
+Gives an entry of matrix in the \(i\)th row and the \(j\)th column. \\
+\midrule
+\multicolumn{2}{c}{Algebraic operations on matrices} \\
+\midrule
+ \begin{lstlisting}
+\matrixAdd{matrix}{m1}{m2}
+\end{lstlisting}&
+Defines a new matrix as the addition of matrices m1 and m2. The second matrix may have more rows and\textbackslash or columns.\\
+\midrule
+ \begin{lstlisting}
+\matrixSub{matrix}{m1}{m2}
+\end{lstlisting}&
+Defines a new matrix as the subtraction of matrices m1 and m2. The second matrix may have more rows and\textbackslash or columns.\\
+\midrule
+ \begin{lstlisting}
+\matrixMulNum{matrix}{number}{m1}
+\end{lstlisting}&
+Defines a new matrix obtained by multiplying each entry of matrix m1 by s real or complex number. \\
+\midrule
+\begin{lstlisting}
+\matrixMul{matrix}{m1}{m2}
+\end{lstlisting}&
+Defines a new matrix obtained by multiplying matrix m1 by matrix m2. The number of rows in matrix m2 must equal the number of columns in matrix m1.\\
+\midrule
+ \begin{lstlisting}
+\matrixPow{matrix}{m1}{power}
+\end{lstlisting}&
+Defines a new matrix obtained by taking the \(i\)th power of matrix m1 (multiplying matrix m1 \(i\) times with itself). \\
+\midrule
+ \begin{lstlisting}
+\matrixInvert{matrix}{matrix1}
+\end{lstlisting}&
+Defines a new matrix obtained by taking the inverse of matrix1. It throws an error if matrix is not invertible. \\
+\midrule
+\begin{lstlisting}
+\matrixTrace{matrix}
+\end{lstlisting}&
+Gives the trace (sum of diagonal entries) of a square matrix. It throws an error if the matrix is not square. \\
+\midrule
+
+\begin{lstlisting}
+\matrixConjugate{matrix}{m1}
+\end{lstlisting}&
+Defines a new matrix obtained by taking the complex conjugate of each entry of matrix m1.  \\
+\midrule
+ \begin{lstlisting}
+\matrixConjugateT{matrix}{m1}
+\end{lstlisting}&
+Defines a new matrix obtained by taking  the transpose of matrix m1 and then the complex conjugate of each  matrix entry.  \\
+\midrule
+\begin{lstlisting}
+\matrixNormOne{matrix}
+\end{lstlisting}&
+Calculates the norm1  of a matrix. For matrix \(A\) of size \(m \times n\), it is given by 
+\[ \|A\|_{1}=\max _{1 \leqslant j \leqslant n} \sum_{i=1}^{m}\left|a_{i j}\right| \]   \\
+\midrule
+\begin{lstlisting}
+\matrixNormInfty{matrix}
+\end{lstlisting}&
+Calculates the infinity norm  of a matrix. For matrix \(A\) of size \(m \times n\), it is given by 
+\[ \|A\|_{\infty}=\max _{1 \leqslant i \leqslant m} \sum_{j=1}^{n}\left|a_{i j}\right| \]   \\
+\midrule
+\begin{lstlisting}
+\matrixNormMax{matrix}
+\end{lstlisting}&
+Calculates the max norm  of a matrix. For matrix \(A\) of size \(m \times n\), it is given by 
+\[ \|A\|_{\max }=\max _{i,j}\left|a_{i j}\right| \]   \\
+\midrule
+ \begin{lstlisting}
+\matrixNormF{matrix}
+\end{lstlisting}&
+Calculates  the Frobenius  norm  of a matrix. For matrix \(A\) of size \(m \times n\), it is given by 
+\[\|A\|_{F}=\sqrt{\sum_{i=1}^{m} \sum_{j=1}^{n}\left|a_{i j}\right|^{2}} \]   \\
+\midrule
+ \begin{lstlisting}
+\matrixRank{matrix}
+\end{lstlisting}&
+Gives the rank of matrix \(m\). It also supports matrices of complex numbers. \\
+\midrule
+ \begin{lstlisting}
+\matrixDet{matrix}
+\end{lstlisting}&
+Gives the determinant of matrix \(m\). It also supports matrices of complex numbers. \\
+\midrule
+ \begin{lstlisting}
+\matrixTranspose{matrix}{m1}
+\end{lstlisting}&
+Defines a new matrix obtained by taking the transpose of matrix m1. \\
+\midrule
+ \begin{lstlisting}
+\matrixSetElement{matrix}{i}{j}{val}
+\end{lstlisting}
+&
+Set entry of a matrix in the \(i\)th  row and \(j\)th column as \verb|val|. \\
+\midrule
+ \begin{lstlisting}
+\matrixSubmatrix{sm}{m}{i}{j}{k}{l}
+\end{lstlisting}&
+Defines a new matrix sm obtained by taking a submatrix of matrix m. Here \(i,j\) denotes the start row and start column,  and \(k,l\) denotes the end row and end column for obtaining the submatrix.    \\
+\midrule
+ \begin{lstlisting}
+\matrixConcatH{matrix}{m1}{m2}
+\end{lstlisting}&
+Defines a new matrix obtained by augmenting matrix m1  with matrix m2 horizontally. \\
+\midrule
+ \begin{lstlisting}
+\matrixConcatV{matrix}{m1}{m2}
+\end{lstlisting}&
+Defines a new matrix obtained by augmenting matrix m1  with matrix m2 vertically. \\
+\midrule
+\begin{lstlisting}
+\matrixOp{matrix}{expression}
+\end{lstlisting}&
+Defines a new matrix obtained by evaluating an expression. The expression supports all standard operations such as  \(+,*, \) \^ \ . \\
+\midrule
+\begin{lstlisting}
+\matrixCopy{matrix}{matrix1}
+\end{lstlisting}&
+Defines a new matrix obtained by copying values from matrix1. \\
+\midrule
+
+\begin{lstlisting}
+\matrixEql{m1}{m2}
+\end{lstlisting}&
+Returns true if m1 = m2, otherwise returns false. \\
+\midrule
+
+ \begin{lstlisting}
+\matrixCreateRandom
+{m}{i}{j}{k}{l}
+\end{lstlisting}&
+Creates a new matrix m with random numbers. Here \(i, j\) denotes the number of rows and columns, and \(k, l\) denotes the start and end integers between which random numbers are generated.  \\
+\midrule
+\multicolumn{2}{c}{Elementary row operations on matrices} \\
+\midrule
+ \begin{lstlisting}
+\matrixSwapRows{mtx}{m1}{i}{j}
+\end{lstlisting}&
+Defines a new matrix mtx obtained by swapping the \(i\)th and  \(j\)th rows of matrix m1. \\
+\midrule
+ \begin{lstlisting}
+\matrixMulRow{matrix}{m}{i}{no}
+\end{lstlisting}&
+Defines a new matrix obtained by multiplying the \(i\)th row of matrix1 by a real or complex number. \\
+\midrule
+\begin{lstlisting}
+\matrixMulAddRow{mtx}{m}{i}{no}{j}
+\end{lstlisting}&
+Defines a new matrix mtx obtained by multiplying the \(i\)th row of matrix1 by a real or complex number and adding it to the \(j\)th row.  \\
+\midrule
+\multicolumn{2}{c}{Elementary column operations on matrices} \\
+\midrule
+\begin{lstlisting}
+\matrixSwapCols{mtx}{m}{i}{j}
+\end{lstlisting}&
+Defines a new matrix mtx obtained by swapping the \(i\)th and  \(j\)th columns of matrix m. \\
+\midrule
+\begin{lstlisting}
+\matrixMulCol{matrix}{m}{i}{no}
+\end{lstlisting}&
+Defines a new matrix obtained by multiplying the \(i\)th column of matrix1 by a real or complex number. \\
+\midrule
+ \begin{lstlisting}
+\matrixMulAddCol{mtx}{m}{i}{no}{j}
+\end{lstlisting}&
+Defines a new matrix mtx obtained by multiplying the \(i\)th column of matrix1 by a real or complex number and adding it to the \(j\)th column.  \\
+\midrule
+\multicolumn{2}{c}{Reduced row echelon form of matrix} \\
+\midrule
+ \begin{lstlisting}
+\matrixRREF{matrix}{matrix1}
+\end{lstlisting}&
+Defines a new matrix obtained by taking the reduced row echelon form of matrix1. It supports matrices of complex numbers as well. \\
+\midrule
+\begin{lstlisting}
+\matrixRREFSteps[type,truncate]
+{matrix}
+\end{lstlisting}&
+Obtains  reduced row echelon form of matrix in a step-by-step manner. The command has two optional parameters \verb|type| and \verb|truncate|. It supports matrices with complex numbers as well. \verb|type| may be one of the values  \verb|pmatrix,bmatrix, vmatrix,Vmatrix|.
+The default type is \verb|bmatrix|. \verb|truncate| specifies number of digits  up to which matrix entries are to be truncated. \verb|truncate|  may be 0,1,2,\ldots. \\
+\midrule
+\multicolumn{2}{c}{Gauss-Jordan Elimination} \\
+\midrule
+\begin{lstlisting}
+\matrixGaussJordan{matrix}
+{m1}{m2}
+\end{lstlisting}&
+Defines new matrix obtained by performing Gauss-Jordan elimination on augmented matrix \(m1|m2\). \\
+\midrule
+\begin{lstlisting}
+\matrixGaussJordanSteps[type,truncate]
+{matrix}{m1}{m2}
+\end{lstlisting}&
+Defines new matrix obtained by performing Gauss-Jordan elimination on augmented matrix \(m1|m2\)  in a step-by-step manner. The command has two optional parameters \verb|type| and \verb|truncate|. \verb|type| may be one of the values  \verb|pmatrix, bmatrix, vmatrix,| \verb |Vmatrix|. The default type is \verb|bmatrix|. \verb|truncate| specifies number of digits  up to which matrix entries are to be truncated. \verb|truncate|  may be 0,1,2,\ldots. \\
+\bottomrule \\
+\caption{Commands for operations on matrices}
+\label{tbl:luamtxcmd}
+\end{longtable}
+
+\subsection{Illustrations of matrix operations}
+The following commands define matrices \(m,n,\) and \(r\).
+\begin{lstlisting}
+\def\r{{{1,2,3},{4,5,6},{7,8,lcomplex(9,3)}}}
+\def\s{{{1,2,3},{4,5,6},{7,8,10}}}
+\def\t{{{1,2,3},{4,5,6},{7,8,9}}}
+\def\u{{{1},{2},{3}}}
+\def\z{{{lfrac(1,2),lcomplex(2,3),3},{4,5,6},{7,8,9}}}
+
+\matrixNew{m}{\r}
+\matrixNew{n}{\s}
+\matrixNew{p}{\t}
+\matrixNew{q}{\u}
+\matrixNew{r}{\z}
+
+\end{lstlisting}
+
+\def\r{{{1,2,3},{4,5,6},{7,8,lcomplex(9,3)}}}
+\def\s{{{1,2,3},{4,5,6},{7,8,10}}}
+\def\t{{{1,2,3},{4,5,6},{7,8,9}}}
+\def\u{{{1},{2},{3}}}
+\def\z{{{lfrac(1,2),lcomplex(2,3),3},{4,5,6},{7,8,9}}}
+
+\matrixNew{m}{\r}
+\matrixNew{n}{\s}
+\matrixNew{p}{\t}
+\matrixNew{q}{\u}
+\matrixNew{r}{\z}
+Table \ref{tbl:illluamatrix} illustrates various operations on matrices \(m,n,p,\) and \(q\).
+\begin{center}
+\begin{longtable}{lc}
+\toprule
+Commands & Output Produced\\
+\toprule
+\multicolumn{2}{c}{Printing matrices}\\
+\midrule
+\begin{lstlisting}
+\(m=\matrixPrint{m}\)
+\end{lstlisting} &
+\(m=\matrixPrint{m}\)
+\\
+\midrule
+\begin{lstlisting}
+\(m=\matrixPrint[type=pmatrix]{m}\)
+\end{lstlisting} &
+\(m=\matrixPrint[type=pmatrix]{m}\)
+\\
+\midrule
+\multicolumn{2}{c}{Some parameters of defined matrices}\\
+\midrule
+\begin{lstlisting}
+No. or rows in matrix \(m
+= \matrixNumRows{m}\)
+\end{lstlisting} &
+No. or rows in matrix \(m
+= \matrixNumRows{m}\)\\
+\midrule
+\begin{lstlisting}
+No. or columns in matrix \(m
+= \matrixNumCols{m}\)
+\end{lstlisting} &
+No. or columns in matrix \(m
+= \matrixNumCols{m}\)\\
+\midrule
+\begin{lstlisting}
+Element of matrix \(m\) at \((3,3) =
+ \matrixGetElement{m}{3}{3}\)
+\end{lstlisting} &
+Element of matrix \(m\) at \((3,3) =
+ \matrixGetElement{m}{3}{3}\)\\
+\midrule
+\multicolumn{2}{c}{Algebraic operations on matrices}\\
+\midrule
+\begin{lstlisting}
+\matrixAdd{m1}{m}{p}
+\(m1 = \matrixPrint{m1}\)
+\end{lstlisting} &
+\matrixAdd{m1}{m}{p}
+\matrixAdd{m1}{m}{p}
+\(m1 = \matrixPrint{m1}\)\\
+\midrule
+\begin{lstlisting}
+\matrixSub{m2}{m}{p}
+\(m2 = \matrixPrint{m2}\)
+\end{lstlisting} &
+\matrixSub{m2}{m}{p}
+\(m2 = \matrixPrint{m2}\)\\
+\midrule
+\begin{lstlisting}
+\matrixMulNum{m3}{3}{m}
+\(m3 = \matrixPrint{m3}\)
+\end{lstlisting} &
+\matrixMulNum{m3}{3}{m}
+\(m3 = \matrixPrint{m3}\)\\
+\midrule
+\begin{lstlisting}
+\matrixMul{m4}{m}{p}
+\(m4 = \matrixPrint{m4}\)
+\end{lstlisting} &
+\matrixMul{m4}{m}{p}
+\(m4 = \matrixPrint{m4}\)\\
+\midrule
+\begin{lstlisting}
+\matrixPow{m5}{m}{2}
+\(m5 = \matrixPrint{m5}\)
+\end{lstlisting} &
+\matrixPow{m5}{m}{2}
+\(m5 = \matrixPrint{m5}\)\\
+\midrule
+\begin{lstlisting}
+\matrixInvert{m6}{m}
+\(m6 = \matrixPrint[truncate=2]{m6}\)
+\end{lstlisting} &
+\matrixInvert{m6}{m}
+\(m6 = \matrixPrint[truncate=2]{m6}\)\\
+\midrule
+
+\begin{lstlisting}
+Rank of matrix \(m =\matrixRank{m}\)
+
+\end{lstlisting} &
+Rank of matrix \(m =\matrixRank{m}\)\\
+\midrule
+\begin{lstlisting}
+Determinant of matrix \(m =\matrixDet{m}\)
+\end{lstlisting} &
+Determinant of matrix \(m =\matrixDet{m}\)\\
+\midrule
+\begin{lstlisting}
+\matrixTranspose{m7}{m}
+\(m7 = \matrixPrint{m7}\)
+\end{lstlisting} &
+\matrixTranspose{m7}{m}
+\(m7 = \matrixPrint{m7}\)\\
+\midrule
+\begin{lstlisting}
+\matrixSetElement{n}{3}{3}{300}
+\(n= \matrixPrint{n}\)
+\end{lstlisting} &
+\matrixSetElement{n}{3}{3}{300}
+\(n= \matrixPrint{n}\)\\
+\midrule
+
+\begin{lstlisting}
+\matrixSubmatrix{m8}{m}{1}{2}{2}{3}
+\(m8 = \matrixPrint{m8}\)
+\end{lstlisting} &
+\matrixSubmatrix{m8}{m}{1}{2}{2}{3}
+\(m8 = \matrixPrint{m8}\)\\
+\midrule
+\begin{lstlisting}
+\matrixConcatH{m9}{m}{q}
+\(m9= \matrixPrint{m9}\)
+\end{lstlisting} &
+\matrixConcatH{m9}{m}{q}
+\(m9= \matrixPrint{m9}\)\\
+\midrule
+\begin{lstlisting}
+\matrixConcatV{m10}{m}{n}
+\(m10= \matrixPrint{m10}\)
+\end{lstlisting} &
+\matrixConcatV{m10}{m}{n}
+\(m10= \matrixPrint{m10}\)\\
+\midrule
+\begin{lstlisting}
+\matrixOp{m11}{m*m+2*m}
+\(\matrixPrint[truncate=4]{m11}\)
+\end{lstlisting} &
+\matrixOp{m11}{m*m+2*m}
+\(\matrixPrint[truncate=4]{m11}\)\\
+\midrule
+\begin{lstlisting}
+\matrixCopy{m12}{m}
+\(m12 = \matrixPrint{m12}\)
+\end{lstlisting} &
+\matrixCopy{m12}{m}
+\(m12 = \matrixPrint{m12}\)\\
+\midrule
+\begin{lstlisting}
+\matrixEql{m12}{m}
+\end{lstlisting} &
+\matrixEql{m12}{m}\\
+\midrule
+\begin{lstlisting}
+trace of matrix  \( m = \matrixTrace{m}\)
+\end{lstlisting} &
+trace of matrix  \( m = \matrixTrace{m}\)  \\
+
+\midrule
+\begin{lstlisting}
+\matrixConjugate{mc}{m}
+\(mc = \matrixPrint{mc}\)
+\end{lstlisting} &
+\matrixConjugate{mc}{m}
+\(mc = \matrixPrint{mc}\)\\
+\midrule
+
+\begin{lstlisting}
+\matrixConjugateT{mct}{m}
+\(mct = \matrixPrint{mct}\)
+\end{lstlisting} &
+\matrixConjugateT{mct}{m}
+\(mct = \matrixPrint{mct}\)\\
+\midrule
+
+\begin{lstlisting}
+ \(\matrixNormOne{m}\)
+\end{lstlisting} &
+ \(\matrixNormOne{m}\)  \\
+
+\midrule
+\begin{lstlisting}
+  \(\matrixNormInfty{m}\)
+\end{lstlisting} &
+ \(\matrixNormInfty{m}\)  \\
+
+\midrule
+\begin{lstlisting}
+ \(\matrixNormMax{m}\)
+\end{lstlisting} &
+\(\matrixNormMax{m}\)  \\
+
+\midrule
+\begin{lstlisting}
+ \(\matrixNormF{m}\)
+\end{lstlisting} &
+ \(\matrixNormF{m}\)  \\
+
+\midrule
+\multicolumn{2}{c}{Elementary row operations on matrices}\\
+\midrule
+\begin{lstlisting}
+\matrixSwapRows{m13}{m}{2}{3}
+\(m13 = \matrixPrint{m13}\)
+\end{lstlisting} &
+\matrixSwapRows{m13}{m}{2}{3}
+\(m13 = \matrixPrint{m13}\)\\
+\midrule
+\begin{lstlisting}
+\matrixMulRow{m14}{m}{3}{300}
+\(m14 = \matrixPrint{m14}\)
+\end{lstlisting} &
+\matrixMulRow{m14}{m}{3}{300}
+\(m14 = \matrixPrint{m14}\)\\
+\midrule
+\begin{lstlisting}
+\matrixMulAddRow{m15}{m}{2}{10}{3}
+\(m15 = \matrixPrint{m15}\)
+\end{lstlisting} &
+\matrixMulAddRow{m15}{m}{2}{10}{3}
+\(m15 = \matrixPrint{m15}\)\\
+\midrule
+\multicolumn{2}{c}{Elementary column operations on matrices}\\
+\midrule
+\begin{lstlisting}
+\matrixSwapCols{m16}{m}{2}{3}
+\(m16 = \matrixPrint{m16}\)
+\end{lstlisting} &
+\matrixSwapCols{m16}{m}{2}{3}
+\(m16 = \matrixPrint{m16}\)\\
+\midrule
+\begin{lstlisting}
+\matrixMulCol{m17}{m}{3}{300}
+\(m17 = \matrixPrint{m17}\)
+\end{lstlisting} &
+\matrixMulCol{m17}{m}{3}{300}
+\(m17 = \matrixPrint{m17}\)\\
+\midrule
+
+\begin{lstlisting}
+\matrixMulAddCol{m18}{m}{2}{10}{3}
+\(m18 = \matrixPrint{m18}\)
+\end{lstlisting} &
+\matrixMulAddCol{m18}{m}{2}{10}{3}
+\(m18 = \matrixPrint{m18}\)\\
+\midrule
+
+\multicolumn{2}{c}{Reduced row echelon form of a matrix}\\
+\midrule
+\begin{lstlisting}
+\matrixRREF{m19}{p}
+\(m19 = \matrixPrint{m19}\)
+\end{lstlisting} &
+\matrixRREF{m19}{p}
+\(m19 = \matrixPrint{m19}\)\\
+\midrule
+\begin{lstlisting}
+\matrixRREF{m20}{m}
+\(m20 = \matrixPrint{m20}\)
+\end{lstlisting} &
+\matrixRREF{m20}{m}
+\(m20 = \matrixPrint{m20}\)\\
+\bottomrule \\
+\caption{Illustration of commands for operations on matrices}
+\label{tbl:illluamatrix}
+\end{longtable}
+\end{center}
+The package has command \verb|\matrixRREFSteps| to produce step-by-step computation of reduced row echelon form of  a matrix. The command \verb|\matrixRREFSteps{r}| outputs the following. 
+\renewcommand*{\arraystretch}{1.5}
+\begin{framed}
+ \matrixRREFSteps{r} 
+\end{framed}
+\renewcommand*{\arraystretch}{1.0}
+The command \verb|\matrixGaussJordan| is used to obtain Gauss-Jordan elimination of an augmented matrix. 
+\begin{lstlisting}
+\def\a{{{lfrac(1,2),1,1},{2,-1,-1},{1,-1,1}}}
+\def\b{{{3},{3},{9}}}
+\matrixNew{S}{\a}
+\matrixNew{T}{\b}
+\matrixConcatH{W}{S}{T}
+$$W = \matrixPrint{W}$$
+\matrixGaussJordan{U}{S}{T}
+$$U = \matrixPrint{U}$$
+\end{lstlisting}
+The above code produces the following output.
+\def\a{{{lfrac(1,2),1,1},{2,-1,-1},{1,-1,1}}}
+\def\b{{{3},{3},{9}}}
+\matrixNew{S}{\a}
+\matrixNew{T}{\b}
+\matrixConcatH{W}{S}{T}
+\renewcommand{\arraystretch}{1.5}
+\begin{framed}
+$$W = \matrixPrint{W}$$
+\matrixGaussJordan{U}{S}{T}
+$$U = \matrixPrint{U}$$
+\end{framed}
+The package also has a command \verb|\matrixGaussJordanSteps| to produce step-by-step computation of Gauss-Jordan elimination of an augmented matrix. The command \verb|\matrixGaussJordanSteps{S}{T}| produces the following output.
+\begin{framed}
+\matrixGaussJordanSteps{S}{T}
+\end{framed}
+\renewcommand{\arraystretch}{1.0}
+\section{Customized usage}\label{customuse}
+The commands available in the package can be used for performing further operations on vectors and matrices.   The command \verb|\vectorAdd| can be extended to add more than two vectors. The latex document (listing \ref{code:custluavec}) provides  some instances of such usage.
+\begin{lstlisting}[label={code:custluavec},  caption={Customized usage of the lualinalg package}]
+\documentclass{article}
+\usepackage{lualinalg}
+\begin{document}
+\begin{luacode*}
+function sumcoordinates(v1)
+local sum = 0
+for i = 1,#v1 do
+			 sum = sum + v1[i]
+			end
+return sum
+end
+
+function vector.addmulti(...)
+  p=table.pack(...)
+  s=vector(p[1])
+  for i=2,#p do
+s=vector.add(s,vector(p[i]))
+end
+  return s
+end
+\end{luacode*}
+\vectorNew{v}{{1,2,lcomplex(3,3)}}
+The sum of coordinates of vector
+ \(v = \directlua{tex.sprint(tostring( sumcoordinates(vectors['v'])))}\).
+
+\newcommand\vectorAddmulti[2]{%
+    \directlua{%
+        vectors['#1'] = vector.addmulti(#2)
+    }%
+}
+\vectorNew{w}{{3,6,lcomplex(6,6)}}
+\vectorNew{x}{{9,12,lcomplex(12,12)}}
+\vectorAddmulti{y}{vectors['v'],vectors['w'],vectors['x']}
+The sum of vectors  \(v,w \text{ and } x  =\left( \vectorPrint{y} \right)\).
+\end{document}
+\end{lstlisting}
+The latex document (listing \ref{code:custluavec}) outputs the following on compilation.
+\begin{framed}
+The sum of coordinates of vector \(v = 6 + 3\mathrm{i}\).
+
+The sum of vectors \(v,w \text{ and } x = \left(13, 20, 21 + 21\mathrm{i}  \right) \).
+\end{framed}
+The command \verb|\matrixAdd| can be extended to add more than two matrices. The latex document (listing \ref{code:custluamtx}) provides some instances of such usage.
+
+\begin{lstlisting}[label={code:custluamtx},  caption={Customized usage of the lualinalg package}]
+\documentclass{article}
+\usepackage{lualinalg}
+\begin{document}
+\begin{luacode}
+function squareDiagEntries(m1)
+	if #m1 ~= #m1[1] then error( "matrix not square") end
+ 	local sum = 0
+for i = 1,#m1 do
+			for j = 1,#m1[1] do
+				if i == j then sum = sum + (m1[i][j])^2 end
+			end
+		end
+return complex.round(sum) 
+end
+
+function matrix.addmulti(...)
+  p=table.pack(...)
+  s=matrix(p[1])
+  for i=2,#p do
+s=matrix.add(s,matrix(p[i]))
+end
+  return s
+end
+\end{luacode}
+
+\def\r{{{1,2,3},{4,5,6},{7,8,lcomplex(9,3)}}}
+\matrixNew{m}{\r}
+The sum of squares of diagonal entries of matrix
+ \(m = \directlua{tex.sprint(tostring(squareDiagEntries(matrices['m'])))}\). 
+
+\def\s{{{1,2,3},{4,5,lcomplex(6,6)}}}
+\def\t{{{10,20,30},{40,50,lcomplex(60,60)}}}
+\def\u{{{100,200,300},{400,500,lcomplex(600,600)}}}
+\matrixNew{m1}{\s}
+\matrixNew{m2}{\t}
+\matrixNew{m3}{\u}
+\newcommand\matrixAddmulti[2]{%
+    \directlua{%
+        matrices['#1'] = matrix.addmulti(#2)
+    }%
+}
+\matrixAddmulti{m4}{matrices['m1'],matrices['m2'],matrices['m3']}
+The sum of matrices  \(m1,m2 \text{ and } m3  = \matrixPrint{m4}\). 
+\end{document}
+\end{lstlisting}
+
+The latex document (listing \ref{code:custluamtx}) outputs the following on compilation.
+\begin{framed}
+The sum of squares of diagonal entries of matrix \(m = 98 + 54\mathrm{i}\).
+
+The sum of matrices  \(m1,m2 \text{ and } m3  =\begin{bmatrix}	111 & 222 & 333 \\	444 & 555 & 666+666\mathrm{i} \end{bmatrix} \).
+\end{framed}
+
+
+\end{document}

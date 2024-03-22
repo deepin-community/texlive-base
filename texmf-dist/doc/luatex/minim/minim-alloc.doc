@@ -25,7 +25,7 @@ load both packages should not matter.
 \section Format files
 
 A major motivation for writing this module (and not, instead, depending on 
-⟦ltluatex.tex⟧) is the ability to write lua-heavy code that can be safely 
+ltluatex) is the ability to write lua-heavy code that can be safely 
 included in format files.
 For this purpose, the register allocation functions described below allow 
 ensuring that the allocation is made only once.
@@ -171,6 +171,46 @@ If you create a new callback with a number for a name, that callback will
 replace the ⟦*process_rule⟧ callback when its number matches the index property 
 of the rule.
 
+\section PDF resources
+
+This package can perform sophisticated pdf resource management, assigning to 
+every page a resource object containing only the resources referenced on that 
+page. pdf resources are ⟦ExtGstate⟧, ⟦ColorSpace⟧, ⟦Pattern⟧ and ⟦Shading⟧ 
+objects that have to be referenced by name (⟦/name⟧) instead of with the usual 
+object references (⟦n 0 R⟧).\footnote
+    {*}{This is of course also the case for ⟦Font⟧ resources, but those are 
+    already managed by luatex’s pdf backend.}
+Currently, the only other package managing pdf resources for plain tex is 
+tikz/pgf, and the latter does so by collecting all resources in a single 
+(global) resource object. That approach is not wrong per se, but may cause 
+other tools processing the resulting pdf to retain unneeded resources.
+Both implementations can safely be used together, but since pgf does not keep 
+track of actual resource use, any resources defined through pgf will be added 
+to the resource dictionary of every subsequent page.
+
+The resource management is implemented in minim-pdfresources.lua and 
+minim-pdfresources.tex, of which the tex file currently only includes pgf 
+compatibility code (and may thus be omitted in the absence of pgf). In the 
+following, ⟦R = require 'minim-pdfresources'⟧ is understood.
+
+You must register resources before you use them. This can be done with
+⟦*R.add_resource(kind, name, resource)⟧, where ⟦kind⟧ is one of the resource 
+types, ⟦name⟧ is the name you want to use for it (without a preceding slash) 
+and ⟦resource⟧ is a table that may contain any data you want to associate with 
+the resource. In the ⟦resource⟧ table, either the key ⟦value⟧ must be present 
+(containing the (raw) contents of the resource; will be written to the pdf 
+as-is) or the key ⟦write⟧ (which must be a function that will be called once, 
+to generate the ⟦value⟧). Registered resources can be retrieved again with
+⟦*R.get_resource(kind, name)⟧.
+
+You can refer to registered resources with the ⟦name⟧ you used to register 
+them. Whenever you do so, however, you must mark the reference with a special 
+⟦late_lua⟧ node that will tell minim to include the resource in the resource 
+list for the page it appears on. These nodes can be created from lua with
+⟦*R.use_resource_node(kind, name)⟧ or directly inserted by tex with
+⟦*\withpdfresource {kind} {name}⟧ (the braces are optional).
+
+
 \section Programming helpers
 
 Optional keyword arguments to tex macros can be defined with help of 
@@ -233,7 +273,7 @@ in into an eternal loop, however.
 
 On the tex side, ⟦*\voidbox⟧, ⟦*\ignore⟧, ⟦*\spacechar⟧, ⟦*\unbrace⟧, 
 ⟦*\firstoftwo⟧ and ⟦*\secondoftwo⟧ should be self-explanatory and 
-uncontroversial additions. For looking ahead, you can use
+uncontroversial additions. ⟦*\Ucharcat⟧ works as in xetex. For looking ahead, you can use
 ⟦*\nextif \token {executed if present} {executed if not}⟧
 or its siblings ⟦*\nextifx⟧ and ⟦*\nextifcat⟧.
 For defining macros with optional arguments, ⟦*\withoptions[default]{code}⟧ 

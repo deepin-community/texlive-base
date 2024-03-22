@@ -1,7 +1,7 @@
 .PS
 # FlowDPV.m4
 gen_init(svg_font(sans-serif,11bp__,2.5bp__))
-ifdef(`FlowchartDefs_',,`include(../FlowchartDefs.m4)')
+ifdef(`FlowchartDefs_',,`include(../FlowchartDefs.m4def)')
 
 define(`Thistle',`rgbstring(0.85,0.75,0.85)')dnl
 define(`RubineRed',`rgbstring(0.81,0,0.35)')dnl
@@ -48,7 +48,7 @@ Case: Fcase(,
             arrow down linewid/3 from last [].S
             Fbox("Task 1.5",, shaded Thistle) with .N at Here
             E:last [].E; S:last [].S],
-  "Test 2",Fbox("Task 2" "is bigger", wid fboxwid*1.2 ht fboxht*3/2, \
+  "Test 2",Fbox("Task 2" "is bigger", wid flowboxwid*1.2 ht flowboxht*3/2, \
                 shaded SeaGreen),
   "Test 3",Fbox("Task 3",, shaded RubineRed)dnl
   )
@@ -79,7 +79,7 @@ Repeatuntil: Frepeatuntil("svg_it(n svg_gt 5)",,,Fbox("Task"),
 
 Ifthenelse: Fifthenelse("svg_it(A svg_lt B)",,,
      Fbox("False"),
-     Fbox("True",ht fboxht*1.2 wid fboxwid)dnl
+     Fbox("True",ht flowboxht*1.2 wid flowboxwid)dnl
      ) with .nw at Repeatuntil.sw +(-0.5,-0.3)
 
   "svg_it(.N)" at Ifthenelse.N rjust above
@@ -116,7 +116,7 @@ Example: [ fillvalue = 0.8; awid = linewid/2; right_
   B2: Fbox("Execu`'svg_ccedilla`'svg_atilde`'o") with .W at B1.E+(awid*3,0)
   B3: Fbox("Sele`'svg_ccedilla`'svg_atilde`'o") with .W at B2.E+(awid*3,0)
   LT: Ftest("Avalia`'svg_ccedilla`'svg_atilde`'o do" "Planejamento",
-    wid fboxwid*1.5 ht fboxht*2.0,
+    wid flowboxwid*1.5 ht flowboxht*2.0,
     shaded YellowGreen,
     "Correto" at Box.e above ljust;
     "Incompleto" at Box.w above rjust) with .S at 0.5 between B1.ne and B2.nw
@@ -125,7 +125,7 @@ Example: [ fillvalue = 0.8; awid = linewid/2; right_
   arrow from LT.E to (B2.N,LT.E) then to B2.N
   RT: Ftest("Avalia`'svg_ccedilla`'svg_atilde`'o da" \
     "Execu`'svg_ccedilla`'svg_atilde`'o",
-    wid fboxwid*1.5 ht fboxht*2.0,
+    wid flowboxwid*1.5 ht flowboxht*2.0,
     shaded YellowGreen,
     "Correto" at Box.e below ljust;
     "Incompleto" at Box.w below rjust) with .N at 0.5 between B2.se and B3.sw
@@ -138,7 +138,7 @@ Example: [ fillvalue = 0.8; awid = linewid/2; right_
   B5: Fbox("Conclus`'svg_atilde`'o")
   arrow up_ awid from B5.N
   ellipse wid boxwid/2 ht boxwid/3 shaded "red"
-] with .nw at last [].Compound.sw+(0,2.5*fboxht)
+] with .nw at last [].Compound.sw+(0,2.5*flowboxht)
 
  command "</g>" # end font
 .PE

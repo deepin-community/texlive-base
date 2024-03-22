@@ -38,7 +38,7 @@
 %% find a complete unmodified copy of LaTeX2e at
 %% <http://mirror.ctan.org/tex-archive/macros/latex/base/>.
 %% 
-%%% From File: $Id: scrkernel-version.dtx 3962 2022-10-12 06:33:06Z kohm $
+%%% From File: $Id: scrkernel-version.dtx 4070 2023-07-07 07:08:40Z kohm $
 \begingroup
   \catcode`\@11\relax
   \ifx\KOMAScriptVersion\undefined
@@ -60,15 +60,13 @@
       \fi
     }
   \fi
-  \@CheckKOMAScriptVersion{2022/10/12 v3.38 KOMA-Script}%
+  \@CheckKOMAScriptVersion{2023/07/07 v3.41 KOMA-Script}%
 \endgroup
 \providecommand*{\scr@clsextension}{\@clsextension}
 \AtBeginDocument{%
   \let\scr@clsextension\@clsextension
 }
-\newcommand*{\KOMAClassName}{%
-  scrartcl%
-}
+\newcommand*{\KOMAClassName}{scrartcl}
 \newcommand*{\ClassName}{%
   article%
 }
@@ -77,7 +75,7 @@
 \newcommand*{\KOMALongClassFileName}{\KOMALongClassName.\@clsextension}
 \edef\KOMALongClassFileName{\KOMALongClassFileName}
 \ProvidesClass{\KOMALongClassName}[%
-  2022/10/12 v3.38 KOMA-Script
+  2023/07/07 v3.41 KOMA-Script
   document class (\ClassName)%
 ]
 \let\ClassName\relax

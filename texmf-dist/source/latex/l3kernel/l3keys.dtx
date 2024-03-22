@@ -2,7 +2,7 @@
 %
 %% File: l3keys.dtx
 %
-% Copyright (C) 2006-2023 The LaTeX Project
+% Copyright (C) 2006-2024 The LaTeX Project
 %
 % It may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -31,7 +31,7 @@
 % \fi
 %
 % \title{^^A
-%   The \pkg{l3keys} package\\ Key--value interfaces^^A
+%   The \pkg{l3keys} module\\ Key--value interfaces^^A
 % }
 %
 % \author{^^A
@@ -43,7 +43,7 @@
 %    }^^A
 % }
 %
-% \date{Released 2023-01-16}
+% \date{Released 2024-01-22}
 %
 % \maketitle
 %
@@ -109,8 +109,8 @@
 % Key names may contain any tokens, as they are handled internally
 % using \cs{tl_to_str:n}. As discussed in
 % section~\ref{sec:l3keys:subdivision}, it is suggested that the character
-% |/| is reserved for sub-division of keys into logical
-% groups. Functions and variables are \emph{not} expanded when creating
+% |/| is reserved for sub-division of keys into different subsets.
+% Functions and variables are \emph{not} expanded when creating
 % key names, and so
 % \begin{verbatim}
 %   \tl_set:Nn \l_mymodule_tmp_tl { key }
@@ -124,7 +124,8 @@
 %
 % \section{Creating keys}
 %
-% \begin{function}[updated = 2017-11-14]{\keys_define:nn}
+% \begin{function}[updated = 2017-11-14]
+%   {\keys_define:nn, \keys_define:ne}
 %   \begin{syntax}
 %     \cs{keys_define:nn} \Arg{module} \Arg{keyval list}
 %   \end{syntax}
@@ -176,8 +177,9 @@
 %       keyname .code:n           = Some~code~using~#1
 %     }
 % \end{verbatim}
-% Note that with the exception of the special |.undefine:| property, all
-% key properties define the key within the current \TeX{} scope.
+% Note that all key properties define the key within the current \TeX{} group,
+% with an exception that the special |.undefine:| property \emph{undefines} the
+% key within the current \TeX{} group.
 %
 % \begin{function}[updated = 2013-07-08]
 %   {.bool_set:N, .bool_set:c, .bool_gset:N, .bool_gset:c}
@@ -215,7 +217,7 @@
 % \end{function}
 %
 % \begin{function}[added = 2011-08-21, updated = 2013-07-10]
-%   {.choices:nn, .choices:Vn, .choices:on, .choices:xn}
+%   {.choices:nn, .choices:Vn, .choices:en, .choices:on}
 %   \begin{syntax}
 %     \meta{key} .choices:nn = \Arg{choices} \Arg{code}
 %   \end{syntax}
@@ -262,7 +264,7 @@
 % \end{function}
 %
 % \begin{function}[updated = 2013-07-09]
-%   {.default:n, .default:V, .default:o, .default:x}
+%   {.default:n, .default:V, .default:e, .default:o}
 %   \begin{syntax}
 %     \meta{key} .default:n = \Arg{default}
 %   \end{syntax}
@@ -286,6 +288,12 @@
 %   forbidden. Thus a required value cannot be supplied by a default
 %   value, and giving a default value for a key which cannot take a value
 %   does not trigger an error.
+%
+%   When no value is given for a key as part of \cs{keys_set:nn}, the
+%   \texttt{.default:n} value provides the value before key properties are
+%   considered. The only exception is when the \texttt{.value_required:n}
+%   property is active: a required value cannot be supplied by the default,
+%   and must be explicitly given as part of \cs{keys_set:nn}.
 % \end{function}
 %
 % \begin{function}[updated = 2020-01-17]
@@ -315,9 +323,15 @@
 %   \begin{syntax}
 %     \meta{key} .groups:n = \Arg{groups}
 %   \end{syntax}
-%   Defines \meta{key} as belonging to the \meta{groups} declared. Groups
+%   Defines \meta{key} as belonging to the \meta{groups} (a
+%   comma-separated list). Groups
 %   provide a \enquote{secondary axis} for selectively setting keys, and are
 %   described in Section~\ref{sec:l3keys:selective}.
+%   \begin{texnote}
+%     The \meta{groups} argument is turned into a string then
+%     interpreted as a comma-separated list, so group names cannot
+%     contain commas nor start or end with a space character.
+%   \end{texnote}
 % \end{function}
 %
 % \begin{function}[added = 2016-11-22]{.inherit:n}
@@ -326,7 +340,7 @@
 %   \end{syntax}
 %   Specifies that the \meta{key} path should inherit the keys listed
 %   as any of the \meta{parents} (a comma list), which can be a module
-%   or a subgroup. For example, after setting
+%   or a sub-division thereof. For example, after setting
 %   \begin{verbatim}
 %     \keys_define:nn { foo } { test .code:n = \tl_show:n {#1} }
 %     \keys_define:nn { } { bar .inherit:n = foo }
@@ -348,7 +362,7 @@
 % \end{function}
 %
 % \begin{function}[updated = 2013-07-09]
-%   {.initial:n, .initial:V, .initial:o, .initial:x}
+%   {.initial:n, .initial:V, .initial:e, .initial:o}
 %   \begin{syntax}
 %     \meta{key} .initial:n = \Arg{value}
 %   \end{syntax}
@@ -377,10 +391,10 @@
 %   \begin{syntax}
 %     \meta{key} .legacy_if_set:n = \meta{switch}
 %   \end{syntax}
-%   Defines \meta{key} to set legacy \cs{if} \meta{switch} to \meta{value}
+%   Defines \meta{key} to set legacy \cs[no-index]{if\meta{switch}} to \meta{value}
 %   (which must be either \enquote{\texttt{true}} or \enquote{\texttt{false}}).
 %   The \meta{switch} is the name of the switch \emph{without the leading
-%   \cs{if}}.
+%   \texttt{if}}.
 %
 %   The \texttt{inverse} versions will set the \meta{switch} to the logical
 %   opposite of the \meta{value}.
@@ -417,7 +431,7 @@
 % \end{function}
 %
 % \begin{function}[added = 2011-08-21, updated = 2013-07-10]
-%   {.multichoices:nn, .multichoices:Vn, .multichoices:on, .multichoices:xn}
+%   {.multichoices:nn, .multichoices:Vn, .multichoices:en, .multichoices:on}
 %   \begin{syntax}
 %     \meta{key} .multichoices:nn \Arg{choices} \Arg{code}
 %   \end{syntax}
@@ -473,14 +487,14 @@
 %   at the point that the key is set up.
 % \end{function}
 %
-% \begin{function}[added = 2021-10-30]
-%   {.str_set_x:N, .str_set_x:c, .str_gset_x:N, .str_gset_x:c}
+% \begin{function}[added = 2023-09-18]
+%   {.str_set_e:N, .str_set_e:c, .str_gset_e:N, .str_gset_e:c}
 %   \begin{syntax}
-%     \meta{key} .str_set_x:N = \meta{string variable}
+%     \meta{key} .str_set_e:N = \meta{string variable}
 %   \end{syntax}
 %   Defines \meta{key} to set \meta{string variable} to \meta{value},
-%   which will be subjected to an \texttt{x}-type expansion
-%   (\emph{i.e.}~using \cs{str_set:Nx}). If the variable does not exist,
+%   which will be subjected to an \texttt{e}-type expansion
+%   (\emph{i.e.}~using \cs{str_set:Ne}). If the variable does not exist,
 %   it is created globally at the point that the key is set up.
 % \end{function}
 %
@@ -493,13 +507,14 @@
 %   at the point that the key is set up.
 % \end{function}
 %
-% \begin{function}{.tl_set_x:N, .tl_set_x:c, .tl_gset_x:N, .tl_gset_x:c}
+% \begin{function}[added = 2023-09-18]
+%   {.tl_set_e:N, .tl_set_e:c, .tl_gset_e:N, .tl_gset_e:c}
 %   \begin{syntax}
-%     \meta{key} .tl_set_x:N = \meta{token list variable}
+%     \meta{key} .tl_set_e:N = \meta{token list variable}
 %   \end{syntax}
 %   Defines \meta{key} to set \meta{token list variable} to \meta{value},
-%   which will be subjected to an \texttt{x}-type expansion
-%   (\emph{i.e.}~using \cs{tl_set:Nx}). If the variable does not exist,
+%   which will be subjected to an \texttt{e}-type expansion
+%   (\emph{i.e.}~using \cs{tl_set:Ne}). If the variable does not exist,
 %   it is created globally at the point that the key is set up.
 % \end{function}
 %
@@ -507,7 +522,7 @@
 %   \begin{syntax}
 %     \meta{key} .undefine:
 %   \end{syntax}
-%   Removes the definition of the \meta{key} within the current scope.
+%   Removes the definition of the \meta{key} within the current \TeX{} group.
 % \end{function}
 %
 % \begin{function}[added = 2015-07-14]{.value_forbidden:n}
@@ -532,21 +547,21 @@
 % \label{sec:l3keys:subdivision}
 %
 % When creating large numbers of keys, it may be desirable to divide
-% them into several sub-groups for a given module. This can be achieved
+% them into several subsets for a given module. This can be achieved
 % either by adding a sub-division to the module name:
 % \begin{verbatim}
-%   \keys_define:nn { mymodule / subgroup }
+%   \keys_define:nn { mymodule / subset }
 %     { key .code:n = code }
 % \end{verbatim}
 % or to the key name:
 % \begin{verbatim}
 %   \keys_define:nn { mymodule }
-%     { subgroup / key .code:n = code }
+%     { subset / key .code:n = code }
 % \end{verbatim}
 % As illustrated, the best choice of token for sub-dividing keys in
 % this way is |/|. This is because of the method that is
 % used to represent keys internally. Both of the above code fragments
-% set the same key, which has full name \texttt{mymodule/subgroup/key}.
+% set the same key, which has full name \texttt{mymodule/subset/key}.
 %
 % As illustrated in the next section, this subdivision is
 % particularly relevant to making multiple choices.
@@ -630,7 +645,7 @@
 %       key / choice-b .code:n = code-b,
 %       key / choice-c .code:n = code-c,
 %       key / unknown  .code:n =
-%         \msg_error:nnxxx { mymodule } { unknown-choice }
+%         \msg_error:nneee { mymodule } { unknown-choice }
 %           { key }                              % Name of choice key
 %           { choice-a , choice-b ,  choice-c }  % Valid choices
 %           { \exp_not:n {#1} }                  % Invalid choice given
@@ -717,7 +732,10 @@
 % \section{Setting keys}
 %
 % \begin{function}[updated = 2017-11-14]
-%   {\keys_set:nn, \keys_set:nV, \keys_set:nv, \keys_set:no}
+%   {
+%     \keys_set:nn, \keys_set:nV, \keys_set:nv,  \keys_set:ne,
+%     \keys_set:no,
+%   }
 %   \begin{syntax}
 %     \cs{keys_set:nn} \Arg{module} \Arg{keyval list}
 %   \end{syntax}
@@ -728,15 +746,11 @@
 % \end{function}
 %
 % \begin{variable}[updated = 2020-02-08]
-%   {\l_keys_key_str, \l_keys_path_str, \l_keys_value_tl}
+%   {\l_keys_path_str, \l_keys_key_str, \l_keys_value_tl}
 %   For each key processed, information of the full \emph{path} of the
 %   key, the \emph{name} of the key and the \emph{value} of the key is
-%   available within three token list variables. These may be used within
-%   the code of the key.
-%
-%   The \emph{value} is everything after the \texttt{=}, which may be
-%   empty if no value was given. This is stored in \cs{l_keys_value_tl}, and
-%   is not processed in any way by \cs{keys_set:nn}.
+%   available within two string and one token list variables.
+%   These may be used within the code of the key.
 %
 %   The \emph{path} of the key is a \enquote{full} description of the key,
 %   and is unique for each key. It consists of the module and full key name,
@@ -755,6 +769,10 @@
 %   \texttt{/}, and thus is not unique. In the preceding examples, both keys
 %   have name \texttt{key-a} despite having different paths.  This information
 %   is stored in \cs{l_keys_key_str}.
+%
+%   The \emph{value} is everything after the \texttt{=}, which may be
+%   empty if no value was given. This is stored in \cs{l_keys_value_tl}, and
+%   is not processed in any way by \cs{keys_set:nn}.
 % \end{variable}
 %
 % \section{Handling of unknown keys}
@@ -763,23 +781,28 @@
 % If a key has not previously been defined (is unknown), \cs{keys_set:nn}
 % looks for a special \texttt{unknown} key for the same module, and if this is
 % not defined raises an error indicating that the key name was unknown. This
-% mechanism can be used for example to issue custom error texts.
+% mechanism can be used for example to issue custom error texts. The
+% \texttt{unknown} key also supports the \texttt{.default:n} property.
 % \begin{verbatim}
 %   \keys_define:nn { mymodule }
 %     {
 %       unknown .code:n =
-%         You~tried~to~set~key~'\l_keys_key_str'~to~'#1'.
+%         You~tried~to~set~key~'\l_keys_key_str'~to~'#1'. ,
+%       unknown .default:V = \c_novalue_tl
 %     }
 % \end{verbatim}
 %
 % \begin{function}[added = 2011-08-23, updated = 2019-01-29]
 %   {
 %     \keys_set_known:nn, \keys_set_known:nV,
-%     \keys_set_known:nv, \keys_set_known:no,
+%     \keys_set_known:nv, \keys_set_known:ne,
+%     \keys_set_known:no,
 %     \keys_set_known:nnN, \keys_set_known:nVN,
-%     \keys_set_known:nvN, \keys_set_known:noN,
+%     \keys_set_known:nvN, \keys_set_known:neN,
+%     \keys_set_known:noN,
 %     \keys_set_known:nnnN, \keys_set_known:nVnN,
-%     \keys_set_known:nvnN, \keys_set_known:nonN
+%     \keys_set_known:nvnN, \keys_set_known:nenN,
+%     \keys_set_known:nonN
 %   }
 %   \begin{syntax}
 %     \cs{keys_set_known:nn} \Arg{module} \Arg{keyval list}
@@ -839,29 +862,29 @@
 % groups to be made \enquote{active}, or by marking one or more groups to
 % be ignored in key setting.
 %
-% \begin{function}[added = 2013-07-14, updated = 2019-01-29]
+% \begin{function}[added = 2024-01-10]
 %   {
-%     \keys_set_filter:nnn, \keys_set_filter:nnV,
-%     \keys_set_filter:nnv, \keys_set_filter:nno,
-%     \keys_set_filter:nnnN, \keys_set_filter:nnVN,
-%     \keys_set_filter:nnvN, \keys_set_filter:nnoN,
-%     \keys_set_filter:nnnnN, \keys_set_filter:nnVnN,
-%     \keys_set_filter:nnvnN, \keys_set_filter:nnonN,
+%     \keys_set_exclude_groups:nnn, \keys_set_exclude_groups:nnV,
+%     \keys_set_exclude_groups:nnv, \keys_set_exclude_groups:nno,
+%     \keys_set_exclude_groups:nnnN, \keys_set_exclude_groups:nnVN,
+%     \keys_set_exclude_groups:nnvN, \keys_set_exclude_groups:nnoN,
+%     \keys_set_exclude_groups:nnnnN, \keys_set_exclude_groups:nnVnN,
+%     \keys_set_exclude_groups:nnvnN, \keys_set_exclude_groups:nnonN,
 %   }
 %   \begin{syntax}
-%     \cs{keys_set_filter:nnn} \Arg{module} \Arg{groups} \Arg{keyval list}
-%     \cs{keys_set_filter:nnnN} \Arg{module} \Arg{groups} \Arg{keyval list} \meta{tl}
-%     \cs{keys_set_filter:nnnnN} \Arg{module} \Arg{groups} \Arg{keyval list} \meta{root} \meta{tl}
+%     \cs{keys_set_exclude_groups:nnn} \Arg{module} \Arg{groups} \Arg{keyval list}
+%     \cs{keys_set_exclude_groups:nnnN} \Arg{module} \Arg{groups} \Arg{keyval list} \meta{tl}
+%     \cs{keys_set_exclude_groups:nnnnN} \Arg{module} \Arg{groups} \Arg{keyval list} \meta{root} \meta{tl}
 %   \end{syntax}
-%   Activates key filtering in an \enquote{opt-out} sense: keys assigned to any
-%   of the \meta{groups} specified are ignored. The \meta{groups} are
+%   Sets keys by excluding those in the specificied \meta{groups}.
+%   The \meta{groups} are
 %   given as a comma-separated list. Unknown keys are not assigned to any
 %   group and are thus always set. The key--value pairs for each
 %   key which is filtered out are stored in the \meta{tl} in a
 %   comma-separated form (\emph{i.e.}~an edited version of the \meta{keyval
-%   list}). The \cs{keys_set_filter:nnn} version skips this stage.
+%   list}). The \cs{keys_set_exclude_groups:nnn} version skips this stage.
 %
-%   Use of \cs{keys_set_filter:nnnN} can be nested, with the correct residual
+%   Use of \cs{keys_set_exclude_groups:nnnN} can be nested, with the correct residual
 %   \meta{keyval list} returned at each stage. In the version which takes
 %   a \meta{root} argument, the key list is returned relative to that point
 %   in the key tree. In the cases without a \meta{root} argument, only
@@ -978,7 +1001,8 @@
 % \end{verbatim}
 % are treated identically.
 %
-% \begin{function}[rEXP, added=2020-12-19, updated = 2021-05-10]{\keyval_parse:nnn}
+% \begin{function}[rEXP, added=2020-12-19, updated = 2021-05-10]
+%   {\keyval_parse:nnn, \keyval_parse:nnV, \keyval_parse:nnv}
 %   \begin{syntax}
 %     \cs{keyval_parse:nnn} \Arg{code_1} \Arg{code_2} \Arg{key--value list}
 %   \end{syntax}
@@ -1007,16 +1031,17 @@
 %   all). Spaces are trimmed from the ends of the \meta{key} and \meta{value},
 %   then one \emph{outer} set of braces is removed from the \meta{key}
 %   and \meta{value} as part of the processing. If you need exactly the output
-%   shown above, you'll need to either \texttt{x}-type or \texttt{e}-type expand
+%   shown above, you'll need to either \texttt{e}-type or \texttt{x}-type expand
 %   the function.
 %   \begin{texnote}
 %     The result of each list element is returned within \cs{exp_not:n}, which
 %     means that the converted input stream does not expand further when
-%     appearing in an \texttt{x}-type or \texttt{e}-type argument expansion.
+%     appearing in an \texttt{e}-type or \texttt{x}-type argument expansion.
 %   \end{texnote}
 % \end{function}
 %
-% \begin{function}[rEXP, updated = 2021-05-10]{\keyval_parse:NNn}
+% \begin{function}[rEXP, updated = 2021-05-10]
+%   {\keyval_parse:NNn, \keyval_parse:NNV, \keyval_parse:NNv}
 %   \begin{syntax}
 %     \cs{keyval_parse:NNn} \meta{function_1} \meta{function_2} \Arg{key--value list}
 %   \end{syntax}
@@ -1051,7 +1076,7 @@
 %   \begin{texnote}
 %     The result is returned within \cs{exp_not:n}, which means that the
 %     converted input stream does not expand further when appearing in an
-%     \texttt{x}-type or \texttt{e}-type argument expansion.
+%     \texttt{e}-type or \texttt{x}-type argument expansion.
 %   \end{texnote}
 % \end{function}
 %
@@ -1059,7 +1084,7 @@
 %
 % \begin{implementation}
 %
-% \section{\pkg{l3keys} Implementation}
+% \section{\pkg{l3keys} implementation}
 %
 %    \begin{macrocode}
 %<*package>
@@ -1107,32 +1132,24 @@
     {
 %    \end{macrocode}
 %
-% \begin{macro}[EXP]{\keyval_parse:nnn, \keyval_parse:NNn}
+% \begin{macro}[EXP]
+%   {
+%     \keyval_parse:nnn, \keyval_parse:nnV, \keyval_parse:nnv,
+%     \keyval_parse:NNn, \keyval_parse:NNV, \keyval_parse:NNv
+%   }
 %   The main function starts the first of two loops. The outer loop splits the
 %   key--value list at active commas, the inner loop will do so at other commas.
 %   The use of \cs{s_@@_mark} here prevents loss of braces from the key
 %   argument.
 %    \begin{macrocode}
-      \cs_if_exist:NTF \tex_expanded:D
+      \cs_new:Npn \keyval_parse:nnn ##1 ##2 ##3
         {
-          \cs_new:Npn \keyval_parse:nnn ##1 ##2 ##3
+          \__kernel_exp_not:w \tex_expanded:D
             {
-              \__kernel_exp_not:w \tex_expanded:D
-                {
-                  {
-                    \@@_loop_active:nnw {##1} {##2}
-                      \s_@@_mark ##3 #1 \s_@@_tail #1
-                  }
-                }
-            }
-        }
-        {
-          \cs_new:Npn \keyval_parse:nnn ##1 ##2 ##3
-            {
-              \group_align_safe_begin:
-              \@@_loop_active:nnw {##1} {##2}
-                \s_@@_mark ##3 #1 \s_@@_tail #1
-              \group_align_safe_end:
+              {
+                \@@_loop_active:nnw {##1} {##2}
+                  \s_@@_mark ##3 #1 \s_@@_tail #1
+              }
             }
         }
       \cs_new_eq:NN \keyval_parse:NNn \keyval_parse:nnn
@@ -1335,9 +1352,9 @@
 %    \begin{macrocode}
       \cs_new:Npn \@@_misplaced_equal_after_active_error:w
           \s_@@_mark ##1 \s_@@_stop \s_@@_mark ##2 \s_@@_nil
-           = \s_@@_mark \@@_split_active_auxii:w
-           \s_@@_mark ##3 \s_@@_nil
-           #2 \s_@@_mark \@@_clean_up_active:w
+          = \s_@@_mark \@@_split_active_auxii:w
+          \s_@@_mark ##3 \s_@@_nil
+          #2 \s_@@_mark \@@_clean_up_active:w
         {
           \msg_expandable_error:nn
             { keyval } { misplaced-equals-sign }
@@ -1384,6 +1401,8 @@
   \char_set_catcode_active:n { `\= }
   \@@_tmp:w , =
 \group_end:
+\cs_generate_variant:Nn \keyval_parse:NNn { NNV , NNv }
+\cs_generate_variant:Nn \keyval_parse:nnn { nnV , nnv }
 %    \end{macrocode}
 %
 % \begin{macro}[EXP]{\@@_pair:nnnn, \@@_key:nn}
@@ -1415,9 +1434,7 @@
           \@@_loop_other:nnw {##2}
         }
     }
-  \cs_if_exist:NTF \tex_expanded:D
-    { \@@_tmp:w { } { } }
-    { \@@_tmp:w \group_align_safe_end: \group_align_safe_begin: }
+  \@@_tmp:w { } { }
 \group_end:
 %    \end{macrocode}
 % \end{macro}
@@ -1569,11 +1586,23 @@
 %    \end{macrocode}
 % \end{variable}
 %
-% \begin{variable}{\l_keys_key_str, \l_keys_key_tl}
-%   The name of a key itself: needed when setting keys. The |tl| version
-%   is deprecated but has to be handled manually.
+% \begin{variable}{\l_@@_inherit_clist}
+%   For normalisation.
+%    \begin{macrocode}
+\clist_new:N \l_@@_inherit_clist
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{variable}{\l_keys_key_str}
+%   The name of a key itself: needed when setting keys.
 %    \begin{macrocode}
 \str_new:N \l_keys_key_str
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{variable}[deprecated]{\l_keys_key_tl}
+%   The |tl| version is deprecated but has to be handled manually.
+%    \begin{macrocode}
 \tl_new:N \l_keys_key_tl
 %    \end{macrocode}
 % \end{variable}
@@ -1600,12 +1629,17 @@
 %    \end{macrocode}
 % \end{variable}
 %
-% \begin{variable}{\l_keys_path_str, \l_keys_path_tl}
+% \begin{variable}{\l_keys_path_str}
 %   The \enquote{path} of the current key is stored here: this is
-%   available to the programmer and so is public. The older version is
-%   deprecated but has to be handled manually.
+%   available to the programmer and so is public.
 %    \begin{macrocode}
 \str_new:N \l_keys_path_str
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{variable}[deprecated]{\l_keys_path_tl}
+%   The older version is deprecated but has to be handled manually.
+%    \begin{macrocode}
 \tl_new:N \l_keys_path_tl
 %    \end{macrocode}
 % \end{variable}
@@ -1634,7 +1668,7 @@
 % \end{variable}
 %
 % \begin{variable}{\l_@@_selective_bool, \l_@@_filtered_bool}
-%   Two flags for using key groups: one to indicate that \enquote{selective}
+%   Two booleans for using key groups: one to indicate that \enquote{selective}
 %   setting is active, a second to specify which type (\enquote{opt-in}
 %   or \enquote{opt-out}).
 %    \begin{macrocode}
@@ -1653,7 +1687,7 @@
 % \begin{variable}{\l_@@_unused_clist}
 %   Used when setting only some keys to store those left over.
 %    \begin{macrocode}
-\tl_new:N \l_@@_unused_clist
+\clist_new:N \l_@@_unused_clist
 %    \end{macrocode}
 % \end{variable}
 %
@@ -1727,9 +1761,24 @@
 %    \end{macrocode}
 % \end{macro}
 %
+% \begin{macro}{\@@_cs_undefine:c}
+%   Local version of \cs{cs_undefine:c} to avoid sprinkling
+%   \cs{tex_undefined:D} everywhere.
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_cs_undefine:c #1
+  {
+    \if_cs_exist:w #1 \cs_end:
+    \else:
+      \use_i:nnnn
+    \fi:
+    \cs_set_eq:cN {#1} \tex_undefined:D
+  }
+%    \end{macrocode}
+% \end{macro}
+%
 % \subsection{The key defining mechanism}
 %
-% \begin{macro}{\keys_define:nn}
+% \begin{macro}{\keys_define:nn, \keys_define:ne, \keys_define:nx}
 % \begin{macro}{\@@_define:nnn, \@@_define:onn}
 %   The public function for definitions is just a wrapper for the lower
 %   level mechanism, more or less. The outer function is designed to
@@ -1738,9 +1787,10 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \keys_define:nn
   { \@@_define:onn \l_@@_module_str }
+\cs_generate_variant:Nn \keys_define:nn { ne , nx }
 \cs_new_protected:Npn \@@_define:nnn #1#2#3
   {
-    \str_set:Nx \l_@@_module_str { \@@_trim_spaces:n {#2} }
+    \str_set:Ne \l_@@_module_str { \@@_trim_spaces:n {#2} }
     \keyval_parse:NNn \@@_define:n \@@_define:nn {#3}
     \str_set:Nn \l_@@_module_str {#1}
   }
@@ -1775,7 +1825,7 @@
       {
         \str_if_empty:NF \l_@@_property_str
           {
-            \msg_error:nnxx { keys } { property-unknown }
+            \msg_error:nnee { keys } { property-unknown }
               \l_@@_property_str \l_keys_path_str
           }
       }
@@ -1786,28 +1836,29 @@
 % \end{macro}
 %
 % \begin{macro}{\@@_property_find:n}
-% \begin{macro}
+% \begin{macro}[EXP]{\@@_property_find_auxi:w}
+% \begin{macro}{\@@_property_find_auxii:w}
+% \begin{macro}[EXP]
 %   {
-%     \@@_property_find_auxi:w   ,
-%     \@@_property_find_auxii:w  ,
 %     \@@_property_find_auxiii:w ,
 %     \@@_property_find_auxiv:w
 %   }
+% \begin{macro}{\@@_property_find_err:w}
 %   Searching for a property means finding the last |.| in the input,
-%   and storing the text before and after it. Everything is turned into
-%   strings, so there is no problem using an \texttt{x}-type expansion. Since
-%   \cs{@@_trim_spaces:n} will turn its argument into a string anyway, this
-%   function uses \cs{cs_set_nopar:Npx} instead of \cs{tl_set:Nx} to gain some
-%   speed.
+%   and storing the text before and after it. Everything is first turned into
+%   strings, so there is no problem using \cs{cs_set_nopar:Npe} instead of
+%   \cs{str_set:Ne} to set \cs{l_keys_path_str}. To gain further speed, brace
+%   tricks are used and \cs{@@_property_find_auxiv:w} is defined as expandable.
+%   Since spaces will already be trimmed from the module we can omit it from the
+%   argument to \cs{@@_trim_spaces:n}.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_property_find:n #1
   {
-    \cs_set_nopar:Npx \l_@@_property_str { \@@_trim_spaces:n { #1 } }
-    \exp_after:wN \@@_property_find_auxi:w \l_@@_property_str
+    \exp_after:wN \@@_property_find_auxi:w \tl_to_str:n {#1}
       \s_@@_nil \@@_property_find_auxii:w
       . \s_@@_nil \@@_property_find_err:w
   }
-\cs_new_protected:Npn \@@_property_find_auxi:w #1 . #2 \s_@@_nil #3
+\cs_new:Npn \@@_property_find_auxi:w #1 . #2 \s_@@_nil #3
   {
     #3 #1 \s_@@_mark #2 \s_@@_nil #3
   }
@@ -1815,23 +1866,25 @@
     #1 \s_@@_mark #2 \s_@@_nil \@@_property_find_auxii:w . \s_@@_nil
     \@@_property_find_err:w
   {
-    \cs_set_nopar:Npx \l_keys_path_str
-      { \str_if_empty:NF \l_@@_module_str { \l_@@_module_str / } #1 }
-    \@@_property_find_auxi:w #2 \s_@@_nil \@@_property_find_auxiii:w . \s_@@_nil
-      \@@_property_find_auxiv:w
+    \cs_set_nopar:Npe \l_keys_path_str
+      {
+        \str_if_empty:NF \l_@@_module_str { \l_@@_module_str / }
+        \exp_after:wN \@@_trim_spaces:n \tex_expanded:D {{
+        #1
+        \if_false: }}} \fi:
+        \@@_property_find_auxi:w #2 \s_@@_nil \@@_property_find_auxiii:w
+          . \s_@@_nil \@@_property_find_auxiv:w
   }
-\cs_new_protected:Npn \@@_property_find_auxiii:w #1 \s_@@_mark
+\cs_new:Npn \@@_property_find_auxiii:w #1 \s_@@_mark #2 . #3 \s_@@_nil #4
   {
-    \cs_set_nopar:Npx \l_keys_path_str { \l_keys_path_str . #1 }
-    \@@_property_find_auxi:w
+    . #1 #4 #2 \s_@@_mark #3 \s_@@_nil #4
   }
-\cs_new_protected:Npn \@@_property_find_auxiv:w
+\cs_new:Npn \@@_property_find_auxiv:w
     #1 \s_@@_nil \@@_property_find_auxiii:w
     \s_@@_mark \s_@@_nil \@@_property_find_auxiv:w
   {
-    \cs_set_nopar:Npx \l_@@_property_str { . #1 }
-    \cs_set_nopar:Npx \l_keys_path_str
-      { \exp_after:wN \@@_trim_spaces:n \exp_after:wN { \l_keys_path_str } }
+    \if_false: {{{ \fi: }}}
+    \cs_set_nopar:Npe \l_@@_property_str { . #1 }
     \tl_set_eq:NN \l_keys_path_tl \l_keys_path_str
   }
 \cs_new_protected:Npn \@@_property_find_err:w
@@ -1841,6 +1894,9 @@
     \msg_error:nnn { keys } { no-property } {#1}
   }
 %    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
 % \end{macro}
 % \end{macro}
 %
@@ -1860,7 +1916,7 @@
           \l_@@_property_str \s_@@_stop
           { \use:c { \c_@@_props_root_str \l_@@_property_str } }
           {
-            \msg_error:nnxx { keys } { property-requires-value }
+            \msg_error:nnee { keys } { property-requires-value }
               \l_@@_property_str \l_keys_path_str
           }
       }
@@ -1895,14 +1951,14 @@
   {
     \bool_if_exist:NF #1 { \bool_new:N #1 }
     \@@_choice_make:
-    \@@_cmd_set:nx { \l_keys_path_str / true }
+    \@@_cmd_set:ne { \l_keys_path_str / true }
       { \exp_not:c { bool_ #2 set_ #3 :N } \exp_not:N #1 }
-    \@@_cmd_set:nx { \l_keys_path_str / false }
+    \@@_cmd_set:ne { \l_keys_path_str / false }
       { \exp_not:c { bool_ #2 set_ #4 :N } \exp_not:N #1 }
     \@@_cmd_set_direct:nn { \l_keys_path_str / unknown }
       {
-        \msg_error:nnx { keys } { boolean-values-only }
-          \l_keys_key_str
+        \msg_error:nne { keys } { boolean-values-only }
+          \l_keys_path_str
       }
     \@@_default_set:n { true }
   }
@@ -1931,7 +1987,7 @@
           { \c_@@_type_root_str \@@_parent:o \l_keys_path_str }
           { choice }
           {
-            \msg_error:nnxx { keys } { nested-choice-key }
+            \msg_error:nnee { keys } { nested-choice-key }
               \l_keys_path_tl { \@@_parent:o \l_keys_path_str }
           }
           { \@@_choice_make_aux:N #1 }
@@ -1945,7 +2001,7 @@
     \@@_cmd_set_direct:nn \l_keys_path_str { #1 {##1} }
     \@@_cmd_set_direct:nn { \l_keys_path_str / unknown }
       {
-        \msg_error:nnxx { keys } { choice-unknown }
+        \msg_error:nnee { keys } { choice-unknown }
           \l_keys_path_str {##1}
       }
   }
@@ -1970,7 +2026,7 @@
     \clist_map_inline:nn {#2}
       {
         \int_incr:N \l_keys_choice_int
-        \@@_cmd_set:nx
+        \@@_cmd_set:ne
           { \l_keys_path_str / \@@_trim_spaces:n {##1} }
           {
             \tl_set:Nn \exp_not:N \l_keys_choice_tl {##1}
@@ -1986,7 +2042,7 @@
 %
 % \begin{macro}
 %   {
-%     \@@_cmd_set:nn, \@@_cmd_set:nx, \@@_cmd_set:Vn, \@@_cmd_set:Vo,
+%     \@@_cmd_set:nn, \@@_cmd_set:Vn, \@@_cmd_set:ne, \@@_cmd_set:Vo,
 %     \@@_cmd_set_direct:nn
 %   }
 %   Setting the code for a key first logs if appropriate that we are
@@ -1994,7 +2050,7 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_cmd_set:nn #1#2
   {  \@@_cmd_set_direct:nn {#1} { \@@_precompile:n {#2} } }
-\cs_generate_variant:Nn \@@_cmd_set:nn { nx , Vn , Vo }
+\cs_generate_variant:Nn \@@_cmd_set:nn { ne , Vn , Vo }
 \cs_new_protected:Npn \@@_cmd_set_direct:nn #1#2
   { \cs_set_protected:cpn { \c_@@_code_root_str #1 } ##1 {#2} }
 %    \end{macrocode}
@@ -2007,7 +2063,7 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_cs_set:NNpn #1#2#3#
   {
-    \cs_set_protected:cpx { \c_@@_code_root_str \l_keys_path_str } ##1
+    \cs_set_protected:cpe { \c_@@_code_root_str \l_keys_path_str } ##1
       {
         \@@_precompile:n
           { #1 \exp_not:N #2 \exp_not:n {#3} {##1} }
@@ -2019,19 +2075,18 @@
 % \end{macro}
 %
 % \begin{macro}{\@@_default_set:n}
-%   Setting a default value is easy. These are stored using \cs{cs_set_nopar:cpx} as this
+%   Setting a default value is easy. These are stored using \cs{cs_set_nopar:cpe} as this
 %   avoids any worries about whether a token list exists.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_default_set:n #1
   {
     \tl_if_empty:nTF {#1}
       {
-        \cs_set_eq:cN
+        \@@_cs_undefine:c
           { \c_@@_default_root_str \l_keys_path_str }
-          \tex_undefined:D
       }
       {
-        \cs_set_nopar:cpx
+        \cs_set_nopar:cpe
           { \c_@@_default_root_str \l_keys_path_str }
           { \exp_not:n {#1} }
         \@@_value_requirement:nn { required } { false }
@@ -2049,11 +2104,11 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_groups_set:n #1
   {
-    \clist_set:Nn \l_@@_groups_clist {#1}
+    \clist_set:Ne \l_@@_groups_clist { \tl_to_str:n {#1} }
     \clist_if_empty:NTF \l_@@_groups_clist
       {
-        \cs_set_eq:cN { \c_@@_groups_root_str \l_keys_path_str }
-          \tex_undefined:D
+        \@@_cs_undefine:c
+          { \c_@@_groups_root_str \l_keys_path_str }
       }
       {
         \cs_set_eq:cN { \c_@@_groups_root_str \l_keys_path_str }
@@ -2070,13 +2125,17 @@
 \cs_new_protected:Npn \@@_inherit:n #1
   {
     \@@_undefine:
-    \cs_set_nopar:cpn { \c_@@_inherit_root_str \l_keys_path_str } {#1}
+    \clist_set:Nn \l_@@_inherit_clist {#1}
+    \cs_set_eq:cN { \c_@@_inherit_root_str \l_keys_path_str }
+      \l_@@_inherit_clist
   }
 %    \end{macrocode}
 % \end{macro}
 %
 % \begin{macro}{\@@_initialise:n}
 %   A set up for initialisation: just run the code if it exists.
+%   We need to set the key string here, using the deprecated \texttt{tl}
+%   as a piece of scratch space.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_initialise:n #1
   {
@@ -2086,7 +2145,14 @@
       {
         \str_clear:N \l_@@_inherit_str
         \cs_if_exist:cT { \c_@@_code_root_str \l_keys_path_str }
-          { \@@_execute:nn \l_keys_path_str {#1} }
+          {
+            \exp_after:wN \@@_find_key_module:wNN
+              \l_keys_path_str \s_@@_stop
+                \l_keys_key_tl \l_keys_key_str
+            \tl_set_eq:NN \l_keys_key_tl \l_keys_key_str
+            \tl_set:Nn \l_keys_value_tl {#1}
+            \@@_execute:no \l_keys_path_str \l_keys_value_tl
+          }
       }
   }
 %    \end{macrocode}
@@ -2104,20 +2170,20 @@
 \cs_new_protected:Npn \@@_legacy_if_set:nnnn #1#2#3#4
   {
     \@@_choice_make:
-    \@@_cmd_set:nx { \l_keys_path_str / true }
+    \@@_cmd_set:ne { \l_keys_path_str / true }
       { \exp_not:c { legacy_if_#2  set_ #3 :n } { \exp_not:n {#1} } }
-    \@@_cmd_set:nx { \l_keys_path_str / false }
+    \@@_cmd_set:ne { \l_keys_path_str / false }
       { \exp_not:c { legacy_if_#2  set_ #4 :n } { \exp_not:n {#1} } }
     \@@_cmd_set:nn { \l_keys_path_str / unknown }
       {
-        \msg_error:nnx { keys } { boolean-values-only }
-          \l_keys_key_str
+        \msg_error:nne { keys } { boolean-values-only }
+          \l_keys_path_str
       }
     \@@_default_set:n { true }
     \cs_if_exist:cF { if#1 }
       {
-         \cs:w newif \exp_after:wN \cs_end:
-           \cs:w if#1 \cs_end:
+        \cs:w newif \exp_after:wN \cs_end:
+          \cs:w if#1 \cs_end:
       }
   }
 %    \end{macrocode}
@@ -2126,20 +2192,22 @@
 %
 % \begin{macro}{\@@_meta_make:n}
 % \begin{macro}{\@@_meta_make:nn}
-%   To create a meta-key, simply set up to pass data through.
+%   To create a meta-key, simply set up to pass data through. The internal
+%   function is used here as a meta key should respect the prevailing
+%   filtering, etc.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_meta_make:n #1
   {
     \exp_args:NVo \@@_cmd_set_direct:nn \l_keys_path_str
       {
-        \exp_after:wN \keys_set:nn \exp_after:wN 
+        \exp_after:wN \@@_set:nn \exp_after:wN 
           { \l_@@_module_str } {#1}
       }
   }
 \cs_new_protected:Npn \@@_meta_make:nn #1#2
   {
     \exp_args:NV \@@_cmd_set_direct:nn
-      \l_keys_path_str { \keys_set:nn {#1} {#2} }
+      \l_keys_path_str { \@@_set:nn {#1} {#2} }
   }
 %    \end{macrocode}
 % \end{macro}
@@ -2153,7 +2221,7 @@
     \prop_if_exist:NF #1 { \prop_new:N #1 }
     \exp_after:wN \@@_find_key_module:wNN \l_keys_path_str \s_@@_stop
       \l_@@_tmpa_tl \l_@@_tmpb_tl
-    \@@_cmd_set:nx \l_keys_path_str
+    \@@_cmd_set:ne \l_keys_path_str
       {
         \exp_not:c { prop_ #2 put:Nnn }
         \exp_not:N #1
@@ -2174,9 +2242,8 @@
     \clist_map_inline:nn
       { code , default , groups , inherit , type , check }
       {
-        \cs_set_eq:cN
+        \@@_cs_undefine:c
           { \tl_use:c { c_@@_ ##1 _root_str } \l_keys_path_str }
-          \tex_undefined:D
       }
   }
 %    \end{macrocode}
@@ -2206,14 +2273,13 @@
               { \c_@@_check_root_str \l_keys_path_str }
               { @@_check_ #1 : }
               {
-                \cs_set_eq:cN
+                \@@_cs_undefine:c
                   { \c_@@_check_root_str \l_keys_path_str }
-                  \tex_undefined:D
               }
           }
       }
       {
-        \msg_error:nnx { keys }
+        \msg_error:nne { keys }
           { boolean-values-only }
           { .value_ #1 :n }
       }
@@ -2222,7 +2288,7 @@
   {
     \bool_if:NF \l_@@_no_value_bool
       {
-        \msg_error:nnxx { keys } { value-forbidden }
+        \msg_error:nnee { keys } { value-forbidden }
           \l_keys_path_str \l_keys_value_tl
         \use_none:nnn
       }
@@ -2231,7 +2297,7 @@
   {
     \bool_if:NT \l_@@_no_value_bool
       {
-        \msg_error:nnx { keys } { value-required }
+        \msg_error:nne { keys } { value-required }
           \l_keys_path_str
         \use_none:nnn
       }
@@ -2282,7 +2348,7 @@
   {
     \prop_get:NVNF #1 \l_@@_module_str \l_@@_tmpa_tl
       { \tl_clear:N \l_@@_tmpa_tl }
-    \tl_set:Nx \l_@@_tmpb_tl
+    \tl_set:Ne \l_@@_tmpb_tl
       { \exp_after:wN \@@_usage:w \l_keys_path_str \s_@@_stop }
     \bool_if:NTF #2
       { \clist_put_right:NV \l_@@_tmpa_tl \l_@@_tmpb_tl }
@@ -2304,7 +2370,7 @@
 \cs_new_protected:Npn \@@_variable_set:NnnN #1#2#3#4
   {
     \use:c { #2_if_exist:NF } #1 { \use:c { #2 _new:N } #1 }
-    \@@_cmd_set:nx \l_keys_path_str
+    \@@_cmd_set:ne \l_keys_path_str
       {
         \exp_not:c { #2 _ #3 set:N #4 }
         \exp_not:N #1
@@ -2374,8 +2440,7 @@
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}
-%   {.choices:nn, .choices:Vn, .choices:on, .choices:xn}
+% \begin{macro}{.choices:nn, .choices:Vn, .choices:en, .choices:on, .choices:xn}
 %   For auto-generation of a series of mutually-exclusive choices.
 %   Here, |#1| consists of two separate
 %   arguments, hence the slightly odd-looking implementation.
@@ -2384,6 +2449,8 @@
   { \@@_choices_make:nn #1 }
 \cs_new_protected:cpn { \c_@@_props_root_str .choices:Vn } #1
   { \exp_args:NV \@@_choices_make:nn #1 }
+\cs_new_protected:cpn { \c_@@_props_root_str .choices:en } #1
+  { \exp_args:Ne \@@_choices_make:nn #1 }
 \cs_new_protected:cpn { \c_@@_props_root_str .choices:on } #1
   { \exp_args:No \@@_choices_make:nn #1 }
 \cs_new_protected:cpn { \c_@@_props_root_str .choices:xn } #1
@@ -2440,13 +2507,15 @@
 % \end{macro}
 % \end{macro}
 %
-% \begin{macro}{.default:n, .default:V, .default:o, .default:x}
+% \begin{macro}{.default:n, .default:V, .default:e, .default:o, .default:x}
 %   Expansion is left to the internal functions.
 %    \begin{macrocode}
 \cs_new_protected:cpn { \c_@@_props_root_str .default:n } #1
   { \@@_default_set:n {#1} }
 \cs_new_protected:cpn { \c_@@_props_root_str .default:V } #1
   { \exp_args:NV \@@_default_set:n #1 }
+\cs_new_protected:cpn { \c_@@_props_root_str .default:e } #1
+  { \exp_args:Ne \@@_default_set:n {#1} }
 \cs_new_protected:cpn { \c_@@_props_root_str .default:o } #1
   { \exp_args:No \@@_default_set:n {#1} }
 \cs_new_protected:cpn { \c_@@_props_root_str .default:x } #1
@@ -2502,13 +2571,15 @@
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{.initial:n, .initial:V, .initial:o, .initial:x}
+% \begin{macro}{.initial:n, .initial:V, .initial:e, .initial:o, .initial:x}
 %   The standard hand-off approach.
 %    \begin{macrocode}
 \cs_new_protected:cpn { \c_@@_props_root_str .initial:n } #1
   { \@@_initialise:n {#1} }
 \cs_new_protected:cpn { \c_@@_props_root_str .initial:V } #1
   { \exp_args:NV \@@_initialise:n #1 }
+\cs_new_protected:cpn { \c_@@_props_root_str .initial:e } #1
+  { \exp_args:Ne \@@_initialise:n {#1} }
 \cs_new_protected:cpn { \c_@@_props_root_str .initial:o } #1
   { \exp_args:No \@@_initialise:n {#1} }
 \cs_new_protected:cpn { \c_@@_props_root_str .initial:x } #1
@@ -2567,11 +2638,7 @@
 % \end{macro}
 %
 % \begin{macro}{.multichoice:}
-% \begin{macro}
-%   {
-%     .multichoices:nn, .multichoices:Vn, .multichoices:on,
-%       .multichoices:xn,
-%   }
+% \begin{macro}{.multichoices:nn, .multichoices:Vn, .multichoices:en, .multichoices:on, .multichoices:xn}
 %   The same idea as \texttt{.choice:} and \texttt{.choices:nn}, but
 %   where more than one choice is allowed.
 %    \begin{macrocode}
@@ -2581,6 +2648,8 @@
   { \@@_multichoices_make:nn #1 }
 \cs_new_protected:cpn { \c_@@_props_root_str .multichoices:Vn } #1
   { \exp_args:NV \@@_multichoices_make:nn #1 }
+\cs_new_protected:cpn { \c_@@_props_root_str .multichoices:en } #1
+  { \exp_args:Ne \@@_multichoices_make:nn #1 }
 \cs_new_protected:cpn { \c_@@_props_root_str .multichoices:on } #1
   { \exp_args:No \@@_multichoices_make:nn #1 }
 \cs_new_protected:cpn { \c_@@_props_root_str .multichoices:xn } #1
@@ -2635,26 +2704,26 @@
 %
 % \begin{macro}{.str_set:N, .str_set:c}
 % \begin{macro}{.str_gset:N, .str_gset:c}
-% \begin{macro}{.str_set_x:N, .str_set_x:c}
-% \begin{macro}{.str_gset_x:N, .str_gset_x:c}
+% \begin{macro}{.str_set_e:N, .str_set_e:c}
+% \begin{macro}{.str_gset_e:N, .str_gset_e:c}
 %   Setting a variable is very easy: just pass the data along.
 %    \begin{macrocode}
 \cs_new_protected:cpn { \c_@@_props_root_str .str_set:N } #1
   { \@@_variable_set:NnnN #1 { str } { } n }
 \cs_new_protected:cpn { \c_@@_props_root_str .str_set:c } #1
   { \@@_variable_set:cnnN {#1} { str } { } n }
-\cs_new_protected:cpn { \c_@@_props_root_str .str_set_x:N } #1
-  { \@@_variable_set:NnnN #1 { str } { } x }
-\cs_new_protected:cpn { \c_@@_props_root_str .str_set_x:c } #1
-  { \@@_variable_set:cnnN {#1} { str } { } x }
+\cs_new_protected:cpn { \c_@@_props_root_str .str_set_e:N } #1
+  { \@@_variable_set:NnnN #1 { str } { } e }
+\cs_new_protected:cpn { \c_@@_props_root_str .str_set_e:c } #1
+  { \@@_variable_set:cnnN {#1} { str } { } e }
 \cs_new_protected:cpn { \c_@@_props_root_str .str_gset:N } #1
   { \@@_variable_set:NnnN #1 { str } { g } n }
 \cs_new_protected:cpn { \c_@@_props_root_str .str_gset:c } #1
   { \@@_variable_set:cnnN {#1} { str } { g } n }
-\cs_new_protected:cpn { \c_@@_props_root_str .str_gset_x:N } #1
-  { \@@_variable_set:NnnN #1 { str } { g } x }
-\cs_new_protected:cpn { \c_@@_props_root_str .str_gset_x:c } #1
-  { \@@_variable_set:cnnN {#1} { str } { g } x }
+\cs_new_protected:cpn { \c_@@_props_root_str .str_gset_e:N } #1
+  { \@@_variable_set:NnnN #1 { str } { g } e }
+\cs_new_protected:cpn { \c_@@_props_root_str .str_gset_e:c } #1
+  { \@@_variable_set:cnnN {#1} { str } { g } e }
 %    \end{macrocode}
 % \end{macro}
 % \end{macro}
@@ -2663,26 +2732,26 @@
 %
 % \begin{macro}{.tl_set:N, .tl_set:c}
 % \begin{macro}{.tl_gset:N, .tl_gset:c}
-% \begin{macro}{.tl_set_x:N, .tl_set_x:c}
-% \begin{macro}{.tl_gset_x:N, .tl_gset_x:c}
+% \begin{macro}{.tl_set_e:N, .tl_set_e:c}
+% \begin{macro}{.tl_gset_e:N, .tl_gset_e:c}
 %   Setting a variable is very easy: just pass the data along.
 %    \begin{macrocode}
 \cs_new_protected:cpn { \c_@@_props_root_str .tl_set:N } #1
   { \@@_variable_set:NnnN #1 { tl } { } n }
 \cs_new_protected:cpn { \c_@@_props_root_str .tl_set:c } #1
   { \@@_variable_set:cnnN {#1} { tl } { } n }
-\cs_new_protected:cpn { \c_@@_props_root_str .tl_set_x:N } #1
-  { \@@_variable_set:NnnN #1 { tl } { } x }
-\cs_new_protected:cpn { \c_@@_props_root_str .tl_set_x:c } #1
-  { \@@_variable_set:cnnN {#1} { tl } { } x }
+\cs_new_protected:cpn { \c_@@_props_root_str .tl_set_e:N } #1
+  { \@@_variable_set:NnnN #1 { tl } { } e }
+\cs_new_protected:cpn { \c_@@_props_root_str .tl_set_e:c } #1
+  { \@@_variable_set:cnnN {#1} { tl } { } e }
 \cs_new_protected:cpn { \c_@@_props_root_str .tl_gset:N } #1
   { \@@_variable_set:NnnN #1 { tl } { g } n }
 \cs_new_protected:cpn { \c_@@_props_root_str .tl_gset:c } #1
   { \@@_variable_set:cnnN {#1} { tl } { g } n }
-\cs_new_protected:cpn { \c_@@_props_root_str .tl_gset_x:N } #1
-  { \@@_variable_set:NnnN #1 { tl } { g } x }
-\cs_new_protected:cpn { \c_@@_props_root_str .tl_gset_x:c } #1
-  { \@@_variable_set:cnnN {#1} { tl } { g } x }
+\cs_new_protected:cpn { \c_@@_props_root_str .tl_gset_e:N } #1
+  { \@@_variable_set:NnnN #1 { tl } { g } e }
+\cs_new_protected:cpn { \c_@@_props_root_str .tl_gset_e:c } #1
+  { \@@_variable_set:cnnN {#1} { tl } { g } e }
 %    \end{macrocode}
 % \end{macro}
 % \end{macro}
@@ -2720,7 +2789,8 @@
 %
 % \begin{macro}
 %   {
-%     \keys_set:nn, \keys_set:nV, \keys_set:nv, \keys_set:no,
+%     \keys_set:nn, \keys_set:nV, \keys_set:nv, \keys_set:ne,
+%     \keys_set:no, \keys_set:nx,
 %     \@@_set:nn
 %   }
 % \begin{macro}{\@@_set:nnn}
@@ -2728,7 +2798,7 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \keys_set:nn #1#2
   {
-    \use:x
+    \use:e
       {
         \bool_set_false:N \exp_not:N \l_@@_only_known_bool
         \bool_set_false:N \exp_not:N \l_@@_filtered_bool
@@ -2746,12 +2816,12 @@
           { \exp_not:o \l_@@_relative_tl }
       }
   }
-\cs_generate_variant:Nn \keys_set:nn { nV , nv , no }
+\cs_generate_variant:Nn \keys_set:nn { nV , nv , ne , no , nx }
 \cs_new_protected:Npn \@@_set:nn #1#2
   { \exp_args:No \@@_set:nnn \l_@@_module_str {#1} {#2} }
 \cs_new_protected:Npn \@@_set:nnn #1#2#3
   {
-    \str_set:Nx \l_@@_module_str { \@@_trim_spaces:n {#2} }
+    \str_set:Ne \l_@@_module_str { \@@_trim_spaces:n {#2} }
     \keyval_parse:NNn \@@_set_keyval:n \@@_set_keyval:nn {#3}
     \str_set:Nn \l_@@_module_str {#1}
   }
@@ -2762,21 +2832,24 @@
 % \begin{macro}
 %   {
 %     \keys_set_known:nnN, \keys_set_known:nVN,
-%     \keys_set_known:nvN, \keys_set_known:noN
+%     \keys_set_known:nvN, \keys_set_known:neN,
+%     \keys_set_known:noN
 %   }
 % \begin{macro}
 %   {
 %     \keys_set_known:nnnN, \keys_set_known:nVnN,
-%     \keys_set_known:nvnN, \keys_set_known:nonN
+%     \keys_set_known:nvnN, \keys_set_known:nenN,
+%     \keys_set_known:nonN
 %   }
 % \begin{macro}{\@@_set_known:nnnnN}
 % \begin{macro}
 %   {
 %     \keys_set_known:nn, \keys_set_known:nV,
-%     \keys_set_known:nv, \keys_set_known:no
+%     \keys_set_known:nv, \keys_set_known:ne,
+%     \keys_set_known:no
 %   }
 %  \begin{macro}{\@@_set_known:nnn}
-%   Setting known keys simply means setting the appropriate flag, then
+%   Setting known keys simply means setting the appropriate boolean, then
 %   running the standard code. To allow for nested setting, any existing
 %   value of \cs{l_@@_unused_clist} is saved on the stack and reset
 %   afterwards. Note that for speed/simplicity reasons we use a \texttt{tl}
@@ -2787,26 +2860,26 @@
     \exp_args:No \@@_set_known:nnnnN
       \l_@@_unused_clist \q_@@_no_value {#1} {#2} #3
   }
-\cs_generate_variant:Nn \keys_set_known:nnN { nV , nv , no }
+\cs_generate_variant:Nn \keys_set_known:nnN { nV , nv , ne , no }
 \cs_new_protected:Npn \keys_set_known:nnnN #1#2#3#4
   {
     \exp_args:No \@@_set_known:nnnnN
       \l_@@_unused_clist {#3} {#1} {#2} #4
   }
-\cs_generate_variant:Nn \keys_set_known:nnnN { nV , nv , no }
+\cs_generate_variant:Nn \keys_set_known:nnnN { nV , nv , ne , no }
 \cs_new_protected:Npn \@@_set_known:nnnnN #1#2#3#4#5
   {
     \clist_clear:N \l_@@_unused_clist
     \@@_set_known:nnn {#2} {#3} {#4}
     \__kernel_tl_set:Nx #5 { \exp_not:o \l_@@_unused_clist }
-    \tl_set:Nn \l_@@_unused_clist {#1}
+    \__kernel_tl_set:Nx \l_@@_unused_clist { \exp_not:n {#1} }
   }
 \cs_new_protected:Npn \keys_set_known:nn #1#2
   { \@@_set_known:nnn \q_@@_no_value {#1} {#2} }
-\cs_generate_variant:Nn \keys_set_known:nn { nV , nv , no }
+\cs_generate_variant:Nn \keys_set_known:nn { nV , nv , ne , no }
 \cs_new_protected:Npn \@@_set_known:nnn #1#2#3
   {
-    \use:x
+    \use:e
       {
         \bool_set_true:N \exp_not:N \l_@@_only_known_bool
         \bool_set_false:N \exp_not:N \l_@@_filtered_bool
@@ -2832,21 +2905,21 @@
 %
 % \begin{macro}
 %   {
-%     \keys_set_filter:nnnN, \keys_set_filter:nnVN, \keys_set_filter:nnvN,
-%       \keys_set_filter:nnoN
+%     \keys_set_exclude_groups:nnnN, \keys_set_exclude_groups:nnVN,
+%     \keys_set_exclude_groups:nnvN, \keys_set_exclude_groups:nnoN
 %   }
 % \begin{macro}
 %   {
-%     \keys_set_filter:nnnnN, \keys_set_filter:nnVnN,
-%     \keys_set_filter:nnvnN, \keys_set_filter:nnonN
+%     \keys_set_exclude_groups:nnnnN, \keys_set_exclude_groups:nnVnN,
+%     \keys_set_exclude_groups:nnvnN, \keys_set_exclude_groups:nnonN
 %   }
-% \begin{macro}{\@@_set_filter:nnnnnN}
+% \begin{macro}{\@@_set_exclude_groups:nnnnnN}
 % \begin{macro}
 %   {
-%     \keys_set_filter:nnn, \keys_set_filter:nnV, \keys_set_filter:nnv,
-%       \keys_set_filter:nno
+%     \keys_set_exclude_groups:nnn, \keys_set_exclude_groups:nnV,
+%     \keys_set_exclude_groups:nnv, \keys_set_exclude_groups:nno
 %   }
-% \begin{macro}{\@@_set_filter:nnnn}
+% \begin{macro}{\@@_set_exclude_groups:nnnn}
 % \begin{macro}
 %   {
 %     \keys_set_groups:nnn, \keys_set_groups:nnV, \keys_set_groups:nnv,
@@ -2854,37 +2927,37 @@
 %   }
 %  \begin{macro}{\@@_set_selective:nnn}
 %  \begin{macro}{\@@_set_selective:nnnn}
-%   The idea of setting keys in a selective manner again uses flags
+%   The idea of setting keys in a selective manner again uses booleans
 %   wrapped around the basic code. The comments on \cs{keys_set_known:nnN}
 %   also apply here. We have a bit more shuffling to do to keep everything
 %   nestable.
 %    \begin{macrocode}
-\cs_new_protected:Npn \keys_set_filter:nnnN #1#2#3#4
+\cs_new_protected:Npn \keys_set_exclude_groups:nnnN #1#2#3#4
   {
-    \exp_args:No \@@_set_filter:nnnnnN
+    \exp_args:No \@@_set_exclude_groups:nnnnnN
       \l_@@_unused_clist
         \q_@@_no_value {#1} {#2} {#3} #4
   }
-\cs_generate_variant:Nn \keys_set_filter:nnnN { nnV , nnv , nno }
-\cs_new_protected:Npn \keys_set_filter:nnnnN #1#2#3#4#5
+\cs_generate_variant:Nn \keys_set_exclude_groups:nnnN { nnV , nnv , nno }
+\cs_new_protected:Npn \keys_set_exclude_groups:nnnnN #1#2#3#4#5
   {
-    \exp_args:No \@@_set_filter:nnnnnN
+    \exp_args:No \@@_set_exclude_groups:nnnnnN
       \l_@@_unused_clist {#4} {#1} {#2} {#3} #5
   }
-\cs_generate_variant:Nn \keys_set_filter:nnnnN { nnV , nnv , nno }
-\cs_new_protected:Npn \@@_set_filter:nnnnnN #1#2#3#4#5#6
+\cs_generate_variant:Nn \keys_set_exclude_groups:nnnnN { nnV , nnv , nno }
+\cs_new_protected:Npn \@@_set_exclude_groups:nnnnnN #1#2#3#4#5#6
   {
     \clist_clear:N \l_@@_unused_clist
-    \@@_set_filter:nnnn {#2} {#3} {#4} {#5}
+    \@@_set_exclude_groups:nnnn {#2} {#3} {#4} {#5}
     \__kernel_tl_set:Nx #6 { \exp_not:o \l_@@_unused_clist }
-    \tl_set:Nn \l_@@_unused_clist {#1}
+    \__kernel_tl_set:Nx \l_@@_unused_clist { \exp_not:n {#1} }
   }
-\cs_new_protected:Npn \keys_set_filter:nnn #1#2#3
-  {\@@_set_filter:nnnn \q_@@_no_value {#1} {#2} {#3} }
-\cs_generate_variant:Nn \keys_set_filter:nnn { nnV , nnv , nno }
-\cs_new_protected:Npn \@@_set_filter:nnnn #1#2#3#4
+\cs_new_protected:Npn \keys_set_exclude_groups:nnn #1#2#3
+  {\@@_set_exclude_groups:nnnn \q_@@_no_value {#1} {#2} {#3} }
+\cs_generate_variant:Nn \keys_set_exclude_groups:nnn { nnV , nnv , nno }
+\cs_new_protected:Npn \@@_set_exclude_groups:nnnn #1#2#3#4
   {
-    \use:x
+    \use:e
       {
         \bool_set_false:N \exp_not:N \l_@@_only_known_bool
         \bool_set_true:N \exp_not:N \l_@@_filtered_bool
@@ -2903,7 +2976,7 @@
   }
 \cs_new_protected:Npn \keys_set_groups:nnn #1#2#3
   {
-    \use:x
+    \use:e
       {
         \bool_set_false:N \exp_not:N \l_@@_only_known_bool
         \bool_set_false:N \exp_not:N \l_@@_filtered_bool
@@ -2926,7 +2999,8 @@
   { \exp_args:No \@@_set_selective:nnnn \l_@@_selective_seq }
 \cs_new_protected:Npn \@@_set_selective:nnnn #1#2#3#4
   {
-    \seq_set_from_clist:Nn \l_@@_selective_seq {#3}
+    \exp_args:NNe \seq_set_from_clist:Nn
+      \l_@@_selective_seq { \tl_to_str:n {#3} }
     \@@_set:nn {#2} {#4}
     \tl_set:Nn \l_@@_selective_seq {#1}
   }
@@ -2966,7 +3040,7 @@
 %   }
 % \begin{macro}{\@@_set_selective:}
 %   A shared system once again. First, set the current path and add a
-%   default if needed. There are then checks to see if the a value is
+%   default if needed. There are then checks to see if a value is
 %   required or forbidden. If everything passes, move on to execute the
 %   code.
 %    \begin{macrocode}
@@ -3008,7 +3082,7 @@
   }
 \cs_generate_variant:Nn \@@_set_keyval:nnn { o }
 %    \end{macrocode}
-%   This function uses \cs{cs_set_nopar:Npx} internally for performance reasons,
+%   This function uses \cs{cs_set_nopar:Npe} internally for performance reasons,
 %   the argument |#1| is already a string in every usage, so turning it into a
 %   string again seems unnecessary.
 %    \begin{macrocode}
@@ -3024,12 +3098,12 @@
 \cs_new_protected:Npn \@@_find_key_module_auxii:Nw
     #1 #2 \s_@@_mark #3 \s_@@_nil \@@_find_key_module_auxii:Nw
   {
-    \cs_set_nopar:Npx #1 { \tl_if_empty:NF #1 { #1 / } #2 }
+    \cs_set_nopar:Npe #1 { \tl_if_empty:NF #1 { #1 / } #2 }
     \@@_find_key_module_auxi:Nw #1 #3 \s_@@_nil \@@_find_key_module_auxiii:Nw
   }
 \cs_new_protected:Npn \@@_find_key_module_auxiii:Nw #1 #2 \s_@@_mark
   {
-    \cs_set_nopar:Npx #1 { \tl_if_empty:NF #1 { #1 / } #2 }
+    \cs_set_nopar:Npe #1 { \tl_if_empty:NF #1 { #1 / } #2 }
     \@@_find_key_module_auxi:Nw #1
   }
 \cs_new_protected:Npn \@@_find_key_module_auxiv:Nw
@@ -3063,23 +3137,21 @@
 %    of groups which apply to a key with the list of those which have been
 %    set active. That requires two mappings, and again a different outcome
 %    depending on whether opt-in or opt-out is set.
-%    We cannot replace the clist mapping by \cs{clist_if_in:NnTF} because
-%    catcodes may not be the same; they cannot be normalized easily in the
-%    clist because of the remote possibility that some items need braces
-%    if they involve commas or leading/trailing spaces.
+%    It is safe to use \cs{clist_if_in:NnTF} because
+%    both \cs{l_@@_selective_seq} and \cs{l_@@_groups_clist} contain the
+%    groups as strings, without leading/trailing spaces in any item,
+%    since the \pkg{l3clist} functions were applied to the result of
+%    applying \cs{tl_to_str:n}.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_check_groups:
   {
     \bool_set_false:N \l_@@_tmp_bool
     \seq_map_inline:Nn \l_@@_selective_seq
       {
-        \clist_map_inline:Nn \l_@@_groups_clist
+        \clist_if_in:NnT \l_@@_groups_clist {##1}
           {
-            \str_if_eq:nnT {##1} {####1}
-              {
-                \bool_set_true:N \l_@@_tmp_bool
-                \clist_map_break:n \seq_map_break:
-              }
+            \bool_set_true:N \l_@@_tmp_bool
+            \seq_map_break:
           }
       }
     \bool_if:NTF \l_@@_tmp_bool
@@ -3195,9 +3267,21 @@
       {
         \cs_if_exist:cTF
           { \c_@@_code_root_str \l_@@_module_str / unknown }
-          { \@@_execute:no { \l_@@_module_str / unknown } \l_keys_value_tl }
           {
-            \msg_error:nnxx { keys } { unknown }
+            \bool_if:NT \l_@@_no_value_bool
+              {
+                \cs_if_exist:cT
+                  { \c_@@_default_root_str \l_@@_module_str / unknown }
+                  {
+                    \tl_set_eq:Nc
+                      \l_keys_value_tl
+                      { \c_@@_default_root_str \l_@@_module_str / unknown }
+                  }
+              }
+            \@@_execute:no { \l_@@_module_str / unknown } \l_keys_value_tl
+          }
+          {
+            \msg_error:nnee { keys } { unknown }
               \l_keys_path_str \l_@@_module_str
           }
       }
@@ -3236,7 +3320,7 @@
   {
     \@@_quark_if_no_value:NTF \l_@@_relative_tl
       {
-        \clist_put_right:Nx \l_@@_unused_clist
+        \clist_put_right:Ne \l_@@_unused_clist
           {
             \l_keys_key_str
             \bool_if:NF \l_@@_no_value_bool
@@ -3246,7 +3330,7 @@
       {
         \tl_if_empty:NTF \l_@@_relative_tl
           {
-            \clist_put_right:Nx \l_@@_unused_clist
+            \clist_put_right:Ne \l_@@_unused_clist
               {
                 \l_keys_path_str
                 \bool_if:NF \l_@@_no_value_bool
@@ -3260,28 +3344,28 @@
   {
     \__kernel_tl_set:Nx \l_@@_relative_tl
       { \exp_args:No \@@_trim_spaces:n \l_@@_relative_tl }
-    \use:x
+    \use:e
       {
         \cs_set_protected:Npn \@@_store_unused:w
-          ####1 \l_@@_relative_tl /
-          ####2 \l_@@_relative_tl /
-          ####3 \s_@@_stop
+          ##1 \l_@@_relative_tl /
+          ##2 \l_@@_relative_tl /
+          ##3 \s_@@_stop
       }
         {
           \tl_if_blank:nF {##1}
             {
-              \msg_error:nnxx { keys } { bad-relative-key-path }
+              \msg_error:nnee { keys } { bad-relative-key-path }
                 \l_keys_path_str
                 \l_@@_relative_tl
             }
-          \clist_put_right:Nx \l_@@_unused_clist
+          \clist_put_right:Ne \l_@@_unused_clist
             {
               \exp_not:n {##2}
               \bool_if:NF \l_@@_no_value_bool
                 { = { \exp_not:o \l_keys_value_tl } }
             }
         }
-    \use:x
+    \use:e
       {
         \@@_store_unused:w \l_keys_path_str
           \l_@@_relative_tl / \l_@@_relative_tl /
@@ -3446,9 +3530,9 @@
 %   To show a key, show its code using a message.
 %    \begin{macrocode}
 \cs_new_protected:Npn \keys_show:nn
-  { \@@_show:Nnn \msg_show:nnxxxx }
+  { \@@_show:Nnn \msg_show:nneeee }
 \cs_new_protected:Npn \keys_log:nn
-  { \@@_show:Nnn \msg_log:nnxxxx }
+  { \@@_show:Nnn \msg_log:nneeee }
 \cs_new_protected:Npn \@@_show:Nnn #1#2#3
   {
     #1 { keys } { show-key }
@@ -3471,7 +3555,7 @@
       }
       { } { }
   }
-\cs_new:Npx \@@_show:n #1
+\cs_new:Npe \@@_show:n #1
   {
     \exp_not:N \@@_show:w
       #1
@@ -3480,21 +3564,21 @@
       \tl_to_str:n { \@@_precompile:n }
       \exp_not:N \s_@@_stop
   }
-\use:x
+\use:e
   {
     \cs_new:Npn \exp_not:N \@@_show:w
-      ##1 \tl_to_str:n { \@@_precompile:n }
-      ##2 \tl_to_str:n { \@@_precompile:n }
-      ##3 \exp_not:N \s_@@_stop
+      #1 \tl_to_str:n { \@@_precompile:n }
+      #2 \tl_to_str:n { \@@_precompile:n }
+      #3 \exp_not:N \s_@@_stop
   }
   {
     \tl_if_blank:nTF {#2}
       {#1}
       { \@@_show:Nw #2 \s_@@_stop }
   }
-\use:x
+\use:e
   {
-    \cs_new:Npn \exp_not:N \@@_show:Nw ##1##2
+    \cs_new:Npn \exp_not:N \@@_show:Nw #1#2
       \c_right_brace_str \exp_not:N \s_@@_stop
   }
   {#2}

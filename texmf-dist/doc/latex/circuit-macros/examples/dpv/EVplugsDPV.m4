@@ -1,6 +1,9 @@
 .PS
-# EV_lugs.m4
+# EVplugs.m4
 # https://en.wikipedia.org/wiki/CHAdeMO
+# https://en.wikipedia.org/wiki/North_American_Charging_Standard
+# https://tesla-cdn.thron.com/static/HXVNIC_North_American_Charging_Standard_Technical_Specification_TS-0023666_HFTPKZ.pdf?xseo=&response-content-disposition=inline%3Bfilename%3D%22North-American-Charging-Standard-Technical-Specification-TS-0023666.pdf%22
+
 gen_init
 divert(-1)
 
@@ -60,7 +63,6 @@ define(`EV_J3068',`[ pushkeys_(`$1',
   Arc: arc thick m4thick from NW to NE with .c at C m4BG ifelse(`$2',,,
     `shaded rgbstring(patsubst(`$2',:,`,'))
      line invis from NE to Ac+(0,m4diamLNP/2) \
-       then to Ac+(0,m4diamLNP/2) \
        then to NW+(1,-1)/sqrt(2)*m4diamLNP/2 + (0,m4diamLNP/2) \
        then to NW then to NE shaded rgbstring(patsubst(`$2',:,`,'))')
   arc thick m4thick to Ac+(0,m4diamLNP/2) with .c at Ac m4BG
@@ -146,16 +148,85 @@ define(`EV_CHAdeMO',`[ pushdef(`m4sk',33/140/pEVskale) pushkeys_(`$1',
  S: circle diam idiam thick m4inthick with .s at C.s+(0,m4thick bp__/2) m4S
  E: circle diam idiam thick m4inthick at Cintersect(N,N.diam,S,S.diam) m4DCminus
  W: circle diam idiam thick m4inthick at Cintersect(S,S.diam,N,N.diam) m4DCplus
- Loopover_(`Z',
+ foreach_(`Z',
   `line thick m4inthick up Z.diam*0.6 right Z.diam*0.6 with .c at Z
    line thick m4inthick up Z.diam*0.6 left Z.diam*0.6 with .c at Z',N,S)
- Loopover_(`L',`L: circle diam idiam/4 thick linethick/2 \
+ foreach_(`L',`L: circle diam idiam/4 thick linethick/2 \
    at N+(Rect_(idiam/4,90*m4Lx)) m4xpand(m4`'L)',FG,NC,DCP,SS1)
- Loopover_(`L',`L: circle diam idiam/4 thick linethick/2 \
+ foreach_(`L',`L: circle diam idiam/4 thick linethick/2 \
    at S+(Rect_(idiam/4,90*m4Lx)) m4xpand(m4`'L)',PP,CL,SS2,CH)
  `$3' popdef(`m4sk',`m4wdth',`m4thick',`m4inthick',`m4BG',
   `m4DCplus',`m4DCminus',`m4N',`m4S',
   `m4FG',`m4NC',`m4SS1',`m4DCP',`m4PP',`m4CL',`m4CH',`m4SS2') ]')
+
+                            `EV_NAC(keys)
+                             NAC (Tesla) charging plug in a [] block
+                             keys: wdth=expr;     # plug width
+                                   diamL=expr; # diam of L1, L2
+                                   BG=background attributes; # shaded "gray"
+                                   L1=attributes; # L1 attributes ...
+                                   L1inner=attributes; # inner circle...
+                                   L2=attributes; # L2 attributes ...
+                                   L2inner=attributes; # inner circle...
+                                   inner=attributes; # central object
+                                   Gnd=attributes;
+                                   Gndinner=attributes;
+                                   PP=attributes;
+                                   CP=attributes; '
+define(`EV_NAC',`[ pushkeys_(`$1', `wdth:1.6; diamL:m4wdth*0.28; BG::N;
+   L1::N; L1inner::N; L2::N; L2inner::N; Gndinner::N; inner::N;
+   Gnd::N; PP::N; CP::N; ')
+  sN = 1/pEVskale*m4wdth/1.6      # drawing coord scale factor
+  tt = 8.5/160*m4wdth;            # outer width
+  rt = (4^2+43^2)/(2*4)/4*sN; rb = (23^2+56.5^2)/(2*23)/4*sN # arc radii
+  Ct: (0,0.83*m4wdth-rt); Cb: (0,rb) # arc centres
+  ra = rb*0.45; ri = ra/4         # radii
+  NAC_fillet(Ct,-rt,Cb,-rb,ra,NW,Wt,Wb) # draw outer boundary
+  NE: (-NW.x,NW.y); Eb: (-Wb.x,Wb.y); Et: (-Wt.x,Wt.y)
+  m = 9; n = 0; P[n]: (0,0)
+  NAC_arc(m,Cb,rb,-pi_/2,langle(Cb,Eb))
+  NAC_arc(m,NE,ra,langle(NE,Eb),langle(NE,Et))
+  NAC_arc(m,Ct,rt,langle(Ct,Et),pi_/2)
+  fitcurve(P,n,shaded "lightgray" m4BG,-n)
+  pushdef(`m4EVs',`shaded graystring(1)')dnl  # inner circles
+  L1: circle diam m4diamL at ( 21.5/2,23.75)*sN m4EVs m4L1
+  inLt = L1.rad/4/(1bp__)
+  L1i: circle thick inLt rad L1.rad-(inLt+L1.thick)/2 bp__ outlined "yellow" \
+    at L1 m4L1inner
+  L2: circle diam m4diamL at (-21.5/2,23.75)*sN m4EVs m4L2
+  L2i: circle thick inLt rad L2.rad-(inLt+L2.thick)/2 bp__ outlined "yellow" \
+    at L2 m4L2inner
+  Gnd: circle diam m4wdth/7 at (0,L1.y-15.92*sN) m4EVs m4Gnd
+  Gndi: circle thick Gnd.rad/4/(1bp__) rad Gnd.rad-(Gnd.rad/4/(1bp__)+ \
+    Gnd.thick)/2 bp__ outlined "green" at Gnd m4Gndinner
+  PP: circle diam Gnd.diam/2 at (-17/2*sN,L1.y-16.52*sN) m4EVs m4PP
+  CP: circle diam Gnd.diam/2 at ( 17/2*sN,L1.y-16.52*sN) m4EVs m4CP
+  rs = (15^2+50^2)/(2*15)/4*sN; Cs: (0,0.3*m4wdth-rs) # inner tri-shape
+  m = 9; n = 0; P[0]: Ct+(0,rt-tt)
+  NAC_fillet(L2,L2.rad+tt,Ct,-(rt-tt),ri,FW,Fb,Ft)
+  NAC_fillet(Cb,-(rb-tt),L2,L2.rad+tt,ri,GW,Gt,Gb)
+  NAC_fillet(Cs,rs,Cb,-(rb-tt),ri,SW,St,Sb)
+  NAC_arc(3,Ct,rt-tt,pi_/2,langle(Ct,Ft))
+  NAC_arc(m,FW,ri,langle(FW,Ft),NAC_ang(FW,Fb))
+  NAC_arc(m,L2,L2.rad+tt,langle(L2,Fb),langle(L2,Gb))
+  NAC_arc(m,GW,ri,NAC_ang(GW,Gb),NAC_ang(GW,Gt))
+  NAC_arc(m,Cb,rb-tt,NAC_ang(Cb,Gt),NAC_ang(Cb,Sb))
+  NAC_arc(m,SW,ri,NAC_ang(SW,Sb),NAC_ang(SW,St))
+  NAC_arc(m,Cs,rs,langle(Cs,St),pi_/2)
+  fitcurve(P,n,fill_(1) m4inner,-n)
+  popdef(`m4EVs',`m4CP',`m4PP',`m4Gnd',`m4inner',
+   `m4L2',`m4L2inner',`m4L1',`m4L1inner',`m4Gndinner',
+   `m4BG',`m4diamL',`m4wdth') `$2' ]')
+  define(`NAC_fillet', #( C1, r1, C2, r2, frad, Cf, T1, T2 )
+   ``$6': Cintersect(`$1',(abs(`$2')+sign(`$2')*(`$5')),
+                     `$3',(abs(`$4')+sign(`$4')*(`$5')))
+    `$7': LCintersect(,`$6',`$5',ifelse(index(`$2',-),0,R),`$1',`$6')
+    `$8': LCintersect(,`$6',`$5',ifelse(index(`$4',-),0,R),`$3',`$6')')
+  define(`NAC_arc', #( m, C, rad, a0, af )
+   `m4a0 = `$4'; m4af = `$5'; for i=1 to `$1' do { n+=1
+      P[n]: `$2'+(rect_(`$3',(1-i/`$1')*m4a0+i/`$1'*m4af))
+      P[-n]: (-P[n].x,P[n].y) }')
+  define(`NAC_ang',`pmod(langle(`$1',`$2'),twopi_)')
 
 divert(0)dnl
 
@@ -188,22 +259,31 @@ P4: EV_CCS2(L1="L1";L2="L2";L3="L3";N="N";PE="PE",0.85:0.85:0.85,
       DCplus="DC+";DCminus="DC-") with .w at P3.e+(P1.wid/5,0)
    "EVsmall(PP)" at P4.J.PP EVk
    "EVsmall(CP)" at P4.J.CP EVk
+
 P5: EV_CHAdeMO( BG=outlined "blue" fill_(0.8);
     DCplus=shaded "red" "DC+";
     DCminus=shaded "red" "DC-";
-    Loopover_(`L',`L=fill_(1);',N,S)
+    foreach_(`L',`L=fill_(1);',N,S)
     FG=shaded "green";
-    Loopover_(`L',`L=shaded "orange";',SS1,DCP,NC,PP,CH,SS2,CL)) \
+    foreach_(`L',`L=shaded "orange";',SS1,DCP,NC,PP,CH,SS2,CL)) \
       with .w at P4.e+(P4.w.x-P3.e.x,0)
-  Loopover_(`L',`"EVsmall(L)" at P5.L EVk',FG,NC,DCP,SS1,PP,CL,CH,SS2)
-#
-   ifsvg(move from P5.e right 0.2)
+  foreach_(`L',`"EVsmall(L)" at P5.L EVk',FG,NC,DCP,SS1,PP,CL,CH,SS2)
+
+P6: EV_NAC(wdth=1) with .w at P5.e+(P5.wid/5,0)
+  foreach_(`L',`"EVtxt(`L'm4Lx)" at P6.L',L1,L2)
+thinlines_
+   arrow <- from P6.Gnd.s down P6.ht/5; "EVtxt(Gnd)" below
+   arrow <- from P6.PP.sw down P6.ht/8 left P6.ht/8; "EVtxt(`PP')" rjust
+   arrow <- from P6.CP.se down P6.ht/8 right P6.ht/8; "EVtxt(`CP')" ljust
+thicklines_
+
    "EVtxt(`EV_CCS2')" at P4.s+(0,-10bp__)
+   "EVtxt(`EV_NAC')" at (P6,last "")
+   "EVtxt(`EV_CHAdeMO')" at (P5,last "")
    "EVtxt(`EV_CCS1')" at (P3,last "")
    "EVtxt(`EV_J3068')" at (P2,last "")
    "EVtxt(`EV_J1772')" at (P1,last "")
-   "EVtxt(`EV_CHAdeMO')" at (P5,last "")
-  ] # with .nw at last [].sw+(0,-0.2)
+  ]
 
   iflatex(command "}%")
   ifsvg(command "</g>")

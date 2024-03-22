@@ -7,19 +7,42 @@
 %% textcase.dtx  (with options: `package')
 %% 
 %% Source File: textcase.dtx
-%% Copyright 1997 1998 2019 2022 David Carlisle
+%% Copyright 1997 1998 2019 2022 2023 David Carlisle
 %%
 %% This file may be distributed under the terms of the LPPL.
 %% See 00readme.txt for details.
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesPackage{textcase}
-       [2022/07/10 v1.03 Text only upper/lower case changing (DPC)]
+       [2023/07/27 v1.04 Text only upper/lower case changing (DPC)]
 \ifx\AddToNoCaseChangeList\@undefined\else
   \DeclareOption{overload}{}
   \ProcessOptions
   \PackageInfo{textcase}{Defining Legacy names}
-  \let\MakeTextUppercase\MakeUppercase
-  \let\MakeTextLowercase\MakeLowercase
+\ExplSyntaxOn
+\cs_set_protected:Npn \reserved@a #1
+ {
+  \cs_generate_variant:cn { text_ \str_lowercase:n {#1} case:nn } { V }
+  \ExpandArgs { cnx } \NewExpandableDocumentCommand
+    { MakeText#1case }
+    { O{} +m }
+    { \exp_not:c { MakeText#1case \c_space_tl \c_space_tl \c_space_tl }
+                           [####1] {####2} }
+  }
+\reserved@a { Upper }
+\reserved@a { Lower }
+\cs_new_protected:cpn {
+   MakeTextLowercase \c_space_tl \c_space_tl \c_space_tl } [#1] #2
+  {%{
+    \let \OE \oe
+    \@@text@case@aux { lower } {#1} {#2}
+  }%}
+\cs_new_protected:cpn {
+   MakeTextUppercase \c_space_tl \c_space_tl \c_space_tl } [#1] #2
+  {%{
+    \let \oe \OE
+    \@@text@case@aux { upper } {#1} {#2}
+  }%}
+\ExplSyntaxOff
   \expandafter\endinput
 \fi
 \def\@uclcnotmath#1#2#3#4{\begingroup

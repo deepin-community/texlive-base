@@ -128,7 +128,8 @@ local lfs = get_locals {lfs = "dir isdir isfile mkdir", kpse = "expand_var show_
 
 -- Returns anything after the last dot, i.e. an extension.
 function lfs.extension (s)
-  return str.lower(str.match(s, "%.([^%.]*)$"))
+  return str.lower(str.match(s, "%.([^%.]*)$") or "")
+--  return str.match(s, "%.([^%.]*)$") -- bugfix: dpc for empty field in file extension 230902
 end
 
 local extensions = {
@@ -220,9 +221,9 @@ local normal_names = {}
 for _, name in ipairs(settings.normal) do
   normal_names[name] = true
 end
-local local_path   = lfs.expand_var("$TEXMFHOME")
-local foundry_path = lfs.ensure_dir (local_path, "tex", "luatex", "foundry")
--- local local_path   = lfs.expand_var("$TEXMFHOME")
+local local_path   = lfs.expand_var("$TEXMFLOCAL") 
+-- local local_path   = lfs.expand_var("$TEXMFHOME") -- :gsub(":",";") -- bugfix dpc: no path search gsub 0.0.2
+local foundry_path = lfs.ensure_dir (local_path, "tex", "luatex", "blotfonts")
 -- local foundry_path = lfs.ensure_dir (local_path, "fonts", "truetype", "public", "gfs")
 local library_file = foundry_path .. "/" .. "readable.txt"
 -- local library_file = "c:/texlive/texmf-local/tex/plain/pitex/readable.txt"
@@ -244,13 +245,19 @@ local function extract_font (file, names)
         fi = fl.open
       end
       if not fi then
-        fl.error("Can't open %s", file)
+--        fl.error("Can't open %s", file)
+        fl.error("\nCannot open file", file)
         return
       end
     end
     subname = name
   else
     fi = fl.open(file)
+    -- blot-fonts.lua:257: attempt to index a nil value (local 'fi')
+     if not fi then
+        print("\nCannot open file", file)
+        return
+	end
   end
   -- Getting the most precise information. Not necessarily the best
   -- solution, but since the user can modify the library, it's not so bad.
@@ -282,6 +289,7 @@ end
 -- only those that arent in the libraries are considered.
 local fonts_done = {}
 local function check_fonts (rep, tb)
+  if lfs.isdir(rep) then
   for f in lfs.dir (rep) do
     if f ~= "." and f ~= ".." then
       f = str.gsub(rep, "/$", "") .. "/" .. f
@@ -307,6 +315,7 @@ local function check_fonts (rep, tb)
         end
       end
     end
+  end
   end
 end
 
@@ -355,6 +364,7 @@ end
 
 -- If there is no library, we create it.
 local font_paths = lfs.show_path("opentype fonts")
+font_paths = str.gsub(font_paths, ":", ";")
 font_paths = str.gsub(font_paths, "\\", "/")
 font_paths = str.gsub(font_paths, "/+", "/")
 font_paths = str.gsub(font_paths, "!!", "")
@@ -398,6 +408,9 @@ local function load_library (lib)
   LIB = str.gsub(LIB, ";%s*;", ";;")
   LIB = str.gsub(LIB, ";+", ";")
   LIB = str.gsub(LIB, "^;", "")
+  LIB = str.gsub(LIB, ":%s*:", "::")
+  LIB = str.gsub(LIB, ":+", ":")
+  LIB = str.gsub(LIB, "^:", "")
   LIB = str.gsub(LIB, "%s+", " ")
 
   LIB = lp.match(explode_semicolon, LIB)
@@ -565,6 +578,8 @@ end
 -- with such a name, so if there's an "f f" ligature in a font, no matter its name, "ff.lig"
 -- will point to it.
 local function ligature (comp, tb, phantoms)
+  if #tb == 0 then -- fast kludge to evade empty tables. jlrn 231207
+    else
   local i = str.gsub(comp[1], "%.lig$", "") .. comp[2] .. ".lig"
   phantoms[i] = true
   tab.insert(tb.all_ligs, i)
@@ -576,6 +591,7 @@ local function ligature (comp, tb, phantoms)
     tab.insert(comp, 1, i)
     ligature(comp, tb, phantoms)
   end
+  end -- endkludge 231209
 end
 
 local function get_lookups (t, lookup_table)
@@ -1195,14 +1211,17 @@ local function load_font (name, size, id, done)
       loaded_font = apply_size(loaded_font, size, features.letterspacing, features.space)
       loaded_font = activate_lookups(loaded_font, features, features.script, features.lang)
 
+      if #loaded_font == 0 then  -- kludge for missing families/series, etc. 231207. jlrn.
+        else -- kludge 231207
       loaded_font.name = loaded_font.name .. id
-      loaded_font.fullname = loaded_font.fullname .. id
+      loaded_font.fullname = loaded_font.fullname .. id 
       local embedding = features.embedding or "subset"
       if embedding ~= "no" and embedding ~= "subset" and embedding ~= "full" then
         wri.error("Invalid value `%s' for the `embedding' feature. Value should be `no', `subset' or `full'.", embedding)
         embedding = "subset"
       end
       loaded_font.embedding = embedding
+      end -- endkludge 231207
     else
       loaded_font = fl.read_tfm(lfs.find_file("cmr10", "tfm"), size)
     end
@@ -1211,3 +1230,13 @@ local function load_font (name, size, id, done)
 end
 
 callback.register("define_font", load_font)
+
+--[[
+History
+0.0.0 First release
+0.0.1 Bugfix
+0.0.2 2023-06-28 Bugfix on font path search: removed gsubs for Nix&Win
+0.0.3 2023-09-02 Bugfix on font path search: empty file extensions in font paths
+0.0.4 2023-12-07 Two kludges: one for missing ligatures, another for missing families/series; 
+      some cleanup and housekeeping.
+--]]

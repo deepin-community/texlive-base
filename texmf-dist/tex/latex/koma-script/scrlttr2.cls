@@ -73,7 +73,7 @@
 %% find a complete unmodified copy of LaTeX2e at
 %% <http://mirror.ctan.org/tex-archive/macros/latex/base/>.
 %% 
-%%% From File: $Id: scrkernel-version.dtx 3962 2022-10-12 06:33:06Z kohm $
+%%% From File: $Id: scrkernel-version.dtx 4070 2023-07-07 07:08:40Z kohm $
 \begingroup
   \catcode`\@11\relax
   \ifx\KOMAScriptVersion\undefined
@@ -95,28 +95,26 @@
       \fi
     }
   \fi
-  \@CheckKOMAScriptVersion{2022/10/12 v3.38 KOMA-Script}%
+  \@CheckKOMAScriptVersion{2023/07/07 v3.41 KOMA-Script}%
 \endgroup
 \providecommand*{\scr@clsextension}{\@clsextension}
 \AtBeginDocument{%
   \let\scr@clsextension\@clsextension
 }
-\newcommand*{\KOMAClassName}{%
-  scrlttr2%
-}
+\newcommand*{\KOMAClassName}{scrlttr2}
 \newcommand*{\KOMAClassFileName}{\KOMAClassName.\@clsextension}
 \edef\KOMAClassFileName{\KOMAClassFileName}
 \newcommand*{\ClassName}{%
   letter%
 }
 \ProvidesClass{\KOMAClassName}[%
-  2022/10/12 v3.38 KOMA-Script
+  2023/07/07 v3.41 KOMA-Script
   document class (\ClassName)%
 ]
-%%% From File: $Id: scrkernel-basics.dtx 3913 2022-06-28 07:45:49Z kohm $
+%%% From File: $Id: scrkernel-basics.dtx 4051 2023-04-26 16:01:28Z kohm $
 %%%            (run: load)
 \RequirePackage{scrkbase}[\KOMAScriptVersion]
-%%% From File: $Id: scrkernel-compatibility.dtx 3949 2022-08-09 10:05:50Z kohm $
+%%% From File: $Id: scrkernel-compatibility.dtx 4054 2023-05-10 14:35:36Z kohm $
 %%%            (run: init)
 \newcommand*
   {\scr@compatibility}{\scr@v@last}
@@ -202,10 +200,13 @@
 \@namedef{scr@v@3.36}{20}
 \@namedef{scr@v@3.37}{20}
 \@namedef{scr@v@3.38}{20}
-\@namedef{scr@v@last}{20}
-%%% From File: $Id: scrkernel-typearea.dtx 3889 2022-06-09 12:11:14Z kohm $
+\@namedef{scr@v@3.39}{20}
+\@namedef{scr@v@3.40}{20}
+\@namedef{scr@v@3.41}{21}
+\@namedef{scr@v@last}{21}
+%%% From File: $Id: scrkernel-typearea.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: init)
-%%% From File: $Id: scrkernel-compatibility.dtx 3949 2022-08-09 10:05:50Z kohm $
+%%% From File: $Id: scrkernel-compatibility.dtx 4054 2023-05-10 14:35:36Z kohm $
 %%%            (run: option)
 \KOMA@key{version}[last]{%
   \scr@ifundefinedorrelax{scr@v@#1}{%
@@ -216,7 +217,7 @@
       Because of this, version was set to `first'%
     }%
     \FamilyKeyStateProcessed
-    \KOMA@kav@replacevalue{.%
+    \KOMA@kav@replacevalue{%
       \KOMAClassFileName
     }{version}{first}%
   }{%
@@ -225,7 +226,7 @@
     }%
  \edef\scr@compatibility{\@nameuse{scr@v@#1}}%
     \FamilyKeyStateProcessed
-    \KOMA@kav@xreplacevalue{.%
+    \KOMA@kav@xreplacevalue{%
       \KOMAClassFileName
     }{version}{#1}%
     \ifnum\scr@compatibility<\scr@v@last
@@ -246,7 +247,7 @@
     \fi
   }%
 }
-\KOMA@kav@add{.\KOMAClassFileName}{version}{last}
+\KOMA@kav@add{\KOMAClassFileName}{version}{last}
 \AtEndOfClass{%
   \KOMA@key{version}[]{%
     \ClassError{\KOMAClassName}{%
@@ -271,61 +272,60 @@
 \newcommand*{\scr@v@is@ge}[1]{%
   \numexpr\scr@compatibility+\@ne\relax>\@nameuse{scr@v@#1}
 }
-%%% From File: $Id: scrkernel-miscellaneous.dtx 3874 2022-06-05 10:38:02Z kohm $
+\newcommand*{\scr@v@is@eq}[1]{%
+  \scr@compatibility=\@nameuse{scr@v@#1}
+}
+%%% From File: $Id: scrkernel-miscellaneous.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: option)
 \KOMA@key{draft}[true]{%
   \KOMA@set@ifkey{draft}{@tempswa}{#1}%
   \ifx\FamilyKeyState\FamilyKeyStateProcessed
     \if@tempswa
-      \KOMA@kav@replacebool{.%
+      \KOMA@kav@replacebool{%
         \KOMAClassFileName
       }{draft}{@tempswa}%
-      \KOMA@kav@replacebool{.%
+      \KOMA@kav@replacebool{%
         \KOMAClassFileName
       }{overfullrule}{@tempswa}%
       \setlength{\overfullrule}{5pt}%
     \else
-      \KOMA@kav@replacebool{.%
+      \KOMA@kav@replacebool{%
         \KOMAClassFileName
       }{draft}{@tempswa}%
-      \KOMA@kav@replacebool{.%
+      \KOMA@kav@replacebool{%
         \KOMAClassFileName
       }{overfullrule}{@tempswa}%
       \setlength{\overfullrule}{\z@}%
     \fi
   \fi
 }
-\KOMA@kav@add{.\KOMAClassFileName}{draft}{false}
+\KOMA@kav@add{\KOMAClassFileName}{draft}{false}
 \KOMA@DeclareStandardOption
 {final}{draft=false}
 \KOMA@key{overfullrule}[true]{%
   \KOMA@set@ifkey{overfullrule}{@tempswa}{#1}%
   \ifx\FamilyKeyState\FamilyKeyStateProcessed
     \if@tempswa
-      \KOMA@kav@replacebool{.%
+      \KOMA@kav@replacebool{%
         \KOMAClassFileName
       }{draft}{@tempswa}%
-      \KOMA@kav@replacebool{.%
+      \KOMA@kav@replacebool{%
         \KOMAClassFileName
       }{overfullrule}{@tempswa}%
       \setlength{\overfullrule}{5pt}%
     \else
-      \KOMA@kav@replacebool{.%
+      \KOMA@kav@replacebool{%
         \KOMAClassFileName
       }{draft}{@tempswa}%
-      \KOMA@kav@replacebool{.%
+      \KOMA@kav@replacebool{%
         \KOMAClassFileName
       }{overfullrule}{@tempswa}%
       \setlength{\overfullrule}{\z@}%
     \fi
   \fi
 }
-\KOMA@kav@add{.\KOMAClassFileName}{overfullrule}{false}
-\KOMA@ifkey{egregdoesnotlikesansseriftitles}{@egregdoesnotlikesansseriftitles}
-\newcommand*{\@gr@gsffamily}{%
-  \if@egregdoesnotlikesansseriftitles\else\sffamily\fi
-}
-%%% From File: $Id: scrkernel-letterclassoptions.dtx 3874 2022-06-05 10:38:02Z kohm $
+\KOMA@kav@add{\KOMAClassFileName}{overfullrule}{false}
+%%% From File: $Id: scrkernel-letterclassoptions.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: option)
 \newcommand*{\lco@test}{%
   \IfFileExists{\CurrentOption.lco}{%
@@ -350,23 +350,23 @@
 }
 \AtEndOfClass
   {\LoadLetterOption{DIN}}
-%%% From File: $Id: scrkernel-language.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-language.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: option)
 \newif\if@orgdate\@orgdatetrue
 \KOMA@key{numericaldate}[true]{%
   \if@orgdate\@orgdatefalse\else\@orgdatetrue\fi
   \KOMA@set@ifkey{numericaldate}{@orgdate}{#1}%
-  \KOMA@kav@replacebool{.%
+  \KOMA@kav@replacebool{%
     \KOMAClassFileName
   }{numericaldate}{@orgdate}%
   \if@orgdate\@orgdatefalse\else\@orgdatetrue\fi
 }
-\KOMA@kav@add{.%
+\KOMA@kav@add{%
   \KOMAClassFileName
 }{numericaldate}{true}
 \KOMA@DeclareDeprecatedOption{scrdate}{numericaldate=true}
 \KOMA@DeclareDeprecatedOption{orgdate}{numericaldate=false}
-%%% From File: $Id: scrkernel-fonts.dtx 3958 2022-10-06 12:44:28Z kohm $
+%%% From File: $Id: scrkernel-fonts.dtx 4034 2023-04-20 08:03:46Z kohm $
 %%%            (run: option)
 \providecommand*\@ptsize{%
   12%
@@ -455,7 +455,7 @@
     \@tempa
   }%
   \FamilyKeyStateProcessed
-  \KOMA@kav@xreplacevalue{.%
+  \KOMA@kav@xreplacevalue{%
     \KOMAClassFileName
   }{fontsize}{#1}%
 }
@@ -477,11 +477,57 @@
 \BeforePackage{tex4ht}{%
   \let\scr@defineobsoletefonts\thr@@
 }
-%%% From File: $Id: scrkernel-variables.dtx 3874 2022-06-05 10:38:02Z kohm $
+\newif\if@sfdefaults\@sfdefaultstrue
+\KOMA@ifkey{sfdefaults}{@sfdefaults}
+\newcommand*{\maybesffamily}{\if@sfdefaults \sffamily \fi}
+\newcommand*{\textmaybesf}{%
+  \if@sfdefaults \expandafter\textsf \else \expandafter\@firstofone \fi
+}
+%% \begin{option}{egegdoesnotlikesansseriftitles}
+\KOMA@key{egregdoesnotlikesansseriftitles}[true]{%
+  \ClassWarningNoLine{\KOMAClassName}%
+  {%
+    You've used deprecated option `egregdoesnotlikesansseriftitles'.\MessageBreak
+    In 2016 this option has been implemented as a joke\MessageBreak
+    answer to egreg's comment:\MessageBreak
+    \space\space ``In my opinion there should be a document class\MessageBreak
+    \space\space option for it, instead of the
+      \string\setkomafont\MessageBreak
+    \space\space statement. And yes, I find imposing sans serif
+      for\MessageBreak
+    \space\space titles is not the best choice (one of the
+      reasons\MessageBreak
+    \space\space why I don't use Koma-script classes).''\MessageBreak
+    to question https://tex.stackexchange.com/q/289853\MessageBreak
+    at TeX.SX.\MessageBreak
+    The option has never been documented in the official\MessageBreak
+    user manuals and therefore should never have been\MessageBreak
+    used in real live documents. It was intended to be\MessageBreak
+    removed after some month.\MessageBreak
+    However, it has been used and also almost forgotten\MessageBreak
+    by the author.\MessageBreak
+    For this the author apologizes both to users but\MessageBreak
+    especially to egreg.\MessageBreak
+    Rightly, egreg has criticized the permanent retention\MessageBreak
+    of the option as unfunny to inappropriate and has\MessageBreak
+    asked that it be removed or replaced.\MessageBreak
+    It will be removed soon!\MessageBreak
+    You should use `sfdefaults=false` instead%
+  }%
+  \KOMA@set@ifkey{egregdoesnotlikesansseriftitles}%
+                 {@sfdefaults}%
+                 {#1}%
+  \ifx\FamilyKeyState\FamilyKeyStateProcessed
+    \if@sfdefault \@sfdefaultsfalse \else \@sfdefaulttrue \fi
+    \KOMA@kav@xreplacevalue{\KOMAClassFileName}%
+                           {sfdefaults}{\if@sfdefaults true\else false\fi}%
+  \fi
+}
+%%% From File: $Id: scrkernel-variables.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: option)
-%%% From File: $Id: scrkernel-pseudolengths.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-pseudolengths.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: option)
-%%% From File: $Id: scrkernel-typearea.dtx 3889 2022-06-09 12:11:14Z kohm $
+%%% From File: $Id: scrkernel-typearea.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: options)
 \KOMA@key{twoside}[true]{%
   \if@atdocument\else\PassOptionsToPackage{twoside=#1}{typearea}\fi%
@@ -501,9 +547,9 @@
         \if@twocolumn\sloppy\flushbottom\else\raggedbottom\fi
       \fi
     \fi
-    \KOMA@kav@xreplacevalue{.%
-      \KOMAClassFileName
-    }{twoside}{#1}%
+    \KOMA@kav@xreplacevalue
+    {\KOMAClassFileName}%
+    {twoside}{#1}%
   \fi
 }
 \KOMAExecuteOptions{twoside=false}
@@ -513,21 +559,23 @@
   \if@atdocument\else\PassOptionsToPackage{twocolumn=#1}{typearea}\fi%
   \KOMA@set@ifkey{twocolumn}{@twocolumn}{#1}%
   \ifx\FamilyKeyState\FamilyKeyStateProcessed
-    \KOMA@kav@replacebool{.%
-      \KOMAClassFileName
-    }{twocolumn}{@twocolumn}%
+    \KOMA@kav@replacebool
+    {\KOMAClassFileName}%
+    {twocolumn}{@twocolumn}%
     \if@atdocument\expandafter\@firstofone
     \else\@ifpackageloaded{typearea}{\expandafter\@firstofone}
                                     {\expandafter\AtEndOfClass}\fi
-    {\expandafter\ifnum\scr@v@is@ge{3.17}%
-      \if@twocolumn\twocolumn\sloppy\flushbottom
-      \else
-        \onecolumn
-        \if@twoside\flushbottom\else
-          \raggedbottom
+    {%
+      \expandafter\ifnum\scr@v@is@ge{3.17}%
+        \if@twocolumn\twocolumn\sloppy\flushbottom
+        \else
+          \onecolumn
+          \if@twoside\flushbottom\else
+            \raggedbottom
+          \fi
         \fi
       \fi
-    \fi}%
+    }%
   \fi
 }
 \AtEndOfClass{%
@@ -608,7 +656,7 @@
 \DeclareOption*{%
   \lco@test
   \x@paper}
-%%% From File: $Id: scrkernel-paragraphs.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-paragraphs.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: option)
 \newcommand*{\setparsizes}[3]{%
   \edef\f@parindent{\the\parindent}%
@@ -621,16 +669,16 @@
     \if@atdocument\let\par@update\default@par@update\fi
     \par@updaterelative
   }%
-  \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{false}%
-  \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{never}%
-  \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{full}%
-  \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{full-}%
-  \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{full+}%
-  \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{full*}%
-  \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{half}%
-  \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{half-}%
-  \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{half+}%
-  \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{half*}%
+  \KOMA@kav@remove{\KOMAClassFileName}{parskip}{false}%
+  \KOMA@kav@remove{\KOMAClassFileName}{parskip}{never}%
+  \KOMA@kav@remove{\KOMAClassFileName}{parskip}{full}%
+  \KOMA@kav@remove{\KOMAClassFileName}{parskip}{full-}%
+  \KOMA@kav@remove{\KOMAClassFileName}{parskip}{full+}%
+  \KOMA@kav@remove{\KOMAClassFileName}{parskip}{full*}%
+  \KOMA@kav@remove{\KOMAClassFileName}{parskip}{half}%
+  \KOMA@kav@remove{\KOMAClassFileName}{parskip}{half-}%
+  \KOMA@kav@remove{\KOMAClassFileName}{parskip}{half+}%
+  \KOMA@kav@remove{\KOMAClassFileName}{parskip}{half*}%
 }
 \newcommand*{\f@parindent}{\the\parindent}
 \newcommand*{\f@parskip}{\the\parskip}
@@ -669,66 +717,66 @@
       \ifcase\number\@tempa% 0
         \endgroup
         \setparsizes{1em}{\z@}{\z@ \@plus 1fil}%
-        \KOMA@kav@add{.\KOMAClassFileName}{parskip}{never}%
+        \KOMA@kav@add{\KOMAClassFileName}{parskip}{never}%
         \if@atdocument\AfterKOMAoptions{\selectfont}\fi
       \or% 1
         \endgroup
         \setparsizes{1em}{\z@ \@plus \p@}{\z@ \@plus 1fil}%
-        \KOMA@kav@add{.\KOMAClassFileName}{parskip}{false}%
+        \KOMA@kav@add{\KOMAClassFileName}{parskip}{false}%
         \if@atdocument\AfterKOMAoptions{\selectfont}\fi
       \or% 2
         \endgroup
         \setparsizes{\z@}{1\baselineskip \@plus .1\baselineskip}{%
           \z@ \@plus 1fil}%
-        \KOMA@kav@add{.\KOMAClassFileName}{parskip}{full-}%
+        \KOMA@kav@add{\KOMAClassFileName}{parskip}{full-}%
         \if@atdocument\AfterKOMAoptions{\selectfont}\fi
       \or% 3
         \endgroup
         \setparsizes{\z@}{.5\baselineskip \@plus .5\baselineskip}{%
           \z@ \@plus 1fil}%
-        \KOMA@kav@add{.\KOMAClassFileName}{parskip}{half-}%
+        \KOMA@kav@add{\KOMAClassFileName}{parskip}{half-}%
         \if@atdocument\AfterKOMAoptions{\selectfont}\fi
       \or% 4
         \endgroup
         \setparsizes{\z@}{1\baselineskip \@plus .1\baselineskip}{%
           1em \@plus 1fil}%
-        \KOMA@kav@add{.\KOMAClassFileName}{parskip}{full}%
+        \KOMA@kav@add{\KOMAClassFileName}{parskip}{full}%
         \if@atdocument\AfterKOMAoptions{\selectfont}\fi
       \or% 5
         \endgroup
         \setparsizes{\z@}{.5\baselineskip \@plus .5\baselineskip}{%
           1em \@plus 1fil}%
-        \KOMA@kav@add{.\KOMAClassFileName}{parskip}{half}%
+        \KOMA@kav@add{\KOMAClassFileName}{parskip}{half}%
         \if@atdocument\AfterKOMAoptions{\selectfont}\fi
       \or% 6
         \endgroup
         \setparsizes{\z@}{1\baselineskip \@plus .1\baselineskip}{%
           .3333\linewidth\@plus 1fil}%
-        \KOMA@kav@add{.\KOMAClassFileName}{parskip}{full+}%
+        \KOMA@kav@add{\KOMAClassFileName}{parskip}{full+}%
         \if@atdocument\AfterKOMAoptions{\selectfont}\fi
       \or% 7
         \endgroup
         \setparsizes{\z@}{.5\baselineskip \@plus .5\baselineskip}{%
           .3333\linewidth \@plus 1fil}%
-        \KOMA@kav@add{.\KOMAClassFileName}{parskip}{half+}%
+        \KOMA@kav@add{\KOMAClassFileName}{parskip}{half+}%
         \if@atdocument\AfterKOMAoptions{\selectfont}\fi
       \or% 8
         \endgroup
         \setparsizes{\z@}{1\baselineskip \@plus .1\baselineskip}{%
           .25\linewidth \@plus 1fil}%
-        \KOMA@kav@add{.\KOMAClassFileName}{parskip}{full*}%
+        \KOMA@kav@add{\KOMAClassFileName}{parskip}{full*}%
         \if@atdocument\AfterKOMAoptions{\selectfont}\fi
       \or% 9
         \endgroup
         \setparsizes{\z@}{.5\baselineskip \@plus .5\baselineskip}{%
           .25\linewidth \@plus 1fil}%
-        \KOMA@kav@add{.\KOMAClassFileName}{parskip}{half*}%
+        \KOMA@kav@add{\KOMAClassFileName}{parskip}{half*}%
         \if@atdocument\AfterKOMAoptions{\selectfont}\fi
       \or% 10
         \endgroup
-        \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{absolute}%
-        \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{relative}%
-        \KOMA@kav@add{.\KOMAClassFileName}{parskip}{relative}%
+        \KOMA@kav@remove{\KOMAClassFileName}{parskip}{absolute}%
+        \KOMA@kav@remove{\KOMAClassFileName}{parskip}{relative}%
+        \KOMA@kav@add{\KOMAClassFileName}{parskip}{relative}%
         \ifx\par@updaterelative\undefined
           \expandafter\AtEndOfClass
         \else
@@ -742,9 +790,9 @@
         }%
       \or%11
         \endgroup
-        \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{absolute}%
-        \KOMA@kav@remove{.\KOMAClassFileName}{parskip}{relative}%
-        \KOMA@kav@add{.\KOMAClassFileName}{parskip}{absolute}%
+        \KOMA@kav@remove{\KOMAClassFileName}{parskip}{absolute}%
+        \KOMA@kav@remove{\KOMAClassFileName}{parskip}{relative}%
+        \KOMA@kav@add{\KOMAClassFileName}{parskip}{absolute}%
         \ifx\par@updaterelative\undefined
           \expandafter\AtEndOfClass
         \else
@@ -772,15 +820,15 @@
 \KOMA@DeclareDeprecatedOption{halfparskip+}{parskip=half+}
 \KOMA@DeclareDeprecatedOption{halfparskip*}{parskip=half*}
 \KOMA@DeclareDeprecatedOption{parindent}{parskip=false}
-\KOMA@kav@add{.\KOMAClassFileName}{parskip}{false}
-\KOMA@kav@add{.\KOMAClassFileName}{parskip}{absolute}
-%%% From File: $Id: scrkernel-pagestyles.dtx 3874 2022-06-05 10:38:02Z kohm $
+\KOMA@kav@add{\KOMAClassFileName}{parskip}{false}
+\KOMA@kav@add{\KOMAClassFileName}{parskip}{absolute}
+%%% From File: $Id: scrkernel-pagestyles.dtx 4058 2023-06-16 08:32:27Z kohm $
 %%%            (run: option)
 \KOMA@ifkey{headsepline}{@hsl}%
-\KOMA@kav@add{.\KOMAClassFileName}{headsepline}{false}
+\KOMA@kav@add{\KOMAClassFileName}{headsepline}{false}
 \KOMA@DeclareDeprecatedOption{headnosepline}{headsepline=false}
 \KOMA@ifkey{footsepline}{@fsl}%
-\KOMA@kav@add{.\KOMAClassFileName}{footsepline}{false}
+\KOMA@kav@add{\KOMAClassFileName}{footsepline}{false}
 \KOMA@DeclareDeprecatedOption{footnosepline}{footsepline=false}
 \KOMA@key{cleardoublepage}{%
   \begingroup
@@ -795,7 +843,7 @@
         \def\cleardoubleoddpage{\cleardoubleoddstandardpage}%
         \def\cleardoubleevenpage{\cleardoubleevenstandardpage}%
         \FamilyKeyStateProcessed
-        \KOMA@kav@replacevalue{.%
+        \KOMA@kav@replacevalue{%
           \KOMAClassFileName
         }{cleardoublepage}{current}%
       }%
@@ -806,7 +854,7 @@
           \def\cleardoubleoddpage{\cleardoubleoddpageusingstyle{#1}}%
           \def\cleardoubleevenpage{\cleardoubleevenpageusingstyle{#1}}%
           \FamilyKeyStateProcessed
-          \KOMA@kav@xreplacevalue{.%
+          \KOMA@kav@xreplacevalue{%
             \KOMAClassFileName
           }{cleardoublepage}{#1}%
         }%
@@ -819,7 +867,7 @@
                 \def\cleardoubleoddpage{\cleardoubleoddpageusingstyle{#1}}%
                 \def\cleardoubleevenpage{\cleardoubleevenpageusingstyle{#1}}%
                 \FamilyKeyStateProcessed
-                \KOMA@kav@xreplacevalue{.\KOMAClassFileName}%
+                \KOMA@kav@xreplacevalue{\KOMAClassFileName}%
                                        {cleardoublepage}{#1}%
               }%
             }{}%
@@ -847,26 +895,28 @@
 \newcommand*{\cleardoubleevenplainpage}{\cleardoubleevenpageusingstyle{plain}}
 \newcommand*{\cleardoublestandardpage}{\cleardoubleoddstandardpage}
 \renewcommand*{\cleardoublepage}{%
-  \expandafter\ifnum \@nameuse{scr@v@2.98c}<\scr@compatibility\relax
+  \expandafter\ifnum \scr@v@is@gt{2.98c}%
     \cleardoubleemptypage
   \else
     \cleardoublestandardpage
   \fi
 }
-\KOMA@kav@add{.%
+\KOMA@kav@add{%
   \KOMAClassFileName
 }{cleardoublepage}{%
-  \expandafter\ifnum \scr@v@is@gt{2.98c}empty\else current\fi
+  \expandafter\ifnum \scr@v@is@gt{2.98c}
+    empty%
+  \else current\fi
 }
 \AtEndOfClass{%
   \KOMAoptionOf[\expandafter\edef\expandafter\@tempa\@firstofone]%
                {%
                  \KOMAClassFileName
                }{cleardoublepage}%
-  \KOMA@kav@removekey{.%
+  \KOMA@kav@removekey{%
     \KOMAClassFileName
   }{cleardoublepage}%
-  \KOMA@kav@xadd{.%
+  \KOMA@kav@xadd{%
     \KOMAClassFileName
   }{cleardoublepage}{\@tempa}%
 }
@@ -879,9 +929,9 @@
 \KOMA@DeclareDeprecatedOption{cleardoubleempty}{cleardoublepage=empty}
 \KOMA@DeclareDeprecatedOption{cleardoubleplain}{cleardoublepage=plain}
 \KOMA@DeclareDeprecatedOption{cleardoublestandard}{cleardoublepage=current}
-%%% From File: $Id: scrkernel-floats.dtx 3946 2022-07-20 10:37:02Z kohm $
+%%% From File: $Id: scrkernel-floats.dtx 4054 2023-05-10 14:35:36Z kohm $
 %%%            (run: option)
-%%% From File: $Id: scrkernel-footnotes.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-footnotes.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: option)
 \KOMA@key{footnotes}{%
   \ifx\@footnotemark\scr@saved@footnotemark
@@ -901,7 +951,7 @@
     \def\FN@mf@prepare{\scr@mf@prepare}%
     \def\scr@footmisc@options{multiple}%
     \FamilyKeyStateProcessed
-    \KOMA@kav@replacevalue{.%
+    \KOMA@kav@replacevalue{%
       \KOMAClassFileName
     }{footnotes}{multiple}%
   }{%
@@ -910,7 +960,7 @@
       \let\FN@mf@prepare\relax
       \let\scr@footmisc@options\@empty
       \FamilyKeyStateProcessed
-      \KOMA@kav@replacevalue{.%
+      \KOMA@kav@replacevalue{%
       \KOMAClassFileName
       }{footnotes}{nomultiple}%
     }{%
@@ -920,17 +970,17 @@
 }
 \AtBeginDocument{%
   \ifx\@footnotemark\scr@saved@footnotemark
-    \KOMA@kav@removekey{.%
+    \KOMA@kav@removekey{%
       \KOMAClassFileName
     }{footnotes}%
-    \KOMA@kav@add{.%
+    \KOMA@kav@add{%
     \KOMAClassFileName
     }{footnotes}{nomultiple}%
   \else\ifx\@footnotemark\scr@footnotemark
-    \KOMA@kav@removekey{.%
+    \KOMA@kav@removekey{%
       \KOMAClassFileName
     }{footnotes}%
-    \KOMA@kav@add{.%
+    \KOMA@kav@add{%
       \KOMAClassFileName
     }{footnotes}{multiple}%
   \fi\fi
@@ -952,9 +1002,9 @@
   \csname FN@mf@prepare\endcsname
   \ifhmode\spacefactor\@x@sf\fi
   \relax}
-%%% From File: $Id: scrkernel-listsandtabulars.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-listsandtabulars.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: option)
-%%% From File: $Id: scrkernel-notepaper.dtx 3895 2022-06-20 10:37:02Z kohm $
+%%% From File: $Id: scrkernel-notepaper.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: option)
 \KOMA@ifkey{firsthead}{@firsthead}
 \KOMAExecuteOptions{firsthead=true}
@@ -969,20 +1019,20 @@
     {no}{10000},{false}{10000},{off}{10000}%
   }{#1}%
   \ifx\FamilyKeyState\FamilyKeyStateProcessed
-    \KOMA@kav@xreplacevalue{.%
+    \KOMA@kav@xreplacevalue{%
       \KOMAClassFileName
     }{fromalign}{#1}%
     \ifcase\@alignfrom\or\or\or\@firstheadfalse\or\@firstheadfalse\fi
   \fi
 }
-\KOMA@kav@add{.%
+\KOMA@kav@add{%
   \KOMAClassFileName
 }{fromalign}{left}
 \KOMA@ncmdkey{fromrule}[below]{@rulefrom}{%
   {false}{0},{no}{0},{off}{0},{aftername}{1},%
   {below}{2},{afteraddress}{2},{true}{2},{yes}{2},{on}{2}%
 }
-\KOMA@kav@add{.%
+\KOMA@kav@add{%
   \KOMAClassFileName
 }{fromrule}{false}
 \KOMA@ifkey{fromphone}{@phone}
@@ -1006,7 +1056,7 @@
   {ppimage}{4},{ppImage}{4},%
   {topaligned}{5},{alignedtop}{5}%
 }
-\KOMA@kav@add{.%
+\KOMA@kav@add{%
   \KOMAClassFileName
 }{addrfield}{true}
 \KOMA@ncmdkey{priority}[A]{ltr@priority}{%
@@ -1018,7 +1068,7 @@
   {priority}{2},{Priority}{2},{PRIORITY}{2},%
   {A-PRIORITY}{2},{A-Priority}{2},{a-priority}{2}%
 }%
-\KOMA@kav@add{.%
+\KOMA@kav@add{%
   \KOMAClassFileName
 }{priority}{false}
 \newcommand{\backaddr@format}[1]{}
@@ -1053,22 +1103,22 @@
       \fi
       \if@baddr
         \ifx\backaddr@format\underline
-          \KOMA@kav@replacevalue{.%
+          \KOMA@kav@replacevalue{%
             \KOMAClassFileName
           }{backaddress}{underlined}%
         \else
           \ifx\backaddr@format\@firstofone
-            \KOMA@kav@replacevalue{.%
+            \KOMA@kav@replacevalue{%
               \KOMAClassFileName
             }{backaddress}{plain}%
           \else
-            \KOMA@kav@replacevalue{.%
+            \KOMA@kav@replacevalue{%
               \KOMAClassFileName
             }{backaddress}{true}%
           \fi
         \fi
       \else
-        \KOMA@kav@replacevalue{.%
+        \KOMA@kav@replacevalue{%
           \KOMAClassFileName
         }{backaddress}{false}%
       \fi
@@ -1085,13 +1135,13 @@
       \ifcase\@tempa
         \endgroup
         \@bigloctrue
-        \KOMA@kav@replacevalue{.%
+        \KOMA@kav@replacevalue{%
           \KOMAClassFileName
         }{locfield}{wide}%
       \else
         \endgroup
         \@biglocfalse
-        \KOMA@kav@replacevalue{.%
+        \KOMA@kav@replacevalue{%
           \KOMAClassFileName
         }{locfield}{narrow}%
       \fi
@@ -1100,7 +1150,7 @@
       \FamilyKeyStateUnknownValue
   \fi
 }
-\KOMA@kav@add{.%
+\KOMA@kav@add{%
   \KOMAClassFileName
 }{locfield}{narrow}
 \KOMA@DeclareDeprecatedOption{wlocfield}{locfield=wide}
@@ -1160,18 +1210,18 @@
     \fi
   \endgroup
   \ifx\FamilyKeyState\FamilyKeyStateProcessed
-    \KOMA@kav@xreplacevalue{.%
+    \KOMA@kav@xreplacevalue{%
       \KOMAClassFileName
     }{foldmarks}{\@usefolds}%
-    \KOMA@kav@xadd{.%
+    \KOMA@kav@xadd{%
       \KOMAClassFileName
     }{foldmarks}{\if@fold true\else false\fi}%
   \fi
 }
-\KOMA@kav@xadd{.%
+\KOMA@kav@xadd{%
   \KOMAClassFileName
 }{foldmarks}{\@usefolds}%
-\KOMA@kav@add{.%
+\KOMA@kav@add{%
   \KOMAClassFileName
 }{foldmarks}{true}%
 \newcommand*{\scr@removechar}[2]{%
@@ -1196,70 +1246,70 @@
       \ifcase\@tempa% wide
         \endgroup
         \@refwidetrue
-        \KOMA@kav@remove{.%
+        \KOMA@kav@remove{%
           \KOMAClassFileName
         }{refline}{wide}%
-        \KOMA@kav@remove{.%
+        \KOMA@kav@remove{%
           \KOMAClassFileName
         }{refline}{narrow}%
-        \KOMA@kav@add{.%
+        \KOMA@kav@add{%
           \KOMAClassFileName
         }{refline}{wide}%
       \or% narrow
         \endgroup
         \@refwidefalse
-        \KOMA@kav@remove{.%
+        \KOMA@kav@remove{%
           \KOMAClassFileName
         }{refline}{wide}%
-        \KOMA@kav@remove{.%
+        \KOMA@kav@remove{%
           \KOMAClassFileName
         }{refline}{narrow}%
-        \KOMA@kav@add{.%
+        \KOMA@kav@add{%
           \KOMAClassFileName
         }{refline}{narrow}%
       \or% dateleft
         \endgroup
         \def\@datepos{2}%
-        \KOMA@kav@remove{.%
+        \KOMA@kav@remove{%
           \KOMAClassFileName
         }{refline}{dateleft}%
-        \KOMA@kav@remove{.%
+        \KOMA@kav@remove{%
           \KOMAClassFileName
         }{refline}{dateright}%
-        \KOMA@kav@remove{.%
+        \KOMA@kav@remove{%
           \KOMAClassFileName
         }{refline}{nodate}%
-        \KOMA@kav@add{.%
+        \KOMA@kav@add{%
           \KOMAClassFileName
         }{refline}{dateleft}%
       \or% dateright
         \endgroup
         \def\@datepos{1}%
-        \KOMA@kav@remove{.%
+        \KOMA@kav@remove{%
           \KOMAClassFileName
         }{refline}{dateleft}%
-        \KOMA@kav@remove{.%
+        \KOMA@kav@remove{%
           \KOMAClassFileName
         }{refline}{dateright}%
-        \KOMA@kav@remove{.%
+        \KOMA@kav@remove{%
           \KOMAClassFileName
         }{refline}{nodate}%
-        \KOMA@kav@add{.%
+        \KOMA@kav@add{%
           \KOMAClassFileName
         }{refline}{dateright}%
       \or% nodate
         \endgroup
         \def\@datepos{0}%
-        \KOMA@kav@remove{.%
+        \KOMA@kav@remove{%
           \KOMAClassFileName
         }{refline}{dateleft}%
-        \KOMA@kav@remove{.%
+        \KOMA@kav@remove{%
           \KOMAClassFileName
         }{refline}{dateright}%
-        \KOMA@kav@remove{.%
+        \KOMA@kav@remove{%
           \KOMAClassFileName
         }{refline}{nodate}%
-        \KOMA@kav@add{.%
+        \KOMA@kav@add{%
           \KOMAClassFileName
         }{refline}{nodate}%
       \fi
@@ -1268,10 +1318,10 @@
       \FamilyKeyStateUnknownValue
   \fi
 }
-\KOMA@kav@add{.%
+\KOMA@kav@add{%
   \KOMAClassFileName
 }{refline}{dateright}%
-\KOMA@kav@add{.%
+\KOMA@kav@add{%
   \KOMAClassFileName
 }{refline}{narrow}%
 \newcommand{\subject@format}[1]{#1}
@@ -1314,29 +1364,29 @@
     \fi
   \endgroup
   \ifx\FamilyKeyState\FamilyKeyStateProcessed
-    \KOMA@kav@xreplacevalue{.%
+    \KOMA@kav@xreplacevalue{%
       \KOMAClassFileName
     }{subject}{\if@subj titled\else untitled\fi}%
-    \KOMA@kav@xadd{.%
+    \KOMA@kav@xadd{%
       \KOMAClassFileName
     }{subject}{\if@subjafter after\else before\fi opening}%
     \ifx\subject@format\underline
-      \KOMA@kav@add{.%
+      \KOMA@kav@add{%
         \KOMAClassFileName
       }{subject}{underlined}%
     \fi
     \ifx\raggedsubject\raggedright
-      \KOMA@kav@add{.%
+      \KOMA@kav@add{%
         \KOMAClassFileName
       }{subject}{left}%
     \else
       \ifx\raggedsubject\raggedleft
-        \KOMA@kav@add{.%
+        \KOMA@kav@add{%
           \KOMAClassFileName
         }{subject}{right}%
       \else
         \ifx\raggedsubject\centering
-          \KOMA@kav@add{.%
+          \KOMA@kav@add{%
             \KOMAClassFileName
           }{subject}{centered}%
         \fi
@@ -1344,10 +1394,10 @@
     \fi
   \fi
 }
-\KOMA@kav@add{.%
+\KOMA@kav@add{%
   \KOMAClassFileName
 }{subject}{untitled}%
-\KOMA@kav@add{.%
+\KOMA@kav@add{%
   \KOMAClassFileName
 }{subject}{beforeopening}%
 \KOMA@ifkey{enlargefirstpage}{@enlargefp}
@@ -1398,7 +1448,7 @@
       \def\@tempa{\endgroup\FamilyKeyStateUnknownValue}%
     \fi
   \@tempa
-  \KOMA@kav@xreplacevalue{.%
+  \KOMA@kav@xreplacevalue{%
     \KOMAClassFileName
   }{pagenumber}{%
     \ifcase \@pageat
@@ -1418,7 +1468,7 @@
     \fi
   }%
 }
-\KOMA@kav@add{.%
+\KOMA@kav@add{%
   \KOMAClassFileName
 }{pagenumber}{botmiddle}
 \newif\if@scrsymbols
@@ -1441,7 +1491,7 @@
     \fi
   \fi
   \ifx \FamilyKeyState\FamilyKeyStateProcessed
-    \KOMA@kav@xreplacevalue{.%
+    \KOMA@kav@xreplacevalue{%
       \KOMAClassFileName
     }{symbolicnames}{#1}%
     \if@scrsymbols
@@ -1501,7 +1551,7 @@
     \fi
   \fi
 }
-\KOMA@kav@add{.%
+\KOMA@kav@add{%
   \KOMAClassFileName
 }{symbolicnames}{false}%
 \newcommand*{\scr@symbols@font}{}
@@ -1510,15 +1560,15 @@
 \newcommand*{\scr@symbol@email}{\undefined}
 \newcommand*{\scr@symbol@mobilephone}{\undefined}
 \newcommand*{\scr@symbol@www}{\undefined}
-%%% From File: $Id: scrkernel-addressfiles.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-addressfiles.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: option)
-%%% From File: $Id: scrkernel-miscellaneous.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-miscellaneous.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: execoption)
 \KOMAExecuteOptions{%
   parskip=false,%
 }
 \KOMAProcessOptions\relax
-%%% From File: $Id: scrkernel-compatibility.dtx 3949 2022-08-09 10:05:50Z kohm $
+%%% From File: $Id: scrkernel-compatibility.dtx 4054 2023-05-10 14:35:36Z kohm $
 %%%            (run: body)
 \AtBeginDocument{%
   \begingroup
@@ -1578,7 +1628,7 @@
     \expandafter\endgroup\@tempa
   }%
 \fi
-%%% From File: $Id: scrkernel-fonts.dtx 3958 2022-10-06 12:44:28Z kohm $
+%%% From File: $Id: scrkernel-fonts.dtx 4034 2023-04-20 08:03:46Z kohm $
 %%%            (run: body)
 \newcommand*\scr@setlength[4]{%
   \expandafter\ifnum\scr@v@is@lt{3.12}\relax
@@ -1616,7 +1666,7 @@
   \fi
 }
 \providecommand*{\simple@changefontsizes}[2][1.2\@tempdima]{%
-  \KOMA@kav@removekey{.%
+  \KOMA@kav@removekey{%
     \KOMAClassFileName
   }{fontsize}%
   \@defaultunits\@tempdima#2pt\relax\@nnil
@@ -1765,7 +1815,9 @@
   \let\Huge\@undefined
   \expandafter\DeclareRobustCommand\expandafter\Huge\expandafter{\reserved@a}%
   \normalsize
-  \expandafter\ifnum\scr@v@is@ge{3.17}\@nameuse{par@updaterelative}\fi
+  \expandafter\ifnum\scr@v@is@ge{3.17}
+    \@nameuse{par@updaterelative}%
+  \fi
   \expandafter\ifnum\scr@v@is@lt{3.12}\relax
     \setlength{\footnotesep}{.7\@tempdimc}%
     \setlength{\skip\footins}{.9\@tempdimc \@plus .3333\@tempdimc \@minus
@@ -1965,25 +2017,25 @@
 \InputIfFileExists{\@fontsizefilebase\@tempa.clo}{%
   \ClassInfo{\KOMAClassName}{%
     File `\@fontsizefilebase\@tempa.clo' used to setup font sizes}%
-  \KOMA@kav@removekey{.\KOMAClassFileName}{fontsize}%
-  \KOMA@kav@xadd{.\KOMAClassFileName}{fontsize}{\@tempa}%
+  \KOMA@kav@removekey{\KOMAClassFileName}{fontsize}%
+  \KOMA@kav@xadd{\KOMAClassFileName}{fontsize}{\@tempa}%
 }{%
   \InputIfFileExists{\@fontsizefilebase\@tempb pt.clo}{%
     \ClassInfo{\KOMAClassName}{%
       File `\@fontsizefilebase\@tempb pt.clo' used instead of\MessageBreak
       file `\@fontsizefilebase\@tempa.clo' to setup font sizes}%
-    \KOMA@kav@removekey{.\KOMAClassFileName}{fontsize}%
-    \KOMA@kav@xadd{.\KOMAClassFileName}{fontsize}{\@tempb pt}%
+    \KOMA@kav@removekey{\KOMAClassFileName}{fontsize}%
+    \KOMA@kav@xadd{\KOMAClassFileName}{fontsize}{\@tempb pt}%
   }{%
       \InputIfFileExists{size\@tempb.clo}{%
         \ClassInfo{\KOMAClassName}{%
           File `size\@tempb.clo' used to setup font sizes}%
-        \KOMA@kav@removekey{.\KOMAClassFileName}{fontsize}%
-        \KOMA@kav@xadd{.\KOMAClassFileName}{fontsize}{\@tempb}%
+        \KOMA@kav@removekey{\KOMAClassFileName}{fontsize}%
+        \KOMA@kav@xadd{\KOMAClassFileName}{fontsize}{\@tempb}%
       }{%
         \edef\@tempa{%
           \noexpand\changefontsizes{\@tempa}%
-          \noexpand\KOMA@kav@xadd{.\KOMAClassFileName}{fontsize}{\@tempa}%
+          \noexpand\KOMA@kav@xadd{\KOMAClassFileName}{fontsize}{\@tempa}%
         }\@tempa
       }%
   }%
@@ -2077,7 +2129,7 @@
   \@nomath\sfb}
 \DeclareRobustCommand*{\cal}{\@fontswitch\relax\mathcal}
 \DeclareRobustCommand*{\mit}{\@fontswitch\relax\mathnormal}
-%%% From File: $Id: scrkernel-miscellaneous.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-miscellaneous.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: body)
 \setlength{\skip\@mpfootins}{\skip\footins}
 \setlength\fboxsep{3\p@}
@@ -2144,7 +2196,7 @@
   \fi
 }
 \newcommand\marginline[1]{%
-  \marginpar[\raggedleft{#1}]{\raggedright #1}%
+  \marginpar[{\raggedleft #1}]{\raggedright #1}%
 }
 \scr@ifundefinedorrelax{textsubscript}{%
   \DeclareRobustCommand*\textsubscript[1]{%
@@ -2201,7 +2253,7 @@
   `parskip' with one of it's several values}
 \scr@package@not@recommended{titleps}{%
   package `scrlayer-scrpage'}
-%%% From File: $Id: scrkernel-letterclassoptions.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-letterclassoptions.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: body)
 \newcommand*{\LoadLetterOption}[1]{%
   \@ifundefined{@restore@catcode@level}%
@@ -2223,11 +2275,11 @@
   \edef\reserved@a{%
     \noexpand\edef\noexpand\scr@currentlco{\reserved@a}%
     \noexpand\InputIfFileExists{\reserved@a.lco}{%
-      \noexpand\ClassInfo{scrlttr2%
-      }{Letter-Class-Option `#1' loaded}%
+      \noexpand\ClassInfo{scrlttr2}%
+      {Letter-Class-Option `#1' loaded}%
     }{%
-      \noexpand\ClassError{scrlttr2%
-      }{%
+      \noexpand\ClassError{scrlttr2}%
+      {%
         Letter-Class-Option file `#1.lco' not found%
       }{%
         You've told me to load the Letter-Class-Option `#1'. So I have
@@ -2353,34 +2405,35 @@
 }
 \newcommand*{\@@PapersizeWarning}{%
   \if@tempswa\else%
-  \ClassWarningNoLine{scrlttr2%
-  }{%
-    Letter option file `\LOPNP@option.lco'\MessageBreak
-    needs paper size `\LOPNP@size'.\MessageBreak
-    Current paper size is not `\LOPNP@size'!\MessageBreak
-    \scr@ifundefinedorrelax{KOMAClassName}{%
-      You should load package `typearea' either\MessageBreak
-      with option `paper=\LOPNP@size,paper=portrait' or
-      additionally\MessageBreak
-    }{%
-      You should add `paper=\LOPNP@size,paper=portrait' at the\MessageBreak
-      option list of `\string\documentclass' or\MessageBreak
+  \ClassWarningNoLine{scrlttr2}%
+    {%
+      Letter option file `\LOPNP@option.lco'\MessageBreak
+      needs paper size `\LOPNP@size'.\MessageBreak
+      Current paper size is not `\LOPNP@size'!\MessageBreak
+      \scr@ifundefinedorrelax{KOMAClassName}{%
+        You should load package `typearea' either\MessageBreak
+        with option `paper=\LOPNP@size,paper=portrait' or
+        additionally\MessageBreak
+      }{%
+        You should add `paper=\LOPNP@size,paper=portrait' at the\MessageBreak
+        option list of `\string\documentclass' or\MessageBreak
+      }%
+      add `\string\KOMAoptions{paper=\LOPNP@size,paper=portrait}'\MessageBreak
+      before starting this letter!\MessageBreak
+      Maybe you know what you are doing,\MessageBreak
+      so I do not change this myself%
     }%
-    add `\string\KOMAoptions{paper=\LOPNP@size,paper=portrait}'\MessageBreak
-    before starting this letter!\MessageBreak
-    Maybe you know what you are doing,\MessageBreak
-    so I do not change this myself}%
   \fi
-  }
+}
 \newcommand*{\LetterOptionNeedsPapersize}[2]{%
   \edef\LOPNP@size{#2}\edef\LOPNP@option{#1}%
 }
-%%% From File: $Id: scrkernel-language.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-language.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: body)
 \newcommand*{\g@addnumerical@date}[2]{%
   \@ifundefined{date#1}{%
-    \ClassInfo{scrlttr2%
-    }{%
+    \ClassInfo{scrlttr2}
+    {%
       no date found for language `#1'\MessageBreak
       --> skipped%
     }%
@@ -2745,8 +2798,8 @@
   \dateenglish
   \begingroup\expandafter\expandafter\expandafter\endgroup
   \expandafter\ifx\csname date\languagename\endcsname\relax
-    \ClassWarningNoLine{scrlttr2%
-    }{%
+    \ClassWarningNoLine{scrlttr2}
+    {%
       \string\language\space is \the\language, \string\languagename\space is
       `\languagename'\MessageBreak
       but \expandafter\string\csname
@@ -2757,8 +2810,8 @@
     \let\languagename=\undefined
   \fi
   \ifx\languagename\undefined
-    \ClassWarningNoLine{scrlttr2%
-    }{\string\languagename\space not
+    \ClassWarningNoLine{scrlttr2}
+    {\string\languagename\space not
       defined, using \string\language.\MessageBreak
       This may result in use of wrong language!\MessageBreak
       You should use a compatible language
@@ -2912,8 +2965,8 @@
   \else
     \edef\@tempa{nohyphenation}%
     \ifx\languagename\@tempa
-      \ClassWarningNoLine{scrlttr2%
-      }{%
+      \ClassWarningNoLine{scrlttr2}
+      {%
         You've selected language `\languagename'.\MessageBreak
         Maybe your LaTeX format contains Babel extension\MessageBreak
         but you have not selected a language using\MessageBreak
@@ -2923,15 +2976,15 @@
         will be used%
       }%
     \else
-      \ClassInfo{scrlttr2%
-      }{%
+      \ClassInfo{scrlttr2}
+      {%
         trying to activate captions and date\MessageBreak
         of language `\languagename'%
       }%
       \csname date\languagename\endcsname
       \csname captions\languagename\endcsname
-      \ClassInfo{scrlttr2%
-      }{%
+      \ClassInfo{scrlttr2}
+      {%
         used language is `\languagename'.\MessageBreak
         Supported languages are: `english', `UKenglish',\MessageBreak
         `ukenglish', `british', `american', `USenglish',\MessageBreak
@@ -2946,7 +2999,7 @@
     \fi
   \fi
 }
-%%% From File: $Id: scrkernel-variables.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-variables.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: body)
 \newcommand*{\newkomavar}{%
   \kernel@ifstar {\@tempswatrue\@newkomavar}{\@tempswafalse\@newkomavar}}
@@ -2961,8 +3014,8 @@
       \expandafter\let\csname scr@#2@var\endcsname=\@empty
       \if@tempswa\addtoreffields{#2}\fi
     }{%
-      \ClassError{scrlttr2%
-      }{%
+      \ClassError{scrlttr2}
+      {%
         This should never happen%
       }{%
         The contents of the KOMA-Script variable `#2'\MessageBreak
@@ -2972,8 +3025,8 @@
       }%
     }%
   }{%
-    \ClassError{scrlttr2%
-    }{%
+    \ClassError{scrlttr2}
+    {%
       Variable `#2' already defined%
     }{%
       I'll ignore this command, if you'll continue.%
@@ -3009,8 +3062,8 @@
   }%
 }
 \newcommand*{\@komavar@err}[2]{%
-  \ClassError{scrlttr2%
-  }{%
+  \ClassError{scrlttr2}
+  {%
     KOMA-Script variable not defined%
   }{%
     You've tried to #1 the not defined KOMA-Script variable
@@ -3131,7 +3184,7 @@
     \fi
   }%
 }
-%%% From File: $Id: scrkernel-pseudolengths.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-pseudolengths.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: body)
 \newcommand*{\Ifplength}[1]{%
   \@ifundefined{ltr@len@#1}{\@secondoftwo}{\@firstoftwo}%
@@ -3146,8 +3199,8 @@
   \@ifundefined{ltr@len@#1}{%
     \expandafter\let\csname ltr@len@#1\endcsname=\z@%
   }{%
-    \ClassError{scrlttr2%
-    }{%
+    \ClassError{scrlttr2}%
+    {%
       pseudo-length \expandafter\string\csname ltr@len@#1\endcsname
       already defined%
     }{%
@@ -3250,7 +3303,7 @@
     Internal macro `\string\@addtoplength' is deprecated.\MessageBreak
     Please use `\string\addtoplength' instead}%
   \addtoplength}
-%%% From File: $Id: scrkernel-typearea.dtx 3889 2022-06-09 12:11:14Z kohm $
+%%% From File: $Id: scrkernel-typearea.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: body)
 \let\@BCOR                =\relax
 \let\@@BCOR               =\relax
@@ -3262,7 +3315,7 @@
 \let\x@@paper             =\relax
 \let\scr@pti@nerr@r       =\relax
 \RequirePackage{typearea}[\KOMAScriptVersion]
-%%% From File: $Id: scrkernel-paragraphs.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-paragraphs.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: body)
 \newcommand*{\par@updaterelative}{%
   \begingroup
@@ -3436,7 +3489,7 @@
 \@lowpenalty  = 51
 \@medpenalty  =151
 \@highpenalty =301
-%%% From File: $Id: scrkernel-pagestyles.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-pagestyles.dtx 4058 2023-06-16 08:32:27Z kohm $
 %%%            (run: body)
 \newcommand*{\set@tempdima@hw}{%
   \setlength{\@tempdima}{\textwidth}%
@@ -3533,9 +3586,9 @@
 }
 \pagestyle{plain}
 \pagenumbering{arabic}
-%%% From File: $Id: scrkernel-floats.dtx 3946 2022-07-20 10:37:02Z kohm $
+%%% From File: $Id: scrkernel-floats.dtx 4054 2023-05-10 14:35:36Z kohm $
 %%%            (run: body)
-%%% From File: $Id: scrkernel-footnotes.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-footnotes.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: body)
 \renewcommand*\footnoterule{%
   \normalsize\ftn@rule@test@values
@@ -3696,7 +3749,7 @@
   \endgroup
   \@footnotemark
 }
-%%% From File: $Id: scrkernel-listsandtabulars.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-listsandtabulars.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: body)
   \setlength{\leftmargini}{2.5em}
 \setlength{\leftmarginii}{2.2em}
@@ -3838,7 +3891,7 @@
   \fi
   \item\is@thispageodd@setlabel\nobreak\ignorespaces
 }
-\newcommand*\descfont{\@gr@gsffamily\bfseries}
+\newcommand*\descfont{\maybesffamily\bfseries}
 \newcommand*{\scr@fnt@descriptionlabel}{\descfont}
 \newcommand*{\labelitemfont}{\normalfont}
 \newcommand*\scr@fnt@itemizelabel{\labelitemfont}
@@ -3853,7 +3906,7 @@
 \setlength\arrayrulewidth{.4\p@}
 \setlength\doublerulesep{2\p@}
 \setlength\tabbingsep{\labelsep}
-%%% From File: $Id: scrkernel-notepaper.dtx 3895 2022-06-20 10:37:02Z kohm $
+%%% From File: $Id: scrkernel-notepaper.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: body)
 
 \newkomavar{firsthead}
@@ -3872,7 +3925,7 @@
   }%
 }
 \newcommand*{\scr@firsthead@postsetvar}{%
-  \KOMAExecuteOptions[.%
+  \KOMAExecuteOptions[%
     \KOMAClassFileName
   ]{fromalign=no}%
 }
@@ -4036,7 +4089,7 @@
 \newkomafont{fromname}{}
 \newkomafont{fromaddress}{}
 \newkomafont{fromrule}{}
-\newkomafont{backaddress}{\@gr@gsffamily}
+\newkomafont{backaddress}{\maybesffamily}
 \newkomafont{specialmail}{}
 \newkomafont{priority}{\fontsize{10pt}{10pt}\sffamily\bfseries}
 \newkomafont{prioritykey}{\fontsize{24.88pt}{24.88pt}\selectfont}
@@ -4045,14 +4098,14 @@
 \newkomafont{addressee}{}
 \newkomafont{toname}{}
 \newkomafont{toaddress}{}
-\newkomafont{refname}{\@gr@gsffamily\scriptsize}
-\ifnum\scr@compatibility=\@nameuse{scr@v@2.97}\relax
+\newkomafont{refname}{\maybesffamily\scriptsize}
+\expandafter\ifnum\scr@v@is@eq{2.97}%
   \newkomafont{refvalue}{\sffamily\scriptsize}
 \else
   \newkomafont{refvalue}{}
 \fi
 \newkomafont{placeanddate}{}
-\newkomafont{lettertitle}{\normalcolor\@gr@gsffamily\bfseries}
+\newkomafont{lettertitle}{\normalcolor\maybesffamily\bfseries}
   \aliaskomafont{title}{lettertitle}%
 \newkomafont{lettersubject}{\normalfont\bfseries}
   \aliaskomafont{subject}{lettersubject}%
@@ -5207,7 +5260,7 @@
   }%
   \scr@saved@date{#1}%
 }
-%%% From File: $Id: scrkernel-addressfiles.dtx 3874 2022-06-05 10:38:02Z kohm $
+%%% From File: $Id: scrkernel-addressfiles.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: body)
 \newcommand*{\adrentry}[7]{%
   \ClassWarning{\KOMAClassName}{%
@@ -5227,7 +5280,7 @@
     You should use `\string\addrchar'}
   \addrchar}
 \newcommand*{\addrchar}[1]{}
-%%% From File: $Id: scrlogo.dtx 3688 2022-02-10 08:26:37Z kohm $
+%%% From File: $Id: scrlogo.dtx 4032 2023-04-17 09:45:11Z kohm $
 \RequirePackage{scrlogo}
 \endinput
 %%

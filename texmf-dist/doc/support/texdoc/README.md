@@ -21,15 +21,15 @@ If you want to try/test the develop version, please see below.
 
 The easiest way to install the develop version of Texdoc is using [Bundler](https://bundler.io/) and [Rake](https://github.com/ruby/rake):
 
-```
-$ bundle install
-$ rake install
+```shell
+bundle install
+rake install
 ```
 
 If you want to uninstall the develop version (to use the TeX Live version), just try:
 
-```
-$ rake uninstall
+```shell
+rake uninstall
 ```
 
 ### Installing manually
@@ -50,50 +50,50 @@ You can make sure that the right files are used by running `texdoc --files`: the
 
 ## Building and Testing
 
-Many building tasks are defined as [Rake](https://github.com/ruby/rake) tasks:
+Many building tasks are defined as [Rake](https://github.com/ruby/rake) tasks.
 
 ### Generating all documentation
 
 The following will generate both the PDF and the manpage in `doc/` directory.
 
-```
-$ rake doc
+```shell
+rake doc
 ```
 
 ### Generating a pre-hashed cache file
 
 The following will generate a pre-hashed cache file `script/Data.tlpdb.lua`. This task have to be done under a TeX Live setup with tlpdb.
 
-```
-$ rake gen_datafile
+```shell
+rake gen_datafile
 ```
 
 ### Running tests
 
 The following will run all tests in `spec/` directory.
 
-```
-$ rake test
+```shell
+rake test
 ```
 
 Alternatively, you can give spec names with the `--list` (`-l`) option for this task. E.g., following will run only `spec/action/help_spec.rb` and `spec/mode/list_spec.rb`:
 
-```
-$ rake test -- -l action/help,mode/list
+```shell
+rake test -- -l action/help,mode/list
 ```
 
 ### Showing all available tasks
 
 Following will show all available tasks with a short description.
 
-```
-$ rake -T
+```shell
+rake -T
 ```
 
 In addition to that, for options available tasks, e.g., `rake test` and `rake run_texdoc`, you can get options information with `-h` option for each task:
 
-```
-$ rake test -- -h
+```shell
+rake test -- -h
 ```
 
 ## Further Information
@@ -104,7 +104,7 @@ More specific information, such as the TODO list of this project and some inform
 
 ## Copyright and License
 
-Copyright 2008-2021 Manuel Pégourié-Gonnard, Takuto Asakura, the TeX Live Team.
+Copyright 2008-2023 Manuel Pégourié-Gonnard, Takuto Asakura, the TeX Live Team.
 
 This package is distributed under the terms of the GNU General Public License as published by the Free Software Foundation, either [version 3](./COPYING) of the License, or (at your option) any later version.
 

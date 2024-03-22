@@ -1,9 +1,8 @@
-# $Id: dvipdfmx.pl 58645 2021-03-23 02:11:47Z preining $
+# $Id: dvipdfmx.pl 69127 2023-12-14 21:41:41Z karl $
 # post action for dvipdfmx to handle upgrades of map files
-# Copyright 2011-2021 Norbert Preining
+# Copyright 2011-2023 Norbert Preining
 # This file is licensed under the GNU General Public License version 2
 # or any later version.
-#
 
 my $texdir;
 my $mode;
@@ -15,7 +14,7 @@ BEGIN {
   # make Perl find our packages first:
   unshift (@INC, "$texdir/tlpkg");
 }
-use TeXLive::TLUtils qw(win32 mkdirhier conv_to_w32_path log info);
+use TeXLive::TLUtils qw(wndws mkdirhier conv_to_w32_path log info);
 
 if ($mode eq 'install') {
   do_install();

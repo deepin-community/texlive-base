@@ -5,7 +5,7 @@
 %%   License information appended
 %% 
 File README.txt for package curve2e
-        [2023-01-01 v.2.2.22 Extension package for pict2e]
+        [2023-01-01 v.2.3.1 Extension package for pict2e]
 The package bundle curve2e is composed of the following files
 
 curve2e.dtx
@@ -81,7 +81,7 @@ This version of curve2e is almost fully compatible with pict2e dated
 2014/01/12 version 0.2z and later; as of today the last pct2e revision 
 is version 0.4b dated 2020, and curve2e has been tested also with this 
 revision confirming that it performs as expected. 
-Pay attention, though, that in 2020 also the \LaTeX kernel part dealing 
+Pay attention, though, that in 2020 also the \LaTeX kernel segment dealing 
 with the picture environment has been upgraded; since then, the picture 
 environment opening and internal commands can handle explicit dimensions 
 and accepts dimensional expressions as those that can be processed by the 
@@ -93,7 +93,7 @@ If you specify:
 
 \usepackage[<pict2e options>]{curve2e}
 
-the package pict2e is automatically invoked with the specified options.
+package pict2e is loaded and curve2e options are automatically passed on to pict2e.
 
 The -almost fully compatible- phrase is necessary to explain that this
 version of curve2e uses some `functions' of the LaTeX3 language that were

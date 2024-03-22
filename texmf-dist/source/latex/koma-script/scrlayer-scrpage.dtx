@@ -1,7 +1,7 @@
 % \iffalse^^A meta-comment
 % ======================================================================
 % scrlayer-scrpage.dtx
-% Copyright (c) Markus Kohm, 2012-2022
+% Copyright (c) Markus Kohm, 2012-2023
 %
 % This file is part of the LaTeX2e KOMA-Script bundle.
 %
@@ -18,7 +18,7 @@
 %
 % This work consists of all files listed in MANIFEST.md.
 % ======================================================================
-%%% From File: $Id: scrlayer-scrpage.dtx 3889 2022-06-09 12:11:14Z kohm $
+%%% From File: $Id: scrlayer-scrpage.dtx 4032 2023-04-17 09:45:11Z kohm $
 %<identify>%%%            (run: identify)
 %<init>%%%            (run: init)
 %<options>%%%            (run: options)
@@ -27,9 +27,9 @@
 \ifx\ProvidesFile\undefined\def\ProvidesFile#1[#2]{}\fi
 \begingroup
   \def\filedate$#1: #2-#3-#4 #5${\gdef\filedate{#2/#3/#4}}
-  \filedate$Date: 2022-06-09 14:11:14 +0200 (Do, 09. Jun 2022) $
+  \filedate$Date: 2023-04-17 11:45:11 +0200 (Mo, 17. Apr 2023) $
   \def\filerevision$#1: #2 ${\gdef\filerevision{r#2}}
-  \filerevision$Revision: 3889 $
+  \filerevision$Revision: 4032 $
   \edef\reserved@a{%
     \noexpand\endgroup
     \noexpand\ProvidesFile{scrlayer-scrpage.dtx}%
@@ -91,6 +91,7 @@
 % \changes{v3.36}{2022/02/09}{require package \pkg*{scrlogo} instead of
 %   defining \cs{KOMAScript}}
 % \changes{v3.36}{2022/02/09}{whole implementation documentation in English}
+% \changes{v3.40}{2023/04/17}{guide names changed}
 %
 % \GetFileInfo{scrlayer-scrpage.dtx}
 % \title{The \texttt{scrlayer} Interface of
@@ -108,8 +109,9 @@
 %
 % \section{User Manual}
 %
-% You can find the user manuals of \pkg*{scrlayer-scrpage} in the \KOMAScript{}
-% manual, either the German \file{scrguide} or the English \file{scrguien}.
+% You can find the user manuals of \pkg*{scrlayer-scrpage} in the
+% \KOMAScript{} manual, either the German \file{scrguide-de.pdf} or the
+% English \file{scrguide-en.pdf}.
 %
 % \MaybeStop{\PrintIndex}
 %
@@ -180,11 +182,15 @@
 % \begin{option}{headwidth}
 % \changes{v0.9.1757}{2014/04/09}{new: two offsets available}
 % \changes{v3.17}{2015/02/25}{new: store the values}
+% \changes{v3.39}{2022/11/11}{initial dot in member argument of option storage
+%   commands removed}
 % \begin{option}{footwidth}
 % \changes{v0.9.1757}{2014/04/09}{new: two offsets available}
 % \changes{v3.15}{2014/12/28}{fix: missing colon in call of
 %   \cs{sls@split@at@iicolons}}
 % \changes{v3.17}{2015/02/25}{new: store the values}
+% \changes{v3.39}{2022/11/11}{initial dot in member argument of option storage
+%   commands removed}
 % \begin{description}
 % \item[\texttt{=\meta{special dimensional expression}:\meta{special
 %   dimensional expression}}:] see \cs{sls@settowidthof} for information about
@@ -208,7 +214,7 @@
       \noexpand\endgroup
       \noexpand\sls@set@hf@width{head}{\reserved@b}{\reserved@c}{\reserved@a}%
       \noexpand\FamilyKeyStateProcessed
-      \noexpand\KOMA@kav@replacevalue{.scrlayer-scrpage.sty}{headwidth}{%
+      \noexpand\KOMA@kav@replacevalue{scrlayer-scrpage.sty}{headwidth}{%
         \reserved@a:\reserved@b:\reserved@c
       }%
     }%
@@ -222,7 +228,7 @@
       \noexpand\endgroup
       \noexpand\sls@set@hf@width{foot}{\reserved@b}{\reserved@c}{\reserved@a}%
       \noexpand\FamilyKeyStateProcessed
-      \noexpand\KOMA@kav@replacevalue{.scrlayer-scrpage.sty}{footwidth}{%
+      \noexpand\KOMA@kav@replacevalue{scrlayer-scrpage.sty}{footwidth}{%
         \reserved@a:\reserved@b:\reserved@c
       }%
     }%
@@ -294,8 +300,15 @@
   \addtolength{\@tempdima}{-\csname sls@#1width\endcsname}%
   \Ifstr{#2}{}{%
     \ifdim \csname sls@#1width\endcsname
-         = \dimexpr \textwidth+\marginparwidth+\marginparsep\relax
-      \setlength{\@tempdimb}{\z@}
+      = \dimexpr \textwidth+\marginparwidth+\marginparsep\relax
+%    \end{macrocode}
+% \changes{3.39}{2023/02/02}{offset depends on \cs{reversemarginpar}}
+%    \begin{macrocode}
+      \if@reversemargin
+        \setlength{\@tempdimb}{-\dimexpr \marginparwidth+\marginparsep\relax}%
+      \else
+        \setlength{\@tempdimb}{\z@}%
+      \fi
     \else
       \if@twoside
         \setlength{\@tempdimb}{.3333333333\@tempdima}%
@@ -329,25 +342,27 @@
 % \end{macro}^^A \sls@set@hf@width
 % \begin{macro}{\sls@headwidth,\sls@oddheadshift,\sls@evenheadshift,
 %               \sls@footwidth,\sls@oddfootshift,\sls@evenfootshift}
+% \changes{v3.39}{2022/11/11}{initial dot in member argument of option storage
+%   commands removed}
 % To store width and offset of page head an footer, we use macros. Those are
 % also used by the options and therefore need to be initialised before option
 % usage.
 %    \begin{macrocode}
 \scr@ifundefinedorrelax{@headwidth}{%
   \newcommand*{\sls@headwidth}{\textwidth}%
-  \KOMA@kav@add{.scrlayer-scrpage.sty}{headwidth}{\textwidth:0pt:0pt}%
+  \KOMA@kav@add{scrlayer-scrpage.sty}{headwidth}{\textwidth:0pt:0pt}%
 }{%
   \newcommand*{\sls@headwidth}{\@headwidth}%
-  \KOMA@kav@xadd{.scrlayer-scrpage.sty}{headwidth}{\@headwidth:0pt:0pt}%
+  \KOMA@kav@xadd{scrlayer-scrpage.sty}{headwidth}{\@headwidth:0pt:0pt}%
 }%
 \newcommand*{\sls@oddheadshift}{0pt}
 \newcommand*{\sls@evenheadshift}{0pt}
 \scr@ifundefinedorrelax{@footwidth}{%
   \newcommand*{\sls@footwidth}{\textwidth}%
-  \KOMA@kav@add{.scrlayer-scrpage.sty}{footwidth}{\textwidth:0pt:0pt}
+  \KOMA@kav@add{scrlayer-scrpage.sty}{footwidth}{\textwidth:0pt:0pt}
 }{%
   \newcommand*{\sls@footwidth}{\@footwidth}%
-  \KOMA@kav@xadd{.scrlayer-scrpage.sty}{footwidth}{\@footwidth:0pt:0pt}
+  \KOMA@kav@xadd{scrlayer-scrpage.sty}{footwidth}{\@footwidth:0pt:0pt}
 }%
 \newcommand*{\sls@oddfootshift}{0pt}
 \newcommand*{\sls@evenfootshift}{0pt}
@@ -505,6 +520,8 @@
 %    \end{macrocode}
 % \begin{macro}{\sls@set@values}
 % \changes{v3.28}{2019/11/18}{\cs{ifstr} renamed to \cs{Ifstr}}
+% \changes{v3.39}{2022/11/11}{initial dot in member argument of option storage
+%   commands removed}
 % \begin{description}
 % \item[\oarg{option name}:] either empty or the name of the option that sets
 %   the line,
@@ -567,7 +584,7 @@
   \reserved@b
   \FamilyKeyStateProcessed
   \Ifstr{#1}{}{}{%
-    \KOMA@kav@xreplacevalue{.scrlayer-scrpage.sty}{#1}{%
+    \KOMA@kav@xreplacevalue{scrlayer-scrpage.sty}{#1}{%
       \csname sls@#2#3@linethickness\endcsname
       :\csname sls@#2#3@linelength\endcsname
     }%
@@ -606,31 +623,33 @@
 %               \sls@headbelow@linelength,\sls@headbelow@linethickness,
 %               \sls@footabove@linelength,\sls@footabove@linethickness,
 %               \sls@footbelow@linelength,\sls@footbelow@linethickness}
+% \changes{v3.39}{2022/11/11}{initial dot in member argument of option storage
+%   commands removed}
 % To store length and thickness of the lines at the page head an footer, we
 % use macros. Those are also used by the options and therefore need to be
 % initialised before option usage.
 %    \begin{macrocode}
 \newcommand*{\sls@headabove@linelength}{\sls@headwidth}%
 \newcommand*{\sls@headabove@linethickness}{0pt}%
-\KOMA@kav@xadd{.scrlayer-scrpage.sty}{headtopline}{%
+\KOMA@kav@xadd{scrlayer-scrpage.sty}{headtopline}{%
   \expandafter\noexpand\sls@headabove@linethickness:%
   \expandafter\noexpand\sls@headabove@linelength
 }
 \newcommand*{\sls@headbelow@linelength}{\sls@headwidth}%
 \newcommand*{\sls@headbelow@linethickness}{0pt}%
-\KOMA@kav@xadd{.scrlayer-scrpage.sty}{headsepline}{%
+\KOMA@kav@xadd{scrlayer-scrpage.sty}{headsepline}{%
   \expandafter\noexpand\sls@headbelow@linethickness:%
   \expandafter\noexpand\sls@headbelow@linelength
 }
 \newcommand*{\sls@footabove@linelength}{\sls@footwidth}%
 \newcommand*{\sls@footabove@linethickness}{0pt}%
-\KOMA@kav@xadd{.scrlayer-scrpage.sty}{footsepline}{%
+\KOMA@kav@xadd{scrlayer-scrpage.sty}{footsepline}{%
   \expandafter\noexpand\sls@footabove@linethickness:%
   \expandafter\noexpand\sls@footabove@linelength
 }
 \newcommand*{\sls@footbelow@linelength}{\sls@footwidth}%
 \newcommand*{\sls@footbelow@linethickness}{0pt}%
-\KOMA@kav@xadd{.scrlayer-scrpage.sty}{footbotline}{%
+\KOMA@kav@xadd{scrlayer-scrpage.sty}{footbotline}{%
   \expandafter\noexpand\sls@footbelow@linethickness:%
   \expandafter\noexpand\sls@footbelow@linelength
 }
@@ -666,6 +685,8 @@
 %
 % \begin{option}{ilines,clines,olines}
 % \changes{v3.17}{2015/02/25}{storing values}
+% \changes{v3.39}{2022/11/11}{initial dot in member argument of option storage
+%   commands removed}
 % \begin{macro}{\sls@hfline@adjust}
 % Maybe it would be more useful to be able to adjust each line on its own or
 % at most to define an offset. But \pkg{scrpage2} supports only these
@@ -674,15 +695,15 @@
 %    \begin{macrocode}
 %<*options>
 \newcommand*{\sls@hfline@adjust}{0}%
-\KOMA@kav@add{.scrlayer-scrpage.sty}{ilines}{}
+\KOMA@kav@add{scrlayer-scrpage.sty}{ilines}{}
 \KOMA@key{ilines}[]{%
   \ifx\relax#1\relax
     \renewcommand*{\sls@hfline@adjust}{0}%
     \FamilyKeyStateProcessed
-    \KOMA@kav@removekey{.scrlayer-scrpage.sty}{ilines}%
-    \KOMA@kav@removekey{.scrlayer-scrpage.sty}{clines}%
-    \KOMA@kav@removekey{.scrlayer-scrpage.sty}{olines}%
-    \KOMA@kav@add{.scrlayer-scrpage.sty}{ilines}{}%
+    \KOMA@kav@removekey{scrlayer-scrpage.sty}{ilines}%
+    \KOMA@kav@removekey{scrlayer-scrpage.sty}{clines}%
+    \KOMA@kav@removekey{scrlayer-scrpage.sty}{olines}%
+    \KOMA@kav@add{scrlayer-scrpage.sty}{ilines}{}%
   \else
     \def\FamilyKeyStateProcessed{unexpected value}%
   \fi
@@ -691,10 +712,10 @@
   \ifx\relax#1\relax
     \renewcommand*{\sls@hfline@adjust}{1}%
     \FamilyKeyStateProcessed
-    \KOMA@kav@removekey{.scrlayer-scrpage.sty}{ilines}%
-    \KOMA@kav@removekey{.scrlayer-scrpage.sty}{clines}%
-    \KOMA@kav@removekey{.scrlayer-scrpage.sty}{olines}%
-    \KOMA@kav@add{.scrlayer-scrpage.sty}{clines}{}%
+    \KOMA@kav@removekey{scrlayer-scrpage.sty}{ilines}%
+    \KOMA@kav@removekey{scrlayer-scrpage.sty}{clines}%
+    \KOMA@kav@removekey{scrlayer-scrpage.sty}{olines}%
+    \KOMA@kav@add{scrlayer-scrpage.sty}{clines}{}%
   \else
     \def\FamilyKeyStateProcessed{unexpected value}%
   \fi
@@ -703,15 +724,15 @@
   \ifx\relax#1\relax
     \renewcommand*{\sls@hfline@adjust}{2}%
     \FamilyKeyStateProcessed
-    \KOMA@kav@removekey{.scrlayer-scrpage.sty}{ilines}%
-    \KOMA@kav@removekey{.scrlayer-scrpage.sty}{clines}%
-    \KOMA@kav@removekey{.scrlayer-scrpage.sty}{olines}%
-    \KOMA@kav@add{.scrlayer-scrpage.sty}{olines}{}%
+    \KOMA@kav@removekey{scrlayer-scrpage.sty}{ilines}%
+    \KOMA@kav@removekey{scrlayer-scrpage.sty}{clines}%
+    \KOMA@kav@removekey{scrlayer-scrpage.sty}{olines}%
+    \KOMA@kav@add{scrlayer-scrpage.sty}{olines}{}%
   \else
     \def\FamilyKeyStateProcessed{unexpected value}%
   \fi
 }
-\KOMA@kav@add{.scrlayer-scrpage.sty}{ilines}{}
+\KOMA@kav@add{scrlayer-scrpage.sty}{ilines}{}
 %</options>
 %    \end{macrocode}
 % \end{macro}^^A \sls@hfline@adjust
@@ -745,6 +766,8 @@
 % \changes{v3.20}{2016/04/12}{\cs{@ifnextchar} replaced by
 %   \cs{kernel@ifnextchar}}
 % \changes{v3.28}{2019/11/18}{\cs{ifstr} renamed to \cs{Ifstr}}
+% \changes{v3.39}{2022/11/11}{initial dot in member argument of
+%   \cs{KOMAExecuteOptions} removed}
 % \begin{macro}{\sls@@@@setline}
 % \changes{v3.18}{2015/06/17}{explicit reuse of the current length}
 % \changes{v3.28}{2019/11/18}{\cs{ifstr} renamed to \cs{Ifstr}}
@@ -770,17 +793,17 @@
     \Ifstr{#2}{current}{}{%
       \setlength{\@tempdima}{#2}%
       \Ifstr{#1}{headabove}{%
-        \KOMAExecuteOptions[.scrlayer-scrpage.sty]%
+        \KOMAExecuteOptions[scrlayer-scrpage.sty]%
           {headtopline=\@tempdima:\csname sls@#1@linelength\endcsname}%
       }{\Ifstr{#1}{headbelow}{%
-          \KOMAExecuteOptions[.scrlayer-scrpage.sty]%
+          \KOMAExecuteOptions[scrlayer-scrpage.sty]%
             {headsepline=\@tempdima:\csname sls@#1@linelength\endcsname}%
         }{%
           \Ifstr{#1}{footabove}{%
-            \KOMAExecuteOptions[.scrlayer-scrpage.sty]%
+            \KOMAExecuteOptions[scrlayer-scrpage.sty]%
               {footsepline=\@tempdima:\csname sls@#1@linelength\endcsname}%
           }{%
-            \KOMAExecuteOptions[.scrlayer-scrpage.sty]%
+            \KOMAExecuteOptions[scrlayer-scrpage.sty]%
               {footbotline=\@tempdima:\csname sls@#1@linelength\endcsname}%
           }%
         }%
@@ -996,6 +1019,8 @@
 %    \end{macrocode}
 % \end{macro}^^A \sls@auto@pagestyleset
 % \changes{v3.17}{2015/02/25}{storing the values}
+% \changes{v3.39}{2022/11/11}{initial dot in member argument of option storage
+%   commands removed}
 %    \begin{macrocode}
 %<*options>
 \KOMA@key{pagestyleset}{%
@@ -1005,7 +1030,7 @@
     \let\sls@auto@pagestyleset\relax
     \@nameuse{sls@ps@style@#1}%
     \FamilyKeyStateProcessed
-    \KOMA@kav@replacevalue{.scrlayer-scrpage.sty}{pagestyleset}{#1}%
+    \KOMA@kav@replacevalue{scrlayer-scrpage.sty}{pagestyleset}{#1}%
   }%
 }
 %    \end{macrocode}
@@ -1072,14 +1097,17 @@
 % \end{option}^^A pagestyleset
 %
 % \begin{option}{komastyle,standardstyle}
+% \changes{v3.39}{2022/11/16}{only with \KOMAScript~3}
 % These options are deprecated, but defined for compatibility with
 % \pkg{scrpage2}:
 %    \begin{macrocode}
 %<*options>
-\KOMA@DeclareDeprecatedOption[scrlayer-scrpage]{komastyle}{%
-  pagestyleset=KOMA-Script}
-\KOMA@DeclareDeprecatedOption[scrlayer-scrpage]{standardstyle}{%
-  pagestyleset=standard}
+\@ifundefined{KOMA@DeclareDeprecatedOption}{}{%
+  \KOMA@DeclareDeprecatedOption[scrlayer-scrpage]{komastyle}{%
+    pagestyleset=KOMA-Script}%
+  \KOMA@DeclareDeprecatedOption[scrlayer-scrpage]{standardstyle}{%
+    pagestyleset=standard}%
+}
 %</options>
 %    \end{macrocode}
 % \end{option}^^A komastyle,standardstyle
@@ -1092,13 +1120,16 @@
 % option \opt{markcase}.
 %
 % \begin{option}{markuppercase,markusedcase,nouppercase}
+% \changes{v3.39}{2022/11/16}{only with \KOMAScript~3}
 % For compatibility with \pkg{scrpage2}.
 %    \begin{macrocode}
 %<*options>
-\KOMA@DeclareDeprecatedOption[scrlayer-scrpage]{markuppercase}{markcase=upper}
-\KOMA@DeclareDeprecatedOption[scrlayer-scrpage]{markusedcase}{markcase=used}
-\KOMA@DeclareDeprecatedOption[scrlayer-scrpage]{nouppercase}{%
-  markcase=ignoreuppercase%
+\@ifundefined{KOMA@DeclareDeprecatedOption}{}{%
+  \KOMA@DeclareDeprecatedOption[scrlayer-scrpage]{markuppercase}{markcase=upper}
+  \KOMA@DeclareDeprecatedOption[scrlayer-scrpage]{markusedcase}{markcase=used}
+  \KOMA@DeclareDeprecatedOption[scrlayer-scrpage]{nouppercase}{%
+    markcase=ignoreuppercase%
+  }
 }
 %</options>
 %    \end{macrocode}

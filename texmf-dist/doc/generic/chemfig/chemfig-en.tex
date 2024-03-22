@@ -1,7 +1,6 @@
+% !TeX TS-program = lualatex
 \documentclass[10pt]{article}
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage[a4paper,margin=2.5cm,head=17pt,headsep=3mm,footskip=10mm]{geometry}
+\usepackage[a4paper,margin=2.5cm,footskip=10mm]{geometry}
 \usepackage[bottom]{footmisc}
 \usepackage{libertine,amsmath,array,longtable,xspace,fancybox,boites,textcomp,enumitem,chemfig,fancyhdr}
 \usetikzlibrary{decorations.pathmorphing}
@@ -241,6 +240,12 @@ The values (empty by default) contained in these two keys are executed at the ve
 
 For example, we can write \verb|schemestart code=\chemnameint{}| to reset the name depth at the beginning of each reaction scheme.
 
+\subsection{Key "baseline"}
+The value passed to this key sets the vertical position of the molecule. See page~\pageref{baseline}.
+
+\subsection{Cram bonds join}
+When \CFkey{bond join} is \CFval{true}, Cram bonds better connect to each other and to simple bonds. See page~\pageref{joinCram}.
+
 \section{Presenting \protect\CF}
 To use this package, start by adding the following code to the preamble:
 \begin{itemize}
@@ -295,6 +300,7 @@ Here is the complete list of parameters as well as their default values\label{li
 		\CFparam{angle increment}
 		\CFparam{node style}
 		\CFparam{bond style}
+		\CFparam{baseline}
 		\CFparam{debug}
 		\CFparam{cycle radius coeff}
 		\CFparam{stack sep}
@@ -355,6 +361,8 @@ It is important to understand that the placement of the entire molecule depends 
 \exemple{Influence of the first atom}/\chemfig{A-B}\qquad
 \chemfig{-B}\qquad
 \chemfig{A^1-B}/
+
+To set an arbitrary vertical offset or place a group of atoms on the baseline, use the \chevrons{baseline} key (see page~\pageref{baseline}).
 
 \section{Different types of bonds}
 For \CF, bonds between two atoms are one of nine types, represented by the characters \boxedfalseverb-, \boxedfalseverb=, \boxedfalseverb~, \boxedfalseverb>, \boxedfalseverb<, \boxedfalseverb{>:}, \boxedfalseverb{<:}, \boxedfalseverb{>|} and \boxedfalseverb{<|} :\label{types.liaisons}
@@ -453,12 +461,6 @@ When the angle field contains an integer, this represents the angle the bond mak
 
 These angles remain valid if the atoms are empty, and this is the case for all the features we will see below:
 \exemple{Predefined angles with empty groups}|\chemfig{--[1]-[3]--[7]-[6]}|
-
-For those who find this "ugly\footnote{See \texttt{\detokenize{http://tex.stackexchange.com/questions/161796/ugly-bond-joints-in-chemfig detokenize}}}", it is now possible connect the single bonds with a slightly increased compilation time. The boolean \chevrons{key} \CFkv{bond join}{boolean} macro enables this feature when \CFval{true} and disables it when \CFval{false}, which is the better behavior, set by default.
-
-\exemple{Connecting bonds}/\setchemfig{bond style={line width=3pt}}
-\chemfig{-[1]-[7]} et
-\chemfig[bond join=true]{-[1]-[7]}/
 
 \label{angle increment}The \chevrons{key} \CFkv{angle increment}{angle} sets the default angle used to calculate the angle of a bond:
 
@@ -593,6 +595,36 @@ Numerous \TIKZ decoration libraries are available. For example, one can use the 
 \exemple{Wavy bonds}|\chemfig{A-[,3,,,decorate,decoration=snake]B}|
 
 Cram bonds ignore thickness and dash settings.
+
+\section{Connecting bonds}
+By default, the lines representing single bonds do not connect, which can be too visible and unsightly when the line widths are large.
+
+For those who find this "ugly\footnote{See \texttt{\detokenize{http://tex.stackexchange.com/questions/161796/ugly-bond-joints-in-chemfig detokenize}}}", it is now possible connect the single bonds with a slightly increased compilation time. The boolean \chevrons{key} \CFkv{bond join}{boolean} macro enables this feature when \CFval{true} and disables it when \CFval{false}, which is the better behavior, set by default.
+
+\exemple{Connecting bonds}/\setchemfig{bond style={line width=3pt}}
+\chemfig{-[1]-[7]} et
+\chemfig[bond join=true]{-[1]-[7]}/
+
+The problem is even more obvious with Cram bonds when they connect to a single bond or another Cram bond. Here again, setting \CFkey{bond join} to \CFval{true} makes for more aesthetically pleasing connections.\label{joinCram}
+
+\exemple{Connecting Cram bonds}/
+\chemfig{<[:-20]>[:50]}\qquad
+\chemfig[bond join]{<[:-20]>[:50]}
+\medbreak
+\setchemfig{cram width=5pt}
+\chemfig{<[:-45]-[:30,,,,line width=5pt]>[:-10]}\qquad
+\chemfig[bond join]{<[:-45]-[:30,,,,line width=5pt]>[:-10]}/
+
+It is important to note the tow following points:
+\begin{itemize}
+	\item \CFkey{bond join} is \CFval{true}, the Cram bond is drawn without an outline: it will therefore appear slightly thinner (the importance depending on the \CFval{line width} parameter);
+	\item \CFkey{bond join} has no effect between a simple bond and a Cram bond when the 2 vertices of the base of the triangle of the Cram bond are outside the space delimited by the 2 parallel edges of the simple bond. Mathematically, it is the case when $d \cos\alpha>w$, where $d$ is the value of \CFval{cram width}, $w$ is the width of the single bond and $\alpha$ is the angle between the 2 bonds.
+\end{itemize}
+
+\exemple{Connecting Cram bonds}/
+\setchemfig{cram width=5pt, bond join}
+\chemfig{-[,,,,line width=3pt]>[:30]}\qquad
+\chemfig{-[,,,,line width=3pt]>[:65]}/
 
 \section{Default values}
 At the beginning of each molecule, the default values for the optional arguments are initialized. They are:
@@ -1143,12 +1175,6 @@ Except in cases where the character "\verb|#|" is followed by a number between 1
 In this example, only \verb|#1| and \verb|#2| are understood as the arguments of the sub molecule \verb|\X|. The other "\verb|#|" are displayed as they are in the molecule (case of \verb|#3| and \verb|#4|) or understood as the character specifying the fine adjustment of the offset of the bonds.
 
 \section{Placement of Atoms}
-\subsection{First Atom}\label{premieratome}
-As explained on page~\pageref{first atom}, the first atom encountered (whether empty or not) is the one that is placed on the baseline, represented in gray on the examples of this manual. The choice of this first atom thus conditions the placement of all the others and often influences the placement of the whole molecule.
-
-\exemple{First atom}/\chemfig{H-[7]C(-[5]H)=C(-[1]H)-[7]H}\qquad
-\chemfig{C(-[3]H)(-[5]H)=C(-[1]H)-[7]H}/
-
 \subsection{Groups of atoms}\label{placementatomes}
 In a group of atoms, the atoms are placed one after the other in a well-established order:
 \begin{itemize}
@@ -1171,6 +1197,35 @@ In the example below whose code would be "\verb|\chemfig{A[:-60,,,3]BCDEF}|" the
 			\hbox to\wd0{\hss$\scriptstyle#2$\hss}}}
 	\chemfig{A-[:-60,,,3]\0{B}{5}|\0{C}{4}|\0{D}{1}|\0{E}{2}|\0{F}{3}}
 \end{center}
+
+\subsection{Vertical alignment}\label{baseline}
+The \CFkey{baseline} is used to finely control the vertical placement of the molecule in relation to the baseline of the current paragraph.
+
+It is set to \CFval{0pt} by default, and in this case, the first atom encountered (whether empty or not) is the one placed on the baseline of the current paragraph, shown in gray on the examples in this manual. The choice of this first atom therefore conditions the placement of all the others, and often influences the placement of the entire molecule.
+
+\exemple{First atom}/\chemfig{H-[7]C(-[5]H)=C(-[1]H)-[7]H}\qquad
+\chemfig{C(-[3]H)(-[5]H)=C(-[1]H)-[7]H}/
+
+An arbitrary dimension can be specified to vertically shift the molecule by this value with the syntax \CFkv{baseline}{dimension}:
+
+\exemple{Vertical shift}/\chemfig{A(-[:-60]-[:30]C)-[:45]B}\qquad
+\chemfig[baseline=5pt]{A(-[:-60]-[:30]C)-[:45]B}\qquad
+\chemfig[baseline=-5pt]{A(-[:-60]-[:30]C)-[:45]B}/
+
+With the syntax \CFkv{baseline}{(name)} (the name must be in parentheses), we specify that the baseline of the molecule is at the node named \chevrons{name}. The name of the atom can be the one assigned automatically by \CF (of the form \Verb|n<a>-<b>|) or a name given by the user using the syntax \Verb|@{<name >}| (see page~\pageref{mecanismes-reactionnels}).
+
+\exemple*{Alignment on atoms}/Default alignment :      \chemfig{A(-[:-60]-[:30]C)-[:45]B}\medbreak
+Alignment on B:          \chemfig[baseline=(b.base)]{A(-[:-60]-[:30]C)-[:45]@{b}B}\medbreak
+Alignment on empty atom: \chemfig[baseline=(vide)]{A(-[:-60]@{vide}-[:30]C)-[:45]B}\medbreak
+Alignment on C:          \chemfig[baseline=(c.base)]{A(-[:-60]-[:30]@{c}C)-[:45]B}/
+
+It is possible to name \TIKZ nodes. Thus, if we want to vertically center several molecules on the current baseline, we set \CFkey{baseline} to \CFval{(current bounding box.center)}.
+
+\exemple*{Centered Alignment}/1) \chemfig{A-[:-45]B} et 2) \chemfig{B-[:45]C}\bigbreak
+
+\setchemfig{baseline=(current bounding box.center)}% vertical centering of the following molecules
+1) \chemfig{A-[:-45]B} et 2) \chemfig{B-[:45]C}
+\setchemfig{baseline=0pt}% back to default value/
 
 \subsection{Bonds between atoms}\label{liaisonentreatomes}
 A bond starting from an atom would, if extended, pass through the centre of its bounding box. The atom placed at the end of the bond has its center of its bounding box is in the extension of the bond. Therefore, a bond between two atoms extends through the centers of their bounding boxes, as shown in this example:
@@ -2447,6 +2502,7 @@ The commands created by \CF are:
 	\item \CFkv{cycle radius coeff}  {0.75}: shrinkage ratio of the circle or arc inside cycles
 	\item \CFkv{stack sep}           {1.5pt}: vertical gap between arguments of \verb-\chemabove- and \verb-\chembelow- macros
 	\item \CFkv{show cntcycle}       {false}: show rings numbers
+	\item \CFkv{baseline}            {0pt}: dimension or name of node to set the vertical position
 	\item \CFkv{debug}               {false}: show atoms ans groups of atoms
 	\item \CFkv{autoreset cntcycle}  {true}: reset ring counter at \verb|\chemfig| execution
 	\item \CFkv{compound style}      {{}}: style of compounds
@@ -2854,32 +2910,30 @@ $\star\quad\star$
 \schemestop
 \chemnameinit{}/
 
-\begingroup\catcode`;12
-\exemple*{Explanatory diagram}/\parbox{0.8\linewidth}{%
-	\hspace{10em}
-	\tikz[remember picture]\node(n0){\chemname{}{Attacks\\nucleophiles}};\par
-	\vspace{2ex}\hspace{15em}
-	\chemfig{R^2-(-[:-60]@{m3}H)-[:60]@{m0}\charge{45:5pt=$\scriptstyle\color{red}\delta+$}{}(-[:120]R^1)
-		=[@{m1}]@{m2}\charge {45=\:,-45=\:,45:7pt=$\scriptstyle\color{red}\delta-$}{O}}
-	\hspace{5em}
-	\chemname[-15ex]{}{\tikz[remember picture]\node(n1){};Addition reactions}\kern1em
-	\chemname{}{\tikz[remember picture]\node(n2){};Basic properties}\par
-	\vspace{6ex}\hspace{8em}
-	\chemname{}{Acidic properties of hydrogen\tikz[remember picture]\node(n3){};
-		\\atom in $\alpha$ position}
-	\chemmove[-stealth,line width=0.8pt,green!60!black!70]{
-		\draw[shorten >=2pt](n0)..controls+(270:4em)and+(180:2em)..(a1);
-		\draw[shorten >=8pt](n1)..controls+(180:2em)and+(60:2em)..(a2);
-		\draw[shorten >=5pt](n2)..controls+(180:2em)and+(270:2em)..([xshift=3pt]a3.315);
-		\draw[shorten >=2pt](n3)..controls+(0:2em)and+(270:2em)..(a0);
-	}%
-}
-\chemnameinit{}/
-\endgroup
-
 \exemple*{Taxotere}/\chemfig{-[::-30](-[5])(-[7])-[::+60]-[::-60]O-[::+60](=[::-45]O)-[::+90]HN>:[::-60](-[::+60]**6(------))
 -[::-30](<:[2]OH)-[::-60](=[6]O)-[::+60]O>:[::-60]*7(---?(<[::-120]OH)-(<|[1]CH_3)(<:[::-90]CH_3)
 -(-[1](<[::+80]HO)-[0](=[::+60]O)-[7](<|[::+130]CH_3)(-[::+75](<|[2]OH)-[::-60]-[::-60](<[::+30]O-[::-90])
 -[::-60](<[::+90])(<:[::+30]O-[7](-[6]CH_3)=[0]O)-[::-60])-[6]-[5,1.3]?(<:[7]O-[5](=[::-60]O)
 -[6]**6(------)))=(-[2]CH_3)-)}/
+
+% https://tex.stackexchange.com/questions/673490/diverging-arrow-in-chemfig/673572#673572
+\exemple*{Diverging arrows}/\schemestart
+	\chemfig{(-[:210]R_2)(-[:330]R_1)=[2]O}
+	\arrow(a--)[,1.5,,,draw=none]
+	\subscheme{
+		\charge{30:4pt=$\mathrm{S}_1$}{\chemleft{[}\chemfig{(-[:210]R_2)(-[:330]R_1)=[2]O}\chemright{]}}
+		\arrow(b--c){->[*{0}ISC]}[-90,1.5]
+		\charge{30:4pt=$\mathrm{T}_1$}{\chemleft[\chemfig{(-[:210]R_2)(-[:330]R_1)=[2]O}\chemright{]}}
+	}
+	\arrow(--d)[,1.5,,,draw=none]
+	\chemfig{(-[:210]R_2)(-[:330,0.1,,,draw=none]\charge{330:-1pt=\.\,}{})=[2]O}
+	\+
+	\chemfig{\charge{90:1pt=\.\,}{R}_1}
+	\schemestop
+\chemmove{
+	\draw[thick,shorten >=10pt] (a.east) -- ++(1,0) |- (b.west);
+	\draw[thick,shorten >=10pt] (a.east) -- ++(1,0) |- (c.west);
+	\draw[-,thick,shorten >=15pt,shorten <=8pt] (b.east) -- ++(1.3,0) |- (d.west);
+	\draw[thick,shorten >=10pt,shorten <=8pt] (c.east) -- ++(1.3,0) |- (d.west);
+}/
 \end{document}

@@ -57,9 +57,9 @@ Q2: mosfet(,,dMESDQuB,E) at (Q1,T2.s-(0,elen_-del))
   capacitor(to (T1.L3.end-(del,0),Here),C)
   rlabel(,\SI{0.1}{\micro{}}\hbox{\sf F}\hskip20pt)
 LOD: dot
-  { line to (RF,Here); dot(,,1)
-    move left_ 4bp__;  "sftxt(local)" rjust "sftxt(oscillator)" rjust
-    move left 40bp__ }
+  { line to (RF,Here); dot(,,1); move left_ 4bp__; textht = 10bp__
+    { "sftxt(local)" wid 30bp__ rjust at Here+(0,5bp__) }
+    "sftxt(oscillator)" wid 50 bp__ rjust at Here+(0,-5bp__) }
   line from T2.T left_ to (Q1.S,T2.T)
 T2T: dot
   { capacitor(down_ to (Here,BT),C); rlabel(,\SI{0.1}{\micro{}}\hbox{\sf F})

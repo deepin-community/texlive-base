@@ -10,7 +10,7 @@
 %% 
 %%                       The `microtype' package
 %%         Subliminal refinements towards typographical perfection
-%%           Copyright (c) 2004--2022 R Schlicht <w.m.l@gmx.net>
+%%           Copyright (c) 2004--2023 R Schlicht <w.m.l@gmx.net>
 %% 
 %% This work may be distributed and/or modified under the conditions of the
 %% LaTeX Project Public License, either version 1.3c of this license or (at
@@ -30,7 +30,7 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesPackage
   {microtype}
-  [2022/06/23 v3.0f
+  [2023/03/13 v3.1a
    Micro-typographical refinements
    (RS)]
 \def\MT@MT
@@ -74,6 +74,7 @@
 \newcommand*\DeclareMicrotypeVariants[1]{}
 \newcommand*\DeclareMicrotypeAlias[2]{}
 \newcommand*\LoadMicrotypeFile[1]{}
+\newcommand*\DeclareMicrotypeFilePrefix[1]{}
 \newcommand*\DeclareMicrotypeBabelHook[2]{}
 \newcommand*\microtypesetup[1]{}
 \newcommand*\microtypecontext[1]{}
@@ -96,6 +97,7 @@
 \@onlypreamble\DisableLigatures
 \@onlypreamble\DeclareMicrotypeVariants
 \@onlypreamble\DeclareMicrotypeBabelHook
+\@onlypreamble\DeclareMicrotypeFilePrefix
 \expandafter\let\csname ver@letterspace.sty\endcsname\@empty
 \def\MT@old@cmd#1#2{%
   \newcommand*#1{\MT@error{%
@@ -511,8 +513,8 @@ time will almost certainly lead to undesired results. Have your choice!}%
   \MT@with@package@T{xunicode}\MT@xunicodetrue
   \MT@with@package@T{fontspec}\MT@fontspectrue
   \MT@glet\MT@setupfont@hook\@empty
-  %\gdef\MT@setupfont@hook{\tracingnone
-  %  \MT@info{Silently doing my `magic' (Mittelbach) for font\MessageBreak\MT@@font}}%
+ %\gdef\MT@setupfont@hook{\ifnum\tracingmacros>\z@\tracingnone
+ %  \MT@info{->Silently doing my `magic' (Mittelbach) for font\MessageBreak->\MT@@font}\fi}%
   \MT@if@false
   \MT@with@babel@and@T{spanish} \MT@if@true
   \MT@with@babel@and@T{galician}\MT@if@true
@@ -594,19 +596,27 @@ time will almost certainly lead to undesired results. Have your choice!}%
 \newif\ifMT@patch@ok
 \def\MT@patch@info#1{\MT@info{Applying patch `#1'}}
 \def\MT@patch@warn#1{\MT@warning{Unable to apply patch `#1'}}
-\def\MT@patch@undef#1{\MT@warning{Patch `#1' undefined. Cannot apply it}}
+\def\MT@patch@undef#1{\MT@warning{Patch `#1' undefined.\MessageBreak Cannot apply it}}
 \def\MT@patch@info@undo#1{\MT@info{Reverting patch `#1'}}
 \let\MT@patches@def\@gobble
 \def\MT@define@patch#1#2#3{%
-  \g@addto@macro\MT@patches@def{,#1}%
-  \MT@def@n{MT@patch@@#1}{#2}%
-  \MT@def@n{MT@patch@undo@@#1}{#3}%
+  \MT@ifdefined@n@TF{MT@patch@@#1}{%
+    \MT@warning{Patch `#1' already defined.\MessageBreak Cannot define it}%
+  }{%
+    \g@addto@macro\MT@patches@def{,#1}%
+    \MT@gdef@n{MT@patch@@#1}{#2}%
+    \MT@gdef@n{MT@patch@undo@@#1}{#3}%
+  }%
 }
 \let\MT@redefined@patches\@empty
 \def\MT@redefine@patch#1#2#3{%
   \g@addto@macro\MT@redefined@patches{%
-    \MT@def@n{MT@patch@@#1}{#2}%
-    \MT@def@n{MT@patch@undo@@#1}{#3}%
+    \MT@ifdefined@n@TF{MT@patch@@#1}{%
+      \MT@gdef@n{MT@patch@@#1}{#2}%
+      \MT@gdef@n{MT@patch@undo@@#1}{#3}%
+    }{%
+      \MT@warning{Patch `#1' undefined.\MessageBreak Cannot redefine it}%
+    }%
   }%
 }
 \@onlypreamble\MT@define@patch
@@ -736,11 +746,15 @@ time will almost certainly lead to undesired results. Have your choice!}%
                {\ignorespaces}{\ignorespaces\leftprotrusion}%
            \MT@exp@cs\MT@patch@patch{beamerx@\string\@mpfootnotetext}
                {\ignorespaces}{\ignorespaces\leftprotrusion}}
-          {\@ifpackageloaded{scrkbase}
+          {\MT@ifdefined@c@TF\KOMAClassName
             {\MT@patch@patch\scr@saved@footnotetext{\ignorespaces}{\ignorespaces\leftprotrusion}}%
             {\MT@patch@patch\@footnotetext{\ignorespaces}{\ignorespaces\leftprotrusion}}%
            \MT@patch@patch\@mpfootnotetext{\ignorespaces}{\ignorespaces\leftprotrusion}}}}%
   }{}%
+  \MT@define@patch{verbatim}{%
+    \MT@append@patch\@verbatim{\microtypesetup{activate=false}}%
+    \MT@with@package@T{alltt}{\MT@append@patch\alltt{\microtypesetup{activate=false}}}%
+  }{}
   \MT@redefined@patches
 }}
 \expandafter\ifx\the\font\nullfont\normalfont\fi
@@ -1045,14 +1059,22 @@ time will almost certainly lead to undesired results. Have your choice!}%
 \DeclareRobustCommand\noprotrusionifhmode{\relax\ifhmode\kern-\p@\kern\p@\fi}
 \DeclareRobustCommand\leftprotrusion{%
   \MT@toks{}%
-  \MT@prot@false
+  \MT@prot@toks{}%
+  \let\MT@prot@l\MT@prot@l@
+  \let\MT@maybe@textcmd\@firstofone
   \MT@prot@get@firstgroup
 }
-\newif\ifMT@prot@
-\def\MT@prot@l#1{%
+\def\MT@prot@l@#1{%
   \MT@get@prot{#1}{left}%
   #1%
 }
+\newtoks\MT@prot@toks
+\def\MT@prot@l@tc#1{%
+  \MT@get@prot{\MT@maybe@textcmd{#1}}{left}%
+  \the\MT@prot@toks
+  \MT@gobble@to@nil
+}
+\def\MT@gobble@to@nil#1\MT@nil{}
 \DeclareRobustCommand\rightprotrusion{\MT@prot@r}
 \def\MT@prot@r#1{%
   {#1}%
@@ -1123,41 +1145,85 @@ time will almost certainly lead to undesired results. Have your choice!}%
       \expandafter\expandafter\expandafter\@tempa
       \expandafter\MT@getthird\MT@prot@next\relax\@nil
     \MT@exp@two@c\ifx\@car\@tempa\relax\@nil\@text@composite
-      \def\MT@temp*##1##2{\MT@prot@l{\the\MT@toks##1##2}}%
+      \def\MT@temp*##1##2{\MT@exp@one@n\MT@prot@l{\the\MT@toks##1##2}}%
     \else
-      \def\MT@temp*##1{\MT@prot@l{\the\MT@toks##1}}%
+      \def\MT@temp*##1{\MT@exp@one@n\MT@prot@l{\the\MT@toks##1}}%
     \fi
   }%
 }
-\def\MT@prot@addgroup{\bgroup\afterassignment\MT@prot@get@firsttoken\let\MT@temp= }
+\def\MT@prot@addgroup{\bgroup\afterassignment\MT@prot@get@firstgroup\let\MT@temp= }
 \def\MT@prot@get@firstgroup{\futurelet\MT@prot@next\MT@prot@get@first@group}
+\def\MT@prot@get@firstgroup@tc{\futurelet\MT@prot@next\MT@prot@get@first@group@tc}
 \def\MT@prot@get@firsttoken{\futurelet\MT@prot@next\MT@prot@get@first@token}
 \def\MT@prot@get@nexttoken{\futurelet\MT@prot@next\MT@prot@get@next@token}
-\def\MT@prot@check#1{\MT@prot@check@#1}
-\def\MT@prot@check@#1#2{%
+\def\MT@prot@check#1{\MT@prot@check@#1\relax\@nil}
+\def\MT@prot@check@#1#2#3\@nil{%
   \ifx\MT@prot@next#2%
-    \MT@prot@true
-    \csname MT@prot@check@#1\endcsname
+    \csname MT@prot@check@#1\endcsname #3%
     \let\MT@prot@ifmacro\@gobble
     \expandafter\MT@tlist@break
   \fi
 }
 \def\MT@prot@check@I{%
-  \def\MT@temp*##1{\MT@prot@get@firsttoken}%
+  \def\MT@temp*##1{\MT@prot@get@firstgroup}%
 }
 \def\MT@prot@check@S{%
-  \def\MT@temp*##1{\MT@toks\expandafter{\the\MT@toks##1}\MT@prot@get@firsttoken}%
+  \def\MT@temp*##1{\MT@toks\expandafter{\the\MT@toks##1}\MT@prot@get@firstgroup}%
 }
 \def\MT@prot@check@O{%
-  \def\MT@temp*##1##2{\MT@toks\expandafter{\the\MT@toks##1{##2}}\MT@prot@get@firsttoken}%
+  \def\MT@temp*##1##2{\MT@toks\expandafter{\the\MT@toks##1{##2}}\MT@prot@get@firstgroup}%
 }
 \def\MT@prot@check@T{%
-  \def\MT@temp*##1##2##3{\MT@toks\expandafter{\the\MT@toks##1{##2}{##3}}\MT@prot@get@firsttoken}%
+  \def\MT@temp*##1##2##3{\MT@toks\expandafter{\the\MT@toks##1{##2}{##3}}\MT@prot@get@firstgroup}%
+}
+\def\MT@prot@check@E{%
+  \the\MT@toks
+  \def\MT@temp*##1{\MT@prot@l{##1}}%
+}
+\def\MT@prot@check@e{%
+  \the\MT@toks
+  \def\MT@temp*##1{\@ifstar{\MT@prot@l{##1*}}{\MT@prot@l{##1}}}%
+}
+\def\MT@prot@check@eX#1{%
+  \the\MT@toks
+  \def\MT@temp*##1{\@ifstar
+    {\MT@get@prot{#1*}{left}##1*}
+    {\MT@get@prot{#1}{left}##1}}%
+}
+\def\MT@prot@check@l{%
+  \def\MT@temp*##1{\@ifstar{\MT@prot@check@l@{##1*}}{\MT@prot@check@l@{##1}}}%
+}
+\def\MT@prot@check@l@#1#2{%
+  \the\MT@toks
+  \MT@prot@l{#1{#2}}%
+}
+\def\MT@prot@check@lX#1{%
+  \def\MT@temp*##1{\@ifstar
+    {\def\MT@temp{##1*}\MT@prot@check@lX@{#1*}}
+    {\def\MT@temp{##1}\MT@prot@check@lX@{#1}}}%
+}
+\def\MT@prot@check@lX@#1#2{%
+  \the\MT@toks
+  \MT@get@prot{#1{#2}}{left}\MT@temp{#2}%
+}
+\def\MT@prot@check@F{%
+  \ifx\MT@prot@l\MT@prot@l@tc
+    \def\MT@temp*{\MT@exp@one@n\MT@prot@l{\the\MT@toks}}%
+  \else
+    \let\MT@prot@l\MT@prot@l@tc
+    \def\MT@temp*##1##2{%
+      \let\MT@maybe@textcmd##1%
+      \the\MT@toks
+      \MT@toks{}%
+      \MT@prot@toks{##1{##2}}%
+      \MT@prot@get@firstgroup@tc##2\MT@nil
+    }%
+  \fi
 }
 \def\MT@prot@check@cmds{%
   {I\ignorespaces}{I\relax}{I\@empty}%
   {S\rmfamily}{S\sffamily}{S\ttfamily}{S\mdseries}{S\bfseries}%
-  {S\upshape}{S\slshape}{S\itshape}{S\scshape}%
+  {S\upshape}{S\itshape}{S\slshape}{S\scshape}{S\em}%
   {S\normalfont}{S\selectfont}%
   {S\lsstyle}%
   {S\tiny}{S\scriptsize}{S\footnotesize}{S\small}{S\normalsize}%
@@ -1165,14 +1231,71 @@ time will almost certainly lead to undesired results. Have your choice!}%
   {O\fontencoding}{O\fontfamily}{O\fontseries}{O\fontshape}%
   {O\microtypesetup}{O\microtypecontext}%
   {T\fontsize}%
+  {F\textrm}{F\textsf}{F\texttt}{F\textnormal}%
+  {F\textbf}{F\textmd}{F\textit}{F\textsl}{F\textsc}{F\textup}{F\emph}%
+  {F\MakeUppercase}{F\MakeLowercase}%
 }
 \IfFormatAtLeastTF{2020/02/02}
   {\g@addto@macro\MT@prot@check@cmds{%
     {S\swshape}{S\ulcshape}{S\sscshape}{S\normalshape}%
-    {O\fontseriesforce}{O\fontshapeforce}}}{}
+    {F\textulc}{F\textsw}{F\textssc}%
+    {O\fontseriesforce}{O\fontshapeforce}}}
+  \relax
+\IfFormatAtLeastTF{2022/11/01}
+  {\g@addto@macro\MT@prot@check@cmds{{F\MakeTitlecase}}}\relax
+\@ifclassloaded{ltxdoc}
+  {\g@addto@macro\MT@prot@check@cmds{{E\enquote}{E\marg}{E\oarg}{E\parg}{E\cs}}}\relax
 \MT@addto@setup{%
+  \MT@with@package@T{doc}
+    {\g@addto@macro\MT@prot@check@cmds{{E\meta}}}%
+  \MT@with@package@T{fontaxes}
+    {\g@addto@macro\MT@prot@check@cmds{%
+      {S\txfigures}{S\lnfigures}{S\tbfigures}{S\prfigures}%
+      {O\fontfigurestyle}{O\fontfigurealignment}{O\fontbasefamily}%
+      {O\figureversion}%
+      {F\textsw}{F\textssc}{F\textulc}%
+      {F\textfigures}{F\liningfigures}{F\tabularfigures}{F\proportionalfigures}}%
+      \IfFormatAtLeastTF{2020/02/02}\relax
+        {\g@addto@macro\MT@prot@check@cmds{%
+          {S\swshape}{S\ulcshape}{S\sscshape}%
+          {F\textulc}{F\textsw}{F\textssc}}}}
+  \MT@with@package@T{nfssext-cfr}
+    {\g@addto@macro\MT@prot@check@cmds{%
+      {S\tistyle}{S\ltstyle}{S\ofstyle}{S\altstyle}{S\regstyle}{S\embossstyle}%
+      {S\ornamentalstyle}{S\qtstyle}{S\shstyle}{S\tmstyle}{S\tvstyle}{S\swashstyle}%
+      {S\lnstyle}{S\osstyle}{S\instyle}{S\sustyle}{S\lstyle}{S\ostyle}%
+      {S\pstyle}{S\tstyle}{S\plstyle}{S\postyle}{S\tlstyle}{S\tostyle}%
+      {S\scolshape}{S\olshape}{S\sishape}{S\ushape}{S\scushape}%
+      {S\uishape}{S\rishape}{S\dfshape}{S\swstyle}%
+      {S\nwwidth}{S\cdwidth}{S\ecwidth}{S\ucwidth}%
+      {S\etwidth}{S\epwidth}{S\exwidth}{S\uxwidth}{S\regwidth}%
+      {S\mbweight}{S\dbweight}{S\sbweight}{S\ebweight}%
+      {S\ubweight}{S\lgweight}{S\elweight}{S\ulweight}%
+      {F\textti}{F\textlt}{F\textof}{F\textalt}{F\textreg}{F\emboss}%
+      {F\textorn}{O\ornament}{F\textqt}{F\textsh}{F\texttm}{F\texttv}{F\textswash}%
+      {F\textln}{F\textos}{F\textin}{F\textsu}{F\textl}{F\texto}%
+      {F\textp}{F\textt}{F\textpl}{F\textpo}{F\texttl}{F\textto}%
+      {F\textol}{F\textsi}{F\textu}{F\textscu}%
+      {F\textui}{F\textri}{F\textdf}%
+      {F\textnw}{F\textcd}{F\textec}{F\textuc}%
+      {F\textet}{F\textep}{F\textex}{F\textux}{F\textrw}%
+      {F\textmb}{F\textdb}{F\textsb}{F\texteb}%
+      {F\textub}{F\textlg}{F\textel}{F\textul}}%
+      \IfFormatAtLeastTF{2020/02/02}\relax
+        {\g@addto@macro\MT@prot@check@cmds{{S\swshape}{F\textsw}}}}
   \MT@with@package@T{yfonts}
-    {\g@addto@macro\MT@prot@check@cmds{{S\frakfamily}{S\swabfamily}{S\gothfamily}}}%
+    {\g@addto@macro\MT@prot@check@cmds{%
+      {S\frakfamily}{S\swabfamily}{S\gothfamily}%
+      {F\textfrak}{F\textswab}{F\textgoth}}}%
+  \MT@with@package@T{csquotes}
+    {\@ifclassloaded{ltxdoc}
+      {\patchcmd\MT@prot@check@cmds{E\enquote}{e\enquote}\relax\relax}
+      {\g@addto@macro\MT@prot@check@cmds{{e\enquote}}}%
+     \g@addto@macro\MT@prot@check@cmds{{e\textquote}%
+       {l\foreignquote}{l\hyphenquote}{l\foreigntextquote}{l\hyphentextquote}%
+       {{eX}\textcquote\textquote}%
+       {{lX}\foreigntextcquote\foreigntextquote}%
+       {{lX}\hyphentextcquote\hyphentextquote}}}%
 }
 \def\MT@prot@get@first@group{%
   \MT@prot@ifcat\bgroup{%
@@ -1182,8 +1305,19 @@ time will almost certainly lead to undesired results. Have your choice!}%
   }%
   \MT@temp*%
 }
+\def\MT@prot@get@first@group@tc{%
+  \MT@prot@ifcat\bgroup{%
+    \def\MT@temp*##1##2\MT@nil{\MT@ifempty{##1}\relax
+          {{\MT@prot@get@firstgroup@tc##1\MT@nil}}}%
+  }{%
+    \def\MT@temp*{\MT@prot@get@first@token}%
+  }%
+  \MT@temp*%
+}
 \def\MT@prot@get@first@token{%
-  \def\MT@temp*{\ifMT@prot@\MT@prot@l{\the\MT@toks}\fi}%
+  \def\MT@temp*{\MT@exp@one@n\MT@ifempty{\the\MT@toks}
+      {\MT@exp@one@n\MT@ifempty{\the\MT@prot@toks}\relax{\the\MT@prot@toks\MT@gobble@to@nil}}
+      {\MT@exp@one@n\MT@prot@l{\the\MT@toks}}}%
   \MT@prot@ifcat{a}{%
     \def\MT@temp*{\MT@prot@addtoken@first}%
   }{%
@@ -1191,21 +1325,21 @@ time will almost certainly lead to undesired results. Have your choice!}%
       \def\MT@temp*{\MT@prot@addtoken@first}%
     }{%
       \MT@prot@ifx\@sptoken{%
-        \def\MT@temp* {\MT@prot@get@firsttoken}%
+        \def\MT@temp* {\MT@prot@get@firstgroup}%
       }{%
         \let\MT@prot@ifmacro\MT@prot@ifmacro@
         \MT@map@tlist@c\MT@prot@check@cmds\MT@prot@check
         \MT@prot@ifmacro{%
           \MT@prot@iffirstcmd\UTFviii@two@octets{%
-            \def\MT@temp*##1##2{\MT@prot@l{\the\MT@toks##1##2}}%
+            \def\MT@temp*##1##2{\MT@exp@one@n\MT@prot@l{\the\MT@toks##1##2}}%
           }{%
             \MT@prot@iffirstcmd\UTFviii@three@octets{%
-              \def\MT@temp*##1##2##3{\MT@prot@l{\the\MT@toks##1##2##3}}%
+              \def\MT@temp*##1##2##3{\MT@exp@one@n\MT@prot@l{\the\MT@toks##1##2##3}}%
             }{%
               \MT@prot@iffirstcmd\UTFviii@four@octets{%
-                \def\MT@temp*##1##2##3##4{\MT@prot@l{\the\MT@toks##1##2##3##4}}%
+                \def\MT@temp*##1##2##3##4{\MT@exp@one@n\MT@prot@l{\the\MT@toks##1##2##3##4}}%
               }{%
-                \MT@prot@iffirstcmd\csqQQ{\def\MT@temp*##1{\MT@prot@l{\the\MT@toks##1}}}{%
+                \MT@prot@iffirstcmd\csqQQ{\def\MT@temp*##1{\MT@exp@one@n\MT@prot@l{\the\MT@toks##1}}}{%
                   \MT@prot@iflicrcmd
                 }%
               }%
@@ -1225,7 +1359,7 @@ time will almost certainly lead to undesired results. Have your choice!}%
   \def\MT@temp*{\MT@prot@addtoken@next}%
   \MT@prot@ifcat{a}\relax{%
     \MT@prot@ifcat{!}\relax{%
-      \def\MT@temp*{\MT@prot@l{\the\MT@toks}}%
+      \def\MT@temp*{\MT@exp@one@n\MT@prot@l{\the\MT@toks}}%
     }%
   }%
   \MT@temp*%
@@ -1300,23 +1434,20 @@ time will almost certainly lead to undesired results. Have your choice!}%
     \MT@begin@catcodes
       \let\MT@begin@catcodes\relax
       \let\MT@end@catcodes\relax
-      \InputIfFileExists{mt-#1.cfg}{%
-        \edef\MT@curr@file{mt-#1.cfg}%
+      \MT@xadd\MT@file@list{#1,}%
+      \InputIfFileExists{\MT@cfg@prefix-#1.cfg}{%
+        \edef\MT@curr@file{\MT@cfg@prefix-#1.cfg}%
         \MT@vinfo{... Loading configuration file \MT@curr@file}%
-        \MT@xadd\MT@file@list{#1,}%
       }{%
         \MT@get@basefamily#1\@empty\@empty\@empty\@nil
         \MT@exp@one@n\MT@in@clist\@tempa\MT@file@list
-        \ifMT@inlist@
-          \MT@xadd\MT@file@list{#1,}%
-        \else
-          \InputIfFileExists{mt-\@tempa.cfg}{%
-            \edef\MT@curr@file{mt-\@tempa.cfg}%
+        \ifMT@inlist@ \else
+          \InputIfFileExists{\MT@cfg@prefix-\@tempa.cfg}{%
+            \edef\MT@curr@file{\MT@cfg@prefix-\@tempa.cfg}%
             \MT@vinfo{... Loading configuration file \MT@curr@file}%
-            \MT@xadd\MT@file@list{\@tempa,#1,}%
+            \MT@xadd\MT@file@list{\@tempa,}%
           }{%
-            \MT@vinfo{... No configuration file mt-#1.cfg}%
-            \MT@xadd\MT@file@list{#1,}%
+            \MT@vinfo{... No configuration file \MT@cfg@prefix-#1.cfg}%
           }%
         \fi
       }%
@@ -1794,7 +1925,6 @@ time will almost certainly lead to undesired results. Have your choice!}%
     \expandafter\MT@rem@from@clist\MT@font\MT@font@list
   \fi
 }
-\let\MT@active@features\@empty
 \def\MT@check@font@cx{%
   \MT@if@true
   \MT@map@clist@c\MT@active@features{%
@@ -2220,19 +2350,23 @@ time will almost certainly lead to undesired results. Have your choice!}%
   \@onelevel@sanitize\@tempa
   \MT@exp@one@n\MT@in@clist\@tempa\MT@file@list
   \ifMT@inlist@
-    \MT@vinfo{... Configuration file mt-\@tempa.cfg already loaded}%
+    \MT@vinfo{... Configuration file \MT@cfg@prefix-\@tempa.cfg already loaded}%
   \else
     \MT@xadd\MT@file@list{\@tempa,}%
     \MT@begin@catcodes
-    \InputIfFileExists{mt-\@tempa.cfg}{%
-      \edef\MT@curr@file{mt-\@tempa.cfg}%
+    \InputIfFileExists{\MT@cfg@prefix-\@tempa.cfg}{%
+      \edef\MT@curr@file{\MT@cfg@prefix-\@tempa.cfg}%
       \MT@vinfo{... Loading configuration file \MT@curr@file}%
     }{%
-      \MT@warning{Configuration file mt-\@tempa.cfg\MessageBreak
+      \MT@warning{Configuration file \MT@cfg@prefix-\@tempa.cfg\MessageBreak
                   does not exist}%
     }%
     \MT@end@catcodes
   \fi
+}
+\def\MT@cfg@prefix{mt}
+\def\DeclareMicrotypeFilePrefix#1{%
+  \def\MT@cfg@prefix{#1}%
 }
 \def\DeclareMicrotypeBabelHook#1#2{%
   \MT@map@clist@n{#1}{%

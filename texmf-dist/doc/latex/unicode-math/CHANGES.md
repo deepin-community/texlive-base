@@ -1,6 +1,15 @@
 CHANGE HISTORY
 ==============
 
+## v0.8r (2023/08/13)
+
+  * Revise definitions of `\\setminus` and `\\smallsetminus` (#181, #583) — long overdue.
+    Note that there are compatibility considerations with this change.
+  * Add `\\diagup` and `\\diagdown` (#604).
+  * Make `\\operator@font` protected to allow operators (e.g., `\\cos`) in section headings (etc). (#550)
+  * Allow `\\symcal` to handle lowercase Latin (#589).
+  * Add additional fonts to the symbol listing document (#597).
+
 ## v0.8q (2020/01/31)
 
   * Update to adapt to / support new features in the upcoming 2e kernel.
@@ -156,7 +165,7 @@ CHANGE HISTORY
 ## v0.8d (2017/01/25)
 
   * `vargreek-shape=TeX` and `vargreek-shape=unicode` package options dropped; for consistency and compatibility, `\phi` and `\epsilon` should and will now behave the same as in `TeX`.
-  * On that note, when using control sequences such as `\mbfitsansvarphi` (and so on), there were a few faulty definitions. The new behaviour is to consistenyl define the `varphi` and `varepsilon` ones as those with the "curly" designs.
+  * On that note, when using control sequences such as `\mbfitsansvarphi` (and so on), there were a few faulty definitions. The new behaviour is to consistently define the `varphi` and `varepsilon` ones as those with the "curly" designs.
   * Add `\wideoverbar`, `\widebreve`, `\widecheck`.
   * Add `\mathsection`, `\mathparagraph`.
   * Remove `\mupvarbeta`, `upold(Kk)oppa`, `\up(Ss)tigma`, `\up(Kk)oppa`, `\up(Ss)ampi` — none of these are maths symbols.

@@ -2,7 +2,7 @@
 %
 %% File: l3pdfmeta.dtx
 %
-% Copyright (C) 2018-2022 The LaTeX Project
+% Copyright (C) 2018-2023 The LaTeX Project
 %
 % It may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -49,7 +49,7 @@
 %    }^^A
 % }
 %
-% \date{Version 0.95t, released 2022-11-03}
+% \date{Version 0.96d, released 2023-12-09}
 %
 % \maketitle
 % \begin{documentation}
@@ -200,17 +200,18 @@
 % tested from TeX, but in a current LaTeX normally ToUnicode are set for all fonts.
 % \item[|tagged|] that is set in A-2a and A-3a and means that the pdf must be
 % tagged. This is currently neither tested not enforced somewhere.
+% \item[|no_CharSet|] CharSet is deprecated is pdf 2.0 and should not
+% be used in A-4. l3pdfmeta will therefore suppress it for the 
+% engines pdftex and luatex (the other engines have no suitable option)
 % \item[|Trailer_no_Info|] The \texttt{Info} dictionary
 % has been deprecated since quite some time. Metadata should be set with
 % XMP-data instead. In PDF A-4 now the \texttt{Info} dictionary
 % shall not be present in the trailer dictionary at all
 % (unless there exists a PieceInfo entry in the Catalog). And if it is present
-% it should only contain the \texttt{/ModDate} entry. The engines
-% do not offer currently an option to suppress the dictionary completly,
-% one can only give the entries the value null (it only works for all entries
-% with lualatex and pdflatex). The next pdflatex will offer \cs{pdfomitinfodict}.
-% Until then l3pdfmeta does nothing with this requirement.
-%
+% it should only contain the \texttt{/ModDate} entry. In
+% texlive 2023 the engines pdftex and luatex have primitives
+% to suppress the dictionary
+% and l3pdfmeta will make use of it. 
 % \end{description}
 %
 % \subsubsection{Tests with values and special handlers}
@@ -348,6 +349,9 @@
 % This sets various metadata to values needed by the \LaTeX{}
 % regression tests.
 % It also sets the seed for random functions.
+% If a current l3backend is used and \cs{c_sys_timestamp_str} is available, 
+% the command does not set dates, but 
+% assumes that the environment variable \verb+SOURCE_DATE_EPOCH+ is used.
 % \end{function}
 %
 %  \section{XMP-metadata}
@@ -454,6 +458,33 @@
 % It is up to the author to ensure and validate
 % that the document actually follows the standard.
 %
+% \subsubsection{Declarations}
+% PDF knows beside standards also a more generic method to declare conformance
+% to some specification by adding a declaration, 
+% see \url{https://pdfa.org/wp-content/uploads/2019/09/PDF-Declarations.pdf}).
+% Such declarations can be added as a simple url which identify the specification or
+% with additional details regarding date and credentials. An example would be
+% 
+% \begin{verbatim}
+% \DocumentMetadata{}
+% \documentclass{article}
+% \ExplSyntaxOn
+% \pdfmeta_xmp_add_declaration:e {https://pdfa.org/declarations\c_hash_str iso32005}
+% \pdfmeta_xmp_add_declaration:ennnn
+%  {https://pdfa.org/declarations\c_hash_str wcag21A}{}{2023-11-20}{}{}
+% \pdfmeta_xmp_add_declaration:nnnnn
+%   {https://github.com/TikZlings/no-duck-harmed}
+%   {Ulrike~Fischer}{2023-11-20}{Bär}{https://github.com/u-fischer/bearwear}
+% \pdfmeta_xmp_add_declaration:nnnnn
+%  {https://github.com/TikZlings/no-duck-harmed}
+%  {Ulrike~Fischer}{2023-11-20}{Paulo}{https://github.com/cereda/sillypage}
+% \ExplSyntaxOff
+% \begin{document}
+%  text
+% \end{document} 
+% 
+% \end{verbatim}
+% 
 % \subsubsection{Dates}
 % \begin{itemize}
 % \item
@@ -553,6 +584,31 @@
 % With this command a xmlns name space can be added.
 % \end{function}
 %
+% With the two following commands PDF declarations can be added to the XMP metadata
+% (see \url{https://pdfa.org/wp-content/uploads/2019/09/PDF-Declarations.pdf}).
+% \begin{function}{\pdfmeta_xmp_add_declaration:n,\pdfmeta_xmp_add_declaration:e}
+% \begin{syntax}
+% \cs{pdfmeta_xmp_add_declaration:n}\Arg{uri}
+% \end{syntax}
+% This add a PDF declaration with the required |conformsTo| property to the XMP metadata. 
+% \meta{uri} should not be empty and is a URI specifying 
+% the standard or profile referred to by the PDF
+% Declaration. If the uri contains a hash, use \cs{c_hash_str} to excape it
+% and use the \texttt{e} variant to expand it.
+% \end{function}
+% 
+% \begin{function}{\pdfmeta_xmp_add_declaration:nnnnn,\pdfmeta_xmp_add_declaration:ennnn}
+% \begin{syntax}
+% \cs{pdfmeta_xmp_add_declaration:nnnnn}\Arg{uri}\Arg{By}\Arg{Date}\Arg{Credentials}\Arg{Report}
+% \end{syntax}
+% This add a PDF declaration to the XMP metadata similar 
+% to \cs{pdfmeta_xmp_add_declaration:n}. 
+% With \meta{By}, \meta{Date}, \meta{Credentials}, \meta{Report} the optional 
+% fields |claimBy| (text), |claimDate| (iso date), |claimCredentials| (text) and 
+% |claimReport| (uri) of the |claimData| property can be given.
+% If  \cs{pdfmeta_xmp_add_declaration:nnnnn} is used twice with the same \meta{uri}
+% argument the |claimData| are concatenated. There is no check if the |claimData| are identical. 
+% \end{function}
 % \end{documentation}
 %
 % \begin{implementation}
@@ -562,7 +618,7 @@
 %    \begin{macrocode}
 %<@@=pdfmeta>
 %<*header>
-\ProvidesExplPackage{l3pdfmeta}{2022-11-03}{0.95t}
+\ProvidesExplPackage{l3pdfmeta}{2023-12-09}{0.96d}
   {PDF-Standards---LaTeX PDF management testphase bundle}
 %</header>
 %    \end{macrocode}
@@ -640,7 +696,7 @@
       {
         \cs_if_exist:cTF {@@_standard_verify_handler_#1:nn}
           {
-            \exp_args:Nnnx
+            \exp_args:Nnne
             \use:c
               {@@_standard_verify_handler_#1:nn}
               { #2 }
@@ -746,9 +802,13 @@
   {
     \pdfmeta_standard_verify:nF { annot_flags }
      { \@@_verify_pdfa_annot_flags: }
+    \pdfmeta_standard_verify:nF { Trailer_no_Info }
+     { \__pdf_backend_omit_info:n {1} }
+    \pdfmeta_standard_verify:nF { no_CharSet }
+     { \__pdf_backend_omit_charset:n {1} }  
     \pdfmeta_standard_verify:nnF { min_pdf_version }
      { \pdf_version: }
-     { \msg_warning:nnxxx {pdf}{wrong-pdfversion}
+     { \msg_warning:nneee {pdf}{wrong-pdfversion}
        {\pdf_version:}{low}
        {
         \pdfmeta_standard_item:n{type}
@@ -758,7 +818,7 @@
      }
     \pdfmeta_standard_verify:nnF { max_pdf_version }
      { \pdf_version: }
-     { \msg_warning:nnxxx {pdf}{wrong-pdfversion}
+     { \msg_warning:nneee {pdf}{wrong-pdfversion}
        {\pdf_version:}{high}
        {
         \pdfmeta_standard_item:n{type}
@@ -939,6 +999,8 @@
 \prop_gput:cnn
   { g_@@_standard_pdf/A-4_prop }{year}{2020}
 \prop_gput:cnn
+  { g_@@_standard_pdf/A-4_prop }{no_CharSet}{}
+\prop_gput:cnn
   { g_@@_standard_pdf/A-4_prop }{Trailer_no_Info}{}
 \prop_gremove:cn
   { g_@@_standard_pdf/A-4_prop }{conformance}
@@ -960,7 +1022,7 @@
 % \end{verbatim}
 % \item Write a |/OutputIntent| dictionary for this
 % \begin{verbatim}
-% \pdf_object_unnamed_write:nx {dict}
+% \pdf_object_unnamed_write:ne {dict}
 %  {
 %    /Type /OutputIntent
 %    /S /GTS_PDFA1  % or GTS_PDFX or ISO_PDFE1 or ...
@@ -971,7 +1033,7 @@
 % \end{verbatim}
 % \item Reference the dictionary in the catalog:
 % \begin{verbatim}
-% \pdfmanagement_add:nnx {Catalog}{OutputIntents}{\pdf_object_ref_last:}
+% \pdfmanagement_add:nne {Catalog}{OutputIntents}{\pdf_object_ref_last:}
 % \end{verbatim}
 % \end{enumerate}
 % But we need to do a bit more work, to get the interface right.
@@ -1075,7 +1137,7 @@
     \pdf_object_if_exist:nF { __color_icc_ #1 }
       {
         \pdf_object_new:n  { __color_icc_ #1 }
-        \pdf_object_write:nnx { __color_icc_ #1 } { fstream }
+        \pdf_object_write:nne { __color_icc_ #1 } { fstream }
          {
            {/N\c_space_tl
              \prop_item:cn{c_@@_colorprofile_#1}{N}
@@ -1088,8 +1150,8 @@
 \cs_new_protected:Npn \@@_write_outputintent:nn #1 #2 %#1 file name, #2 subtype
   {
     \group_begin:
-     \pdfdict_put:nnx {l_pdfmeta/outputintent}{S}{/\str_convert_pdfname:n{#2}}
-     \pdfdict_put:nnx {l_pdfmeta/outputintent}
+     \pdfdict_put:nne {l_pdfmeta/outputintent}{S}{/\str_convert_pdfname:n{#2}}
+     \pdfdict_put:nne {l_pdfmeta/outputintent}
        {DestOutputProfile}
        {\pdf_object_ref:n{ __color_icc_ #1 }}
      \clist_map_inline:nn { OutputConditionIdentifier, Info, RegistryName }
@@ -1100,12 +1162,12 @@
           \l_@@_tmpa_tl
           {
             \pdf_string_from_unicode:nVN {utf8/string}\l_@@_tmpa_tl\l_@@_tmpa_str
-            \pdfdict_put:nnx
+            \pdfdict_put:nne
               {l_pdfmeta/outputintent}{##1}{\l_@@_tmpa_str}
           }
        }
-     \pdf_object_unnamed_write:nx {dict}{\pdfdict_use:n {l_pdfmeta/outputintent} }
-     \pdfmanagement_add:nnx {Catalog}{OutputIntents}{\pdf_object_ref_last:}
+     \pdf_object_unnamed_write:ne {dict}{\pdfdict_use:n {l_pdfmeta/outputintent} }
+     \pdfmanagement_add:nne {Catalog}{OutputIntents}{\pdf_object_ref_last:}
     \group_end:
   }
 %    \end{macrocode}
@@ -1133,18 +1195,18 @@
 % Then we loop but take always the same profile.
 %    \begin{macrocode}
       {
-         \exp_args:NNx
+         \exp_args:NNe
          \prop_if_in:NnF
            \g_@@_outputintents_prop
            { \pdfmeta_standard_item:n { outputintent_A } }
            {
-             \exp_args:NNx
+             \exp_args:NNe
              \prop_gput:Nnn
                \g_@@_outputintents_prop
                { \pdfmeta_standard_item:n { outputintent_A } }
                { sRGB.icc }
            }
-         \exp_args:NNx
+         \exp_args:NNe
          \prop_get:NnN
            \g_@@_outputintents_prop
            { \pdfmeta_standard_item:n { outputintent_A } }
@@ -1181,8 +1243,8 @@
 %    \begin{macrocode}
 \hook_gput_code:nnn{pdfmanagement/add}{pdfmanagement}
   {
-   \pdfmanagement_add:nnx {Info}{Producer}{(\c_sys_engine_exec_str-\c_sys_engine_version_str)}
-   \pdfmanagement_add:nnx {Info}{Creator}{(LaTeX)}
+   \pdfmanagement_add:nne {Info}{Producer}{(\c_sys_engine_exec_str-\c_sys_engine_version_str)}
+   \pdfmanagement_add:nne {Info}{Creator}{(LaTeX)}
   }
 %    \end{macrocode}
 % \subsection{New document keys}
@@ -1206,7 +1268,11 @@
    _pdfstandard / X-6p .code:n =
     {\AddToDocumentProperties [document]{pdfstandard-X}{PDF/X-6p}},
    _pdfstandard / UA-1 .code:n =
-    {\AddToDocumentProperties [document]{pdfstandard-UA}{1}},
+    {
+     \AddToDocumentProperties [document]{pdfstandard-UA}{{1}{}}
+    },
+   _pdfstandard / UA-2 .code:n =
+    {\AddToDocumentProperties [document]{pdfstandard-UA}{{2}{2023}}},    
    xmp  .bool_gset:N = \g_@@_xmp_bool
  }
 %    \end{macrocode}
@@ -1376,7 +1442,7 @@
 \cs_new_protected:Npn \@@_xmp_date_get:nNN #1 #2 #3
   %#1 property, #2 tl var with PDF date, #3 seq for splitted date
   {
-    \tl_set:Nx #2 { \GetDocumentProperties{#1} }
+    \tl_set:Ne #2 { \GetDocumentProperties{#1} }
     \tl_if_blank:VTF #2
       {
         \seq_set_eq:NN #3 \l_@@_xmp_currentdate_seq
@@ -1394,8 +1460,8 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_xmp_create_uuid:nN #1 #2
   {
-    \str_set:Nx#2 {\str_lowercase:f{\tex_mdfivesum:D{#1}}}
-    \str_set:Nx#2
+    \str_set:Ne#2 {\str_lowercase:f{\tex_mdfivesum:D{#1}}}
+    \str_set:Ne#2
       { uuid:
         \str_range:Nnn #2{1}{8}
         -\str_range:Nnn#2{9}{12}
@@ -1419,8 +1485,8 @@
     \group_begin:
      \text_declare_purify_equivalent:Nn \& {\tl_to_str:N & }
      \text_declare_purify_equivalent:Nn \texttilde {\c_tilde_str}
-     \tl_set:Nx \l_@@_tmpa_tl { \text_purify:n {#1} }
-     \str_gset:Nx \g_@@_tmpa_str { \tl_to_str:N \l_@@_tmpa_tl }
+     \tl_set:Ne \l_@@_tmpa_tl { \text_purify:n {#1} }
+     \str_gset:Ne \g_@@_tmpa_str { \tl_to_str:N \l_@@_tmpa_tl }
      \str_greplace_all:Nnn\g_@@_tmpa_str {&}{&amp;}
      \str_greplace_all:Nnn\g_@@_tmpa_str {<}{&lt;}
      \str_greplace_all:Nnn\g_@@_tmpa_str {>}{&gt;}
@@ -1464,8 +1530,8 @@
         \tl_set:Nn #3 {#1}
       }
       {
-        \tl_set:Nx #2 {\seq_item:Nn\l_@@_tmpa_seq{2}}
-        \tl_set:Nx #3 {\seq_item:Nn\l_@@_tmpa_seq{3}}
+        \tl_set:Ne #2 {\seq_item:Nn\l_@@_tmpa_seq{2}}
+        \tl_set:Ne #3 {\seq_item:Nn\l_@@_tmpa_seq{3}}
       }
   }
 \cs_generate_variant:Nn \@@_xmp_lang_get:nNN {eNN,VNN}
@@ -1489,7 +1555,7 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_xmp_add_packet_chunk:n #1
   {
-    \tl_gput_right:Nx\g_@@_xmp_packet_tl
+    \tl_gput_right:Ne\g_@@_xmp_packet_tl
       {
         \@@_xmp_indent:  \exp_not:n{#1}
       }
@@ -1504,7 +1570,7 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_xmp_add_packet_chunk:nN #1 #2
   {
-    \tl_put_right:Nx#2
+    \tl_put_right:Ne#2
       {
         \@@_xmp_indent:  \exp_not:n{#1}
       }
@@ -1676,8 +1742,8 @@
 % think if an error is needed for empty lang.
 % \end{NOTE}
 %    \begin{macrocode}
-   \tl_set:Nx \l_@@_xmp_doclang_tl  {\GetDocumentProperties{document/lang}}
-   \tl_set:Nx \l_@@_xmp_metalang_tl {\GetDocumentProperties{hyperref/pdfmetalang}}
+   \tl_set:Ne \l_@@_xmp_doclang_tl  {\GetDocumentProperties{document/lang}}
+   \tl_set:Ne \l_@@_xmp_metalang_tl {\GetDocumentProperties{hyperref/pdfmetalang}}
    \tl_if_blank:VT \l_@@_xmp_metalang_tl
     { \cs_set_eq:NN \l_@@_xmp_metalang_tl\l_@@_xmp_doclang_tl}
 %    \end{macrocode}
@@ -1721,6 +1787,7 @@
         \@@_xmp_build_pdf:
         \@@_xmp_build_xmpRights:
         \@@_xmp_build_standards: %pdfaid,pdfxid,pdfuaid
+        \@@_xmp_build_pdfd:
         \@@_xmp_build_dc:
         \@@_xmp_build_photoshop:
         \@@_xmp_build_xmp:
@@ -1754,17 +1821,17 @@
 \prop_new:N \g_@@_xmp_xmlns_prop
 %    \end{macrocode}
 % \end{variable}
-% \begin{macro}{\@@_xmp_xmlns_new:nn,\@@_xmp_xmlns_new:nx}
+% \begin{macro}{\@@_xmp_xmlns_new:nn,\@@_xmp_xmlns_new:ne}
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_xmp_xmlns_new:nn #1 #2
   {
     \prop_gput:Nnn \g_@@_xmp_xmlns_prop {#1}{#2}
-    \tl_gput_right:Nx \g_@@_xmp_xmlns_tl
+    \tl_gput_right:Ne \g_@@_xmp_xmlns_tl
       {
         \@@_xmp_indent:n{4} xmlns:\exp_not:n{#1="#2"}
       }
   }
-\cs_generate_variant:Nn \@@_xmp_xmlns_new:nn {nx}
+\cs_generate_variant:Nn \@@_xmp_xmlns_new:nn {ne}
 %    \end{macrocode}
 % \end{macro}
 % Now we fill the data. The list is more or less the same as in hyperxmp
@@ -1775,7 +1842,7 @@
 \@@_xmp_xmlns_new:nn {photoshop}{http://ns.adobe.com/photoshop/1.0/}
 \@@_xmp_xmlns_new:nn {xmp}      {http://ns.adobe.com/xap/1.0/}
 \@@_xmp_xmlns_new:nn {xmpMM}    {http://ns.adobe.com/xap/1.0/mm/}
-\@@_xmp_xmlns_new:nx {stEvt}
+\@@_xmp_xmlns_new:ne {stEvt}
   {http://ns.adobe.com/xap/1.0/sType/ResourceEvent\c_hash_str}
 \@@_xmp_xmlns_new:nn {pdfaid}   {http://www.aiim.org/pdfa/ns/id/}
 \@@_xmp_xmlns_new:nn {pdfuaid}  {http://www.aiim.org/pdfua/ns/id/}
@@ -1784,13 +1851,13 @@
 \@@_xmp_xmlns_new:nn {prism}    {http://prismstandard.org/namespaces/basic/3.0/}
 %\@@_xmp_xmlns_new:nn {jav}      {http://www.niso.org/schemas/jav/1.0/}
 %\@@_xmp_xmlns_new:nn {xmpTPg}   {http://ns.adobe.com/xap/1.0/t/pg/}
-\@@_xmp_xmlns_new:nx {stFnt}    {http://ns.adobe.com/xap/1.0/sType/Font\c_hash_str}
+\@@_xmp_xmlns_new:ne {stFnt}    {http://ns.adobe.com/xap/1.0/sType/Font\c_hash_str}
 \@@_xmp_xmlns_new:nn {Iptc4xmpCore}{http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/}
 \@@_xmp_xmlns_new:nn {pdfaExtension}{http://www.aiim.org/pdfa/ns/extension/}
-\@@_xmp_xmlns_new:nx {pdfaSchema}{http://www.aiim.org/pdfa/ns/schema\c_hash_str}
-\@@_xmp_xmlns_new:nx {pdfaProperty}{http://www.aiim.org/pdfa/ns/property\c_hash_str}
-\@@_xmp_xmlns_new:nx {pdfaType} {http://www.aiim.org/pdfa/ns/type\c_hash_str}
-\@@_xmp_xmlns_new:nx {pdfaField}{http://www.aiim.org/pdfa/ns/field\c_hash_str}
+\@@_xmp_xmlns_new:ne {pdfaSchema}{http://www.aiim.org/pdfa/ns/schema\c_hash_str}
+\@@_xmp_xmlns_new:ne {pdfaProperty}{http://www.aiim.org/pdfa/ns/property\c_hash_str}
+\@@_xmp_xmlns_new:ne {pdfaType} {http://www.aiim.org/pdfa/ns/type\c_hash_str}
+\@@_xmp_xmlns_new:ne {pdfaField}{http://www.aiim.org/pdfa/ns/field\c_hash_str}
 %    \end{macrocode}
 
 % \subsection{Building the chunks: Extensions}
@@ -1893,7 +1960,19 @@
 %  Renditionclass declared by hyperxmp.
 %  Properties InstanceID and OriginalDocumentID declared by pdfx (pdfx.xmp)
 %  With the exception of OriginalDocumentID all are already allowed and
-%  predefined. We ignore OriginalDocumentID until requested.
+%  predefined. 
+%    \begin{macrocode}
+\@@_xmp_schema_new:nnn
+   {XMP~Media~Management~Schema}
+   {xmpMM}
+   {http://ns.adobe.com/xap/1.0/mm/}
+\@@_xmp_property_new:nnnnn
+   {xmpMM}
+   {OriginalDocumentID}
+   {URI}
+   {internal}
+   {The~common~identifier~for~all~versions~and~renditions~of~a~document.}
+%    \end{macrocode}
 %  \item[pdfaid] properties part and conformance are declared by hyperxmp, but
 %  no here as already in http://www.aiim.org/pdfa/ns/id/. But we declare
 %  year so that it can be used also with older A-standards.
@@ -1911,7 +1990,8 @@
    {Year~of~standard}
 %    \end{macrocode}
 % \end{macro}
-%  \item[pdfuaid] here we need to declare the property \enquote{part}.
+%  \item[pdfuaid] here we need (?) to declare the property 
+%  \enquote{part} and \enquote{rev}.
 % \begin{macro}{pdfuaid~(schema)}
 %    \begin{macrocode}
 \@@_xmp_schema_new:nnn
@@ -1924,6 +2004,12 @@
    {Integer}
    {internal}
    {Part~of~ISO~14289~standard}
+\@@_xmp_property_new:nnnnn
+   {pdfuaid}
+   {rev}
+   {Integer}
+   {internal}
+   {Revision~of~ISO~14289~standard}   
 %    \end{macrocode}
 % \end{macro}
 % \item[pdfx] According to [1] not an allowed schema, but it seems
@@ -1966,13 +2052,13 @@
   {publicationName}
   {Text}
   {external}
-  {Publication name}
+  {Publication~name}
 \@@_xmp_property_new:nnnnn
   {prism}
   {aggregationType}
   {Text}
   {external}
-  {Publication type}
+  {Publication~type}
 \@@_xmp_property_new:nnnnn
   {prism}
   {bookEdition}
@@ -2014,7 +2100,7 @@
   {isbn}
   {Text}
   {external}
-  {ISBN for the publication in which the document was published}
+  {ISBN~for~the~publication~in~which~the~document~was~published}
 \@@_xmp_property_new:nnnnn
   {prism}
   {doi}
@@ -2044,7 +2130,7 @@
   {subtitle}
   {Text}
   {external}
-  {Document's subtitle}
+  {Document's~subtitle}
 %    \end{macrocode}
 % \end{macro}
 % \item[iptc]
@@ -2096,6 +2182,84 @@
   }
 %    \end{macrocode}
 % \item[jav]: currently ignored
+% 
+% \item[declarations] The PDF Declarations mechanism allows creation and 
+% editing software to declare, via a PDF Declaration, a PDF file to be in 
+% conformance with a 3rd party specification or profile 
+% that may not be related to PDF technology. Their specification is for example
+% described in \url{https://pdfa.org/wp-content/uploads/2019/09/PDF-Declarations.pdf}.
+% 
+% If declarations are added to the XMP-metadata they need (for pdf/A compliancy) a
+% schema declaration. We do not add it by default but define here a command to enable
+% it. (This can be done in the document preamble as xmp is built only at the end.)
+% 
+% 
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_xmp_schema_enable_pdfd:
+ {
+  \@@_xmp_xmlns_new:ne {pdfd}{http://pdfa.org/declarations/} 
+  \@@_xmp_schema_new:nnn
+    {PDF~Declarations~Schema}
+    {pdfd}
+    {http://pdfa.org/declarations/}
+  \@@_xmp_property_new:nnnnn
+    {pdfd}
+    {declarations}
+    {Bag~declaration}
+    {external}
+    {An~unordered~array~of~PDF~Declaration~entries,~where~each~PDF~Declaration~representing~a~statement~of~conformance~with~ an~identified~external~standard~or~profile,~along~with~optional~information~identifying~the~nature~of~the~claim.}  
+%    \end{macrocode}
+% the values are complicated so we use the additions: method to add them.
+%    \begin{macrocode}
+  \cs_new_protected:cpn { __pdfmeta_xmp_schema_pdfd_additions: }
+    {
+      \@@_xmp_add_packet_open:nn{pdfaSchema}{valueType}
+        \@@_xmp_add_packet_open:nn{rdf}{Seq}
+          \@@_xmp_add_packet_open_attr:nnn{rdf}{li}{rdf:parseType="Resource"}
+            \@@_xmp_add_packet_line:nnn{pdfaType}{type}{claim}
+            \@@_xmp_add_packet_line:nnn{pdfaType}{namespaceURI}
+               {http://pdfa.org/declarations/}
+            \@@_xmp_add_packet_line:nnn{pdfaType}{prefix}{pdfd}
+            \@@_xmp_add_packet_line:nnn{pdfaType}{description}
+              {A~structure~describing~properties~of~an~individual claim.}
+            \@@_xmp_add_packet_open:nn{pdfaType}{field}
+             \@@_xmp_add_packet_open:nn{rdf}{Seq}
+              \@@_xmp_add_packet_field:nnn{claimReport}{Text}
+                {A~URL~to~a~report~containing~details~of~the~specific~conformance~claim.}
+              \@@_xmp_add_packet_field:nnn{claimCredentials}{Text}
+                {The~claimant's~credentials.}
+              \@@_xmp_add_packet_field:nnn{claimDate}{Text}
+                {A~date~identifying~when~the~claim~was~made.}
+              \@@_xmp_add_packet_field:nnn{claimBy}{Text}
+                {The~name~of~the~organization~and/or~individual~and/or~software~making~the~claim.}
+             \@@_xmp_add_packet_close:nn{rdf}{Seq}
+           \@@_xmp_add_packet_close:nn{pdfaType}{field}
+          \@@_xmp_add_packet_close:nn{rdf}{li}
+          \@@_xmp_add_packet_open_attr:nnn{rdf}{li}{rdf:parseType="Resource"}
+            \@@_xmp_add_packet_line:nnn{pdfaType}{type}{declaration}
+            \@@_xmp_add_packet_line:nnn{pdfaType}{namespaceURI}
+               {http://pdfa.org/declarations/}
+            \@@_xmp_add_packet_line:nnn{pdfaType}{prefix}{pdfd}
+            \@@_xmp_add_packet_line:nnn{pdfaType}{description}
+              {A~structure~describing~a~single~PDF~ Declaration~asserting~conformance~with~ an~externally-identified~standard~or~ profile.}
+            \@@_xmp_add_packet_open:nn{pdfaType}{field}
+             \@@_xmp_add_packet_open:nn{rdf}{Seq}
+              \@@_xmp_add_packet_field:nnn{conformsTo}{Text}
+                {A~property~containing~a~URI~specifying~the~standard~or~profile~by~the~PDF~Declaration.~This~property~is~ intended~to~mirror~the~Dublin~Core~property~dc:conformsTo.}
+              \@@_xmp_add_packet_field:nnn{claimData}{Bag~claim}
+                {An~unordered~array~of~claim~data,~where~each~claim~identifies~the~nature~of~the~claim.}
+             \@@_xmp_add_packet_close:nn{rdf}{Seq}
+           \@@_xmp_add_packet_close:nn{pdfaType}{field}
+          \@@_xmp_add_packet_close:nn{rdf}{li}      
+        \@@_xmp_add_packet_close:nn{rdf}{Seq}
+      \@@_xmp_add_packet_close:nn{pdfaSchema}{valueType}
+    }  
+%    \end{macrocode}
+% the schema should be added only once so disable it after use:
+%    \begin{macrocode}
+   \cs_gset_eq:NN \@@_xmp_schema_enable_pdfd: \prg_do_nothing: 
+ }
+%    \end{macrocode}
 %
 % \end{description}
 % \subsection{The actual user / document data}
@@ -2156,16 +2320,16 @@
 % CreationDate
 %    \begin{macrocode}
     \@@_xmp_date_get:nNN
-      {document/pdfcreationdate}\l_@@_tmpa_tl\l_@@_tmpa_seq
+      {document/creationdate}\l_@@_tmpa_tl\l_@@_tmpa_seq
     \@@_xmp_add_packet_line:nne{xmp}{CreateDate}{\@@_xmp_print_date:N\l_@@_tmpa_seq}
-    \pdfmanagement_add:nnx{Info}{CreationDate}{(\l_@@_tmpa_tl)}
+    \pdfmanagement_add:nne{Info}{CreationDate}{(\l_@@_tmpa_tl)}
 %    \end{macrocode}
 % ModifyDate
 %    \begin{macrocode}
     \@@_xmp_date_get:nNN
-      {document/pdfmoddate}\l_@@_tmpa_tl\l_@@_tmpa_seq
+      {document/moddate}\l_@@_tmpa_tl\l_@@_tmpa_seq
     \@@_xmp_add_packet_line:nne{xmp}{ModifyDate}{\@@_xmp_print_date:N\l_@@_tmpa_seq}
-    \pdfmanagement_add:nnx{Info}{ModDate}{(\l_@@_tmpa_tl)}
+    \pdfmanagement_add:nne{Info}{ModDate}{(\l_@@_tmpa_tl)}
 %    \end{macrocode}
 % MetadataDate
 %    \begin{macrocode}
@@ -2191,18 +2355,73 @@
   {
     \@@_xmp_add_packet_line:nne {pdfaid}{part}{\pdfmeta_standard_item:n{level}}
     \@@_xmp_add_packet_line:nne
-      {pdfaid}{conformance}{\pdfmeta_standard_item:n{conformance}}
-    \@@_xmp_add_packet_line:nne {pdfaid}{year} {\pdfmeta_standard_item:n{year}}
+      {pdfaid}{conformance}{\pdfmeta_standard_item:n{conformance}}  
+    \int_compare:nNnTF {0\pdfmeta_standard_item:n{level}}<{4}  
+     {\@@_xmp_add_packet_line:nne {pdfaid}{year} {\pdfmeta_standard_item:n{year}}}
+     {\@@_xmp_add_packet_line:nne {pdfaid}{rev}  {\pdfmeta_standard_item:n{year}}}
     \@@_xmp_add_packet_line:nne
       {pdfxid}{GTS_PDFXVersion}{\GetDocumentProperties{document/pdfstandard-X}}
-    \@@_xmp_add_packet_line:nne
-      {pdfuaid}{part}{\GetDocumentProperties{document/pdfstandard-UA}}
+    \pdfmanagement_get_documentproperties:nNT {document/pdfstandard-UA}\l_@@_tmpa_tl  
+     { 
+       \@@_xmp_add_packet_line:nne
+        {pdfuaid}{part}{\exp_last_unbraced:No\use_i:nn \l_@@_tmpa_tl}          
+      \@@_xmp_add_packet_line:nne
+        {pdfuaid}{rev}{\exp_last_unbraced:No\use_ii:nn \l_@@_tmpa_tl}            
+     } 
   }
 %    \end{macrocode}
 % \end{macro}
 %
-
-% \subsubsection{Photoshop}
+% \subsection{Declarations}
+% See \url{https://pdfa.org/wp-content/uploads/2019/09/PDF-Declarations.pdf}
+% 
+% \begin{variable}{\g_@@_xmp_pdfd_data_prop}
+% This holds the data for declarations.
+%    \begin{macrocode}
+\prop_new:N \g_@@_xmp_pdfd_data_prop
+%    \end{macrocode}
+% \end{variable}
+% the main building command used in the xmp generation
+% \begin{macro}{\@@_xmp_build_pdfd:}
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_xmp_build_pdfd:
+  {
+    \prop_if_empty:NF\g_@@_xmp_pdfd_data_prop
+      {
+        \@@_xmp_add_packet_open:nn{pdfd}{declarations}
+        \@@_xmp_add_packet_open:nn{rdf}{Bag}  
+          \prop_map_inline:Nn \g_@@_xmp_pdfd_data_prop
+            {
+              \@@_xmp_build_pdfd_claim:nn{##1}{##2}
+            }      
+        \@@_xmp_add_packet_close:nn{rdf}{Bag}
+        \@@_xmp_add_packet_close:nn{pdfd}{declarations}
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\@@_xmp_build_pdfd_claim:nn}
+% This build the xml for one claim. If there is no
+% claimData only the conformsTo is output.
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_xmp_build_pdfd_claim:nn #1#2
+ {
+    \@@_xmp_add_packet_open_attr:nnn{rdf}{li}{rdf:parseType="Resource"}
+      \@@_xmp_add_packet_line:nnn{pdfd}{conformsTo}{#1}      
+      \tl_if_empty:nF {#2}
+       {
+         \@@_xmp_add_packet_open:nn{pdfd}{claimData}  
+          \@@_xmp_add_packet_open:nn{rdf}{Bag}  
+            #2
+          \@@_xmp_add_packet_close:nn{rdf}{Bag}  
+         \@@_xmp_add_packet_close:nn{pdfd}{claimData}  
+       }
+    \@@_xmp_add_packet_close:nn{rdf}{li}   
+ }  
+%    \end{macrocode}
+% \end{macro}
+% 
+% \subsection{Photoshop}
 % \begin{macro}{\@@_xmp_build_photoshop:}
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_xmp_build_photoshop:
@@ -2233,7 +2452,7 @@
 %    \end{macrocode}
 % pdfdocumentid / xmpMM:DocumentID
 %    \begin{macrocode}
-    \str_set:Nx\l_@@_tmpa_str {\GetDocumentProperties{hyperref/pdfdocumentid}}
+    \str_set:Ne\l_@@_tmpa_str {\GetDocumentProperties{hyperref/pdfdocumentid}}
     \str_if_empty:NT \l_@@_tmpa_str
       {
         \@@_xmp_create_uuid:nN
@@ -2245,7 +2464,7 @@
 %    \end{macrocode}
 % pdfinstanceid / xmpMM:InstanceID
 %    \begin{macrocode}
-    \str_set:Nx\l_@@_tmpa_str {\GetDocumentProperties{hyperref/pdfinstanceid}}
+    \str_set:Ne\l_@@_tmpa_str {\GetDocumentProperties{hyperref/pdfinstanceid}}
     \str_if_empty:NT \l_@@_tmpa_str
       {
         \@@_xmp_create_uuid:nN
@@ -2433,7 +2652,7 @@
      {
        \@@_xmp_add_packet_open_attr:nnn
         {Iptc4xmpCore}{CreatorContactInfo}{rdf:parseType="Resource"}
-       \tl_gput_right:Nx\g_@@_xmp_packet_tl { \l_@@_xmp_iptc_data_tl }
+       \tl_gput_right:Ne\g_@@_xmp_packet_tl { \l_@@_xmp_iptc_data_tl }
        \@@_xmp_add_packet_close:nn
         {Iptc4xmpCore}{CreatorContactInfo}
     }
@@ -2512,7 +2731,7 @@
 % The page count is take from the previous run or from
 % pdfnumpages.
 %    \begin{macrocode}
-     \tl_set:Nx \l_@@_tmpa_tl { \GetDocumentProperties{hyperref/pdfnumpages} }
+     \tl_set:Ne \l_@@_tmpa_tl { \GetDocumentProperties{hyperref/pdfnumpages} }
      \@@_xmp_add_packet_line:nne
       {prism}{pageCount}
       {\tl_if_blank:VTF \l_@@_tmpa_tl {\PreviousTotalPages}{\l_@@_tmpa_tl}}
@@ -2548,12 +2767,18 @@
   {
     \bool_if:NT\g_@@_xmp_bool
      {
-       \file_get_timestamp:nN{\jobname.log}\l_@@_xmp_currentdate_tl
+       \str_if_exist:NTF\c_sys_timestamp_str 
+        {          
+          \tl_set_eq:NN \l_@@_xmp_currentdate_tl \c_sys_timestamp_str
+        }
+        {
+          \file_get_timestamp:nN{\jobname.log}\l_@@_xmp_currentdate_tl
+        }
        \@@_xmp_date_split:VN\l_@@_xmp_currentdate_tl\l_@@_xmp_currentdate_seq
        \@@_xmp_build_packet:
        \exp_args:No
        \__pdf_backend_metadata_stream:n {\g_@@_xmp_packet_tl}
-        \pdfmanagement_add:nnx {Catalog} {Metadata}{\pdf_object_ref_last:}
+        \pdfmanagement_add:nne {Catalog} {Metadata}{\pdf_object_ref_last:}
        \bool_if:NT \g_@@_xmp_export_bool
         {
           \iow_open:Nn\g_tmpa_iow{\g_@@_xmp_export_str.xmpi}
@@ -2587,6 +2812,45 @@
   }
 %    \end{macrocode}
 % \end{macro}
+% 
+% \begin{macro}{\pdfmeta_xmp_add_declaration:n,\pdfmeta_xmp_add_declaration:e}
+%    \begin{macrocode}
+\cs_new_protected:Npn \pdfmeta_xmp_add_declaration:n #1 %conformsTo uri
+ {
+   \@@_xmp_schema_enable_pdfd:
+   \prop_gput:Nnn\g_@@_xmp_pdfd_data_prop{#1}{}
+ }
+\cs_generate_variant:Nn \pdfmeta_xmp_add_declaration:n {e}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\pdfmeta_xmp_add_declaration:nnnnn,\pdfmeta_xmp_add_declaration:ennnn}
+%    \begin{macrocode}
+\cs_new_protected:Npn \pdfmeta_xmp_add_declaration:nnnnn #1#2#3#4#5
+ %#1=conformsTo uri, #2 claimBy, #3 claimDate #4 claimCredentials #4 claimReport
+ {
+   \@@_xmp_schema_enable_pdfd:
+   \tl_set:Nn \l_@@_tmpa_tl
+     {
+       \@@_xmp_add_packet_open_attr:nnn{rdf}{li}{rdf:parseType="Resource"}
+       \@@_xmp_add_packet_line:nnn{pdfd}{claimBy}{#2} 
+       \@@_xmp_add_packet_line:nnn{pdfd}{claimDate}{#3} 
+       \@@_xmp_add_packet_line:nnn{pdfd}{claimCredentials}{#4} 
+       \@@_xmp_add_packet_line:nnn{pdfd}{claimReport}{#5} 
+       \@@_xmp_add_packet_close:nn{rdf}{li}      
+     } 
+   \prop_get:NnNT \g_@@_xmp_pdfd_data_prop {#1}\l_@@_tmpb_tl
+    {
+      \tl_concat:NNN \l_@@_tmpa_tl \l_@@_tmpa_tl \l_@@_tmpb_tl
+    }
+   \prop_gput:Nno\g_@@_xmp_pdfd_data_prop{#1}
+       {
+         \l_@@_tmpa_tl
+       }        
+ }
+\cs_generate_variant:Nn\pdfmeta_xmp_add_declaration:nnnnn {e}
+%    \end{macrocode}
+% \end{macro}
+% 
 %    \begin{macrocode}
 %</package>
 %    \end{macrocode}

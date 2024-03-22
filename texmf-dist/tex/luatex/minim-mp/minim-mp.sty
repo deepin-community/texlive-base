@@ -1,0 +1,52 @@
+
+\ProvidesPackage{minim-mp}[2023/03/03 Run MetaPost code from LaTeX]
+
+\input minim-mp
+
+% work around latex’s \protect mechanism
+\let\mnm@protect=\protect
+\everymaketext{\let\protect=\mnm@protect}
+
+% the defaultfont is the current \normalfont
+\def\mnm@setnormalfont{{\normalfont
+    \xdef\mnm@normalfont{\expandafter\csstring\the\font}}}
+
+% a one-off metapost environment
+\newenvironment{metapost}[1][]{%
+    \begingroup \catcode`\#=12
+    \let\mpcolor = \minimpcolor
+    \csname:metapost:\endcsname[#1]}
+    {\csname end:metapost:\endcsname \endgroup}
+\NewDocumentEnvironment{:metapost:}{O{}+b}{%
+    \mnm@setnormalfont
+    \let\protect=\noexpand
+    \directmetapost[#1]{%
+        defaultfont:="\mnm@normalfont"; #2; }%
+    \let\protect=\mnm@protect}{}
+
+% separate metapost instances
+\newcommand\newmetapostenvironment[2][]{%
+    \newmetapostinstance[#1]\mnm@tmp
+    \expandafter\let\csname #2@instance\endcsname\mnm@tmp
+    \newenvironment{#2}{%
+         \begingroup \catcode`\#=12
+         \let\mpcolor = \minimpcolor
+         \csname:#2:\endcsname}
+        {\csname end:#2:\endcsname \endgroup}%
+    \NewDocumentEnvironment{:#2:}{+b}{%
+        \mnm@setnormalfont
+        \let\protect=\noexpand
+        \runmetapostimage
+            \csname #2@instance\endcsname
+            {defaultfont:="\mnm@normalfont";##1;}%
+        \let\protect=\mnm@protect}{}}
+
+% \mpcolor support
+\def\minimpcolor#1#{\dominimpcolor{#1}}
+\def\dominimpcolor#1#2{%
+    \directlua{ tex.scantoks('mpcolorspectoks', 0, '#1{#2}')
+                tex.runtoks 'mpcolorruntoks' }
+    (\the\mpcolorvaltoks)}
+\newtoks\mpcolorspectoks \newtoks\mpcolorruntoks \newtoks\mpcolorvaltoks
+\mpcolorruntoks{\expandafter\extractcolorspec\the\mpcolorspectoks\mptmpcolor
+    \expandafter\mpcolorvaltoks\expandafter\@gobble\mptmpcolor}
