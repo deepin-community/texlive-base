@@ -9,7 +9,7 @@ Q1: mosfet(down_ dimen_*5/4,R,TFSDdPyQdB)
   dot(at Q1.S)
   { line up_ dimen_/4
     dot(,,1); "ifsvg(`svg_it(V)svg_sub(DD)',`$V_{\hbox{\scriptsize DD}}$')" \
-      at last [].n+(0,0.05) above }
+      at last [].e ljust }
   line left_ dimen_*2/3
 SW: switch(left_ dimen_,`$1',D); ifelse(`$1',,`rlabel(,SW1)',`llabel(,SW2)')
 Q2: mosfet(up_ dimen_*5/4,,TFSDPyQuB) with .D at Q1.D
@@ -27,7 +27,7 @@ T: dot; right_
   ]')
 
 S1: String
-S2: String(R) with .Q1.S at S1.Q2.D+(0,-2*elen_)
+S2: String(R) with .Q1.S at S1.Q2.D+(0,-3/2*elen_)
 I1: line left_ dimen_/2 from S1.Comp.In1
   sinusoid(dimen_/4,twopi_/(dimen_/2),-pi_/2,0,dimen_/2) \
     with .Start at I1.end-(textoffset,0)
@@ -51,7 +51,7 @@ NO: dot(at N.Out+(dimen_/12,0))
   dot
   { line up_ dimen_/2; diode(to (NO,Here),Z); line to NO }
   { capacitor(down_ dimen_); ground(,T,S)
-  llabel(,iflatex(C_{\hbox{\scriptsize On}},ifsvg(svg_it(R)`'svg_sub(On)))) }
+  llabel(iflatex(C_{\hbox{\scriptsize On}},ifsvg(svg_it(R)`'svg_sub(On)))) }
   line dashed to (S1.SW,Here)
   arrow <-> dashed from S1.SW to S2.SW chop dimen_/4
 

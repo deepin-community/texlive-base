@@ -2,7 +2,7 @@
 
 
 The `addtoluatexpath` package provides a convenient way to add input and Lua package paths in your document.
-You may want this package, for example, if a `.cls` or `.sty` file is located a network or cloud storage drive.
+You may want this package, for example, if a `.cls` or `.sty` file is located on a network or cloud storage drive.
 
 ## Usage
 * You can either pass the comma-separated paths via package options like `\RequirePackage[path1,path2]{addtoluatexpath}` in pre-amble,
@@ -13,6 +13,12 @@ You may want this package, for example, if a `.cls` or `.sty` file is located a 
 * If you want to add to Lua path (`package.path`) only, include `notex=true` in the argument.
 * If you want to add to tex input path only, include `nolua=true` in the argument.
  eg. `\RequirePackage[nolua=true, C:/Users/me/Desktop/*, /**]{addtoluatexpath}`
+* The lua functions below are globally defined: 
+* `atlp_main(paths_str)` is the main function that runs
+* `atlp_paths = {}` is a table containing all paths added by this package
+* `atlp_find_file(file_str)` is a function that returns the full path of a file, it searches through all paths that were input to this package and returns the first valid. If no paths are found, an error is issed
+
+
 
 ## Note
 This package appends to the `package.path` Lua variable and the `\input@path` command (it first uses `\providecommand` to intialize it).
@@ -33,7 +39,7 @@ However, if `\graphicspath{}` is used after paths are added by this package, gra
 
 ## License
 
-Copyright (C) 2023 Kale Ewasiuk
+Copyright (C) 2023-2024 Kale Ewasiuk
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

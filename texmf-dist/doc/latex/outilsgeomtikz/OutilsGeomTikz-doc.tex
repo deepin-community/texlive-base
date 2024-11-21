@@ -1,13 +1,16 @@
 % !TeX TXS-program:compile = txs:///arara
-% arara: lualatex: {shell: yes, synctex: no, interaction: batchmode}
-% arara: lualatex: {shell: yes, synctex: no, interaction: batchmode} if found('log', '(undefined references|Please rerun|Rerun to get)')
+% arara: pdflatex: {shell: yes, synctex: no, interaction: batchmode}
+% arara: pdflatex: {shell: yes, synctex: no, interaction: batchmode} if found('log', '(undefined references|Please rerun|Rerun to get)')
 
 \documentclass[french,a4paper,11pt]{article}
 \usepackage[margin=2cm,includefoot]{geometry}
-\def\TPversion{0.1.5}
-\def\TPdate{13 décembre 2023}
+\def\TPversion{0.1.6}
+\def\TPdate{29 août 2024}
+\usepackage{amssymb}
 \usepackage[table,svgnames]{xcolor}
-\usepackage[bold-style=ISO,math-style=french]{concmath-otf}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+%\usepackage[bold-style=ISO,math-style=french]{concmath-otf}
 %\usepackage[bold-style=ISO,math-style=french]{unicode-math}
 %\setmainfont{TeX Gyre Schola}
 %\setmathfont{TeX Gyre Schola Math}
@@ -91,8 +94,8 @@
 
 \newcommand\affichegrille[4]{%
 	\draw[xstep=1,ystep=1,lightgray] (#1,#3) grid (#2,#4) ;
-	\foreach \x in {#1,\inteval{1+#1},...,#2} \draw[lightgray] (\x,#4)--++(0,3pt) node[font=\scriptsize,above] {$\x$} ;
-	\foreach \y in {#3,\inteval{1+#3},...,#4} \draw[lightgray] (#1,\y)--++(-3pt,0) node[font=\scriptsize,left] {$\y$} ;
+	\foreach \x in {#1,\inteval{1+#1},...,#2} {\draw[lightgray] (\x,#4)--++(0,3pt) node[font=\scriptsize,above] {$\x$} ;}
+	\foreach \y in {#3,\inteval{1+#3},...,#4} {\draw[lightgray] (#1,\y)--++(-3pt,0) node[font=\scriptsize,left] {$\y$} ;}
 }
 \newcommand\pointsutiles[1]{%
 	\foreach \point in {#1} {\draw[thick,fill=red] \point circle[radius=3pt] ;}
@@ -170,7 +173,7 @@
 
 \vfill
 
-\hfill\textit{Merci à Arnaud pour ses retours et idées !!}
+\hfill\textit{Merci à Arnaud et Cyril pour leurs retours et idées !!}
 
 \vfill
 
@@ -197,7 +200,9 @@
 
 \part{Historique}
 
-\verb|v0.1.4 : |Modification de la graduation intérieure pour les rapporteurs 180°
+\verb|v0.1.6 : |Correction d'un bug avec une compilation en \textsf{pdflatex} + Améliorations pour les rotations des labels
+
+\verb|v0.1.5 : |Modification de la graduation intérieure pour les rapporteurs 180°
 
 \verb|v0.1.4 : |Possibilité de positionner certains outils avec deux points (angle calculé automatiquement)
 
@@ -288,10 +293,8 @@ Les différents outils disponibles ont \textit{grosso-modo} le même mode de fon
 	\item pour certains outils, des dimensions minimales sont requises pour un aspect acceptable ;
 	\item les options personnalisables sont (sauf exceptions) :
 	\begin{itemize}
-		\item la \textit{taille} ;
-		\item l'\textit{échelle} globale ou l'\textit{échelle} des éventuels labels ;
-		\item les \textit{couleurs} ;
-		\item le \textit{fond} (couleur et opacité) ;
+		\item la \textit{taille}, l'\textit{échelle} globale ou l'\textit{échelle} des éventuels labels ;
+		\item les \textit{couleurs}, le \textit{fond} (couleur et opacité) ;
 		\item la position (\textit{placement} et/ou \textit{rotation}) ;
 		\item un \textit{placement automatique} avec la données de 2 points.
 	\end{itemize}
@@ -326,7 +329,7 @@ Les outils disponibles sont à insérer dans un environnement \TikZ, et pour le 
 \tkzCompas[clés]{pointe}{mine}
 \end{PresentationCode}
 
-\subsection{Utilisation d'unités}
+\subsection{Utilisation d'unités et/ou de rotations}
 
 \begin{tipblock}
 Les outils ont été créés avec unité de base de 1~cm, afin que les graduations soient \textit{en taille réelle}.
@@ -338,6 +341,10 @@ Il est toutefois possible de modifier les unités de l'environnement \TikZ, dans
 \smallskip
 
 Ce choix est donc à \textit{réserver} dans l'optique de faire des petits schémas pour illustrer des positions d'outils.
+
+\smallskip
+
+Du fait des rotations effectuées par le code pour correctement placer les objets et les graduations, il est conseillé (même si cela devrait fonctionner) de ne pas trop spécifier de rotation globale pour l'environnement \texttt{tikzpicture}\ldots
 \end{tipblock}
 
 \pagebreak
@@ -430,6 +437,7 @@ Quelques \Cle{clés} de personnalisation sont disponibles :
 	\item \Cle{CouleurFond} pour la couleur du fond de la règle ;\hfill~(défaut : \Cle{black})
 	\item \Cle{Opacite} pour régler l'opacité du fond de la règle ;\hfill~(défaut : \Cle{0.5})
 	\item le booléen \Cle{AfficheValeurs} pour afficher les valeurs des graduations ;\hfill~(défaut : \Cle{true})
+	\item \Cle{EchelleValeurs} pour l'échelle (relative) des valeurs ;\hfill~(défaut : \Cle{0.8})
 	\item \Cle{PosVal} pour spécifier la position (haut, milieu, etc) des valeurs, parmi \Cle{h/m/b/hb}.
 	
 	\hfill~(défaut : \Cle{m})
@@ -501,6 +509,7 @@ Quelques \Cle{clés} de personnalisation sont disponibles :
 	\item \Cle{CouleurFond} pour la couleur du fond de la règle-repère ;\hfill~(défaut : \Cle{black})
 	\item \Cle{Opacite} pour régler l'opacité du fond de la règle-repère ;\hfill~(défaut : \Cle{0.5})
 	\item le booléen \Cle{AfficheValeurs} pour afficher les valeurs des graduations ;\hfill~(défaut : \Cle{true})
+	\item \Cle{EchelleValeurs} pour l'échelle (relative) des valeurs ;\hfill~(défaut : \Cle{0.8})
 	\item le booléen \Cle{Retourne} pour \textit{inverser la position des graduations}.
 	
 	\hfill~(défaut : \Cle{false})
@@ -564,6 +573,7 @@ Quelques \Cle{clés} de personnalisation sont disponibles :
 	\item \Cle{Origine} pour le placer l'équerre (au niveau du coin) ;\hfill~(défaut : \Cle{\{(0,0)\}})
 	\item \Cle{Rotation} pour pivoter l'équerre (au niveau du coin) ;\hfill~(défaut : \Cle{0})
 	\item \Cle{Echelle} pour l'échelle globale de l'équerre ;\hfill~(défaut : \Cle{1})
+	\item \Cle{EchelleValeurs} pour l'échelle (relative) des valeurs ;\hfill~(défaut : \Cle{0.8})
 	\item \Cle{Couleur} pour la couleur des éléments de l'équerre ;\hfill~(défaut : \Cle{black})
 	\item le booléen \Cle{Fond} pour afficher une couleur de fond pour l'équerre ;\hfill~(défaut : \Cle{false})
 	\item \Cle{CouleurFond} pour la couleur du fond de l'équerre ;\hfill~(défaut : \Cle{black})
@@ -749,7 +759,8 @@ Quelques \Cle{clés} de personnalisation sont disponibles :
 	\item le booléen \Cle{Fond} pour afficher une couleur de fond pour la réquerre ;\hfill~(défaut : \Cle{false})
 	\item \Cle{CouleurFond} pour la couleur du fond de la réquerre ;\hfill~(défaut : \Cle{black})
 	\item \Cle{Opacite} pour régler l'opacité du fond de la réquerre ;\hfill~(défaut : \Cle{0.5})
-	\item le booléen \Cle{AfficheValeurs} pour afficher les valeurs des graduations.\hfill~(défaut : \Cle{true})
+	\item le booléen \Cle{AfficheValeurs} pour afficher les valeurs des graduations ;\hfill~(défaut : \Cle{true})
+	\item \Cle{EchelleValeurs} pour l'échelle (relative) des valeurs.\hfill~(défaut : \Cle{0.8})
 \end{itemize}
 
 À noter que pour la clé \Cle{Rotation}, il est possible de préciser un deuxième point, et dans ce cas la clé sera précisée sous la forme \Cle{Rotation=auto/pt}. Dans \textbf{ce cas}, les points \textit{support} \textbf{devront} avoir été déclarés au préalable !

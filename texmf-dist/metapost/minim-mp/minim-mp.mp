@@ -7,12 +7,7 @@ delimiters ();
 
 message "Setting up the minim MetaPost extensions";
 
-def save_picture   text t = save t; picture   t; enddef;
-def save_boolean   text t = save t; boolean   t; enddef;
-def save_string    text t = save t; string    t; enddef;
-def save_path      text t = save t; path      t; enddef;
-
-% 1 lua scripts, functions and variables
+% 1 lua scripts and functions
 
 def luafunction = gobble inner_luafunction enddef;
 vardef inner_luafunction @# (text args) = endgroup
@@ -85,9 +80,6 @@ vardef quote_for_lua tertiary a =
         ","& (hexadecimal magentapart a) &
         ","& (hexadecimal yellowpart a) &
         ","& (hexadecimal blackpart a) & "}"
-    elseif pen a:
-        hide(errmessage("I cannot pass a pen value to lua");)
-        "nil"
     elseif transform a:
         "{"& (hexadecimal xxpart a) &
         ","& (hexadecimal xypart a) &
@@ -95,6 +87,9 @@ vardef quote_for_lua tertiary a =
         ","& (hexadecimal yypart a) &
         ","& (hexadecimal xpart a) &
         ","& (hexadecimal ypart a) & "}"
+    elseif pen a:
+        hide(errmessage("I cannot pass a pen value to lua");)
+        "nil"
     elseif picture a:
         hide(errmessage("I cannot pass a picture value to lua");)
         "nil"
@@ -121,7 +116,7 @@ vardef make_lua_keyval @# expr e =
     (str @#) & " = " & quote_for_lua e
 enddef;
 
-% tex registers
+% 1 tex registers
 
 string _SUFFIX_HACK_[];
 vardef index_or_suffix (suffix s) =
@@ -138,6 +133,8 @@ vardef tex.attribute @# =
     runscript ("return tex.attribute" & index_or_suffix(@#)) enddef;
 vardef tex.dimen @# =
     runscript ("return sp_to_pt(tex.dimen" & index_or_suffix(@#) & ")") enddef;
+vardef tex.skip @# =
+    runscript ("return sp_to_pt(tex.skip" & index_or_suffix(@#) & ".width)") enddef;
 vardef tex.toks @# =
     runscript ("return quote(tex.toks" & index_or_suffix(@#) & ")") enddef;
 
@@ -381,9 +378,5 @@ _patterns_._last_ := 0;
 def debug_pdf = luafunction enable_debugging(); enddef;
 
 vardef texmessage text msg = luafunction texmessage (msg) enddef;
-
-vardef rgb_to_gray expr c =
-    luafunction rgb_to_gray (redpart c, greenpart c, bluepart c)
-enddef;
 
 % 

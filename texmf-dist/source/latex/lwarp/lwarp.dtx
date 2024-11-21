@@ -16,7 +16,7 @@
 % \iffalse
 %<package>\NeedsTeXFormat{LaTeX2e}[1999/12/01]
 %<package>\ProvidesPackage{lwarp}
-%<package>    [2024/02/05 v0.915  Allows LaTeX to directly produce HTML5 output.]
+%<package>    [2024/02/22 v0.916  Allows LaTeX to directly produce HTML5 output.]
 %
 %<*driver>
 \documentclass{ltxdoc}
@@ -1629,16 +1629,18 @@ or ``\texttt{\{0x5C\}}'' for a backslash.
 
 \newcommand*{\limitsmathinsectionnames}{
 If using named \HTML\ files,
-in section names use paren math \texttt{\textbackslash(x+y\textbackslash)}
+in section names use parentheses math \texttt{\textbackslash(x+y\textbackslash)}
 \trouble[math in section names]{filename>math in}
 \trouble{sectioning>math in name}
 \trouble{math>section name}
 \trouble{math>file name}
 instead of dollar math \texttt{\$x+y\$}.
-(Dollar math works, but appears in the filename.)
+Parentheses math is removed from the file name.
+(Dollar math works, but it generates complicated filenames.)
 Or, use a short name for the \TOC\ entry without the math, or use \cs{texorpdfstring}
 from the \pkg{hyperref} package:
 \begin{sourcedisplay}
+\cs{section}[Simplified name]\{Name with \cs{(}1+2=3\cs{)} math\} \\
 \cs{section}\{Some math \cs{texorpdfstring}\{\$1+2=3\$\}\{three\}\}
 \end{sourcedisplay}
 }
@@ -3431,6 +3433,7 @@ This boolean may be tested by the user for later use.
 % \changes{v0.913}{2024/01/05}{\ 2024/01/05}
 % \changes{v0.914}{2024/01/11}{\ 2024/01/11}
 % \changes{v0.915}{2024/02/05}{\ 2024/02/05}
+% \changes{v0.916}{2024/02/22}{\ 2024/02/22}
 
 
 
@@ -3668,6 +3671,14 @@ This boolean may be tested by the user for later use.
 % see the end of the Change History on page \pageref{sec:changesend}.
 %
 % \begin{description}
+% \item[v0.916:] Now allows duplicate section names for file breaks.
+%   \begin{itemize}
+%       \item Adjusts file names to allow duplicate section names.
+%               See \cref{sec:limitssectionnamesduplicates}.
+%       \item Fixed \LaTeX3 key/value option handling.
+%       \item Fixed \cs{<space>} at end of a line.
+%   \end{itemize}
+% \needspace{2\baselineskip}
 % \item[v0.915:] \HTML\ list classes, meta tags.
 %   \begin{itemize}
 %       \item \LaTeX\ lists now given the class \attribute{itemize},
@@ -7928,7 +7939,7 @@ This boolean may be tested by the user for later use.
 % The \pkg{lwarp} option \optn{pdftotextEnc} may be useful in some situations.
 % See \cref{sec:loading}.
 %
-% While using \DVI\ \prog{latex} or \PDF\ \prog{pdflatex},
+% While using older versions of \DVI\ \prog{latex} or \PDF\ \prog{pdflatex},
 % \margintag{vector fonts}
 % if no font-related package is specified then the default
 % \brand{Computer Modern} font is used,
@@ -7952,14 +7963,28 @@ This boolean may be tested by the user for later use.
 %
 % \DescribePackage{dejavu}
 % Another useful option is the Deja Vu series of fonts, which have
-% an increased coverage of language and glyphs:
-%	\begin{sourcedisplay}
-% |\usepackage{dejavu}|
-%	\end{sourcedisplay}
 % \gindex{Deja Vu}%
 % \gindex{font>Deja Vu}%
 % \gindex{Unicode>enhanced coverage}%
 % \gindex{UTF-8>enhanced coverage}%
+% an increased coverage of language and glyphs:
+%	\begin{sourcedisplay}
+% |\usepackage{dejavu}|
+%	\end{sourcedisplay}
+%
+%
+% To avoid ``Missing character'' warnings and empty or missing
+% \trouble[Missing characters]{missing characters}
+% \trouble{characters>missing}
+% \trouble{font>missing characters}
+% \trouble{Unicode>missing characters}
+% characters in \HTML\ and math output,
+% if using a font with an enhanced set of characters
+% also specify a monospace font with similar coverage.
+% \pkg{lwarp} uses the mono font for \HTML\ and math output.
+% Many font packages provide a monospace font automatically.
+% \changes{v0.916}{2024/02/18}{Docs: Missing characters}
+%
 %
 % While using \DVI\ \prog{latex} or \PDF\ \prog{pdflatex},
 % \margintag{\prog{latex}, \prog{pdflatex}, T1, UTF8}
@@ -9596,20 +9621,7 @@ This boolean may be tested by the user for later use.
 %	Use a trailing backslash: |\item[label] \|
 %   \margintag{lists}
 %   \trouble{list>empty item}
-%
-%
-% \subsubsection{Filenames and \URL{}s in lists or footnotes}
-%
-%	\gindex{underscore>filename}\gindex{filename>underscore in}
-%   \gindex{list>filename}
-%	\changes{v0.24}{2017/03/13}{Docs: Filename underscore.}
-%	Escape underscores in
-%	\margintag{filename underscore}
-%	the filenames:
-%	\begin{sourcedisplay}
-%	|\item[\href{file\_name.pdf}{text}]|
-%	\end{sourcedisplay}
-%
+%%
 %
 % \subsubsection{\pkg{relsize} package}
 %
@@ -9781,7 +9793,26 @@ This boolean may be tested by the user for later use.
 % \label{sec:limitssectionnames}
 %
 % If using named \HTML\ files, by selecting |\booltrue{FileSectionNames}|,
-% the generated filenames may be simplified by using \cs{FilenameSimplify}
+% several steps should be taken to avoid problematic file names.
+%
+% \subsubsection{Formatting in section names}
+%
+% When using special formatting in the section name,
+% \trouble[macros in section names]{sectioning>macro in name}
+% use the optional short form:
+% \begin{sourceverb}
+% \section[Simplified name]{Fancy name with formatting}
+% \end{sourceverb}
+% Remember to \cs{protect} \LaTeX\ commands which appear in
+% section names and \TOC\ captions.
+%
+% \subsubsection{Math in section names}
+%
+% \limitsmathinsectionnames
+%
+% \subsubsection{Simplifying file names}
+%
+% The generated filenames may be simplified by using \cs{FilenameSimplify}
 % and \cs{FilenameNullify}:
 %
 % \DescribeMacro{\FilenameSimplify} \marg{text}
@@ -9808,7 +9839,6 @@ This boolean may be tested by the user for later use.
 % \DescribeMacro{\FilenameNullify} \marg{macros}
 %
 % Macro names may appear in the automatically-generated file names.
-% \trouble[macros in section names]{sectioning>macro in name}
 % \trouble{filename>corrupted}
 % \trouble{filename>macro in name}
 % To remove these, create \emph{non-robust} nullified versions
@@ -9828,18 +9858,28 @@ This boolean may be tested by the user for later use.
 % \}
 % \end{sourcedisplay}
 %
-% Avoid duplicate file names.
+% \subsubsection{Preventing duplicate file names}
+% \label{sec:limitssectionnamesduplicates}
+%
+% Section names at levels which result in \HTML\ file splits may
 % \trouble[duplicate filename]{filename>duplicate}
 % \trouble{duplcate filename}
 % \trouble{sectioning>duplicate name}
-% Section names at levels which result in \HTML\ file splits must
-% be unique.  \pkg{lwarp} will generate an error if a duplicate
-% \HTML\ filename is generated.
-% Use the optional \TOC\ caption entry parameter for formatting.
-% Remember to \cs{protect} \LaTeX\ commands which appear in
-% section names and \TOC\ captions.
-%
-% \limitsmathinsectionnames
+% be duplcates, but the resulting file names must be unique.
+% \pkg{lwarp} will generate a warning if a duplicate section name occurs,
+% then \pkg{lwarp} will append a unique file number to the resulting file name,
+% thus avoiding file name clashes.
+% These unique file numbers may change as sections are added or removed.
+% As a result, old and orphaned HTML files may be left behind.
+% To remove these leftover files, use \cmds{lwarpmk cleanall} and recompile.
+% Also, as file names are adjusted, external links from outside to these
+% files may be broken.
+% To use fixed file names, use the optional short-form name,
+% or use \cs{texorpdfstring} from \pkg{hyperref}:
+% \begin{sourceverb}
+% \section[Unique Name]{Duplicate name}
+% \section{\texorpdfstring{Duplcate Name}{Unique Name}}
+% \end{sourceverb}
 %
 %
 % \subsection{Cross-references}
@@ -12233,9 +12273,9 @@ This boolean may be tested by the user for later use.
 % makeindex -s gglo.ist -o lwarp.gls lwarp.glo \hfill \textgreen{<indexes>} \\
 % splitindex lwarp.idx -- -s gind.ist  \hfill \textgreen{<again>} \\
 % pdflatex lwarp.dtx \\
-% pdflatex lwarp.dtx  \hfill \textgreen{<if necessary>}
+% pdflatex lwarp.dtx  \hfill \textgreen{<if necessary>} \\
 % \end{sourcedisplay}
-% (The second round of index processing is required to fully resolve the
+% (The multiple rounds of index processing are required to fully resolve the
 % final Index of Indexes.)
 %
 % To make it easier to update the documentation after a minor change,
@@ -12544,9 +12584,10 @@ This boolean may be tested by the user for later use.
 % \item[Filenames:] \pkg{lwarp} may generate file names from section names.
 %   While doing so, the filenames are simplified, and special characters
 %   and math are removed.
-%   If this process generates a duplicate filename, and error is generated,
-%   describing the filename and which section name generated it.
-%   A warning is issued if dollar-delimited math is used.
+%   If this process generates a duplicate filename, and warning is generated,
+%   describing the filename and which section name generated it,
+%   and a unique file number is appended to the file name.
+%   A warning is also issued if dollar-delimited math is used.
 %   Parenthesis-delimited math is recommended instead.
 % \item[Multirow:] When \cs{multirow} or \cs{multicolrow} are used,
 %   \trouble[\HTML\ corrupted]{HTML>corrupted}
@@ -16724,9 +16765,26 @@ This boolean may be tested by the user for later use.
 %    \begin{macrocode}
 \IfValueTF{#1}%
 {% options given
+%    \end{macrocode}
+%
+% The \LaTeX3 key/value handler does not appear to expand the option
+% argument, so it is pre-expanded here.
+% This was a problem for \pkg{mathspec}, which passed options
+% to \pkg{fontspec}.
+% \changes{v0.916}{2024/02/17}{Fix for \LaTeX3 key/val option handling.}
+%    \begin{macrocode}
+    \edef\LWR@packageoptions{#1}%
     \IfValueTF{#3}% version given?
-        {\LWR@origRequirePackage[#1]{\LWR@parsedrequirepackagenames}[#3]}%
-        {\LWR@origRequirePackage[#1]{\LWR@parsedrequirepackagenames}}%
+        {%
+            \expandafter\LWR@origRequirePackage%
+                \expandafter[\LWR@packageoptions]%
+                {\LWR@parsedrequirepackagenames}[#3]%
+        }%
+        {%
+            \expandafter\LWR@origRequirePackage%
+                \expandafter[\LWR@packageoptions]%
+                {\LWR@parsedrequirepackagenames}%
+        }%
 }%
 {% no options given
     \IfValueTF{#3}% version given?
@@ -21299,7 +21357,7 @@ MathJax = {
 -- Copyright 2016-2024 Brian Dunn
 
 
-printversion = "v0.915"
+printversion = "v0.916"
 requiredconfversion = "2" -- also at *lwarpmk.conf
 
 function printhelp ()
@@ -26258,9 +26316,20 @@ end -- not --version
 %    \end{macrocode}
 
 
+% \begin{macro}{\LWR@eolspace} The end of line character
+% generated by detokenizing \cs{<space>} when at the end of a line.
+% \changes{v0.916}{2024/02/17}{Fixed trailing \cs{\textless{}space\textgreater}.}
+%    \begin{macrocode}
+\expandafter\def\expandafter\LWR@eolspace\expandafter{\detokenize{\ 
+}}% there is a trailing space in the previous line
+%    \end{macrocode}
+% \end{macro}
+
+
 % \begin{macro}{\LWR@HTMLsanitize@tmpb} Sanitizes \HTML\ for \cs{tmpb}.
 % These characters may be interpreted by the browser.
 % \changes{v0.913}{2023/10/01}{Added.}
+% \changes{v0.916}{2024/02/17}{Fixed trailing \cs{\textless{}space\textgreater}.}
 %    \begin{macrocode}
 \catcode`\&=12
 \newcommand*{\LWR@HTMLsanitize@tmpb}{%
@@ -26269,8 +26338,15 @@ end -- not --version
 %    \end{macrocode}
 %
 % \HTML\ entities:
+%
+% At the end of a line, \cs{<space>} is turned in to an end of line character,
+% which is now converted to a regular \cs{<space>}.
 %    \begin{macrocode}
-        \LWR@replacestrings{&}{&amp;}% must be first because & is used for lt, gt, etc.
+        \expandafter\LWR@replacestrings\expandafter{\LWR@eolspace}{\ }%
+%    \end{macrocode}
+% |&amp| must be first because |&| is used for |lt|, |gt|, etc.
+%    \begin{macrocode}
+        \LWR@replacestrings{&}{&amp;}% Must be before the following:
         \LWR@replacestrings{<}{&lt;}%
         \LWR@replacestrings{>}{&gt;}%
         \LWR@replacestrings{'}{&apos;}%
@@ -26856,6 +26932,7 @@ end -- not --version
 \LWR@traceinfo{LWR@newhtmlfile: about to LWR@orignewpage}
 \LWR@maybe@orignewpage
 %    \end{macrocode}
+%
 % \changes{v0.84}{2020/04/24}{Added prev/next links.}
 %    \begin{macrocode}
 \addtocounter{LWR@htmlfilenumber}{1}%
@@ -26885,34 +26962,46 @@ end -- not --version
     \edef\LWR@hashedname{\LWR@mdfive{\LWR@thisfilename}}%
 %    \end{macrocode}
 % If the macro name is not yet defined, this filename is unique.
+% If the filename is unique, create an empty macro using the hashed name,
+% to be used to test for additional duplicates in the future.
+% The first time a duplicate is found, a warning is issued and this
+% macro then contains a |1|.
+% For further duplicates of the same name, no additional warning is issed.
 %    \begin{macrocode}
     \ifcsundef{LWR@filename\LWR@hashedname}{%
-%    \end{macrocode}
-% If the filename is unique, create a macro using the hashed name,
-% to be used to test for additional duplicates in the future.
-%    \begin{macrocode}
         \csdef{LWR@filename\LWR@hashedname}{}%
     }{%
 %    \end{macrocode}
-% If the filename is not unique, create an error.
+% If the filename is not unique, create a warning if the first duplicate,
+% and modify the filename by appending a unique file number.
+% \changes{v0.916}{2024/02/08}{Warn if duplicate section names.}
+% \changes{v0.916}{2024/02/08}{Append unique file number if duplicate sections.}
 %    \begin{macrocode}
-        \PackageError{lwarp}%
-            {%
-                The section name:\MessageBreak
-                ``#1'',\MessageBreak
-                at the line number listed below,\MessageBreak
-                generates the filename\MessageBreak
-                ``\LWR@thisfilename'',\MessageBreak
-                which appears to be a duplicate.  There is a\MessageBreak
-                previous section with an identical or similar name.\MessageBreak
-                While generating file names, Lwarp sanitizes math,\MessageBreak
-                most symbols, and a few common short words,\MessageBreak
-                and this may cause a conflict.\MessageBreak
-                Enter 'H' for possible solutions%
-            }%
-            {%
-                \LWR@avoiddupfilenames%
-            }%
+        \ifcsempty{LWR@filename\LWR@hashedname}%
+        {% first instance
+            \PackageWarning{lwarp}
+                {%
+                    The section name:\MessageBreak
+                    ``#1'',\MessageBreak
+                    at the line number listed below,\MessageBreak
+                    generates the filename\MessageBreak
+                    ``\LWR@thisfilename'',\MessageBreak
+                    which appears to be a duplicate.  There is a\MessageBreak
+                    previous section with an identical or similar name.\MessageBreak
+                    A unique file number has been appended to the file name\MessageBreak
+                    of this and any further similar files.\MessageBreak
+                    This number may change as sections are added/removed,\MessageBreak
+                    and obsolete HTML files may result.\MessageBreak
+                    To remove these files, use lwarpmk cleanall.\MessageBreak
+                    (While generating file names, Lwarp sanitizes math,\MessageBreak
+                    most symbols, and a few common short words,\MessageBreak
+                    and this may cause a conflict.)\MessageBreak
+                    \LWR@avoiddupfilenames%
+                }%
+            \csdef{LWR@filename\LWR@hashedname}{1}%
+        }% first instance
+        {}% repeated instances
+        \edef\LWR@thisfilename{\LWR@thisfilename-\arabic{LWR@htmlseqfilenumber}}%
     }%
 }%
 %    \end{macrocode}
@@ -37002,6 +37091,7 @@ end -- not --version
 \begin{warpHTML}
 %    \end{macrocode}
 
+
 % \begin{macro}{\LWR@sidetoc}
 % Creates the actual side-TOC.
 %    \begin{macrocode}
@@ -37016,7 +37106,6 @@ end -- not --version
     \LWR@htmlelementclass{nav}{sidetoc}
 
     \setcounter{tocdepth}{\value{SideTOCDepth}}
-
 %    \end{macrocode}
 % The title is placed into a \element{div} of class \attribute{sidetoctitle}, and may
 % contain paragraphs.
@@ -37075,15 +37164,17 @@ end -- not --version
 % The |autopage| label is always created just after the section opens.
 %
 % \begin{description}
-% \item[\#1] is depth
-% \item[\#2] is |section|, |subsection|, etc.
-% \item[\#3] the text of the caption
-% \item[\#4] page number
+% \item[\#1:] Depth.
+% \item[\#2:] |section|, |subsection|, etc.
+% \item[\#3:] The text of the caption.
+% \item[\#4:] Page number, which for \HTML\ is the \ctr{LWR@currentautosecpage}
+%                   when the section was created.
 % \end{description}
 %    \begin{macrocode}
 \NewDocumentCommand{\hypertoc}{m m +m m}{%
     \LWR@traceinfo{hypertoc !#1!#2!#3!#4!}%
 %    \end{macrocode}
+%
 % Respond to |tocdepth|:
 %    \begin{macrocode}
     \ifnumcomp{#1}{>}{\value{tocdepth}}%
@@ -55026,6 +55117,7 @@ name = \chemmacros_translate:n {scheme-name}
 %
 % \changes{v0.913}{2023/11/23}{\pkg{doipubmed}: Added.}
 % \changes{v0.914}{2024/01/11}{\pkg{doipubmed}: Added missing \filenm{sty} file.}
+% \changes{v0.916}{2024/02/17}{\pkg{doipubmed}: Added missing \filenm{sty} file.}
 %
 % \codehtml
 %

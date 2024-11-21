@@ -1,8 +1,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% MCF metapost souce file example                 by Akira Yamaji  2024.01.21
+% MCF metapost souce file example                 by Akira Yamaji  2024.11.10
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if unknown mcftograph: input mcf2graph; fi  %%% it must be version 5.11
-message "* mcf_template 2024.01.21";
+if unknown mcftograph: input mcf2graph; fi  %%% it must be version 5.13
+message "* mcf_template 2024.11.10";
 message "";
 %------------------------------------------------------------------------------
 fsize:=(30mm,20mm);
@@ -20,9 +20,9 @@ max_blength:=4mm;
 %%%%sw_comment:=1; loadm("CAT=biological","MW>=100","MW<=250","a:MW");
 %%%%savem("temp.mcf");                    % save to temp.mcf
 %%%%loadm("EN<>*");                       % select all
-loadm("EXA=1");                           % select EXA=1
+loadm("EXA=9");                           % select EXA=1
 %------------------------------------------------------------------------------
-for i=1 upto ucount:  beginfigm $(i) \\ endfigm  endfor
+for i=1 upto ucount: beginfigm $(i) \\ endfigm  endfor
 %******************************************************************************
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 bye

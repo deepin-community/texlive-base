@@ -1,10 +1,11 @@
 %% Herbert Voss <hvoss@tug.org>
-%% Copyright (C) 2023
+%% Copyright (C) 2024
 %%
 %% This program can be redistributed and/or modified under the terms
 %% of the LaTeX Project Public License Distributed from CTAN archives
 %% in directory macros/latex/base/lppl.txt.
 %%
+%%  width=2\paperwidth, height=\paperheight
 %%
 %% ||1in+evenside --- |1in+oddside ---||
 %
@@ -24,7 +25,6 @@
     \else
       \global\hv@@capPos=2 % other caption type
   \fi\fi
-  %\checkoddpage
   \global\savebox{\hvObjectBox}{\ifhv@useOBox\usebox{\hvOBox}\else\hv@floatObject\fi}%
   \global\hv@tempWidthA=\dimexpr-\oddsidemargin-1in-\parindent+\hvSet@bindCorrection%  the width of the right side offset
   \global\hv@tempWidthB=\dimexpr\ht\hvCaptionBox+\wd\hvObjectBox+2\hvSet@bindCorrection%
@@ -32,6 +32,7 @@
 %  \savebox\hv@leftBox{\clipbox*{0 0 \the\hv@leftPageObjectWidth{} \height}{\usebox\hvObjectBox}}%
 %  \savebox\hv@rightBox{\clipbox*{\the\hv@leftPageObjectWidth{} \depth{} \width{} \height}{\usebox\hvObjectBox}}%
 %  \expandafter\captionsetup\expandafter{\hv@caption@format}%
+  \checkoddpage
   \ifoddpage
     \hvfloat@typeout{do@hvFloat@doubleFULLPAGE: oddpage}%
     \ifcase\hv@@capPos % =0 Caption before
@@ -199,6 +200,8 @@
 
 \def\do@hvFloat@doubleFULLPAGE@CaptionBefore{%
   \afterpage{%
+    \let\c@hv@tempCNTfigA\c@figure
+    \let\c@hv@tempCNTtabA\c@table
     \hfuzz=\maxdimen
     \global\savebox{\hvObjectBox}{\ifhv@useOBox\usebox{\hvOBox}\else\hv@floatObject\fi}%
     \vspace*{\the\dimexpr-1in-\voffset-\topmargin-\headheight-\headsep-\baselineskip-\parskip+1.5\lineskip}%  no interlineskip
@@ -229,11 +232,11 @@
   }}%
 }
 
-\newif\ifhv@temp
-
 \def\do@hvFloat@doubleFULLPAGE@CaptionAfter{%
   \afterpage{%
     \hfuzz=\maxdimen
+    \let\c@hv@tempCNTfigA\c@figure
+    \let\c@hv@tempCNTtabA\c@table
     \global\savebox{\hvObjectBox}{\ifhv@useOBox\usebox{\hvOBox}\else\hv@floatObject\fi}%
     \vspace*{\the\dimexpr-1in-\voffset-\topmargin-\headheight-\headsep-\baselineskip-\parskip+1.5\lineskip}%  no interlineskip
     \hspace*{\the\dimexpr-\evensidemargin-\parindent-1in}%
@@ -279,6 +282,8 @@
 \def\do@hvFloat@doubleFULLPAGE@CaptionAfterTwoCol{%
   \hvfloat@typeout{do@hvFloat@doubleFULLPAGE@CaptionAfterTwoCol: start}  %
   \afterpage{%
+    \let\c@hv@tempCNTfigA\c@figure
+    \let\c@hv@tempCNTtabA\c@table
     \hvfloat@typeout{do@hvFloat@doubleFULLPAGE@CaptionAfterTwoCol: afterpage start}  %
     \global\savebox{\hvObjectBox}{\ifhv@useOBox\usebox{\hvOBox}\else\hv@floatObject\fi}%
     \vspace*{\the\dimexpr-1in-\voffset-\topmargin-\headheight-\headsep-\baselineskip-\parskip+1.5\lineskip}%  no interlineskip
@@ -327,6 +332,8 @@
 
 \def\do@hvFloat@doubleFULLPAGE@CaptionOther#1{%
   \afterpage{%
+    \let\c@hv@tempCNTfigA\c@figure
+    \let\c@hv@tempCNTtabA\c@table
     \vspace*{\the\dimexpr-1in-\voffset-\topmargin-\headheight-\headsep-\baselineskip-\parskip+1.5\lineskip}%    -0.5\paperheight+0.5\ht\hvObjectBox
     \hspace*{\the\dimexpr-\evensidemargin-\parindent-1in}%
     \global\savebox{\hvObjectBox}{\ifhv@useOBox\usebox{\hvOBox}\else\hv@floatObject\fi}%
@@ -445,6 +452,7 @@
     \vspace*{\the\dimexpr-1in-\voffset-\topmargin-\headheight-\headsep}%-0.5\baselineskip%
     \if@twoside
       \hvfloat@typeout{>>>> setPageObject/FULLPAGE/twoside}%
+      \checkoddpage
       \ifoddpage
         \hvfloat@typeout{>>>> setPageObject/FULLPAGE/twoside/oddpage (\thepage)}%
         \hspace*{\the\dimexpr-\oddsidemargin-\parindent-1in}%

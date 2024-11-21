@@ -3,7 +3,7 @@
 # m4 macro NeedDpicTools or the pic statement copy "HOMELIB_/dpictools.pic"
 # when HOMELIB_ is defined or, generically, copy "<path>dpictools.pic"
 
-# Circuit_macros Version 10.5, copyright (c) 2024 J. D. Aplevich under     #
+# Circuit_macros Version 10.6, copyright (c) 2024 J. D. Aplevich under     #
 # the LaTeX Project Public Licence in file Licence.txt. The files of       #
 # this distribution may be redistributed or modified provided that this    #
 # copyright notice is included and provided that modifications are clearly #
@@ -370,52 +370,57 @@ define DefineCMYKColor { cmyktorgb($2,$3,$4,r_CMYKRGB,g_CMYKRGB,b_CMYKRGB)
   DefineRGBColor($1,r_CMYKRGB,g_CMYKRGB,b_CMYKRGB) }
 
 #                               ShadeObject(DrawRoutineName, n, colorseq)
-#                               colorseq = 0,r0,g0,b0,
-#                                      frac1,r1,g1,b1,
-#                                      frac2,r2,g2,b2,
+#                               colorseq = frac0,r0,g0,b0,
+#                                          frac1,r1,g1,b1,
 #                                          ...
-#                                          1,rn,gn,bn
-#                                 with 0 < frac1 < frac2 < ... < 1
+#                                          fracn,rn,gn,bn
+#                                 with 0 <= frac0 < frac1 < ... < fracn <= 1
+#                                 (Often frac0 = 0 and fracn = 1)
 #
 #                               calls DrawRoutineName(frac,r,g,b)
-#                                 n+1 times for frac = 0, 1/n, 2/n, ... 1
+#                                 n+1 times for frac =
+#                                    frac0, frac0+1/n*(fracn-frac0),
+#                                    frac0+2/n*(fracn-frac0), ... fracn 
+#                               (i.e., often frac = 0, 1/n, 2/n, ... 1)
 #                                 with rgb args interpolated (in hsv space)
 #                                 between colorseq points
-#
 # eg B: box; define HorizShade { line right B.wid thick B.ht/100/(1bp__) \
 #         from (0,-($1)*B.ht) outlined rgbstring($2,$3,$4) }
 # ShadeObject(HorizShade, 100, 0,1,0,0, 1,0,0,1) at B
 #
-define ShadeObject { [ Origin: Here; nSteps = abs($2)
-  nextP = $3; nextR = $4; nextG = $5; nextB = $6
+define ShadeObject { [ Origin: Here; nSteps = max(abs($2),1)
+  nextF = $3; nextR = $4; nextG = $5; nextB = $6; lastF = nextF; frac0 = nextF
+  fracn = frac0; nextarg = 3; for done = 0 to 1 do { if nextarg < $+ then \
+    { exec sprintf("fracn = $%g",nextarg); nextarg +=4; done = 0 } }
+  if frac0 <= fracn then { $1(frac0,nextR,nextG,nextB) }
   nextarg = 7
-  thisP = nextP
-  if $2 < 0 then { rgbtohsv(nextR,nextG,nextB,nextH,nextS,nextV) } \
-  else { rgbtohsv(nextR^2,nextG^2,nextB^2,nextH,nextS,nextV) }
-  if nextP*nSteps >= 1 then { nextP = 0 }
-  $1(nextP,nextR,nextG,nextB)
-  for stepnum = 1 to nSteps do {
-    if stepnum > nextP*nSteps then {
-      thisP = nextP; thisH = nextH; thisS = nextS; thisV = nextV
-      exec sprintf("nextP = $%g; nextR = $%g; nextG = $%g; nextB = $%g",\
-        nextarg,nextarg+1,nextarg+2,nextarg+3);
-      nextarg +=4 }
-    if nextP != thisP then {
-      rgbtohsv(nextR^2,nextG^2,nextB^2,nextH,nextS,nextV)
-      if thisS == 0 then { thisH = nextH }
-      if nextS == 0 then { nextH = thisH }
-      if thisH-nextH > 180 then { nextH += 360 } \
-      else { if nextH-thisH > 180 then { thisH +=360 } } }
-    if nextP > thisP then {
-      x = (stepnum/nSteps-thisP)/(nextP-thisP)
-      currP = thisP*(1-x) + nextP*x
-      currH = thisH*(1-x) + nextH*x
-      currS = thisS*(1-x) + nextS*x
-      currV = thisV*(1-x) + nextV*x
-      hsvtorgb(currH,currS,currV,cRsq,cGsq,cBsq)
-      if $2 < 0 then { $1(currP,cRsq,cGsq,cBsq) } \
-      else { $1(currP,sqrt(cRsq),sqrt(cGsq),sqrt(cBsq)) } }
-    }
+  if $2 < 0 then { rgbtohsv(nextR,nextG,nextB, nextH,nextS,nextV) } \
+  else { rgbtohsv(nextR^2,nextG^2,nextB^2, nextH,nextS,nextV) }
+  for stepnum = 0 to nSteps do {
+    currF = frac0+stepnum/nSteps*(fracn-frac0)
+    if currF >= nextF then {
+      if nextarg >= $+ then { stepnum = nSteps } \
+      else { lastF = nextF; lastH = nextH; lastS = nextS; lastV = nextV
+        exec sprintf("nextF = $%g; nextR = $%g; nextG = $%g; nextB = $%g",\
+          nextarg,nextarg+1,nextarg+2,nextarg+3);
+        nextarg +=4 } }
+    if stepnum <= nSteps then {
+      if nextF != lastF then {
+        rgbtohsv(nextR^2,nextG^2,nextB^2,nextH,nextS,nextV)
+        if lastS == 0 then { lastH = nextH }
+        if nextS == 0 then { nextH = lastH }
+        if lastH-nextH > 180 then { nextH += 360 } \
+        else { if nextH-lastH > 180 then { lastH +=360 } } }
+      if nextF > lastF then {
+        x = (currF-lastF)/(nextF-lastF)
+        currH = lastH*(1-x) + nextH*x
+        currS = lastS*(1-x) + nextS*x
+        currV = lastV*(1-x) + nextV*x
+        hsvtorgb(currH,currS,currV,cRsq,cGsq,cBsq)
+        if (currF >= frac0) && (currF <= fracn) then {
+          if $2 < 0 then { $1(currF,cRsq,cGsq,cBsq) } \
+          else { $1(currF,sqrt(abs(cRsq)),sqrt(abs(cGsq)),sqrt(abs(cBsq))) } } }
+      } }
   exec sprintf("$%g",nextarg)
   ] }
 

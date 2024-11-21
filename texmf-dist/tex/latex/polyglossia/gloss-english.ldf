@@ -1,4 +1,4 @@
-% Language definition file (part of polyglossia v1.66 -- 2023/12/11)
+% Language definition file (part of polyglossia v2.3 -- 2024/09/23)
 %
 \ProvidesFile{gloss-english.ldf}[polyglossia: module for English]
 
@@ -30,9 +30,12 @@
 \setlanguagealias[variant=canadian]{english}{canadian}
 \setlanguagealias[variant=newzealand]{english}{newzealand}
 
-\providebool{british@hyphen}
-\providebool{english@ordinalmonthday}
-\providebool{british@dateformat}
+\@ifundefined{ifbritish@hyphen}%
+  {\newif\ifbritish@hyphen}{}
+\@ifundefined{ifenglish@ordinalmonthday}%
+  {\newif\ifenglish@ordinalmonthday}{}
+\@ifundefined{ifbritish@dateformat}%
+  {\newif\ifbritish@dateformat}{}
 
 % US English (\l@english) is default
 % Initialize its settings
@@ -41,49 +44,46 @@
 \english@ordinalmonthdayfalse
 \british@dateformatfalse
 
-% Option ordinalmonthday
-\define@boolkey{english}[english@]{ordinalmonthday}[true]{}
-
-\define@choicekey*+{english}{variant}[\xpg@val\xpg@nr]{uk,british,us,american,usmax,australian,newzealand,canadian}[us]{%
-   \ifcase\xpg@nr\relax
+\DeclareKeys[polyglossia/gloss/english]
+  {
+    ordinalmonthday.if = english@ordinalmonthday,
+    ordinalmonthday.default:n = true,
+    variant.choices:nn = { uk, british, us, american, usmax, australian, newzealand, canadian }
+      {%
+        \ifcase\UseName{l_keys_choice_int}\or
       % uk:
       \british@hyphentrue
       \british@dateformattrue
       \english@ordinalmonthdaytrue
       \SetLanguageKeys{english}{babelname=british,bcp47=en-GB,bcp47-language=en,bcp47-region=GB}%
-      \xpg@info{Option: English, variant=british}%
    \or
       % british:
       \british@hyphentrue
       \british@dateformattrue
       \english@ordinalmonthdaytrue
       \SetLanguageKeys{english}{babelname=british,bcp47=en-GB,bcp47-language=en,bcp47-region=GB}%
-      \xpg@info{Option: english variant=british}%
    \or
       % us:
       \british@hyphenfalse
       \british@dateformatfalse
       \english@ordinalmonthdayfalse
       \SetLanguageKeys{english}{babelname=american,bcp47=en-US,bcp47-language=en,bcp47-region=US}%
-      \xpg@info{Option: English, variant=american}%
    \or
       % american:
       \british@hyphenfalse
       \british@dateformatfalse
       \english@ordinalmonthdayfalse
       \SetLanguageKeys{english}{babelname=american,bcp47=en-US,bcp47-language=en,bcp47-region=US}%
-      \xpg@info{Option: English, variant=american}%
    \or
       % usmax:
       \british@hyphenfalse
       \british@dateformatfalse
       \english@ordinalmonthdayfalse
       \SetLanguageKeys{english}{babelname=american,bcp47=en-US,bcp47-language=en,bcp47-region=US}%
-      \xpg@info{Option: english variant=american (with additional patterns)}%
-      \xpg@ifdefined{usenglishmax}{}%
+      \IfLanguageDefinedF{usenglishmax}%
          {\xpg@warning{No hyphenation patterns were loaded for "US English Max"\MessageBreak
                        I will use the standard patterns for US English instead}%
-          \adddialect\l@usenglishmax\l@english\relax%
+          \adddialect\l@usenglishmax\l@english
          }%
       \def\english@variant{usenglishmax}%
    \or
@@ -94,8 +94,7 @@
       \british@dateformattrue
       \english@ordinalmonthdayfalse
       \SetLanguageKeys{english}{babelname=australian,bcp47=en-AU,bcp47-language=en,bcp47-region=AU}%
-      \xpg@info{Option: English, variant=australian}%
-      \adddialect\l@australian\l@english%
+      \adddialect\l@australian\l@english
    \or
       % newzealand:
       % These use the british hyphenation patterns
@@ -104,8 +103,7 @@
       \british@dateformattrue
       \english@ordinalmonthdayfalse
       \SetLanguageKeys{english}{babelname=newzealand,bcp47=en-NZ,bcp47-language=en,bcp47-region=NZ}%
-      \xpg@info{Option: English, variant=newzealand}%
-      \adddialect\l@newzealand\l@english%
+      \adddialect\l@newzealand\l@english
    \or
       % canadian:
       % This is currently equivalent to usenglish (as in babel)
@@ -113,45 +111,35 @@
       \british@dateformatfalse
       \english@ordinalmonthdayfalse
       \SetLanguageKeys{english}{babelname=canadian,bcp47=en-CA,bcp47-language=en,bcp47-region=CA}%
-      \xpg@info{Option: English, variant=american}%
-      \adddialect\l@canadian\l@english%
+      \adddialect\l@canadian\l@english
    \fi
    \ifbritish@hyphen
-      \xpg@ifdefined{ukenglish}{}%
+      \IfLanguageDefinedF{ukenglish}%
          {\xpg@warning{No hyphenation patterns were loaded for British English\MessageBreak
                        I will use the patterns for US English instead}%
-          \adddialect\l@ukenglish\l@english\relax%
+          \adddialect\l@ukenglish\l@english
          }%
       \def\english@variant{ukenglish}%
    \fi
-}{\xpg@warning{Unknown English variant `#1'}}
+      },
+    variant.default:n = us,
+    variant/unknown.code = \xpg@warning{Unknown English variant `#1'},
+  }
 
 % Register default options
-\xpg@initialize@gloss@options{english}{variant=us,ordinalmonthday=false}
+\InitializeGlossOptions{english}{variant=us,ordinalmonthday=false}
 % Register alias options
-\xpg@set@alias@values{english}{variant}{us}{american}
-\xpg@set@alias@values{english}{variant}{uk}{british}
+\SetLanguageAliasValues{english}{variant}{us,american}
+\SetLanguageAliasValues{english}{variant}{uk,british}
 
 \ifxetex
    % Check if \l@english is defined. If not, try to set it to some variety
-   % (specific order as in the csv list below), or null language if everything fails
-   \xpg@ifdefined{english}{}{%
-      \def\do##1{%
-         \xpg@ifdefined{#1}%
-            {\csletcs{l@english}{l@#1}\listbreak}%
-            {%
-               \xpg@warning{No hyphenation patterns for English found"\MessageBreak
-                            I will use the 'null' language instead}%
-               \adddialect\l@english0
-            }%
-      }%
-      \docsvlist{british, american, usenglishmax, australian, newzealand}
-      \xpg@ifdefined{english}{}{}
-   }%
+   % (specific order as in the csv list), or null language if everything fails
+   \TryPatternWithFallback{english}{british, american, usenglishmax, australian, newzealand}
 \fi
 
 \def\english@language{%
-   \polyglossia@setup@language@patterns{\english@variant}%
+   \SetupPolyglossiaLangPatterns{\english@variant}%
 }%
 
 \def\captionsenglish{%

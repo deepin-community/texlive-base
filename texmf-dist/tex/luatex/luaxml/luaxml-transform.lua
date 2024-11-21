@@ -1,11 +1,18 @@
 --- XML transformation module for LuaXML
--- @module luaxml-tranform
+-- @module luaxml-transform
 -- @author Michal Hoftich <michal.h21@gmail.com
 
 -- code originaly comes from from https://github.com/michal-h21/luaxml-mathml
 --
-local domobject = require "luaxml-domobject"
-local cssquery = require "luaxml-cssquery"
+local domobject
+local cssquery
+if kpse then
+  domobject = require "luaxml-domobject"
+  cssquery = require "luaxml-cssquery"
+else
+  domobject = require "luaxml.domobject"
+  cssquery = require "luaxml.cssquery"
+end
 -- initialize CSS selector object
 local css = cssquery()
 
@@ -49,14 +56,18 @@ local function process_text(text, parameters)
   -- process all Unicode characters and find if they should be replaced
   for _, char in utf8.codes(text) do
     -- construct new string with replacements or original char
-    t[#t+1] = unicodes[char] or utf8.char(char)
+    if verbatim then
+      t[#t+1] = utf8.char(char)
+    else
+      t[#t+1] = unicodes[char] or utf8.char(char)
+    end
   end
   local text = table.concat(t)
   if parameters.collapse_newlines==true then
     text = text:gsub("\n", " ")
   end
   -- verbatim can be set in parameters table. it prevent collapsing of spaces. 
-  if not parameters.verbatim then
+  if not verbatim then
     text = text:gsub("(%s%s+)", function(a) return a:sub(1,1) end)
   end
   return text
@@ -187,6 +198,13 @@ local function add_action(selector, template, parameters, csspar)
 end
 
 
+--- Remove actions for a given selector
+-- @param selector CSS selector for the matching element
+-- @param csspar cssquery object. Default is set by the library, so it is not necessary to use.
+local function reset_actions(selector, csspar)
+  local css = csspar or css
+  css:remove_selector(selector)
+end
 
 
 --- Transform XML string
@@ -223,7 +241,7 @@ end
 local function print_tex(content)
   -- we need to replace "\n" characters with calls to tex.sprint
   for s in content:gmatch("([^\n]*)") do
-    tex.sprint(s)
+    tex.print(s)
   end
 end
 
@@ -232,7 +250,7 @@ end
 local Transformer 
 
 --- Make new Transformer object
--- @return Tranformer object
+-- @return Transformer object
 local function new()
   local self = setmetatable({}, Transformer)
   self.css = cssquery()
@@ -276,6 +294,12 @@ end
 -- @see add_custom_action
 function Transformer:add_custom_action(selector, fn )
   add_custom_action(selector, fn, self.css)
+end
+
+--- Remove all actions that match the given selector
+---@param selector string 
+function Transformer:reset_actions(selector)
+  reset_actions(selector, self.css)
 end
 
 -- all methods that use transformation functions must 
@@ -327,6 +351,7 @@ local M = {
   print_tex = print_tex,
   add_action = add_action,
   add_custom_action = add_custom_action,
+  reset_actions = reset_actions,
   simple_content = simple_content,
   load_file = load_file,
   process_dom = process_dom,

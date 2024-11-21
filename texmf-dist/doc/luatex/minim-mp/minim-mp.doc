@@ -8,8 +8,8 @@
 \else \startmetadata
     author   {Esger Renkema}
     title    {minim-mp}
-    date     {2024-01-05}
-    version  {2024/1.4}
+    date     {2024-03-25}
+    version  {2024/1.6}
     keywords {LuaTeX; Plain TeX; MetaPost; mplib}
     stopmetadata
 \maketitle \fi
@@ -20,8 +20,15 @@ running tex or lua code from within metapost.
 In order to use it, simply say ⟦\input minim-mp.tex⟧.
 
 After this, ⟦*\directmetapost [ options ] { mp code }⟧ will result in a series 
-of images corresponding to the ⟦beginfig ... endfig⟧ statements in your
+of images corresponding to the ⟦beginfig() ... endfig;⟧ statements in your
 ⟦mp code⟧. Every image will be in a box of its own.
+
+The metapost code to-be-run will be read under a special catcode regime in 
+which most ‘special’ characters (including {\tt\#} and {\tt\%}) are inert.
+However, any control sequences will be expanded fully, as inside an ⟦\edef⟧.
+Keep this in mind and define any macros you want to use in a ⟦btex ... etex;⟧ 
+environment as ⟦\protected⟧ (with the latex package, latex’s ‘protected’ macros 
+are safe-to-use, too).
 
 Every call to ⟦\directmetapost⟧ opens and closes a separate metapost instance. 
 If you want your second call to remember the first, you will have to define 
@@ -29,8 +36,9 @@ a persistent metapost instance. This will also give you more control over image
 extraction. See below under „Metapost instances”. The ⟦options⟧ will also be 
 explained there (for simple cases, you will not need them).
 
-The logging of the metapost run will be included in the regular log file. If an 
-error occurs, the logging will also be shown on the terminal.
+The logs of the metapost run will be embedded in the regular log file. If an 
+error occurs, the log of the last snippet will also be shown on the terminal.
+
 
 \section As a stand-alone Metapost compiler %1
 
@@ -47,18 +55,34 @@ With minim-lamp, for specifying the contents of the preamble, you can use
 Concluding the preamble with ⟦\begin{document}⟧ is optional, as both ⟦\begin⟧ 
 and ⟦\end{document}⟧ will be inserted automatically if omitted.
 
+
 \section LaTeX compatibility %1
 
-An experimental latex package is included in ⟦minim-mp.sty⟧. It accepts no 
-options, as it really is a rather thin wrapper around the plain tex package.
-It does, however, provide a proper ⟦*metapost⟧ latex environment as an 
+An experimental latex package is included in ⟦minim-mp.sty⟧. It really is 
+a rather thin wrapper around the plain tex package,
+but does provide a proper ⟦*metapost⟧ latex environment as an 
 alternative to ⟦\directmetapost⟧.
-
-The ⟦metapost⟧ environment has no persistent backing instance.
-You can create a similar environment ⟦envname⟧ that does with
+The ⟦metapost⟧ environment has no persistent backing instance,
+but you can create a similar environment ⟦envname⟧ that does with
 ⟦*\newmetapostenvironment [options] {envname}⟧.
 If your demands are even more complex, you should fall back to the plain tex 
-commands described below.
+commands described in the next section.
+
+As in luamplib, you can use ⟦*\mpcolor {name}⟧ to insert the proper colour 
+values; this macro is only available inside the above environments.
+A ⟦\mpdim⟧ macro is present too, but quite superfluous: since the contents of 
+the metapost environments are fully expanded before metapost sees them, you can 
+use ⟦\the⟧ and ⟦\the\dimexpr⟧ like everywhere else. Tex’s registers can also be 
+accessed by metapost itself (see below).
+
+When the package is loaded with the option ⟦luamplib⟧, minim-mp will try and 
+act as a drop-in replacement for luamplib. The effort made is not very great 
+though, but it will define an ⟦mplibcode⟧ environment, as well as the
+⟦\mplibcodeinherit⟧, ⟦\mplibshowlog⟧, ⟦\mplibsetformat⟧ and 
+⟦\mplibnumbersystem⟧ switches;
+also the macros ⟦\everymplib⟧ and ⟦\everyendmplib⟧.
+Please do note that this is not the recommended way of using minim-mp, which 
+remains the interface documented above and further in the next section.
 
 
 \section Metapost instances %1
@@ -66,16 +90,17 @@ commands described below.
 For more complicated uses, you can define your own instances by saying
 ⟦*\newmetapostinstance [ options ] \id⟧.
 An instance can be closed with ⟦*\closemetapostinstance \id⟧.
-These are the options you can use:
+The ⟦options⟧ are directly passed to lua, as a table, and can contain the 
+following keys:
 
 \smallskip\smallskip\automarktable
 \halign{#\quad\hfil&#\quad\hfil&#\hfil\cr
 Option&Default&Description\cr
 ⟦jobname⟧&⟦':metapost:'⟧&Used in error messages.\cr
 ⟦format⟧&⟦'plain.mp'⟧&Format to initialise the instance with.\cr
-⟦math⟧&⟦'scaled'⟧&One of ⟦scaled⟧, ⟦decimal⟧ or ⟦double⟧.\cr
+⟦mathmode⟧&⟦'scaled'⟧&One of ⟦scaled⟧, ⟦decimal⟧ or ⟦double⟧.\cr
 ⟦seed⟧&⟦nil⟧&Random seed for this instance.\cr
-⟦catcodes⟧&⟦0⟧&Catcode table for ⟦btex ... etex⟧.\cr
+⟦catcodes⟧&(internal value)&Catcode table for ⟦btex ... etex⟧.\cr
 ⟦env⟧&copy of ⟦_G⟧&Lua environment; see below.\cr
 }\smallskip
 
@@ -90,7 +115,6 @@ There, the image will be contained in a single box node.
 
 ⟦*\getnamedmpimage \id {name}⟧
 – Retrieves an image by name
-regardless of its position,
 and writes it to the current node list.
 
 ⟦*\boxnextmpimage  \id box-nr⟧
@@ -100,11 +124,81 @@ tex can parse as a number.
 ⟦*\boxnamedmpimage \id box-nr {name}⟧
 – Puts the image named ⟦name⟧ in box ⟦box-nr⟧.
 
-Say ⟦*\remainingmpimages \id⟧ for the number of images not yet retrieved.
+Say ⟦*\remainingmpimages \id⟧ for the number of images not yet retrieved
+and ⟦*\getallmpimages \id⟧ to insert all remaining images.
 
 Finally, as a shorthand, ⟦*\runmetapostimage \id { code }⟧ will add
-⟦beginfig ... endfig⟧ to your ⟦code⟧ and write the resulting image immediately 
+⟦beginfig ... endfig;⟧ to your ⟦code⟧ and write the resulting image immediately 
 to the current list.
+
+Associated to every instance are four token registers containing tex and/or 
+metapost code to be inserted before or after each executed chunk.
+You can access them with ⟦*\everymp \id {pre|post} {tex|mp}⟧.
+The token lists where ${\tt id}=0$ do not correspond to any instance and will 
+apply to every instance instead.
+All four token lists are empty by default if you use minim-mp with plain tex.
+The latex package, on the other hand, uses them for its own purposes, so take 
+care in that case to use ⟦\tokspre⟧ and ⟦\toksapp⟧ instead of overwriting their 
+contents. As a bonus, when using the latex package, you can use the environment 
+name instead of the numerical ⟦\id⟧.
+
+
+\section Lua interface %1
+
+In what follows, you should assume ⟦M⟧ to be the result of
+\stopformulatagging$$\hbox{⟦M = require('minim-mp')⟧}$$\startformulatagging
+as this package does not claim a table in the global environment for itself.
+
+You can open a new instance with ⟦*nr = M.open {options}⟧.
+This returns an index in the ⟦*M.instances⟧ table.
+Run code with ⟦*M.run (nr, code)⟧ and close the instance with ⟦*M.close (nr)⟧.
+Images can be retrieved only with ⟦*box_node = M.get_image(nr, [name])⟧; omit 
+the ⟦name⟧ to select the first image.
+Say ⟦*nr_remaining = M.left(nr)⟧ for the number of remaining images.
+
+Each metapost instance is a table containing the following entries:
+
+\smallskip\smallskip
+\marktableaslist
+\tagattribute List ListNumbering /Description
+\halign{\qquad#\quad\hfil&#\hfil\cr
+⟦jobname⟧&The jobname.\cr
+⟦instance⟧&The primitive metapost instance.\cr
+⟦results⟧&A linked list of unretrieved images.\cr
+⟦status⟧&The last exit status (will never decrease).\cr
+⟦catcodes⟧&Number of the catcode table used with ⟦btex ... etex⟧.\cr
+⟦env⟧&The lua environment for ⟦runscript⟧.\cr}
+
+Default values for the format and number system are available in the
+⟦*M.default_format⟧ and ⟦*M.default_mathmode⟧ variables.
+The full initialisation sequence for new instances (i.e. the first metapost 
+chunk, that is executed automatically) is contained in the ⟦*M.init_code⟧ 
+table.
+
+
+\section Logs and debugging %1
+
+Metapost log output of every processed chunk of metapost code will be printed 
+to the main log file in a quoted form.
+The logs will be duplicated to the terminal if an error occurs or if the 
+variable ⟦*M.on_line⟧ is ⟦true⟧ (the default is ⟦false⟧, but set to ⟦true⟧ in 
+the stand-alone format files).
+Because a single error message might trigger many others, log output to the 
+terminal (but not the log file) will be cut after a certain number of errors: 
+this behaviour is governed by the ⟦*M.max_errprint⟧ variable (default ⟦1⟧; set 
+to ⟦0⟧ to disable).
+
+You can enable (global) debugging by saying ⟦*debug_pdf⟧ to metapost, 
+⟦*\debugmetapost⟧ to tex or ⟦*M.enable_debugging()⟧ to lua. This will write 
+out a summary of metapost object information to the pdf file, just above the 
+pdf instructions that object was translated into. For this purpose, the pdf 
+will be generated uncompressed. Additionally, the metapost code itself will be 
+echoed to the log, as well as ⟦runscript⟧ and ⟦maketext⟧ invocations, and 
+a small summary of every generated image will be written to log and terminal.
+
+For debugging the results of ⟦maketext⟧ and the like, you can set the
+⟦*debug_tex_bboxes⟧ variable to ⟦true⟧ and have their resulting bounding boxes 
+drawn on the pdf.
 
 
 \section Running tex from within metapost %1
@@ -129,10 +223,12 @@ You can also use metapost’s ⟦*infont⟧ operator, which restricts the text
 to-be-typeset to a single font, but returns an ⟦picture⟧ containing a ⟦picture⟧ 
 for each character. The right-hand argument of ⟦infont⟧ should either be 
 a (numerical) font~id or the (cs)name of a font (without backslash).
+A traditional font name (e.g. ‘cmtt10’) is also accepted; this will silently 
+load the font.
 
 One possible use of the ⟦infont⟧ operator is setting text along curves:
 
-\nobreak
+\goodbreak
 ⟦beginfig(1)
     save t, w, r, a; picture t;
     t = "Running TeX from within MetaPost" infont "tenrm";
@@ -147,7 +243,7 @@ endfig;⟧
 \vskip-2\parskip plus 2\parskip
 \quitvmode\hfil
 \startelement alt {The text ‘Running TeX from within MetaPost’ set along a half-circle.} {Figure}%
-\startsinglecontentitem\directmetapost{%
+\startsinglecontentitem\directmetapost [jobname='tex-in-mp'] {%
 beginfig(1)
     save t, w, r, a; picture t;
     t = "Running TeX from within MetaPost" infont "tenrm";
@@ -179,35 +275,7 @@ Be aware that the contours returned by these operators may be disjoint:
 a letter ⟦o⟧, for example, will consists of two. This means you cannot recreate 
 the characters by just filling each contour: this would turn the ⟦o⟧ into 
 a filled-in circle. Instead, you must use ⟦multifill⟧ on the entire output of 
-⟦glyph of⟧ or ⟦contours of⟧ (see the next section).
-
-
-\section Partial paths and the even-odd rule %1
-
-You can fill or draw two or more disjoint paths in one go by using ⟦*nofill⟧ as 
-drawing operator for all paths but the last. This may make it easier to cut 
-something out of a shape, since you do not have to worry about stitching the 
-paths together.
-
-While metapost fills paths according to the winding number, the pdf format also 
-supports filling according to the even-odd rule. This has been made possible 
-with the ⟦*eofill⟧ and ⟦*eofilldraw⟧ drawing statements, which can of course 
-also be used as the final statement after a series of nofills.
-
-The macros ⟦*multi(draw|fill|filldraw|eofill|eofilldraw)⟧ take a list of paths 
-between parentheses and can be followed by the usual drawing options.
-For example,
-⟦multidraw (contours "example" of "tenbf") withpen currentpen scaled 1/10;⟧
-will give the word%
-\markelement{Span}{\setactualtext{example }\startsinglecontentitem\space
-\directmetapost{beginfig(1) multidraw (contours "example" of "tenbf")
-withpen currentpen scaled 1/10; baseline 0; endfig;}\stopsinglecontentitem}
-in a thin outline.
-
-Finally, two handy clipping macros have been added:
-⟦*clipout⟧ and ⟦*clipto⟧, which both receive a list of paths as a ‘text’ 
-parameter and either clip their ensemble out of the picture, or the picture to 
-the ensemble.
+⟦glyph of⟧ or ⟦contours of⟧ (see below under ‘partial paths’).
 
 
 \section Running lua from within metapost %1
@@ -218,10 +286,10 @@ you make are local to the instance. (You can of course order the global
 environment to be used by giving ⟦env = _G⟧ as option to 
 ⟦\newmetapostinstance⟧.)
 Any environment you specify will be supplemented with the contents of the 
-⟦*M.mp_functions⟧ table. It currently contains two functions: ⟦quote(s)⟧, which 
-escapes all double quotes in the string ⟦s⟧ before surrounding it with the same 
-(so that it may be read as a metapost string literal); and ⟦sp_to_pt(nr)⟧, 
-which prints dimensions in points (preventing overflows).
+⟦*M.mp_functions⟧ table. Two useful functions pre-supplied are ⟦quote(s)⟧, 
+which escapes all double quotes in the string ⟦s⟧ before surrounding it with 
+the same (so that it may be read as a metapost string literal); and 
+⟦sp_to_pt(nr)⟧, which prints dimensions in points (preventing overflows).
 
 When using ⟦runscript⟧ in this way, you must ensure its argument is a correct 
 lua program. As an escape hatch, raw strings can be passed to lua with
@@ -279,11 +347,40 @@ For accessing count, dimen, attribute or toks registers, the macros are
 setting values.
 
 
+\section Partial paths and the even-odd rule %1
+
+You can fill or draw two or more disjoint paths in one go by using ⟦*nofill⟧ as 
+drawing operator for all paths but the last. This may make it easier to cut 
+something out of a shape, since you do not have to worry about stitching the 
+paths together.
+
+While metapost fills paths according to the winding number, the pdf format also 
+supports filling according to the even-odd rule. You can use that method 
+with the ⟦*eofill⟧ and ⟦*eofilldraw⟧ drawing statements, which can of course 
+also be used as the final statement after a series of nofills.
+
+The macros ⟦*multi(draw|fill|filldraw|eofill|eofilldraw)⟧ take a list of paths 
+between parentheses and can be followed by the usual drawing options.
+For example,
+⟦multidraw (contours "example" of "tenbf") withpen currentpen scaled 1/10;⟧
+will give the word%
+\markelement{Span}{\setactualtext{example }\startsinglecontentitem\space
+\directmetapost [jobname='outline']
+{beginfig(1) multidraw (contours "example" of "tenbf")
+withpen currentpen scaled 1/10; baseline 0; endfig;}\stopsinglecontentitem}
+in a thin outline.
+
+Finally, two handy clipping macros have been added:
+⟦*clipout⟧ and ⟦*clipto⟧, which both receive a list of paths as a ‘text’ 
+parameter and either clip their ensemble out of the picture, or the picture to 
+the ensemble.
+
+
 \section Tiling patterns %1
 
-The condition ⟦*withpattern(<name>)⟧ added to a ⟦fill⟧ statement will fill the path with 
-a pattern instead of a solid colour. If the patterns contains no colour 
-information of itself, it will have the colour given by ⟦withcolor⟧.
+The specification ⟦*withpattern(<name>)⟧ added to a ⟦fill⟧ statement will fill 
+the path with a pattern instead of a solid colour. If the pattern itself does 
+not contain any colour statements, it will have the colour given by ⟦withcolor⟧.
 Stroking operations (the ⟦draw⟧ part) will not be affected.
 Patterns will always look the same, irrespective of any transformations you 
 apply to the picture.
@@ -305,8 +402,8 @@ information on these parameters.
 You can use text inside patterns, as in this example:
 \hfill \vbox to 0pt{
 \startelement alt{A circle filled with red As in a rectangular pattern.}{Figure}
-\startsinglecontentitem \directmetapost{
-% define the pattern
+\startsinglecontentitem \directmetapost [jobname='pattern']
+{% define the pattern
 picture letter; letter = maketext("a");
 beginpattern(a)
     draw letter rotated 45;
@@ -355,19 +452,19 @@ For applying transparency, ⟦*setalpha(a)⟧ updates the ⟦CA⟧ and ⟦ca⟧ 
 as a stand-alone command and ⟦*withalpha(a)⟧ can be used in a drawing statement 
 where it will save/restore the graphical state around it. For applying 
 transparency to an ensemble of drawing statements, ⟦*transparent (a) <picture>⟧ 
-will create and insert the proper transparency group. The transparency group 
-attributes can be set with the string internal ⟦transparency_group_attrs⟧, 
-while for all three macros the blend mode can be set with the string internal 
-⟦blend_mode⟧ (it will be added whenever set).
+instead of ⟦draw <picture>⟧ will create and insert the proper transparency group.
+The transparency group attributes can be set with the string internal 
+⟦*transparency_group_attrs⟧, while for all three macros the blend mode can be 
+set with the string internal ⟦*blend_mode⟧ (it will be added whenever set).
 
 A transparency group is a special kind of XForm, and these can be created from 
-withing metapost: ⟦<id> =⟧ ⟦*saveboxresource (<attributes>) <picture>⟧ returns 
-a number identifying the resource and can be fed attributes in the same way as 
-⟦setgstate⟧. XForms defined through metapost are available to other metapost 
-instances, but not to tex, though the macro painting them, ⟦*boxresource <id>⟧, 
-also accepts identifiers of tex-defined box resources. There remains a subtle 
-difference, however: metapost-defined box resources are placed at their 
-original origin.
+within metapost: ⟦<id> =⟧ ⟦*saveboxresource (<attributes>) <picture>⟧ returns 
+a number identifying the resource; the ⟦<attributes>⟧ can be given in the same 
+way as the arguments to ⟦setgstate⟧. XForms defined through metapost are 
+available to other metapost instances but not to tex, though the macro painting 
+them, ⟦*boxresource <id>⟧, also accepts identifiers of tex-defined box 
+resources. There remains a subtle difference, however: metapost-defined box 
+resources are placed at their original origin.
 
 
 \section Other metapost extensions %1
@@ -390,8 +487,16 @@ In that case, they will be added before or after the object they are attached to
 Do note that all ⟦special⟧ statements will appear at the beginning of the 
 image; use pre- and postscripts to drawing statements if the order matters.
 
-Minim-mp also provides a few elementary macros and constants that are 
-conspicuously absent from plain.mp; I hope their addition is uncontroversial.
+
+\section Additions to plain.mp %1
+
+Minim-mp provides a few elementary macros and constants that are 
+conspicuously absent from plain.mp; I hope their addition is uncontroversial. 
+All are provided in the file minim.mp; the contents of this file do not depend 
+on functions specific to minim-mp and thus it can safely be used with other 
+metapost processors. It is included automatically right after the format file 
+(i.e. plain.mp).
+
 The constants are ⟦*pi⟧ (355/113), ⟦*fullsquare⟧, ⟦*unitcircle⟧ and the 
 cmyk-colours ⟦*cyan⟧, ⟦*magenta⟧, ⟦*yellow⟧ and ⟦*key⟧. The macros are 
 ⟦*clockwise⟧, ⟦*xshifted⟧, ⟦*yshifted⟧, ⟦*hflip⟧ and ⟦*vflip⟧, where the flips 
@@ -403,44 +508,12 @@ etc. that save and declare in one go; the missing trigonometric functions
 drawing function ⟦*arc(⟧$θ_0$⟦*,⟧$θ_ℓ$⟦*)⟧ (taking a starting angle and arc 
 length, both in degrees).
 
-\section Lua interface %1
+Version 1.6 brought ⟦*empty⟧ for testing empty suffixes, ⟦*typeof(v)⟧ 
+expanding to the type (⟦numeric⟧, ⟦pair⟧ etc.) of variable ⟦v⟧,
+⟦*getbounds⟧ as complement to ⟦setbounds⟧, the (twodimensional) exterior product 
+⟦*p extprod q⟧ and the test ⟦*collinear(p,q,r)⟧.
 
-In what follows, you should assume ⟦M⟧ to be the result of
-\stopformulatagging$$\hbox{⟦M = require('minim-mp')⟧}$$\startformulatagging
-as this package does not claim a table in the global environment for itself.
-
-You can open a new instance with ⟦*nr = M.open {options}⟧.
-This returns an index in the ⟦*M.instances⟧ table.
-Run code with ⟦*M.run (nr, code)⟧ and close the instance with ⟦*M.close (nr)⟧.
-Images can be retrieved only with ⟦*box_node = M.get_image(nr, [name])⟧; omit 
-the ⟦name⟧ to select the first image.
-Say ⟦*nr_remaining = M.left(nr)⟧ for the number of remaining images.
-
-Each metapost instance is a table containing the following entries:
-
-\smallskip\smallskip
-\marktableaslist
-\tagattribute List ListNumbering /Description
-\halign{\qquad#\quad\hfil&#\hfil\cr
-⟦jobname⟧&The jobname.\cr
-⟦instance⟧&The primitive metapost instance.\cr
-⟦results⟧&A linked list of unretrieved images.\cr
-⟦status⟧&The last exit status (will never decrease).\cr
-⟦catcodes⟧&Number of the catcode table used with ⟦btex ... etex⟧.\cr
-⟦env⟧&The lua environment for ⟦runscript⟧.\cr}
-
-
-\section Debugging %1
-
-You can enable (global) debugging by saying ⟦*debug_pdf⟧ to metapost or 
-⟦*M.enable_debugging()⟧ to lua. This will write out a summary of metapost 
-object information to the pdf file, just above the pdf instructions that object 
-was translated into. For this purpose, the pdf will be generated uncompressed. 
-Additionally, a small summary of every generated image will be written to log 
-and terminal.
-
-
-\section Extending metapost %1
+\section Metapost specials %1
 
 You can extend this package by adding new metapost specials. Specials should 
 have the form ⟦"identifier: instructions"⟧ and can be added as pre- or 
@@ -467,10 +540,6 @@ callback that is executed just before the processed image is surrounded by
 properly-dimensioned boxes. If a ⟦user.save_fn⟧ function is defined, it will 
 replace the normal saving of the image to the image list and the image node 
 list will be flushed.
-
-The ⟦*M.init_code⟧ table contains the code used for initialing new instances. 
-In it, the string ⟦INIT⟧ will be replaced with the value of the ⟦format⟧ option 
-(normally ⟦plain.mp⟧).
 
 \endmanual %
 

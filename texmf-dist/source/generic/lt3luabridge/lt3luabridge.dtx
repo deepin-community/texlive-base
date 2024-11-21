@@ -39,7 +39,7 @@
 % }
 %
 % \author{^^A
-%  Vít Novotný\thanks
+%  Vít Starý Novotný\thanks
 %    {^^A
 %      E-mail:
 %        \href{mailto:witiko@mail.muni.cz}
@@ -47,7 +47,7 @@
 %    }^^A
 % }
 %
-% \date{Released 2022-10-24}
+% \date{Released 2024-07-03}
 %
 % \maketitle
 %
@@ -108,6 +108,14 @@
 %   the \cs{luabridge_now:e} function.
 % \end{function}
 %
+% \begin{function}[added = 2024-02-14]{\luabridge_tl_set:Nn}
+%   \begin{syntax}
+%     \cs{luabridge_tl_set:Nn} \meta{tl var} \Arg{token list}
+%   \end{syntax}
+%   Like \cs{lua_now:n} but the result of executing the Lua code is stored in
+%   \meta{tl var} instead of being inserted into \TeX's input stream.
+% \end{function}
+%
 % \section{Setting and getting the method to execute \Lua{} code}
 %
 % There are several methods that can be used to execute \Lua{} code. This
@@ -143,7 +151,7 @@
 %   \texttt{-output-directory} parameter of the \TeX{} engine.
 % \end{variable}
 %
-% \begin{variable}[added = 2022-06-26]{\c_luabridge_default_output_dirname_str}
+% \begin{variable}[added = 2022-06-26, updated = 2024-07-03]{\c_luabridge_default_output_dirname_str}
 %   This constant is the default value of \cs{g_luabridge_output_dirname_str}.
 % \end{variable}
 %
@@ -253,9 +261,42 @@
   =
   { \c_luabridge_method_shell_int }
   {
-    \str_const:Nn
-      \c_luabridge_default_output_dirname_str
-      { . }
+%    \end{macrocode}
+%
+% Instead of assuming the current working directory as the output directory,
+% try to determine the output directory from the environmental variable
+% \texttt{TEXMF_OUTPUT_DIRECTORY}, which is automatically defined by \TeX{}
+% engines and accessible from child processes.
+%
+%    \begin{macrocode}
+    \sys_if_platform_unix:TF
+      {
+        \str_const:Nn
+          \c_luabridge_default_output_dirname_str
+          { $TEXMF_OUTPUT_DIRECTORY }
+      }
+      {
+        \sys_if_platform_windows:TF
+          {
+            \str_set:Nn
+              \l_tmpa_str
+              { TEXMF_OUTPUT_DIRECTORY }
+            \str_put_left:NV
+              \l_tmpa_str
+              \c_percent_str
+            \str_put_right:NV
+              \l_tmpa_str
+              \c_percent_str
+            \str_const:NV
+              \c_luabridge_default_output_dirname_str
+              \l_tmpa_str
+          }
+          {
+            \str_const:Nn
+              \c_luabridge_default_output_dirname_str
+              { . }
+          }
+      }
     \str_const:Nx
       \c_luabridge_default_helper_script_filename_str
       { \jobname.luabridge.lua }
@@ -286,7 +327,7 @@
           \c_luabridge_default_error_output_filename_str
       }
     \cs_new:Nn
-      \luabridge_now:n
+      \luabridge_tl_set:Nn
       {
         \iow_open:NV
           \g_tmpa_iow
@@ -304,7 +345,7 @@
 %    \begin{macrocode}
         \tl_set:Nx
           \l_tmpa_tl
-          { \tl_to_str:n { #1 } }
+          { \tl_to_str:n { #2 } }
         \regex_replace_all:nnN
           { [\\"] }
           { \\\0 }
@@ -350,14 +391,47 @@
           \g_luabridge_helper_script_filename_str
         \sys_get_shell:xnNTF
           {
-            texlua~
-              \g_luabridge_output_dirname_str /
-              \g_luabridge_helper_script_filename_str
+%    \end{macrocode}
+%
+% If the environmental variable \texttt{TEXMF_OUTPUT_DIRECTORY} is undefined,
+% use the current working directory (\texttt{.}) instead.
+%
+%    \begin{macrocode}
+            \str_if_eq:NNTF
+              \g_luabridge_output_dirname_str
+              \c_luabridge_default_output_dirname_str
+              {
+                \sys_if_platform_windows:TF
+                  {
+                    if~not~defined~TEXMF_OUTPUT_DIRECTORY~(
+                      texlua~
+                        \g_luabridge_helper_script_filename_str
+                    )~else~(
+                      texlua~
+                        \g_luabridge_output_dirname_str /
+                        \g_luabridge_helper_script_filename_str
+                    )
+                  }
+                  {
+                    \sys_if_platform_unix:T
+                      {
+                        TEXMF_OUTPUT_DIRECTORY =
+                          ${TEXMF_OUTPUT_DIRECTORY:-.} \iow_newline:
+                      }
+                    texlua~
+                      \g_luabridge_output_dirname_str /
+                      \g_luabridge_helper_script_filename_str
+                  }
+              }
+              {
+                texlua~
+                  \g_luabridge_output_dirname_str /
+                  \g_luabridge_helper_script_filename_str
+              }
           }
           { }
-          \l_tmpa_tl
+          #1
           {
-            \l_tmpa_tl
           }
           {
             \msg_error:nn
@@ -420,11 +494,11 @@
   { \c_luabridge_method_directlua_int }
   {
     \cs_new:Nn
-      \luabridge_now:n
+      \luabridge_tl_set:Nn
       {
         \tl_set:Nn
           \l_tmpa_tl
-          { #1 }
+          { #2 }
         \tl_set:Nx
           \l_tmpa_tl
           {
@@ -442,12 +516,25 @@
             end~
             \exp_not:V \l_tmpa_tl
           }
-        \lua_now:V
-          \l_tmpa_tl
+        \tl_set:Nf
+          #1
+          {
+            \lua_now:V
+              \l_tmpa_tl
+          }
       }
     \cs_generate_variant:Nn
       \lua_now:n
       { V }
+  }
+\cs_new:Nn
+  \luabridge_now:n
+  {
+    \luabridge_tl_set:Nn
+      \l_tmpb_tl
+      { #1 }
+    \tl_use:N
+      \l_tmpb_tl
   }
 \cs_new_protected:Npn
   \luabridgeExecute
@@ -472,8 +559,8 @@
 \RequirePackage{expl3}
 \ProvidesExplPackage
   {lt3luabridge}%
-  {2022-10-24}%
-  {2.0.2}%
+  {2024-07-03}%
+  {2.2.0}%
   {An expl3 package that allows you to execute Lua code in LuaTeX or any other
    TeX engine that exposes the shell}
 \input lt3luabridge\relax

@@ -38,30 +38,32 @@
 %% find a complete unmodified copy of LaTeX2e at
 %% <http://mirror.ctan.org/tex-archive/macros/latex/base/>.
 %% 
-%%% From File: $Id: scrkernel-version.dtx 4070 2023-07-07 07:08:40Z kohm $
-\begingroup
-  \catcode`\@11\relax
-  \ifx\KOMAScriptVersion\undefined
-    \newcommand*{\@CheckKOMAScriptVersion}[1]{%
+%%% From File: $Id: scrkernel-version.dtx 4133 2024-10-24 09:54:28Z kohm $
+\providecommand*{\@CheckKOMAScriptVersion}{%
+  \begingroup
+    \ExplSyntaxOff
+    \@@CheckKOMAScriptVersion
+}
+\providecommand*{\@@CheckKOMAScriptVersion}[1]{%
+    \@ifundefined{KOMAScriptVersion}{%
       \gdef\KOMAScriptVersion{#1}%
-    }%
-  \else
-    \newcommand*{\@CheckKOMAScriptVersion}[1]{%
+    }{%
       \def\@tempa{#1}%
       \ifx\KOMAScriptVersion\@tempa\else
-        \@latex@warning@no@line{%
-          \noexpand\KOMAScriptVersion\space is
-          `\KOMAScriptVersion',\MessageBreak
+        \GenericWarning{\space\@spaces\@spaces\@spaces\@spaces}{%
+          Version warning:
+          \noexpand\KOMAScriptVersion is
+          `\csname KOMAScriptVersion\endcsname',\MessageBreak
           but `#1' was expected!\MessageBreak
           You should not use classes, packages or files
           from\MessageBreak
-          different KOMA-Script versions%
+          different KOMA-Script versions\@gobble
         }%
       \fi
-    }
-  \fi
-  \@CheckKOMAScriptVersion{2023/07/07 v3.41 KOMA-Script}%
-\endgroup
+    }%
+  \endgroup
+}
+\@CheckKOMAScriptVersion{2024/10/24 v3.43 KOMA-Script}%
 \providecommand*{\scr@clsextension}{\@clsextension}
 \AtBeginDocument{%
   \let\scr@clsextension\@clsextension
@@ -75,7 +77,7 @@
 \newcommand*{\KOMALongClassFileName}{\KOMALongClassName.\@clsextension}
 \edef\KOMALongClassFileName{\KOMALongClassFileName}
 \ProvidesClass{\KOMALongClassName}[%
-  2023/07/07 v3.41 KOMA-Script
+  2024/10/24 v3.43 KOMA-Script
   document class (\ClassName)%
 ]
 \let\ClassName\relax

@@ -19,14 +19,14 @@ A: Autologix(
 #                             Draw a tree of gates only.  The ~ has been
 #                             replaced by NOT gates.
 definergbcolor(lightblue,0.72,0.72,0.9)
-B: Autologix(Or(And(B,Not(C)),And(Not(A),B,C)),N,shaded "lightblue") \
+G: Autologix(Or(And(B,Not(C)),And(Not(A),B,C)),N,shaded "lightblue") \
   with .sw at A.e+(1.3,-0.5)
-  "{\sl Out}" at B.Out above ljust
-  `"\shortstack[l]{\tt B: Autologix( \\ \tt \
+  "{\sl G.Out}" at G.Out above ljust
+  `"\shortstack[l]{\tt G: Autologix( \\ \tt \
      Or(And(B,Not(C)),And(Not(A),B,C)),N,\\ \tt \
-     shaded \"lightblue\")}"' wid 242pt__ ht 20pt__ at B.s+(0,-0.3)
-  for_(1,4,1,`"{\sf\small\sl B.In`'m4x}" at B.In`'m4x rjust')
-  "{\sf\small\sl B.In5}" at B.In5+(0,-1.5bp__) rjust
+     shaded \"lightblue\")}"' wid 242pt__ ht 20pt__ at G.s+(0,-0.3)
+  for_(1,4,1,`"{\sf\small\sl G.In`'m4x}" at G.In`'m4x rjust')
+  "{\sf\small\sl G.In5}" at G.In5+(0,-1.5bp__) rjust
 
 #                             Here is how to include an arbitrary circuit
 #                             (an SR-flipflop, for example)

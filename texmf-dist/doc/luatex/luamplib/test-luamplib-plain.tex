@@ -1,6 +1,7 @@
+%\input luaotfload.sty
 \input miniltx
 \input color
-\definecolor{orange}{rgb}{1,0.5,0}
+\definecolor{orange}{cmyk}{0,.5,1,0}
 \input luamplib.sty
 \mpliblegacybehavior{true}%
 \everymplib{ beginfig(0); }\everyendmplib{ endfig; }
@@ -79,6 +80,7 @@ B\par\mplibforcehmode
 \mplibglobaltextext{disable}\par
 \mplibsetformat{metafun}%
 \mplibcode
+message "Hello World!";
 verbatimtex \moveright 0.4\hsize etex
 beginfig(0);
 path p; p:= fullcircle scaled 2cm yshifted .5cm;
@@ -162,4 +164,216 @@ diameter:\Dia bp.%
     rotatedlabel.top(textext("Rotated!"), origin, 45);
   endfig;
 \endmplibcode
+\par
+\mplibcode
+beginfig(1) % in dvi mode, not work for type1 font
+draw mplibgraphictext "\bf Funny$\sqrt{2}$"
+  fakebold 2 % fontspec option
+  drawcolor blue fillcolor .5[red,white]
+  scaled 3 rotated 30 ;
+picture p;
+p:=mplibgraphictext "\it xyz"
+  fillcolor .7white;
+draw p scaled 3 shifted (40,0);
+endfig;
+\endmplibcode
+\par
+\mplibsetformat{metafun}%
+\mplibcode
+beginfig(1)
+fill unitsquare xyscaled (\mpdim\hsize, 1cm)
+    withshademethod "linear"
+    withshadevector (0,1)
+    withshadestep (
+       withshadefraction .5
+       withshadecolors (red,blue)
+    )
+    withshadestep (
+       withshadefraction 1
+       withshadecolors (blue,green)
+    )
+    ;
+endfig;
+\endmplibcode
+\leavevmode
+\mpfig
+picture Q, u, e;
+Q := mplibglyph "Q" of "texgyrepagella-bolditalic.otf" scaled .1;
+u := mplibglyph "u" of "texgyrepagella-bolditalic.otf" scaled .1 shifted lrcorner Q;
+e := mplibglyph "e" of "texgyrepagella-bolditalic.otf" scaled .1 shifted lrcorner u;
+i:=0;
+totallen := length Q + length u + length e;
+for pic=Q, u, e:
+  for item within pic:
+    i:=i+1;
+    fill pathpart item
+    if i < totallen: withpostscript "collect"; fi
+  endfor
+endfor
+  withshademethod "linear"
+  withshadedirection (0.5,2.5)
+  withshadecolors (.7red,.7yellow)
+  ;
+\endmpfig
+\everymplib[@mpfig]{ drawoptions(withcolor mplibrgbtexcolor"orange"); }%
+\mpfig* input boxes \endmpfig
+\mpfig circleit.a(btex\tracingcommands0 Box 1 etex); drawboxed(a); \endmpfig
+\def\mpfiginstancename{mympfig}%
+\mpfig
+draw mpliboutlinetext.b ("$\overbrace{x+\cdots+x}^k$")
+    (withcolor .6[red,white])
+    (withpen pencircle scaled .2 withcolor red)
+    scaled 3 ;
+\endmpfig
+\par
+\mpfig
+  draw mpliboutlinetext.r
+    ("Question")
+    ( withpen pencircle scaled .3 )
+    (
+      withshademethod "linear"
+      withshadedirection (2.5, 0.5)
+      withshadecolors(red, blue)
+    )
+    scaled 4;
+\endmpfig
+\par\leavevmode
+\mppattern{mypatt}
+  \mpfig
+    picture q;
+    q := btex Q etex;
+    fill bbox q withcolor .8[red,white];
+    draw q withcolor .8red;
+  \endmpfig
+\endmppattern
+\mpfig
+  fill fullcircle scaled 100 withpostscript "collect";
+  draw unitsquare shifted - center unitsquare scaled 45
+    withpattern "mypatt"
+    withpostscript "evenodd"
+    ;
+\endmpfig
+\mppattern{pattuncolored}
+  [
+    colored = false,
+    matrix = "slanted .3 rotated 30",
+  ]
+  \fiverm\TeX
+\endmppattern
+\mpfig
+  picture tex;
+  tex = mpliboutlinetext.p ("\bf \TeX");
+  draw image(
+  for i=1 upto mpliboutlinenum:
+    j:=0;
+    for item within mpliboutlinepic[i]:
+      j:=j+1;
+      draw pathpart item scaled 10
+      if j < length mpliboutlinepic[i]:
+          withpostscript "collect"
+      else:
+          withpattern "pattuncolored"
+          withpen pencircle scaled 1/2
+          withcolor (i/4)[red,blue]
+      fi;
+    endfor
+  endfor
+  )
+  withfademethod "linear"
+  ;
+\endmpfig
+\par\leavevmode
+\mpfig
+fill fullcircle scaled 125 withcolor 2/3[blue,white];
+fill fullcircle scaled 80  withcolor 2/3[red,white];
+draw image(
+  draw (left--right) rotated 45 scaled 50
+    withpen pencircle scaled 20
+    ;
+  draw (left--right) rotated -45 scaled 50
+    withpen pencircle scaled 20
+    ;
+  )
+  asgroup ""
+  withgroupname "testTRgroup"
+  withprescript "tr_transparency=.3"
+  ;
+\endmpfig
+\mpfig
+fill fullcircle scaled 125 withcolor 2/3[red,white];
+fill fullcircle scaled 80  withcolor 2/3[blue,white];
+usemplibgroup "testTRgroup"
+  withfademethod "circular"
+  withfaderadius (0,60)
+  ;
+\endmpfig
+\mplibgroup{mytex}[matrix="rotated 15"] \TeX \endmplibgroup
+\hbox to0pt{\hss\vrule width.5pt height5pt depth5pt\hss}%
+\hbox to0pt{\hss\vrule width10pt height.25pt depth.25pt\hss}%
+\usemplibgroup{mytex}%
+\mpfig usemplibgroup "mytex"; draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig
+\par
+\mpfig
+  picture test; test = mplibgraphictext "\bf MPLIB"
+  fakebold 1 fillcolor .7[white,blue] drawcolor .7blue scaled 7;
+  draw test withpattern "pattuncolored" ;
+\endmpfig
+\tracingcommands0
+
+\vskip 2\baselineskip
+\mplibcodeinherit{disable}
+\everymplib[instanceOne]{beginfig(1);}
+\everyendmplib[instanceOne]{endfig;}
+
+\mplibcode[instanceOne]
+  picture TeX;
+  TeX := btex \TeX etex;
+a := 1cm;
+draw fullcircle scaled a;
+draw btex a circle with $d=a$ etex shifted (a,0);
+draw TeX;
+\endmplibcode
+Current instance name is: \currentmpinstancename \vskip 2\baselineskip
+
+\mplibcode[instanceTwo]
+beginfig(1);
+if not known a:
+  draw btex code is not inherited from an instance with a different name etex;
+else:
+  errmessage("Variable was inherited from a different instance");
+fi;
+endfig;
+\endmplibcode
+Current instance name is: \currentmpinstancename \vskip 2\baselineskip
+
+\mplibcode
+beginfig(1);
+if not known a:
+  draw btex code is not inherited if instance name is not listed etex;
+else:
+  errmessage("Variable was inherited from a different instance");
+fi;
+a := 1cm;
+endfig;
+\endmplibcode
+Current instance name is: \currentmpinstancename (should be empty) \vskip 2\baselineskip
+
+\mplibcode
+beginfig(1);
+if not known a:
+  draw btex code is not inherited if mplibcodeinherit is disabled and instance name is not explicitly set etex;
+else:
+  errmessage("Variable was inherited when code inheritance is turned off and instance name is not set");
+fi;
+endfig;
+\endmplibcode
+Current instance name is: \currentmpinstancename (should be empty) \vskip 2\baselineskip
+
+\mplibcode[instanceOne]
+draw unitsquare scaled a;
+draw btex a square with side $=a$, inherited from the same instance etex shifted (3/2a, 1/2a);
+  draw TeX;
+\endmplibcode
+Current instance name is: \currentmpinstancename \vskip 2\baselineskip
+
 \bye

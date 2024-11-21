@@ -17,10 +17,11 @@
 %% version 2005/12/01 or later.
 \NeedsTeXFormat{LaTeX2e}[1999/12/01]
 \ProvidesPackage{lwarp}
-    [2024/02/05 v0.915  Allows LaTeX to directly produce HTML5 output.]
+    [2024/02/22 v0.916  Allows LaTeX to directly produce HTML5 output.]
 
 
 
+%%
 
 
 
@@ -1680,9 +1681,18 @@
     {}% no brace
 \IfValueTF{#1}%
 {% options given
+    \edef\LWR@packageoptions{#1}%
     \IfValueTF{#3}% version given?
-        {\LWR@origRequirePackage[#1]{\LWR@parsedrequirepackagenames}[#3]}%
-        {\LWR@origRequirePackage[#1]{\LWR@parsedrequirepackagenames}}%
+        {%
+            \expandafter\LWR@origRequirePackage%
+                \expandafter[\LWR@packageoptions]%
+                {\LWR@parsedrequirepackagenames}[#3]%
+        }%
+        {%
+            \expandafter\LWR@origRequirePackage%
+                \expandafter[\LWR@packageoptions]%
+                {\LWR@parsedrequirepackagenames}%
+        }%
 }%
 {% no options given
     \IfValueTF{#3}% version given?
@@ -4885,7 +4895,7 @@ MathJax = {
 
 -- Copyright 2016-2024 Brian Dunn
 
-printversion = "v0.915"
+printversion = "v0.916"
 requiredconfversion = "2" -- also at *lwarpmk.conf
 
 function printhelp ()
@@ -7440,11 +7450,15 @@ end -- not --version
 \newbool{LWR@MathJax@silentquotes}
 \boolfalse{LWR@MathJax@silentquotes}
 
+\expandafter\def\expandafter\LWR@eolspace\expandafter{\detokenize{\
+}}% there is a trailing space in the previous line
+
 \catcode`\&=12
 \newcommand*{\LWR@HTMLsanitize@tmpb}{%
     \ifbool{LWR@HTMLsanitize@tmpb@enable}%
     {%
-        \LWR@replacestrings{&}{&amp;}% must be first because & is used for lt, gt, etc.
+        \expandafter\LWR@replacestrings\expandafter{\LWR@eolspace}{\ }%
+        \LWR@replacestrings{&}{&amp;}% Must be before the following:
         \LWR@replacestrings{<}{&lt;}%
         \LWR@replacestrings{>}{&gt;}%
         \LWR@replacestrings{'}{&apos;}%
@@ -7722,23 +7736,31 @@ end -- not --version
     \ifcsundef{LWR@filename\LWR@hashedname}{%
         \csdef{LWR@filename\LWR@hashedname}{}%
     }{%
-        \PackageError{lwarp}%
-            {%
-                The section name:\MessageBreak
-                ``#1'',\MessageBreak
-                at the line number listed below,\MessageBreak
-                generates the filename\MessageBreak
-                ``\LWR@thisfilename'',\MessageBreak
-                which appears to be a duplicate.  There is a\MessageBreak
-                previous section with an identical or similar name.\MessageBreak
-                While generating file names, Lwarp sanitizes math,\MessageBreak
-                most symbols, and a few common short words,\MessageBreak
-                and this may cause a conflict.\MessageBreak
-                Enter 'H' for possible solutions%
-            }%
-            {%
-                \LWR@avoiddupfilenames%
-            }%
+        \ifcsempty{LWR@filename\LWR@hashedname}%
+        {% first instance
+            \PackageWarning{lwarp}
+                {%
+                    The section name:\MessageBreak
+                    ``#1'',\MessageBreak
+                    at the line number listed below,\MessageBreak
+                    generates the filename\MessageBreak
+                    ``\LWR@thisfilename'',\MessageBreak
+                    which appears to be a duplicate.  There is a\MessageBreak
+                    previous section with an identical or similar name.\MessageBreak
+                    A unique file number has been appended to the file name\MessageBreak
+                    of this and any further similar files.\MessageBreak
+                    This number may change as sections are added/removed,\MessageBreak
+                    and obsolete HTML files may result.\MessageBreak
+                    To remove these files, use lwarpmk cleanall.\MessageBreak
+                    (While generating file names, Lwarp sanitizes math,\MessageBreak
+                    most symbols, and a few common short words,\MessageBreak
+                    and this may cause a conflict.)\MessageBreak
+                    \LWR@avoiddupfilenames%
+                }%
+            \csdef{LWR@filename\LWR@hashedname}{1}%
+        }% first instance
+        {}% repeated instances
+        \edef\LWR@thisfilename{\LWR@thisfilename-\arabic{LWR@htmlseqfilenumber}}%
     }%
 }%
 {\renewcommand*{\LWR@thisfilename}{\arabic{LWR@htmlfilenumber}}}
@@ -11797,7 +11819,6 @@ end -- not --version
     \LWR@htmlelementclass{nav}{sidetoc}
 
     \setcounter{tocdepth}{\value{SideTOCDepth}}
-
     \begin{BlockClass}{sidetoctitle}
     \ifcsvoid{thetitle}{}{\InlineClass{sidetocthetitle}{\thetitle}\par}
     \sidetocname

@@ -1,4 +1,4 @@
-% Language definition file (part of polyglossia v1.66 -- 2023/12/11)
+% Language definition file (part of polyglossia v2.3 -- 2024/09/23)
 %
 \ProvidesFile{gloss-hungarian.ldf}[polyglossia: module for Hungarian]
 
@@ -25,53 +25,61 @@
 \newif\if@hungarian@swapcaptions
 \newif\if@hungarian@swapheadings
 \newif\if@hungarian@swapheaders
-\define@choicekey*+{hungarian}{swapstrings}[\xpg@val\xpg@nr]{all,captions,headings,headers,hheaders,none}[all]{%
-   \ifcase\xpg@nr\relax
-      % all:
-      \@hungarian@swapcaptionstrue%
-      \@hungarian@swapheadingstrue%
-      \@hungarian@swapheaderstrue%
-   \or
-      % captions:
-      \@hungarian@swapcaptionstrue%
-      \@hungarian@swapheadingsfalse%
-      \@hungarian@swapheadersfalse%
-   \or
-      % headings:
-      \@hungarian@swapcaptionsfalse%
-      \@hungarian@swapheadingstrue%
-      \@hungarian@swapheadersfalse%
-   \or
-      % headers:
-      \@hungarian@swapcaptionsfalse%
-      \@hungarian@swapheadingsfalse%
-      \@hungarian@swapheaderstrue%
-   \or
-      % hheaders:
-      \@hungarian@swapcaptionsfalse%
-      \@hungarian@swapheadingstrue%
-      \@hungarian@swapheaderstrue%
-   \or
-      % none:
-      \@hungarian@swapcaptionsfalse%
-      \@hungarian@swapheadingsfalse%
-      \@hungarian@swapheadersfalse%
-   \fi
-   \xpg@info{Option: Hungarian, swapstrings=\xpg@val}%
-}{\xpg@warning{Unknown Hungarian swapstrings value `#1'}}
 
-% Force punctuation: 1) after section type counters; 2) after @chapapp in the running head
-\define@boolkey{hungarian}[hungarian@]{forceheadingpunctuation}[true]{}
+\DeclareKeys[polyglossia/gloss/hungarian]
+  {
+    forceheadingpunctuation.if = hungarian@forceheadingpunctuation,
+    forceheadingpunctuation.default:n = true,
+    swapstrings.choice:,
+    swapstrings / all.code =
+      {%
+        \@hungarian@swapcaptionstrue
+        \@hungarian@swapheadingstrue
+        \@hungarian@swapheaderstrue
+      },
+    swapstrings / captions.code =
+      {%
+        \@hungarian@swapcaptionstrue
+        \@hungarian@swapheadingsfalse
+        \@hungarian@swapheadersfalse
+      },
+    swapstrings / headings.code = 
+      {%
+        \@hungarian@swapcaptionsfalse
+        \@hungarian@swapheadingstrue
+        \@hungarian@swapheadersfalse
+      },
+    swapstrings / headers.code =
+      {%
+        \@hungarian@swapcaptionsfalse
+        \@hungarian@swapheadingsfalse
+        \@hungarian@swapheaderstrue
+      },
+    swapstrings / hheaders.code =
+      {%
+        \@hungarian@swapcaptionsfalse
+        \@hungarian@swapheadingstrue
+        \@hungarian@swapheaderstrue
+      },
+    swapstrings / none.code = 
+      {%
+        \@hungarian@swapcaptionsfalse
+        \@hungarian@swapheadingsfalse
+        \@hungarian@swapheadersfalse
+      },
+    swapstrings.default:n = all,
+    swapstrings/unknown.code = \xpg@warning{Unknown Hungarian swapstrings value `#1'}
+  }
 
 % Register default options
 % forceheadinpunctuatin is recommended, but the default value is false for compatibility reasons
-\xpg@initialize@gloss@options{hungarian}{swapstrings=all,
+\InitializeGlossOptions{hungarian}{swapstrings=all,
                                          forceheadingpunctuation=false}
 
 
 \def\hungarian@language{%
-   \polyglossia@setup@language@patterns{hungarian}%
-   \xpg@ifdefined{hungarian}{\adddialect\l@magyar\l@hungarian}{}%
+   \SetupPolyglossiaLangPatterns{hungarian}%
+   \IfLanguageDefinedT{hungarian}{\adddialect\l@magyar\l@hungarian}%
 }%
 
 \def\captionshungarian{%
@@ -143,107 +151,115 @@
   % change chapter and part headings
   \if@hungarian@swapheadings
      % With titlesec
-     \ifcsdef{titleformat}{%
-       \ifcsdef{NR@part}{% Hyperref (nameref)
-            \let\xpg@save@part@format\NR@part%
-            \patchcmd{\NR@part}%
-                      {\partname\nobreakspace\thepart}%
-                      {\thepart.\nobreakspace\partname}%
-                      {}%
-                      {\xpg@warning{Failed to patch part for Hungarian}}%
-       }{% not hyperref
-         \ifcsdef{@part}{%
-            \let\xpg@save@part@format\@part%
-            \patchcmd{\@part}%
-                      {\partname\nobreakspace\thepart}%
-                      {\thepart.\nobreakspace\partname}%
-                      {}%
-                      {\xpg@warning{Failed to patch part for Hungarian}}%
-         }{}%
-       }
-       \ifcsdef{chapter}{%
-          \titleformat\chapter[display]%
-             {\@ifundefined{ttl@fil}{\raggedright}{\ttl@fil}\ttl@fonts\ttl@sizes6}
-             {\thechapter.\space\@chapapp}{.8\baselineskip}{\ttl@sizes\z@\ttl@passexplicit}
-       }{}%
-     }{% (not \ifdefined\titleformat)
+     \@ifundefined{titleformat}{%
        % With KOMA
-       \ifcsdef{sectionformat}{%
-          \ifcsdef{partformat}{%
-            \let\xpg@save@part@format\partformat%
-            \renewcommand{\partformat}{\thepart.~\partname}%
-          }{}%
-          \ifcsdef{chapterformat}{%
-            \let\xpg@save@chap@format\chapterformat%
-            \renewcommand{\chapterformat}{\mbox{\thechapter\autodot%
-                                          \IfUsePrefixLine{\nobreakspace\chapapp}{\enskip}}}%
-          }{}%
-       }{%  (not \ifdefined\sectionformat)
-         % With memoir
-         \ifcsdef{@memptsize}{%
-           \ifcsdef{@makechapterhead}{%
-              \let\xpg@save@chap@format\@makechapterhead%
-              \patchcmd{\@makechapterhead}{\printchaptername \chapternamenum \printchapternum}%
-                       {\printchapternum.\chapternamenum\printchaptername}%
-                       {}%
-                       {\xpg@warning{Failed to patch chapter for Hungarian}}%
-           }{}%
-           \ifcsdef{NR@part}{% Hyperref (nameref)
-                \let\xpg@save@part@format\NR@part%
-                \patchcmd{\NR@part}{\printpartname \partnamenum \printpartnum}%
-                                 {\printpartnum.\partnamenum\printpartname}%
-                                 {}%
-                                 {\xpg@warning{Failed to patch part for Hungarian}}%
-           }{% not hyperref
-             \ifcsdef{@part}{%
-                \let\xpg@save@part@format\@part%
-                \patchcmd{\@part}{\printpartname \partnamenum \printpartnum}%
-                                 {\printpartnum.\partnamenum\printpartname}%
-                                 {}%
-                                 {\xpg@warning{Failed to patch part for Hungarian}}%
-             }{}%
-           }%
-         }{%  (not \ifdefined\@memptsize)
+       \@ifundefined{sectionformat}{%
+         % Memoir?
+         \@ifundefined{@memptsize}{%
            % With standard classes
-            \ifcsdef{@makechapterhead}{%
+            \@ifundefined{@makechapterhead}{}{%
               \let\xpg@save@chap@format\@makechapterhead%
               \patchcmd{\@makechapterhead}%
                        {\@chapapp\space \thechapter}%
                        {\thechapter.\space \@chapapp}%
                        {}%
                        {\xpg@warning{Failed to patch chapter for Hungarian}}%
-            }{}%
-            \ifcsdef{NR@part}{% Hyperref (nameref)
+            }%
+            \@ifundefined{NR@part}{% not hyperref
+              \@ifundefined{@part}{}{%
+                \let\xpg@save@part@format\@part%
+                \patchcmd{\@part}%
+                         {\partname\nobreakspace\thepart}%
+                         {\thepart.\nobreakspace\partname}%
+                         {}%
+                         {\@ifundefined{part}{}{\xpg@warning{Failed to patch part for Hungarian}}}%
+              }%  (end \ifdefined\@part)
+            }{% Hyperref (nameref)
               \let\xpg@save@part@format\NR@part%
               \patchcmd{\NR@part}%
                        {\partname\nobreakspace\thepart}%
                        {\thepart.\nobreakspace\partname}%
                        {}%
                        {\xpg@warning{Failed to patch part for Hungarian}}%
-            }{% not hyperref
-              \ifcsdef{@part}{%
-                \let\xpg@save@part@format\@part%
-                \patchcmd{\@part}%
-                         {\partname\nobreakspace\thepart}%
-                         {\thepart.\nobreakspace\partname}%
-                         {}%
-                         {\ifcsdef{part}{\xpg@warning{Failed to patch part for Hungarian}}{}}%
-              }{}%  (end \ifdefined\@part)
             }% (end not hyperref)
-          }% (end \ifdefined\@memptsize)
-        }% (end \ifdefined\sectionformat)
+          }{% with memoir (\ifdefined\@memptsize)
+           \@ifundefined{@makechapterhead}{}{%
+              \let\xpg@save@chap@format\@makechapterhead%
+              \patchcmd{\@makechapterhead}{\printchaptername \chapternamenum \printchapternum}%
+                       {\printchapternum.\chapternamenum\printchaptername}%
+                       {}%
+                       {\xpg@warning{Failed to patch chapter for Hungarian}}%
+           }%
+           \@ifundefined{NR@part}{% not hyperref
+             \@ifundefined{@part}{}{%
+                \let\xpg@save@part@format\@part%
+                \patchcmd{\@part}{\printpartname \partnamenum \printpartnum}%
+                                 {\printpartnum.\partnamenum\printpartname}%
+                                 {}%
+                                 {\xpg@warning{Failed to patch part for Hungarian}}%
+             }%
+           }{% Hyperref (nameref)
+                \let\xpg@save@part@format\NR@part%
+                \patchcmd{\NR@part}{\printpartname \partnamenum \printpartnum}%
+                                 {\printpartnum.\partnamenum\printpartname}%
+                                 {}%
+                                 {\xpg@warning{Failed to patch part for Hungarian}}%
+           }%
+         }% (end \ifdefined\@memptsize)
+        }{% (\ifdefined\sectionformat)
+          \@ifundefined{partformat}{}{%
+            \let\xpg@save@part@format\partformat%
+            \renewcommand{\partformat}{\thepart.~\partname}%
+          }%
+          \@ifundefined{chapterformat}{}{%
+            \let\xpg@save@chap@format\chapterformat%
+            \renewcommand{\chapterformat}{\mbox{\thechapter\autodot%
+                                          \IfUsePrefixLine{\nobreakspace\chapapp}{\enskip}}}%
+          }%
+       }% (end \ifdefined\sectionformat)
+     }{% (\ifdefined\titleformat)
+       \@ifundefined{NR@part}{% not hyperref
+         \@ifundefined{@part}{}{%
+            \let\xpg@save@part@format\@part%
+            \patchcmd{\@part}%
+                      {\partname\nobreakspace\thepart}%
+                      {\thepart.\nobreakspace\partname}%
+                      {}%
+                      {\xpg@warning{Failed to patch part for Hungarian}}%
+         }%
+       }{% Hyperref (nameref)
+            \let\xpg@save@part@format\NR@part%
+            \patchcmd{\NR@part}%
+                      {\partname\nobreakspace\thepart}%
+                      {\thepart.\nobreakspace\partname}%
+                      {}%
+                      {\xpg@warning{Failed to patch part for Hungarian}}%
+       }%
+       \@ifundefined{chapter}{}{%
+          \titleformat\chapter[display]%
+             {\@ifundefined{ttl@fil}{\raggedright}{\ttl@fil}\ttl@fonts\ttl@sizes6}
+             {\thechapter.\space\@chapapp}{.8\baselineskip}{\ttl@sizes\z@\ttl@passexplicit}
+       }%
      }% (end \ifdefined\titleformat)
   \fi% (end \if@hungarian@swapheadings)
   %
   % Change running headers
   \if@hungarian@swapheaders
-    \ifcsdef{chapterformat}{%
-      % With KOMA
-      \let\xpg@save@chaptermark@format\chaptermarkformat%
-      \renewcommand*\chaptermarkformat{%
-         \thechapter\autodot\ \IfChapterUsesPrefixLine{\chapapp\@hungarian@forced@dot\enskip}{}}
-    }{% (not \ifdefined\chapterformat)
-      \ifcsdef{@memptsize}{%
+    \@ifundefined{chapterformat}{%
+      \@ifundefined{@memptsize}{%
+        % With standard classes
+        \@ifundefined{chaptermark}{}{%
+          \ifpatchable{\chaptermark}%
+               {\@chapapp\ \thechapter.}%
+               {\let\xpg@save@chaptermark@format\chaptermark%
+                \patchcmd{\chaptermark}%
+                    {\@chapapp\ \thechapter.}%
+                    {\thechapter.\ \@chapapp\@hungarian@forced@dot}%
+                    {}%
+                    {\xpg@warning{Failed to patch chaptermark for Hungarian}}}%
+               {}%
+        }% (end \ifdefined\chaptermark)
+      }{% (\ifdefined\@memptsize)
         % With memoir
         \let\xpg@save@chaptermark@format\chaptermark%
         \renewcommand*\chaptermark[1]{%
@@ -254,20 +270,12 @@
               }{}%
             \fi
             ##1}}{}}%
-      }{% (not \ifdefined\@memptsize)
-        % With standard classes
-        \ifcsdef{chaptermark}{%
-          \ifpatchable{\chaptermark}%
-               {\@chapapp\ \thechapter.}%
-               {\let\xpg@save@chaptermark@format\chaptermark%
-                \patchcmd{\chaptermark}%
-                    {\@chapapp\ \thechapter.}%
-                    {\thechapter.\ \@chapapp\@hungarian@forced@dot}%
-                    {}%
-                    {\xpg@warning{Failed to patch chaptermark for Hungarian}}}%
-               {}%
-        }{}% (end \ifdefined\chaptermark)
       }% (end \ifdefined\@memptsize)
+    }{% (\ifdefined\chapterformat)
+      % With KOMA
+      \let\xpg@save@chaptermark@format\chaptermarkformat%
+      \renewcommand*\chaptermarkformat{%
+         \thechapter\autodot\ \IfChapterUsesPrefixLine{\chapapp\@hungarian@forced@dot\enskip}{}}
     }% (end \ifdefined\chapterformat)
   \fi% (end \if@hungarian@swapheaders)
 }
@@ -279,70 +287,70 @@
    \let\fnum@figure\xpg@save@fnum@figure%
    %
    % Reset chapter and part heading
-   \ifcsdef{titleformat}{%
-      % With titlesec
-     \ifcsdef{xpg@save@part@format}{%
-        \ifcsdef{NR@part}{%
-            \let\NR@part\xpg@save@part@format%
-        }{%
-            \let\@part\xpg@save@part@format%
+   \@ifundefined{titleformat}{%
+     \@ifundefined{sectionformat}{%
+        % With memoir and standard classes
+        \@ifundefined{xpg@save@part@format}{}{%
+           \@ifundefined{NR@part}{%
+               \let\@part\xpg@save@part@format%
+           }{%
+               \let\NR@part\xpg@save@part@format%
+           }%
         }%
-     }{}%
-     \ifcsdef{chapter}{%
+        \@ifundefined{xpg@save@chap@format}{}{%
+          \let\@makechapterhead\xpg@save@chap@format
+        }%
+     }{%
+        % With KOMA
+        \@ifundefined{xpg@save@part@format}{}{%
+           \let\partformat\xpg@save@part@format
+        }%
+        \@ifundefined{xpg@save@chap@format}{}{%
+           \let\chapterformat\xpg@save@chap@format
+        }%
+     }% (end \ifdefined\sectionformat)
+   }{% (\ifdefined\titleformat)
+      % With titlesec
+     \@ifundefined{xpg@save@part@format}{}{%
+        \@ifundefined{NR@part}{%
+            \let\@part\xpg@save@part@format%
+        }{%
+            \let\NR@part\xpg@save@part@format%
+        }%
+     }%
+     \@ifundefined{chapter}{}{%
         \titleformat\chapter[display]%
           {\@ifundefined{ttl@fil}{\raggedright}{\ttl@fil}\ttl@fonts\ttl@sizes6}
           {\@chapapp\space\thechapter}{.8\baselineskip}{\ttl@sizes\z@\ttl@passexplicit}
-     }{}%
-   }{% (not \ifdefined\titleformat)
-     \ifcsdef{sectionformat}{%
-        % With KOMA
-        \ifcsdef{xpg@save@part@format}{%
-           \let\partformat\xpg@save@part@format
-        }{}%
-        \ifcsdef{xpg@save@chap@format}{%
-           \let\chapterformat\xpg@save@chap@format
-        }{}%
-     }{%
-        % With memoir and standard classes
-        \ifcsdef{xpg@save@part@format}{%
-           \ifcsdef{NR@part}{%
-               \let\NR@part\xpg@save@part@format%
-           }{%
-               \let\@part\xpg@save@part@format%
-           }%
-        }{}%
-        \ifcsdef{xpg@save@chap@format}{%
-          \let\@makechapterhead\xpg@save@chap@format
-        }{}%
-     }% (end \ifdefined\sectionformat)
+     }%
    }% (end \ifdefined\titleformat)
   %
   % Reset headers
-  \ifcsdef{chaptermarkformat}{%
-     % With KOMA
-     \ifcsdef{xpg@save@chaptermark@format}{%
-       \let\chaptermarkformat\xpg@save@chaptermark@format%
-     }{}%
-  }{%
-     \ifcsdef{chaptermark}{%
+  \@ifundefined{chaptermarkformat}{%
+     \@ifundefined{chaptermark}{}{%
        % With memoir and standard classes
-       \ifcsdef{xpg@save@chaptermark@format}{%
+       \@ifundefined{xpg@save@chaptermark@format}{}{%
          \let\chaptermark\xpg@save@chaptermark@format%
-       }{}%
-     }{}% (end \ifdefined\chaptermark)
-  }% (end \ifdefined\chapterformat)
+       }%
+     }% (end \ifdefined\chaptermark)
+  }{%
+     % With KOMA
+     \@ifundefined{xpg@save@chaptermark@format}{}{%
+       \let\chaptermarkformat\xpg@save@chaptermark@format%
+     }%
+  }% (end \ifdefined\chaptermarkformat)
 }
 % Hungarian needs 1) trailing dots in chapter headings; 2) trailing dot in section, subsection, etc, counters
 \def\@hungarian@forced@dot{}
 \def\xpg@save@autodot{}
-\ifdef{\KOMAScript}{%
+\ifdef{\KOMAClassName}{%
     \providecommand*\autodot{}%
     \let\xpg@save@autodot\autodot%
 }{}
 % The following is based on some ideas from gloss-russian.ldf
 \def\hungarian@sectsformat{%
   \ifhungarian@forceheadingpunctuation%
-   \ifdef{\KOMAScript}{%
+   \ifdef{\KOMAClassName}{%
       \renewcommand*\autodot{.}%
    }{%
       \def\@seccntformat##1{\csname pre##1\endcsname%
@@ -368,7 +376,7 @@
 %
 \def\nohungarian@sectsformat{%
   \ifhungarian@forceheadingpunctuation%
-    \ifdef{\KOMAScript}{%
+    \ifdef{\KOMAClassName}{%
        \let\autodot\xpg@save@autodot%
     }{%
        \def\@seccntformat##1{\csname the##1\endcsname\quad}% = LaTeX kernel

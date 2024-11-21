@@ -1,4 +1,4 @@
-% Language definition file (part of polyglossia v1.66 -- 2023/12/11)
+% Language definition file (part of polyglossia v2.3 -- 2024/09/23)
 %
 \ProvidesFile{gloss-greek.ldf}[polyglossia: module for Greek]
 
@@ -22,7 +22,7 @@
 
 % BCP-47 compliant aliases
 \setlanguagealias*[variant=ancient]{greek}{grc}
-\setlanguagealias*[varant=polytonic]{greek}{el-polyton}
+\setlanguagealias*[variant=polytonic]{greek}{el-polyton}
 \setlanguagealias*[variant=monotonic]{greek}{el-monoton}
 \setlanguagealias*{greek}{el}
 
@@ -42,44 +42,9 @@
 \newif\if@greek@ancient\@greek@ancientfalse
 \newif\if@greek@poly\@greek@polyfalse
 
-\define@choicekey*+{greek}{variant}[\xpg@val\xpg@nr]{monotonic,mono,polytonic,poly,ancient,ancientgreek}[monotonic]{%
-   \xpg@ifdefined{greek}{}{%
-      \xpg@nopatterns{greek}%
-      \adddialect\l@greek\l@nohyphenation
-   }%
-   \ifcase\xpg@nr\relax
-      % monotonic:
-      \@greek@polyfalse
-      \@greek@ancientfalse
-   \or
-      % mono:
-      \@greek@polyfalse
-      \@greek@ancientfalse
-   \or
-      % polytonic:
-      \@greek@polytrue
-      \@greek@ancientfalse
-   \or
-      % poly:
-      \@greek@polytrue
-      \@greek@ancientfalse
-   \or
-      % ancient:
-      \@greek@polyfalse
-      \@greek@ancienttrue
-   \or
-      % ancientgreek:
-      \@greek@polyfalse
-      \@greek@ancienttrue
-   \fi
-   \greek@set@langdata
-   \xpg@info{Option: Greek, variant=\xpg@val}%
-}{\xpg@warning{Unknown Greek variant `#1'}}
-
-
 \def\greek@set@langdata{%
    \if@greek@ancient
-       \xpg@ifdefined{ancientgreek}{}%
+       \IfLanguageDefinedF{ancientgreek}%
            {\xpg@warning{No hyphenation patterns were loaded for Ancient Greek\MessageBreak
 	                 I will use the patterns loaded for \string\l@greek\space instead}%
             \adddialect\l@ancientgreek\l@greek\relax}%
@@ -89,7 +54,7 @@
        \SetLanguageKeys{greek}{babelname=greek,bcp47=grc,bcp47-language=grc,bcp47-variant={}}%
    \else
       \if@greek@poly
-          \xpg@ifdefined{polygreek}{}%
+          \IfLanguageDefinedF{polygreek}%
               {\xpg@warning{No hyphenation patterns were loaded for Polytonic Greek\MessageBreak
 	                    I will use the patterns loaded for \string\l@greek\space instead}%
                \adddialect\l@polygreek\l@greek\relax}%
@@ -98,7 +63,7 @@
           \def\dategreek{\datepolygreek}%
           \SetLanguageKeys{greek}{babelname=polutonikogreek,bcp47=el-polyton,bcp47-language=el,bcp47-variant=polyton}%
       \else% monotonic greek
-          \xpg@ifdefined{monogreek}{}%
+          \IfLanguageDefinedF{monogreek}%
               {\xpg@warning{No hyphenation patterns were loaded for Monotonic Greek\MessageBreak
 	                    I will use the patterns loaded for \string\l@greek\space instead}%
                \adddialect\l@monogreek\l@greek\relax}%
@@ -112,42 +77,85 @@
 
 
 \def\greek@language{%
-  \polyglossia@setup@language@patterns{\greek@variant}%
+  \SetupPolyglossiaLangPatterns{\greek@variant}%
 }
 
 
 \newif\if@greek@numerals
-\define@choicekey*+{greek}{numerals}[\xpg@val\xpg@nr]{greek,arabic}[greek]{%
-   \ifcase\xpg@nr\relax
-      % greek:
-      \@greek@numeralstrue%
-      \SetLanguageKeys{greek}{bcp47-extension-u=nu-grek}%
-   \or
-      % arabic:
-      \@greek@numeralsfalse%
-      \SetLanguageKeys{greek}{bcp47-extension-u=nu-latn}%
-   \fi
-   \xpg@info{Option: Greek, numerals=\xpg@val}%
-}{\xpg@warning{Unknown Greek numerals value `#1'}}
 
-
-\define@boolkey{greek}[greek@]{capitaliota}[true]{%
-  \ifgreek@capitaliota
-     % \MakeUppercase converts the ypogegrammeni (subscript muted iota) to capital iota
-     \SetLanguageKeys{greek}{bcp47-casing=el-x-iota,bcp47-extension-x=iota}
-  \else
-     % \MakeUppercase retains the subscript versions (default)
-     \SetLanguageKeys{greek}{bcp47-casing=el,bcp47-extension-x={}}
-  \fi
-}
-
-\define@boolkey{greek}{attic}[true]{\xpg@warning{Greek option `attic' is no longer required.}}
+\DeclareKeys[polyglossia/gloss/greek]
+  {
+    variant.choices:nn = { monotonic, mono,polytonic, poly,ancient, ancientgreek }
+      {%
+        \CheckHyphenationPatterns{greek}%
+        \ifcase\UseName{l_keys_choice_int}\or
+          % monotonic:
+          \@greek@polyfalse
+          \@greek@ancientfalse
+        \or
+          % mono:
+          \@greek@polyfalse
+          \@greek@ancientfalse
+        \or
+          % polytonic:
+          \@greek@polytrue
+          \@greek@ancientfalse
+        \or
+          % poly:
+          \@greek@polytrue
+          \@greek@ancientfalse
+        \or
+          % ancient:
+          \@greek@polyfalse
+          \@greek@ancienttrue
+        \or
+          % ancientgreek:
+          \@greek@polyfalse
+          \@greek@ancienttrue
+        \fi
+        \greek@set@langdata
+      },
+    variant.default:n = monotonic,
+    variant/unknown.code = \xpg@warning{Unknown Greek variant `#1'},
+    numerals.choice:,
+    numerals / greek.code =
+      {%      
+        \@greek@numeralstrue
+        \SetLanguageKeys{greek}{bcp47-extension-u=nu-grek}%
+      },
+    numerals / arabic.code =
+      {%
+        \@greek@numeralsfalse
+        \SetLanguageKeys{greek}{bcp47-extension-u=nu-latn}%
+      },
+    numerals.default:n = greek,
+    numerals/unknown.code = \xpg@warning{Unknown Greek numerals value `#1'},
+    capitaliota.choice:,
+    capitaliota / true.code =
+      {%
+        \@greek@capitaliotatrue
+        % \MakeUppercase converts the ypogegrammeni (subscript muted iota) to capital iota
+        \SetLanguageKeys{greek}{bcp47-casing=el-x-iota,bcp47-extension-x=iota}%
+      },
+    capitaliota / false.code =
+      {%
+        \@greek@capitaliotafalse
+        % \MakeUppercase retains the subscript versions (default)
+        \SetLanguageKeys{greek}{bcp47-casing=el,bcp47-extension-x={}}%
+      },
+    capitaliota.default:n = true,
+    attic.choices:nn = { true, false }
+      {%
+        \xpg@warning{Greek option `attic' is no longer required.}
+      },
+    capitaliota.default:n = true,
+  }
 
 % Register default options
-\xpg@initialize@gloss@options{greek}{variant=monotonic,numerals=greek}
+\InitializeGlossOptions{greek}{variant=monotonic,numerals=greek}
 % Register alias options
-\xpg@set@alias@values{greek}{variant}{monotonic}{mono}
-\xpg@set@alias@values{greek}{variant}{polytonic}{poly}
+\SetLanguageAliasValues{greek}{variant}{monotonic,mono}
+\SetLanguageAliasValues{greek}{variant}{polytonic,poly}
 
 \def\monogreekcaptions{%
    \def\refname{Αναφορές}%

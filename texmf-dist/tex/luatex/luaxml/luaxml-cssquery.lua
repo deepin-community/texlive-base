@@ -1,7 +1,12 @@
 --- CSS query module for LuaXML
 -- @module luaxml-cssquery
 -- @author Michal Hoftich <michal.h21@gmail.com
-local parse_query = require("luaxml-parse-query")
+local parse_query
+if kpse then
+  parse_query = require("luaxml-parse-query")
+else
+  parse_query = require("luaxml.parse-query")
+end
 
 -- the string.explode function is provided by LuaTeX
 -- this is alternative for stock Lua
@@ -151,7 +156,7 @@ local function cssquery()
     -- make sure we deal with a string
     value = tostring(value)
     -- make the search string safe for pattern matching
-    local escaped_search = search:gsub("([%(%)%.%%%+%–%*%?%[%^%$])", "%%%1")
+    local escaped_search = search:gsub("([%(%)%.%%%+%-%#%*%?%[%^%$])", "%%%1")
     if modifier == "" then
       return value == search
     elseif modifier == "|" then
@@ -427,6 +432,18 @@ local function cssquery()
       return a.specificity > b.specificity
     end)
     return querylist
+  end
+
+  --- Remove selector from the CSS list object.
+  --  All actions that literaly match the given selector will be removed.
+  function CssQuery:remove_selector(
+    selector -- CSS selector to be removed
+    )
+    for pos, obj in ipairs(self.querylist) do
+      if obj.source == selector then
+        table.remove(self.querylist, pos)
+      end
+    end
   end
 
   --- It tests list of queries agaings a DOM element and executes the

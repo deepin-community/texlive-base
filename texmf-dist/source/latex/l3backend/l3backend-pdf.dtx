@@ -43,7 +43,7 @@
 %    }^^A
 % }
 %
-% \date{Released 2024-01-04}
+% \date{Released 2024-05-08}
 %
 % \maketitle
 %
@@ -113,25 +113,13 @@
 %
 % \subsubsection{Objects}
 %
-% \begin{variable}{\g_@@_backend_object_int}
-%   For tracking objects.
+% \begin{macro}{\@@_backend_object_new:}
+% \begin{macro}[EXP]{\@@_backend_object_ref:n, \@@_backend_object_id:n}
 %    \begin{macrocode}
-\int_new:N \g_@@_backend_object_int
-%    \end{macrocode}
-% \end{variable}
-%
-% \begin{macro}{\@@_backend_object_new:n}
-% \begin{macro}[EXP]{\@@_backend_object_ref:n}
-%    \begin{macrocode}
-\cs_new_protected:Npn \@@_backend_object_new:n #1
-  {
-    \int_gincr:N \g_@@_backend_object_int
-    \int_const:cn
-      { c_@@_object_ \tl_to_str:n {#1} _int }
-      { \g_@@_backend_object_int }
-  }
-\cs_new:Npn \@@_backend_object_ref:n #1
-  { { pdf.obj \int_use:c { c_@@_object_ \tl_to_str:n {#1} _int } } }
+\cs_new_protected:Npn \@@_backend_object_new:
+  { \int_gincr:N \g_@@_backend_object_int }
+\cs_new:Npn \@@_backend_object_ref:n #1 { { pdf.obj #1 } }
+\cs_new_eq:NN \@@_backend_object_id:n \@@_backend_object_ref:n
 %    \end{macrocode}
 % \end{macro}
 % \end{macro}
@@ -278,7 +266,7 @@
 %
 % \begin{macro}{\@@_backend_annotation:nnnn}
 %   Annotations are objects, but we track them separately. Notably, they are
-%   not in the object data lists. Here, to get the co-ordinates of the
+%   not in the object data lists. Here, to get the coordinates of the
 %   annotation, we need to have the data collected at the PostScript level.
 %   That requires a bit of box trickery (effectively a \LaTeXe{} |picture|
 %   of zero size). Once the data is collected, use it to set up the annotation
@@ -388,7 +376,7 @@
 % \begin{macro}{\@@_backend_link_minima:}
 % \begin{macro}{\@@_backend_link_outerbox:n}
 % \begin{macro}{\@@_backend_link_sf_save:, \@@_backend_link_sf_restore:}
-%   Links are crated like annotations but with dedicated code to allow for
+%   Links are created like annotations but with dedicated code to allow for
 %   adjusting the size of the rectangle. In contrast to \pkg{hyperref}, we
 %   grab the link content as a box which can then unbox: this allows the same
 %   interface as for \pdfTeX{}.
@@ -958,12 +946,12 @@
 %    \end{macrocode}
 % \end{variable}
 %
-% \begin{macro}{\@@_backend_object_new:n}
-% \begin{macro}[EXP]{\@@_backend_object_ref:n}
+% \begin{macro}{\@@_backend_object_new:}
+% \begin{macro}[EXP]{\@@_backend_object_ref:n, \@@_backend_object_id:n}
 %   Declaring objects means reserving at the PDF level plus starting
 %   tracking.
 %    \begin{macrocode}
-\cs_new_protected:Npn \@@_backend_object_new:n #1
+\cs_new_protected:Npn \@@_backend_object_new:
   {
 %<*luatex>
     \tex_pdfextension:D obj ~
@@ -972,17 +960,16 @@
     \tex_pdfobj:D
 %</pdftex>
       reserveobjnum ~
-      \int_const:cn
-        { c_@@_object_ \tl_to_str:n {#1} _int }
+    \int_gset:Nn \g_@@_backend_object_int
 %<*luatex>
-        { \tex_pdffeedback:D lastobj }
+      { \tex_pdffeedback:D lastobj }
 %</luatex>
 %<*pdftex>
-        { \tex_pdflastobj:D }
+      { \tex_pdflastobj:D }
 %</pdftex>
   }
-\cs_new:Npn \@@_backend_object_ref:n #1
-  { \int_use:c { c_@@_object_ \tl_to_str:n {#1} _int } ~ 0 ~ R }
+\cs_new:Npn \@@_backend_object_ref:n #1 { #1 ~ 0 ~ R }
+\cs_new:Npn \@@_backend_object_id:n #1 {#1}
 %    \end{macrocode}
 % \end{macro}
 % \end{macro}
@@ -1001,28 +988,26 @@
 %<*pdftex>
     \tex_immediate:D \tex_pdfobj:D
 %</pdftex>
-      useobjnum ~
-      \int_use:c
-        { c_@@_object_ \tl_to_str:n {#1} _int }
-      \@@_backend_object_write:nn {#2} {#3}
+      useobjnum ~ #1
+    \@@_backend_object_write:nn {#2} {#3}
   }
 \cs_new:Npn \@@_backend_object_write:nn #1#2
   {
-      \str_case:nn {#1}
-        {
-          { array } { { [ ~ \exp_not:n {#2} ~ ] } }
-          { dict }  { { << ~ \exp_not:n {#2} ~ >> } }
-          { fstream }
-            {
-              stream ~ attr ~ { \@@_exp_not_i:nn #2 } ~
-                file ~ { \@@_exp_not_ii:nn #2 }
-            }
-          { stream }
-            {
-              stream ~ attr ~ { \@@_exp_not_i:nn #2 } ~
-                { \@@_exp_not_ii:nn #2 }
-            }
-        }
+    \str_case:nn {#1}
+      {
+        { array } { { [ ~ \exp_not:n {#2} ~ ] } }
+        { dict }  { { << ~ \exp_not:n {#2} ~ >> } }
+        { fstream }
+          {
+            stream ~ attr ~ { \@@_exp_not_i:nn #2 } ~
+              file ~ { \@@_exp_not_ii:nn #2 }
+          }
+        { stream }
+          {
+            stream ~ attr ~ { \@@_exp_not_i:nn #2 } ~
+              { \@@_exp_not_ii:nn #2 }
+          }
+      }
   }
 \cs_generate_variant:Nn \@@_backend_object_write:nnn { nne }
 \cs_new:Npn \@@_exp_not_i:nn #1#2 { \exp_not:n {#1} }
@@ -1235,28 +1220,22 @@
 %
 % \subsubsection{Objects}
 %
-% \begin{variable}{\g_@@_backend_object_int, \g_@@_backend_object_prop}
+% \begin{variable}{\g_@@_backend_object_prop}
 %   For tracking objects to allow finalisation.
 %    \begin{macrocode}
-\int_new:N \g_@@_backend_object_int
 \prop_new:N \g_@@_backend_object_prop
 %    \end{macrocode}
 % \end{variable}
 %
-% \begin{macro}{\@@_backend_object_new:n}
-% \begin{macro}[EXP]{\@@_backend_object_ref:n}
+% \begin{macro}{\@@_backend_object_new:}
+% \begin{macro}[EXP]{\@@_backend_object_ref:n, \@@_backend_object_id:n}
 %   Objects are tracked at the macro level, but we don't have to do anything
 %   at this stage.
 %    \begin{macrocode}
-\cs_new_protected:Npn \@@_backend_object_new:n #1
-  {
-    \int_gincr:N \g_@@_backend_object_int
-    \int_const:cn
-      { c_@@_object_ \tl_to_str:n {#1} _int }
-      { \g_@@_backend_object_int }
-  }
-\cs_new:Npn \@@_backend_object_ref:n #1
-  { @pdf.obj \int_use:c { c_@@_object_ \tl_to_str:n {#1} _int } }
+\cs_new_protected:Npn \@@_backend_object_new:
+  { \int_gincr:N \g_@@_backend_object_int }
+\cs_new:Npn \@@_backend_object_ref:n #1 { @pdf.obj #1 }
+\cs_new_eq:NN \@@_backend_object_id:n \@@_backend_object_ref:n
 %    \end{macrocode}
 % \end{macro}
 % \end{macro}
@@ -1627,16 +1606,17 @@
 %
 % \subsubsection{Objects}
 %
-% \begin{macro}{\@@_backend_object_new:n}
-% \begin{macro}[EXP]{\@@_backend_object_ref:n}
+% \begin{macro}{\@@_backend_object_new:}
+% \begin{macro}[EXP]{\@@_backend_object_ref:n, \@@_backend_object_id:n}
 % \begin{macro}{\@@_backend_object_write:nnn, \@@_backend_object_write:ne}
 % \begin{macro}{\@@_backend_object_now:nn, , \@@_backend_object_now:ne}
 % \begin{macro}{\@@_backend_object_last:}
 % \begin{macro}[EXP]{\@@_backend_pageobject_ref:n}
 %   All no-ops here.
 %    \begin{macrocode}
-\cs_new_protected:Npn \@@_backend_object_new:nn #1 { }
+\cs_new_protected:Npn \@@_backend_object_new: { }
 \cs_new:Npn \@@_backend_object_ref:n #1 { }
+\cs_new:Npn \@@_backend_object_id:n #1 { }
 \cs_new_protected:Npn \@@_backend_object_write:nnn #1#2#3 { }
 \cs_new_protected:Npn \@@_backend_object_write:nne #1#2#3 { }
 \cs_new_protected:Npn \@@_backend_object_now:nn #1#2 { }

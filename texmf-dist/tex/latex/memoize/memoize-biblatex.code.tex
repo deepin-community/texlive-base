@@ -1,0 +1,238 @@
+%%
+%% This is file `memoize-biblatex.code.tex',
+%% generated with the docstrip utility.
+%%
+%% The original source files were:
+%%
+%% memoize.dtx  (with options: `biblatex')
+%% 
+%% This file is a part of Memoize, a TeX package for externalization of
+%% graphics and memoization of compilation results in general, available at
+%% https://ctan.org/pkg/memoize and https://github.com/sasozivanovic/memoize.
+%%
+%% Copyright (c) 2020- Saso Zivanovic <saso.zivanovic@guest.arnes.si>
+%%                     (Sa\v{s}o \v{Z}ivanovi\'{c})
+%%
+%% This work may be distributed and/or modified under the conditions of the
+%% LaTeX Project Public License, either version 1.3c of this license or (at
+%% your option) any later version.  The latest version of this license is in
+%% https://www.latex-project.org/lppl.txt and version 1.3c or later is part of
+%% all distributions of LaTeX version 2008 or later.
+%%
+%% This work has the LPPL maintenance status `maintained'.
+%% The Current Maintainer of this work is Saso Zivanovic.
+%%
+%% The files belonging to this work and covered by LPPL are listed in
+%% (<texmf>/doc/generic/memoize/)FILES.
+\edef\memoizeresetatcatcode{\catcode`\noexpand\@\the\catcode`\@\relax}%
+\catcode`\@=11
+\mmzset{%
+  auto=\blx@bbl@entry{
+    inner handler=\mmz@biblatex@entry,
+    args={%
+      m%
+      &&{\collargsVerb
+        \collargsAppendExpandablePostprocessor{{\the\collargsArg}}%
+      }u{\endentry}%
+    },
+    raw collector options=\collargsReturnPlain,
+  },
+  auto/cite/.style={
+    run conditions=\mmz@biblatex@cite@rc,
+    outer handler=\mmz@biblatex@cite@outer,
+    args=l*m,
+    raw collector options=\mmz@biblatex@def@star\collargsReturnNo,
+    inner handler=\mmz@biblatex@cite@inner,
+  },
+  auto/volcite/.style={
+    run if memoizing,
+    outer handler=\mmz@biblatex@cite@outer,
+    args=lml*m,
+    raw collector options=\mmz@biblatex@def@star\collargsReturnNo,
+    inner handler=\mmz@biblatex@cite@inner,
+  },
+  auto/cites/.style={
+    run conditions=\mmz@biblatex@cites@rc,
+    outer handler=\mmz@biblatex@cites@outer,
+    args=l*m,
+    raw collector options=
+      \mmz@biblatex@def@star\collargsClearArgsfalse\collargsReturnNo,
+    inner handler=\mmz@biblatex@cites@inner,
+  },
+  auto/volcites/.style={
+    run if memoizing,
+    outer handler=\mmz@biblatex@cites@outer,
+    args=lml*m,
+    raw collector options=
+      \mmz@biblatex@def@star\collargsClearArgsfalse\collargsReturnNo,
+    inner handler=\mmz@biblatex@cites@inner,
+  },
+  biblatex ccmemo cite/.is choice,
+  biblatex ccmemo cite/nocite/.code={%
+    \let\mmz@biblatex@do@ccmemo\mmz@biblatex@do@nocite
+  },
+  biblatex ccmemo cite/replicate/.code={%
+    \let\mmz@biblatex@do@ccmemo\mmz@biblatex@do@replicate
+  },
+}%
+\def\mmz@biblatex@entry#1#2{%
+  \edef\mmz@temp{\pdf@mdfivesum{#2}}%
+  \global\cslet{mmz@bbl@#1}\mmz@temp
+  \mmz@scantokens{\AdviceOriginal{#1}#2}%
+}
+\def\mmz@biblatex@cite@rc{%
+  \ifmemoizing
+    \ifx\blx@citeargs\blx@volciteargs
+    \else
+      \AdviceRuntrue
+    \fi
+  \fi
+}
+\def\mmz@biblatex@cites@rc{%
+  \ifmemoizing
+    \ifdef\blx@hook@mcite@before{}{\AdviceRuntrue}%
+  \fi
+}
+\def\mmz@biblatex@cite@outer{%
+  \gdef\mmz@biblatex@keys{}%
+  \AdviceCollector
+}
+\def\mmz@biblatex@def@star{%
+  \collargsAlias{*}{&&{\mmz@biblatex@mark@citation@key}}%
+}
+\def\mmz@biblatex@mark@citation@key{%
+  \collargsAppendPreprocessor{\xappto\mmz@biblatex@keys{,\the\collargsArg}}%
+}
+\def\mmz@biblatex@cite@inner{%
+  \mmz@biblatex@do@context
+  \mmz@biblatex@do@ccmemo
+  \expandafter\AdviceOriginal\the\collargsArgs
+}
+\def\mmz@biblatex@do@context{%
+  \expandafter\forcsvlist
+    \expandafter\mmz@biblatex@do@context@one
+    \expandafter{\mmz@biblatex@keys}%
+}
+\def\mmz@biblatex@do@context@one#1{%
+  \mmz@mtoc@csname{mmz@bbl@#1}%
+  \ifcsdef{mmz@bbl@#1}{}{\mmzAbort}%
+}
+\def\mmz@biblatex@do@nocite{%
+  \xtoksapp\mmzCCMemo{%
+    \noexpand\nocite{\mmz@biblatex@keys}%
+  }%
+}
+\def\mmz@biblatex@do@replicate{%
+  \xtoksapp\mmzCCMemo{%
+    {%
+      \nullfont
+      \expandonce\AdviceName\the\collargsArgs
+    }%
+  }%
+}
+\let\mmz@biblatex@do@ccmemo\mmz@biblatex@do@nocite
+\def\mmz@biblatex@cites@outer{%
+  \global\collargsArgs{}%
+  \gdef\mmz@biblatex@keys{}%
+  \AdviceCollector
+}
+\def\mmz@biblatex@cites@inner{%
+  \futurelet\mmz@temp\mmz@biblatex@cites@inner@again
+}
+\def\mmz@biblatex@cites@inner@again{%
+  \mmz@tempfalse
+  \ifx\mmz@temp\bgroup
+    \mmz@temptrue
+  \else
+    \ifx\mmz@temp[%]
+      \mmz@temptrue
+    \fi
+  \fi
+  \ifmmz@temp
+    \expandafter\AdviceCollector
+  \else
+    \expandafter\mmz@biblatex@cites@inner@finish
+  \fi
+}
+\def\mmz@biblatex@cites@inner@finish{%
+  \mmz@biblatex@do@context
+  \mmz@biblatex@do@ccmemo
+  \expandafter\AdviceOriginal\the\collargsArgs
+}
+\mmzset{
+  auto=\cite{cite},
+  auto=\Cite{cite},
+  auto=\parencite{cite},
+  auto=\Parencite{cite},
+  auto=\footcite{cite},
+  auto=\footcitetext{cite},
+  auto=\textcite{cite},
+  auto=\Textcite{cite},
+  auto=\smartcite{cite},
+  auto=\Smartcite{cite},
+  auto=\supercite{cite},
+  auto=\cites{cites},
+  auto=\Cites{cites},
+  auto=\parencites{cites},
+  auto=\Parencites{cites},
+  auto=\footcites{cites},
+  auto=\footcitetexts{cites},
+  auto=\smartcites{cites},
+  auto=\Smartcites{cites},
+  auto=\textcites{cites},
+  auto=\Textcites{cites},
+  auto=\supercites{cites},
+  auto=\autocite{cite},
+  auto=\Autocite{cite},
+  auto=\autocites{cites},
+  auto=\Autocites{cites},
+  auto=\citeauthor{cite},
+  auto=\Citeauthor{cite},
+  auto=\citetitle{cite},
+  auto=\citeyear{cite},
+  auto=\citedate{cite},
+  auto=\citeurl{cite},
+  auto=\nocite{cite},
+  auto=\fullcite{cite},
+  auto=\footfullcite{cite},
+  auto=\volcite{volcite},
+  auto=\Volcite{volcite},
+  auto=\volcites{volcites},
+  auto=\Volcites{volcites},
+  auto=\pvolcite{volcite},
+  auto=\Pvolcite{volcite},
+  auto=\pvolcites{volcites},
+  auto=\Pvolcites{volcites},
+  auto=\fvolcite{volcite},
+  auto=\Fvolcite{volcite},
+  auto=\fvolcites{volcites},
+  auto=\Fvolcites{volcites},
+  auto=\ftvolcite{volcite},
+  auto=\ftvolcites{volcites},
+  auto=\Ftvolcite{volcite},
+  auto=\Ftvolcites{volcites},
+  auto=\svolcite{volcite},
+  auto=\Svolcite{volcite},
+  auto=\svolcites{volcites},
+  auto=\Svolcites{volcites},
+  auto=\tvolcite{volcite},
+  auto=\Tvolcite{volcite},
+  auto=\tvolcites{volcites},
+  auto=\Tvolcites{volcites},
+  auto=\avolcite{volcite},
+  auto=\Avolcite{volcite},
+  auto=\avolcites{volcites},
+  auto=\Avolcites{volcites},
+  auto=\notecite{cite},
+  auto=\Notecite{cite},
+  auto=\pnotecite{cite},
+  auto=\Pnotecite{cite},
+  auto=\fnotecite{cite},
+  auto=\citename{cite, args=l*mlm},
+  auto=\citelist{cite, args=l*mlm},
+  auto=\citefield{cite, args=l*mlm},
+}
+\memoizeresetatcatcode
+\endinput
+%%
+%% End of file `memoize-biblatex.code.tex'.

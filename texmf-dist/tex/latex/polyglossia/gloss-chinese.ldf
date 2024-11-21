@@ -1,4 +1,4 @@
-% Language definition file (part of polyglossia v1.66 -- 2023/12/11)
+% Language definition file (part of polyglossia v2.3 -- 2024/09/23)
 %
 \ProvidesFile{gloss-chinese.ldf}[polyglossia: module for Chinese]
 
@@ -22,52 +22,75 @@
 \setlanguagealias*[variant=simplified]{chinese}{zh-CN}
 \setlanguagealias*[variant=traditional]{chinese}{zh-TW}
 
-\providebool{chinese@traditional}
+\@ifundefined{ifchinese@traditional}%
+  {\newif\ifchinese@traditional}{}
+
+\@ifundefined{ifchinese@numerals}%
+  {\newif\ifchinese@numerals}{}
 
 \def\chinese@variant{chinese}
 
-\newif\ifchinese@numerals
-\define@key{chinese}{numerals}[arabic]{%
-   \ifstrequal{#1}{chinese}%
-      {\chinese@numeralstrue%
-       \SetLanguageKeys{chinese}{bcp47-extension-u=nu-hant}%
-      }{\chinese@numeralsfalse%
-       \SetLanguageKeys{chinese}{bcp47-extension-u=nu-latn}%
-      }%
-}
-
-
-\define@choicekey*+{chinese}{variant}[\xpg@val\xpg@nr]{cn,simplified,tw,traditional}[cn]{%
-   \ifcase\xpg@nr\relax
-      % cn:
-      \chinese@traditionalfalse
-      \SetLanguageKeys{chinese}{language={Chinese Simplified},langtag=ZHS,bcp47=zh-CN,bcp47-language=zh,bcp47-region=CN,bcp47-script=Hans}%
-      \xpg@info{Option: Chinese, variant=simplified}%
-   \or
-      % simplified:
-      \chinese@traditionalfalse
-      \SetLanguageKeys{chinese}{language={Chinese Simplified},langtag=ZHS,bcp47=zh-CN,bcp47-language=zh,bcp47-region=CN,bcp47-script=Hans}%
-      \xpg@info{Option: Chinese, variant=simplified}%
-   \or
-      % tw:
-      \chinese@traditionaltrue
-      \SetLanguageKeys{chinese}{language={Chinese Traditional},langtag=ZHT,bcp47=zh-TW,bcp47-language=zh,bcp47-region=TW,bcp47-script=Hant}%
-      \xpg@info{Option: Chinese, variant=traditional}%
-   \or
-      % traditional:
-      \chinese@traditionaltrue
-      \SetLanguageKeys{chinese}{language={Chinese Traditional},langtag=ZHT,bcp47=zh-TW,bcp47-language=zh,bcp47-region=TW,bcp47-script=Hant}%
-      \xpg@info{Option: Chinese, variant=traditional}%
-   \fi
-}{\xpg@warning{Unknown Chinese variant `#1'}}
+\DeclareKeys[polyglossia/gloss/chinese]
+  {
+    variant.choice:,
+    variant / cn.code =
+      {%
+        \chinese@traditionalfalse
+        \SetLanguageKeys{chinese}{language={Chinese Simplified},langtag=ZHS,bcp47=zh-CN,bcp47-language=zh,bcp47-region=CN,bcp47-script=Hans}%
+      },
+    variant / simplified.code =
+      {%
+        \chinese@traditionalfalse
+        \SetLanguageKeys{chinese}{language={Chinese Simplified},langtag=ZHS,bcp47=zh-CN,bcp47-language=zh,bcp47-region=CN,bcp47-script=Hans}%
+      },
+    variant / tw.code =
+      {%
+        \chinese@traditionaltrue
+        \SetLanguageKeys{chinese}{language={Chinese Traditional},langtag=ZHT,bcp47=zh-TW,bcp47-language=zh,bcp47-region=TW,bcp47-script=Hant}%
+      },
+    variant / traditional.code =
+      {%
+        \chinese@traditionaltrue
+        \SetLanguageKeys{chinese}{language={Chinese Traditional},langtag=ZHT,bcp47=zh-TW,bcp47-language=zh,bcp47-region=TW,bcp47-script=Hant}%
+      },
+    variant.default:n = cn,
+    variant/unknown.code = \xpg@warning{Unknown Chinese variant `#1'},
+    numerals.choice:,
+    numerals / arabic.code =
+      {%
+        \chinese@numeralsfalse
+        \SetLanguageKeys{chinese}{bcp47-extension-u=nu-latn}%
+      },
+    numerals / chinese.code =
+      {%
+        \chinese@numeralstrue
+        \SetLanguageKeys{chinese}{bcp47-extension-u=nu-hant}%
+      },
+    numerals.default:n = arabic,
+    numerals/unknown.code = \xpg@warning{Unknown Chinese numerals value `#1'}
+  }
 
 % Register default options
-\xpg@initialize@gloss@options{chinese}{variant=cn,numerals=arabic}
-%\xpg@initialize@gloss@options{chinese}{variant=tw,numerals=arabic}
+\InitializeGlossOptions{chinese}{variant=cn,numerals=arabic}
+%\InitializeGlossOptions{chinese}{variant=tw,numerals=arabic}
 % Register alias options
-\xpg@set@alias@values{chinese}{variant}{cn}{simplified}
-\xpg@set@alias@values{chinese}{variant}{tw}{traditional}
+\SetLanguageAliasValues{chinese}{variant}{cn,simplified}
+\SetLanguageAliasValues{chinese}{variant}{tw,traditional}
 
+
+\providecommand*\presection{}
+\providecommand*\presubsection{}
+\providecommand*\presubsubsection{}
+\providecommand*\postsection{}
+\providecommand*\postsubsection{}
+\providecommand*\postsubsubsection{}
+\let\xpg@save@presection\presection
+\let\xpg@save@presubsection\presubsection
+\let\xpg@save@presubsubsection\presubsubsection
+\let\xpg@save@postsection\postsection
+\let\xpg@save@postsubsection\postsubsection
+\let\xpg@save@postsubsubsection\postsubsubsection
+\let\xpg@save@seccntformat\@seccntformat
 
 \def\chinese@capsformat{%
     \def\@seccntformat##1{%
@@ -87,6 +110,16 @@
     \def\presection{第}%
     \def\presubsection{第}%
     \def\presubsubsection{第}%
+}
+
+\def\nochinese@capsformat{%
+    \let\presection\xpg@save@presection%
+    \let\presubsection\xpg@save@presubsection%
+    \let\presubsubsection\xpg@save@presubsubsection%
+    \let\postsection\xpg@save@postsection%
+    \let\postsubsection\xpg@save@postsubsection%
+    \let\postsubsubsection\xpg@save@postsubsubsection%
+    \let\@seccntformat\xpg@save@seccntformat%
 }
 
 \def\captionschinese{%
@@ -118,7 +151,7 @@
     \def\enclname{附件}%
     \def\ccname{抄送}%
     \def\headtoname{收件人}%
-    \def\\glossaryname{詞彙表}%
+    \def\glossaryname{詞彙表}%
 }
 \def\captions@chinese@simplified{%
     \def\contentsname{目录}%
@@ -141,7 +174,7 @@
     \def\enclname{附件}%
     \def\ccname{抄送}%
     \def\headtoname{收件人}%
-    \def\\glossaryname{词汇表}%
+    \def\glossaryname{词汇表}%
 }
 
 \newcount\c@TempJNum%
@@ -267,16 +300,60 @@
     }%
 }
 
+\ifluatex
+  \@ifundefined{xpg@attr@cjkspacing}{\newattribute\xpg@attr@cjkspacing}{}
+  \directlua{ require"polyglossia-cjk-spacing" }
+  \def\chinese@simplified@spacing {\xpg@attr@cjkspacing=\thr@@}  % chinese simplified
+  \def\chinese@traditional@spacing{\xpg@attr@cjkspacing=4\relax} % chinese traditional
+  \def\nochinese@spacing{\unsetattribute\xpg@attr@cjkspacing}
+\else
+  \@ifundefined{xpg@orig@XeTeXlinebreakskip}{\newskip\xpg@orig@XeTeXlinebreakskip}{}
+  \xpg@orig@XeTeXlinebreakskip=\XeTeXlinebreakskip
+  \def\chinese@simplified@spacing{%
+    \XeTeXlinebreaklocale "zh"%
+    \XeTeXlinebreakskip = 0pt plus 0.1em minus 0.01em%
+  }
+  \let\chinese@traditional@spacing\chinese@simplified@spacing
+  \def\nochinese@spacing{%
+    \XeTeXlinebreakskip=\xpg@orig@XeTeXlinebreakskip%
+    \XeTeXlinebreaklocale ""%
+  }
+\fi
+
 \def\noextras@chinese{%
-    \chinese@capsformat%
+    \nochinese@capsformat%
+    \nochinese@spacing%
 }
 
 \def\blockextras@chinese{%
     \chinese@capsformat%
+    \ifchinese@traditional
+      \chinese@traditional@spacing%
+    \else
+      \chinese@simplified@spacing%
+    \fi%
 }
 
 \def\inlineextras@chinese{%
     \chinese@capsformat%
+    \ifchinese@traditional
+      \chinese@traditional@spacing%
+    \else
+      \chinese@simplified@spacing%
+    \fi%
 }
+
+\ifxetex
+  % \XeTeXlinebreaklocale is global,
+  % so we need to reset after nested language got closed
+  \def\nestedextras@chinese{%
+    \ifchinese@traditional
+      \chinese@traditional@spacing%
+    \else
+      \chinese@simplified@spacing%
+    \fi%
+  }
+\fi
+
 % Based on contributions of Toru Inagaki, Norio Iwase, François Charette
 

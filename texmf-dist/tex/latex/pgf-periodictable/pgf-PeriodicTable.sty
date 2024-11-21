@@ -1,18 +1,65 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Hugo Gomes @ 09/09/2024 v2.1.4
+% Hugo Gomes @ 07/08/2024 v2.1.3
+% Hugo Gomes @ 01/08/2024 v2.1.2
+% Hugo Gomes @ 07/07/2024 v2.1.1
+% Hugo Gomes @ 03/04/2024 v2.1.0a
+% Hugo Gomes @ 14/02/2024 v2.1.0
 % Hugo Gomes @ 29/05/2023 v2.0.1
 % Hugo Gomes @ 20/02/2023 v2.0.0
 % Hugo Gomes @ 08/11/2022 v1.0.1
 % Hugo Gomes @ 10/10/2022 v1.0.0
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \NeedsTeXFormat{LaTeX2e}%
-\ProvidesPackage{pgf-PeriodicTable}[29/05/2023 pgf-PeriodicTable v2.0.1]%%
+\ProvidesPackage{pgf-PeriodicTable}[08/09/2024 pgf-PeriodicTable v2.1.4]%%
 \RequirePackage{tikz}%
 \usetikzlibrary{fadings}%
 \tikzfading[name=aumentax, left color=transparent!80, right color=transparent!1]%
 \tikzfading[name=diminuix, left color=transparent!1, right color=transparent!80]%
 \tikzfading[name=aumentay, top color=transparent!80, bottom color=transparent!1]%
 \tikzfading[name=diminuiy, bottom color=transparent!80, top color=transparent!1]%
-\RequirePackage[T1]{fontenc}%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% check the engine and load font packages
+% changed in v2.1.3
+% pdfLaTeX --------------------------------------------------
+\ifx\pdftexversion\undefined\else%
+\RequirePackage[T1]{fontenc}\edef\pgfPT@fontspec{0}\edef\pgfPT@engine{0}%
+\fi% -----------------------------------------------------------
+% LuaLaTeX --------------------------------------------------
+\ifx\directlua\undefined\else%
+\RequirePackage{fontspec}[2020/02/03]\edef\pgfPT@fontspec{1}\edef\pgfPT@engine{1}%
+\fi% -----------------------------------------------------------
+% XeLaTeX ---------------------------------------------------
+\ifx\XeTeXrevision\undefined\else%
+\RequirePackage{fontspec}[2020/02/03]\edef\pgfPT@fontspec{1}\edef\pgfPT@engine{2}%
+\fi% -----------------------------------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ifs to user language and list of user translations available
+\newif\ifpgfPT@user@lang\pgfPT@user@langfalse%
+\newif\ifpgfPT@user@lang@isvalid\pgfPT@user@lang@isvalidfalse%
+% ISO code language list ------------------------------------->
+\def\pggPT@userlanguage@ISOcode@list{nl/Nederlands}%
+% ----------------------------------------------------------------
+\def\pggPT@userlanguage@ISOcode@check#1{%
+\edef\pgfPT@tmpISOcode{#1}%
+\def\pggPT@userlanguage@ISOcode@validate##1/##2\relax{\edef\pggPT@userlanguage@ISOcode@curr{##1}\edef\pggPT@userlanguage@ISOcode@currName{##2}}%
+\@for\@pgfPT@tmp:=\pggPT@userlanguage@ISOcode@list\do{\expandafter\pggPT@userlanguage@ISOcode@validate\@pgfPT@tmp\relax%
+\ifx\pggPT@userlanguage@ISOcode@curr\pgfPT@tmpISOcode\relax\global\pgfPT@user@lang@isvalidtrue%
+\edef\pggPT@userlanguage@ISOcode{\pggPT@userlanguage@ISOcode@curr}%
+\edef\pggPT@userlanguage@ISOcode@Name{\pggPT@userlanguage@ISOcode@currName}\fi%
+}% END \@for
+}%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ifs to typeset with \zhnumber
+\newif\ifpgfPT@zhnumbers@Z\pgfPT@zhnumbers@Zfalse%
+\newif\ifpgfPT@zhnumbers@per\pgfPT@zhnumbers@perfalse%
+\newif\ifpgfPT@zhnumbers@gr\pgfPT@zhnumbers@grfalse%
+% macro to set the zhnumber ifs to true or false
+% \pgfPTzhnumber[true|false]{what list} -> default [true]
+\def\pgfPTzhnumber{\@ifnextchar[{\@pgfPT@zhnumber}{\@pgfPT@zhnumber[true]}}%
+\def\@pgfPT@zhnumber[#1]#2{%
+\@for\@pgfPT@tmp:=#2\do{\csname pgfPT@zhnumbers@\@pgfPT@tmp#1\endcsname}%
+}%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \DeclareOption{pt}{\def\pgfPT@defaultLanguage{pt}}%
 \DeclareOption{en}{\def\pgfPT@defaultLanguage{en}}%
@@ -21,8 +68,75 @@
 \DeclareOption{it}{\def\pgfPT@defaultLanguage{it}}%
 \DeclareOption{es}{\def\pgfPT@defaultLanguage{es}}%
 \DeclareOption{br}{\def\pgfPT@defaultLanguage{br}}%
+\DeclareOption{dvnnumerals}{%
+\ifnum\pgfPT@fontspec=0\relax%
+\def\pgfPT@dvn@wrn{\PackageError{pgfPT}{package option 'numerals=dvn' (Devanagari Numerals) requires 'fontspec' package with XeLaTeX engine...}}%
+\else\ifx\pdfextension\undefined\relax% XeLaTeX%
+\newfontfamily\pgfPTdvn[Mapping=devanagarinumerals]{Eczar}%
+\def\pgfPTdvnfont{\@ifnextchar[{\@pgfPTdvnfont}{\@pgfPTdvnfont[]}}%
+\def\@pgfPTdvnfont[#1]#2{\renewfontfamily\pgfPTdvn[Mapping=devanagarinumerals,#1]{#2}}%
+\let\pgfPTnumberfont\pgfPTdvn\let\pgfPT@printnum\relax%
+\else\def\pgfPT@dvn@wrn{\PackageError{pgfPT}{package option 'numerals=dvn' (Devanagari Numerals) requires XeLaTeX engine...}}%
+\fi\fi%
+}%
+\DeclareOption{zhnumerals}{%
+\ifnum\pgfPT@fontspec=0\relax%
+\def\pgfPT@zh@wrn{\PackageError{pgfPT}{package option 'numerals=zh' (Mandarin Numerals) requires 'fontspec' package with XeLaTeX or LuaLaTeX engines...}}%
+\else\def\pgfPT@zhnumerals{}\fi}%
+\DeclareOption*{%
+\edef\pgfPT@processOption@equal{=}\edef\pgfPT@processOption@STOP{}%
+\def\pgfPT@processOption#1#2\relax{\edef\pgfPT@processOption@curchar{#1}\edef\pgfPT@processOption@remain{#2}%
+\def\pgfPT@getOption##1=##2\relax{%
+% option numerals=<dvn|zh>
+\edef\pgfPT@tmpOptionA{##1}\edef\pgfPT@tmpOptionB{numerals}\ifx\pgfPT@tmpOptionA\pgfPT@tmpOptionB%
+\edef\pgfPT@tmpOptionA{##2}\edef\pgfPT@tmpOptionB{zh}\ifx\pgfPT@tmpOptionA\pgfPT@tmpOptionB\ExecuteOptions{zhnumerals}\else%
+\edef\pgfPT@tmpOptionA{##2}\edef\pgfPT@tmpOptionB{dvn}\ifx\pgfPT@tmpOptionA\pgfPT@tmpOptionB\ExecuteOptions{dvnnumerals}\else%
+\@latex@error{Unknown value '\pgfPT@tmpOptionA' for option 'numerals' passed to '\@currname'}%
+{The option '\CurrentOption' was not declared in \@cls@pkg\space'\@currname', perhaps you\MessageBreak misspelled its name. Try typing \space <return>\space to proceed.}%
+\fi\fi% END option numerals
+% option userlang=<language ISO code>
+\else\edef\pgfPT@tmpOptionB{userlang}\ifx\pgfPT@tmpOptionA\pgfPT@tmpOptionB%
+\pggPT@userlanguage@ISOcode@check{##2}%
+\ifpgfPT@user@lang@isvalid%
+\message{Loading \pggPT@userlanguage@ISOcode@Name\space language data...}%
+\pgfPT@user@langtrue\def\pgfPT@defaultLanguage{user}%
+\else%
+\@latex@error{Unknown language ISO code '\pgfPT@tmpISOcode' for \@cls@pkg\space`\@currname'}%
+{The language ISO code '\pgfPT@tmpISOcode' was not declared in \@cls@pkg\space'\@currname', perhaps you\MessageBreak misspelled its name. Try typing \space <return>\space to proceed.}%
+\fi% \ifpgfPT@user@lang@isvalid%
+\else%
+\@latex@error{Unknown option '\pgfPT@tmpOptionA' for \@cls@pkg\space`\@currname'}%
+{The option '\CurrentOption' was not declared in \@cls@pkg\space'\@currname', perhaps you\MessageBreak misspelled its name. Try typing \space <return>\space to proceed with the default language (en).}%
+\fi\fi% % END option userlang
+}% END \pgfPT@getOption
+\ifx\pgfPT@processOption@curchar\pgfPT@processOption@equal\relax%
+\expandafter\pgfPT@getOption\CurrentOption\relax%
+\else\ifx\pgfPT@processOption@remain\pgfPT@processOption@STOP\relax%
+\else\expandafter\pgfPT@processOption#2\pgfPT@processOption@STOP\relax\fi\fi%
+}% END \pgfPT@processOption
+\expandafter\pgfPT@processOption\CurrentOption\pgfPT@processOption@STOP\relax%
+}% END \DeclareOption*
 \ExecuteOptions{en}%
 \ProcessOptions\relax%
+\ifx\pgfPT@dvn@wrn\undefined\relax\else\pgfPT@dvn@wrn\fi%
+\ifx\pgfPT@zh@wrn\undefined\relax\else\pgfPT@zh@wrn\fi%
+\ifx\pgfPT@zhnumerals\undefined\relax\else%
+\RequirePackage{zhnumber}%
+\pgfPT@zhnumbers@Ztrue\pgfPT@zhnumbers@pertrue\pgfPT@zhnumbers@grtrue%
+\newfontfamily\pgfPTzhnumberfont[Script=CJK,AutoFakeBold=4]{SimSun}%
+\def\pgfPTzhfont{\@ifnextchar[{\@pgfPTzhfont}{\@pgfPTzhfont[]}}%
+\def\@pgfPTzhfont[#1]#2{\renewfontfamily\pgfPTzhnumberfont[Script=CJK,#1]{#2}}%
+\let\pgfPTnumberfont\pgfPTzhnumberfont%
+\let\pgfPT@printnum\zhnumber%
+\fi%
+\ifx\pgfPT@printnum\undefined\relax\let\pgfPT@printnum\relax\let\pgfPTnumberfont\relax\fi%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% process user language
+\ifpgfPT@user@lang%
+\input{translations/pgfPT.lang.\pggPT@userlanguage@ISOcode.tex}%
+\else%
+\input{translations/pgfPT.lang.undefined.tex}%
+\fi%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newcount\pgfPT@counta\newcount\pgfPT@countb%
 \newcount\pgfPT@countc\newcount\pgfPT@countd%
@@ -34,6 +148,7 @@
 \newdimen\pgfPT@boxwd%
 \newdimen\pgfPT@boxht%
 \newdimen\pgfPT@data@Z@natwd%
+\newdimen\pgfPT@data@DiscY@natwd%
 \newif\ifpgfPT@temp%
 \newif\ifpgfPT@found%
 \newif\ifpgfPTis@backcolorsolid%
@@ -57,6 +172,8 @@
 \newsavebox\pgfPT@tmpbox%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \def\@pgfPT@setlayers{%
+\ifx\@pgfPT@resetlayers\undefined\relax\edef\@pgfPT@resetlayers{\pgf@layerlist}\fi%
+\pgfsetlayers{\@pgfPT@resetlayers}%
 \edef\@pgfPT@layers{pgfPTpaperlayer,pgfPTbacklayer,\pgf@layerlist}%
 \pgfdeclarelayer{pgfPTbacklayer}%
 \pgfdeclarelayer{pgfPTpaperlayer}%
@@ -85,10 +202,10 @@ font,IUPAC,capitalize element names=false,show title,show period numbers,show gr
 show legend,legend acronyms,legend back color,show legend pins,show extra legend,legend radio color,%
 legend CS color,legend Z color,show blocks=false,show families=false,show MNM line,show periodic variations=false,%
 show label LaAc,title font,title color,cell width,cell height,cell style,label font,period label color,group label color,%
-label LaAc font,Z list,CS solid, CS liquid,CS gas,CS synt,CS font,CS render mode,CS outline color,CS outline width,%
+label LaAc font,group numbers,Roman label color,Z list,CS solid, CS liquid,CS gas,CS synt,CS font,CS render mode,CS outline color,CS outline width,%
 Z backcolor,Z color,Z font,Z align,Z padding,Z use box width=false,name color,name font,name align,Ar color,Ar font,Ar label,Ar precision,%
 R color,R font,Rcov color,Rcov font,Rion color,Rion font,Ei color,Ei font,eneg color,eneg font,eaff color,eaff font,%
-O color,O font,Tmelt color,Tmelt font,TmeltC color,TmeltC font,Tboil color,Tboil font,TboilC color,TboilC font,%
+O color,O font,O Roman=false,Tmelt color,Tmelt font,TmeltC color,TmeltC font,Tboil color,Tboil font,TboilC color,TboilC font,%
 eDist color,eDist font,eDist sep,eConfign color,eConfign font,eConfignl color,eConfignl font,d color,d font,Cp color,Cp font,%
 kT color,kT font,ls color,ls font,ls align,ls,lsa color,lsa font,lsb color,lsb font,lsc color,lsc font,lsca color,lsca font,%
 DiscY color,DiscY font,DiscY BC scale,DiscC color,DiscC font,spectra color,spectra font,MNM line color,MNM line width,%DiscC,
@@ -113,7 +230,14 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
 \@pgfPT@setlayers%
 \tikz[every node/.append style={inner sep=0pt,below right}]{%
 \pgfkeys{/pgfPerTable/.cd,#1}%
-\fontfamily{\pgfPTglobalfont}\selectfont\renewcommand*\rmdefault{\pgfPTglobalfont}%
+% setting the font
+\ifnum\pgfPT@fontspec=1\relax% fontspec is loaded
+\edef\pgfPT@defaultfont{phv}%
+\ifx\pgfPTglobalfont\pgfPT@defaultfont\relax\edef\pgfPTglobalfont{TeX Gyre Heros}\fi% replacing 'phv' by 'TeX Gyre Heros'
+\setmainfont{\pgfPTglobalfont}%
+\ifx\NoAutoSpacing\undefined\relax\else\NoAutoSpacing\fi% XeLaTeX/LuaLaTeX -> removing «extra space» before ':' for babel:french
+\else% fontenc is loaded (with T1 option)
+\fontfamily{\pgfPTglobalfont}\selectfont\renewcommand*\rmdefault{\pgfPTglobalfont}\fi%
 \edef\pgfPT@doc@fsize{\f@size}%
 \input{pgfPT.coordinates.tex}%
 % loading the cell style
@@ -205,13 +329,42 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
         \edef\pgfPT@teststra{Radio}\ifx\pgfPT@teststra\pgfPT@teststrb\pgfPT@processbackcolor{61}\fill[cpgfPTTMP] ([xshift={4/15*\pgfPTcellwd}]xLa) rectangle ++(\pgfPTcellwd/15,-\pgfPTcellht);\draw (xLa) -- ++(\pgfPTcellwd,0);\draw ([yshift=-\pgfPTcellht]xLa) -- ++(\pgfPTcellwd,0);\fi%
         \edef\pgfPT@teststra{Blocks}\ifx\pgfPT@teststra\pgfPT@teststrb\pgfPT@processbackcolor{58}\fill[cpgfPTTMP] ([xshift={1/15*\pgfPTcellwd}]xLa) rectangle ++(\pgfPTcellwd*14/15,-\pgfPTcellht);\draw (xLa) -- ++(\pgfPTcellwd,0);\fi%
         \ifpgfPT@Z
-            \ifpgfZuseboxwidth%
-            \node[fill=\pgfPTZback,font=\pgfPTZfont,text=\pgfPTZcolor,align=\pgfPTZalign,text width=\pgfPT@data@Z@wd]%
-            at (xLa) {\vbox to\pgfPT@data@Z@ht{\vfil\hspace{\pgfPTZspace}57--71\hspace{\pgfPTZspace}\vfil}};%
-            \else%
-            {\pgfPTZfont\selectfont\pgfmathparse{width("57--71")}\pgfmathsetlength{\pgfPT@data@Z@natwd}{\pgfmathresult}%
-            \node[fill=\pgfPTZback,font=\pgfPTZfont,text=\pgfPTZcolor,text width=\pgfPT@data@Z@natwd,inner xsep=.5ex]%
-            at (xLa) {\vbox to\pgfPT@data@Z@ht{\vfil57--71\vfil}};}%
+            \ifpgfZuseboxwidth{\pgfPTZfont\pgfPTnumberfont%
+            \ifpgfPT@zhnumbers@Z\let\pgfPT@printnum\zhnumber%
+                \pgfmathparse{width("\pgfPT@printnum{57}\ --\ \pgfPT@printnum{71}")}\pgfmathsetlength{\pgfPT@data@Z@natwd}{\pgfmathresult}%
+                \ifdim\pgfPT@data@Z@natwd>\pgfPT@data@Z@wd\relax%
+                    \pgfmathparse{\pgfPT@data@Z@wd-2*\pgfPTZspace-.3333em}\pgfmathsetlength{\pgfPT@data@Z@natwd}{\pgfmathresult}%
+                    \node[fill=\pgfPTZback,font=\pgfPTZfont,text=\pgfPTZcolor,align=\pgfPTZalign,text width=\pgfPT@data@Z@wd]%
+                        at (xLa) {\vbox to\pgfPT@data@Z@ht{\vfil\hspace{\pgfPTZspace}\resizebox{\pgfPT@data@Z@natwd}{\height}{\pgfPT@printnum{57}\ --\ \pgfPT@printnum{71}}\hspace{\pgfPTZspace}\vfil}};%
+                \else%
+                    \node[fill=\pgfPTZback,font=\pgfPTZfont,text=\pgfPTZcolor,align=\pgfPTZalign,text width=\pgfPT@data@Z@wd]%
+                        at (xLa) {\vbox to\pgfPT@data@Z@ht{\vfil\hspace{\pgfPTZspace}\pgfPT@printnum{57}\ --\ \pgfPT@printnum{71}\hspace{\pgfPTZspace}\vfil}};%
+                \fi%
+            \else\let\pgfPT@printnum\relax%
+                \node[fill=\pgfPTZback,font=\pgfPTZfont,text=\pgfPTZcolor,align=\pgfPTZalign,text width=\pgfPT@data@Z@wd]%
+                    at (xLa) {\vbox to\pgfPT@data@Z@ht{\vfil\hspace{\pgfPTZspace}\pgfPT@printnum{57--71}\hspace{\pgfPTZspace}\vfil}};%
+            \fi%
+            }%
+            \else{%
+                \ifpgfPT@zhnumbers@Z\let\pgfPT@printnum\zhnumber%
+                    \pgfPTZfont\pgfPTnumberfont\pgfmathparse{width("\pgfPT@printnum{57}\ --\ \pgfPT@printnum{71}")}\pgfmathsetlength{\pgfPT@data@Z@natwd}{\pgfmathresult}%
+                    \ifdim\pgfPT@data@Z@natwd>\pgfPT@data@Z@wd\relax\edef\@pgfPT@resizebox{1}%
+                    \pgfmathparse{\pgfPT@data@Z@wd-1ex}\pgfmathsetlength{\pgfPT@data@Z@natwd}{\pgfmathresult}\else\edef\@pgfPT@resizebox{0}\fi%
+                \else\let\pgfPT@printnum\relax%
+                    \pgfPTZfont\pgfPTnumberfont\pgfmathparse{width("\pgfPT@printnum{57}\ --\ \pgfPT@printnum{71}")}\pgfmathsetlength{\pgfPT@data@Z@natwd}{\pgfmathresult}%
+                \fi%
+                \node[fill=\pgfPTZback,font=\pgfPTZfont,text=\pgfPTZcolor,text width=\pgfPT@data@Z@natwd,inner xsep=.5ex]%
+                at (xLa) {%
+                    \ifpgfPT@zhnumbers@Z%
+                        \ifnum\@pgfPT@resizebox=1\relax%
+                        \vbox to\pgfPT@data@Z@ht{\vfil\resizebox{\pgfPT@data@Z@natwd}{\height}{\pgfPT@printnum{57}\ --\ \pgfPT@printnum{71}}\vfil}%
+                        \else%
+                        \vbox to\pgfPT@data@Z@ht{\vfil\pgfPT@printnum{57}\ --\ \pgfPT@printnum{71}\vfil}%
+                        \fi%
+                    \else%
+                        \vbox to\pgfPT@data@Z@ht{\vfil\pgfPT@printnum{57--71}\vfil}%
+                    \fi%
+                    };}%
             \fi%
         \fi%
         \ifpgfPT@name\pgfPT@setlabels[\pgfPTlanguages]{La}%
@@ -247,13 +400,42 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
         \edef\pgfPT@teststra{PS}\ifx\pgfPT@teststra\pgfPT@teststrb\pgfPT@processbackcolor{93}\fill[cpgfPTTMP] ([xshift={4/15*\pgfPTcellwd}]xAc) rectangle ++(\pgfPTcellwd*11/15,-\pgfPTcellht);\draw (xAc) -- ++(\pgfPTcellwd,0);\draw ([yshift=-\pgfPTcellht]xAc) -- ++(\pgfPTcellwd,0);\fi%
         \edef\pgfPT@teststra{Blocks}\ifx\pgfPT@teststra\pgfPT@teststrb\pgfPT@processbackcolor{90}\fill[cpgfPTTMP] ([xshift={1/15*\pgfPTcellwd}]xAc) rectangle ++(\pgfPTcellwd*14/15,-\pgfPTcellht);\draw (xAc) -- ++(\pgfPTcellwd,0);\draw ([yshift=-\pgfPTcellht]xAc) -- ++(\pgfPTcellwd,0);\fi%
         \ifpgfPT@Z%
-            \ifpgfZuseboxwidth%
-            \node[fill=\pgfPTZback,font=\pgfPTZfont,text=\pgfPTZcolor,align=\pgfPTZalign,text width=\pgfPT@data@Z@wd]%
-            at (xAc) {\vbox to\pgfPT@data@Z@ht{\vfil\hspace{\pgfPTZspace}89--103\hspace{\pgfPTZspace}\vfil}};%
-            \else%
-            {\pgfPTZfont\selectfont\pgfmathparse{width("89--103")}\pgfmathsetlength{\pgfPT@data@Z@natwd}{\pgfmathresult}%
-            \node[fill=\pgfPTZback,font=\pgfPTZfont,text=\pgfPTZcolor,text width=\pgfPT@data@Z@natwd,inner xsep=.5ex]%
-            at (xAc) {\vbox to\pgfPT@data@Z@ht{\vfil89--103\vfil}};}%
+            \ifpgfZuseboxwidth{\pgfPTZfont\pgfPTnumberfont%
+            \ifpgfPT@zhnumbers@Z\let\pgfPT@printnum\zhnumber%
+                \pgfmathparse{width("\pgfPT@printnum{89}\ --\ \pgfPT@printnum{103}")}\pgfmathsetlength{\pgfPT@data@Z@natwd}{\pgfmathresult}%
+                \ifdim\pgfPT@data@Z@natwd>\pgfPT@data@Z@wd\relax%
+                    \pgfmathparse{\pgfPT@data@Z@wd-2*\pgfPTZspace-.3333em}\pgfmathsetlength{\pgfPT@data@Z@natwd}{\pgfmathresult}%
+                    \node[fill=\pgfPTZback,font=\pgfPTZfont,text=\pgfPTZcolor,align=\pgfPTZalign,text width=\pgfPT@data@Z@wd]%
+                        at (xAc) {\vbox to\pgfPT@data@Z@ht{\vfil\hspace{\pgfPTZspace}\resizebox{\pgfPT@data@Z@natwd}{\height}{\pgfPT@printnum{89}\ --\ \pgfPT@printnum{103}}\hspace{\pgfPTZspace}\vfil}};%
+                \else%
+                    \node[fill=\pgfPTZback,font=\pgfPTZfont,text=\pgfPTZcolor,align=\pgfPTZalign,text width=\pgfPT@data@Z@wd]%
+                        at (xAc) {\vbox to\pgfPT@data@Z@ht{\vfil\hspace{\pgfPTZspace}\pgfPT@printnum{89}\ --\ \pgfPT@printnum{103}\hspace{\pgfPTZspace}\vfil}};%
+                \fi%
+            \else\let\pgfPT@printnum\relax%
+                \node[fill=\pgfPTZback,font=\pgfPTZfont,text=\pgfPTZcolor,align=\pgfPTZalign,text width=\pgfPT@data@Z@wd]%
+                    at (xAc) {\vbox to\pgfPT@data@Z@ht{\vfil\hspace{\pgfPTZspace}\pgfPT@printnum{89--103}\hspace{\pgfPTZspace}\vfil}};%
+            \fi%
+            }%
+            \else{%
+                \ifpgfPT@zhnumbers@Z\let\pgfPT@printnum\zhnumber%
+                    \pgfPTZfont\pgfPTnumberfont\pgfmathparse{width("\pgfPT@printnum{89}\ --\ \pgfPT@printnum{103}")}\pgfmathsetlength{\pgfPT@data@Z@natwd}{\pgfmathresult}%
+                    \ifdim\pgfPT@data@Z@natwd>\pgfPT@data@Z@wd\relax\edef\@pgfPT@resizebox{1}%
+                    \pgfmathparse{\pgfPT@data@Z@wd-1ex}\pgfmathsetlength{\pgfPT@data@Z@natwd}{\pgfmathresult}\else\edef\@pgfPT@resizebox{0}\fi%
+                \else\let\pgfPT@printnum\relax%
+                    \pgfPTZfont\pgfPTnumberfont\pgfmathparse{width("\pgfPT@printnum{89}\ --\ \pgfPT@printnum{103}")}\pgfmathsetlength{\pgfPT@data@Z@natwd}{\pgfmathresult}%
+                \fi%
+                \node[fill=\pgfPTZback,font=\pgfPTZfont,text=\pgfPTZcolor,text width=\pgfPT@data@Z@natwd,inner xsep=.5ex]%
+                at (xAc) {%
+                    \ifpgfPT@zhnumbers@Z%
+                        \ifnum\@pgfPT@resizebox=1\relax%
+                        \vbox to\pgfPT@data@Z@ht{\vfil\resizebox{\pgfPT@data@Z@natwd}{\height}{\pgfPT@printnum{89}\ --\ \pgfPT@printnum{103}}\vfil}%
+                        \else%
+                        \vbox to\pgfPT@data@Z@ht{\vfil\pgfPT@printnum{89}\ --\ \pgfPT@printnum{103}\vfil}%
+                        \fi%
+                    \else%
+                        \vbox to\pgfPT@data@Z@ht{\vfil\pgfPT@printnum{89--103}\vfil}%
+                    \fi%
+                    };}%
             \fi%
         \fi%
         \ifpgfPT@name\pgfPT@setlabels[\pgfPTlanguages]{Ac}%
@@ -293,13 +475,46 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \draw[fill=cpgfPTTMP,line width=\pgfPTcelllinewd,draw=\pgfPTcelllinecolor] (\Z) rectangle ++(\pgfPTcellwd,-\pgfPTcellht);
     % append the Z box
     \ifpgfPT@Z%
-        \ifpgfZuseboxwidth%
-            \node[fill=\pgfPTZback,font=\pgfPTZfont,text=\pgfPTZcolor,align=\pgfPTZalign,text width=\pgfPT@data@Z@wd]%
-            at ([xshift=.5*\pgfPT@data@Z@x,yshift=-.5*\pgfPT@data@Z@y]\Z) {\vbox to\pgfPT@data@Z@ht{\vfil\hspace{\pgfPTZspace}\Z\hspace{\pgfPTZspace}\vfil}};%
+        \ifpgfZuseboxwidth{\pgfPTZfont\pgfPTnumberfont%
+            \ifpgfPT@zhnumbers@Z\let\pgfPT@printnum\zhnumber%
+                \pgfmathparse{width("\pgfPT@printnum{\Z}")}\pgfmathsetlength{\pgfPT@data@Z@natwd}{\pgfmathresult}%
+                \ifdim\pgfPT@data@Z@natwd>\pgfPT@data@Z@wd\relax%
+                    \pgfmathparse{\pgfPT@data@Z@wd-2*\pgfPTZspace-.3333em}\pgfmathsetlength{\pgfPT@data@Z@natwd}{\pgfmathresult}%
+                    \node[fill=\pgfPTZback,font=\pgfPTZfont,text=\pgfPTZcolor,align=\pgfPTZalign,text width=\pgfPT@data@Z@wd]%
+                        at ([xshift=.5*\pgfPT@data@Z@x,yshift=-.5*\pgfPT@data@Z@y]\Z)
+                        {\vbox to\pgfPT@data@Z@ht{\vfil\hspace{\pgfPTZspace}\resizebox{\pgfPT@data@Z@natwd}{\height}{\pgfPT@printnum{\Z}}\hspace{\pgfPTZspace}\vfil}};
+                \else%
+                    \node[fill=\pgfPTZback,font=\pgfPTZfont,text=\pgfPTZcolor,align=\pgfPTZalign,text width=\pgfPT@data@Z@wd]%
+                        at ([xshift=.5*\pgfPT@data@Z@x,yshift=-.5*\pgfPT@data@Z@y]\Z)
+                        {\vbox to\pgfPT@data@Z@ht{\vfil\hspace{\pgfPTZspace}\pgfPT@printnum{\Z}\hspace{\pgfPTZspace}\vfil}};
+                \fi%
+            \else\let\pgfPT@printnum\relax%
+                \node[fill=\pgfPTZback,font=\pgfPTZfont,text=\pgfPTZcolor,align=\pgfPTZalign,text width=\pgfPT@data@Z@wd]%
+                    at ([xshift=.5*\pgfPT@data@Z@x,yshift=-.5*\pgfPT@data@Z@y]\Z)
+                    {\vbox to\pgfPT@data@Z@ht{\vfil\hspace{\pgfPTZspace}\pgfPT@printnum{\Z}\hspace{\pgfPTZspace}\vfil}};
+            \fi%
+            }%
         \else%
-            {\pgfPTZfont\pgfmathparse{width(\Z)}\pgfmathsetlength{\pgfPT@data@Z@natwd}{\pgfmathresult}%
+            {%
+            \ifpgfPT@zhnumbers@Z\let\pgfPT@printnum\zhnumber%
+                \pgfPTZfont\pgfPTnumberfont\pgfmathparse{width("\pgfPT@printnum{\Z}")}\pgfmathsetlength{\pgfPT@data@Z@natwd}{\pgfmathresult}%
+                \ifdim\pgfPT@data@Z@natwd>\pgfPT@data@Z@wd\relax\edef\@pgfPT@resizebox{1}%
+                \pgfmathparse{\pgfPT@data@Z@wd-1ex}\pgfmathsetlength{\pgfPT@data@Z@natwd}{\pgfmathresult}\else\edef\@pgfPT@resizebox{0}\fi%
+            \else\let\pgfPT@printnum\relax%
+                \pgfPTZfont\pgfPTnumberfont\pgfmathparse{width("\pgfPT@printnum{\Z}")}\pgfmathsetlength{\pgfPT@data@Z@natwd}{\pgfmathresult}%
+            \fi%
             \node[fill=\pgfPTZback,font=\pgfPTZfont,text=\pgfPTZcolor,text width=\pgfPT@data@Z@natwd,inner xsep=.5ex]%
-            at ([xshift=\pgfPT@data@Z@x+.5*\@pgfPT@Zxshift,yshift=-\pgfPT@data@Z@y-.5*\@pgfPT@Zyshift]\Z) {\vbox to\pgfPT@data@Z@ht{\vfil\Z\vfil}};}%
+            at ([xshift=\pgfPT@data@Z@x+.5*\@pgfPT@Zxshift,yshift=-\pgfPT@data@Z@y-.5*\@pgfPT@Zyshift]\Z) {%
+                    \ifpgfPT@zhnumbers@Z%
+                        \ifnum\@pgfPT@resizebox=1\relax%
+                        \vbox to\pgfPT@data@Z@ht{\vfil\resizebox{\pgfPT@data@Z@natwd}{\height}{\pgfPT@printnum{\Z}}\vfil}%
+                        \else%
+                        \vbox to\pgfPT@data@Z@ht{\vfil\pgfPT@printnum{\Z}\vfil}%
+                        \fi%
+                    \else%
+                        \vbox to\pgfPT@data@Z@ht{\vfil\pgfPT@printnum{\Z}\vfil}%
+                    \fi%
+                    };}%
         \fi%
     \fi%
     % the Chemical Symbol
@@ -318,12 +533,10 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             \@for\pgfPT@tmp:=\pgfPTlanguages\do{%
                 \ifnum\pgfPT@counta=0\relax%
                     \edef\pgfPT@tmp@name@defaultLanguage{\csname pgfPTdata@name@\@roman{\Z}@\pgfPT@tmp\endcsname}%
-                    %\ifpgfPTNames\edef\pgfPT@tmp@name@defaultLanguage{\expandafter\pgfPT@namec@p\pgfPT@tmp@name@defaultLanguage\relax}\fi% v1.0.1
                     \ifx\pgfPTNames\pgfPT@true\relax\edef\pgfPT@tmp@name@defaultLanguage{\expandafter\pgfPT@namec@p\pgfPT@tmp@name@defaultLanguage\relax}\else%
                     \ifx\pgfPTNames\pgfPT@TRUE\relax\edef\pgfPT@tmp@name@defaultLanguage{\pgfPT@makeUppercase\pgfPT@tmp@name@defaultLanguage\relax}\fi\fi%
                 \else%
                     \edef\pgfPT@tmp@n@me{\csname pgfPTdata@name@\@roman{\Z}@\pgfPT@tmp\endcsname}%
-                    %\ifpgfPTNames\edef\pgfPT@tmp@n@me{\expandafter\pgfPT@namec@p\pgfPT@tmp@n@me\relax}\fi% v1.0.1
                     \ifx\pgfPTNames\pgfPT@true\relax\edef\pgfPT@tmp@n@me{\expandafter\pgfPT@namec@p\pgfPT@tmp@n@me\relax}\else%
                     \ifx\pgfPTNames\pgfPT@TRUE\relax\edef\pgfPT@tmp@n@me{\pgfPT@makeUppercase\pgfPT@tmp@n@me\relax}\fi\fi%
                     \edef\pgfPT@tmp@name@otherLanguages{\pgfPT@tmp@name@otherLanguages\vskip-\pgfPT@dima\hbox to %
@@ -353,7 +566,6 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
                 {\vbox to \pgfPT@boxht{\vfil\vbox to \pgfPT@dimb{\vfil\pgfPT@tmp@name@otherLanguages}\vfil}};%
             \fi%
             \fi%
-            \fontseries{\seriesdefault}\fontshape{\shapedefault}\selectfont% Restoring the font settings to normal mode in the document
     \fi%
     % the Atomic weight
     \ifpgfPT@Ar%
@@ -461,6 +673,16 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \fi%
     % O -> Oxidation States
     \ifpgfPT@O\relax%
+        \ifpgfPTORoman% new in v2.1.1
+        \ifnum\Z=25\relax% Mn
+            \node[font=\pgfPTOfont,text=\pgfPTOcolor,text width=\pgfPT@data@O@wd,text centered]%
+                at ([xshift=\pgfPT@data@O@x,yshift=-\pgfPT@data@O@y]\Z) {\vbox to\pgfPT@data@O@ht{\vfil\pgfPT@box@zerodepth{\resizebox{.95\linewidth}{\height}{\pgfPT@data@ORoman}}
+                \vfil}};%
+        \else%
+            \node[font=\pgfPTOfont,text=\pgfPTOcolor,text width=\pgfPT@data@O@wd,text centered]%
+                at ([xshift=\pgfPT@data@O@x,yshift=-\pgfPT@data@O@y]\Z) {\vbox to\pgfPT@data@O@ht{\vfil\pgfPT@box@zerodepth{\pgfPT@data@ORoman}\vfil}};%
+        \fi%
+        \else%
         \ifnum\Z=25\relax% Mn
             \node[font=\pgfPTOfont,text=\pgfPTOcolor,text width=\pgfPT@data@O@wd,text centered]%
                 at ([xshift=\pgfPT@data@O@x,yshift=-\pgfPT@data@O@y]\Z) {\vbox to\pgfPT@data@O@ht{\vfil\pgfPT@box@zerodepth{\resizebox{.95\linewidth}{\height}{\pgfPT@data@O}}
@@ -468,6 +690,7 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
         \else%
             \node[font=\pgfPTOfont,text=\pgfPTOcolor,text width=\pgfPT@data@O@wd,text centered]%
                 at ([xshift=\pgfPT@data@O@x,yshift=-\pgfPT@data@O@y]\Z) {\vbox to\pgfPT@data@O@ht{\vfil\pgfPT@box@zerodepth{\pgfPT@data@O}\vfil}};%
+        \fi%
         \fi%
     \fi%
     % Tmelt -> Melting Point (Kelvin)
@@ -797,8 +1020,8 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             \fi\fi%
     \fi%
     % DiscY -> Discover Year
-    \ifpgfPT@DiscY\relax%
-        \node[font=\pgfPTDiscYfont,text=\pgfPTDiscYcolor,text width=\pgfPT@data@DiscY@wd,text centered]%
+    \ifpgfPT@DiscY\relax
+            \node[font=\pgfPTDiscYfont,text=\pgfPTDiscYcolor,text width=\pgfPT@data@DiscY@wd,text centered]%
                 at ([xshift=\pgfPT@data@DiscY@x,yshift=-\pgfPT@data@DiscY@y]\Z) {\vbox to\pgfPT@data@DiscY@ht{\vfil\mbox{\pgfPT@data@DiscY}\vfil}};%
     \fi%
     % spectra -> spectra
@@ -849,8 +1072,10 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
         \foreach \Z in \pgfPT@@cellslist {%
             \ifnum\Z=\Zsearch\global\pgfPTis@labeldrawntrue%
             \ifpgfPTIUPACMMIX\edef\pgfPT@teststrb{\pgfPTcells}\edef\pgfPT@teststra{d}\ifx\pgfPT@teststra\pgfPT@teststrb\ifnum\Z>48\pgfmathparse{-1.075*\pgfPTcellwd}\edef\pgfPT@perlabel@xshift{\pgfmathresult}\fi\fi\fi%
+            {\pgfPTlabfont\pgfPTnumberfont\ifpgfPT@zhnumbers@per\let\pgfPT@printnum\zhnumber\else\let\pgfPT@printnum\relax\fi%
             \node[left,font=\pgfPTlabfont,text=\pgfPTlabpercolor] at%
-            ([xshift=\pgfPT@perlabel@xshift,yshift=\pgfPT@CS@yshift]\Z) {\per};\breakforeach\fi%
+            ([xshift=\pgfPT@perlabel@xshift,yshift=\pgfPT@CS@yshift]\Z) {\pgfPT@printnum{\per}};%
+            }\breakforeach\fi%
         }%
         \ifpgfPTis@labeldrawn\global\pgfPTis@labeldrawnfalse\breakforeach\fi%
     }%
@@ -878,15 +1103,15 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
         \advance\pgfPT@counta by 1\relax%
     }%
     \pgfPTlabLaAcfont\selectfont\pgfmathsetlength{\pgfPT@dima}{.75*\f@size}%
-    \pgfmathparse{width("\pgfPT@tmp@label@defaultLanguage")}%
+    \pgfmathparse{width("\noexpand\pgfPT@tmp@label@defaultLanguage")}%
     \edef\pgfPT@labelboxwd{\pgfmathresult}%
+    \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \foreach \Zsearch in \pgfPT@cells@lanthanoids{%
         \foreach \Z in \pgfPT@@cellslist {%
             \ifnum\Z=\Zsearch\global\pgfPTis@labeldrawntrue%
-            \node[left,font=\pgfPTlabfont,text=\pgfPTlabpercolor] at ([xshift=\pgfPT@perlabel@xshift,yshift=\pgfPT@CS@yshift]\Z) {6};%
+            {\pgfPTlabfont\pgfPTnumberfont\ifpgfPT@zhnumbers@per\let\pgfPT@printnum\zhnumber\else\let\pgfPT@printnum\relax\fi%
+            \node[left,font=\pgfPTlabfont,text=\pgfPTlabpercolor] at ([xshift=\pgfPT@perlabel@xshift,yshift=\pgfPT@CS@yshift]\Z) {\pgfPT@printnum{6}};}%
             \ifpgfPTLaAclabels\pgfPT@processbackcolor{57}%
-            %\node[below left,font=\pgfPTlabLaAcfont,text=cpgfPTTMP,inner ysep=0pt] at ([xshift=\pgfPT@perlabel@xshift]\Z)%
-            %{\pgfPT@labels@La};\fi%
             \node[below left,font=\pgfPTlabLaAcfont,text=cpgfPTTMP,inner ysep=0pt,text width=\pgfPT@labelboxwd] at ([xshift=\pgfPT@perlabel@xshift]\Z)%
                     {\pgfPT@tmp@label@defaultLanguage\ifnum\pgfPT@counta>1\relax\fontsize{\pgfPT@dima}{\pgfPT@dima}\selectfont\\ [-1pt]\pgfPT@tmp@labels@otherLanguages\fi};\fi%
             \breakforeach\fi%
@@ -905,12 +1130,14 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
         \advance\pgfPT@counta by 1\relax%
     }%
     \pgfPTlabLaAcfont\selectfont\pgfmathsetlength{\pgfPT@dima}{.75*\f@size}%
-    \pgfmathparse{width("\pgfPT@tmp@label@defaultLanguage")}%
+    \pgfmathparse{width("\noexpand\pgfPT@tmp@label@defaultLanguage")}%
     \edef\pgfPT@labelboxwd{\pgfmathresult}%
+    \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \foreach \Zsearch in \pgfPT@cells@La{%
         \foreach \Z in \pgfPT@@cellslist {%
             \ifnum\Z=\Zsearch\global\pgfPTis@labeldrawntrue%
-                \node[left,font=\pgfPTlabfont,text=\pgfPTlabpercolor] at ([xshift=\pgfPT@perlabel@xshift,yshift=\pgfPT@CS@yshift]\Z) {6};%
+                {\pgfPTlabfont\pgfPTnumberfont\ifpgfPT@zhnumbers@per\let\pgfPT@printnum\zhnumber\else\let\pgfPT@printnum\relax\fi%
+                \node[left,font=\pgfPTlabfont,text=\pgfPTlabpercolor] at ([xshift=\pgfPT@perlabel@xshift,yshift=\pgfPT@CS@yshift]\Z) {\pgfPT@printnum{6}};}%
                 \ifpgfPTLaAclabels\pgfPT@processbackcolor{57}%
                     \node[below left,font=\pgfPTlabLaAcfont,text=cpgfPTTMP,inner ysep=0pt,text width=\pgfPT@labelboxwd] at ([xshift=\pgfPT@perlabel@xshift]\Z)%
                     {\pgfPT@tmp@label@defaultLanguage\ifnum\pgfPT@counta>1\relax\fontsize{\pgfPT@dima}{\pgfPT@dima}\selectfont\\ [-1pt]\pgfPT@tmp@labels@otherLanguages\fi};\fi%
@@ -918,9 +1145,9 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
         }%
     \ifpgfPTis@labeldrawn\global\pgfPTis@labeldrawnfalse\breakforeach\fi%
     }%
-    \fontseries{\seriesdefault}\fontshape{\shapedefault}\selectfont% Restoring the font settings to normal mode in the document
+\ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
 \fi%
-\fontseries{\seriesdefault}\fontshape{\shapedefault}\selectfont% Restoring the font settings to normal mode in the document
+\ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
 % actinoids -->
 \global\pgfPTis@labeldrawnfalse%
 \ifpgfPTIUPACMMIX%
@@ -935,12 +1162,14 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
         \advance\pgfPT@counta by 1\relax%
     }%
     \pgfPTlabLaAcfont\selectfont\pgfmathsetlength{\pgfPT@dima}{.75*\f@size}%
-    \pgfmathparse{width("\pgfPT@tmp@label@defaultLanguage")}%
+    \pgfmathparse{width("\noexpand\pgfPT@tmp@label@defaultLanguage")}%
     \edef\pgfPT@labelboxwd{\pgfmathresult}%
+    \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \foreach \Zsearch in \pgfPT@cells@actinoids{%
         \foreach \Z in \pgfPT@@cellslist {%
             \ifnum\Z=\Zsearch\global\pgfPTis@labeldrawntrue%
-            \node[left,font=\pgfPTlabfont,text=\pgfPTlabpercolor] at ([xshift=\pgfPT@perlabel@xshift,yshift=\pgfPT@CS@yshift]\Z) {7};%
+            {\pgfPTlabfont\pgfPTnumberfont\ifpgfPT@zhnumbers@per\let\pgfPT@printnum\zhnumber\else\let\pgfPT@printnum\relax\fi%
+            \node[left,font=\pgfPTlabfont,text=\pgfPTlabpercolor] at ([xshift=\pgfPT@perlabel@xshift,yshift=\pgfPT@CS@yshift]\Z) {\pgfPT@printnum{7}};}%
             \ifpgfPTLaAclabels\pgfPT@processbackcolor{89}%
             \node[below left,font=\pgfPTlabLaAcfont,text=cpgfPTTMP,inner ysep=0pt,text width=\pgfPT@labelboxwd] at ([xshift=\pgfPT@perlabel@xshift]\Z)%
                     {\pgfPT@tmp@label@defaultLanguage\ifnum\pgfPT@counta>1\relax\fontsize{\pgfPT@dima}{\pgfPT@dima}\selectfont\\ [-1pt]\pgfPT@tmp@labels@otherLanguages\fi};\fi%
@@ -960,12 +1189,14 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
         \advance\pgfPT@counta by 1\relax%
     }%
     \pgfPTlabLaAcfont\selectfont\pgfmathsetlength{\pgfPT@dima}{.75*\f@size}%
-    \pgfmathparse{width("\pgfPT@tmp@label@defaultLanguage")}%
+    \pgfmathparse{width("\noexpand\pgfPT@tmp@label@defaultLanguage")}%
     \edef\pgfPT@labelboxwd{\pgfmathresult}%
+    \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \foreach \Zsearch in \pgfPT@cells@Ac{%
         \foreach \Z in \pgfPT@@cellslist {%
             \ifnum\Z=\Zsearch\global\pgfPTis@labeldrawntrue%
-                \node[left,font=\pgfPTlabfont,text=\pgfPTlabpercolor] at ([xshift=\pgfPT@perlabel@xshift,yshift=\pgfPT@CS@yshift]\Z) {7};%
+                {\pgfPTlabfont\pgfPTnumberfont\ifpgfPT@zhnumbers@per\let\pgfPT@printnum\zhnumber\else\let\pgfPT@printnum\relax\fi%
+                \node[left,font=\pgfPTlabfont,text=\pgfPTlabpercolor] at ([xshift=\pgfPT@perlabel@xshift,yshift=\pgfPT@CS@yshift]\Z) {\pgfPT@printnum{7}};}%
                 \ifpgfPTLaAclabels\pgfPT@processbackcolor{89}%
                     \node[below left,font=\pgfPTlabLaAcfont,text=cpgfPTTMP,inner ysep=0pt,text width=\pgfPT@labelboxwd] at ([xshift=\pgfPT@perlabel@xshift]\Z)%
                     {\pgfPT@tmp@label@defaultLanguage\ifnum\pgfPT@counta>1\relax\fontsize{\pgfPT@dima}{\pgfPT@dima}\selectfont\\ [-1pt]\pgfPT@tmp@labels@otherLanguages\fi};\fi%
@@ -973,20 +1204,28 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
         }%
     \ifpgfPTis@labeldrawn\global\pgfPTis@labeldrawnfalse\breakforeach\fi%
     }%
-    \fontseries{\seriesdefault}\fontshape{\shapedefault}\selectfont% Restoring the font settings to normal mode in the document
+\ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
 \fi%
-\fontseries{\seriesdefault}\fontshape{\shapedefault}\selectfont% Restoring the font settings to normal mode in the document
+\ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
 \fi%
 % groups -->
 \ifpgfPTgrlabels%
 \global\pgfPTis@labeldrawnfalse%
+\pgfPT@gr@numbers{\pgfPTgrnum}% new in v2.1.1
 \ifpgfPTIUPACMMIX%
 \foreach \group in {1,2,4,5,...,18} {%
     \edef\pgfPT@@grlist{\csname pgfPT@cells@G\@Roman\group\endcsname}%
     \foreach \Zsearch in \pgfPT@@grlist{%
         \foreach \Z in \pgfPT@@cellslist {%
-            \ifnum\Z=\Zsearch\global\pgfPTis@labeldrawntrue\node[above,font=\pgfPTlabfont,text=\pgfPTlabgrcolor] at%
-            ([xshift=\pgfPT@@xshift,yshift=\pgfPT@grlabel@yshift]\Z) {\group};\breakforeach\fi%
+            \ifnum\Z=\Zsearch\global\pgfPTis@labeldrawntrue%
+            {\pgfPTlabfont\pgfPTnumberfont\colorlet{pgfPT@grcolor}{\pgfPTlabgrcolor}\ifpgfPT@zhnumbers@gr\let\pgfPT@printnum\zhnumber\else%
+            \ifpgfPT@grRoman\let\pgfPT@printnum\pgfPT@gr@Roman\colorlet{pgfPT@grcolor}{\pgfPTRomanlabgrcolor}\else\let\pgfPT@printnum\relax\fi\fi%
+            \node[above,font=\pgfPTlabfont,text=pgfPT@grcolor] at%
+            ([xshift=\pgfPT@@xshift,yshift=\pgfPT@grlabel@yshift]\Z) {\pgfPT@printnum{\group}};
+            \ifpgfPT@grarabic\colorlet{pgfPT@grcolor}{\pgfPTlabgrcolor}%
+            \node[above,font=\pgfPTlabfont,text=pgfPT@grcolor] at%
+            ([xshift=\pgfPT@@xshift,yshift=\pgfPT@grlabel@yshift+2ex]\Z) {\group};\fi}%
+            \breakforeach\fi%
         }%
         \ifpgfPTis@labeldrawn\global\pgfPTis@labeldrawnfalse\breakforeach\fi%
     }%
@@ -994,8 +1233,15 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
 \global\pgfPTis@labeldrawnfalse%
 \foreach \Zsearch in \pgfPT@cells@GIIILaAc{%
     \foreach \Z in \pgfPT@@cellslist {%
-        \ifnum\Z=\Zsearch\global\pgfPTis@labeldrawntrue\node[above,font=\pgfPTlabfont,text=\pgfPTlabgrcolor] at%
-        ([xshift=\pgfPT@@xshift,yshift=\pgfPT@grlabel@yshift]\Z) {3};\breakforeach\fi%
+        \ifnum\Z=\Zsearch\global\pgfPTis@labeldrawntrue%
+        {\pgfPTlabfont\pgfPTnumberfont\colorlet{pgfPT@grcolor}{\pgfPTlabgrcolor}\ifpgfPT@zhnumbers@gr\let\pgfPT@printnum\zhnumber\else%
+            \ifpgfPT@grRoman\let\pgfPT@printnum\pgfPT@gr@Roman\colorlet{pgfPT@grcolor}{\pgfPTRomanlabgrcolor}\else\let\pgfPT@printnum\relax\fi\fi%
+            \node[above,font=\pgfPTlabfont,text=pgfPT@grcolor] at%
+            ([xshift=\pgfPT@@xshift,yshift=\pgfPT@grlabel@yshift]\Z) {\pgfPT@printnum{3}};
+            \ifpgfPT@grarabic\colorlet{pgfPT@grcolor}{\pgfPTlabgrcolor}%
+            \node[above,font=\pgfPTlabfont,text=pgfPT@grcolor] at%
+            ([xshift=\pgfPT@@xshift,yshift=\pgfPT@grlabel@yshift+2ex]\Z) {3};\fi}%
+        \breakforeach\fi%
     }%
     \ifpgfPTis@labeldrawn\global\pgfPTis@labeldrawnfalse\breakforeach\fi%
 }%
@@ -1004,8 +1250,15 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \edef\pgfPT@@grlist{\csname pgfPT@cells@G\@Roman\group\endcsname}%
     \foreach \Zsearch in \pgfPT@@grlist{%
         \foreach \Z in \pgfPT@@cellslist {%
-            \ifnum\Z=\Zsearch\global\pgfPTis@labeldrawntrue\node[above,font=\pgfPTlabfont,text=\pgfPTlabgrcolor] at%
-            ([xshift=\pgfPT@@xshift,yshift=\pgfPT@grlabel@yshift]\Z) {\group};\breakforeach\fi%
+            \ifnum\Z=\Zsearch\global\pgfPTis@labeldrawntrue%
+            {\pgfPTlabfont\pgfPTnumberfont\colorlet{pgfPT@grcolor}{\pgfPTlabgrcolor}\ifpgfPT@zhnumbers@gr\let\pgfPT@printnum\zhnumber\else%
+            \ifpgfPT@grRoman\let\pgfPT@printnum\pgfPT@gr@Roman\colorlet{pgfPT@grcolor}{\pgfPTRomanlabgrcolor}\else\let\pgfPT@printnum\relax\fi\fi%
+            \node[above,font=\pgfPTlabfont,text=pgfPT@grcolor] at%
+            ([xshift=\pgfPT@@xshift,yshift=\pgfPT@grlabel@yshift]\Z) {\pgfPT@printnum{\group}};%
+            \ifpgfPT@grarabic\colorlet{pgfPT@grcolor}{\pgfPTlabgrcolor}%
+            \node[above,font=\pgfPTlabfont,text=pgfPT@grcolor] at%
+            ([xshift=\pgfPT@@xshift,yshift=\pgfPT@grlabel@yshift+2ex]\Z) {\group};\fi}%
+            \breakforeach\fi%
         }%
         \ifpgfPTis@labeldrawn\global\pgfPTis@labeldrawnfalse\breakforeach\fi%
     }%
@@ -1034,7 +1287,7 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
                 \pgfPTtitlefont\selectfont\pgfmathsetlength{\pgfPT@dima}{.75*\f@size}%
                 \node[font=\pgfPTotherLangFont\fontsize{\pgfPT@dima}{\pgfPT@dima}\selectfont,text=\pgfPTotherLangColor,below,text width=18*\pgfPTcellwd,text centered,inner xsep=0pt] at ([yshift={-.075*\pgfPTcellht}]theTitle.south)%
                 {\vbox{\pgfPT@tmp@titulo@otherLanguages}};%
-                \fontseries{\seriesdefault}\fontshape{\shapedefault}\selectfont% Restoring the font settings to normal mode in the document
+                \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
             \fi%
 \fi%
 % legend -->
@@ -1043,14 +1296,14 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
 \ifpgfPTlegacro% use acronyms ##############################################
 \draw[fill=\pgfPTlegendbackcolor,draw=\pgfPTcelllinecolor,line width=\pgfPTcelllinewd] (0) rectangle ++(\pgfPTcellwd,-\pgfPTcellht);
     % append the Z box
-    \ifpgfPT@Z\fontfamily{\pgfPTglobalfont}\pgfPTZfont\selectfont%
+    \ifpgfPT@Z%
         \node[fill=\pgfPTZback,font=\pgfPTZfont,text=\pgfPTZcolor,below right,inner sep=1.5pt] (LZ)%
             at ([xshift=\pgfPT@data@Z@x,yshift=-\pgfPT@data@Z@y]0) {Z};%
     \fi%
     % the Chemical Symbol
     \ifpgfPT@CS%
         \pgfPT@extract@rgb@fill{\pgfPTlegendCScolor}%
-        \fontfamily{\pgfPTglobalfont}\pgfPTCSfont\selectfont%
+        \pgfPTCSfont\selectfont%
         \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.5*\f@size}\pgfmathsetlength{\pgfPT@dimb}{.3*\f@size}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.35*\f@size}\pgfmathsetlength{\pgfPT@dimb}{.2*\f@size}%
             \else\pgfmathsetlength{\pgfPT@dima}{.6*\f@size}\fi\fi%
@@ -1067,7 +1320,7 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
         \else\pgfmathsetlength{\pgfPT@dima}{.4*\f@size}\fi%
         \fontsize{\pgfPT@doc@fsize}{\pgfPT@doc@fsize}\selectfont\relax%
         \node[legendpins,%
-                text width={.7*\pgfPTcellwd+.2*(\pgfPT@countb-1)*\pgfPTcellwd-4pt},font=\fontfamily{\pgfPTglobalfont}\fontsize{\the\pgfPT@dima}{\the\pgfPT@dima}\selectfont,inner xsep=2pt,inner ysep=1pt]
+                text width={.7*\pgfPTcellwd+.2*(\pgfPT@countb-1)*\pgfPTcellwd-4pt},font=\fontsize{\the\pgfPT@dima}{\the\pgfPT@dima}\selectfont,inner xsep=2pt,inner ysep=1pt]%
                 at ([xshift={\pgfPT@dimc+.2*\pgfPTcellwd},yshift={.25*\pgfPT@data@CS@ht}]LCS.east)%
                 {%
                 \pgfPT@extract@rgb@fill{solido}\pgfPT@pinEstado{solido}%
@@ -1096,9 +1349,9 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
                 }\fi%
                 };%
         \fi\fi%
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     % the Name
     \ifpgfPT@name%
-        \fontfamily{\pgfPTglobalfont}\pgfPTnamefont\selectfont%
         \node[font=\pgfPTnamefont,text=\pgfPTnamecolor,text width=\pgfPT@data@name@wd,align=\pgfPTnamealign,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@name@ht]%
             at ([xshift=\pgfPT@data@name@x,yshift=-\pgfPT@data@name@y]0)%
@@ -1108,7 +1361,6 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \ifpgfPT@Ar%
         \edef\pgfPT@tmptest{\pgfPTArlabel}\edef\pgfPT@tmp@m{m}%
         \ifx\pgfPT@tmptest\pgfPT@tmp@m\relax\let\pgfPT@labels@Ar\pgfPT@labels@Ar@m\else\let\pgfPT@labels@Ar\pgfPT@labels@Ar@w\fi%
-        \fontfamily{\pgfPTglobalfont}\pgfPTArfont\selectfont%
         \node[font=\pgfPTArfont,text=\pgfPTArcolor,text width=\pgfPT@data@Ar@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@Ar@ht]%
             at ([xshift=\pgfPT@data@Ar@x,yshift=-\pgfPT@data@Ar@y]0)%
@@ -1117,26 +1369,25 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \ifpgfPT@Arstar%
         \edef\pgfPT@tmptest{\pgfPTArlabel}\edef\pgfPT@tmp@m{m}%
         \ifx\pgfPT@tmptest\pgfPT@tmp@m\relax\let\pgfPT@labels@Arstar\pgfPT@labels@Arstar@m\else\let\pgfPT@labels@Arstar\pgfPT@labels@Arstar@w\fi%
-        \fontfamily{\pgfPTglobalfont}\pgfPTArfont\selectfont%
         \node[font=\pgfPTArfont,text=\pgfPTArcolor,text width=\pgfPT@data@Arstar@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@Arstar@ht]%
             at ([xshift=\pgfPT@data@Arstar@x,yshift=-\pgfPT@data@Arstar@y]0)%
             {Ar};%
     \fi%
     % radioactivity
-    \ifpgfPT@radio\pgfmathsetlength{\pgfPT@dima}{.85*\f@size}%
-    \fontfamily{\pgfPTglobalfont}\pgfPTotherLangFont\selectfont%
+    \ifpgfPT@radio%
+    \pgfPTotherLangFont\selectfont%
+    \pgfmathsetlength{\pgfPT@dima}{.85*\f@size}%
     \node[text width=\pgfPT@data@radio@wd,text centered,inner sep=0pt,opacity=.25] (Lradio)%
     at ([xshift=\pgfPT@data@radio@x,yshift=-\pgfPT@data@radio@y]0)
     {\includegraphics[height=\pgfPT@data@radio@ht]{pgfPT_radio_symbol.pdf}};
     \node[text width=\pgfPT@data@radio@wd,text centered,inner sep=0pt,font=\fontsize{\the\pgfPT@dima}{\the\pgfPT@dima}\selectfont,%
              text depth=0pt,minimum height=\pgfPT@data@radio@ht,text=\pgfPTlegendradiocolor]%
-    at ([xshift=\pgfPT@data@radio@x,yshift=-\pgfPT@data@radio@y]0)
-    {Ra};
+        at ([xshift=\pgfPT@data@radio@x,yshift=-\pgfPT@data@radio@y]0) {Ra};
+    \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
-        % R -> Atomic Radius (Empirycal)
+    % R -> Atomic Radius (Empirycal)
     \ifpgfPT@R%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \node[font=\pgfPTRfont,text=\pgfPTRcolor,text width=\pgfPT@data@R@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@R@ht]%
             at ([xshift=\pgfPT@data@R@x,yshift=-\pgfPT@data@R@y]0)%
@@ -1144,7 +1395,6 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \fi%
     % Rcov -> Covalente Radius
     \ifpgfPT@Rcov%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \node[font=\pgfPTRcovfont,text=\pgfPTRcovcolor,text width=\pgfPT@data@Rcov@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@Rcov@ht]%
             at ([xshift=\pgfPT@data@Rcov@x,yshift=-\pgfPT@data@Rcov@y]0)%
@@ -1152,7 +1402,6 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \fi%
     % Rion -> Ionic Radius
     \ifpgfPT@Rion%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \node[font=\pgfPTRionfont,text=\pgfPTRioncolor,text width=\pgfPT@data@Rion@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@Rion@ht]%
             at ([xshift=\pgfPT@data@Rion@x,yshift=-\pgfPT@data@Rion@y]0)%
@@ -1160,7 +1409,6 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \fi%
     % Ei -> First Ionization Energy
     \ifpgfPT@Ei%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \node[font=\pgfPTEifont,text=\pgfPTEicolor,text width=\pgfPT@data@Ei@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@Ei@ht]%
             at ([xshift=\pgfPT@data@Ei@x,yshift=-\pgfPT@data@Ei@y]0)%
@@ -1168,7 +1416,6 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \fi%
     % eneg -> Electronegativity (Pauling)
     \ifpgfPT@eneg%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \node[font=\pgfPTenegfont,text=\pgfPTenegcolor,text width=\pgfPT@data@eneg@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@eneg@ht]%
             at ([xshift=\pgfPT@data@eneg@x,yshift=-\pgfPT@data@eneg@y]0)%
@@ -1176,7 +1423,6 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \fi%
     % eaff -> Electroaffinity
     \ifpgfPT@eaff%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \node[font=\pgfPTeafffont,text=\pgfPTeaffcolor,text width=\pgfPT@data@eaff@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@eaff@ht]%
             at ([xshift=\pgfPT@data@eaff@x,yshift=-\pgfPT@data@eaff@y]0)%
@@ -1184,7 +1430,6 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \fi%
     % O -> Oxidation States
     \ifpgfPT@O%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \node[font=\pgfPTOfont,text=\pgfPTOcolor,text width=\pgfPT@data@O@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@O@ht]%
             at ([xshift=\pgfPT@data@O@x,yshift=-\pgfPT@data@O@y]0)%
@@ -1192,7 +1437,6 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \fi%
     % Tmelt -> Melting Point (Kelvin)
     \ifpgfPT@Tmelt%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \pgfPT@setacro[\pgfPTlanguages]{Tmelt}%
         \node[font=\pgfPTTmeltfont,text=\pgfPTTmeltcolor,text width=\pgfPT@data@Tmelt@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@Tmelt@ht]%
@@ -1201,7 +1445,6 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \fi%
     % TmeltC -> Melting Point (degrees Celsius)
     \ifpgfPT@TmeltC%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \pgfPT@setacro[\pgfPTlanguages]{TmeltC}%
         \node[font=\pgfPTTmeltCfont,text=\pgfPTTmeltCcolor,text width=\pgfPT@data@TmeltC@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@TmeltC@ht]%
@@ -1210,7 +1453,6 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \fi%
     % Tboil -> Boiling Point (Kelvin)
     \ifpgfPT@Tboil%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \pgfPT@setacro[\pgfPTlanguages]{Tboil}%
         \node[font=\pgfPTTboilfont,text=\pgfPTTboilcolor,text width=\pgfPT@data@Tboil@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@Tboil@ht]%
@@ -1219,7 +1461,6 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \fi%
     % TboilC -> Boiling Point (degrees Celsius)
     \ifpgfPT@TboilC%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \pgfPT@setacro[\pgfPTlanguages]{TboilC}%
         \node[font=\pgfPTTboilCfont,text=\pgfPTTboilCcolor,text width=\pgfPT@data@TboilC@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@TboilC@ht]%
@@ -1228,7 +1469,6 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \fi%
     % eDist -> Electron Distribuition
     \ifpgfPT@eDist%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \pgfPT@setacro[\pgfPTlanguages]{eDist}%
         \node[font=\pgfPTeDistfont,text=\pgfPTeDistcolor,text width=\pgfPT@data@eDist@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@eDist@ht]%
@@ -1237,7 +1477,6 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \fi%
     % eConfign -> Electronic Configuration (increasing n)
     \ifpgfPT@eConfign%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \pgfPT@setacro[\pgfPTlanguages]{eConfign}%
         \node[font=\pgfPTeConfignfont,text=\pgfPTeConfigncolor,text width=\pgfPT@data@eConfign@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@eConfign@ht]%
@@ -1246,7 +1485,6 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \fi%
     % eConfignl -> Electronic Configuration (increasing n+l)
     \ifpgfPT@eConfignl%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \pgfPT@setacro[\pgfPTlanguages]{eConfignl}%
         \node[font=\pgfPTeConfignlfont,text=\pgfPTeConfignlcolor,text width=\pgfPT@data@eConfignl@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@eConfignl@ht]%
@@ -1255,7 +1493,6 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \fi%
     % d -> Density
     \ifpgfPT@d%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \node[font=\pgfPTdfont,text=\pgfPTdcolor,text width=\pgfPT@data@d@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@d@ht]%
             at ([xshift=\pgfPT@data@d@x,yshift=-\pgfPT@data@d@y]0)%
@@ -1263,7 +1500,6 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \fi%
     % Cp -> Specific heat capacity (25ºC, 100kPa)
     \ifpgfPT@Cp%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \node[font=\pgfPTCpfont,text=\pgfPTCpcolor,text width=\pgfPT@data@Cp@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@Cp@ht]%
             at ([xshift=\pgfPT@data@Cp@x,yshift=-\pgfPT@data@Cp@y]0)%
@@ -1271,7 +1507,6 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \fi%
     % kT -> Thermal Condutivity (25ºC)
     \ifpgfPT@kT%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \node[font=\pgfPTkTfont,text=\pgfPTkTcolor,text width=\pgfPT@data@kT@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@kT@ht]%
             at ([xshift=\pgfPT@data@kT@x,yshift=-\pgfPT@data@kT@y]0)%
@@ -1279,14 +1514,13 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \fi%
     % ls -> Lattice Structure
     \ifpgfPT@ls%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \pgfPT@setacro[\pgfPTlanguages]{ls}%
         \node[font=\pgfPTlsfont,text=\pgfPTlscolor,text width=\pgfPT@data@ls@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@ls@ht]%
             at ([xshift=\pgfPT@data@ls@x,yshift=-\pgfPT@data@ls@y]0)%
             {\pgfPT@theacro};%
         \ifpgfPTlegendaextra%
-            \fontfamily{\pgfPTglobalfont}\pgfPTlsfont\selectfont%
+            \pgfPTlsfont\selectfont%
                 \ifnum\pgfPT@countb>1\relax\pgfmathsetlength{\pgfPT@dima}{.67*\f@size}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size}%
                 \else\pgfmathsetlength{\pgfPT@dima}{.78*\f@size}\pgfmathsetlength{\pgfPT@dimb}{.625*\f@size}\fi%
                 \ifpgfPT@DiscC% insere a legenda extra para a estrutura da rede (existindo as bandeiras)
@@ -1334,11 +1568,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
                         }%
                     };
                 \fi%
+                \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
             \fi% legenda extra
     \fi%
     % lsa -> Lattice constant: a
     \ifpgfPT@lsa%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \pgfPT@setacro[\pgfPTlanguages]{lsa}%
         \node[font=\pgfPTlsafont,text=\pgfPTlsacolor,text width=\pgfPT@data@lsa@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@lsa@ht]%
@@ -1347,7 +1581,6 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \fi%
     % lsb -> Lattice constant: b
     \ifpgfPT@lsb%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \pgfPT@setacro[\pgfPTlanguages]{lsb}%
         \node[font=\pgfPTlsbfont,text=\pgfPTlsbcolor,text width=\pgfPT@data@lsb@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@lsb@ht]%
@@ -1356,7 +1589,6 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \fi%
     % lsc -> Lattice constant: c
     \ifpgfPT@lsc%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \pgfPT@setacro[\pgfPTlanguages]{lsc}%
         \node[font=\pgfPTlscfont,text=\pgfPTlsccolor,text width=\pgfPT@data@lsc@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@lsc@ht]%
@@ -1365,7 +1597,6 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \fi%
     % lsca -> Lattice c/a ratio:
     \ifpgfPT@lsca%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \pgfPT@setacro[\pgfPTlanguages]{lsca}%
         \node[font=\pgfPTlscafont,text=\pgfPTlscacolor,text width=\pgfPT@data@lsca@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@lsca@ht]%
@@ -1374,7 +1605,6 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \fi%
     % DiscY -> Discover Year
     \ifpgfPT@DiscY%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \pgfPT@setacro[\pgfPTlanguages]{DiscY}%
         \node[font=\pgfPTDiscYfont,text=\pgfPTDiscYcolor,text width=\pgfPT@data@DiscY@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@DiscY@ht]%
@@ -1383,14 +1613,13 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     \fi%
     % DiscC -> Discover Country
     \ifpgfPT@DiscC%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \pgfPT@setacro[\pgfPTlanguages]{DiscC}%
         \node[font=\pgfPTDiscCfont,text=\pgfPTDiscCcolor,text width=\pgfPT@data@DiscC@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@DiscC@ht]%
             at ([xshift=\pgfPT@data@DiscC@x,yshift=-\pgfPT@data@DiscC@y]0)%
             {\pgfPT@theacro};%
         \ifpgfPTlegendaextra%
-            \fontfamily{\pgfPTglobalfont}\pgfPTDiscCfont\selectfont%
+            \pgfPTDiscCfont\selectfont%
                 \ifnum\pgfPT@countb>1\relax\pgfmathsetlength{\pgfPT@dima}{.67*\f@size}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size}\edef\pgfPT@nodepos{below right}\edef\pgfPT@nodeat{north east}%
                 \else\pgfmathsetlength{\pgfPT@dima}{.78*\f@size}\edef\pgfPT@nodepos{right}\edef\pgfPT@nodeat{east}\fi%
                 \ifpgfPT@ls% insere a legenda extra para as bandeiras (existindo a estrutura da rede)
@@ -1448,11 +1677,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
                         }%
                     };
                 \fi%
+                \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
             \fi% legenda extra
     \fi%
     % spectra -> spectra
     \ifpgfPT@spectra%
-        \fontfamily{\pgfPTglobalfont}\selectfont%
         \pgfPT@setacro[\pgfPTlanguages]{spectra}%
         \node[font=\pgfPTspectrafont,text=\pgfPTspectracolor,text width=\pgfPT@data@spectra@wd,text centered,inner xsep=0pt,%
                   text depth=0pt,minimum height=\pgfPT@data@spectra@ht]%
@@ -1460,11 +1689,12 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {\pgfPT@theacro};%
     \fi%
     % acronyms description
-    \fontfamily{\pgfPTglobalfont}\fontsize{\pgfPT@doc@fsize}{\pgfPT@doc@fsize}\selectfont%
+    \fontsize{\pgfPT@doc@fsize}{\pgfPT@doc@fsize}\selectfont%
     \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.4*\f@size}\pgfmathsetlength{\pgfPT@dimb}{.3*\f@size}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.3*\f@size}\pgfmathsetlength{\pgfPT@dimb}{.2*\f@size}%
             \else\pgfmathsetlength{\pgfPT@dima}{.45*\f@size}\fi\fi%
-    \node[below right,text width={2.5*\pgfPTcellwd+.3*(\pgfPT@countb-1)*\pgfPTcellwd-4pt},inner sep=2pt,font=\fontsize{\the\pgfPT@dima}{\the\pgfPT@dima}\selectfont,%
+    \node[below right,text width={2.5*\pgfPTcellwd+.3*(\pgfPT@countb-1)*\pgfPTcellwd-4pt},inner sep=2pt,%
+             font=\fontsize{\the\pgfPT@dima}{\the\pgfPT@dima}\selectfont,%
              fill=\pgfPTlegendbackcolor,line width=\pgfPTcelllinewd] (legend) %
         at ([yshift={-\pgfPTcellht-.3*\pgfPT@doc@fsize}]0)%
         {%
@@ -1472,8 +1702,8 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
         \ifx\pgfPTlegendZcolor\@empty\relax\edef\pgfPTZcolor{\pgfPTZback}\else\edef\pgfPTZcolor{\pgfPTlegendZcolor}\fi%
         \@for\pgfPT@tmp:=\pgfPT@legend@content\do{%
             \tikz{\node[text={\csname pgfPT\pgfPT@tmp color\endcsname},text depth=0pt,
-                            font=\fontfamily{\pgfPTglobalfont}\selectfont\csname pgfPT\pgfPT@tmp font\endcsname\fontsize{\the\pgfPT@dima}{\the\pgfPT@dima}\selectfont] %
-                {\pgfPT@setacro[\pgfPTlanguages]{\pgfPT@tmp}\pgfPT@theacro%
+                               font=\csname pgfPT\pgfPT@tmp font\endcsname\fontsize{\the\pgfPT@dima}{\the\pgfPT@dima}\selectfont] %
+              {\pgfPT@setacro[\pgfPTlanguages]{\pgfPT@tmp}\pgfPT@theacro%
                 \edef\pgfPT@test@tmp{\pgfPT@tmp}%
                 \ifpgfPT@TboilC\ifpgfPT@Tboil\edef\pgfPT@test@TboilC{TboilC}\ifx\pgfPT@test@tmp\pgfPT@test@TboilC\hspace{.15ex}C\fi\fi\fi%
                 \ifpgfPT@Tboil\ifpgfPT@TboilC\edef\pgfPT@test@Tboil{Tboil}\ifx\pgfPT@test@tmp\pgfPT@test@Tboil\hspace{.15ex}K\fi\fi\fi%
@@ -1489,7 +1719,7 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
         \path[line width=\pgfPTcelllinewd,legendbox,rounded corners=2pt] %
         ([xshift=2pt,yshift=-2pt]legend.south east) rectangle ([xshift=-2pt,yshift=2pt]0);%
         \end{pgfonlayer}
-        \fontfamily{\pgfPTglobalfont}\selectfont%
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
 \else% use full description #################################################
 \pgfPT@count@note=0%
 \ifnum\pgfPT@countb>1\relax%
@@ -1516,43 +1746,46 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
 \fi%
 \fontsize{\pgfPT@doc@fsize}{\pgfPT@doc@fsize}\selectfont\relax%
 \draw[fill=\pgfPTlegendbackcolor] (0) rectangle ++({\pgfPT@legendscaleX*\pgfPTcellwd},-\pgfPT@legendscaleY*\pgfPTcellht);
-    \ifpgfPT@Z\fontfamily{\pgfPTglobalfont}\pgfPTZfont\selectfont\pgfmathsetlength{\pgfPT@dima}{1.5*\pgfPT@loadcell@scaleX*\f@size}%
+    \ifpgfPT@Z\pgfPTZfont\selectfont\pgfmathsetlength{\pgfPT@dima}{1.5*\pgfPT@loadcell@scaleX*\f@size}%
         \node[fill=\pgfPTZback,font=\pgfPTZfont\fontsize{\the\pgfPT@dima}{\the\pgfPT@dima}\selectfont,text=\pgfPTZcolor,below right,inner sep=1.5pt] (LZ)%
             at ([xshift=\pgfPT@legendscaleX*\pgfPT@data@Z@x,yshift=-\pgfPT@legendscaleY*\pgfPT@data@Z@y]0) {Z};%
-            \fontfamily{\pgfPTglobalfont}\pgfPTZfont\selectfont%
         \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.5*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.4*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.4*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.3*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\fi\fi%
         \pgfPT@leglabel{Z}%
         \node[right,font=\pgfPTZfont\fontsize{\the\pgfPT@dima}{\the\pgfPT@dima}\selectfont,text=\pgfPTZback,text width=\pgfPT@data@Z@wd,inner xsep=1pt]%
             at (LZ.east) {\pgfPT@putleglabel{Z}};%
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % the Chemical Symbol
     \ifpgfPT@CS\pgfPT@extract@rgb@fill{\pgfPTlegendCScolor}%
-        \fontfamily{\pgfPTglobalfont}\pgfPTCSfont\selectfont%
+        \pgfPTCSfont\selectfont%
         \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.5*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.3*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.35*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.2*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.5*\f@size*\pgfPT@txtscale}\fi\fi%
         \pgfPT@legend{CS}%
         \edef\pgfPT@checkf@nt{fmm}\edef\pgfPT@f@nt{\f@family}%
         \ifx\pgfPT@f@nt\pgfPT@checkf@nt\relax\pgfmathsetlength{\pgfPT@dima}{.65*\pgfPT@dima}\pgfmathparse{-.75*\pgfPT@dima}\edef\pgfPT@extra@shift{\pgfmathresult}\else\edef\pgfPT@extra@shift{0pt}\fi%
-        \node[font=\fontfamily{\pgfPTglobalfont}\selectfont\pgfPTCSfont\fontsize{\the\pgfPT@dima}{\the\pgfPT@dima}\selectfont,text width={\pgfPT@legendscaleX*\pgfPT@data@CS@wd},text centered,text depth=0pt] (LCS)%
+        \node[font=\pgfPTCSfont\fontsize{\the\pgfPT@dima}{\the\pgfPT@dima}\selectfont,text width={\pgfPT@legendscaleX*\pgfPT@data@CS@wd},text centered,text depth=0pt] (LCS)%
         at ([xshift=\pgfPT@legendscaleX*\pgfPT@data@CS@x,yshift=-\pgfPT@legendscaleY*\pgfPT@data@CS@y+\pgfPT@extra@shift]0)
         {\pgfPT@lt[\pgfPTCSolwd](\pgfPT@tmp@label@defaultLanguage)(\pgfPT@rs,\pgfPT@gs,\pgfPT@bs)(\pgfPT@rf,\pgfPT@gf,\pgfPT@bf)(\pgfPT@CS@txt@render)%
-        \ifnum\pgfPT@counta>1\relax\\ %[-.5ex]%
+        \ifnum\pgfPT@counta>1\relax\\ %
         {\fontsize{\the\pgfPT@dimb}{\the\pgfPT@dimb}\selectfont%
         \pgfPT@lt[\pgfPTCSolwd](\pgfPT@tmp@labels@otherLanguages)(\pgfPT@rs,\pgfPT@gs,\pgfPT@bs)(\pgfPT@rf,\pgfPT@gf,\pgfPT@bf)(\pgfPT@CS@txt@render)%
         }\fi};
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
         % pin it...
         \ifpgfPTlegendapins%
         \pgfmathsetlength{\pgfPT@dimc}{\pgfPT@data@CS@x+\pgfPT@data@CS@wd}%
         \ifdim\pgfPT@dimc<\pgfPTcellwd\pgfmathsetlength{\pgfPT@dimc}{\pgfPTcellwd-\pgfPT@dimc}\else\pgfmathsetlength{\pgfPT@dimc}{0pt}\fi%
         \draw[fill=black!30,line width=.05pt,draw=black!50] (LCS.east) circle(.05*\pgfPTcellwd) ++(.05*\pgfPTcellwd,0) -- ++(\pgfPT@dimc+.35*\pgfPTcellwd,0);
-        \pgfPTCSfont\selectfont\ifnum\pgfPT@countb>1\relax\pgfmathsetlength{\pgfPT@dima}{.45*\f@size}\pgfmathsetlength{\pgfPT@dimb}{.3*\f@size}
+        \pgfPTCSfont\selectfont%
+        \ifnum\pgfPT@countb>1\relax\pgfmathsetlength{\pgfPT@dima}{.45*\f@size}\pgfmathsetlength{\pgfPT@dimb}{.3*\f@size}
         \else\pgfmathsetlength{\pgfPT@dima}{.45*\f@size}\fi%
-        \fontfamily{\pgfPTglobalfont}\fontsize{\pgfPT@doc@fsize}{\pgfPT@doc@fsize}\selectfont\relax%
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
+        \fontsize{\pgfPT@doc@fsize}{\pgfPT@doc@fsize}\selectfont\relax%
         \node[legendpins,%
-                text width={.7*\pgfPT@legendscale*\pgfPTcellwd-4pt},font=\fontfamily{\pgfPTglobalfont}\fontsize{\the\pgfPT@dima}{\the\pgfPT@dima}\selectfont,inner xsep=2pt,inner ysep=1pt]
+                text width={.7*\pgfPT@legendscale*\pgfPTcellwd-4pt},font=\fontsize{\the\pgfPT@dima}{\the\pgfPT@dima}\selectfont,inner xsep=2pt,inner ysep=1pt]
                 at ([xshift={\pgfPT@legendscaleX*\pgfPT@dimc+.2*\pgfPTcellwd},yshift={.25*\pgfPT@data@CS@ht}]LCS.east)%
                 {%
                 \pgfPT@extract@rgb@fill{solido}\pgfPT@pinEstado{solido}%
@@ -1581,9 +1814,10 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
                 }\fi%
                 };%
         \fi\fi%
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     % the Name
     \ifpgfPT@name%
-        \fontfamily{\pgfPTglobalfont}\pgfPTnamefont\selectfont%
+        \pgfPTnamefont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -1594,12 +1828,13 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {%
             \pgfPT@putleglabel{name}%
             };%
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % the Atomic weight
     \ifpgfPT@Ar%
         \edef\pgfPT@tmptest{\pgfPTArlabel}\edef\pgfPT@tmp@m{m}%
         \ifx\pgfPT@tmptest\pgfPT@tmp@m\relax\let\pgfPT@labels@Ar\pgfPT@labels@Ar@m\else\let\pgfPT@labels@Ar\pgfPT@labels@Ar@w\fi%
-        \fontfamily{\pgfPTglobalfont}\pgfPTArfont\selectfont%
+        \pgfPTArfont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -1610,11 +1845,12 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {%
             \pgfPT@putleglabel{Ar}%
             };%
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     \ifpgfPT@Arstar%
         \edef\pgfPT@tmptest{\pgfPTArlabel}\edef\pgfPT@tmp@m{m}%
         \ifx\pgfPT@tmptest\pgfPT@tmp@m\relax\let\pgfPT@labels@Arstar\pgfPT@labels@Arstar@m\else\let\pgfPT@labels@Arstar\pgfPT@labels@Arstar@w\fi%
-        \fontfamily{\pgfPTglobalfont}\pgfPTArfont\selectfont%
+        \pgfPTArfont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -1625,6 +1861,7 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {
             \pgfPT@putleglabel{Arstar}%
             };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % radioactivity
     \ifpgfPT@radio%
@@ -1634,7 +1871,7 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
     {\includegraphics[height=\pgfPT@dima]{pgfPT_radio_symbol.pdf}};
     % pin it...
         \ifpgfPTlegendapins%
-        \fontfamily{\pgfPTglobalfont}\pgfPTotherLangFont\selectfont%
+        \pgfPTotherLangFont\selectfont%
         \ifnum\pgfPT@countb>1\relax\pgfmathsetlength{\pgfPT@dima}{.65*\f@size}\pgfmathsetlength{\pgfPT@dimb}{.45*\f@size}%
         \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size}\fi%
         \fontsize{\pgfPT@doc@fsize}{\pgfPT@doc@fsize}\selectfont\relax%
@@ -1650,11 +1887,12 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             \ifnum\pgfPT@counta>1\relax\\ [-.25ex]{\fontsize{\the\pgfPT@dimb}{\the\pgfPT@dimb}\selectfont\color{\pgfPTotherLangColor}%
                 \pgfPT@tmp@labels@otherLanguages}\fi%
         };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
         \fi%
     \fi%
     % R -> Atomic Radius (Empirycal)
     \ifpgfPT@R%
-        \fontfamily{\pgfPTglobalfont}\pgfPTRfont\selectfont%
+        \pgfPTRfont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -1665,10 +1903,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {
             \pgfPT@putleglabel{R}%
             };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % Rcov -> Covalente Radius
     \ifpgfPT@Rcov%
-        \fontfamily{\pgfPTglobalfont}\pgfPTRcovfont\selectfont%
+        \pgfPTRcovfont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -1679,10 +1918,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {
             \pgfPT@putleglabel[\pgfPT@labels@unit@pm]{Rcov}%
             };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % Rion -> Ionic Radius
     \ifpgfPT@Rion%
-        \fontfamily{\pgfPTglobalfont}\pgfPTRionfont\selectfont%
+        \pgfPTRionfont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -1693,10 +1933,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {
             \pgfPT@putleglabel[\pgfPT@labels@unit@pm]{Rion}%
             };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % Ei -> First Ionization Energy
     \ifpgfPT@Ei%
-        \fontfamily{\pgfPTglobalfont}\pgfPTEifont\selectfont%
+        \pgfPTEifont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -1707,10 +1948,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {
             \pgfPT@putleglabel[\pgfPT@labels@unit@kJmol]{Ei}%
             };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % eneg -> Electronegativity (Pauling)
     \ifpgfPT@eneg%
-        \fontfamily{\pgfPTglobalfont}\pgfPTenegfont\selectfont%
+        \pgfPTenegfont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -1721,10 +1963,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {
             \pgfPT@putleglabel{eneg}%
             };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % eaff -> Electroaffinity
     \ifpgfPT@eaff%
-        \fontfamily{\pgfPTglobalfont}\pgfPTeafffont\selectfont%
+        \pgfPTeafffont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -1735,10 +1978,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {
             \pgfPT@putleglabel[\pgfPT@labels@unit@kJmol]{eaff}%
             };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % O -> Oxidation States
     \ifpgfPT@O%
-        \fontfamily{\pgfPTglobalfont}\pgfPTOfont\selectfont%
+        \pgfPTOfont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -1749,10 +1993,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {
             \pgfPT@putleglabel{O}%
             };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % Tmelt -> Melting Point (Kelvin)
     \ifpgfPT@Tmelt%
-        \fontfamily{\pgfPTglobalfont}\pgfPTTmeltfont\selectfont%
+        \pgfPTTmeltfont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -1763,10 +2008,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {
             \pgfPT@putleglabel[\pgfPT@labels@unit@kelvin]{Tmelt}%
             };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % TmeltC -> Melting Point (degrees Celsius)
     \ifpgfPT@TmeltC%
-        \fontfamily{\pgfPTglobalfont}\pgfPTTmeltCfont\selectfont%
+        \pgfPTTmeltCfont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -1777,10 +2023,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {
             \pgfPT@putleglabel[\pgfPT@labels@unit@degC]{TmeltC}%
             };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % Tboil -> Boiling Point (Kelvin)
     \ifpgfPT@Tboil%
-        \fontfamily{\pgfPTglobalfont}\pgfPTTboilfont\selectfont%
+        \pgfPTTboilfont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -1791,10 +2038,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {
             \pgfPT@putleglabel[\pgfPT@labels@unit@kelvin]{Tboil}%
             };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % TboilC -> Boiling Point (degrees Celsius)
     \ifpgfPT@TboilC%
-        \fontfamily{\pgfPTglobalfont}\pgfPTTboilCfont\selectfont%
+        \pgfPTTboilCfont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -1805,10 +2053,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {
             \pgfPT@putleglabel[\pgfPT@labels@unit@degC]{TboilC}%
             };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % eDist -> Electron Distribuition
     \ifpgfPT@eDist%
-        \fontfamily{\pgfPTglobalfont}\pgfPTeDistfont\selectfont%
+        \pgfPTeDistfont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -1819,10 +2068,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {
             \pgfPT@putleglabel{eDist}%
             };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % eConfign -> Electronic Configuration (increasing n)
     \ifpgfPT@eConfign%
-        \fontfamily{\pgfPTglobalfont}\pgfPTeConfignfont\selectfont%
+        \pgfPTeConfignfont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -1833,10 +2083,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {
             \pgfPT@putleglabel{eConfign}%
             };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % eConfignl -> Electronic Configuration (increasing n+l)
     \ifpgfPT@eConfignl%
-        \fontfamily{\pgfPTglobalfont}\pgfPTeConfignlfont\selectfont%
+        \pgfPTeConfignlfont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -1847,10 +2098,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {
             \pgfPT@putleglabel{eConfignl}%
             };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % d -> Density
     \ifpgfPT@d%
-        \fontfamily{\pgfPTglobalfont}\pgfPTdfont\selectfont%
+        \pgfPTdfont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -1861,10 +2113,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {
             \pgfPT@putleglabel[\pgfPT@labels@unit@d]{d}%
             };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % Cp -> Specific heat capacity (25ºC, 100kPa)
     \ifpgfPT@Cp%
-        \fontfamily{\pgfPTglobalfont}\pgfPTCpfont\selectfont\advance\pgfPT@count@note by1\relax%
+        \pgfPTCpfont\selectfont\advance\pgfPT@count@note by1\relax%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -1875,10 +2128,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {
             \pgfPT@putleglabel[\pgfPT@labels@unit@Cp]{Cp}%
             };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % kT -> Thermal Condutivity (25ºC)
     \ifpgfPT@kT%
-        \fontfamily{\pgfPTglobalfont}\pgfPTkTfont\selectfont\advance\pgfPT@count@note by1\relax%
+        \pgfPTkTfont\selectfont\advance\pgfPT@count@note by1\relax%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -1889,11 +2143,12 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {
             \pgfPT@putleglabel[\pgfPT@labels@unit@kT]{kT}%
             };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % NOTES for Cp & kT:
             \ifnum\pgfPT@count@note=1\relax%
                 \ifpgfPT@Cp%
-                \fontfamily{\pgfPTglobalfont}\pgfPTCpfont\selectfont%
+                \pgfPTCpfont\selectfont%
                 \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size}%
                 \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size}%
                 \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size}\fi\fi%
@@ -1995,10 +2250,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
                         @ 25\raisebox{.777ex}{\fontsize{\pgfPT@dimc}{\pgfPT@dimc}\selectfont o}C,100\hspace{.1ex}kPa};%
                 \fi\fi%
             \fi\fi% \else\ifnum\pgfPT@count@note=2
+            \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     % END OF NOTES for Cp & kT <-------
     % ls -> Lattice Structure
     \ifpgfPT@ls%
-        \fontfamily{\pgfPTglobalfont}\pgfPTlsfont\selectfont%
+        \pgfPTlsfont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.5*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.3*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.2*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -2059,10 +2315,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
                     };
                 \fi%
             \fi% legenda extra
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % lsa -> Lattice constant: a
     \ifpgfPT@lsa%
-        \fontfamily{\pgfPTglobalfont}\pgfPTlsafont\selectfont%
+        \pgfPTlsafont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -2073,10 +2330,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {
             \pgfPT@putleglabel[\pgfPT@labels@unit@ls]{lsa}%
             };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % lsb -> Lattice constant: b
     \ifpgfPT@lsb%
-        \fontfamily{\pgfPTglobalfont}\pgfPTlsbfont\selectfont%
+        \pgfPTlsbfont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -2087,10 +2345,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {
             \pgfPT@putleglabel[\pgfPT@labels@unit@ls]{lsb}%
             };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % lsc -> Lattice constant: c
     \ifpgfPT@lsc%
-        \fontfamily{\pgfPTglobalfont}\pgfPTlscfont\selectfont%
+        \pgfPTlscfont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -2101,10 +2360,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {
             \pgfPT@putleglabel[\pgfPT@labels@unit@ls]{lsc}%
             };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % lsca -> Lattice c/a ratio:
     \ifpgfPT@lsca%
-        \fontfamily{\pgfPTglobalfont}\pgfPTlscafont\selectfont%
+        \pgfPTlscafont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -2115,10 +2375,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {
             \pgfPT@putleglabel{lsca}%
             };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % DiscY -> Discover Year
     \ifpgfPT@DiscY%
-        \fontfamily{\pgfPTglobalfont}\pgfPTDiscYfont\selectfont%
+        \pgfPTDiscYfont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -2129,10 +2390,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {
             \pgfPT@putleglabel{DiscY}%
             };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % DiscC -> Discover Country
     \ifpgfPT@DiscC%
-        \fontfamily{\pgfPTglobalfont}\pgfPTDiscCfont\selectfont%
+        \pgfPTDiscCfont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -2185,7 +2447,7 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
                         \tikz{%
                         \node[text width=\pgfPT@boxwd,text centered,inner sep=0pt] (exFlag) at (0,0) {\includegraphics[height=\pgfPT@boxht]{flags/\pgfPT@country@flag.pdf}};%
                         \global\pgfPT@countc=0%
-                        \node[below right,text width=3.75*\pgfPTcellwd,inner xsep=0pt] at ([xshift=.025*\pgfPTcellwd]exFlag.north east) {%
+                        \node[below right,text width=2.2*\pgfPTcellwd,inner xsep=0pt] at ([xshift=.025*\pgfPTcellwd]exFlag.north east) {%
                         \@for\pgfPT@tmp:=\pgfPTlanguages\do{%
                             \ifnum\pgfPT@countc=0\relax%
                                 \pgfPT@box@zerodepth{\csname pgfPT@country@name@\pgfPT@tmp\endcsname}%
@@ -2202,10 +2464,11 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
                     };
                 \fi%
             \fi% legenda extra
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     % spectra -> spectra
     \ifpgfPT@spectra%
-        \fontfamily{\pgfPTglobalfont}\pgfPTspectrafont\selectfont%
+        \pgfPTspectrafont\selectfont%
             \ifnum\pgfPT@countb=2\relax\pgfmathsetlength{\pgfPT@dima}{.7*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size*\pgfPT@txtscale}%
             \else\ifnum\pgfPT@countb>2\relax\pgfmathsetlength{\pgfPT@dima}{.6*\f@size*\pgfPT@txtscale}\pgfmathsetlength{\pgfPT@dimb}{.35*\f@size*\pgfPT@txtscale}%
             \else\pgfmathsetlength{\pgfPT@dima}{.85*\f@size*\pgfPT@txtscale}\fi\fi%
@@ -2216,6 +2479,7 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
             {
             \pgfPT@putleglabel{spectra}%
             };
+        \ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
     \fi%
     \global\pgfPT@dima=0pt\relax%
 \fi\fi% end legend
@@ -2240,7 +2504,7 @@ d unit,d precision,E precision,ls unit,ls precision,T precision,Cp precision,kT 
 \ifnum\pgfPT@limits@min=1\relax\ifnum\pgfPT@limits@max=118\relax\ifnum\pgfPT@element@count>87\relax%
 % draw the blocks
 \pgfPT@countb=0\relax\@for\pgfPT@tmp:=\pgfPTlanguages\do{\advance\pgfPT@countb by 1\relax}%
-\fontfamily{\pgfPTglobalfont}\pgfPTblocksfont\selectfont%
+\pgfPTblocksfont\selectfont%
 \ifnum\pgfPT@countb>1\relax\pgfmathsetlength{\pgfPT@dima}{.75*\f@size}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size}%
 \else\pgfmathsetlength{\pgfPT@dima}{\f@size}\fi%
 % bloco s
@@ -2350,6 +2614,7 @@ at (15*\pgfPTcellwd,-1.5*\pgfPTcellht) {\pgfPT@box@zerodepth{\pgfPT@tmp@label@de
 \fi% IUPAC
 \fi%
 \fi\fi\fi\fi% END Blocks
+\ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
 %
 % Families
 \ifpgfPTfamilias%
@@ -2358,7 +2623,7 @@ at (15*\pgfPTcellwd,-1.5*\pgfPTcellht) {\pgfPT@box@zerodepth{\pgfPT@tmp@label@de
 \ifnum\pgfPT@limits@min=1\relax\ifnum\pgfPT@limits@max=118\relax\ifnum\pgfPT@element@count>87\relax%
 % draw the families
 \pgfPT@countb=0\relax\@for\pgfPT@tmp:=\pgfPTlanguages\do{\advance\pgfPT@countb by 1\relax}%
-\fontfamily{\pgfPTglobalfont}\pgfPTfamiliesfont\selectfont%
+\pgfPTfamiliesfont\selectfont%
 \ifnum\pgfPT@countb>1\relax\pgfmathsetlength{\pgfPT@dima}{.75*\f@size}\pgfmathsetlength{\pgfPT@dimb}{.55*\f@size}%
 \else\pgfmathsetlength{\pgfPT@dima}{\f@size}\fi%
 % elementos representativos
@@ -2456,6 +2721,7 @@ at (7*\pgfPTcellwd,-1.5*\pgfPTcellht) {\pgfPT@box@zerodepth{\pgfPT@tmp@label@def
 \fi%
 \fi%
 \fi\fi\fi\fi% END Families
+\ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
 % Variacoes
 \edef\@pgfPT@varpage@xshift{0pt}%
 \edef\@pgfPT@varpage@yshift{0pt}%
@@ -2600,7 +2866,7 @@ at (7*\pgfPTcellwd,-1.5*\pgfPTcellht) {\pgfPT@box@zerodepth{\pgfPT@tmp@label@def
 % end of shifts
 % R var
 \ifpgfPT@R%
-\fontfamily{\pgfPTglobalfont}\pgfPTvarRfont\selectfont%
+\pgfPTvarRfont\selectfont%
 \ifnum\pgfPT@countb>1\relax\pgfmathsetlength{\pgfPT@dima}{.85*\f@size}\pgfmathsetlength{\pgfPT@dimb}{.65*\f@size}%
 \else\pgfmathsetlength{\pgfPT@dima}{\f@size}\fi%
 \colorlet{pgfPTcolortemp}{\pgfPTvarRcolor}\colorlet{pgfPTfontcolortemp}{\pgfPTvarRfontcolor}%
@@ -2630,10 +2896,11 @@ at (7*\pgfPTcellwd,-1.5*\pgfPTcellht) {\pgfPT@box@zerodepth{\pgfPT@tmp@label@def
             at ([xshift=-.0375*\pgfPTcellwd]variacao.south) {\pgfPT@tmp@labels@otherLanguages};\fi%
 \draw[fill=pgfPTcolortemp!60!black,draw=pgfPTcolortemp!60!black] (-\pgfPTcellwd-\pgfPT@Rvar@shift,\pgfPTcellht+\pgfPT@Rvar@shift) circle(.3125*\pgfPTcellwd) %
     node[font=\pgfPTvarRfont,text=pgfPTcolortemp!25!white,anchor=mid] {R};%
+\ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
 \fi%
 % Ei var
 \ifpgfPT@Ei%
-\fontfamily{\pgfPTglobalfont}\pgfPTvarEifont\selectfont%
+\pgfPTvarEifont\selectfont%
 \ifnum\pgfPT@countb>1\relax\pgfmathsetlength{\pgfPT@dima}{.85*\f@size}\pgfmathsetlength{\pgfPT@dimb}{.65*\f@size}%
 \else\pgfmathsetlength{\pgfPT@dima}{\f@size}\fi%
 \colorlet{pgfPTcolortemp}{\pgfPTvarEicolor}\colorlet{pgfPTfontcolortemp}{\pgfPTvarEifontcolor}%
@@ -2663,10 +2930,11 @@ at (7*\pgfPTcellwd,-1.5*\pgfPTcellht) {\pgfPT@box@zerodepth{\pgfPT@tmp@label@def
             at ([xshift=-.0375*\pgfPTcellwd]variacao.south) {\pgfPT@tmp@labels@otherLanguages};\fi%
 \draw[fill=pgfPTcolortemp!60!black,draw=pgfPTcolortemp!60!black] (-\pgfPTcellwd-\pgfPT@Eivar@shift,\pgfPTcellht+\pgfPT@Eivar@shift) circle(.3125*\pgfPTcellwd) %
     node[font=\pgfPTvarEifont,text=pgfPTcolortemp!25!white,anchor=mid] {E\raisebox{-.2ex}{i}};%
+\ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
 \fi%
 % Eaff var
 \ifpgfPT@eaff%
-\fontfamily{\pgfPTglobalfont}\pgfPTvareafffont\selectfont%
+\pgfPTvareafffont\selectfont%
 \ifnum\pgfPT@countb>1\relax\pgfmathsetlength{\pgfPT@dima}{.85*\f@size}\pgfmathsetlength{\pgfPT@dimb}{.65*\f@size}%
 \else\pgfmathsetlength{\pgfPT@dima}{\f@size}\fi%
 \colorlet{pgfPTcolortemp}{\pgfPTvareaffcolor}\colorlet{pgfPTfontcolortemp}{\pgfPTvareafffontcolor}%
@@ -2696,6 +2964,7 @@ at (7*\pgfPTcellwd,-1.5*\pgfPTcellht) {\pgfPT@box@zerodepth{\pgfPT@tmp@label@def
             at ([xshift=-.0375*\pgfPTcellwd]variacao.south) {\pgfPT@tmp@labels@otherLanguages};\fi%
 \draw[fill=pgfPTcolortemp!60!black,draw=pgfPTcolortemp!60!black] (-\pgfPTcellwd-\pgfPT@eaffvar@shift,\pgfPTcellht+\pgfPT@eaffvar@shift) circle(.3125*\pgfPTcellwd) %
     node[font=\pgfPTvareafffont,text=pgfPTcolortemp!25!white,anchor=mid] {E\raisebox{-.2ex}{ea}};%
+\ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\fontseries{\seriesdefault}\fontshape{\shapedefault}%
 \fi%
 \fi\fi\fi\fi% END Variacoes
 %
@@ -2706,7 +2975,7 @@ at (7*\pgfPTcellwd,-1.5*\pgfPTcellht) {\pgfPT@box@zerodepth{\pgfPT@tmp@label@def
 \pgfPT@dima=0pt\pgfPT@dimb=0pt\relax%
 \ifpgfPTperlabels%
 \begin{pgfinterruptpicture}%
-\setbox0=\hbox{\fontfamily{\pgfPTglobalfont}\pgfPTlabfont\selectfont7}\global\pgfPT@dima=\wd0%
+\setbox0=\hbox{\ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\pgfPTlabfont\selectfont7}\global\pgfPT@dima=\wd0%
 \end{pgfinterruptpicture}%
 \pgfmathsetlength{\pgfPT@dima}{-\pgfPT@dima+2*\pgfPT@perlabel@xshift}%
 \else%
@@ -2714,13 +2983,13 @@ at (7*\pgfPTcellwd,-1.5*\pgfPTcellht) {\pgfPT@box@zerodepth{\pgfPT@tmp@label@def
 \fi% pgfPTperlabels
 \ifpgfPTtitulo%
 \begin{pgfinterruptpicture}%
-\setbox0=\hbox{\fontfamily{\pgfPTglobalfont}\pgfPTtitlefont\selectfont P}\global\pgfPT@dimb=\ht0%
+\setbox0=\hbox{\ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\pgfPTtitlefont\selectfont P}\global\pgfPT@dimb=\ht0%
 \end{pgfinterruptpicture}%
 \pgfmathsetlength{\pgfPT@dimb}{\pgfPT@dimb+.5*\pgfPTcellht+5pt}%
 \else%
 \ifpgfPTgrlabels%
 \begin{pgfinterruptpicture}%
-\setbox0=\hbox{\fontfamily{\pgfPTglobalfont}\pgfPTlabfont\selectfont7}\global\pgfPT@dimb=\ht0%
+\setbox0=\hbox{\ifnum\pgfPT@fontspec=1\relax\setmainfont{\pgfPTglobalfont}\else\fontfamily{\pgfPTglobalfont}\selectfont\fi\pgfPTlabfont\selectfont7}\global\pgfPT@dimb=\ht0%
 \end{pgfinterruptpicture}%
 \pgfmathsetlength{\pgfPT@dimb}{\pgfPT@dimb+5pt}%
 \else%
@@ -2749,7 +3018,10 @@ rectangle
 \fi% \pgfPT@element@count=118
 \fi\fi% min=1 & max 118
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\fontseries{\seriesdefault}\fontshape{\shapedefault}\selectfont% Restoring the font settings to normal mode in the document
+% corrected in v2.1.2: \@pgfPT@resetlayers -> \pgfsetlayers{\@pgfPT@resetlayers}
+%              ... Warning: Missing character: There is no m (U+006D) in font nullfont! ...
+\pgfsetlayers{\@pgfPT@resetlayers}% Restoring pgf layers to those used in the document
+\fontseries{\seriesdefault}\fontshape{\shapedefault}\fontfamily{\familydefault}\selectfont% Restoring the font settings to normal mode in the document
 }% end tikz
 }%
 % END !! \pgfPT -----------------------------------------------------------------------------------
@@ -2823,15 +3095,14 @@ rectangle
 % renders text via pdfliteral:  -------------
 % #1 outline width width #2 txt #3 #4 #5 rgb stroke color  #6 #7 #8 rgb fill color -----------
 %                                       #9 txt render mode (0 - fill 1 - stroke 2 - fill then stroke ---------
-\ifx\pdfliteral\undefined\relax%
-\ifx\pdfextension\undefined\relax% XeLaTeX
+% changed in v2.1.3
+\ifcase\pgfPT@engine\relax% pdfLaTeX
+\def\pgfPT@lt[#1](#2)(#3,#4,#5)(#6,#7,#8)(#9){\pdfliteral direct {#1 w #3 #4 #5 RG #6 #7 #8 rg #9 Tr}{#2}\pdfliteral direct {0 0 0 rg 1 w 0 Tr}}%
+\or% LuaLaTeX
+\protected\def\pdfliteral{\pdfextension literal}%
+\def\pgfPT@lt[#1](#2)(#3,#4,#5)(#6,#7,#8)(#9){\pdfliteral direct {#1 w #3 #4 #5 RG #6 #7 #8 rg #9 Tr}{#2}\pdfliteral direct {0 0 0 rg 1 w 0 Tr}}%
+\or% XeLaTeX
 \def\pgfPT@lt[#1](#2)(#3,#4,#5)(#6,#7,#8)(#9){\special{pdf:literal direct #1 w #3 #4 #5 RG #6 #7 #8 rg #9 Tr}#2\special{pdf:literal direct 0 0 0 rg 1 w 0 Tr}}%
-\else% LuaLaTeX
-\protected\def\pdfliteral{\pdfextension literal}
-\def\pgfPT@lt[#1](#2)(#3,#4,#5)(#6,#7,#8)(#9){\pdfliteral direct {#1 w #3 #4 #5 RG #6 #7 #8 rg #9 Tr}{#2}\pdfliteral direct {0 0 0 rg 1 w 0 Tr}}%
-\fi%
-\else% pdfLaTeX
-\def\pgfPT@lt[#1](#2)(#3,#4,#5)(#6,#7,#8)(#9){\pdfliteral direct {#1 w #3 #4 #5 RG #6 #7 #8 rg #9 Tr}{#2}\pdfliteral direct {0 0 0 rg 1 w 0 Tr}}%
 \fi%
 % END !! \pgfPT@lt --------------------------------------------------------------------------------
 %
@@ -2842,9 +3113,10 @@ rectangle
 % auxiliary macros to set the rgb components of one color ---------------------------------------
 % with use of \extractcolorspecs from xcolor package ---------------------------------------------
 % each component is stored in \pgfPT@«r, g or b» & «s or f» -------------------------------------
-\def\pgfPT@extract@rgb@stroke#1{\extractcolorspecs{#1}{\pgfPTcolmodel}{\pgfPTcolinfo}\expandafter\pgfPT@set@rgb@stroke\pgfPTcolinfo\relax}%
+% v3.1.3: added conversion of the color to rgb :: \colorlet{#1}[rgb]{#1}
+\def\pgfPT@extract@rgb@stroke#1{\colorlet{#1}[rgb]{#1}\extractcolorspecs{#1}{\pgfPTcolmodel}{\pgfPTcolinfo}\expandafter\pgfPT@set@rgb@stroke\pgfPTcolinfo\relax}%
 \def\pgfPT@set@rgb@stroke#1,#2,#3\relax{\def\pgfPT@rs{#1}\def\pgfPT@gs{#2}\def\pgfPT@bs{#3}}%
-\def\pgfPT@extract@rgb@fill#1{\extractcolorspecs{#1}{\pgfPTcolmodel}{\pgfPTcolinfo}\expandafter\pgfPT@set@rgb@fill\pgfPTcolinfo\relax}%
+\def\pgfPT@extract@rgb@fill#1{\colorlet{#1}[rgb]{#1}\extractcolorspecs{#1}{\pgfPTcolmodel}{\pgfPTcolinfo}\expandafter\pgfPT@set@rgb@fill\pgfPTcolinfo\relax}%
 \def\pgfPT@set@rgb@fill#1,#2,#3\relax{\def\pgfPT@rf{#1}\def\pgfPT@gf{#2}\def\pgfPT@bf{#3}}%
 % END !! \pgfPT@«color macros» ------------------------------------------------------------------
 %

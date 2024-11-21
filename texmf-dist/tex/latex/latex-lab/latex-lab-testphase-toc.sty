@@ -35,36 +35,42 @@
 %% where one can also log issues in case there are any.
 %% 
 %% 
-%% File: latex-lab-toc.dtx (C) Copyright 2022-2023 LaTeX Project
-\def\ltlabtocdate{2023-10-16}
-\def\ltlabtocversion{0.85b}
+%% File: latex-lab-toc.dtx (C) Copyright 2022-2024 LaTeX Project
+\def\ltlabtocdate{2024-09-26}
+\def\ltlabtocversion{0.85e}
 \ProvidesExplPackage {latex-lab-testphase-toc} {\ltlabtocdate} {\ltlabtocversion}
   { Code related to the tagging of toc-like lists}
-%% File: latex-lab-toc-kernel-changes.dtx (C) Copyright 2022-2023 LaTeX Project
-\def\ltlabkerneldate{2023-10-16}
-\def\ltlabkernelversion{0.85b}
+%% File: latex-lab-toc-kernel-changes.dtx (C) Copyright 2022-2024 LaTeX Project
+\def\ltlabkerneldate{2024-07-11}
+\def\ltlabkernelversion{0.85d}
 \RequirePackage{latex-lab-kernel-changes}
-\def\@contentsline@cfgpoint@before#1#2#3#4{}
-\def\@contentsline@cfgpoint@after#1#2#3#4{}
+\str_if_exist:cF { l__socket_tagsupport/toc/contentsline/before_plug_str }
+    {
+      \NewSocket{tagsupport/toc/contentsline/before}{1}
+      \NewSocket{tagsupport/toc/contentsline/after}{1}
+    }
 \def\contentsline#1#2#3#4%
   {%
-    \@contentsline@cfgpoint@before{#1}{#2}{#3}{#4}%
+    \UseTaggingSocket{toc/contentsline/before}{{#1}{#2}{#3}{#4}}%
     \gdef\@contentsline@destination{#4}%
     \csname l@#1\endcsname{#2}{#3}%
-    \@contentsline@cfgpoint@after{#1}{#2}{#3}{#4}%
+    \UseTaggingSocket{toc/contentsline/after}{{#1}{#2}{#3}{#4}}%
   }
 \def\addcontentsline#1#2#3{% #1=toc extension, #2= heading type, tag
     \addtocontents{#1}{%
       \protect\contentsline{#2}{#3}{\thepage}{\@currentHref}\protected@file@percent
     }}
-\def\@starttoc@cfgpoint@before#1{}
-\def\@starttoc@cfgpoint@after#1{}
+\str_if_exist:cF { l__socket_tagsupport/toc/starttoc/before_plug_str }
+    {
+      \NewSocket{tagsupport/toc/starttoc/before}{1}
+      \NewSocket{tagsupport/toc/starttoc/after}{1}
+    }
 \def\@starttoc#1{%
   \begingroup
     \makeatletter
-    \@starttoc@cfgpoint@before{#1}%
+    \UseTaggingSocket{toc/starttoc/before}{#1}%
     \@input{\jobname.#1}%
-    \@starttoc@cfgpoint@after{#1}
+    \UseTaggingSocket{toc/starttoc/after}{#1}%
     \if@filesw
       \expandafter\newwrite\csname tf@#1\endcsname
       \immediate\openout \csname tf@#1\endcsname \jobname.#1\relax
@@ -74,8 +80,11 @@
 \NewMirroredHookPairWithArguments{contentsline/number/before}{contentsline/number/after}{1}%
 \NewMirroredHookPairWithArguments{contentsline/text/before}{contentsline/text/after}{4}%
 \NewMirroredHookPairWithArguments{contentsline/page/before}{contentsline/page/after}{4}%
-\def\@dottedtocline@cfgpoint@leaders#1{#1}
-
+\str_if_exist:cF { l__socket_tagsupport/toc/leaders/before_plug_str }
+    {
+      \NewSocket{tagsupport/toc/leaders/before}{0}
+      \NewSocket{tagsupport/toc/leaders/after}{0}
+    }
 \def\@dottedtocline#1#2#3#4#5{%
   \ifnum #1>\c@tocdepth \else
     \vskip \z@ \@plus.2\p@
@@ -89,10 +98,11 @@
      \csname contentsline@text@#1@format\endcsname{#4}%
      \UseHookWithArguments{contentsline/text/after}{4}{#1}{#4}{#5}{\@contentsline@destination}%
      \nobreak
-     \@dottedtocline@cfgpoint@leaders{%
+     \UseTaggingSocket{toc/leaders/before}\SuspendTagging{toc/leaders}%
        \leaders\hbox{$\m@th
          \mkern \@dotsep mu\hbox{.}\mkern \@dotsep
-          mu$}\hfill}%
+          mu$}\hfill
+     \ResumeTagging{toc/leaders}\UseTaggingSocket{toc/leaders/after}%
      \nobreak
      \hb@xt@\@pnumwidth{\hfil\normalfont \normalcolor
      \UseHookWithArguments{contentsline/page/before}{4}{#1}{#4}{#5}{\@contentsline@destination}%
@@ -275,46 +285,27 @@
        \endgroup
      \fi}
  }
-%% File: latex-lab-toc.dtx (C) Copyright 2022-2023 LaTeX Project
-\def\ltlabtocdate{2023-10-16}
-\def\ltlabtocversion{0.85b}
+%% File: latex-lab-toc.dtx (C) Copyright 2022-2024 LaTeX Project
+\def\ltlabtocdate{2024-09-26}
+\def\ltlabtocversion{0.85e}
 \tl_new:N \l__tag_toc_tmpa_tl
-\AddToHook{cmd/refstepcounter/after}
- {
-   \tl_if_blank:VF \@currentHref
-    {
-      \prop_gput:Nee \g__tag_struct_dest_num_prop {\@currentHref}{\tag_get:n{struct_num}}
-    }
- }
-\AddToHook{cmd/H@refstepcounter/after}
- {
-   \tl_if_blank:VF \@currentHref
-    {
-      \prop_gput:Nee \g__tag_struct_dest_num_prop {\@currentHref}{\tag_get:n{struct_num}}
-    }
- }
-\msg_new:nnn { tag } {struct-dest-unknown}
- {
-   Destination~#1~has~no~related~structure.\\
-   /Ref~for~structure~#2~not~updated
- }
-
-\cs_new_protected:Npn \g__tag_struct_ref_by_dest:
+\str_if_exist:cF { l__socket_tagsupport/recordtarget_plug_str }
   {
-    \prop_map_inline:Nn\g__tag_struct_ref_by_dest_prop
-      {
-        \prop_get:NnNTF \g__tag_struct_dest_num_prop {##2} \l__tag_tmpa_tl
-          {
-            \__tag_struct_gput_data_ref:ee
-              { ##1 }
-              { \tag_struct_object_ref:e{ \l__tag_tmpa_tl }}
-          }
-          {
-            \msg_warning:nnnn {tag}{struct-dest-unknown}{##2}{ ##1}
-          }
-      }
-  }
-\hook_gput_code:nnn {tagpdf/finish/before}{tagpdf/struct/Ref}{\g__tag_struct_ref_by_dest:}
+    \AddToHook{cmd/refstepcounter/after}
+     {
+       \tl_if_blank:VF \@currentHref
+        {
+          \prop_gput:Nee \g__tag_struct_dest_num_prop {\@currentHref}{\tag_get:n{struct_num}}
+        }
+     }
+    \AddToHook{cmd/H@refstepcounter/after}
+     {
+       \tl_if_blank:VF \@currentHref
+        {
+          \prop_gput:Nee \g__tag_struct_dest_num_prop {\@currentHref}{\tag_get:n{struct_num}}
+        }
+     }
+   }
 \int_new:N \g__tag_toc_level_int
 \seq_new:N \g__tag_toc_stack_seq
 
@@ -325,10 +316,11 @@
     \int_gset:Nn  \g__tag_toc_level_int {-100}
     \tag_struct_begin:n{tag=TOC,title=#1}
  }
-\cs_set_protected:Npn\@starttoc@cfgpoint@before#1
-  {
-    \__tag_toc_starttoc_init:n{#1}
-  }
+\NewSocketPlug{tagsupport/toc/starttoc/before}{default}
+ {
+   \__tag_toc_starttoc_init:n{#1}
+ }
+\AssignSocketPlug{tagsupport/toc/starttoc/before}{default}
 \cs_new_protected:Npn \__tag_toc_starttoc_finalize:
  {
     \int_step_inline:nn
@@ -337,11 +329,11 @@
     \tag_struct_end:
     \seq_gclear:N \g__tag_toc_stack_seq
  }
-\cs_set_protected:Npn\@starttoc@cfgpoint@after#1
-  {
-    \__tag_toc_starttoc_finalize:
-  }
-
+\NewSocketPlug{tagsupport/toc/starttoc/after}{default}
+ {
+   \__tag_toc_starttoc_finalize:
+ }
+\AssignSocketPlug{tagsupport/toc/starttoc/after}{default}
 \cs_new_protected:Npn \__tag_toc_end:n #1
  {
    \seq_get:NNT\g__tag_toc_stack_seq \l__tag_toc_tmpa_tl
@@ -361,7 +353,8 @@
      }
  }
 \cs_generate_variant:Nn \__tag_toc_end:n {e}
-\cs_new_protected:Npn \__tag_toc_contentsline_begin:nnn #1 #2 #3 %#1 level, #2 content, #3 destination
+\cs_new_protected:Npn \__tag_toc_contentsline_begin:nnnn #1 #2 #3 #4
+  %#1 level, #2 content, #3 page number (unused) #4 destination
   {
    \tag_if_active:T
      {
@@ -372,7 +365,7 @@
             { \int_compare_p:nNn { \g__tag_toc_level_int } > {-100} }
             { \int_compare_p:nNn { \use:c{toclevel@#1} }   > { \g__tag_toc_level_int } }
             {
-              \seq_gpush:Nx \g__tag_toc_stack_seq {{TOC}\use:c{toclevel@#1}}
+              \seq_gpush:Ne \g__tag_toc_stack_seq {{TOC}\use:c{toclevel@#1}}
               \tag_struct_begin:n{tag=TOC}
             }
           \int_compare:nNnT
@@ -383,21 +376,22 @@
           \int_gset:Nn \g__tag_toc_level_int { \use:c{toclevel@#1} }
           \group_begin:
            \text_declare_expand_equivalent:Nn \numberline \use_none:n
-           \exp_args:Nx \tag_struct_begin:n{tag=TOCI,title={\text_purify:n {#2}}}
-           \prop_gput:Nxx \g__tag_struct_ref_by_dest_prop
-             { \tag_get:n {struct_num} }{#3}
-           \seq_gpush:Nx \g__tag_toc_stack_seq {{TOCI}\use:c{toclevel@#1}}
+           \exp_args:Ne
+           \tag_struct_begin:n{tag=TOCI,title={\text_purify:n {#2}}}
+           \tag_struct_gput:nnn { \tag_get:n {struct_num} }{ref_dest}{#4}
+           \seq_gpush:Ne \g__tag_toc_stack_seq {{TOCI}\use:c{toclevel@#1}}
           \group_end:
        }
     }
   }
-\cs_set_protected:Npn\@contentsline@cfgpoint@before#1#2#3#4
+\NewSocketPlug{tagsupport/toc/contentsline/before}{default}
   {
-    \__tag_toc_contentsline_begin:nnn {#1}{#2}{#4}
+    \__tag_toc_contentsline_begin:nnnn #1
   }
+\AssignSocketPlug{tagsupport/toc/contentsline/before}{default}
 \msg_new:nnn {tag}{toc-no-TOCI}{Missing~TOCI~structure~on~toc~stack}
 
-\cs_new_protected:Npn \__tag_toc_contentsline_end:n #1 %#1 level name
+\cs_new_protected:Npn \__tag_toc_contentsline_end:nnnn #1 #2 #3 #4
   {
     \int_compare:nNnF { \use:c{toclevel@#1} } > {\use:c{c@tocdepth}}
       {
@@ -413,10 +407,11 @@
           }
       }
   }
-\cs_set_protected:Npn \@contentsline@cfgpoint@after #1#2#3#4
- {
-   \__tag_toc_contentsline_end:n {#1}
- }
+\NewSocketPlug{tagsupport/toc/contentsline/after}{default}
+  {
+    \__tag_toc_contentsline_end:nnnn #1
+  }
+\AssignSocketPlug{tagsupport/toc/contentsline/after}{default}
 \AddToHook{contentsline/text/before}[tagpdf]{%
   \tag_struct_begin:n{tag=Reference}%
   \tag_mc_begin:n{tag=Reference}}
@@ -435,10 +430,13 @@
   \tag_mc_end:
   \tag_struct_end:
   \tag_mc_begin:n{tag=Reference}}
-\def\@dottedtocline@cfgpoint@leaders#1{%
- \tag_mc_begin:n{artifact}\tag_stop:n{leaders}\nobreak#1\nobreak\tag_start:n{leaders}\tag_mc_end:}
-
-%% File: latex-lab-toc-hyperref-changes.dtx (C) Copyright 2022-2023 LaTeX Project
+\NewSocketPlug{tagsupport/toc/leaders/before}{artifact}
+ {\tag_mc_begin:n{artifact}\nobreak}
+\NewSocketPlug{tagsupport/toc/leaders/after}{artifact}
+ {\nobreak\tag_mc_end:}
+\AssignSocketPlug{tagsupport/toc/leaders/before}{artifact}
+\AssignSocketPlug{tagsupport/toc/leaders/after}{artifact}
+%% File: latex-lab-toc-hyperref-changes.dtx (C) Copyright 2022-2024 LaTeX Project
 \def\ltlabtochyperdate{2023-07-20}
 \def\ltlabtochyperversion{0.85a}
 \def\hyper@nopatch@toc{}

@@ -6,9 +6,11 @@
 %%
 %% curve2e.dtx  (with options: `v161')
 %% 
-%%   Copyright (C)  2005--2023 Claudio Beccari  all rights reserved.
+%%   Copyright (C)  2005--2024 Claudio Beccari all
+%%   rights reserved.
 %%   License information appended
 %% 
+
 \NeedsTeXFormat{LaTeX2e}[2016/01/01]
 \ProvidesPackage{curve2e-v161}%
         [2019/02/07 v.1.61 Extension package for pict2e]
@@ -599,28 +601,24 @@
                {\@sPunX\unitlength}{\@sPunY\unitlength}%
 \fi}
 \def\VectorArc(#1)(#2)#3{\begingroup
-\@tdA=#3\p@ \ifdim\@tdA=\z@\else
-  \@VArc(#1)(#2)%
-\fi
-\endgroup\ignorespaces}%
+\edef\tempG{#3}\@tdA=#3\p@
+\fptestF{#3=0}{\@VArc(#1)(#2)}}%
+
 \def\VectorARC(#1)(#2)#3{\begingroup
-\@tdA=#3\p@
-\ifdim\@tdA=\z@\else
-  \@VARC(#1)(#2)%
-\fi
-\endgroup\ignorespaces}%
+\edef\tempG{#3}\@tdA=#3\p@
+\fptestF{#3=0}{\@VArc(#1)(#2)}}%
+
 \def\@VArc(#1)(#2){%
-\ifdim\@tdA>\z@
-  \let\Segno+%
-\else
-  \@tdA=-\@tdA \let\Segno-%
-\fi \Numero\@gradi\@tdA
-\ifdim\@tdA>360\p@
- \PackageWarning{curve2e}{The arc aperture is \@gradi\space degrees
-      and gets reduced\MessageBreak%
-      to the range 0--360 taking the sign into consideration}%
- \@whiledim\@tdA>360\p@\do{\advance\@tdA-360\p@}%
-\fi
+\fptest{\tempG>\z@}{\let\Segno+}%
+               {\edef\tempG={-\tempG}\let\Segno-}%
+\fptestT{\tempG>360}{%
+\PackageWarning{curve2e}{The arc aperture is \tempG\space degrees
+      and gets reduced^^J%
+      to the range 0--360 taking the sign into
+      consideration}%
+      \edef\tempG{\Modulo{\tempG}{360}}}%
+\@tdA=\tempG\p@
+\Numero\@gradi\@tdA
 \SubVect#1from#2to\@V \ModOfVect\@V to\@Raggio \CopyVect#2to\@pPun
 \@tdE=\pIIe@FAW\@wholewidth \@tdE=\pIIe@FAL\@tdE
 \DividE\@tdE by \@Raggio\unitlength to\DeltaGradi
@@ -629,13 +627,13 @@
 \@tdD=\ifx\Segno--\fi\@gradi\p@ \Numero\@tempa\@tdD
 \DirFromAngle\@tempa to\@Dir
 \MultVect\@V by\@Dir to\@sPun
-\edef\@tempA{\ifx\Segno-\m@ne\else\@ne\fi}%
+\edef\@tempA{\ifx\Segno--\@ne\fi}%
 \MultVect\@sPun by 0,\@tempA to\@vPun
 \DirOfVect\@vPun to\@Dir
 \AddVect\@sPun and #1 to \@sPun
 \GetCoord(\@sPun)\@tdX\@tdY
 \@tdD\ifx\Segno--\fi\DeltaGradi\p@
-\@tdD=.5\@tdD \Numero\DeltaGradi\@tdD
+\@tdD=0.5\@tdD \Numero\DeltaGradi\@tdD
 \DirFromAngle\DeltaGradi to\@Dird
 \MultVect\@Dir by*\@Dird to\@Dir
 \GetCoord(\@Dir)\@xnum\@ynum
@@ -643,20 +641,20 @@
 \@tdE =\ifx\Segno--\fi\DeltaGradi\p@
 \advance\@tdA -\@tdE \Numero\@gradi\@tdA
 \CopyVect#1to\@Cent \GetCoord(\@pPun)\@pPunX\@pPunY
-\@@Arc
-\strokepath\ignorespaces}%
+\@@Arc\strokepath\endgroup\ignorespaces}%
+
 \def\@VARC(#1)(#2){%
-\ifdim\@tdA>\z@
-  \let\Segno+%
-\else
-  \@tdA=-\@tdA \let\Segno-%
-\fi \Numero\@gradi\@tdA
-\ifdim\@tdA>360\p@
- \PackageWarning{curve2e}{The arc aperture is \@gradi\space degrees
-      and gets reduced\MessageBreak%
-      to the range 0--360 taking the sign into consideration}%
- \@whiledim\@tdA>360\p@\do{\advance\@tdA-360\p@}%
-\fi
+\fptest{\tempG>\z@}{\let\Segno+}%
+               {\edef\tempG={-\tempG}\let\Segno-}%
+\@tdA=\tempG\p@
+\Numero\@gradi\@tdA
+\fptestT{\tempG>360}{%
+ \PackageWarning{curve2e}{The arc aperture is \tempG\space degrees
+      and gets reduced^^J%
+      to the range 0--360 taking the sign into
+      consideration}%
+      \edef\tempG{\Modulo{\tempG}{360}}%
+}
 \SubVect#1from#2to\@V \ModOfVect\@V to\@Raggio \CopyVect#2to\@pPun
 \@tdE=\pIIe@FAW\@wholewidth \@tdE=0.8\@tdE
 \DividE\@tdE by \@Raggio\unitlength to\DeltaGradi
@@ -807,6 +805,7 @@
     \PackageWarning{curve2e}{%
     Curve specifications must contain at least two nodes!\MessageBreak
     Please, control your Curve specifications\MessageBreak}}}
+
 \def\@Curve(#1)<#2>{%
     \CurveTo#1WithDir{#2}%
     \@ifnextchar\lp@r\@Curve{%
@@ -886,15 +885,17 @@
 
 
 %% 
-%% Distributable under the LaTeX Project Public License,
-%% version 1.3c or higher (your choice). The latest version of
-%% this license is at: http://www.latex-project.org/lppl.txt
+%% Distributable under the LaTeX Project Public
+%% License, version 1.3c or higher (your choice).
+%% The latest version of this license is at:
+%% http://www.latex-project.org/lppl.txt
 %% 
 %% This work is "maintained"
 %% 
-%% This work consists of file curve2e.dtx, and the derived files
-%% curve2e.sty and curve2e.pdf, plus the auxiliary derived files
-%% README.txt and curve2e-v161.sty.
+%% This work consists of file curve2e.dtx, and the
+%% derived files curve2e.sty and curve2e.pdf, plus
+%% the auxiliary derived files README.txt and
+%% curve2e-v161.sty.
 %% 
 %%
 %% End of file `curve2e-v161.sty'.

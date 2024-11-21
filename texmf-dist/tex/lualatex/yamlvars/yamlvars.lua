@@ -1,5 +1,5 @@
 --% Kale Ewasiuk (kalekje@gmail.com)
---% 2023-12-08
+--% 2024-08-17
 --% Copyright (C) 2021-2023 Kale Ewasiuk
 --%
 --% Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -55,6 +55,7 @@ YAMLvars.setts.decstr = 'xfm' -- if in declaration key the value is a string (in
 YAMLvars.setts.undeclared = false
 YAMLvars.setts.overwrite = false
 YAMLvars.setts.lowercase = false
+YAMLvars.setts.stripvars = true  -- todo add this as an option accessible in latex
 YAMLvars.setts.tabmidrule = 'midrule'
 YAMLvars.setts.prcstring = true
 YAMLvars.setts.xfm = {}
@@ -86,7 +87,7 @@ end
 
 function YAMLvars.debugtalk(s, ss)
     if YAMLvars.debug then
-        pl.tex.help_wrt(s, ss)
+        pl.tex.wrth(s, ss)
     end
 end
 
@@ -100,7 +101,7 @@ end
 
 function YAMLvars.xfm.markdown(var, val)
      --return '\\begin{markdown} '..val..'\n \\end{markdown}'
-     pl.tex.help_wrt(val, md)
+     pl.tex.wrth(val, md)
      return [[begin markdown ..val..
 
      par end markdown]]
@@ -206,6 +207,7 @@ function YAMLvars.dec.toggle(var, dft)
 end
 
 function YAMLvars.dec.length(var, dft)
+        dft = dft or '0pt'
         tex.print('\\global\\newlength{\\'..var..'}')
         YAMLvars.prc.length(var, dft)
 end
@@ -337,7 +339,10 @@ function YAMLvars.declareYAMLvarsStr(y)
             var = var:lower()
             YAMLvars.varslowcase:append(var)
         end
-        YAMLvars.varspecs[var] = default_stuff()
+        if YAMLvars.setts.stripvars then -- todo move to a func for easier use
+            var = var:gsub("%s+", "")
+        end
+        YAMLvars.varspecs[var] = default_stuff()  -- assign default specs of a variable to the current var
         if type(specs) == 'string' then
             if YAMLvars.setts.decstr == 'xfm' then specs = {xfm={specs}} end
             if YAMLvars.setts.decstr == 'dft' then specs = {dft=specs} end
@@ -436,6 +441,9 @@ function YAMLvars.parseYAMLvarsStr(y)
     for var, val in pairs(YAMLvars.varsvals) do
         if YAMLvars.varslowcase:contains(var:lower()) then
             var = var:lower()
+        end
+        if YAMLvars.setts.stripvars then -- todo move to a func for easier use
+            var = var:gsub("%s+", "")
         end
         if YAMLvars.varspecs[var] == nil and YAMLvars.setts.undeclared then
             YAMLvars.debugtalk(YAMLvars.setts, 'XYZ')

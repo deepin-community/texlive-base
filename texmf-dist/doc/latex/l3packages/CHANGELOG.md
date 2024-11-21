@@ -7,6 +7,38 @@ this project uses date-based 'snapshot' version identifiers.
 
 ## [Unreleased]
 
+## [2024-08-16]
+
+### Fixed
+- Support for optimised commands using `\GetDocumentCommandArgSpec` (issue
+  [\#1550](https://github.com/latex3/latex3/issues/1550))
+- Unmatched `macrocode` environment in `xtemplate`
+
+## [2024-05-08]
+
+### Changed
+- Prepare for kernel adjustments to templates:
+  `\IfInstanceExist(TF)` as alias for `\IfInstanceExists(TF)`
+
+## [2024-03-14]
+
+### Changed
+- Add a new intro to `xparse.dtx` pointing to kernel methods
+
+## [2024-02-18]
+
+### Changed
+- Re-added `\IfInstanceExist(TF)` to docs - is required
+
+## [2024-02-13]
+
+### Changed
+- Preparation for move of `xtemplate` concepts to the kernel
+
+### Removed
+- `\IfInstanceExist(TF)`
+- `xfrac`: moved to https://github.com/latex3/xfrac
+
 ## [2023-10-10]
 
 ### Changed
@@ -65,7 +97,7 @@ this project uses date-based 'snapshot' version identifiers.
 
 ## [2022-05-30]
 
-## Added
+### Added
 - `\SetTemplateKeys` for _ad hoc_ adjustment of template values
 
 ### Changed
@@ -99,25 +131,22 @@ this project uses date-based 'snapshot' version identifiers.
 ## [2021-06-18]
 
 ### Fixed
-
 - Correct internal changes to message naming
 
 ## [2021-06-01]
 
 ### Fixed
-
 - Restore one parameter in `xfrac`
 
 ## [2021-05-27]
 
 ### Changed
-
 - Internal changes to message naming
 
 ## [2021-05-07]
 
 ### Fixed
-- Implmentation of `\DeclareRestrictedTemplate`
+- Implementation of `\DeclareRestrictedTemplate`
 - Incorrect use of restricted template in `xfrac`
 
 ## [2021-03-12]
@@ -237,7 +266,12 @@ this project uses date-based 'snapshot' version identifiers.
 - Switch to ISO date format
 - Improve cross-module use of internal functions
 
-[Unreleased]: https://github.com/latex3/latex3/compare/2023-10-10...HEAD
+[Unreleased]: https://github.com/latex3/latex3/compare/2024-08-16...HEAD
+[2024-08-16]: https://github.com/latex3/latex3/compare/2024-05-08...2024-08-16
+[2024-05-08]: https://github.com/latex3/latex3/compare/2024-03-14...2024-05-08
+[2024-03-14]: https://github.com/latex3/latex3/compare/2024-02-18...2024-03-14
+[2024-02-18]: https://github.com/latex3/latex3/compare/2024-02-13...2024-02-18
+[2024-02-13]: https://github.com/latex3/latex3/compare/2023-10-10...2024-02-13
 [2023-10-10]: https://github.com/latex3/latex3/compare/2023-08-29...2023-10-10
 [2023-08-29]: https://github.com/latex3/latex3/compare/2023-02-02...2023-08-29
 [2023-02-02]: https://github.com/latex3/latex3/compare/2023-02-01...2023-02-02

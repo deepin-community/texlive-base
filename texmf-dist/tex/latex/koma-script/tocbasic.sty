@@ -52,27 +52,159 @@
 %% find a complete unmodified copy of LaTeX2e at
 %% <http://mirror.ctan.org/tex-archive/macros/latex/base/>.
 %% 
-%%% From File: $Id: tocbasic.dtx 4067 2023-06-28 14:37:03Z kohm $
+%%% From File: $Id: tocbasic.dtx 4132 2024-10-24 09:32:44Z kohm $
 %%%            (run: identify)
 \NeedsTeXFormat{LaTeX2e}[1995/12/01]
 \ProvidesPackage{tocbasic}[%
-  2023/07/07 v3.41 KOMA-Script
+  2024/10/24 v3.43 KOMA-Script
   package
   (handling toc-files)%
 ]
-%%% From File: $Id: tocbasic.dtx 4067 2023-06-28 14:37:03Z kohm $
+%%% From File: $Id: tocbasic.dtx 4132 2024-10-24 09:32:44Z kohm $
 %%%            (run: prepare)
+\newif\if@tocbasic@old@latex@found
+\ifnum 0=\ifcsname IfFormatAtLeastTF\endcsname
+    \IfFormatAtLeastTF{2022-06-01}{1}{0}
+  \else
+    0
+  \fi\relax
+  \PackageWarningNoLine{tocbasic}{%
+    LaTeX kernel too old!\MessageBreak
+    For full functionality the package needs at least\MessageBreak
+    LaTeX 2022-06-01.\MessageBreak
+    You are using an older LaTeX version.\MessageBreak
+    So the functionality will be limited.\MessageBreak
+    Note that this also can result in error messages,\MessageBreak
+    that would not raise with an up-to-date LaTeX%
+  }
+  \@tocbasic@old@latex@foundtrue
+\fi
 \RequirePackage{scrbase}
 \scr@ifundefinedorrelax{NewDocumentCommand}{%
   \RequirePackage{xparse}[2018-04-12]%
 }{}
-%%% From File: $Id: tocbasic.dtx 4067 2023-06-28 14:37:03Z kohm $
+%%% From File: $Id: tocbasic.dtx 4132 2024-10-24 09:32:44Z kohm $
 %%%            (run: option)
-%%% From File: $Id: tocbasic.dtx 4067 2023-06-28 14:37:03Z kohm $
+\if@tocbasic@old@latex@found\else
+  \ExplSyntaxOn
+
+  \bool_new:N \__tocbasic_patch_all_bool
+  \bool_new:N \__tocbasic_patch_starttoc_bool
+  \bool_new:N \__tocbasic_patch_chapter_bool
+  \bool_new:N \__tocbasic_patch_listoffigures_bool
+  \bool_new:N \__tocbasic_patch_listoftables_bool
+
+  \DeclareKeys
+    {
+      enablepatch  .code             = \__tocbasic_endisable_patch:nn {#1} \c_true_bool,
+      enablepatch  .usage            = preamble,
+      enablepatch  .value_required:n = true,
+      disablepatch .code             = \__tocbasic_endisable_patch:nn {#1} \c_false_bool,
+      disablepatch .usage            = preamble,
+      disablepatch .value_required:n = true,
+    }
+
+  \msg_new:nnnn { tocbasic } { unknown-patch }
+    {
+      \text_uppercase:n #1bling~of~unknown~patch~#2~ignored.
+    }
+    {
+      You've~tried~to~#1able~patch~#2,~
+      but~this~is~not~a~known~patch.~
+      Because~of~this~your~attempt~is~ignored.~
+      See~the~KOMA-Script~user~manual~for~more~information~about~known~patches.
+    }
+
+  \cs_new:Nn \__tocbasic_endisable_patch:nn
+    {
+      \clist_map_inline:nn { #1 }
+        {
+          \cs_if_exist:cTF { __tocbasic_patch_##1_bool }
+            {
+              \bool_set_eq:cN { __tocbasic_patch_##1_bool } #2
+            }
+            {
+              \exp_args:Nnnx \msg_warning:nnnn { tocbasic } { unknown-patch }
+                { \bool_if:NTF #2 { en } { dis } } { ##1 }
+            }
+        }
+    }
+
+  \ExplSyntaxOff
+\fi
+%%% From File: $Id: tocbasic.dtx 4132 2024-10-24 09:32:44Z kohm $
 %%%            (run: execoption)
-\ProcessOptions\relax
-%%% From File: $Id: tocbasic.dtx 4067 2023-06-28 14:37:03Z kohm $
+\if@tocbasic@old@latex@found
+  \ProcessOptions
+\else
+  \ProcessKeyOptions
+\fi
+%%% From File: $Id: tocbasic.dtx 4132 2024-10-24 09:32:44Z kohm $
 %%%            (run: body)
+\if@tocbasic@old@latex@found\else
+  \ExplSyntaxOn
+  \msg_new:nnnn { tocbasic } { dangerous-patch }
+    {
+      Dangerous~#2~patch~enabled \str_if_empty:nF { #1 } { ~using~#1 } .
+    }
+    {
+      \str_if_empty:nF { #1 } { Class~#1~does~not~need~the~#2~patch.~ }
+      Using~this~patch~can~even~result~in~harm.~
+      If~you~are~not~sure~that~this~patch~is~needed,~
+      you~should~not~enable~it.~
+      Please,~see~the~KOMA-Script~user~manual~for~more~information~about~
+      the~#2~patch.
+    }
+
+  \AtBeginDocument
+    {
+
+      \bool_if:NT \__tocbasic_patch_all_bool
+        {
+          \bool_set_true:N \__tocbasic_patch_starttoc_bool
+          \cs_if_exist:NF \KOMAClassName
+            { \bool_set_true:N \__tocbasic_patch_chapter_bool }
+          \bool_set_true:N \__tocbasic_patch_listoffigures_bool
+          \bool_set_true:N \__tocbasic_patch_listoftables_bool
+        }
+
+      \bool_if:NT \__tocbasic_patch_chapter_bool
+        {
+          \cs_if_exist:NTF \KOMAClassName
+            {
+              \exp_args:Nnnx \msg_warn:nnnn { tocbasic } { dangerous-patch }
+                { \KOMAClassName } { chapter }
+            }
+            {
+              \exp_args:Nnnx \msg_note:nnnn { tocbasic } { dangerous-patch }
+                { } { chapter }
+            }
+          \hook_gput_code:nnn { cmd/@makechapterhead/before } { tocbasic }
+            {
+              \doforeachtocfile[float]{
+                \addtocontents{\@currext}{\protect\addvspace{10\p@}}
+              }
+            }
+        }
+
+      \bool_if:NT \__tocbasic_patch_starttoc_bool \tocbasicautomode
+
+      \bool_if:NT \__tocbasic_patch_listoffigures_bool
+        {
+          \renewcommand*{\listoffigures}{\listoftoc{\ext@figure}}%
+          \providecommand*{\listoflofname}{\listfigurename}%
+        }
+
+      \bool_if:NT \__tocbasic_patch_listoftables_bool
+        {
+          \renewcommand*{\listoftables}{\listoftoc{\ext@table}}%
+          \providecommand*{\listoflotname}{\listtablename}%
+        }
+
+    }
+
+  \ExplSyntaxOff
+\fi
 \AfterPackage*{multitoc}{%
   \@ifpackagelater{multitoc}{2022/02/10}{}{%
     \PackageWarningNoLine{tocbasic}{%
@@ -2909,7 +3041,7 @@
 %%% From File: $Id: scrkernel-tocstyle.dtx 4060 2023-06-20 08:59:01Z kohm $
 %%%            (run: style,dottedtocline)
 \CloneTOCEntryStyle{dottedtocline}{default}
-%%% From File: $Id: tocbasic.dtx 4067 2023-06-28 14:37:03Z kohm $
+%%% From File: $Id: tocbasic.dtx 4132 2024-10-24 09:32:44Z kohm $
 %%%            (run: exit)
 \AtBeginDocument{%
   \@ifundefined{MakeMarkcase}{%

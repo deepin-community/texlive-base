@@ -1,11 +1,11 @@
-            LaTeX Package innerscript v. 1.2
+            LaTeX Package innerscript v. 1.3
                Installation Guide/README
                     Conrad Kosowsky
 
 
-This file is README.txt from version 1.2 of the free and
-open-source LaTeX package "innerscript," released November
-2023, to be used with the LuaTeX engine. The innerscript
+This file is README.txt from version 1.3 of the free and
+open-source LaTeX package "innerscript," released January
+2024, to be used with the LuaTeX engine. The innerscript
 package optionally modifies four aspects of TeX's automatic
 math formatting rules to improve typesetting. See the user
 guide for more information. See below for installation and
@@ -55,7 +55,7 @@ produces the user guide in point (3) above.
 
 *********************************************************
 
-Copyright 2021,2023 by Conrad Kosowsky
+Copyright 2021, 2023, 2024 Conrad Kosowsky
 
 This file may be distributed and modified under the terms
 of the LaTeX Public Project License, version 1.3c or any
@@ -70,7 +70,7 @@ be reached at kosowsky.latex@gmail.com. The Work consists
 of the following items:
 
   (1) the base file:
-        innerscript.dtx
+        innerscript_code.dtx
 
   (2) the package file:
         innerscript.sty

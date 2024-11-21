@@ -14,7 +14,7 @@ Check [issue #1](https://github.com/koppor/plantuml/issues/1) for the current st
 
 1. Environment variable `PLANTUML_JAR` set to the location of `plantuml.jar`.
    You get it from <https://sourceforge.net/projects/plantuml/files/plantuml.jar/download>.
-2. Enviroment variable `GRAPHVIZ_DOT` set to the location of `dot.exe`.
+2. Windows: Environment variable `GRAPHVIZ_DOT` set to the location of `dot.exe`.
    Example: `C:\Program Files (x86)\Graphviz2.38\bin\dot.exe`.
    You can install graphviz using `choco install graphviz`.
 3. lualatex available with command line parameter `-shell-escape` included.
@@ -49,6 +49,29 @@ Check [issue #1](https://github.com/koppor/plantuml/issues/1) for the current st
 ### Example Class Relations Rendered Using SVG
 
 **LaTeX source:**
+
+```latex
+\documentclass{scrartcl}
+\usepackage{graphics}
+\usepackage{epstopdf}
+\epstopdfDeclareGraphicsRule{.svg}{pdf}{.pdf}{
+  inkscape #1 --export-filename=\OutputFile
+}
+\usepackage[output=svg]{plantuml}
+\begin{document}
+\begin{plantuml}
+@startuml
+class Car
+
+Driver - Car : drives >
+Car *- Wheel : have 4 >
+Car -- Person : < owns
+@enduml
+\end{plantuml}
+\end{document}
+```
+
+**For older Inkscape use this LaTeX source:**
 
 ```latex
 \documentclass{scrartcl}

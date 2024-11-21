@@ -2,10 +2,10 @@
 #
 # This file generates files required to use the listings package.
 #
-# $Id$
+# Time-stamp: <2024-02-15 20:02:38 ax006ho>
 #
 # (c) 2007 Brooks Moses
-# (c) 2013-2018 Jobst Hoffmann
+# (c) 2013- Jobst Hoffmann
 #
 # This file is distributed under the terms of the LaTeX Project Public
 # License from CTAN archives in directory  macros/latex/base/lppl.txt.
@@ -36,7 +36,7 @@ DISTRIBUTION_FILES = ../$(PACKAGE)/$(PACKAGE).pdf \
 	../$(PACKAGE)/README \
 	../$(PACKAGE)/Makefile \
 	../$(PACKAGE)/lstdrvrs.dtx \
-	../$(PACKAGE)/lstdrvrs.pdf 
+	../$(PACKAGE)/lstdrvrs.pdf
 PACKAGE_FILES = $(subst ../$(PACKAGE)/,,$(DISTRIBUTION_FILES))
 STY_FILES = listings.cfg listings.sty lstmisc.sty \
 	lstlang0.sty lstlang1.sty lstlang2.sty
@@ -59,7 +59,7 @@ listings.sty: listings.ins listings.dtx lstdrvrs.dtx
 	$(TEX) $<
 
 listings.pdf: listings.sty
-	echo "\PassOptionsToClass{a4paper}{article}" > ltxdoc.cfg
+	echo "\PassOptionsToClass{a4paper}{ltxdoc}" > ltxdoc.cfg
 	$(LATEX) ${<:.sty=.dtx}
 	$(MAKEINDEX) -s gind.ist ${@:.pdf=}
 	$(LATEX) ${<:.sty=.dtx}
@@ -67,7 +67,7 @@ listings.pdf: listings.sty
 	rm -f ltxdoc.cfg
 
 listings-devel.pdf: listings.sty
-	echo "\PassOptionsToClass{a4paper}{article}" > ltxdoc.cfg
+	echo "\PassOptionsToClass{a4paper}{ltxdoc}" > ltxdoc.cfg
 	echo "\AtBeginDocument{\AlsoImplementation}" >> ltxdoc.cfg
 	$(LATEX) -jobname=${@:.pdf=} ${<:.sty=.dtx}
 	$(MAKEINDEX) -s gind.ist ${@:.pdf=}
@@ -76,7 +76,7 @@ listings-devel.pdf: listings.sty
 	rm -f ltxdoc.cfg
 
 lstdrvrs.pdf: lstdrvrs.dtx
-	echo "\PassOptionsToClass{a4paper}{article}" > ltxdoc.cfg
+	echo "\PassOptionsToClass{a4paper}{ltxdoc}" > ltxdoc.cfg
 	$(LATEX) ${<:.sty=.dtx}
 	$(MAKEINDEX) -s gind.ist lstdrvrs
 	$(LATEX) ${<:.sty=.dtx}

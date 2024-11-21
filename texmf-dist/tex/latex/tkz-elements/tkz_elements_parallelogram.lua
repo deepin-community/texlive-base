@@ -1,6 +1,6 @@
 -- tkz_elements_parallelogram.lua
--- date 2024/02/04
--- version 2.00c
+-- date 2024/07/16
+-- version 2.30c
 -- Copyright 2024  Alain Matthes
 -- This work may be distributed and/or modified under the
 -- conditions of the LaTeX Project Public License, either version 1.3

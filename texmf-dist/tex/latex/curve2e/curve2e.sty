@@ -6,12 +6,14 @@
 %%
 %% curve2e.dtx  (with options: `package')
 %% 
-%%   Copyright (C)  2005--2023 Claudio Beccari  all rights reserved.
+%%   Copyright (C)  2005--2024 Claudio Beccari all
+%%   rights reserved.
 %%   License information appended
 %% 
 \NeedsTeXFormat{LaTeX2e}[2019/01/01]
 \ProvidesPackage{curve2e}%
-        [2023-07-04 v.2.3.1 Extension package for pict2e]
+[2024-11-13 v.2.6.0 Extension package for pict2e]
+
 \IfFileExists{xfp.sty}{%
   \RequirePackage{graphicx,color}
   \RequirePackageWithOptions{pict2e}[2014/01/01]
@@ -35,11 +37,21 @@
 \ExplSyntaxOn
 \AtBeginDocument{%
 \ProvideExpandableDocumentCommand\fptest{m m m}{%
-   \fp_compare:nTF{#1}{#2}{#3}\ignorespaces}
+   \fp_compare:nTF{#1}{#2}{#3}}
+\ProvideExpandableDocumentCommand\fptestT{m m}{%
+   \fp_compare:nTF{#1}{#2}{\relax}}
+\ProvideExpandableDocumentCommand\fptestF{m m}{%
+   \fp_compare:nTF{#1}{\relax}{#2}}
 \ProvideExpandableDocumentCommand\fpdowhile{m m}{%
-   \fp_do_while:nn{#1}{#2}\ignorespaces}
+   \fp_do_while:nn{#1}{#2}}
 \ProvideExpandableDocumentCommand\fpwhiledo{m m}{%
-   \fp_while_do:nn{#1}{#2}\ignorespaces}
+   \fp_while_do:nn{#1}{#2}}
+\ProvideExpandableDocumentCommand\Modulo{m m}{%
+ \inteval{\int_mod:nn{#1}{#2}}}
+\ProvideExpandableDocumentCommand\Ifodd{m m m}{%
+  \int_if_odd:nTF{#1}{#2}{#3}}
+\ProvideExpandableDocumentCommand\Ifequal{m m m m}%
+  {\str_if_eq:eeTF{#1}{#2}{#3}{#4}}
 }
 \ExplSyntaxOff
 
@@ -259,44 +271,73 @@
       \ignorespaces}}
 
 \def\@picture(#1,#2)(#3,#4){%
-  \edef\pict@urcorner{#1,#2}% New statement
-  \edef\pict@llcorner{#3,#4}% New statement
+  \edef\pict@dimen{#1,#2} % New 2.4.0
+  \edef\pict@offset{#3,#4}% New 2.4.0
   \@picht#2\unitlength
   \setbox\@picbox\hb@xt@#1\unitlength\bgroup
     \hskip -#3\unitlength
     \lower #4\unitlength\hbox\bgroup
       \ignorespaces}
-\def\Gr@phGrid(#1,#2){\bgroup\textcolor{red}{\linethickness{.1\p@}%
-\RoundUp#1modulo10to\@GridWd \RoundUp#2modulo10to\@GridHt
-\@tempcnta=\@GridWd \divide\@tempcnta10\relax \advance\@tempcnta\@ne
-\multiput(0,0)(10,0){\@tempcnta}{\line(0,1){\@GridHt}}%
-\@tempcnta=\@GridHt \divide\@tempcnta10\advance\@tempcnta\@ne
-\multiput(0,0)(0,10){\@tempcnta}{\line(1,0){\@GridWd}}\thinlines}%
+
+\newif\ifinnerlines \let\ifinnerlines\iftrue
+\def\noinnerlines{\let\ifinnerlines\iffalse}
+
+\newcommand\griglia[2]{%
+\linethickness{#1\p@}%
+\edef\ggllx{\Goffx}
+\fpdowhile{\ggllx!>\GridWd}{%
+\fptest{\ggllx=\fpeval{#2*(round(\ggllx/#2,0))}}%
+{\segment(\ggllx,\Goffy)(\ggllx,\GridHt)}{\relax}%
+\edef\ggllx{\fpeval{\ggllx+#2}}}%
+\edef\gglly{\Goffy}
+\fpdowhile{\gglly!>\GridHt}{%
+\fptest{\gglly=\fpeval{#2*(round(\gglly/#2,0))}}%
+{\segment(\Goffx,\gglly)(\GridWd,\gglly)}{\relax}
+\edef\gglly{\fpeval{\gglly+#2}}}}
+
+\NewDocumentCommand\Gr@phGrid{d() d()}{\bgroup
+\color{\GridColor}
+\edef\Gdim{#1}\edef\Goff{#2}
+\GetCoord(\Gdim)\Gllx\Glly
+\GetCoord(\Goff)\Goffx\Goffy
+\edef\GridWd{\fpeval{\Gllx+\Goffx}}%
+\edef\GridHt{\fpeval{\Glly+\Goffy}}%
+\griglia{1.0}{10}
+\ifinnerlines
+  \griglia{0.70}{5}%
+  \unless\ifdim \unitlength < 1mm
+    \griglia{0.70}{5}%
+    \griglia{0.35}{1}%
+  \fi
+\fi
+\egroup
+\ignorespaces}
+
+\NewDocumentCommand\AutoGrid%
+{D(){\pict@dimen} D(){\pict@offset} O{cyan!50!white}}{\bgroup
+\def\GridColor{#3}%
+\put(0,0){\Gr@phGrid(#1)(#2)}%
 \egroup\ignorespaces}
 
-\NewDocumentCommand\AutoGrid{d() d()}{\bgroup%
-\put(\pict@llcorner){\expandafter\Gr@phGrid\expandafter(\pict@urcorner)}%
+\NewDocumentCommand\GraphGrid%
+{R(){\pict@dimen} D(){\pict@offset} O{cyan!50!white}}
+{\bgroup
+\def\GridColor{#3}%
+\put(#2){\Gr@phGrid(#1)(#2)}%
 \egroup\ignorespaces}
-
-\NewDocumentCommand\GraphGrid{r() d()}{%
-\IfValueTF{#2}{\put(#1){\Gr@phGrid(#2)}}%
-              {\put(0,0){\Gr@phGrid(#1)}}}
 
 \def\RoundUp#1modulo#2to#3{\edef#3{\fpeval{(ceil(#1/#2,0))*#2}}}%
 \def\Integer#1.#2??{#1}%
-%%
-%%
-%%
-%%
+
 \providecommand\Pbox{}
 \newlength\PbDim
 \RenewDocumentCommand\Pbox{D(){0,0} O{cc} m O{0.5ex} s D<>{0}}{%
 \put(#1){\rotatebox{#6}{\makebox(0,0){%
 \settowidth\PbDim{#2}%
 \edef\Rapp{\fpeval{\PbDim/{1ex}}}%
-\fptest{\Rapp > 1.5}{\fboxsep=0.5ex}{\fboxsep=0.75ex}%
+\fptest{\Rapp>1.5}{\fboxsep=0.5ex}{\fboxsep=0.75ex}%
 \IfBooleanTF{#5}{\fboxrule=0.4pt}{\fboxrule=0pt}%
-\fptest{#4 = 0sp}%
+\fptest{#4=0sp}%
   {\makebox(0,0)[#2]{\fbox{$\relax#3\relax$}}}%
   {\edef\Diam{\fpeval{(#4)/\unitlength}}%
    \makebox(0,0){\circle*{\Diam}}%
@@ -311,9 +352,9 @@
 
 \providecommand\legenda{}
 \newbox\legendbox
-\RenewDocumentCommand\legenda{ D(){0,0} m}{\put(#1){%
+\RenewDocumentCommand\legenda{D(){0,0} m}{\put(#1){%
    \setbox\legendbox\hbox{$\relax#2\relax$}%
-   \edef\@tempA{\fpeval{(\wd\legendbox + 3\p@)/\unitlength}}%
+   \edef\@tempA{\fpeval{(\wd\legendbox+3\p@)/\unitlength}}%
    \edef\@tempB{\fpeval{(\ht\legendbox+\dp\legendbox+3\p@)/\unitlength}}%
    \framebox(\@tempA,\@tempB){\box\legendbox}}\ignorespaces}
 
@@ -323,24 +364,23 @@
 \let\DivideFN\DividE
 \def\MultiplY#1by#2to#3{\edef#3{\fpeval{#1 * #2}}}\relax
 \let\MultiplyFN\MultiplY
-\unless\ifdefined\Numero
-  \def\Numero#1#2{\edef#1{\fpeval{round(#2,6)}}\ignorespaces}%
-\fi
+\providecommand\Numero[2]{\edef#1{\fpeval{round(#2,6)}}}
 \def\SinOf#1to#2{\edef#2{\fpeval{round(sind#1,6)}}}\relax
 \def\CosOf#1to#2{\edef#2{\fpeval{round(cosd#1,6)}}}\relax
 \def\ArgOfVect#1to#2{\GetCoord(#1){\t@X}{\t@Y}%
-\fptest{\t@X=\z@ && \t@Y=\z@}{\edef#2{0}%
-\PackageWarning{curve2e}{Null vector}{Check your data\MessageBreak
-Computations go on, but the results may be meaningless}}{%
-\edef#2{\fpeval{round(atand(\t@Y,\t@X),6)}}}\ignorespaces}
-\def\MakeVectorFrom#1#2to#3{\edef#3{#1,#2}\ignorespaces}%
+\fptest{\t@X=\z@&&\t@Y=\z@}{\edef#2{0}%
+\PackageWarning{curve2e}{Null vector}{%
+Check your data\MessageBreak
+Computations go on, but the results may be meaningless}%
+}{\edef#2{\fpeval{round(atand(\t@Y,\t@X),6)}}}%
+\ignorespaces}
+\def\MakeVectorFrom#1#2to#3{\edef#3{#1,#2}}%
 \def\CopyVect#1to#2{\edef#2{#1}\ignorespaces}%
 \def\ModOfVect#1to#2{\GetCoord(#1)\t@X\t@Y
-\edef#2{\fpeval{round(sqrt(\t@X*\t@X + \t@Y*\t@Y),6)}}%
-\ignorespaces}%
+\edef#2{\fpeval{round(sqrt(\t@X*\t@X + \t@Y*\t@Y),6)}}\ignorespaces}%
 \def\DirOfVect#1to#2{\GetCoord(#1)\t@X\t@Y
 \ModOfVect#1to\@tempa
-\fptest{\@tempa=\z@}{}{%
+\fptestF{\@tempa=\z@}{%
   \edef\t@X{\fpeval{round(\t@X/\@tempa,6)}}%
   \edef\t@Y{\fpeval{round(\t@Y/\@tempa,6)}}%
 }\MakeVectorFrom\t@X\t@Y to#2\ignorespaces}%
@@ -350,10 +390,8 @@ Computations go on, but the results may be meaningless}}{%
 \def\DistanceAndDirOfVect#1minus#2to#3and#4{%
 \SubVect#2from#1to\@tempa
 \ModAndDirOfVect\@tempa to#3and#4\ignorespaces}%
-\def\XpartOfVect#1to#2{%
-\GetCoord(#1)#2\@tempa\ignorespaces}%
-\def\YpartOfVect#1to#2{%
-\GetCoord(#1)\@tempa#2\ignorespaces}%
+\def\XpartOfVect#1to#2{\GetCoord(#1)#2\@tempa\ignorespaces}%
+\def\YpartOfVect#1to#2{\GetCoord(#1)\@tempa#2\ignorespaces}%
 \def\DirFromAngle#1to#2{%
 \edef\t@X{\fpeval{round(cosd#1,6)}}%
 \edef\t@Y{\fpeval{round(sind#1,6)}}%
@@ -363,8 +401,7 @@ Computations go on, but the results may be meaningless}}{%
 \edef\t@Y{\fpeval{#2 * \t@Y}}%
 \MakeVectorFrom\t@X\t@Y to#3\ignorespaces}%
 \def\ConjVect#1to#2{\GetCoord(#1)\t@X\t@Y
-\edef\t@Y{-\t@Y}%
-\MakeVectorFrom\t@X\t@Y to#2\ignorespaces}%
+\edef\t@Y{-\t@Y}\MakeVectorFrom\t@X\t@Y to#2\ignorespaces}%
 \def\AddVect#1and#2to#3{\GetCoord(#1)\tu@X\tu@Y
 \GetCoord(#2)\td@X\td@Y
 \edef\t@X{\fpeval{\tu@X + \td@X}}%
@@ -378,90 +415,100 @@ Computations go on, but the results may be meaningless}}{%
 \def\ModAndAngleOfVect#1to#2and#3{\ModOfVect#1to#2\relax
 \ArgOfVect#1to#3\ignorespaces}
 \newcount\MV@C
-\NewDocumentCommand\Multvect{m s m s m}{%
-\MV@C=0
-\ModAndAngleOfVect#1to\MV@uM and\MV@uA
+\NewDocumentCommand\Multvect{m s m s m}%
+{\ModAndAngleOfVect#1to\MV@uM and\MV@uA
 \ModAndAngleOfVect#3to\MV@dM and\MV@dA
-\IfBooleanT{#2}{\MV@C=1}\relax
-\IfBooleanT{#4}{\MV@C=1}\relax
-\unless\ifnum\MV@C=0\edef\MV@dA{-\MV@dA}\fi
-\edef\MV@rM{\fpeval{round((\MV@uM * \MV@dM),6)}}%
-\edef\MV@rA{\fpeval{round((\MV@uA + \MV@dA),6)}}%
-\GetCoord(\MV@rA:\MV@rM)\t@X\t@Y
-\MakeVectorFrom\t@X\t@Y to#5}
-\def\MultVect#1by{\@ifstar{\let\MV@c\@ne\@MultVect#1by}%
-  {\let\MV@c\empty\@MultVect#1by}}
+\fptestT{%
+\IfBooleanTF{#2}{1}{0}+\IfBooleanTF{#4}{1}{0}!=0}%
+{\edef\MV@dA{-\MV@dA}}%
+\edef\MV@rM{\fpeval{round((\MV@uM*\MV@dM),6)}}%
+\edef\MV@rA{\fpeval{round((\MV@uA+\MV@dA),6)}}%
+\edef#5{\fpeval{\MV@rM*cosd\MV@rA},\fpeval{\MV@rM*sind\MV@rA}}}
+
+\def\MultVect#1by{\@ifstar{\let\MV@c1\@MultVect#1 by}{\let\MV@c0\@MultVect#1by}}
 
 \def\@MultVect#1by#2to#3{%
-  \unless\ifx\MV@c\empty\Multvect{#1}{#2}*{#3}\else
-    \Multvect{#1}{#2}{#3}\fi}
+  \fptest{\MV@c!=0}{\Multvect{#1}{#2}*{#3}}%
+    {\Multvect{#1}{#2}{#3}}%
+}%
 \def\DivVect#1by#2to#3{\Divvect{#1}{#2}{#3}}
 
-\NewDocumentCommand\Divvect{ m m m }{%
-\ModAndDirOfVect#2to\@Mod and\@Dir
-\edef\@Mod{\fpeval{1 / \@Mod}}%
-\ConjVect\@Dir to\@Dir
-\ScaleVect#1by\@Mod to\@tempa
-\Multvect{\@tempa}{\@Dir}#3\ignorespaces}%
+\NewDocumentCommand \Divvect{m m m}%
+{\ModOfVect#2to\DV@dD
+\fptest{\DV@dD=0}{\PackageWarning{curve2e}{^^J%
+******************************************^^J%
+Division by zero!^^J%
+Result set to maxdimen in scaled points^^J%
+******************************************^^J}%
+\edef#3{\fpeval{\maxdimen*2**16},0}}%
+{\edef\DV@sF{\fpeval{1/\DV@dD**2}}%
+\Multvect{#2}{\DV@sF,0}{\DV@dD}%
+\Multvect{#1}{\DV@dD}*{#3}}}%
 \def\Arc(#1)(#2)#3{\begingroup
-\@tdA=#3\p@
-\unless\ifdim\@tdA=\z@
-  \@Arc(#1)(#2)%
-\fi
-\endgroup\ignorespaces}%
+\edef\tempG{#3}%
+\fptestF{#3=0}{\@Arc(#1)(#2)}}%
+
 \def\@Arc(#1)(#2){%
-\ifdim\@tdA>\z@
-  \let\Segno+%
-\else
-  \@tdA=-\@tdA \let\Segno-%
-\fi
-\Numero\@gradi\@tdA
-\ifdim\@tdA>360\p@
- \PackageWarning{curve2e}{The arc aperture is \@gradi\space degrees
-      and gets reduced\MessageBreak%
-      to the range 0--360 taking the sign into consideration}%
- \@whiledim\@tdA>360\p@\do{\advance\@tdA-360\p@}%
-\fi
+\fptest{\tempG>\z@}%
+       {\let\Segno+}%
+       {\let\Segno-%
+        \edef\tempG{\fpeval{abs(\tempG)}}%
+               }%
+\fptestT{\tempG>360}{%
+ \PackageWarning{curve2e}%
+     {The arc aperture is \tempG\space degrees
+      and gets reduced^^J%
+      to the interval 0--360 taking the sign into
+      consideration}%
+      \edef\tempG{\Modulo{\tempG}{360}}%
+      }%
 \GetCoord(#2)\@pPunX\@pPunY
 \ifCV@polare
   \ModOfVect#2to\@Raggio
   \CopyVect#1to\@Cent
-  \AddVect#2and#1to\@pPun% punto da cui parte l'arco
+  \AddVect#2and#1to\@pPun%          starting point
   \GetCoord(\@pPun)\@pPunX\@pPunY
 \else
-  \SubVect#2from#1to\@V \ModOfVect\@V to\@Raggio
+  \SubVect#2from#1to\@V
+  \ModOfVect\@V to\@Raggio
   \CopyVect#2to\@pPun
-  \CopyVect#1to\@Cent \GetCoord(\@pPun)\@pPunX\@pPunY
+  \CopyVect#1to\@Cent
+  \GetCoord(\@pPun)\@pPunX\@pPunY
 \fi
-\@@Arc\strokepath\ignorespaces}%
-\def\@@Arc{\pIIe@moveto{\@pPunX\unitlength}{\@pPunY\unitlength}%
-\ifdim\@tdA>180\p@
-  \advance\@tdA-180\p@
-  \Numero\@gradi\@tdA
+\@@Arc\strokepath\endgroup\ignorespaces}%
+\def\@@Arc{%
+\pIIe@moveto{\@pPunX\unitlength}%
+            {\@pPunY\unitlength}%
+\fptestT{\tempG>180}{%
+  \edef\tempG{\fpeval{\tempG-180}}%
   \SubVect\@pPun from\@Cent to\@V
   \AddVect\@V and\@Cent to\@sPun
-  \Multvect{\@V}{0,-1.3333333}\@V
+  \Multvect{\@V}{0,-1.3333333}{\@V}%
   \if\Segno-\ScaleVect\@V by-1to\@V\fi
   \AddVect\@pPun and\@V to\@pcPun
   \AddVect\@sPun and\@V to\@scPun
   \GetCoord(\@pcPun)\@pcPunX\@pcPunY
   \GetCoord(\@scPun)\@scPunX\@scPunY
   \GetCoord(\@sPun)\@sPunX\@sPunY
-  \pIIe@curveto{\@pcPunX\unitlength}{\@pcPunY\unitlength}%
-               {\@scPunX\unitlength}{\@scPunY\unitlength}%
-               {\@sPunX\unitlength}{\@sPunY\unitlength}%
-  \CopyVect\@sPun to\@pPun
-\fi
-\ifdim\@tdA>\z@
-  \DirFromAngle\@gradi to\@Dir \if\Segno-\ConjVect\@Dir to\@Dir \fi
+  \pIIe@curveto{\@pcPunX\unitlength}%
+               {\@pcPunY\unitlength}%
+               {\@scPunX\unitlength}%
+               {\@scPunY\unitlength}%
+               {\@sPunX\unitlength}%
+               {\@sPunY\unitlength}%
+  \CopyVect\@sPun to\@pPun}%
+\fptestT{\tempG>0}{%
+  \DirFromAngle\tempG to\@Dir
+  \if\Segno-\ConjVect\@Dir to\@Dir \fi
   \SubVect\@Cent from\@pPun to\@V
   \Multvect{\@V}{\@Dir}\@V
   \AddVect\@Cent and\@V to\@sPun
-  \@tdA=.5\@tdA \Numero\@gradi\@tdA
-  \DirFromAngle\@gradi to\@Phimezzi
+  \edef\tempG{\fpeval{\tempG/2}}%
+  \DirFromAngle\tempG to\@Phimezzi
   \GetCoord(\@Phimezzi)\@cosphimezzi\@sinphimezzi
   \@tdB=1.3333333\p@ \@tdB=\@Raggio\@tdB
-  \@tdC=\p@ \advance\@tdC -\@cosphimezzi\p@ \Numero\@tempa\@tdC
+  \@tdC=\p@ \advance\@tdC -\@cosphimezzi\p@
+  \Numero\@tempa\@tdC
   \@tdB=\@tempa\@tdB
   \DividE\@tdB by\@sinphimezzi\p@ to\@cZ
   \ScaleVect\@Phimezzi by\@cZ to\@Phimezzi
@@ -481,39 +528,36 @@ Computations go on, but the results may be meaningless}}{%
   \GetCoord(\@pcPun)\@pcPunX\@pcPunY
   \GetCoord(\@scPun)\@scPunX\@scPunY
   \GetCoord(\@sPun)\@sPunX\@sPunY
-  \pIIe@curveto{\@pcPunX\unitlength}{\@pcPunY\unitlength}%
-               {\@scPunX\unitlength}{\@scPunY\unitlength}%
-               {\@sPunX\unitlength}{\@sPunY\unitlength}%
-\fi}
+  \pIIe@curveto{\@pcPunX\unitlength}%
+               {\@pcPunY\unitlength}%
+               {\@scPunX\unitlength}%
+               {\@scPunY\unitlength}%
+               {\@sPunX\unitlength}%
+               {\@sPunY\unitlength}%
+}}%
 \def\VectorArc(#1)(#2)#3{\begingroup
-\@tdA=#3\p@ \ifdim\@tdA=\z@\else
-  \@VArc(#1)(#2)%
-\fi
-\endgroup\ignorespaces}%
-\def\VectorARC(#1)(#2)#3{\begingroup
-\@tdA=#3\p@
-\ifdim\@tdA=\z@\else
-  \@VARC(#1)(#2)%
-\fi
-\endgroup\ignorespaces}%
-\let\VVectorArc\VectorARC
+\def\tempG{#3}%
+\fptestF{#3=0}{\@VArc(#1)(#2)}}%
 \def\@VArc(#1)(#2){%
-\ifdim\@tdA>\z@
-  \let\Segno+%
-\else
-  \@tdA=-\@tdA \let\Segno-%
-\fi \Numero\@gradi\@tdA
-\ifdim\@tdA>360\p@
- \PackageWarning{curve2e}{The arc aperture is \@gradi\space degrees
-      and gets reduced\MessageBreak%
-      to the range 0--360 taking the sign into consideration}%
- \@whiledim\@tdA>360\p@\do{\advance\@tdA-360\p@}%
-\fi
+\fptest{\tempG>\z@}%
+       {\let\Segno+}%
+       {\let\Segno-%
+        \edef\tempG{\fpeval{abs(\tempG)}}}%
+\let\@gradi\tempG
+\fptestT{\tempG>360}
+ {\PackageWarning{curve2e}%
+     {The arc aperture is \tempG\space degrees
+      and gets reduced^^J%
+      to the range 0--360 taking the sign into
+      consideration}%
+      \edef\tempG{\Modulo{\tempG}{360}}%
+      }%
+\let\@gradi\tempG
 \GetCoord(#2)\@pPunX\@pPunY
 \ifCV@polare
   \ModOfVect#2to\@Raggio \CopyVect#2to\@V
   \CopyVect#1to\@Cent
-  \AddVect#2and#1to\@pPun% punto da cui parte l'arco
+  \AddVect#2and#1to\@pPun%          punto iniziale
   \GetCoord(\@pPun)\@pPunX\@pPunY
 \else
   \SubVect#1from#2to\@V \ModOfVect\@V to\@Raggio
@@ -542,24 +586,31 @@ Computations go on, but the results may be meaningless}}{%
 \advance\@tdA -\@tdE \Numero\@gradi\@tdA
 \CopyVect#1to\@Cent \GetCoord(\@pPun)\@pPunX\@pPunY
 \@@Arc
-\strokepath\ignorespaces}%
+\strokepath\endgroup\ignorespaces}%
+\def\VectorARC(#1)(#2)#3{\begingroup
+\def\tempG{#3}%
+ \fptestF{#3=0}{\@VARC(#1)(#2)}}%
+\let\VVectorArc\VectorARC%                   alias
+
 \def\@VARC(#1)(#2){%
-\ifdim\@tdA>\z@
-  \let\Segno+%
-\else
-  \@tdA=-\@tdA \let\Segno-%
-\fi \Numero\@gradi\@tdA
-\ifdim\@tdA>360\p@
- \PackageWarning{curve2e}{The arc aperture is \@gradi\space degrees
+\fptest{\tempG>\z@}%
+       {\let\Segno+}%
+       {\let\Segno-%
+         \edef\tempG{\fpeval{abs(\tempG)}}}%
+\let\@gradi\tempG
+\fptestT{\tempG>360}{%
+ \PackageWarning{curve2e}%
+     {The arc aperture is \@gradi\space degrees
       and gets reduced\MessageBreak%
-      to the range 0--360 taking the sign into consideration}%
- \@whiledim\@tdA>360\p@\do{\advance\@tdA-360\p@}%
-\fi
+      to the range 0--360 taking the sign into
+      consideration}%
+ \edef\tempG{\Modulo{\tempG}{360}\p@}}
+ \@tdA=\tempG\p@ \let\@gradi\tempG
 \GetCoord(#2)\@pPunX\@pPunY
 \ifCV@polare
   \ModOfVect#2to\@Raggio \CopyVect#2to\@V
   \CopyVect#1to\@Cent
-  \AddVect#2and#1to\@pPun% punto da cui parte l'arco
+  \AddVect#2and#1to\@pPun%          punto iniziale
   \GetCoord(\@pPun)\@pPunX\@pPunY
 \else
   \SubVect#1from#2to\@V \ModOfVect\@V to\@Raggio
@@ -568,11 +619,10 @@ Computations go on, but the results may be meaningless}}{%
 \fi
 \@tdE=\pIIe@FAW\@wholewidth \@tdE=\pIIe@FAL\@tdE
 \DividE\@tdE by \@Raggio\unitlength to\DeltaGradi
-\@tdD=\DeltaGradi\p@
-\@tdD=57.29578\@tdD \Numero\DeltaGradi\@tdD
+\edef\DeltaGradi{\fpeval{57.29578*\DeltaGradi}}
 \@tdD=\if\Segno--\fi\@gradi\p@ \Numero\@tempa\@tdD
 \DirFromAngle\@tempa to\@Dir
-\Multvect{\@V}{\@Dir}\@sPun% corrects the end point
+\Multvect{\@V}{\@Dir}\@sPun% correct the end point
 \edef\@tempA{\if\Segno--\fi1}%
 \Multvect{\@sPun}{0,\@tempA}\@vPun
 \DirOfVect\@vPun to\@Dir
@@ -593,7 +643,7 @@ Computations go on, but the results may be meaningless}}{%
 \@tdE\if\Segno--\fi\DeltaGradi\p@
 \Numero\@tempB{0.5\@tdE}%
 \DirFromAngle\@tempB to\@Dird
-\Multvect{\@vPun}{\@Dird}\@vPun% corrects the starting point
+\Multvect{\@vPun}{\@Dird}\@vPun% correct the starting point
 \DirOfVect\@vPun to\@Dir\GetCoord(\@Dir)\@xnum\@ynum
 \put(\@pPunX,\@pPunY){\vector(\@xnum,\@ynum){0}}% starting point arrow tip
 \edef\@tempa{\if\Segno--\fi\DeltaGradi}%
@@ -603,7 +653,7 @@ Computations go on, but the results may be meaningless}}{%
 \AddVect\@Cent and\@V to\@pPun
 \GetCoord(\@pPun)\@pPunX\@pPunY
 \@@Arc
-\strokepath\ignorespaces}%
+\strokepath\endgroup\ignorespaces}%
 
 \def\CurveBetween#1and#2WithDirs#3and#4{%
   \StartCurveAt#1WithDir{#3}\relax
@@ -623,7 +673,7 @@ Computations go on, but the results may be meaningless}}{%
 \CopyVect\@tempa,\@tempb to\@Dzero
 \DirOfVect\@Dzero to\@Dzero
 \ignorespaces}
-\def\CurveFinish{\strokepath\endgroup\ignorespaces}%
+\def\CurveFinish{\strokepath\endgroup\ignorespaces}
 \def\FillCurve{\fillpath\endgroup\ignorespaces}
 \def\CurveEnd{\fillstroke\endgroup\ignorespaces}
 \def\CbezierTo#1WithDir#2AndDists#3And#4{%
@@ -636,18 +686,18 @@ Computations go on, but the results may be meaningless}}{%
 \GetCoord(\@Cuno)\@XCuno\@YCuno
 \GetCoord(\@Puno)\@XPuno\@YPuno
 \pIIe@curveto{\@XCzero\unitlength}{\@YCzero\unitlength}%
-             {\@XCuno\unitlength}{\@YCuno\unitlength}%
-             {\@XPuno\unitlength}{\@YPuno\unitlength}%
+             {\@XCuno\unitlength}%
+             {\@YCuno\unitlength}%
+             {\@XPuno\unitlength}%
+             {\@YPuno\unitlength}%
 \CopyVect\@Puno to\@Pzero
 \CopyVect\@Duno to\@Dzero
 \ignorespaces}%
-\def\CbezierBetween#1And#2WithDirs#3And#4UsingDists#5And#6{%
-\StartCurveAt#1WithDir{#3}\relax
+\def\CbezierBetween#1And#2WithDirs#3And#4UsingDists#5And#6{\StartCurveAt#1WithDir{#3}\relax
 \CbezierTo#2WithDir#4AndDists#5And{#6}\CurveFinish}
 
-
 \def\@isTension#1;#2!!{\def\@tempA{#1}%
-\def\@tempB{#2}\unless\ifx\@tempB\empty\strip@semicolon#2\fi}
+\def\@tempB{#2}\unless\ifx\@tempB\empty \strip@semicolon#2\fi}
 
 \def\strip@semicolon#1;{\def\@tempB{#1}}
 \def\CurveTo#1WithDir#2{%
@@ -661,16 +711,17 @@ Computations go on, but the results may be meaningless}}{%
 \GetCoord(\@Dpzero)\@DXpzero\@DYpzero
 \GetCoord(\@Dpuno)\@DXpuno\@DYpuno
 \DivideFN\@Chord by2 to\@semichord
-\fptest{\@DYpuno=0 && \@DYpzero=0}{\GetCoord(\@Puno)\@tX\@tY
-  \pIIe@lineto{\@tX\unitlength}{\@tY\unitlength}}%
-{\ifdim\@DXpzero\p@=\z@
-   \@tdA=1.333333\p@
-   \Numero\@KCzero{\@semichord\@tdA}%
-\fi
-\ifdim\@DYpzero\p@=\z@
-  \@tdA=1.333333\p@
-  \Numero\@Kpzero{\@semichord\@tdA}%
-\fi
+\fptest{abs(\@DYpuno)<=0.01&& abs(\@DYpzero)<=0.01}
+{\GetCoord(\@Puno)\@tX\@tY
+  \pIIe@lineto{\@tX\unitlength}%
+              {\@tY\unitlength}%
+}{%
+  \fptestT{abs(\@DXpzero)<=0.01}%
+   {\@tdA=1.333333\p@
+   \Numero\@KCzero{\@semichord\@tdA}}%
+\fptestT{abs(\@DYpzero)<=0.01}%
+  {\@tdA=1.333333\p@
+  \Numero\@Kpzero{\@semichord\@tdA}}%
 \unless\ifdim\@DXpzero\p@=\z@
   \unless\ifdim\@DYpzero\p@=\z@
     \edef\@CosDzero{\ifdim\@DXpzero\p@<\z@ -\fi\@DXpzero}%
@@ -708,9 +759,12 @@ Computations go on, but the results may be meaningless}}{%
 \GetCoord(\@Puno)\@XPuno\@YPuno
 \GetCoord(\@CPzero)\@XCPzero\@YCPzero
 \GetCoord(\@CPuno)\@XCPuno\@YCPuno
-\pIIe@curveto{\@XCPzero\unitlength}{\@YCPzero\unitlength}%
-             {\@XCPuno\unitlength}{\@YCPuno\unitlength}%
-             {\@XPuno\unitlength}{\@YPuno\unitlength}}\egroup
+\pIIe@curveto{\@XCPzero\unitlength}%
+             {\@YCPzero\unitlength}%
+             {\@XCPuno\unitlength}%
+             {\@YCPuno\unitlength}%
+             {\@XPuno\unitlength}%
+             {\@YPuno\unitlength}}\egroup
 \CopyVect\@Puno to\@Pzero
 \CopyVect\@Duno to\@Dzero
 \ignorespaces}%
@@ -721,23 +775,29 @@ Computations go on, but the results may be meaningless}}{%
     \StartCurveAt#1WithDir{#2}%
     \@ifnextchar\lp@r\@Curve{%
     \PackageWarning{curve2e}{%
-    Curve specifications must contain at least two nodes!\MessageBreak
-    Please, control your \string\Curve\space specifications\MessageBreak}}}
+    Curve specifications must contain at least
+    two nodes!^^J
+    Please, control your \string\Curve\space
+    specifications^^J}}}
+
 \def\@Curve(#1)<#2>{%
     \CurveTo#1WithDir{#2}%
     \@ifnextchar\lp@r\@Curve{%
     \@ifnextchar[\@ChangeDir\CurveEnd}}
 \def\@ChangeDir[#1]{\ChangeDir<#1>\@Curve}
-\def\Qurve{\@ifstar{\let\fillstroke\fillpath\Qurve@}%
-{\let\fillstroke\strokepath\Qurve@}}
+\def\Qurve{%
+  \@ifstar{\let\fillstroke\fillpath\Qurve@}%
+  {\let\fillstroke\strokepath\Qurve@}%
+}%
 
 \def\Qurve@(#1)<#2>{%
     \StartCurveAt#1WithDir{#2}%
     \@ifnextchar\lp@r\@Qurve{%
     \PackageWarning{curve2e}{%
-      Quadratic curve specifications must contain at least
-      two nodes!\MessageBreak
-      Please, control your Qurve specifications\MessageBreak}}}%
+      Quadratic curve specifications must contain
+      at least two nodes!^^J
+      Please, control your Qurve
+      specifications^^J}}}%
 
 \def\@Qurve(#1)<#2>{\QurveTo#1WithDir{#2}%
     \@ifnextchar\lp@r\@Qurve{%
@@ -751,10 +811,12 @@ Computations go on, but the results may be meaningless}}{%
 \YpartOfVect\@Scalar to \@YScalar
 \ifdim\@YScalar\p@=\z@
 \PackageWarning{curve2e}%
-   {Quadratic Bezier arcs cannot have their starting\MessageBreak
-   and ending directions parallel or antiparallel with\MessageBreak
-   each other. This arc is skipped and replaced with
-   a dotted line.\MessageBreak}%
+   {Quadratic Bezier arcs cannot have their
+   starting^^J
+   and ending directions parallel or antiparallel
+   with each other.^^J
+   This arc is skipped and replaced with
+   a dotted line.^^J}%
    \Dotline(\@Pzero)(\@Puno){2}\relax
 \else
 \Multvect{\@Dzero}*{\@DirChord}\@Dpzero
@@ -765,23 +827,27 @@ Computations go on, but the results may be meaningless}}{%
 \MultiplyFN\@DYpzero by\@DYpuno to\@YYD
 \unless\ifdim\@YYD\p@<\z@\ifdim\@XXD\p@<\z@
 \PackageWarning{curve2e}%
-   {Quadratic Bezier arcs cannot have inflection points\MessageBreak
-   Therefore the tangents to the starting and ending arc\MessageBreak
-   points cannot be directed to the same half plane.\MessageBreak
-   This arc is skipped and replaced by a dotted line\MessageBreak}%
+   {Quadratic Bezier arcs cannot have
+   inflection points^^J
+   Therefore the tangents to the
+   starting and ending arc^^J
+   points cannot be directed to the
+   same half plane.^^J
+   This arc is skipped and replaced by
+   a dotted line^^J}%
    \Dotline(\@Pzero)(\@Puno){2}\fi
 \else
 \edef\@CDzero{\@DXpzero}\relax
 \edef\@SDzero{\@DYpzero}\relax
 \edef\@CDuno{\@DXpuno}\relax
 \edef\@SDuno{\@DYpuno}\relax
-\MultiplyFN\@SDzero by\@CDuno to\@tempA
-\MultiplyFN\@SDuno by\@CDzero to\@tempB
+\MultiplY\@SDzero by\@CDuno to\@tempA
+\MultiplY\@SDuno by\@CDzero to\@tempB
 \edef\@tempA{\strip@pt\dimexpr\@tempA\p@-\@tempB\p@}\relax
 \@tdA=\@SDuno\p@ \@tdB=\@Chord\p@ \@tdC=\@tempA\p@
 \edef\@tempC{\strip@pt\dimexpr \@tdA*\@tdB/\@tdC}\relax
-\MultiplyFN\@tempC by\@CDzero to \@XC
-\MultiplyFN\@tempC by\@SDzero to \@YC
+\MultiplY\@tempC by\@CDzero to \@XC
+\MultiplY\@tempC by\@SDzero to \@YC
 \ModOfVect\@XC,\@YC to\@KC
 \ScaleVect\@Dzero by\@KC to\@CP
 \AddVect\@Pzero and\@CP to\@CP
@@ -802,15 +868,17 @@ Computations go on, but the results may be meaningless}}{%
 \ignorespaces}
 
 %% 
-%% Distributable under the LaTeX Project Public License,
-%% version 1.3c or higher (your choice). The latest version of
-%% this license is at: http://www.latex-project.org/lppl.txt
+%% Distributable under the LaTeX Project Public
+%% License, version 1.3c or higher (your choice).
+%% The latest version of this license is at:
+%% http://www.latex-project.org/lppl.txt
 %% 
 %% This work is "maintained"
 %% 
-%% This work consists of file curve2e.dtx, and the derived files
-%% curve2e.sty and curve2e.pdf, plus the auxiliary derived files
-%% README.txt and curve2e-v161.sty.
+%% This work consists of file curve2e.dtx, and the
+%% derived files curve2e.sty and curve2e.pdf, plus
+%% the auxiliary derived files README.txt and
+%% curve2e-v161.sty.
 %% 
 %%
 %% End of file `curve2e.sty'.

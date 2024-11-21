@@ -42,7 +42,7 @@ movewid = 0.25
   jumper(,CJBED) ; {"`\tt $\ldots$(,CJBED)'" at last line.c+(0,-0.2) }
   move
   jumper(,body=outlined "gray" shaded "gray";)
-  "`\tt $\ldots$(,body=outlined \"gray\" \textbackslash'" \
+  "`\tt $\ldots$(,body=outlined \"gray\" \textbackslash'" wid 168bp__ \
     at last line.start+(0,-20bp__) ljust \
   "`\tt \hphantom{body=}shaded \"gray\";)'" ljust
   }

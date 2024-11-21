@@ -69,7 +69,7 @@
 \input docstrip.tex
 \Msg{************************************************************************}
 \Msg{* Installation}
-\Msg{* Package: mathtools 2022/06/29 v1.29}
+\Msg{* Package: mathtools 2024/10/04 v1.31}
 \Msg{************************************************************************}
 
 \keepsilent
@@ -133,7 +133,7 @@ and the derived files
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{mathtools.drv}%
-  [2022/06/29 v1.29 mathematical typesetting tools]
+  [2024/10/04 v1.31 mathematical typesetting tools]
 \documentclass{ltxdoc}
   
 \IfFileExists{fourier.sty}{\usepackage{fourier}}{}
@@ -333,7 +333,7 @@ colorlinks,
 %
 %  \GetFileInfo{mathtools.drv}
 %
-%  \CheckSum{3740}
+%  \CheckSum{3775}
 %
 %  \title{The \pkg{mathtools} package\thanks{This file has version number
 %  \fileversion, last revised \filedate.}}
@@ -1056,7 +1056,7 @@ colorlinks,
 % \usepackage[overload,ntheorem]{empheq}
 % \end{verbatim}
 % before loading \pkg{ntheorem}. But the \texttt{overload} option of
-% course disables things like \cs{intertext} and \cs{shotintertext}.
+% course disables things like \cs{intertext} and \cs{shortintertext}.
 %
 % The other thing to try is to drop the \texttt{overload} option
 % and use \env{empheq} on the very last expression, as in
@@ -1118,6 +1118,21 @@ colorlinks,
 %    \[
 %      A \xLeftarrow[under]{over} B
 %    \]
+%    \textbf{Caveat for \cs{xmapsto}:} Whenever \pkg{unicode-math} is
+%    used, the macro \cs{xmapsto} will not work correctly (a random 7
+%    appears). This is due to how we define \cs{xmapsto}: the symbol
+%    »\,$\mapstochar{}$\,« (via \cs{mapstochar}, setup in the \LaTeX{}
+%    kernel) and extensible \cs{rightarrow}. The symbol behind
+%    \cs{mapstochar} is not defined in unicode, and thus is not
+%    available in the unicode math fonts.\footnote{The symbol
+%    $\mapsto$ \emph{is} in unicode and \pkg{unicode-math} maps
+%    \cs{mapsto} onto this symbol in the unicode math font. Whereas
+%    without \pkg{unicode-math}, \cs{mapsto} is a symbol constructed
+%    by combining \cs{mapstochar} and \cs{rightarrow}.  On the other
+%    hand \textsf{lualatex} \emph{does} have some special macros to
+%    create extensible arrows, but \emph{none} of these can write above
+%    \emph{and} below at the same time. So for now we leave this
+%    unresolved.}
 %  \begin{codesyntax}
 %    \SpecialUsageIndex{\xrightharpoondown}
 %    \cs{xrightharpoondown}\oarg{sub}\marg{sup}\texttt{~~~~}
@@ -1170,6 +1185,24 @@ colorlinks,
 %   A & \xlongrightarrow[b]{a} B & A & \xlongleftarrow[b]{a} B \\
 %   A & \xlongrightarrow[below]{above} B & A & \xlongleftarrow[below]{above} B \\
 % \end{align*}
+%  \begin{codesyntax}
+%    \SpecialUsageIndex{\xLongrightarrow}
+%    \cs{xLongrightarrow}\oarg{sub}\marg{sup}\texttt{~~~~}
+%    \SpecialUsageIndex{\xLongleftarrow}
+%    \cs{xLongleftarrow}\oarg{sub}\marg{sup}\texttt{~~~~}
+% \end{codesyntax}
+%  \FeatureRequest{quarkQuark {\footnotesize (issue \#51)}}{added 2024}%
+% Similar to \cs{xRight/Leftarrow} but based on the \emph{long}
+% versions. For short arguments it stays the same length as the
+% \cs{long...} base arrow.
+% \begin{align*}
+%   A & \xLongrightarrow B & A & \Longleftarrow B \\
+%   A & \xLongrightarrow[b]{a} B & A & \xLongleftarrow[b]{a} B \\
+%   A & \xLongrightarrow[below]{above} B & A & \xLongleftarrow[below]{above} B \\
+% \end{align*}
+
+%
+%
 %
 %  \subsubsection{Braces and brackets}
 %
@@ -2019,15 +2052,26 @@ colorlinks,
 %      \]
 %  \end{itemize}
 %
+%  \paragraph{A note on the delimiters.}  Whenever the manual scalings
+%  are used we internally convert them into their \cs{...l} and
+%  \cs{...r} variants. Therefore if you define your own manual
+%  scalers, remember to also have -l and -r variants.
+% \\
+%  \emph{New from version 1.30.} You can now use »\verb|.|« (dot)
+%  as an empty delimiter, for macros what only have a delimiter on one
+%  side.\footnote{The syntax is borrowed from
+%  \cs{left.}\cs{frac\{1\}\{2\}}\cs{right}\cs{rvert} where the dot marks an empty
+%  delimiter. }
+%
 %  \begin{codesyntax}
 %    \SpecialUsageIndex{\DeclarePairedDelimiterX}
 %    \cs{DeclarePairedDelimiterX}\marg{cmd}\oarg{num args}\marg{left_delim}\marg{right_delim}\marg{body}\\
 %     \cs{delimsize}
 %  \end{codesyntax}
 %  Sometimes one might want to have the capabilities of
-%  \cs{DeclarePairedDelimiter}, but also want a macro the takes more
-%  than one argument and specify plus being able to specify the body
-%  of the generated macro. 
+%  \cs{DeclarePairedDelimiter}, but also want a macro which takes more
+%  than one argument plus being able to specify the body of the
+%  generated macro.
 %
 %  \cs{DeclarePairedDelimiterX} extends the features of
 %  \cs{DeclarePairedDelimiter} such that the user will get a macro
@@ -2183,8 +2227,8 @@ colorlinks,
 % the \marg{pre code} and \marg{post code} it is identical to
 % \cs{DeclarePairedDelimiterX}. It should be interpreted as
 % \begin{center}
-% \marg{pre code} \marg{left_delim} \marg{body}
-% \marg{right_delim} \marg{post code}  
+% \marg{pre code} \marg{left_delim} \marg{right_delim}
+% \marg{post code} \marg{body}
 % \end{center}
 % 
 %
@@ -2261,7 +2305,7 @@ colorlinks,
 %  The default values for the call backs correspond to
 % \begin{verbatim}
 % star:            \mathopen{}\mathclose\bgroup #1#2\aftergroup\egroup #3
-% nostarnonscaled: \mathopen#1#2\mathclose#3
+% nostarnonscaled: \ifx.#1\else\mathopen#1\fi#2\ifx.#3\else\mathclose#3\fi
 % nostarscaled:    \mathopen{#1}#2\mathclose{#3}
 % \end{verbatim}
 %  The two \texttt{nostar...} versions look the same, but they are
@@ -2768,7 +2812,7 @@ colorlinks,
 %    \SpecialUsageIndex{\splitdfrac}\cs{splitdfrac}\marg{start line}\marg{continuation}
 %  \end{codesyntax}
 %  \cttPosting{Michael J.~Downes}{2001/12/06}
-%  These commands provide split fractions e.g., multiline fractions:
+%  These commands provide split fractions, e.g., multiline fractions:
 %  \begin{verbatim}
 %    \[
 %      a=\frac{
@@ -3094,7 +3138,7 @@ colorlinks,
 %    \begin{macrocode}
 %<*package>
 \ProvidesPackage{mathtools}%
-  [2022/06/29 v1.29 mathematical typesetting tools]
+  [2024/10/04 v1.31 mathematical typesetting tools]
 %    \end{macrocode}
 % \changes{v1.10}{2011/02/12}{Might as well make sure that we need the
 % latest version of \texttt{mhsetup}}
@@ -3292,10 +3336,11 @@ colorlinks,
 %  commands similar to \cs{tagform@} only this will give us tag form
 %  \emph{types}. The actual code is very similar to the one in
 %  \pkg{amsmath}.
+% \changes{v1.30}{2024/01/19}{Add group so \#2 (the inner format) does not leak}
 %    \begin{macrocode}
 \def\MT_define_tagform:nwnn #1[#2]#3#4{
   \@namedef{MT_tagform_#1:n}##1
-    {\maketag@@@{#3\ignorespaces#2{##1}\unskip\@@italiccorr#4}}
+    {\maketag@@@{#3\ignorespaces{#2{##1}}\unskip\@@italiccorr#4}}
 }
 %    \end{macrocode}
 %  \end{macro}
@@ -3789,8 +3834,31 @@ colorlinks,
   \arrowfill@{\mapstochar\relbar}\relbar\rightarrow}
 %    \end{macrocode}
 %  \end{macro}
-%  \end{macro}
+% \end{macro}
+% 2024 (v1.30): Added \verb+\xLongrightarrow+ and \verb+\xLongleftarrow+. Code by muzimuchi on GitHub. I added extra spaces like for |\xRightarrow| above.
+% \begin{macro}{\MT_Longrightarrow_fill:}
+% \begin{macro}{\MT_Longleftarrow_fill:}
+% \begin{macro}{\xLongrightarrow}
+% \begin{macro}{\xLongleftarrow}
+%    \begin{macrocode}
+\def\MT_Longrightarrow_fill:{%
+  \arrowfill@\Relbar\Relbar\Longrightarrow}
+\def\MT_Longleftarrow_fill:{%
+  \arrowfill@\Longleftarrow\Relbar\Relbar}
+
+\providecommand*\xLongrightarrow[2][]{%
+  \ext@arrow 0359\MT_Longrightarrow_fill:{#1\ }{#2\ }}
+\providecommand*\xLongleftarrow[2][]{%
+  \ext@arrow 3095\MT_Longleftarrow_fill:{\ #1}{\ #2}}
+
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
 %  \subsection{Underbrackets etc.}
+%
 %  \begin{macro}{\underbracket}
 %  \begin{macro}{\MT_underbracket_I:w}
 %  \begin{macro}{\MT_underbracket_II:w}
@@ -3980,6 +4048,13 @@ colorlinks,
     \mathcode`\:=32768
   }
 }
+%    \end{macrocode}
+% 
+% \changes{v1.30}{2022/11/15}{Forgot to define a default
+% \cs{MT\_active\_colon_false:}, who would run centercolon=false
+% before it being true?}
+%    \begin{macrocode}
+\def\MT_active_colon_false:{}
 %    \end{macrocode}
 %  \end{macro}
 %  \end{macro}
@@ -4596,8 +4671,13 @@ colorlinks,
     \@namedef{MT_delim_\MH_cs_to_str:N #1 _nostarscaled_wrapper:nnn}##1##2##3{
       \mathopen{##1}##2\mathclose{##3}
     }
+%    \end{macrocode}
+%   \changes{v1.30}{2024/01/18}{Changed the nostarnonscaled to support the empty scaler (dot).}
+%   If we want to support the empty scaler (dot) we need a test in the non-scaled case, otherwise a dot would be left in the output.
+%   Test sugggested by David Carlisle.
+%    \begin{macrocode}
     \@namedef{MT_delim_\MH_cs_to_str:N #1 _nostarnonscaled_wrapper:nnn}##1##2##3{
-      \mathopen##1##2\mathclose##3
+      \ifx.##1\else\mathopen##1\fi##2\ifx.##3\else\mathclose##3\fi
     }
   }
 
@@ -6627,12 +6707,23 @@ colorlinks,
           \MH_if_dim:w \lastskip>\z@
             \skip@\lastskip\unskip
 %    \end{macrocode}
-%  \changes{v1.15}{2014/07/16}{Added penalty workaround}
-%  Here is the fix.
-%  \changes{v1.19}{2017/03/31}{Added MH\_ prefix}
+% \changes{v1.15}{2014/07/16}{Added penalty workaround}
+% Here is the fix.
+% \changes{v1.19}{2017/03/31}{Added MH\_ prefix}
+% The code we inserted here in 2014, had a bug in it. The intent was
+% to move the penalty on to the other side of the italic correction.
+% But when we reinsert the penalty we only test if the scratch
+% counter is non-zero, so it may insert random penalties depending
+% on the non-zero value of \cs{count@}. Simple fix: initialise \cs{count@}.
+% \changes{v1.31}{2024/10/03}{Added missing counter initialisation, fixing issue \#62}
+% In chat David C. mentioned that \verb|\ifnum\lastnodetype=13| is a better
+% test than \verb|\ifnum\lastpenalty>\z@|. Just leaving this here for when we do the
+% Expl3 conversion.
 %    \begin{macrocode}
             \MH_if_num:w \lastpenalty>\z@
               \count@\lastpenalty\unpenalty
+            \MH_else:
+              \count@\z@
             \MH_fi:
             \@@italiccorr
 %    \end{macrocode}
@@ -6648,8 +6739,12 @@ colorlinks,
             \@@italiccorr
           \MH_fi:
         \MH_fi:
-      \MH_fi:
-      $\MH_fi:
+%    \end{macrocode}
+% 
+% \changes{v1.31}{2024/10/03}{Also fixed typo here, the last two \cs{fi} comes from non-MH syntax}
+%    \begin{macrocode}
+      \fi
+      $\fi
     }
   }
 }

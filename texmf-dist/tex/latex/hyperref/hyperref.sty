@@ -36,7 +36,7 @@
 %% File: hyperref.dtx
 \NeedsTeXFormat{LaTeX2e}[2020/10/01]
 \ProvidesPackage{hyperref}
-  [2024-01-20 v7.01h %
+  [2024-11-05 v7.01l %
   Hypertext links for LaTeX]
 \begingroup
   \@makeother\`%
@@ -111,9 +111,9 @@
 \RequirePackage{kvdefinekeys}[2011/04/07]
 \RequirePackage{pdfescape}[2007/11/11]
 \RequirePackage{hycolor}
-\RequirePackage{auxhook}[2009/12/14]
 \RequirePackage{nameref}[2012/07/28]
 \RequirePackage{etoolbox}
+\RequirePackage{stringenc}[2009/12/15]%
 \def\Hy@Error{\PackageError{hyperref}}
 \def\Hy@Warning{\PackageWarning{hyperref}}
 \def\Hy@WarningNoLine{\PackageWarningNoLine{hyperref}}
@@ -628,30 +628,27 @@
     \ifHy@unicode
       \HyPsd@ConvertToUnicode#1%
       \ifx\HyPsd@pdfencoding\HyPsd@pdfencoding@auto
-        \@ifundefined{StringEncodingConvertTest}{%
-        }{%
-          \EdefUnescapeString\HyPsd@temp#1%
-          \iftutex
-            \let\HyPsd@UnescapedString\HyPsd@temp
-            \StringEncodingConvertTest\HyPsd@temp\HyPsd@temp
-                                      {utf16be}{ascii-print}{%
-              \EdefEscapeString\HyPsd@temp\HyPsd@temp
-              \global\let#1\HyPsd@temp
-              \HyPsd@EscapeTeX#1%
-              \Hy@unicodefalse
-            }{%
-              \HyPsd@EscapeTeX#1%
-            }%
-          \else
-            \StringEncodingConvertTest\HyPsd@temp\HyPsd@temp
-                                      {utf16be}{pdfdoc}{%
-              \EdefEscapeString\HyPsd@temp\HyPsd@temp
-              \global\let#1\HyPsd@temp
-              \HyPsd@EscapeTeX#1%
-              \Hy@unicodefalse
-            }{}%
-          \fi
-        }%
+         \EdefUnescapeString\HyPsd@temp#1%
+         \iftutex
+           \let\HyPsd@UnescapedString\HyPsd@temp
+           \StringEncodingConvertTest\HyPsd@temp\HyPsd@temp
+                                     {utf16be}{ascii-print}{%
+             \EdefEscapeString\HyPsd@temp\HyPsd@temp
+             \global\let#1\HyPsd@temp
+             \HyPsd@EscapeTeX#1%
+             \Hy@unicodefalse
+           }{%
+             \HyPsd@EscapeTeX#1%
+           }%
+         \else
+           \StringEncodingConvertTest\HyPsd@temp\HyPsd@temp
+                                     {utf16be}{pdfdoc}{%
+             \EdefEscapeString\HyPsd@temp\HyPsd@temp
+             \global\let#1\HyPsd@temp
+             \HyPsd@EscapeTeX#1%
+             \Hy@unicodefalse
+           }{}%
+         \fi
       \fi
     \fi
     \pdfstringdefPostHook#1%
@@ -2439,9 +2436,6 @@
       \hypersetup{unicode}%
       \ifHy@unicode
         \def\HyPsd@pdfencoding{#1}%
-        \ifx\HyPsd@pdfencoding\HyPsd@pdfencoding@auto
-          \HyPsd@LoadStringEnc
-        \fi
       \else
         \Hy@Warning{Cannot switch to unicode bookmarks}%
         \let\HyPsd@pdfencoding\HyPsd@pdfencoding@pdfdoc
@@ -2461,22 +2455,6 @@
 \def\HyPsd@pdfencoding@unicode{unicode}
 \let\HyPsd@pdfencoding\HyPsd@pdfencoding@unicode
 \HyPsd@LoadUnicode
-\def\HyPsd@LoadStringEnc{%
-  \RequirePackage{stringenc}[2009/12/15]%
-  \let\HyPsd@LoadStringEnc\relax
-}
-\Hy@AtBeginDocument{%
-  \@ifpackageloaded{stringenc}{%
-    \let\HyPsd@LoadStringEnc\relax
-  }{%
-    \def\HyPsd@LoadStringEnc{%
-      \Hy@WarningNoLine{%
-        Missing package `stringenc'. Use `pdfencoding=auto'\MessageBreak
-        in the preamble or load the package there%
-      }%
-    }%
-  }%
-}
 \define@key{Hyp}{psdextra}[true]{%
   \Hy@boolkey{psdextra}{#1}%
   \HyPsd@LoadExtra
@@ -4587,6 +4565,7 @@
   \catcode`\&\active
   \gdef\hyper@normalise{^^A
     \begingroup
+    \@makeother{:}^^A
     \catcode`\^^M\active
     \def^^M{ }^^A
     \catcode`\%\active
@@ -5924,6 +5903,8 @@
 \Hy@temp{calculate}
 \Hy@temp{onfocus}
 \Hy@temp{onblur}
+\Hy@temp{onmousedown}
+\Hy@temp{onmouseup}
 \Hy@temp{onenter}
 \Hy@temp{onexit}
 \let\Fld@calculate@sortkey\@empty
@@ -5944,8 +5925,6 @@
   }%
 \fi
 \Hy@temp{ondblclick}
-\Hy@temp{onmousedown}
-\Hy@temp{onmouseup}
 \Hy@temp{onmouseover}
 \Hy@temp{onmousemove}
 \Hy@temp{onmouseout}
@@ -6542,7 +6521,7 @@
 
 \cs_new_protected:Npn \__hyp_target_counter_doc:nn #1 #2
   {
-    \bool_lazy_and:nnTF { \cs_if_free_p:c {c@#2} } { \cs_if_free_p:c {theH#2} }
+    \bool_lazy_or:nnTF { \cs_if_free_p:c {c@#2} } { \cs_if_free_p:c {theH#2} }
       {
         \PackageWarning {hyperref}{Counter~'#2'~or~the~representation~'\string\theH#2`\MessageBreak
         don't~exist.~No~target~created.}{}
@@ -6588,58 +6567,76 @@
     \fi
   \fi
 }
-\Hy@CounterExists{section}{%
-  \providecommand\theHequation{\theHsection.\arabic{equation}}%
-}
-\providecommand\theHequation{\arabic{equation}}%
-\Hy@CounterExists{part}{%
-  \providecommand\theHpart{\arabic{part}}%
-}
-\@ifundefined{thechapter}{%
-  \providecommand\theHsection    {\arabic{section}}%
-  \providecommand\theHfigure     {\arabic{figure}}%
-  \providecommand\theHtable      {\arabic{table}}%
-}{%
-  \providecommand\theHchapter    {\arabic{chapter}}%
-  \providecommand\theHfigure     {\theHchapter.\arabic{figure}}%
-  \providecommand\theHtable      {\theHchapter.\arabic{table}}%
-  \providecommand\theHsection    {\theHchapter.\arabic{section}}%
-}
-\providecommand\theHsubsection   {\theHsection.\arabic{subsection}}
-\providecommand\theHsubsubsection{\theHsubsection.\arabic{subsubsection}}
-\providecommand\theHparagraph    {\theHsubsubsection.\arabic{paragraph}}
-\providecommand\theHsubparagraph {\theHparagraph.\arabic{subparagraph}}
-\providecommand\theHtheorem      {\theHsection.\arabic{theorem}}
-\providecommand\theHthm          {\theHsection.\arabic{thm}}
+\IfFormatAtLeastTF{2024-11-01}{}
+ {
+    \Hy@CounterExists{section}{%
+      \providecommand\theHequation{\theHsection.\arabic{equation}}%
+    }
+    \providecommand\theHequation{\arabic{equation}}%
+    \Hy@CounterExists{part}{%
+      \providecommand\theHpart{\arabic{part}}%
+    }
+    \@ifundefined{thechapter}{%
+      \providecommand\theHsection    {\arabic{section}}%
+      \providecommand\theHfigure     {\arabic{figure}}%
+      \providecommand\theHtable      {\arabic{table}}%
+    }{%
+      \providecommand\theHchapter    {\arabic{chapter}}%
+      \providecommand\theHfigure     {\theHchapter.\arabic{figure}}%
+      \providecommand\theHtable      {\theHchapter.\arabic{table}}%
+      \providecommand\theHsection    {\theHchapter.\arabic{section}}%
+    }
+    \providecommand\theHsubsection   {\theHsection.\arabic{subsection}}
+    \providecommand\theHsubsubsection{\theHsubsection.\arabic{subsubsection}}
+    \providecommand\theHparagraph    {\theHsubsubsection.\arabic{paragraph}}
+    \providecommand\theHsubparagraph {\theHparagraph.\arabic{subparagraph}}
+    \providecommand\theHtheorem      {\theHsection.\arabic{theorem}}
+    \providecommand\theHthm          {\theHsection.\arabic{thm}}
+  }
 \let\H@item\item
 \newcounter{Item}
-\def\theHItem{\arabic{Item}}
+\IfFormatAtLeastTF{2024-11-01}{}
+ {\def\theHItem{\arabic{Item}}}
 \def\item{%
   \@hyper@itemfalse
   \if@nmbrlist\@hyper@itemtrue\fi
   \H@item
 }
-\providecommand\theHenumi     {\theHItem}
-\providecommand\theHenumii    {\theHItem}
-\providecommand\theHenumiii   {\theHItem}
-\providecommand\theHenumiv    {\theHItem}
-\providecommand\theHHfootnote {\arabic{Hfootnote}}
-\providecommand\theHmpfootnote{\arabic{mpfootnote}}
-\@ifundefined{theHHmpfootnote}{%
-  \let\theHHmpfootnote\theHHfootnote
-}{}
-\let\H@refstepcounter\refstepcounter
+\IfFormatAtLeastTF{2024-11-01}{}
+ {
+   \providecommand\theHenumi     {\theHItem}
+   \providecommand\theHenumii    {\theHItem}
+   \providecommand\theHenumiii   {\theHItem}
+   \providecommand\theHenumiv    {\theHItem}
+   \providecommand\theHHfootnote {\arabic{Hfootnote}}
+   \providecommand\theHmpfootnote{\arabic{mpfootnote}}
+ }
+\let\H@refstepcounter\@kernel@refstepcounter
 \edef\name@of@eq{equation}%
 \newif\if@hyper@item
 \newif\if@skiphyperref
 \@hyper@itemfalse
 \@skiphyperreffalse
 \ExplSyntaxOn
-\def\refstepcounter#1{%
-  \legacy_if:nF {Hy@pdfstring}
+\IfFormatAtLeastTF{2024-11-01}
+ {
+  \NewSocketPlug{refstepcounter}{hyperref}{\ifHy@pdfstring\else#1\fi}
+  \AssignSocketPlug{refstepcounter}{hyperref}
+  \AddToHook{package/cleveref/after}
    {
-    \H@refstepcounter{#1}%
-    \bool_lazy_and:nnT
+     \@ifpackagelater{cleveref}{2018/03/28}{}
+      {
+      \NewSocketPlug{refstepcounter}{hyperref/fixcleveref}
+       {\ifHy@pdfstring\else
+         #1%
+         {\firstaid@cref@updatelabeldata{\@currentcounter}}%
+        \fi}
+       \AssignSocketPlug{refstepcounter}{hyperref/fixcleveref}
+      }
+   }
+  \NewSocketPlug{refstepcounter/target}{hyperref}
+    {
+      \bool_lazy_and:nnT
       { \l__hyp_target_create_bool }
       { ! \legacy_if_p:n{@skiphyperref} }
       {
@@ -6650,11 +6647,34 @@
             \@hyper@itemfalse
           }
           {
-            \hyper@refstepcounter{#1}%
+            \hyper@refstepcounter{\@currentcounter}%
           }
-      }
-   }
-}
+       }
+     }
+    \AssignSocketPlug{refstepcounter/target}{hyperref}
+  }
+  {
+    \def\refstepcounter#1{%
+      \legacy_if:nF {Hy@pdfstring}
+       {
+        \H@refstepcounter{#1}%
+        \bool_lazy_and:nnT
+          { \l__hyp_target_create_bool }
+          { ! \legacy_if_p:n{@skiphyperref} }
+          {
+            \legacy_if:nTF {@hyper@item}
+              {
+                \stepcounter{Item}%
+                \hyper@refstepcounter{Item}%
+                \@hyper@itemfalse
+              }
+              {
+                \hyper@refstepcounter{#1}%
+              }
+          }
+       }
+     }
+  }
 \ExplSyntaxOff
 \let\Hy@saved@refstepcounter\refstepcounter
 \newif\ifmeasuring@\measuring@false
@@ -7054,7 +7074,16 @@
   }}}{}
 \@ifundefined{hyper@nopatch@footnote}{%
 \ifHy@hyperfootnotes
-  \newcounter{Hfootnote}%
+  \@ifundefined{theHfootnote}
+   {\newcounter{Hfootnote}}
+   {\let\H@@theHfootnote\theHfootnote
+    \let\theHfootnote\undefined
+    \newcounter{Hfootnote}
+    \let\theHfootnote\H@@theHfootnote
+   }%
+  \@ifundefined{theHHmpfootnote}{%
+   \let\theHHmpfootnote\theHHfootnote
+   }{}
   \let\H@@footnotetext\@footnotetext
   \let\H@@footnotemark\@footnotemark
   \def\@xfootnotenext[#1]{%
@@ -7320,6 +7349,7 @@
           }%
           #3%
         \fi
+        \IfFormatAtLeastTF{2024-11-01}{\UseTaggingSocket{recordtarget}}{}%
       }%
     \fi
     \par
@@ -7733,13 +7763,15 @@
     \fi
   }
 }{}
+\IfFormatAtLeastTF{2024-11-01}{\def\hyper@nopatch@counter{}}{}
 \@ifundefined{hyper@nopatch@counter}
   {
    \let\H@definecounter\@definecounter
    \def\@definecounter#1{%
      \H@definecounter{#1}%
-     \expandafter\gdef\csname theH#1\endcsname{\arabic{#1}}%
-   }
+     \expandafter
+     \gdef\csname theH#1\expandafter\endcsname\expandafter
+          {\expandafter\@arabic\csname c@#1\endcsname}}%
   }{}
 \@ifundefined{hyper@nopatch@counter}
   {
@@ -7777,6 +7809,7 @@
       \let\make@df@tag@@@\Hy@make@df@tag@@@
     }{}
   }{}
+\def\HyOrg@addtoreset#1#2{\expandafter\@cons\csname cl@#2\endcsname {{#1}}}
 \@ifundefined{hyper@nopatch@counter}
   {
    \let\HyOrg@addtoreset\@addtoreset

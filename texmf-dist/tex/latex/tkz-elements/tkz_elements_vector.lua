@@ -1,6 +1,6 @@
 -- tkz_elements_vectors.lua
--- date 2024/02/04
--- version 2.00c
+-- date 2024/07/16
+-- version 2.30c
 -- Copyright 2024  Alain Matthes
 -- This work may be distributed and/or modified under the
 -- conditions of the LaTeX Project Public License, either version 1.3
@@ -17,10 +17,12 @@ vector = {}
 function vector: new(za, zb)
     local type          = 'vector'
     local slope         = angle_normalize_(point.arg(zb-za))
-    local norm        = point.mod(zb-za)
-    local o =  {t      = za, 
-                h      = zb,
-                norm  = norm,
+    local norm          = point.mod(zb-za)
+    local mtx           = matrix : new {{za},{zb}}
+    local o =  {tail    = za, 
+                head    = zb,
+                norm    = norm,
+                mtx     = mtx,
                 slope   = slope,
                 type    = type }
     setmetatable(o, self)
@@ -46,35 +48,35 @@ function vector.__mul(r,v)
 end
 
 function vector: normalize  ()
-   local z  = self.h-self.t
+   local z  = self.head-self.tail
    local d  = point.abs(z)
    local nz = point(z.re/d,z.im/d)
-   return vector : new (self.t,nz + self.t)  
+   return vector : new (self.tail,nz + self.tail)  
 end
 
   function vector: add (ve)
-    return vector :new (self.t,self.h+ve.h-ve.t)
+    return vector :new (self.tail,self.head+ve.head-ve.tail)
   end
  
 function vector: orthogonal (d)
 local z
 if d == nil then
-   return vector : new (self.t, rotation_(self.t,math.pi/2,self.h))
+   return vector : new (self.tail, rotation_(self.tail,math.pi/2,self.head))
 else
-   z = self.t+ point (d*math.cos(self.slope),d*math.sin(self.slope))
- return vector : new (self.t, rotation_(self.t,math.pi/2,z))
+   z = self.tail+ point (d*math.cos(self.slope),d*math.sin(self.slope))
+ return vector : new (self.tail, rotation_(self.tail,math.pi/2,z))
 end
 end
 
 function vector: scale (d)
    local l,z
    l = self.norm
-   z = self.t+ point (d*l*math.cos(self.slope),d*l*math.sin(self.slope))
-   return vector : new (self.t,z )
+   z = self.tail+ point (d*l*math.cos(self.slope),d*l*math.sin(self.slope))
+   return vector : new (self.tail,z )
 end
  
 function vector: at (zc)
-  return vector :new (zc,zc+self.h-self.t)
+  return vector :new (zc,zc+self.head-self.tail)
 end
 
 return vector

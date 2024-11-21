@@ -1,6 +1,6 @@
 --% Kale Ewasiuk (kalekje@gmail.com)
---% 2023-12-08
---% Copyright (C) 2021-2023 Kale Ewasiuk
+--% 2024-09-30
+--% Copyright (C) 2021-2024 Kale Ewasiuk
 --%
 --% Permission is hereby granted, free of charge, to any person obtaining a copy
 --% of this software and associated documentation files (the "Software"), to deal
@@ -32,10 +32,15 @@ __PL_SKIP_TEX__ = __PL_SKIP_TEX__ or false --if declared true before here, it wi
 __PL_GLOBALS__ = __PL_GLOBALS__ or false
 __PL_NO_HYPERREF__ = __PL_NO_HYPERREF__ or false
 
-
 penlight.luakeys = require'luakeys'()
 
-penlight.COMP = require'pl.comprehension'.new() -- for comprehensions
+penlight.debug_available = false -- check if penlight debug package is available
+if debug ~= nil then
+  if type(debug.getinfo) == 'function' then
+   penlight.debug_available = true
+  end
+end
+
 
 -- http://lua-users.org/wiki/SplitJoin -- todo read me!!
 
@@ -143,8 +148,9 @@ function penlight.tex.wrth(s1, s2) -- helpful printing, makes it easy to debug, 
     end
     wrt2('\n^^^^^\n')
 end
+penlight.wrth = penlight.tex.wrth
+penlight.tex.help_wrt = penlight.tex.wrth
 penlight.help_wrt = penlight.tex.wrth
-penlight.wrth = penlight.help_wrt
 
 function penlight.tex.prt_array2d(t)
     for _, r in ipairs(t) do
@@ -289,7 +295,7 @@ function penlight.tex.aliasluastring(s, d)
     s = s:delspace():upper():tolist()
     d = d:delspace():upper():tolist()
     for i, S in penlight.seq.enum(d:slice_assign(1,#s,s)) do
-        if (S == 'E') or (S == 'F') then S = '' end  -- E or F is fully expanded
+        if (S == 'F') then S = '' end  -- F is fully expanded
         penlight.tex.prtn('\\let\\plluastring'..penlight.Char(i)..'\\luastring'..S)
     end
 end
@@ -456,22 +462,18 @@ function str_mt.__index.subpar(s, r)
 end
 
 
-function str_mt.__index.fmt(s, t, fmt) -- format a $1 string with an array or table and formats
-    -- formats can be a luakeys string, or a table
-    fmt = fmt or {}
-    if type(fmt) == 'string' then
-        fmt = penlight.tablex.strinds(penlight.luakeys.parse(fmt, {naked_as_value=true}))
-    end
+function str_mt.__index.fmt(s, t, fmt) -- format a $1 and $k string with an array or table and formats
+    -- formats can be a luakeys string, or a table and are applied to table before string is formatted
     if type(t) ~= 'table' then t = {t} end
     t = penlight.tablex.strinds(t)
-    for k, f in pairs(fmt)  do -- apply formats
-        t[k] = string.format('%'..f, t[tostring(k)])
-    end
+    t = penlight.tablex.fmt(t, fmt, true)
     return s % t
 end
 
-
-
+function str_mt.__index.parsekv(s, t) -- parsekv string
+    if type(t) ~= 'table' then t = penlight.luakeys.parse(t) end
+    return penlight.luakeys.parse(s, t)
+end
 
 -- -- -- -- function stuff
 
@@ -489,6 +491,85 @@ function penlight.clone_function(fn)
   end
   return cloned
 end
+
+
+
+
+
+
+
+
+
+
+
+-- -- -- -- -- -- -- -- -- -- -- --  functions below extend the seq module
+
+
+function penlight.seq.check_neg_index(i, len, fallback)
+i = tostring(i):delspace()
+if i == '' then return fallback end
+i = tonumber(i)
+if i == nil then
+  local _ = 1*'"Attempted to use seqstr indexing with negative number, but length of list not provided"'
+  return fallback -- fallback is the number to fall back on if i isn't provided
+end
+len = tonumber(len)
+if i < 0 then
+    if len == nil then
+      local _ = 1*'"Attempted to use seqstr indexing with negative number, but length of list not provided"'
+      return pl.utils.raise("Attempted to use seqstr indexing with negative number, but length of list not provided")
+    end
+  i = len + 1 + i -- negative index
+end
+return i
+end
+
+penlight.seq.train_element_sep = ','
+penlight.seq.train_range_sep = ':'
+
+function penlight.seq.train(s, len)
+    -- parse a range given a string indexer
+    -- syntax is: s = 'i1, i2, r1:r2'  where i1 and i2 are individual indexes.
+    -- r1:r2 is a range (inclusive).
+    -- a 'stride' can be given to ranges, eg. ::2 is 1,3,5,..., or 2::3 is 2,5,8,...
+    -- negative numbers can be used to index relative to the length of the table, eg, -1 -> len
+    -- if length is not given, negative indeing cannot be used
+    -- returns a penlight list of numbers
+
+    local t = penlight.List() -- list of indexes
+    local check_neg = penlight.seq.check_neg_index
+    for _, r in ipairs(s:split(penlight.seq.train_element_sep)) do
+      if r:find(penlight.seq.train_range_sep) then
+        r = r:split(penlight.seq.train_range_sep) -- if it's a range
+        t:extend(penlight.List.range(check_neg(r[1], len, 1),
+                               check_neg(r[2], len, len),
+                               tonumber(r[3])))
+      else
+        t:append(check_neg(r, len))
+      end
+    end
+    return t
+end
+
+function penlight.seq.itrain(s, len)
+-- iterator version of sequence-string
+    local t = penlight.seq.train(s, len)
+    local i = 0
+  return function ()
+      i = i + 1
+      if i <= #t then return t[i] end
+  end
+end
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -515,8 +596,6 @@ end
 
 
 
-
-
 -- table stuff below
 
 function penlight.tablex.strinds(t) -- convert indices that are numbers to string indices
@@ -529,6 +608,37 @@ function penlight.tablex.strinds(t) -- convert indices that are numbers to strin
       end
     end
   return t_new
+end
+
+
+function penlight.tablex.listcontains(t, v)
+    return penlight.tablex.find(t, v) ~= nil
+end
+
+
+-- format contents of a table
+function penlight.tablex.fmt(t, fmt, strinds)
+    if fmt == nil then
+        return t
+    end
+    strinds = strinds or false -- if your fmt table should use string indexes
+    if type(fmt) == 'string' then
+        if not fmt:find('=') then -- if no = assume format all same
+            for k, v in pairs(t) do -- apply same format to all
+                if tonumber(v) ~= nil then -- only apply to numeric values
+                    t[k] = string.format("%"..fmt, v)
+                end
+            end
+            return t
+        else
+            fmt = fmt:parsekv('naked_as_value') -- make fmt a table from keyval str
+        end
+    end
+    if strinds then fmt = penlight.tablex.strinds(fmt) end -- convert int inds to str inds
+    for k, f in pairs(fmt) do -- apply formatting to table
+        t[k] = string.format("%"..f, tostring(t[k]))
+    end
+    return t
 end
 
 
@@ -556,24 +666,25 @@ function penlight.tablex.filterstr(t, exp, case)
     end
 end
 
-
+--todo add doc
 function penlight.utils.filterfiles(...)
     -- f1 is a series of filtering patterns, or condition
     -- f2 is a series of filtering patters, or condition
     -- (f1_a or f2_...) and (f2 .. ) must match
     local args = table.pack(...)
-    -- todo -- check where boolean is for recursive or not, set starting argument
+    -- dir, recursive[bool], filt1, filt2 etc...
+    -- OR recursive[bool], filt1, filt2, etc..
+    -- OR filt1, filt2, filt3, etc..
     -- this could allow one to omit dir
-    -- todo if no boolean at all, assume dir = '.' and r = false
-    -- if boolean given, assume dir = '.'
+    -- if boolean given ar arg 1, assume dir = '.'
     local nstart = 3
-    local r = args[2]
-    local dir = args[1]
+    local r = args[2] -- recursive
+    local dir = args[1] -- start dir
     if type(args[1]) == 'boolean' then
         dir = '.'
         r =  args[1]
         nstart = 2
-    elseif type(args[2]) ~= 'boolean' then
+    elseif type(args[2]) ~= 'boolean' then -- if boolean given ar arg 1, assume dir = '.'
         dir = '.'
         r =  false
         nstart = 1
@@ -588,7 +699,6 @@ function penlight.utils.filterfiles(...)
     end
     return  files
 end
-
 
 
 
@@ -691,17 +801,22 @@ function penlight.array2d.parse_numpy2d_str(s)
 end
 
 
-local _parse_range = penlight.clone_function(penlight.array2d.parse_range)
 
-function penlight.array2d.parse_range(s) -- edit parse range to do numpy string if no letter passed
-    penlight.utils.assert_arg(1,s,'string')
-    if not s:find'%a' then
-        return penlight.array2d.parse_numpy2d_str(s)
+if not penlight.debug_available then
+    penlight.tex.pkgwarn('penlight', 'lua debug library is not available, recommend re-compiling with the --luadebug option')
+else
+     penlight.COMP = require'pl.comprehension'.new() -- for comprehensions
+
+    local _parse_range = penlight.clone_function(penlight.array2d.parse_range)
+
+    function penlight.array2d.parse_range(s) -- edit parse range to do numpy string if no letter passed
+        penlight.utils.assert_arg(1,s,'string')
+        if not s:find'%a' then
+            return penlight.array2d.parse_numpy2d_str(s)
+        end
+        return _parse_range(s)
     end
-    return _parse_range(s)
 end
-
-
 
 
 
@@ -734,35 +849,47 @@ __PDFmetadata__ = {}
 penlight.tex.add_xspace_intext = true
 
 
-function penlight.tex.updatePDFtable(k, v, o) -- key val overwrite
-    k = k:upfirst()
-    if penlight.hasval(o) or (__PDFmetadata__[k] == nil) then
-        __PDFmetadata__[k] = v
+function penlight.tex.checkPDFkey(k)
+    k = k:delspace():upfirst()
+    local keys_allowed = 'Title Author Subject Date Language Keywords Publisher Copyright CopyrightURL Copyrighted Owner CertificateURL Coverage PublicationType Relation Source Doi ISBN URLlink Journaltitle Journalnumber Volume Issue Firstpage Lastpage CoverDisplayDate CoverDate Advisory BaseURL Identifier Nickname Thumbnails '
+    if not keys_allowed:find(k ..' ') then
+        penlight.tex.pkgerror('penlightplus', 'invalid PDF metadata key assigned "'..k..'"')
     end
+    return k
 end
+
+function penlight.tex.makePDFtablekv(kv)
+    local t_new = {}
+    for k, v in pairs(penlight.luakeys.parse(kv)) do
+       k = penlight.tex.checkPDFkey(k)
+       v = penlight.tex.makePDFvarstr(v)
+       t_new[k] = v
+    end
+    return t_new
+end
+
 
 penlight.tex.writePDFmetadata = function(t) -- write PDF metadata to xmpdata file
   t = t or __PDFmetadata__
   local str = ''
   for k, v in pairs(t) do
-    k = k:upfirst()
     str = str..'\\'..k..'{'..v..'}'..'\n'
   end
   penlight.utils.writefile(tex.jobname..'.xmpdata', str)
 end
 
 
-
-function penlight.tex.clear_cmds_str(s)
-    return s:gsub('%s+', ' '):gsub('\\\\',' '):gsub('\\%a+',''):gsub('{',' '):gsub('}',' '):gsub('%s+',' '):strip()
-end
-
 function penlight.tex.makePDFvarstr(s)
     s = s:gsub('%s*\\sep%s+','\0'):gsub('%s*\\and%s+','\0')  -- turn \and into \sep
+    -- todo preserve \%, \{, \}, \backslash, and \copyright
     s = penlight.tex.clear_cmds_str(s)
     s = s:gsub('\0','\\sep ')
     --penlight.tex.help_wrt(s,'PDF var string')
     return s
+end
+
+function penlight.tex.clear_cmds_str(s)
+    return s:gsub('%s+', ' '):gsub('\\\\',' '):gsub('\\%a+',''):gsub('{',' '):gsub('}',' '):gsub('%s+',' '):strip()
 end
 
 function penlight.tex.makeInTextstr(s)
@@ -808,10 +935,42 @@ function penlight.tex.split2items(s, d)
 end
 
 
+function penlight.toggle_luaexpr(expr)
+    if expr then
+      tex.sprint('\\toggletrue{luaexpr}')
+    else
+      tex.sprint('\\togglefalse{luaexpr}')
+    end
+end
+
+
+
+
+function penlight.caseswitch(s, c, kv)
+    local kvtbl = penlight.luakeys.parse(kv)
+    local sw = kvtbl[c] -- the returned switch
+    if sw == nil then -- if switch not found
+      if s == penlight.tex.xTrue then -- if star, throw error
+        pl.tex.pkgerror('penlight', 'case: "'..c..'" not found in key-vals: "'..kv..'"')
+        sw = ''
+      else
+        sw = kvtbl['__'] or '' -- use __ as not found case
+      end
+     end
+    tex.sprint(sw)
+end
+
+
+
 penlight.tbls = {}
 
 penlight.rec_tbl = ''
 penlight.rec_tbl_opts = {}
+
+
+function penlight.tbl(s)
+    return penlight.get_tbl_item(s)
+end
 
 function penlight.get_tbl_name(s)
     if s == '' then
@@ -820,9 +979,16 @@ function penlight.get_tbl_name(s)
     return s
 end
 
-function penlight.get_tbl_index(s)
+function penlight.get_tbl(s)
+    s = penlight.get_tbl_name(s)
+    return penlight.tbls[s]
+end
+
+function penlight.get_tbl_index(s, undec)
+    undec = undec or false -- flag for allowing undeclared indexing
     local tbl = ''
     local key = ''
+    local s_raw = s
     if s:find('%.') then
         local tt = s:split('.')
         tbl = tt[1]
@@ -830,6 +996,7 @@ function penlight.get_tbl_index(s)
     elseif s:find('/') then
         local tt = s:split('/')
         tbl = tt[1]
+        if tbl == '' then tbl = penlight.rec_tbl end
         key = tonumber(tonumber(tt[2]))
         if key < 0 then key = #penlight.tbls[tbl]+1+key end
     else
@@ -837,8 +1004,10 @@ function penlight.get_tbl_index(s)
         key = tonumber(s) or s
         if type(key) == 'number' and key < 0 then key = #penlight.tbls[tbl]+1+key end
     end
-    if penlight.tbls[tbl] == nil or penlight.tbls[tbl][key] == nil then
-        penlight.tex.pkgerror('penlightplus',  'Invalid index of tbl using: "'..s..'"')
+    if tbl == '' then tbl = penlight.rec_tbl end
+
+    if (penlight.tbls[tbl] == nil) or ((not undec) and (penlight.tbls[tbl][key] == nil)) then
+        penlight.tex.pkgerror('penlightplus',  'Invalid tbl index attempt using: "'..s_raw..'". We tried to use tbl: "' ..tbl..'" and key: "'..key..'"')
     end
     return tbl, key
 end
@@ -881,10 +1050,26 @@ function penlight.check_recent_tbl_undefault()
     end
 end
 
+function penlight.def_tbl(ind, def, g)
+  local _tbl, _key = penlight.get_tbl_index(ind)
+  if def == '' then def = 'dtbl'.._tbl.._key end
+  token.set_macro(def, tostring(penlight.tbls[_tbl][_key]), g)
+end
+
+function penlight.def_tbl_all(ind, def)
+    local _tbl = penlight.get_tbl_name(ind)
+    if def == '' then def = 'dtbl'.._tbl end
+    for k, v in pairs(penlight.tbls[_tbl]) do
+        token.set_macro(def..k, tostring(v))
+  end
+end
+
 -- TODO TODO TODO get error working xy def, and referene which table for key-vals
 penlight.tbl_xysep = '%s+' -- spaces separate x-y coordinates
-function penlight.def_tbl_coords(str, def)
-    -- todo could definitely make this flexible for a table...
+function penlight.def_tbl_coords(ind, def)
+    local tbl, key = penlight.get_tbl_index(ind)
+    local str = penlight.tbls[tbl][key]
+    if def == '' then def = 'dtbl'..tbl..key end
     local x, y = str:strip():splitv(penlight.tbl_xysep)
      if (not penlight.hasval(x)) or (not penlight.hasval(y))  then
        penlight.tex.pkgerror('penlightplus', 'def_tbl_coords function could not parse coordiantes given as "'..str..'" ensure two numbers separated by space are given!', '', true)
@@ -894,7 +1079,14 @@ function penlight.def_tbl_coords(str, def)
 end
 
 
---
+
+
+
+
+
+
+
+-- global setting type stuff
 
 function penlight.make_tex_global()
     for k,v in pairs(penlight.tex) do  -- make tex functions global
@@ -943,117 +1135,4 @@ if penlight.hasval(__PL_GLOBALS__) then
     tbx = penlight.tablex
 end
 
-
-
-
--- graveyard
-
-    --_xTrue = penlight.tex._xTrue
-    --_xFalse = penlight.tex._xFalse
-    --_xNoValue = penlight.tex._xNoValue
-    --
-    --prt = penlight.tex.prt
-    --prtn = penlight.tex.prtn
-    --wrt = penlight.tex.wrt
-    --wrtn = penlight.tex.wrtn
-    --
-    --prtl = penlight.tex.prtl
-    --prtt = penlight.tex.prtt
-    --
-    --help_wrt = penlight.tex.help_wrt
-    --prt_array2d = penlight.tex.prt_array2d
-    --
-    --pkgwarn = penlight.tex.pkgwarn
-    --pkgerror = penlight.tex.pkgerror
-    --
-    --defcmd = penlight.tex.defcmd
-    --prvcmd = penlight.tex.prvcmd
-    --newcmd = penlight.tex.newcmd
-    --renewcmd = penlight.tex.renewcmd
-    --deccmd = penlight.tex.deccmd
-    --
-    --_NumBkts = penlight.tex._NumBkts
-    --opencmd = penlight.tex.opencmd
-    --reset_bkt_cnt = penlight.tex.reset_bkt_cnt
-    --add_bkt_cnt = penlight.tex.add_bkt_cnt
-    --close_bkt_cnt = penlight.tex.close_bkt_cnt
-
-
--- graveyard
-
-
--- luakeys parses individual keys as ipairs, this changes the list to a pure map
---function penlight.luakeystomap(t)
---    local t_new = {}
---    for k, v in pairs(t) do
---        if type(k) == 'number' then
---            t_new[v] = true
---        else
---            t_new[k] = v
---        end
---    end
---    return t_new
---end
---if luakeys then -- if luakeys is already loaded
---    function luakeys.parseN(s, ...)
---        local t = luakeys.parse(s,...)
---        t = penlight.luakeystomap(t)
---        return t
---    end
---end
--- might not be needed
-
-
-    --local func = check_func(func)
---local function check_func(func)  -- check if a function is a PE, if so, make it a function
---    if type(func) ~= 'function' then
---        return I(func)
---    end
---    return func
---end
-
--- -- -- -- -- -- --
--- -- -- --  functions below extend the array2d module
-
-
---function penlight.array2d.map_slice1(func, L, i1, i2) -- map a function to a slice of an array, can use PlcExpr
---    i2 = i2 or i1
---    local len = #L
---    i1 = check_index(i1, len)
---    i2 = check_index(i2, len)
---    func = check_func(func)
---    for i in penlight.seq.range(i1,i2) do
---            L[i] = func(L[i])
---        end
---   return L
---end
-
-    -- used this below when iter was not working..
-    --i1, j1, i2, j2 = check_slice(M, i1, j1, i2, j2)
-        --for i in penlight.seq.range(i1,i2) do
-    --    for j in penlight.seq.range(j1,j2) do
-        --end
-    -- penlight may have fixed this
---local function check_index(ij, rc) -- converts array index to positive value if negative
---    if type(ij) ~= 'number' then
---        return 1
---    else
---        if ij < 0 then
---            ij = rc + ij + 1
---        elseif ij > rc then
---            ij = rc
---        elseif ij == 0 then
---            ij = 1
---        end
---        return ij
---    end
---end
---local function check_slice(M, i1, j1, i2, j2) -- ensure a slice is valid; i.e. all positive numbers
---    r, c = penlight.array2d.size(M)
---    i1 = check_index(i1 or 1, r)
---    i2 = check_index(i2 or r, r)
---    j1 = check_index(j1 or 1, c)
---    j2 = check_index(j2 or c, c)
---    return i1, j1, i2, j2
---end
 

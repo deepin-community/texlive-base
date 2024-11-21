@@ -24,7 +24,7 @@
 %%
 %% The files belonging to this work and covered by LPPL are listed in
 %% (<texmf>/doc/generic/memoize/)FILES.
-\ProvidesPackage{memoize}[2024/01/21 v1.1.2 Fast and flexible externalization]
+\ProvidesPackage{memoize}[2024/04/02 v1.3.0 Fast and flexible externalization]
 \RequirePackage{etoolbox}
 \ifdefined\luatexversion
   \directlua{memoize = {}}
@@ -80,7 +80,7 @@
 \ifmmz@loadstatus{1}{\endinput}{}%
 \def\mmz@loadstatus{1}%
 \def\filetotoks#1#2{%
-  \immediate\mmz@openin0{#2}%
+  \immediate\openin0{#2}%
   #1={}%
   \loop
   \unless\ifeof0
@@ -89,8 +89,6 @@
   \repeat
   \immediate\closein0
 }
-\let\mmz@openin\openin
-\let\mmz@openout\openout
 \newif\ifmmz@temp
 \newtoks\mmz@temptoks
 \newbox\mmz@box
@@ -143,10 +141,11 @@
   },
   begindocument/.append code=\mmz@maybe@mkmemodir,
 }
+\def\mmz@initial@mkdir@command{\mmzvalueof{perl extraction command} --mkdir}
 \mmzset{
   mkdir/.is if=mmz@mkdir,
   mkdir command/.store in=\mmz@mkdir@command,
-  mkdir command={},
+  mkdir command/.expand once=\mmz@initial@mkdir@command,
 }
 \newif\ifmmz@mkdir
 \mmz@mkdirtrue
@@ -165,7 +164,7 @@
   memo dir/.default=\jobname,
   no memo dir/.style={prefix={#1.}},
   no memo dir/.default=\jobname,
-  no memo dir,
+  memo dir,
 }
 \def\mmz@remove@quotes#1#2{%
   \def\mmz@remove@quotes@end{\let#2\mmz@temp}%
@@ -178,9 +177,9 @@
 }
 \def\mmz@remove@quotes@i{%
   \CollectArgumentsRaw
-    {\collargsBraceCollectedfalse
+    {\collargsReturnPlain
       \collargsNoDelimiterstrue
-      \collargsAppendPostwrap{{##1}}%
+      \collargsAppendExpandablePostprocessor{{\the\collargsArg}}%
     }%
     {u"u\mmz@eov}%
     \mmz@remove@quotes@ii
@@ -272,7 +271,7 @@
       \expandonce\mmzRawCollectorOptions
       \ifmmz@verbatim\mmz@verbatim@fix\fi
     }%
-  }{&&{\collargsAppendPostwrap{}}!t{ }+b{memoize}}{\mmz@do}%
+  }{&&{\collargsAppendExpandablePostprocessor{}}!t{ }+b{memoize}}{\mmz@do}%
 }%
 \protected\def\nommz#1#{%
   \afterassignment\nommz@i
@@ -670,7 +669,7 @@
 \newif\ifmmz@include@source
 \mmz@include@sourcetrue
 \def\mmz@write@cmemo{%
-  \immediate\mmz@openout\mmz@out{\mmz@cmemo@path}%
+  \immediate\openout\mmz@out{\mmz@cmemo@path}%
   \immediate\write\mmz@out{\noexpand\mmzMemo}%
   \immediate\write\mmz@out{%
     \global\mmzContextExtra{\the\mmzContextExtra}\collargs@percentchar
@@ -725,7 +724,7 @@
   direct ccmemo input/.is if=mmz@direct@ccmemo@input,
 }
 \def\mmz@write@ccmemo{%
-  \immediate\mmz@openout\mmz@out{\mmz@ccmemo@path}%
+  \immediate\openout\mmz@out{\mmz@ccmemo@path}%
   \begingroup
   \the\mmz@ccmemo@resources
   \endgroup
@@ -1014,7 +1013,6 @@
       \mmzvalueof{perl extraction options}%
     }%
     \mmz@check@extraction@log{perl}%
-    \def\mmz@mkdir@command{\mmzvalueof{perl extraction command} --mkdir}%
   },
   perl extraction command/.initial=memoize-extract.pl,
   perl extraction options/.initial={\space
@@ -1029,7 +1027,9 @@
       \mmzvalueof{python extraction options}%
     }%
     \mmz@check@extraction@log{python}%
-    \def\mmz@mkdir@command{\mmzvalueof{python extraction command} --mkdir}%
+    \ifx\mmz@mkdir@command\mmz@initial@mkdir@command
+      \def\mmz@mkdir@command{\mmzvalueof{python extraction command} --mkdir}%
+    \fi
   },
   python extraction command/.initial=memoize-extract.py,
   python extraction options/.initial={\space
@@ -1044,7 +1044,7 @@
 }
 \def\mmz@clear@extraction@log{%
   \begingroup
-  \immediate\mmz@openout0{\jobname.mmz.log}%
+  \immediate\openout0{\jobname.mmz.log}%
   \immediate\closeout0
   \endgroup
 }
@@ -1101,7 +1101,7 @@
 \mmzset{
   record/mmz/begin/.code={%
     \newwrite\mmz@mmzout
-    \immediate\mmz@openout\mmz@mmzout{\jobname.mmz}%
+    \immediate\openout\mmz@mmzout{\jobname.mmz}%
   },
   record/mmz/prefix/.code={%
     \immediate\write\mmz@mmzout{\noexpand\mmzPrefix{#1}}%
@@ -1110,6 +1110,7 @@
     \immediate\write\mmz@mmzout{%
       \noexpand\mmzNewExtern{#1}{\pagenumber}{\expectedwidth}{\expectedheight}%
     }%
+    \typeout{No file #1}%
   },
   record/mmz/new cmemo/.code={%
     \immediate\write\mmz@mmzout{\noexpand\mmzNewCMemo{#1}}%
@@ -1136,7 +1137,7 @@
   bat=memoize-extract.\jobname.bat,
   record/sh/begin/.code={%
     \newwrite\mmz@shout
-    \immediate\mmz@openout\mmz@shout{\mmz@shname}%
+    \immediate\openout\mmz@shout{\mmz@shname}%
   },
   record/sh/new extern/.code={%
     \begingroup
@@ -1148,7 +1149,7 @@
   },
   record/bat/begin/.code={%
     \newwrite\mmz@batout
-    \immediate\mmz@openout\mmz@batout{\mmz@batname}%
+    \immediate\openout\mmz@batout{\mmz@batname}%
   },
   record/bat/new extern/.code={%
     \begingroup
@@ -1169,7 +1170,7 @@
   record/makefile/begin/.code={%
     \newwrite\mmz@makefileout
     \newtoks\mmz@makefile@externs
-    \immediate\mmz@openout\mmz@makefileout{\mmz@makefilename}%
+    \immediate\openout\mmz@makefileout{\mmz@makefilename}%
     \immediate\write\mmz@makefileout{.DEFAULT_GOAL = externs}%
     \immediate\write\mmz@makefileout{.PHONY: externs}%
   },
@@ -1450,38 +1451,53 @@
 \AddToHook{shipout/after}[memoize]{\global\advance\mmzExtraPages1\relax}
 \mmzset{auto=\DiscardShipoutBox{
     outer handler=\global\advance\mmzExtraPages1\relax\AdviceOriginal}}
-\mmzset{
-  begindocument/before/.append code={%
-    \@ifpackageloaded{tikz}{%
-      \input advice-tikz.code.tex
-    }{}%
-    \mmzset{%
-      auto/memoize tikz/.style={
-        memoize,
-        at begin memoization=\edef\mmz@pgfpictureid{%
-          \the\pgf@picture@serial@count
-        },
-        at end memoization=\xtoksapp\mmzCCMemo{%
-          \unexpanded{%
-            \global\expandafter\advance\csname pgf@picture@serial@count\endcsname
-          }%
-          \the\numexpr\pgf@picture@serial@count-\mmz@pgfpictureid\relax\relax
-        },
-      },
-      auto=\tikz{memoize tikz, collector=\AdviceCollectTikZArguments},
-      auto={tikzpicture}{memoize tikz},
+\def\mmz@if@package@loaded#1#2#3{%
+  \mmzset{%
+    begindocument/before/.append code={%
+      \@ifpackageloaded{#1}{%
+        #3%
+      }{}%
     }%
-  },
+  }%
 }
-\mmzset{
-  begindocument/before/.append code={%
-    \@ifpackageloaded{forest}{%
-      \mmzset{
-        auto={forest}{memoize},
-        auto=\Forest{memoize},
+\mmz@if@package@loaded{pgf}{%
+}{%
+  \def\mmzPgfAtBeginMemoization{%
+    \edef\mmz@pgfpictureid{%
+      \the\pgf@picture@serial@count
+    }%
+  }%
+  \def\mmzPgfAtEndMemoization{%
+    \edef\mmz@temp{%
+      \the\numexpr\pgf@picture@serial@count-\mmz@pgfpictureid\relax
+    }%
+    \ifx\mmz@temp=0
+    \else
+      \xtoksapp\mmzCCMemo{%
+        \unexpanded{%
+          \global\expandafter\advance\csname pgf@picture@serial@count\endcsname
+        }%
+        \mmz@temp
       }%
-    }{}%
-  },
+    \fi
+  }%
+  \mmzset{%
+    at begin memoization=\mmzPgfAtBeginMemoization,
+    at end memoization=\mmzPgfAtEndMemoization,
+  }%
+}
+\mmz@if@package@loaded{tikz}{\tikz}{%
+  \input advice-tikz.code.tex
+  \mmzset{%
+    auto={tikzpicture}{memoize},
+    auto=\tikz{memoize, collector=\AdviceCollectTikZArguments},
+  }%
+}
+\mmz@if@package@loaded{forest}{\Forest}{%
+  \mmzset{
+    auto={forest}{memoize},
+    auto=\Forest{memoize},
+  }%
 }
 \AddToHook{begindocument/before}{\@ifclassloaded{beamer}{%
   \mmzset{per overlay/.style={
@@ -1519,78 +1535,25 @@
     \fi
   }%
 }{}}
-\AddToHook{begindocument/before}{%
-  \@ifpackageloaded{morewrites}{%
-    \def\mmz@openin#1#2{\openin#1=#2\relax}%
-    \def\mmz@openout#1#2{\openout#1=#2\relax}%
-  }{}%
-}
 \mmzset{
-  begindocument/before/.append style={%
-    auto=\blx@bbl@entry{outer handler=\mmz@biblatex@entry},
-    auto/cite/.style={run if memoizing, outer handler=\mmz@biblatex@cite},
-    auto/cites/.style={run if memoizing, outer handler=\mmz@biblatex@cites},
-    auto=\cite{cite},
-    auto=\cites{cites},
-  }%
-}
-\def\mmz@biblatex@entry#1#2\endentry{%
-  \protected@edef\mmz@temp{\pdf@mdfivesum{#2}}%
-  \global\cslet{mmz@bbl@#1}\mmz@temp
-  \AdviceOriginal{#1}#2\endentry
-}
-\def\mmz@biblatex@cite#1#{\mmz@biblatex@cite@i{#1}}
-\def\mmz@biblatex@cite@i#1#2{%
-  \forcsvlist\mmz@biblatex@cite@do@key{#2}%
-  \xtoksapp\mmzCCMemo{%
-    \noexpand\setbox0\noexpand\hbox{%
-      \expandonce\AdviceOriginal\unexpanded{#1}{#2}%
-    }}%
-  \AdviceOriginal#1{#2}%
-}
-\def\mmz@biblatex@cite@do@key#1{%
-  \mmz@mtoc@csname{mmz@bbl@#1}%
-  \ifcsdef{mmz@bbl@#1}{}{\mmzAbort}%
-}
-\def\mmz@biblatex@cites{%
-  \mmz@temptoks{}%
-  \mmz@biblatex@cites@i
-}
-\def\mmz@biblatex@cites@i{%
-  \futurelet\mmz@temp\mmz@biblatex@cites@ii
-}
-\def\mmz@biblatex@cites@ii{%
-  \mmz@tempfalse
-  \ifx\mmz@temp\bgroup
-    \mmz@temptrue
-  \else
-    \ifx\mmz@temp[%]
-      \mmz@temptrue
-    \fi
-  \fi
-  \ifmmz@temp
-    \expandafter\mmz@biblatex@cites@iii
-  \else
-    \expandafter\mmz@biblatex@cites@z
-  \fi
-}
-\def\mmz@biblatex@cites@iii#1#{\mmz@biblatex@cites@iv{#1}}
-\def\mmz@biblatex@cites@iv#1#2{%
-  \forcsvlist\mmz@biblatex@cite@do@key{#2}%
-  \toksapp\mmz@temptoks{#1{#2}}%
-  \mmz@biblatex@cites@i
-}
-\def\mmz@biblatex@cites@z{%
-  \xtoksapp\mmzCCMemo{%
-    \noexpand\setbox0\noexpand\hbox{%
-      \expandonce\AdviceOriginal\the\mmz@temptoks
-    }}%
-  \expandafter\AdviceOriginal\the\mmz@temptoks
+  biblatex/.code={%
+    \mmz@if@package@loaded{biblatex}{}{%
+      \input memoize-biblatex.code.tex
+      \mmzset{#1}%
+    }%
+  },
 }
 \AddToHook{begindocument/before}{\mmzset{begindocument/before}}
 \AddToHook{begindocument}{\mmzset{begindocument}}
 \AddToHook{begindocument/end}{\mmzset{begindocument/end}}
 \AddToHook{enddocument/afterlastpage}{\mmzset{enddocument/afterlastpage}}
+\mmzset{
+  begindocument/end/.append style={
+    begindocument/before/.code={},
+    begindocument/.code={},
+    begindocument/end/.code={},
+  }
+}
 \mmzset{extract/no/.code={}}
 \InputIfFileExists{memoize.cfg}{}{}
 \let\mmz@initial@extraction@method\mmz@extraction@method

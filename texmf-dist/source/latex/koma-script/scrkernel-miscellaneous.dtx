@@ -18,7 +18,7 @@
 %
 % This work consists of all files listed in MANIFEST.md.
 % ======================================================================
-%%% From File: $Id: scrkernel-miscellaneous.dtx 4032 2023-04-17 09:45:11Z kohm $
+%%% From File: $Id: scrkernel-miscellaneous.dtx 4094 2023-12-05 16:17:40Z kohm $
 %<init>%%%            (run: init)
 %<option>%%%            (run: option)
 %<execoption>%%%            (run: execoption)
@@ -27,9 +27,9 @@
 \ifx\ProvidesFile\undefined\def\ProvidesFile#1[#2]{}\fi
 \begingroup
   \def\filedate$#1: #2-#3-#4 #5${\gdef\filedate{#2/#3/#4}}
-  \filedate$Date: 2023-04-17 11:45:11 +0200 (Mo, 17. Apr 2023) $
+  \filedate$Date: 2023-12-05 17:17:40 +0100 (Di, 05 Dez 2023) $
   \def\filerevision$#1: #2 ${\gdef\filerevision{r#2}}
-  \filerevision$Revision: 4032 $
+  \filerevision$Revision: 4094 $
   \edef\reserved@a{%
     \noexpand\endgroup
     \noexpand\ProvidesFile{scrkernel-miscellaneous.dtx}%
@@ -522,6 +522,8 @@
 % \changes{v3.17}{2015/03/23}{added}
 % \changes{v3.20}{2016/03/25}{write to \file{aux} file only \cs{if@filesw}}
 % \changes{v3.23}{2017/02/23}{empty macro after usage}
+% \changes{v3.42}{2023/12/05}{using \cs{number} instead of \cs{arabic} to fix
+%   \href{https://sourceforge.net/p/koma-script/tickets/58/}{issue 58}}
 % The main workers of \cs{Ifthispageodd}. It is used to set
 % \cs{ifthispagewasodd} depending on the information it adds to the \file{aux}
 % file.
@@ -529,6 +531,8 @@
 % \item[ToDo:] Why do we use an optional argument here? Are there any
 %   circumstances, when the optional argument is not the default
 %   \cs{is@thispageodd@setlabel}?
+% \item[ToDo:] From \LaTeX~2023-11-01 use the page property instead of
+%   \cs{new@tpo@label}.
 % \end{description}
 %    \begin{macrocode}
 \newcommand*{\is@thispageodd}[1][\is@thispageodd@setlabel]{%
@@ -554,9 +558,9 @@
   \endgroup
   \edef\is@thispageodd@setlabel{%
     \if@filesw
-      \unexpanded{\protected@write\@auxout{\let\arabic\relax}}{%
+      \unexpanded{\protected@write\@auxout{\let\number\relax}}{%
         \noexpand\string
-        \noexpand\new@tpo@label{\scr@tpo}{\noexpand\arabic{page}}}%
+        \noexpand\new@tpo@label{\scr@tpo}{\noexpand\number\c@page}}%
     \fi
     \noexpand\def\noexpand\is@thispageodd@setlabel
     {\unexpanded\expandafter{\is@thispageodd@setlabel}}%
@@ -714,6 +718,8 @@
 % \changes{v3.12}{2013/07/08}{added}
 % \begin{macro}{\class@shoulddisablepackagewarning@list}
 % \changes{v3.24}{2017/06/25}{added}
+% \changes{v3.42}{2023/07/26}{indirect warnings can be redefined after loading
+%   the class}
 % Loading of several incompatible packages should result in warnings using:
 % \begin{quote}
 %   \cs{scr@package@not@recommended}\marg{package}\marg{alternatives}
@@ -721,9 +727,11 @@
 % Usually the warning contains information about \meta{alternatives}, but this
 % argument can also be empty. Authors of classes can deactivate the warning,
 % by adding a \meta{package} to the comma separated list
-% \cs{class@shoulddisablepackagewarning@lis}. This has to be done, before
+% \cs{class@shoulddisablepackagewarning@list}. This has to be done, before
 % loading the \KOMAScript{} class. However doing so is not recommended and the
-% class author is responsible for the drawbacks.
+% class author is responsible for the drawbacks. Similar the indirect warning
+% messages \cs{scr@class@\meta{package}@warning} could be redefined after
+% loading the class, but this is also not recommended.
 %    \begin{macrocode}
 %<*class&body>
 \newcommand*{\scr@package@not@recommended}[2]{%
@@ -735,7 +743,7 @@
     \reserved@a
     \ifin@\expandafter\@gobble\else\expandafter\@firstofone\fi
   }{%
-    \BeforePackage{#1}{%
+    \expandafter\providecommand\csname scr@class@#1@warning\endcsname{%
       \ClassWarning{\KOMAClassName}{%
         Usage of package `#1' together\MessageBreak
         with a KOMA-Script class is not recommended.\MessageBreak
@@ -745,6 +753,9 @@
         Nevertheless, using requested\MessageBreak
         package `#1'%
       }%
+    }%
+    \BeforePackage{#1}{%
+      \csname scr@class@#1@warning\endcsname
     }%
   }%
 }%

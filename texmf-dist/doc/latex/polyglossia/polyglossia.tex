@@ -23,8 +23,10 @@
     ]{hyperref}
 \usepackage{array}
 \usepackage{metalogo}
-\let\XeTeX\undefined
-\let\XeLaTeX\undefined
+\ifxetex
+  \let\XeTeX\undefined
+  \let\XeLaTeX\undefined
+\fi
 \usepackage[babelshorthands]{polyglossia}
 \usepackage{farsical}
 %
@@ -124,15 +126,23 @@
 \usepackage[osf]{libertine}
 % Monospace: Package dejavu-otf
 \setmonofont[Scale=MatchLowercase]{DejaVuSansMono}
-% Libertine includes Hebrew, but we load it separately since
-% osf is not supported with this script and we want to avoid the
-% respective warnings
-\newfontfamily\hebrewfont[Script=Hebrew]{Linux Libertine O}
+% Package culmus
+\newfontfamily\hebrewfont[Script=Hebrew]{DavidCLM}[
+  UprightFont = *-Medium,
+  BoldFont = *-Bold,
+  Extension = .otf,
+  ItalicFont = *-MediumItalic,
+  BoldItalicFont = *-BoldItalic]
 % Package dejavu-otf
 \newfontfamily\armenianfont[Script=Armenian,Scale=MatchLowercase]{DejaVuSans}
 \newfontfamily\georgianfont[Scale=MatchLowercase]{DejaVuSerif}
 % Package amiri
-\newfontfamily\arabicfont[Script=Arabic]{Amiri-Regular}
+\newfontfamily\arabicfont[Script=Arabic]{Amiri}[%
+ UprightFont = *-Regular,
+  BoldFont = *-Bold,
+  Extension = .ttf,
+  ItalicFont = *-Italic,
+  BoldItalicFont = *-BoldItalic]
 % No Syriac otf/ttf font seems available on CTAN
 % This one, from the Syriac Institute, is included on Linux
 % in the x11-fonts set and can be downloaded from
@@ -159,7 +169,7 @@
 \title{{\textgreek{\xpgtitlefont\color{lightblue}\MakeUppercase{Πολυγλωσσία}}}
 \\[16pt]
 \color{xpgblue}Polyglossia: Modern multilingual typesetting with \XeLaTeX\ and \LuaLaTeX}
-\author{\TA{François Charette} \and \TA{Arthur Reutenauer}\thanks{Current maintainer}
+\author{\TA{François Charette} \and \TA{Arthur Reutenauer}
 	    \and \TA{Udi Fogiel} \and \TA{Bastien Roucariès} \and \TA{Jürgen Spitzmüller}}
 \date{\filedate \qquad \fileversion\thanks{Please report bugs to \url{http://github.com/reutenauer/polyglossia/issues}}\\
 \footnotesize (\textsc{pdf} file generated on \today)}
@@ -278,6 +288,9 @@ that are explained in section \ref{specific} below.
 \end{tabular}
 
 \end{table}
+
+\paragraph{Nota bene} Support for Chinese and Japanese is experimental. This particularly concerns the line breaking mechanism which is a proof of concept.
+Please use with care and report any issues and unexpected output you encounter.
 
 \paragraph{Version Notes} The support for Amharic\new{1.0.1} should be considered an experimental attempt to
 port the package \pkg{ethiop}; feedback is welcome.
@@ -457,7 +470,7 @@ Table~\ref{tab:BCP47-polyglossia} lists the currently supported tags.
 	dv               & divehi      &                                                    \tabularnewline
 	el               & greek       &                                                    \tabularnewline
 	el-monoton       & greek       & variant=monotonic  [\emph{default}]                \tabularnewline
-	el-polyton       & greek       & varant=polytonic                                   \tabularnewline
+	el-polyton       & greek       & variant=polytonic                                   \tabularnewline
 	en               & english     &                                                    \tabularnewline
 	en-AU            & english     & variant=australian                                 \tabularnewline
 	en-CA            & english     & variant=canadian                                   \tabularnewline
@@ -570,11 +583,8 @@ Table~\ref{tab:BCP47-polyglossia} lists the currently supported tags.
 
 \begin{itemize}
 	\item \xpgboolkeyfalse[1.1.1]{babelshorthands}
-		Globally activates \pkg{babel} shorthands whenever available. Such shorthands are
-		implemented currently for Afrikaans, Belarusian, Catalan, Croatian,
-		Czech, Dutch, Finnish, Georgian, German, Italian, Latin, Mongolian,
-		Russian, Slovak, and Ukrainian. Please refer to the respective language descriptions
-		(sec.~\ref{specific}) for details.
+		Globally activates \pkg{babel} shorthands whenever available. 
+		Please refer to sec.~\ref{shorthands} for details.
 
 	\item \xpgboolkeyfalse{localmarks} redefines the internal \LaTeX\ macros \cmd\markboth\ and
 		\cmd\markright\ to the effect that the header text is explicitly set in the currently
@@ -599,6 +609,43 @@ Table~\ref{tab:BCP47-polyglossia} lists the currently supported tags.
 	\item \xpgboolkeytrue{verbose} determines whether info messages and (some of the) warnings issued
 		by \LaTeX, \pkg{fontspec} and \pkg{polyglossia} are output.
 \end{itemize}
+
+\subsection{Shorthands}\label{shorthands}
+
+\pkg{Babel} has introduced the nifty feature of \enquote{shorthands} for some of the languages
+it supports.
+Shorthands make use of active characters to provide quick access to glyphs and formatting
+peculiarities that are common in a respective language (\eg ¦"a¦ for German umlaut ⟨ä⟩ in case
+this is not available on your keyboard).
+\pkg{Polyglossia} has adopted this feature, we call it \emph{babelshorthands}.
+
+Shorthands need to be activated for the respective language, or can be activated globally, via
+the boolean option \xpgoption{babelshorthands} (either passed globally when loading \pkg{polyglossia}
+or to a specific language when loading it).
+
+Shorthands are implemented currently for Afrikaans, Belarusian, Catalan, Croatian,
+Czech, Dutch, Finnish, Georgian, German, Italian, Latin, Mongolian, Occitan,
+Piedmontese, Polish, Portuguese, Russian, Slovak, and Ukrainian, and their number and function
+differs between these languages. Please refer to the respective language descriptions (sec.~\ref{specific})
+for detailed elaborations.
+
+If you want to re-use the shorthands defined for a specific language in a different language,
+you can do so by using in preamble:\new{2.0}
+\displaycmd{\inheritbabelshorthands\marg{source language}\marg{target language}}{\inheritbabelshorthands}
+in order to input and activate the shorthands defined for the \meta{source language} in
+the \meta{target language}. Both languages will be loaded as \enquote{other} languages if they have not
+been loaded yet. If one of the languages does not exist, or if the \meta{source language} does not provide any
+shorthands, you will get an error message.
+
+Note, also, that you can only use \cmd{\inheritbabelshorthands} once per language. Subsequent
+calls will overwrite previous ones (and also the shorthand that might be defined for a
+\meta{target language} in the first place).
+
+If you want to enable the shorthands of a specific language inline, also when the language itself
+is not active (but loaded in the preamble), you can do so by means of\new{2.0}
+\displaycmd{\usebabelshorthands\marg{language}}{\usebabelshorthands}
+The effect of this is local to groups. If you want to disable any active shorthands, you can use
+¦\usebabelshorthands{none}¦.
 
 \section{Language-switching commands}\label{languageswitching}
 
@@ -697,9 +744,11 @@ ought to be mentioned here.
 	In a similar vein, it is possible to use \Cmd\rmfamilylatin, \Cmd\sffamilylatin,
 	and \Cmd\ttfamilylatin.
 
-\item \Cmd\latinalph: Representation of counter as a lower-case letter:  1 = a, 2 = b, etc.
+\item \DescribeMacro{\latinalph}\cmd{\latinalph\marg{counter}}: Representation of counter as a lower-case letter:
+    1 = a, 2 = b, etc.
 
-\item \Cmd\latinAlph: Representation of counter as a upper-case letter:  1 = A, 2 = B, etc.
+\item \DescribeMacro{\latinAlph}\cmd{\latinAlph\marg{counter}}: Representation of counter as a upper-case letter:
+    1 = A, 2 = B, etc.
 \end{itemize}
 
 
@@ -735,13 +784,25 @@ see sec.~\ref{sec:langtags}).
 
 \section{Font setup}
 
-With polyglossia it is possible to associate a specific font with any script or language
+With \pkg{polyglossia} it is possible to associate a specific font with any script or language
 that occurs in the document. That font should always be defined as
-\cmd{\⟨script⟩font}\ or \cmd{\⟨language⟩font}.
+\cmd{\⟨script⟩font}\ or \cmd{\⟨language⟩font}. Note that ¦⟨language⟩¦ points to the \pkg{polyglossia}
+language name, ¦⟨script⟩¦ might point either to an OpenType script name as defined by \pkg{fontspec}
+(\eg ¦Latin¦) \new{2.2}or a BCP-47 script tag (\eg ¦Latn¦), though the script is fully lower-cased
+in the \cmd{\⟨script⟩font}\ command.
+
 For instance, if the default font defined by \cmd\setmainfont\
 does not support Greek, then one can define the font used to display Greek with:\\
-\centerline{ \cmd\newfontfamily\cmd{\greekfont[Script=Greek,\meta{…}]\marg{font}}. }
-Note that polyglossia will use the font defined as is, so assure to do all necessary settings
+\centerline{\cmd\newfontfamily\cmd{\greekfont[Script=Greek,\meta{…}]\marg{font}}}
+%
+If you want to setup a blackletter font specifically for the German blackletter script variant,
+you might do so by:\\
+\centerline{\cmd\newfontfamily\cmd{\latffont[\meta{…}]\marg{font}}}
+%
+Setting up a font specifically for traditional Chinese is possible via:\\
+\centerline{\cmd\newfontfamily\cmd{\hantfont[Script=CJK,\meta{…}]\marg{font}}}
+%
+Note that \pkg{polyglossia} will use the font defined as is, so assure to do all necessary settings
 (please refer to the \pkg{fontspec} documentation for details).
 For instance, if \cmd\arabicfont\ is explicitly defined, then the option ¦Script=Arabic¦ should
 be included in that definition.
@@ -751,10 +812,12 @@ it can be defined by means of \new{1.2.0}
 \cmd{\⟨script⟩fontsf} or \cmd{\⟨language⟩fontsf} and \cmd{\⟨script⟩fonttt} or \cmd{\⟨language⟩fonttt}, respectively.
 
 Whenever a new language is activated, \pkg{polyglossia} will first check whether
-a font has been defined for that language or – for languages in non-Latin scripts –
-for the script it uses. If it is not defined, it will use the currently active font
-and – in the case of OpenType fonts – will attempt to turn on the appropriate
-OpenType tags for the script and language used, in case these are available in
+a font has been defined for that language. If this is not the case, it will check whether a font associated
+with the BCP-47 script tag of the current language is defined. If this also isn't the case, \pkg{polyglossia}
+will finally check (but this only for languages in non-Latin scripts) whether there is a font associated
+with the OpenType script tag. If none of these fonts is defined, \pkg{polyglossia} will use the currently
+active font as defined by ¦\setmainfont¦, ¦\setsansfont¦ or ¦\setmonofont¦ and – in the case of OpenType fonts –
+will attempt to turn on the appropriate OpenType tags for the script and language used, in case these are available in
 the font, by means of \pkg{fontspec}’s \cmd\addfontfeature. If the current font
 does not appear to support the script of that language, an error message is
 displayed.
@@ -768,21 +831,24 @@ which override the hyphenation patterns for specified words. The command takes a
 list of words where hyphenation points are marked by a dash (if no dash is used, the respective word is not
 hyphenated at all):
 \begin{quote}
-\begin{minipage}{.7\textwidth}
 \begin{verbatim}
 \hyphenation{%
   po-ly-glos-sia
   LaTeX
 }
 \end{verbatim}
-\end{minipage}
 \end{quote}
 %
-These exceptions, however, apply to all languages. In addition to this, \pkg{polyglossia} provides
+These exceptions, however, apply only to the currently active language.
+
+In addition to this, \pkg{polyglossia} provides
 the command\new{1.45}
 \displaycmd{\pghyphenation\oarg{options}\marg{lang}\marg{exceptions}}{\pghyphenation}
 which can be used to define exceptions that only apply to a specific language or language variant,
-respectively.
+respectively.\footnote{More precisely, it applies to all languages or varieties that share the
+same hyphenation patterns. Hence, for instance, all variants of \xpgoption{german} with
+\xpgoption{spelling=new} will share the same exceptions, as opposed to \xpgoption{spelling=old}
+which uses different patterns.}
 
 \subsection{Hyphenation thresholds}
 
@@ -1139,23 +1205,37 @@ and that passing \xpgvalue{babelshorthands} (without value) is equivalent to pas
 		If this is turned on, the following shorthands for fine-tuning hyphenation
 		and micro-typography of Finnish words are activated:
 		\begin{shorthands}
-		\item[¦"-¦] adds a hyphenation point that does still allow for hyphenation at the points preset
-                    in the hyphenation patterns (as opposed to \cmd\-).
-        \item[\texttt{"\textasciitilde}] for a hyphen sign without a breakpoint. Useful for
-                    cases where the hyphen should stick at the following syllable.
+		\item[¦"-¦] adds an explicit hyphen without a breakpoint, allowing for hyphenation at the
+		            other points preset in the hyphenation patterns. Useful for
+		            cases where the hyphen should stick at the following syllable
+		            (\eg ¦pakastekaapit ja "-arkut¦).
+		\item[\texttt{"=}] for a hyphen sign without a breakpoint that does also remove all other
+		            breakpoints in the word (as opposed to ¦"-¦).
+        \item[\texttt{"\textasciitilde}] functionally equivalent to ¦"-¦ (provided for backwards
+                   compatibility reasons).
         \item[¦"|¦] disables a ligature at this position.
         \item[¦""¦] allows for a line break at this position (without hyphenation sign).
         \item[¦"/¦] a slash that allows for a subsequent line break. As opposed to \cmd\slash,
                   hyphenation at the breakpoints preset in the hyphenation patterns is still allowed.
 		\end{shorthands}
-  \item \xpgboolkeyfalse[1.54]{schoolhyphens}
-	    If this is set to true, alternative (experimental) hyphenation patterns are used rather than the
-	    default Finnish patterns. These (so-called `School') patterns allow hyphenation at
+  \item \xpgchoicekey[2.0]{hyphens}{\xpgpresetvalue{default}, \xpgvalue{babel}, \xpgvalue{school}}
+        Hyphenation in Finnish is peculiar since there are many rather long words. In order to select a suitable
+        hyphenation pattern, three different options are provided:
+        \begin{itemize}
+        \item The \xpgvalue{default} patterns as used by \LaTeX\ are rather strict and try to prevent hyphenation
+        at points which are valid but considered sub-optimal from an ortho-typographic point of view
+        (\eg hyphenation between two vowels), with the drawback that simple words are sometimes not being
+        hyphenated at points where this would be valid, and lines might become unevenly spaced.
+        \item The \pkg{babel} support for Finnish by default tweaks some hyphenation-related values
+        (such as \cmd\hyphenpenalty) for Finnish. If you want to replicate this with \pkg{polyglossia},
+        select \xpgvalue{babel} (this still uses the default patterns).
+        \item The \xpgvalue{school} setting, finally, employs alternative (experimental) hyphenation patterns
+	    rather than the default Finnish patterns. These (so-called `School') patterns allow hyphenation at
 	    all valid points, including hyphenation points that are considered sub-optimal from an
-	    ortho-typographic point of view (e.\,g., hyphenation between two vowels).
-	    The default patterns try to prevent such hyphenation, with the drawback that simple words
-	    are sometimes not being hyphenated at points where this would be valid.
+	    ortho-typographic point of view.\footnote{This equals the previous boolean option \xpgoption{schoolhyphens},
+	    which is still supported for backwards compatibility.}
 	    See \url{https://github.com/hyphenation/basic-finnish} for details.
+	    \end{itemize}
 \end{itemize}
 
 \subsection{french}\label{french}
@@ -1313,6 +1393,11 @@ and that passing \xpgvalue{babelshorthands} (without value) is equivalent to pas
 		           \eg ¦(pseudo"~)""wissenschaftlich¦.
 		\item[¦"/¦] a slash that allows for a subsequent line break. As opposed to \cmd\slash, hyphenation at the breakpoints
 		           preset in the hyphenation patterns is still allowed.
+		\item[¦"*¦]\new{2.0} An asterisk which assures the word can still be hyphenated at its defined breakpoints.
+		            Useful if you want to employ gender-sensitive writing (,gender star`).					
+		            Similar shorthands are available for the alternative gender-sensitive spellings, ¦":¦ and ¦"_¦.
+		\item[¦"x¦]\new{2.0} Inserts a gender mark which assures the word can still be hyphenated at its defined breakpoints.
+	                This is predefined to ¦*¦ but can be globally redefined by redefining the macro \cmd\mkgender\ (see below).
 		\end{shorthands}
 
 		There are also four shorthands for quotation signs:
@@ -1323,6 +1408,11 @@ and that passing \xpgvalue{babelshorthands} (without value) is equivalent to pas
 		\item[¦">¦] for French-style right double quotes (»).
 		\end{shorthands}
 	\end{itemize}
+	\paragraph*{Commands:}
+	\begin{itemize}
+		\item \Cmd\mkgender\new{2.0} Defines which gender mark is output by the babelshorthand ¦"x¦.
+		      Predefined to ¦\def\mkgender{*}¦.
+    \end{itemize}
 
 \subsection{greek}\label{greek}
 \paragraph*{Options:}
@@ -1525,7 +1615,7 @@ and that passing \xpgvalue{babelshorthands} (without value) is equivalent to pas
 			\end{table}
 	\item \xpgchoicekey[1.46]{hyphenation}{\xpgvalue{classic}, \xpgvalue{modern}, or \xpgvalue{liturgical}}
 			There are three different sets of hyphenation patterns for Latin. Separate
-			documention for them is available on the
+			documentation for them is available on the
 			Internet.\footnote{Refer to \url{https://github.com/gregorio-project/hyphen-la/blob/master/doc/README.md\#hyphenation-styles}}
 			Each of the four variants mentioned above has its default set of hyphenation
 			patterns as indicated by table \ref{tab:latin-hyphenation}. Use the
@@ -1597,7 +1687,7 @@ and that passing \xpgvalue{babelshorthands} (without value) is equivalent to pas
 				\item[¦'AE¦] for Ǽ (AE ligature with acute), also available for \'Œ
 			\end{shorthands}
 	\item \xpgboolkeyfalse[1.46]{prosodicshorthands}
-			Enable shorthands for prosodic marks (macrons and breves) very similiar to
+			Enable shorthands for prosodic marks (macrons and breves) very similar to
 			those provided by \pkg{babel-latin} using the ¦withprosodicmarks¦
 			modifier.
 			Note that the active ¦=¦ character used for macrons will cause problems with
@@ -2240,14 +2330,15 @@ Ukrainian mathematical symbols.
 	          \meta{lang} is activated locally via \cmd\text\meta{lang} command
 	\item \Cmd{\noextras@\meta{lang}} stores macros that are to be executed when the language
 	          \meta{lang} is closed
+	\item \Cmd{\nestedextras@\meta{lang}}\new{2.3} stores macros that are to be executed when a nested language
+	          is closed and \meta{lang} is the active language again. This is useful
+	          for settings that are only possible on global scale.
 \end{itemize}
 %
-In order to redefine internal macros, we recommend to use the command \cmd\gappto.
-For compatibility with \pkg{babel} the command \cmd\addto\ is also available
-to the same effect. For instance, to change the \cmd\chaptername\ for language ¦lingua¦,
-you can do this:
+In order to redefine internal macros, we recommend to use the command \cmd\addto.
+For instance, to change the \cmd\chaptername\ for language ¦lingua¦, you can do this:
 \begin{verbatim}
-\gappto\captionslingua{\def\chaptername{Caput}}
+\addto\captionslingua{\def\chaptername{Caput}}
 \end{verbatim}
 %
 Note that this needs to be done after the respective language has been loaded with
@@ -2503,7 +2594,7 @@ in Hebrew script or in roman transliteration).
 \subsection{Islamic calendar (hijrical.sty)}\label{sec:hijrical}
 This package computes dates in the lunar Islamic (Hijra) calendar.\footnote{ %
 	It makes use of the arithmetical algorithm in chapter 6 of
-	Reingold \& Gershowitz, \textit{Calendrical calculation: the Millenium edition}
+	Reingold \& Gershowitz, \textit{Calendrical calculation: the Millennium edition}
 	(Cambridge University Press, 2001).\label{reingold}}
 It provides two macros for the end-user.
 The command
@@ -2637,7 +2728,95 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 \section{Revision history}
 
 \bgroup\footnotesize
-\subsection*{1.66 (2023/12/02)}
+
+\subsection*{2.3 (2024/09/23)}
+
+\subsubsection*{Bug fixes}
+\begin{itemize}
+	\item Line-breaking for Japanese and Chinese has been implemented. This is still
+	      considered experimental, please test and report any issues (\TXI{635}).
+	\item Prevent the Latin gloss from writing undefined commands 
+	      to the aux file (\TXI{643}).
+	\item Fix use of \cmd\pghyphenation\ in preamble (\TXI{654}).
+	\item Fix handling of current language options in lists of figures/tables (\TXI{657}).
+	\item Fix definition of \cmd\cyrdash\ so that no linebreak is added when it is used at
+	      paragraph begin.
+	\item Fix test for KOMA class in Hungarian and Russian glosses (\TXP{447}).
+	\item Fix display of font name in package error.
+	\item Remove spurious spaces from Korean, Sanskrit, and Serbian glosses (\TXI{659}, \TXI{660})
+\end{itemize}
+
+\subsection*{2.2 (2024/07/15)}
+
+\subsubsection*{Bug fixes}
+\begin{itemize}
+	\item Fix \texttt{lang} environment (\TXI{633}).
+	\item Fix first number of Maghrib abjad numbering for Algeria, Morocco and
+	      Tunisia (\TXI{640}).
+	\item Fix some captions strings in Bulgarian, Chinese, Esperanto, Estonian, Hindi,
+	      Latvian, and Slovak (\TXP{651})
+	\item Improve performance with multilingual documents that have a TOC (\TXI{641}).
+\end{itemize}
+
+\subsubsection*{New Features}
+\begin{itemize}
+	\item Add possibility to associate a font to a language/variant with reference to
+	      a BCP-47 script tag (\TXI{636}). 
+\end{itemize}
+
+\subsubsection*{Internal work}
+\begin{itemize}
+	\item The major rewrite of the package code has been finished. More code has been cleaned up,
+	and \pkg{polyglossia} employs modern concepts (\pkg{latex3} and modern \LaTeXe).
+	All key-val handling uses \pkg{l3keys} now rather than \pkg{xkeyval}.
+\end{itemize}
+
+\subsection*{2.1 (2024/03/07)}
+
+\subsubsection*{Bug fixes}
+\begin{itemize}
+	\item Make \cmd{\foreignlanguage} \cmd{\long} again (\TXI{622}).
+	\item Fix \texttt{otherlanguage*} environment (\TXI{622}).
+\end{itemize}
+
+\subsection*{2.0 (2024/02/17)}
+
+\subsubsection*{Bug fixes}
+\begin{itemize}
+	\item Fix error with undefined property list that unhides with
+	      \pkg{l3kernel} version 2024-02-13 (\TXI{626}).
+	\item Fix \xpgoption{frenchfootnote} option (\TXI{620}).
+	\item The error message on improper font setting is now
+	      correct if the main script is non-Latin, for
+	      non-Roman fonts (\TXI{571}), and specifically for
+	      the CJK case (\TXI{621}).
+	\item Fix expansion of localnumeral (\TXI{622}).
+\end{itemize}
+
+\subsubsection*{New Features}
+\begin{itemize}
+	\item Add \cmd{\inheritbabelshorthands} (\TXI{604}).
+	\item Add \cmd{\usebabelshorthands}.
+	\item Add shorthands for German gender-sensitive writing.
+	\item Implement \pkg{babel}-style hyphenation for Finnish.
+\end{itemize}
+
+\subsubsection*{Documentation improvements}
+\begin{itemize}
+	\item Fix documentation of Finnish shorthands (\TXI{623}).
+\end{itemize}
+
+\subsubsection*{Internal work}
+\begin{itemize}
+	\item The package code has been subjected to a major rewrite.
+	      Code has been cleaned up, and in general, \pkg{polyglossia}
+	      more consistently employs \pkg{latex3} now. Note that this is
+	      an ongoing and yet unfinished project that will continue over
+	      the next releases.
+\end{itemize}
+
+
+\subsection*{1.66 (2023/12/11)}
 
 \subsubsection*{Bug fixes}
 \begin{itemize}
@@ -3650,7 +3829,7 @@ where \meta{type} is a supported language id type (such as ¦bcp-47¦) and \meta
 \section{Acknowledgements (by François Charette)}
 \pkg{Polyglossia} is notable for being a recycle box of previous contributions
 by other people. I take this opportunity to thank the following individuals,
-whose splendid work has made my task almost trivial in comparision: \TA{Johannes
+whose splendid work has made my task almost trivial in comparison: \TA{Johannes
 Braams} and the numerous contributors to the \pkg{babel} package (in particular
 \TA{Boris Lavva} and others for its Hebrew support), \TA{Alexej Kryukov} (\pkg{antomega}),
 \TA{Will Robertson} (\pkg{fontspec}), \TA{Apostolos Syropoulos} (\pkg{xgreek}), \TA{Youssef Jabri}
@@ -3677,7 +3856,7 @@ Many thanks to all the people who have contributed bugfixes and new features to 
 since we took over.
 In alphabetical order: \TA{Ignas Anikevicius}, \TA{Sina Ahmadi}, \TA{Matthew Bertucci}, \TA{Wouter Bolsterlee}, \TA{Christian Buhtz},
 \TA{Ashok Das}, \TA{Oleg Domanov}, user \TA{fakhriaunur}, \TA{Philipp Gesang}, \TA{Kevin Godby},
-\TA{Enrico Gregorio}, \TA{Khaled Hosny}, \TA{Najib Idrissi}, user \TA{julroy67}, \TA{Dohyun Kim}, \TA{Phil Kime},
+\TA{Enrico Gregorio}, \TA{Khaled Hosny}, \TA{Stephen Huan}, \TA{Najib Idrissi}, user \TA{julroy67}, \TA{Dohyun Kim}, \TA{Phil Kime},
 \TA{Mike Kroutikov}, \TA{Ivan Kokan}, \TA{Caleb Maclennan}, \TA{Gyula Magyarkuti}, \TA{José Mancera}, \TA{Miquel Ortega},
 \TA{Yevgen Pogribnyi}, \TA{Will Robertson}, \TA{Maïeul Rouquette}, \TA{Elie Roux}, \TA{Hugo Roy},  \TA{Guy Rutenberg},
 \TA{Marcin Serwin}, \TA{Arvinder Singh}, \TA{Avisek Jena}, \TA{Philipp Stephani}, \TA{Niranjan Tambe}, \TA{Takuji Tanaka},

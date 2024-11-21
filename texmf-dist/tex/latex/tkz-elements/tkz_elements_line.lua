@@ -1,6 +1,6 @@
 -- tkz_elements_lines.lua
--- date 2024/02/04
--- version 2.00c
+-- date 2024/07/16
+-- version 2.30c
 -- Copyright 2024  Alain Matthes
 -- This work may be distributed and/or modified under the
 -- conditions of the LaTeX Project Public License, either version 1.3
@@ -151,6 +151,26 @@ end
 function line: _north_pb (d)
    local d = d or 1
    return d/self.length *( self.north_pb - self.pb ) + self.pb
+end
+
+function line  : report (d,pt)
+   local t
+   t = d/self.length
+   if pt == nil  
+      then  
+         return barycenter_({self.pa,1-t},{self.pb,(t)})
+      else 
+         return barycenter_({self.pa,1-t},{self.pb,(t)}) +pt-self.pa
+      end
+end
+
+function line  : colinear_at (pt,k)
+   if k == nil  
+      then  
+         return colinear_at_ (self.pa,self.pb,pt,1)
+      else 
+         return colinear_at_ (self.pa,self.pb,pt,k)
+      end
 end
 -------------- transformations -------------
 function line: translation_pt ( pt )
@@ -304,11 +324,25 @@ function line: mediator ()
    m = midpoint_ (self.pa,self.pb)
   return line : new (rotation_ (m,-math.pi/2,self.pb),rotation_ (m,math.pi/2,self.pb)) 
 end
+
+function line : perpendicular_bisector ()
+   local m
+   m = midpoint_ (self.pa,self.pb)
+  return line : new (rotation_ (m,-math.pi/2,self.pb),rotation_ (m,math.pi/2,self.pb))
+end
+
 -------------------
 -- Result -> circle
 -------------------
-function line: circle ()   
+function line: circle (swap)
+  if swap == nil then
+      swap = false
+  end
+  if swap then
+    return circle : new (self.pb,self.pa)
+  else
     return circle : new (self.pa,self.pb)
+  end
 end
 
 function line: circle_swap ()   
@@ -465,7 +499,7 @@ line.golden = line.sublime
 line.golden_gnomon = line.divine
 
 ------------------------------
--- Result -> couple of points
+-- Result -> square
 ------------------------------
 function line: square (swap)
    if swap == nil  
@@ -476,15 +510,5 @@ function line: square (swap)
    end
 end
 
-function line  : report (d,pt)
-   local t
-   t = d/self.length
-   if pt == nil  
-   then  
-   return barycenter_({self.pa,1-t},{self.pb,(t)})
-else 
-   return barycenter_({self.pa,1-t},{self.pb,(t)}) +pt-self.pa
-end
-end
 
 return line

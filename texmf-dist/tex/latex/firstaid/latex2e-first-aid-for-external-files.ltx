@@ -11,7 +11,7 @@
 %% (but please observe conditions on bug reports sent to that address!)
 %% 
 %% 
-%% Copyright (C) 2020-2023
+%% Copyright (C) 2020-2024
 %% The LaTeX Project and any individual authors listed elsewhere
 %% in this file.
 %% 
@@ -30,12 +30,12 @@
 %% `First Aid Bundle'. You may however distribute the LaTeX `First Aid Bundle'
 %% without such generated files.
 %% 
-%% File: latex2e-first-aid-for-external-files.dtx (C) Copyright 2020-2023
+%% File: latex2e-first-aid-for-external-files.dtx (C) Copyright 2020-2024
 %%
 %% The LaTeX Project and any individual authors listed elsewhere
 %% in this file.
-\def\LaTeXFirstAidDate{2023/09/20}
-\def\LaTeXFirstAidVersion{v1.1b}
+\def\LaTeXFirstAidDate{2024/10/16}
+\def\LaTeXFirstAidVersion{v1.1g}
 \ProvidesFile{latex2e-first-aid-for-external-files.ltx}
              [\LaTeXFirstAidDate\space \LaTeXFirstAidVersion\space
                LaTeX kernel fixes to external files and packages]
@@ -169,6 +169,100 @@
 }
 \AddToHook{file/underscore.sty/after}[firstaid]{%
   \FirstAidNeededT{underscore}{sty}{2006/09/13}{\RequirePackage{underscore-ltx}}}
+\AddToHook{package/acro/after}[firstaid]{%
+  \FirstAidNeededT{acro}{sty}{2022/04/01 v3.8 typeset acronyms
+                              and other abbreviations (CN)}
+     {\UseName{prop_new:c}{l__acro_tmpa_prop}%
+       \acsetup{patch/longtable=false}%
+     }%
+}
+\AddToHook{package/chemformula/before}[firstaid]{%
+  \RequirePackage{l3keys2e}%
+}
+\AddToHook{package/chemnum/after}[firstaid]{%
+  \FirstAidNeededT{chemnum}{sty}{2021/01/21 v1.3a a comprehensive
+             approach for the numbering of chemical compounds (CN)}
+    {\UseName{prop_new:c}{l__chemnum_tmpa_prop}}%
+}
+\AddToHook{package/cleveref/after}[firstaid]{%
+  \FirstAidNeededT{cleveref}{sty}{2018/03/27 v0.21.4 Intelligent cross-referencing}
+     {%
+       \def\cref@getref#1#2{%
+         \expandafter\let\expandafter#2\csname r@#1@cref\endcsname%
+         \expandafter\expandafter\expandafter\def%
+           \expandafter\expandafter\expandafter#2%
+           \expandafter\expandafter\expandafter{%
+             \expandafter\@firstoffive#2}}% <-------- five
+       \def\cpageref@getref#1#2{%
+         \expandafter\let\expandafter#2\csname r@#1@cref\endcsname%
+         \expandafter\expandafter\expandafter\def%
+           \expandafter\expandafter\expandafter#2%
+           \expandafter\expandafter\expandafter{%
+             \expandafter\@secondoffive#2}}% <----------- five
+      \AddToHook{begindocument}[cleveref]{%
+         \def\label@noarg#1{%
+          \cref@old@label{#1}%
+          \@bsphack%
+          \edef\@tempa{{page}{\the\c@page}}%
+          \setcounter{page}{1}%
+          \edef\@tempb{\thepage}%
+          \expandafter\setcounter\@tempa%
+          \cref@constructprefix{page}{\cref@result}%
+          \protected@write\@auxout{}%
+            {\string\newlabel{#1@cref}{{\cref@currentlabel}%
+            {[\@tempb][\arabic{page}][\cref@result]\thepage}{}{}{}}}% <----- five
+          \@esphack}%
+        \def\label@optarg[#1]#2{%
+          \cref@old@label{#2}%
+          \@bsphack%
+          \edef\@tempa{{page}{\the\c@page}}%
+          \setcounter{page}{1}%
+          \edef\@tempb{\thepage}%
+          \expandafter\setcounter\@tempa%
+          \cref@constructprefix{page}{\cref@result}%
+          \protected@edef\cref@currentlabel{%
+            \expandafter\cref@override@label@type%
+              \cref@currentlabel\@nil{#1}}%
+          \protected@write\@auxout{}%
+            {\string\newlabel{#2@cref}{{\cref@currentlabel}%
+            {[\@tempb][\arabic{page}][\cref@result]\thepage}{}{}{}}}% <------- five
+          \@esphack}%
+          }
+       \newcommand\firstaid@cref@smugglelabel{\let\cref@currentlabel\cref@gcurrentlabel@temp}
+       \newcommand\firstaid@cref@updatelabeldata[1]{%
+        \cref@constructprefix{#1}{\cref@result}%
+         \@ifundefined{cref@#1@alias}%
+           {\def\@tempa{#1}}%
+           {\def\@tempa{\csname cref@#1@alias\endcsname}}%
+         \protected@xdef\cref@gcurrentlabel@temp{%
+           [\@tempa][\arabic{#1}][\cref@result]%
+           \csname p@#1\endcsname\csname the#1\endcsname}%
+         \aftergroup\firstaid@cref@smugglelabel
+           }
+       \AddToHook{label}[firstaid/cleveref]
+         {\ifx
+           \@currentcounter\@empty
+          \else
+           \firstaid@cref@updatelabeldata{\@currentcounter}
+          \fi}
+      }%
+}
+\AddToHook{package/arydshln/after}[firstaid]{%
+  \FirstAidNeededT{arydshln}{sty}{2019/02/21 v1.76 }
+  {%
+\protected\def\adl@@vlineL#1#2#3#4{\adl@ivline#4\@nil{#1}{#2}%
+        \xdef\adl@colsL{\adl@colsL
+                \@elt{#3}{\number\@tempcnta}{\number\@tempcntb}%
+                        {\adl@dashcolor}{\adl@gapcolor}}}%
+\protected\def\adl@@vlineR#1#2#3#4{\adl@ivline#4\@nil{#1}{#2}%
+        \xdef\adl@colsR{%
+                \@elt{#3}{\number\@tempcnta}{\number\@tempcntb}%
+                        {\adl@dashcolor}{\adl@gapcolor}%
+                \adl@colsR}}%
+\let\adl@act@@vlineL\adl@@vlineL
+\let\adl@act@@vlineR\adl@@vlineR
+  }%
+}
 \endinput
 %%
 %% End of file `latex2e-first-aid-for-external-files.ltx'.

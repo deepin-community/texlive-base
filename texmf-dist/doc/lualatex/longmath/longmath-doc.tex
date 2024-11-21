@@ -1,0 +1,964 @@
+%%
+%%  longmath-doc.tex is part of longmath version 1.0. 
+%%
+%%  (c) 2024 Hans-Jürgen Matschull
+%%
+%%  This work may be distributed and/or modified under the
+%%  conditions of the LaTeX Project Public License, either version 1.3
+%%  of this license or (at your option) any later version.
+%%  The latest version of this license is in
+%%    http://www.latex-project.org/lppl.txt
+%%  and version 1.3 or later is part of all distributions of LaTeX
+%%  version 2005/12/01 or later.
+%% 
+%%  This work has the LPPL maintenance status 'maintained'.
+%%  
+%%  The Current Maintainer of this work is Hans-Jürgen Matschull
+%% 
+%%  see README for a list of files belonging to longmath.
+%%
+
+\documentclass{longmath-doc}
+
+\usepackage{longmath}
+\usepackage{unicode-math}
+\usepackage{tikz}
+\usepackage{array}
+\usepackage{multido}
+
+
+\def\intro{
+The \p{longmath} package provides yet another solution to some well known 
+typesetting problems solved in a variety of ways: multi line formulas 
+with paired and nested delimiters. It tackles the problem at the Lua 
+level, which has some advantages over solutions implemented in \TeX. 
+In particular, the \TeX\ code need not be executed multiple times, and 
+there is no interference between \TeX\ grouping and the nesting of 
+delimiter groups.
+
+As a byproduct, delimiters can be scaled in various ways, inner 
+delimiters come in different flavours like relational and binary 
+operators, punctuation symbols etc., and outer delimiters can be 
+selected automatically according to the nesting level. Last but not 
+least, delimiter groups can even extend across several array cells 
+or across the whole document. 
+
+A special environment is provided as well, which allows multi line
+expressions to be placed inside a displayed equation and make \TeX\ 
+do the line splitting and alignment. 
+}
+
+\newcommand{\icol}[1]{% inline column vector
+  \lleft(\begin{matrix}#1\end{matrix}\rright)%
+}
+
+\def\tr{\mathrm{Tr}}
+
+\def\lagrange{ 
+	 -\frac{1}{4} 
+	 \lleft( \partial_\mu B_\nu-\partial_\nu B_\mu \rright ) 
+   \lleft( \partial^\mu B^\nu-\partial^\nu B^\mu \rright )
+	 - \frac{1}{8}\tr\lleft\{ 
+\lleft[ \partial_\mu W_\nu-\partial_\nu W_\mu+\frac{ig_2}{2}
+    \lleft( W_\mu W_\nu- W_\nu W_\mu\rright) \rright]
+\lleft[ \partial^\mu W^\nu-\partial^\nu W^\mu+\frac{ig_2}{2}
+    \lleft( W^\mu W^\nu- W^\nu W^\mu\rright) \rright]
+    \rright\} 
+	 - \frac{1}{2}\tr\lleft\{ 
+    \lleft[\partial_\mu G_\nu-\partial_\nu G_\mu
+           + G_\mu G_\nu- G_\nu G_\mu\rright]
+    \lleft[\vphantom{G_\mu} \partial^\mu G^\nu-\partial^\nu G^\mu
+           + G^\mu G^\nu- G^\nu G^\mu\rright]
+    \rright\}
+    + \icol{\nu_L\\e_L}^\dagger \tilde{\sigma}^\mu i
+    \lleft[\partial_\mu-\frac{ig_1}{2}B_\mu+\frac{ig_2}{2}W_\mu\rright]\icol{\nu_L\\e_L}
+   - \lleft\{\lleft[\partial_\mu-\frac{ig_1}{2}B_\mu+\frac{ig_2}{2}W_\mu\rright]\icol{\nu_L\\e_L}
+        \rright\}^\dagger
+     i \tilde{\sigma}^\mu \icol{\nu_L\\e_L} 
+	 + e_R^\dagger i \sigma^\mu 
+     \lleft[\partial_\mu-ig_1B_\mu\rright]e_R
+    + \nu_R^\dagger i \sigma^\mu\partial_\mu\nu_R 
+	 - \lleft\{ \left[\partial_\mu-ig_1B_\mu\right] e_R \rright\}^\dagger i \sigma^\mu e_R 
+	 - \lleft\{ \partial_\mu\nu_R \rright\}^\dagger i \sigma^\mu \nu_R 
+	 - \frac{\sqrt{2}}{\nu}
+      \lleft[ \icol{\nu_L\\e_L}^\dagger \phi M^ee_R
+             +e_R^\dagger M^{e\dagger} \phi^\dagger \icol{\nu_L\\e_L} \rright] 
+	  - \frac{\sqrt{2}}{\nu} 
+	     \lleft[ \icol{ -e_L\\ \nu_L}^\dagger \phi^{*}M^\nu\nu_R
+	               + \nu_R^\dagger M^{\nu^\dagger} \phi^T\icol{-e_L\\\nu_L} \rright] 
+    + \icol{u_L\\d_L}^\dagger\tilde{\sigma}^\mu i
+      \lleft[\partial_\mu-\frac{ig_1}{6}B_\mu+\frac{ig_2}{2}W_\mu+igG_\mu\rright]\icol{u_L\\d_L}
+    - \lleft\{\lleft[\partial_\mu-\frac{ig_1}{6}B_\mu+\frac{ig_2}{2}W_\mu+igG_\mu\rright]\icol{u_L\\d_L}\rright\}^\dagger
+      i\tilde{\sigma}^\mu \icol{u_L\\d_L} 
+    + u_R^\dagger \sigma^\mu i \lleft[\partial_\mu+\frac{ig_1}{3}B_\mu+igG_\mu\rright]u_r
+    - \lleft\{ \lleft[\partial_\mu+\frac{ig_1}{3}B_\mu+igG_\mu\rright]u_r \rright\}^\dagger i \sigma^\mu u_R 
+      + d_R^\dagger \sigma^\mu i \lleft[\partial_\mu - \frac{ig_1}{3}B_\mu+igG_\mu\rright]d_R
+    - \lleft\{ \lleft[\partial_\mu - \frac{ig_1}{3}B_\mu+igG_\mu\rright]d_R \rright\}^\dagger i \sigma^\mu d_R 
+	- \frac{\sqrt{2}}{\nu}\lleft[\icol{u_L\\d_L}^\dagger \phi M^d d_R
+	          + \lleft( M^d d_R\rright) ^\dagger \phi^\dagger \icol{u_L\\d_L}\rright] 
+	-\frac{\sqrt{2}}{\nu}\lleft[\icol{-d_L\\u_L}^\dagger \phi^{*} M^u u_R
+	                          + \lleft( M^u u_R \rright)^\dagger \phi^\top \icol{-d_L\\u_L}\rright] 
+	+ \lleft\{\lleft[\partial_\mu+\frac{ig_1}{2}B_\mu+\frac{ig_2}{2}W_\mu\rright]\phi\rright\}^\dagger 
+	   \lleft[\partial^\mu+\frac{ig_1}{2}B^\mu+\frac{ig_2}{2}W^\mu\rright]\phi
+	- \frac{ m_h^2 }{ 2 \nu^2 } \lleft[ \phi^\dagger \phi - \frac{\nu^2}{2} \rright]^2  
+}
+
+\begin{document}
+
+\begin{center}
+\tikzset{ txt/.style = { fill=white,fill opacity=0.6,text opacity=1.0 } }
+\begin{tikzpicture}
+  \useasboundingbox (0,0.53\textheight); 
+   \node[color=yellow!85!black,rotate=-17,scale=1.8] at (-0.7,0) 
+     {$\displaystyle \mathcal{L} = \begin{longmath}[t]{110mm+30mm} \lagrange \end{longmath}$};
+   \node[txt,scale=1.8] at (0,7.2) {\Huge\textbf{\p{longmath}}};
+   \node[txt,scale=1.2] at (0,5.4) {\Large Documentation for Version 1.0};
+   \node[txt,scale=1.2] at (0,4.0) {\large Hans-Jürgen Matschull};
+   \node[txt,scale=1.2] at (0,3.3) {\texttt{hjm.tex@matschull.net}};
+   \node[txt,scale=1.2] at (0,1.7) {\texttt{2024/07/04}};
+   \node[txt,scale=1.0] at (0,-3) {\begin{minipage}{130mm}\parskip 1.3ex \intro\end{minipage}};
+\end{tikzpicture}
+\end{center}
+
+\parskip 1ex plus 3pt
+\parindent 0pt
+\baselineskip 13pt plus 1pt
+\lineskip 2pt plus 1pt
+\lineskiplimit 2pt 
+
+\newpage
+
+\section{Delimiters}
+\label{delims}
+
+The \p{longmath} package provides ``long'' versions of the "\left" and "\right" primitives. 
+
+\comm{"\lleft" [°scale°] °delimiter°} marks the beginning of a delimiter group and inserts an opening °delimiter°. 
+
+\comm{"\rright" [°scale°] °delimiter°} marks the end of a delimiter group and inserts a closing °delimiter°. 
+
+The optional °scale° argument will be explained below. The °delimiter° can be anything that is also accepted by "\left" and "\right", including a dot representing an invisible or null delimiter, any character with a "\delcode", or an explicit "\delimiter" or "\Udelimiter". If you want to use the \p{longmath} package with existing documents, or just stick to the familiar notation, and provided that this does not cause conflicts with other packages manipulating the original primitives, it is even save to say "\let\left\lleft" and "\let\right\rright". 
+
+Here is a simple example. Of course, as \LaTeX\ authors, we should better use some math environment instead of "$$", but let's stick to them here just to save some space, and indicate that everything should work regardless of what environment we use.   
+\begin{code}
+  The Sellmann-Yokuzi contribution to the 
+  Johansson Entropy is given by    
+  $$ S^\top = k · \lleft[ A + \lleft( B_C 
+    + D^{E^2} \rright) ^ { \lleft( 3+κ^2 \rright)^2 }
+                            + F \rright] $$
+\end{code}
+\begin{exec}
+  The Sellmann-Yokuzi contribution to the 
+  Johansson Entropy is given by    
+  $$ S^\top = k · \lleft[ A + 
+      \lleft( B_C + D^{E^2} \rright)^{\lleft( 3+κ^2 \rright)^2 }
+                            + F \rright] $$
+\end{exec}
+The "\lleft" and "\rright" delimiters enclose a \emph{delimiter group}. Within the group, you can have arbitrarily many inner or middle delimiters. As these often have different interpretations, several ``long'' variants of the "\middle" primitive are provided, associated with different types of math atoms. 
+
+\comm{"\mmiddle" [°scale°] °delimiter°} inserts an inner °delimiter° into a delimiter group. 
+
+\comm{"\mmrel" [°scale°] °delimiter°} interprets the °delimiter° as a relational operator. 
+
+\comm{"\mmbin" [°scale°] °delimiter°} interprets the °delimiter° as a binary operator. 
+
+\comm{"\mmord" [°scale°] °delimiter°} interprets the °delimiter° as an ordinary symbol. 
+
+\comm{"\mmop" [°scale°] °delimiter°} interprets the °delimiter° as a large operator.  
+
+\comm{"\mmpunct" [°scale°] °delimiter°} interprets the °delimiter° as a punctuation character. 
+
+They differ in the way \TeX\ inserts spaces before and after these delimiters, just as if you had written "\mathrel{"°delimiter°"}", "\mathbin{"°delimiter°"}", etc. Like the "\middle" primitive, the "\mmiddle" variant creates a "\mathinner{"°delimiter°"}". 
+\begin{code}
+  The scalar product is written as 
+  $$ \lleft\langle A_1 \mmiddle| \tilde A_2 \rright\rangle . $$  %%%      
+\end{code}
+\begin{exec}
+  The scalar product is written as 
+  $$ \lleft\langle A_1 \mmiddle| \tilde A_2 \rright\rangle . $$ 
+\end{exec}
+\begin{code}
+  There are three parallel lines 
+  $$ \lleft. A_1 B_1 \mmrel \Vert A_2 \hat B_2 
+                    \mmrel \Vert \hat A_2 B_2 \rright. . $$      %%%
+\end{code}
+\begin{exec}
+  There are three parallel lines 
+  $$ \lleft. A_1 B_1 \mmrel \Vert A_2 \hat B_2 
+                    \mmrel \Vert \hat A_2 B_2 \rright. . $$
+\end{exec}
+\begin{code}
+  The centre of mass is defined as 
+  $$ \vec R = \lleft( \sum_{k=1}^{n} m_k \, \vec r_k 
+              \mmbin / \sum_{k=1}^{n} m_k \rright) . $$          %%%
+\end{code}
+\begin{exec}
+  The centre of mass is defined as 
+  $$ \vec R = \lleft( \sum_{k=1}^{n} m_k \, \vec r_k 
+              \mmbin / \sum_{k=1}^{n} m_k \rright) . $$
+\end{exec}
+\begin{code}
+  Vectors can be written as tuples like                          %%%
+  $$ \lleft( \tilde X_1 \mmpunct| \tilde X_2 \mmpunct| 
+             \tilde X_3 \mmpunct| \dots \rright) . $$ 
+\end{code}
+\begin{exec}
+  Vectors can be written as tuples like
+  $$ \lleft( \tilde X_1 \mmpunct| \tilde X_2 \mmpunct| 
+             \tilde X_3 \mmpunct| \dots \rright) . $$ 
+\end{exec}
+\begin{code}
+  This expression makes no sense:  
+  $$ \lleft. \int \mmord( \sum \mmord[ \prod \mmord\} \rright. $$
+\end{code}
+\begin{exec}
+  This expression makes no sense:  
+  $$ \lleft. \int \mmord( \sum \mmord[ \prod \mmord\} \rright. $$
+\end{exec}
+Unlike the standard "\left"-"\middle"-"\right" primitives, the long variants do not create subformulas or induce grouping at the \TeX\ level. \TeX nically, each delimiter is actually its own group, paired with an invisible delimiter, and with an empty "\hbox" between them. As such, it behaves like a single mathematical symbol of the respective type, or like an atom in \TeX's language. In particular, sub- and superscripts can be attached to individual delimiters, not only to the whole group, and the operator version really behaves like a big operator. 
+\begin{code}
+  Applying the triangular square limit, we get    
+  $$ \lleft. W(x) + \mmop \uparrow_n^\infty 
+        \frac{ 1-x^n }{ 1-x } \rright. = \log( x ). $$        %%%
+\end{code}
+\begin{exec}
+  Applying the triangular square limit, we get    
+  $$ \lleft. W(x) + \mmop \uparrow_n^\infty 
+        \frac{ 1-x^n }{ 1-x } \rright. = \log( x ). $$
+\end{exec}
+\begin{code}
+  The relations $1^\star$ and $2^\star$ imply the existence of
+  $$ \lleft[ \lleft( A_k \mmrel |^{\lleft(1^\star\rright)} 
+                     B_k \mmrel |^{\lleft(2^\star\rright)} 
+                     C_k \rright) \rright] .$$
+\end{code}
+\begin{exec}
+  The relations $1^\star$ and $2^\star$ imply the existence of
+  $$ \lleft[ \lleft( A_k \mmrel |^{\lleft(1^\star\rright)} 
+                     B_k \mmrel |^{\lleft(2^\star\rright)} 
+                     C_k \rright) \rright] .$$
+\end{exec}
+Within a formula or subformula, you can have unbalanced groups, or even inner delimiters only. The formula is then interpreted and typeset as if there were invisible delimiters at one or both ends. 
+\begin{code}
+  $$ \prod_{p\in\mathbfit{P}} G(p) \mmbin \uparrow  
+     \sum_{q\in\mathbfit{Q}} H(q)  \mmbin \downarrow
+     \lim_{x\to\infty} F(x) $$
+\end{code}
+\begin{exec}\:
+  $$ \prod_{p\in\mathbfit{P}} G(p) \mmbin \uparrow  
+     \sum_{q\in\mathbfit{Q}} H(q)  \mmbin \downarrow
+     \lim_{x\to\infty} F(x) $$
+\end{exec}
+\begin{code}
+  A skewed-rational fraction can be written as   
+  $$ \frac{ x × \lleft( 1 - x^2 }
+          { x^2 + 1 \rright) × x } . $$             %%%
+\end{code}
+\begin{exec}
+  A skewed-rational fraction can be written as   
+  $$ \frac{ x × \lleft( 1 - x^2 }{ x^2 + 1 \rright) × x } . $$
+\end{exec}
+When the formula is processed, each actual delimiter group is temporarily put in a box and the size of that box is determined. Then the dimensions of the empty "\hbox"es inside the fake delimiter groups are set accordingly, so that \TeX\ can apply its algorithm to finally fix the sizes of the delimiters. As this takes place after the whole formula has been transformed into a list of math nodes, no \TeX\ code has to be processed multiple times. It also allows to add some features that cannot be implemented otherwise, unless you are willing to go really deep into macro and token magic. 
+
+For example, the limits of large operators like sums or integrals can be excluded from the box that determines the delimiter size. This feature can be turned on and off with two control sequences.
+
+\comm{"\includelimits"} includes the limits of large operators (default). 
+
+\comm{"\ignorelimits"} ignores the limits of large operators. 
+
+It is possible to use the switch in the middle of a formula or even inside a delimiter group. The switch position at the moment the operator is created determines whether its limits are included or ignored.  
+\begin{code}
+  \ignorelimits 
+  $$ \vec R = \lleft( \sum_{k=1}^{n} m_k \, \vec r_k 
+              \mmbin / \sum_{k=1}^{n} m_k \rright) . $$            %%%
+\end{code}
+\begin{exec}\:
+  \ignorelimits 
+  $$ \vec R = \lleft( \sum_{k=1}^{n} m_k \, \vec r_k 
+              \mmbin / \sum_{k=1}^{n} m_k \rright) . $$            %%%
+\end{exec}
+\begin{code}
+  $$ \lleft[ \ignorelimits \sum_{A_X^3}^{A_Y^3} F(Z) 
+           + \includelimits \sum_a^c f(x) \rright] $$              %%%
+\end{code}
+\begin{exec}\:
+  $$ \lleft[ \ignorelimits \sum_{A_X^3}^{A_Y^3} F(Z) 
+           + \includelimits \sum_a^c f(x) \rright] $$              %%%
+\end{exec}
+\begin{code}
+  \includelimits 
+  $$  A = 3 × \lleft[ \int\limits_1^5 
+     \lleft( 1 + \sqrt{ 1 + x } \rright) \, \mathrm{d}x \rright] $$
+\end{code}
+\begin{exec}\:
+  \includelimits 
+  $$  A = 3 × \lleft[ \int\limits_1^5 
+     \lleft( 1 + \sqrt{ 1 + x } \rright) \, \mathrm{d}x \rright] $$
+\end{exec}
+\begin{code}
+  \ignorelimits
+  $$  A = 3 × \lleft[ \int\limits_1^5 
+     \lleft( 1 + \sqrt{ 1 + x } \rright) \, \mathrm{d}x \rright] $$
+\end{code}
+\begin{exec}\:
+  \ignorelimits
+  $$  A = 3 × \lleft[ \int\limits_1^5 
+     \lleft( 1 + \sqrt{ 1 + x } \rright) \, \mathrm{d}x \rright] $$
+\end{exec}
+There are several ways to fine tune the sizes of delimiters. A priori, the minimal size of all delimiters within a group is determined by the total height and depth of everything in this group, except for the delimiters themselves. \TeX\ then checks if a predefined character with the required size exists in the current math font and uses it. Otherwise it creates a stretched symbol with the required size. 
+
+Two plain \TeX\ parameters modify the finally chosen sizes of all delimiters. By default, they are used to shrink them slightly, which makes the final formula look less bulky while keeping it readably. This can be seen in the integral example above. An additional third parameter is provided by the \p{longmath} package, which applies to middle delimiters only. 
+
+\comm{"\delimiterfactor" °factor°} scales all delimiters by $°factor°/1000$ 
+(default \the\delimiterfactor).   
+
+\comm{"\delimitershortfall" °dimension°} limits the shrinkage of delimiters to the °dimension°
+(default \the\delimitershortfall).   
+
+\comm{"\delimiterscale" °factor°} additionally scales middle delimiters by $°factor°/1000$
+(default \the\delimiterscale).   
+
+The parameters "\delimiterfactor" (a count register) and "\delimitershortfall" (a dimension register) are explained in the \TeX book. Briefly summarised, every delimiter is finally resized by the given $°factor°/1000$, but the shrinkage is limited to the given °dimension°. The "\delimiterscale" (another count register) is applied to all middle delimiters before the final scaling is applied, and there is no limited shrinkage at this stage.  
+\begin{code}
+  \delimiterscale 400 
+  $$ \vec R = \lleft( \sum_{k=1}^{n} m_k \, \vec r_k 
+              \mmbin / \sum_{k=1}^{n} m_k \rright) . $$       %%%
+\end{code}
+\begin{exec}\:
+  \delimiterscale 400 
+  $$ \vec R = \lleft( \sum_{k=1}^{n} m_k \, \vec r_k 
+              \mmbin / \sum_{k=1}^{n} m_k \rright) . $$          %%%
+\end{exec}
+Instead of changing "\delimiterscale", the scale factor can also be applied to each delimiter individually, using the optional °scale° argument. In this case, the "\delimiterscale" is ignored and replaced by the given number. 
+\begin{code}
+  $$ X = \lleft ( \sum_k^\infty A \mmbin 900 | \sum_k^\infty B 
+     \mmbin 700 | \sum_k^\infty C \mmbin 500 | \sum_k^\infty D 
+     \mmbin 300 | \sum_k^\infty E \rright ) $$
+\end{code}
+\begin{exec}\:
+  $$ X = \lleft ( \sum_k^\infty A \mmbin 900 | \sum_k^\infty B 
+     \mmbin 700 | \sum_k^\infty C \mmbin 500 | \sum_k^\infty D 
+     \mmbin 300 | \sum_k^\infty E \rright ) $$
+\end{exec}
+If you want to produce strange and ugly results, you can even scale the opening and closing delimiters independently, or choose factors greater than $1000$. 
+\begin{code}
+  $$ \vec R = \lleft 900 ( \sum_{k=1}^{n} m_k \, \vec r_k 
+     \mmbin 1300 \divslash \sum_{k=1}^{n} m_k \rright 700 ) $$
+\end{code}
+\begin{exec}\:
+  $$ \vec R = \lleft 900 ( \sum_{k=1}^{n} m_k \, \vec r_k 
+     \mmbin 1300 \divslash \sum_{k=1}^{n} m_k \rright 700 ) $$
+\end{exec}
+
+
+\section{Alignment}
+\label{align}
+
+There are two more special delimiter types not listed in section~\ref{delims}. They are treated as middle delimiters regarding the logical grouping, but when they are finally typeset, they are treated as opening and closing delimiters. 
+
+\comm{"\mleft" [°scale°] °delimiter°} typesets a left °delimiter°, but does not open a new group.
+
+\comm{"\mright" [°scale°] °delimiter°} typesets a right °delimiter°, but does not close the current group.
+
+To see what they are useful for, consider the following example. 
+\begin{code}
+  $$ \lleft( A + \sum B \rright) 
+     \lleft( C + \int D \rright) $$ 
+\end{code}
+\begin{exec}\:
+  $$ \lleft( A + \sum B \rright) 
+     \lleft( C + \int D \rright) $$ 
+\end{exec}
+Can we make the brackets to have the same size? A few "\vphantom"s would probably fix it. But then we need to know in advance which symbols are the responsible ones, or we have to place the content of each bracket as a phantom inside the other one and make \TeX\ process everything twice. Alternatively, we could include everything in a single group and make the two brackets in the middle inner delimiters. But then the correct spacing between them and the adjacent symbols is lost.
+\begin{code}
+  $$ \lleft( A + \sum B \mmiddle ) 
+     \mmiddle ( C + \int D \rright) $$ 
+\end{code}
+\begin{exec}\:
+  $$ \lleft( A + \sum B \mmiddle ) 
+     \mmiddle 1000 ( C + \int D \rright) $$ 
+\end{exec}
+With "\mleft" and "\mright", we get the same sizes and the correct spacing. Since in this case we only have these two pairs of brackets, we can simple make the whole formula a single group. 
+\begin{code}
+  $$ \mleft( A + \sum B \mright) 
+     \mleft( C + \int D \mright) $$ 
+\end{code}
+\begin{exec}\:
+  $$ \mleft( A + \sum B \mright) 
+     \mleft( C + \int D \mright) $$ 
+\end{exec}
+What "\mleft" and "\mright" basically do is not to adapt the opening and closing delimiters to the content between them, but align them with the enclosing group.  
+\begin{code*}
+  $$ \lleft( \mleft( 1 + 2 \mright) \mleft( 1 + 2^2 \mright) \mleft( 1 + 2^{2^2} \mright) 
+      \mleft( 1 + 2^{2^{2^2}} \mright) + \mleft( 1 + 3 \mright) \mleft( 1 + 3^3 \mright) 
+      \mleft( 1 + 3^{3^3} \mright) + \mleft( 1 + 5 \mright) \mleft( 1 + 5^5 \mright) \rright) $$
+\end{code*}
+\begin{exec}\:
+  $$ \lleft( \mleft( 1 + 2 \mright) \mleft( 1 + 2^2 \mright) \mleft( 1 + 2^{2^2} \mright) 
+      \mleft( 1 + 2^{2^{2^2}} \mright) + \mleft( 1 + 3 \mright) \mleft( 1 + 3^3 \mright) 
+      \mleft( 1 + 3^{3^3} \mright) + \mleft( 1 + 5 \mright) \mleft( 1 + 5^5 \mright) \rright) $$
+\end{exec}
+But what if there is more stuff inside the enclosing group and we only want to align particular brackets with each other? Something like this, and we want both the square and the round brackets to be aligned.  
+\begin{code*}
+  $$  F\lleft[ X \rright] \lleft( 1 + 2^2 \rright) \lleft( 1 + 2^{2^2} \rright) 
+    + F\lleft[ X^2 \rright] \lleft( 1 + 3^3 \rright) \lleft( 1 + 3^{3^3} \rright) 
+    + F\lleft[ X^3 \rright] \lleft( 1 + 5^5 \rright) \lleft( 1 + 5^{5^5} \rright)   $$
+\end{code*}
+\begin{exec}\:
+  $$  F\lleft[ X \rright] \lleft( 1 + 2^2 \rright) \lleft( 1 + 2^{2^2} \rright) 
+    + F\lleft[ X^2 \rright] \lleft( 1 + 3^3 \rright) \lleft( 1 + 3^{3^3} \rright) 
+    + F\lleft[ X^3 \rright] \lleft( 1 + 5^5 \rright) \lleft( 1 + 5^{5^5} \rright)   $$
+\end{exec}
+Now we definitely need "\vphantom"s, right? In principle, yes, but the \p{longmath} package provides a way to set them up automatically and hide them inside the delimiters. To use this feature, we have to attach a tag to those delimiters we want to align. The tag is enclosed in braces and placed between the control sequence and the delimiter symbol. 
+
+\comm{"\"°type° "{"°tag°"}" [°scale°] °delimiter°} aligns this °delimiter° with all delimiters with the same °tag°. 
+
+Here, "\"°type° is any of the above delimiter types, and the °tag° is any string that would also do as, say, an argument to "\label". The basic idea is to make all delimiters with the same °tag° attached to them behave as if they belong to the same group. So, the problem just posed can be solved as follows. 
+\begin{code*}
+  $$  F\lleft {Fx} [ X \rright] \lleft {Pw} ( 1 + 2^2 \rright) \lleft {Pw} ( 1 + 2^{2^2} \rright) 
+    + F\lleft {Fx} [ X^2 \rright] \lleft {Pw} (  1 + 3^3 \rright) \lleft {Pw} ( 1 + 3^{3^3} \rright) 
+    + F\lleft {Fx} [ X^3 \rright] \lleft {Pw} ( 1 + 5^5 \rright)  \lleft {Pw} ( 1 + 5^{5^5} \rright) $$
+\end{code*}
+\begin{exec}\:
+  $$  F\lleft {Fx} [ X \rright] \lleft {Pw} ( 1 + 2^2 \rright) \lleft {Pw} ( 1 + 2^{2^2} \rright)
+    + F\lleft {Fx} [ X^2 \rright] \lleft {Pw} (  1 + 3^3 \rright) \lleft {Pw} ( 1 + 3^{3^3} \rright) 
+    + F\lleft {Fx} [ X^3 \rright] \lleft {Pw} ( 1 + 5^5 \rright)  \lleft {Pw} ( 1 + 5^{5^5} \rright) $$
+\end{exec}
+It is enough to tag only the left delimiters, or just one delimiter per group, because those belonging to the same group are aligned anyway. What we actually do is to align groups with each other, not individual delimiters. 
+
+The groups being linked need not belong to a common subformula. Here we want to align the brackets and the division slashed in the numerators. 
+\begin{code}
+  $$ \frac{ \lleft ( a + 1 \rright) \mmord / x }{a}
+   + \frac{ \lleft ( \sum_k b^k \rright) \mmord / y }{b} 
+   + \frac{ \lleft ( c^2 + 1 \rright) \mmord / z }{c} $$     %%%
+\end{code}
+\begin{exec}\:
+  $$ \frac{ \lleft ( a + 1 \rright) \mmord / x }{a}
+   + \frac{ \lleft ( \sum_k b^k \rright) \mmord / y }{b} 
+   + \frac{ \lleft ( c^2 + 1 \rright) \mmord / z }{c} $$
+\end{exec}
+This is how it can be done. 
+\begin{code}
+  $$ \frac{ \lleft {f5} ( a + 1 \rright) \mmord / x }{a}
+   + \frac{ \lleft {f5} ( \sum_k b^k \rright) \mmord / y }{b} 
+   + \frac{ \lleft {f5} ( c^2 + 1 \rright) \mmord / z }{c} $$
+\end{code}
+\begin{exec}\:
+  $$ \frac{ \lleft {f5} ( a + 1 \rright) \mmord / x }{a}
+   + \frac{ \lleft {f5} ( \sum_k b^k \rright) \mmord / y }{b} 
+   + \frac{ \lleft {f5} ( c^2 + 1 \rright) \mmord / z }{c} $$
+\end{exec}
+Note that the division slashes are outside the linked groups. But in each numerator, the slash belongs to the enclosing group, which is the  subformula formed by the numerator. As this group also contains the brackets, the size of the slash is also adapted to them and thus all slashes get the same size as well. Alternatively, we could have done it like this. 
+\begin{code}
+  $$ \frac{ \mleft ( a + 1 \mright) \mmord {f6} / x }{a}
+   + \frac{ \mleft ( \sum_k b^k \mright) \mmord {f6} / y }{b} 
+   + \frac{ \mleft ( c^2 + 1 \mright) \mmord {f6} / z }{c} $$
+\end{code}
+\begin{exec}\:
+  $$ \frac{ \mleft ( a + 1 \mright) \mmord {f6} / x }{a}
+   + \frac{ \mleft ( \sum_k b^k \mright) \mmord {f6} / y }{b} 
+   + \frac{ \mleft ( c^2 + 1 \mright) \mmord {f6} / z }{c} $$
+\end{exec}
+But not like this, which aligns the slashes, but not the brackets.
+\begin{code}
+  $$ \frac{ \lleft ( a + 1 \rright) \mmord {f7} / x }{a}
+   + \frac{ \lleft ( \sum_k b^k \rright) \mmord {f7} / y }{b} 
+   + \frac{ \lleft ( c^2 + 1 \rright) \mmord {f7} / z }{c} $$
+\end{code}
+\begin{exec}\:
+  $$ \frac{ \lleft ( a + 1 \rright) \mmord {f7} / x }{a}
+   + \frac{ \lleft ( \sum_k b^k \rright) \mmord {f7} / y }{b} 
+   + \frac{ \lleft ( c^2 + 1 \rright) \mmord {f7} / z }{c} $$
+\end{exec}
+For the alignment to work, the linked delimiters need not be visible. An invisible inner delimiter basically behaves like a "\vphantom", whose content is the whole group to which this delimiter belongs. More precisely, it is actually the empty "\hbox" that is present in our special delimiters which replaces the "\vphantom". We can use this to align the square roots in the following example. 
+\begin{code}
+  $$ \sqrt{ \mleft {sq8} . a + 1 } 
+   + \sqrt{ \mleft {sq8} . \sum\nolimits_k b_k }             %%%
+   + \sqrt{ \mleft {sq8} . c^2 + 1 } $$
+\end{code}
+\begin{exec}\:
+  $$ \sqrt{ \mleft {sq8} . a + 1 } 
+   + \sqrt{ \mleft {sq8} . \sum\nolimits_k b_k } 
+   + \sqrt{ \mleft {sq8} . c^2 + 1 } $$
+\end{exec}
+Why did we use "\mleft" here, and not one of the middle delimiters? The first reason is that putting an opening atom at the beginning of a subformula will get the horizontal spacing correct, independent of what kind of symbol follows. The second reason is that a middle delimiter would be scaled by "\delimiterscale", so that it wouldn't have the required size to align the heights of the square roots. The "\delimiterfactor" is irrelevant here, because it doesn't affect an invisible delimiter. 
+
+We can even go a step further and link delimiters in different equations and, in fact, all across the document. 
+\begin{code}
+  Equations that start with 
+  $$ \lleft( \int\limits_1^\infty f(x) \, \mathrm{d}x \rright)
+       \lleft {longeq} ( \sum_k a_k + 1000 + 999 + \cdots $$ 
+  often go on for pages and end with 
+  $$ \cdots + 1 \rright {longeq} ) = 0 . $$ 
+\end{code}
+\begin{exec}
+  Equations that start with 
+  $$ \lleft( \int\limits_1^\infty f(x) \, \mathrm{d}x \rright)
+        \lleft {longeq} ( \sum_k a_k + 1000 + 999 + \cdots $$ 
+  often go on for pages and end with 
+  $$ \cdots + 1 \rright {longeq} ) = 0 . $$ 
+\end{exec}
+To make this possible, the \LaTeX\ method of storing information in the "aux" file is used. The dimensions of all tagged delimiter groups are saved and reloaded when the document is typeset the next time. It therefore requires a second run to get the sizes of linked delimiters correct. If the size of any delimiter changes while the typesetting is in progress, a warning message is issued at the end, similar to the message that you need to rerun the document to get all the "\ref"erences to "\label"s right. 
+
+You will also get a warning message if you set up the tags so that some delimiter group is linked to its own parent or subgroup. In such a case, there is no consistent way to determine the required sizes. With each run, they will change randomly or even start to increase and diverge. It's okay, however, to link delimiters in different math styles. You can link an exponent in script style to its own basis in display style, although this might not make much sense.
+
+For all this to work, the tags must be document wide unique. But unlike equation labels or bibliography entries, they typically only link delimiters within a single equation or an array of equations. It is therefore preferable to have short tags like the ones used above, or even simple letters or numbers. To make this possible, you can locally define a °prefix°, which is added to each tag used within its scope. 
+
+\comm{"\delimiterprefix{"°prefix°"}"} prepends the °prefix° to the tags of all tagged delimiters. 
+
+It is then sufficient to use a document wide unique prefix for each section, equation, or whatever scope suits best. The setting is local to the \TeX\ group, but if the same prefix is used at different places, the tagged delimiters within those scopes are linked to each other. For example, if the prefix is "introduction-" and the tag "a2" is attached to a delimiter, then the actual tag used internally is "introduction-a2", and this is a global name. 
+
+You can even automate this, by setting a dynamical prefix like this in the preamble.  
+\begin{code*}
+  \delimiterprefix{\theequation.}
+\end{code*}
+Provided that you use unique equations numbers, and link delimiters within single equations only, your tags will then always be local to the current equation, something like "5.16.a" if the tag "a" is used in equation~(5.16). 
+
+The perhaps most useful application of tagged delimiters is to typeset formulas that extend over several cells or lines in an array. Here is a little challenge. In the following array, we want the multiplication and addition operators to be aligned vertically, and of course the brackets to be adapted to the content they enclose. We use the \p{array} package to define a few special column types to get the math style and the spacing correct.
+\begin{code*}
+  \newcolumntype{d}{ >{\displaystyle} c }    
+  \newcolumntype{s}{ @{} >{{}} c <{{}} @{} }
+\end{code*}
+  \newcolumntype{d}{ >{\displaystyle} c }    
+  \newcolumntype{s}{ @{} >{{}} c <{{}} @{} }
+\begin{code}
+  $$ \begin{array}{dsdsdsd}
+       \lleft [ Z & - & \sum_k A & × & 
+       \lleft ( B & + & C^X \rright ) \rright ] \\[3ex]               %%%
+       \lleft [ P & × & \lleft ( U & + & 
+               \int_R V \rright ) & - & W^Y \rright ] 
+     \end{array} $$  
+\end{code}
+\begin{exec}
+  $$ \begin{array}{dsdsdsd}
+       \lleft[ Z & - & \sum_k A & × & 
+       \lleft( B & + & C^X \rright) \rright] \\[3ex]
+       \lleft[ P & × & \lleft( U & + & 
+               \int_R V \rright ) & - & W^Y \rright] 
+     \end{array} $$
+\end{exec}
+In an "array", each cell is typeset as a separate formula. Therefore, the delimiters in each cell are adapted only to the content of this particular cell. Apparently, it would be quite a complicated task to fix this with "\vphantom"s. Let's try to simply link the delimiters that belong together. 
+\begin{code}
+  $$ \begin{array}{dsdsdsd}
+       \lleft {a1} [ Z  & - & \sum_k A & × & 
+       \lleft {b1} ( B & + & C^X \rright {b1} ) \rright {a1} ] \\[3ex]
+       \lleft {a2} [ P & × & \lleft {b2} ( U & + & 
+               \int_R V \rright {b2} ) & - & W^Y \rright {a2} ] 
+     \end{array} $$
+\end{code}
+\begin{exec}
+  $$ \begin{array}{dsdsdsd}
+       \lleft {a1} [ Z  & - & \sum_k A & × & 
+       \lleft {b1} ( B & + & C^X \rright {b1} ) \rright {a1} ] \\[3ex]
+       \lleft {a2} [ P & × & \lleft {b2} ( U & + & 
+               \int_R V \rright {b2} ) & - & W^Y \rright {a2} ] 
+     \end{array} $$
+\end{exec}
+A first step, but not the expected result. It seems that we have to look at it more closely and sort out which parts of which cells actually belong to the same groups. But there is in fact a simple solution that doesn't require any deeper thinking or sorting out. We just need to connect the end of each cell to the beginning of the next one. We can do this by inserting invisible delimiters. 
+\begin{code}
+  $$ \begin{array}{dsdsdsd}
+      \lleft[ Z \mright{c1}. & - & \mleft{c1}. \sum_k A \mright{c2}. 
+      & × & \mleft{c2}. \lleft( B \mright{c3}. & + & 
+      \mleft{c3}. C^X \rright ) \rright ] \\[3ex]
+      \lleft[ P \mright{d1}. & × & \mleft{d1}. \lleft ( U \mright{d2}. 
+      & + & \mleft{d2}. \int_R V \rright ) \mright{d3}. & - & 
+      \mleft{d3}. W^Y \rright ] \end{array} $$
+\end{code}
+\begin{exec}
+  $$ \begin{array}{dsdsdsd}
+      \lleft[ Z \mright{c1}. & - & \mleft{c1}. \sum_k A \mright{c2}. 
+      & × & \mleft{c2}. \lleft( B \mright{c3}. & + & 
+      \mleft{c3}. C^X \rright ) \rright ] \\[3ex]
+      \lleft[ P \mright{d1}. & × & \mleft{d1}. \lleft ( U \mright{d2}. 
+      & + & \mleft{d2}. \int_R V \rright ) \mright{d3}. & - & 
+      \mleft{d3}. W^Y \rright ] \end{array} $$
+\end{exec}
+This is the desired output, but the code starts to look complicated. But it is a simple rule, so there should be a way to automate it. Can we include the invisible linking delimiters into the cell template? The problem is that we need a unique tag for each transition from one cell to the next. For this purpose, two macros are provided. 
+
+\comm{"\pushdelimiter"} inserts an invisible closing delimiter with an automatically generated unique tag. 
+
+\comm{"\pulldelimiter"} inserts an invisible opening delimiter with the previously generated tag. 
+
+The generated tags are stored on a stack, so that multiple push and pull operations can be nested. They are globally unique and survive the current \TeX\ group. If we include the macros into the cell template, they connect each cell to the next one. We can also define templates that start a new sequence or end the current one. As Lua\TeX\ allows this, let's use Greek letters for the beginning, the middle, and the end of a row.  
+\begin{code*}
+  \newcolumntype{α}{ >{ \displaystyle } c <{ \pushdelimiter } }
+  \newcolumntype{μ}{ >{ \displaystyle \pulldelimiter } c <{ \pushdelimiter } }
+  \newcolumntype{ω}{ >{ \displaystyle \pulldelimiter } c }
+\end{code*}
+  \newcolumntype{α}{ >{ \displaystyle } c <{ \pushdelimiter } }
+  \newcolumntype{μ}{ >{ \displaystyle \pulldelimiter } c <{ \pushdelimiter } }
+  \newcolumntype{ω}{ >{ \displaystyle \pulldelimiter } c }
+Now the code is as simple as it was in the beginning. We can just ignore the cell boundaries and write the formula as if it was a single line in "$$"s, or whatever single line math environment.    
+\begin{code}
+  $$ \begin{array}{αsμsμsω}
+       \lleft [ Z & - & \sum_k A & × & 
+       \lleft ( B & + & C^X \rright ) \rright ] \\[3ex]               %%%
+       \lleft [ P & × & \lleft ( U & + & 
+               \int_R V \rright ) & - & W^Y \rright ] 
+     \end{array} $$  
+\end{code}
+\begin{exec}\.[-4ex]
+  $$ \begin{array}{αsμsμsω}
+       \lleft [ Z & - & \sum_k A & × & 
+       \lleft ( B & + & C^X \rright ) \rright ] \\[3ex]               %%%
+       \lleft [ P & × & \lleft ( U & + & 
+               \int_R V \rright ) & - & W^Y \rright ] 
+     \end{array} $$ 
+\end{exec}
+If you want the formula to continue on the next line with pending delimiters, you can include the push and pull macros into the line separator as well. 
+\begin{code}
+  \newcommand\continue[1][0pt]{ \pushdelimiter \\[#1] \pulldelimiter } 
+  $$ \begin{array}{αsμsμsω}  
+       \lleft \{ Z & - & \sum_k \lleft ( A & × & 
+                B^3 \rright ) & + & \continue[3ex]                   %%%
+                  & + & \lleft ( U & + & 
+               \int_R V \rright ) & - & W^Y \rright \} 
+     \end{array} $$ 
+\end{code}
+\begin{exec}
+  \newcommand\continue[1][0pt]{ \pushdelimiter \\[#1] \pulldelimiter } 
+  $$ \begin{array}{αsμsμsω}  
+       \lleft \{ Z & - & \sum_k \lleft ( A & × & 
+                B^3 \rright ) & + & \continue[3ex]                   %%%
+                  & + & \lleft ( U & + & 
+               \int_R V \rright ) & - & W^Y \rright \} 
+     \end{array} $$ 
+\end{exec}
+A construction like this can also be used with \p{amsmath} environments like "multiline" or "split" , which require explicit line breaks to be inserted into long formulas. The "longmath" environment described in section~\ref{multiline} provides an alternative method to typeset long formulas without the need to specify the breakpoints manually. 
+
+\section{Automatic Nesting}
+
+It is possible to select the kinds of brackets used as outer delimiters automatically depending on the nesting level. This might not add much value for formulas that are explicitly written into the document. But it could be useful for semi-automatically produced formulas, where the author doesn't have direct control over individual symbols.  
+
+The basic idea is to define a collection of delimiter pairs, and let \TeX\ pick them according to the current nesting level.
+
+\comm{"\autodelimiters{"°sample°"}"} defines a collection of nested delimiters pairs. 
+
+The °sample° must be an otherwise empty, nested structure of delimiters enclosing an asterisk "*" as a single object.
+  \autodelimiters{  \lfloor  [  \{  (  *  )  \}  ]  \rceil  } 
+\begin{code*}
+  \autodelimiters{  \lfloor  [  \{  (  *  )  \}  ]  \rceil  } 
+\end{code*}
+Once this is set up, you can pick one of them by using "*" as a variable delimiter. 
+\begin{code}
+  The corrected Sellmann-Yokuzi contribution to the 
+  Johansson Entropy is given by    
+  $$ S^\top = k · \lleft* A + \lleft* B_C + 
+    \lleft* D^E \rright* ^ 2 \rright* 
+         ^ { \lleft* 3+κ \rright* ^2 } + F \rright* $$
+\end{code}
+\begin{exec}
+  The corrected Sellmann-Yokuzi contribution to the 
+  Johansson Entropy is given by    
+  $$ S^\top = k · \lleft* A + \lleft* B_C + 
+    \lleft* D^E \rright* ^ 2 
+    \rright* ^ { \lleft* 3+κ \rright* ^2 } + F \rright* $$
+\end{exec}
+If the nesting level exceeds the number of sample pairs provided, the outermost pair is repeated. 
+\begin{code+}
+  $$ \lleft* A + \lleft* B + \lleft* C + \lleft* 
+    D + \frac{ \lleft* X + Y \rright* × Z }{ W }  
+    \rright* · E \rright* · F \rright* · G \rright* $$
+\end{code+}
+\begin{exec}\:
+  $$ \lleft* A + \lleft* B + \lleft* C + \lleft* 
+    D + \frac{ \lleft* X + Y \rright* × Z }{ W }  
+    \rright* · E \rright* · F \rright* · G \rright* $$
+\end{exec}
+Automatic delimiters can be mixed with explicit delimiters. When the nesting level is determined, only the "*" delimiters are taken into account. To demonstrate this, let's choose a different collection and set a negative value for "\delimitershortfall". This makes the bracket size increase linearly with the nesting level.
+  \autodelimiters{ < \lceil \lfloor [ \{ ( * ) \} ] \rfloor \rceil > } 
+\begin{code*}
+  \delimitershortfall -2pt
+  \autodelimiters{ < \lceil \lfloor [ \{ ( * ) \} ] \rfloor \rceil > }
+\end{code*}
+This is what we get with automatic brackets only. The numbers indicate the actually used level.
+\begin{code}
+  $$ \lleft* 5 + \lleft* 4 + \lleft* 3 
+   + \lleft* 2 + \lleft* 1 + A \rright* + B \rright* 
+   + C \rright* + D \rright* + E \rright* $$
+\end{code}
+\begin{exec}\:
+  \delimitershortfall -2pt
+  $$ \lleft* 5 + \lleft* 4 + \lleft* 3 
+   + \lleft* 2 + \lleft* 1 + A \rright* + B \rright* 
+   + C \rright* + D \rright* + E \rright* $$
+\end{exec}
+If we replace the second level by explicit square brackets, the counting continues at the third level.
+\begin{code}
+  $$ \lleft* 4 + \lleft* 3 + \lleft* 2
+   + \lleft[ 0 + \lleft* 1 + A \rright* + B \rright]
+   + C \rright* + D \rright* + E \rright* $$
+\end{code}
+\begin{exec}\:
+  \delimitershortfall -2pt
+  $$ \lleft* 4 + \lleft* 3 + \lleft* 2
+   + \lleft[ 0 + \lleft* 1 + A \rright* + B \rright]
+   + C \rright* + D \rright* + E \rright* $$
+\end{exec}
+And here two levels are skipped.
+\begin{code}
+  $$ \lleft* 3 + \lleft| 0 + \lleft* 2
+   + \lleft[ 0 + \lleft* 1 + A \rright* + B \rright]
+   + C \rright* + D \rright| + E \rright* $$
+\end{code}
+\begin{exec}\:
+  \delimitershortfall -2pt
+  $$ \lleft* 3 + \lleft| 0 + \lleft* 2
+   + \lleft[ 0 + \lleft* 1 + A \rright* + B \rright]
+   + C \rright* + D \rright| + E \rright* $$
+\end{exec}
+In the first experimental version of this packages, there was an interaction between automatic and explicit brackets. This has been removed. It didn't work well with linked groups, and it caused problems with bracktes used for purposes other than grouping, like function arguments, binomial coeffiecients etc.
+
+If automatic delimiters are tagged and aligned, this also applies to the chosen delimiter from the collection. Here is a typical example. Without tagging, we get this.
+\begin{code}
+  $$ \lleft * \frac{ n+1 }{ n^2 } \rright * ^2 
+     + \lleft * \frac{ n }{ \lleft * n - 1 \rright *^2 }    %%%
+                  \rright * ^2 $$  
+\end{code}
+\begin{exec}\:
+  $$ \lleft * \frac{ n+1 }{ n^2 } \rright * ^2 
+     + \lleft * \frac{ n }{ \lleft * n - 1 \rright *^2} 
+                  \rright * ^2 $$  
+\end{exec}
+If the outer brackets are aligned, both become second level brackets. 
+\begin{code}
+  $$ \lleft {qx} * \frac{ n+1 }{ n^2 } \rright * ^2 
+     + \lleft {qx} * \frac{ n }{ \lleft * n - 1 \rright *^2} 
+                  \rright * ^2 $$  
+\end{code}
+\begin{exec}\:
+  $$ \lleft {qx} * \frac{ n+1 }{ n^2 } \rright * ^2 
+     + \lleft {qx} * \frac{ n }{ \lleft * n - 1 \rright *^2} 
+                  \rright * ^2 $$  
+\end{exec}
+As a last challenge, let's consider the array from the previous section with a slight modification. If we replace all brackets with automatic delimiters, but do not link the cells, we get this.
+\begin{code}
+  $$ \begin{array}{dsdsdsd}
+       \lleft * Z & - & \sum_k A & × & 
+       \lleft * B & + & C^X \rright * \rright * \\[3ex]               %%%
+       \lleft * P & × & \lleft * \lleft * U^2 \rright * & + & 
+               \int_R V \rright * & - & W^Y \rright * 
+     \end{array} $$  
+\end{code}
+\begin{exec}\.[-4ex]
+  $$ \begin{array}{dsdsdsd}
+       \lleft * Z & - & \sum_k A & × & 
+       \lleft * B & + & C^X \rright * \rright * \\[3ex]               %%%
+       \lleft * P & × & \lleft * \lleft * U^2 \rright * & + & 
+               \int_R V \rright * & - & W^Y \rright * 
+     \end{array} $$  
+\end{exec}
+As expected, only the brackets within each cell are set up properly, but with no relation to those in the other cells. If we use the version with linked cells, we get the intended result. 
+\begin{code}
+  $$ \begin{array}{αsμsμsω}
+       \lleft * Z & - & \sum_k A & × & 
+       \lleft * B & + & C^X \rright * \rright * \\[3ex]               %%%
+       \lleft * P & × & \lleft * \lleft * U^2 \rright * & + & 
+               \int_R V \rright * & - & W^Y \rright * 
+     \end{array} $$  
+\end{code}
+\begin{exec}\.[-4ex]
+  \delimiterprefix{A}
+  $$ \begin{array}{αsμsμsω}
+       \lleft * Z & - & \sum_k A & × & 
+       \lleft * B & + & C^X \rright * \rright * \\[3ex]               %%%
+       \lleft * P & × & \lleft * \lleft * U^2 \rright * & + & 
+               \int_R V \rright * & - & W^Y \rright * 
+     \end{array} $$  
+\end{exec}
+
+
+\section{Multi Line Formulas}
+\label{multiline}
+Unlike the \TeX\ primitives, the \p{longmath} macros do not create a subformula that cannot be broken into lines. In inline math mode, long formulas with delimiter groups can extend over several lines just like ordinary text. 
+\begin{code*}
+  \newcommand\polyA{ x^{10} + x^9 - x^8 + 2 x^6 + 9 x^5 + 2 x^4 - 4 x^3 - 2 x^2 + 6 x + 4 }
+  \newcommand\polyB{ x^4 - x^3 + x + 2 } \newcommand\polyC{ x^6 + 2 x^5 + x^4 - 2 x^2 + 2 x + 2 }
+\end{code*}
+  \newcommand\polyA{ x^{10} + x^9 - x^8 + 2 x^6 + 9 x^5 + 2 x^4 - 4 x^3 - 2 x^2 + 6 x + 4 }
+  \newcommand\polyB{ x^4 - x^3 + x + 2 } \newcommand\polyC{ x^6 + 2 x^5 + x^4 - 2 x^2 + 2 x + 2 }
+\begin{code+}
+   Factorising the polynomial 
+   $ P\lleft( \polyA \rright) $
+   gives $ P \lleft( \polyB \rright)  
+         · P \lleft( \polyC \rright) $.       %%%
+\end{code+}
+\begin{exec*}\openup 1pt
+   Factorising the polynomial 
+   $ P\lleft( \polyA \rright) $
+   gives $ P \lleft( \polyB \rright)  
+         · P \lleft( \polyC \rright) $. 
+\end{exec*}
+There is no interference between nested delimiter groups and logical \TeX\ groups. Delimiters can be placed deep inside "\begingroup"-"\endgroup" constructs, and they do not create such groups themselves. The following example uses the \p{multido} package. It wouldn't work with "\left", "\right" and "\middle".  
+\begin{code}
+  Applying the Hofstadt Zebelajev theorem, we conclude that 
+  $ \lleft( \hat A_0 
+      \multido{\i=1+1}{10}{ \mmbin \uparrow \hat A_{\i} } 
+        \rright) \in \lleft[\mathcal{H}^\infty\rright]^{11}$.
+\end{code} 
+\begin{exec*}\openup 2pt
+  Applying the Hofstadt Zebelajev theorem, we conclude that 
+  $ \lleft( \hat A_0 
+      \multido{\i=1+1}{10}{ \mmbin \uparrow \hat A_{\i} } 
+        \rright) \in \lleft[\mathcal{H}^\infty\rright]^{11}$.
+\end{exec*}
+For multi line formulas in display mode, \p{longmath} provides a special environment. 
+
+\comm{"\begin{longmath}["°align°"]{"°width°"}"} begins a multi line expression in display mode.
+         
+\comm{"\end{longmath}"} ends a multi line expression in display mode. 
+
+It works like the "minipage" environment. You have to specify the °width° of the box the formula will by placed into, and how to °align° it vertically with the rest of the displayed equation. The optional alignment argument is either "c" for centre, which is the default, or "t" for top or "b" for bottom. 
+\begin{code*}
+  \newcommand\harm[2]{ \frac{1}{#1} \mmultido{\n=#1+1}{#2}{ + \frac{1}{\n} } } 
+\end{code*}
+  \newcommand\harm[2]{ \frac{1}{#1} \mmultido{\n=#1+1}{#2}{ + \frac{1}{\n} } } 
+\begin{code+}
+  The harmonic series starts with 
+  $$  Q = \begin{longmath}[t]{70mm}
+          1 + \harm{2}{21} + \cdots           %%%
+         \end{longmath} $$
+  and diverges very slowly. 
+\end{code+}
+\begin{exec}
+  The harmonic series starts with 
+  $$  Q = \begin{longmath}[t]{70mm}
+          1 + \harm{2}{21} + \cdots 
+         \end{longmath} $$
+  and diverges very slowly. 
+\end{exec}
+No markers are needed to force line breaks at particular points. \TeX's line breaking algorithm is used to find the ``best'' breakpoints. If you're familiar with it, you can insert penalties into the formula to optimize it. 
+
+The °width° can be specified either as an absolute dimension or as fraction of the available width of the display.
+\begin{code+}
+  One can easily prove that  
+  $$  \begin{longmath}[b]{0.7}
+          1 + \harm{2}{21} + \cdots 
+         \end{longmath} \to \infty, $$
+  which comes as a surprise for some students. 
+\end{code+}
+\begin{exec}
+  One can easily prove that  
+  $$  \begin{longmath}[b]{0.7}
+          1 + \harm{2}{21} + \cdots 
+         \end{longmath} \to \infty, $$
+  which comes as a surprise for some students. 
+\end{exec}
+As formulas typically have fewer possible breakpoints than ordinary text, no attempt is made to justify the lines. Instead, some flexible glue is inserted at both sides of each line to avoid extreme stretching or shrinking. Only the beginning of the first line and the end of the last line are forced to align with the boundary of the box specified by the °width° parameter. If the whole formula fits into a single line, a box with only the required width is created. This ensures that, regardless of the number of lines, a top aligned "longmath" box always aligns neatly with an expression to the left, and the formula in a bottom aligned "longmath" box can be continued to the right. 
+
+Since the "longmath" environment creates a vertical box, you can have several of them in a single display. 
+\begin{code+}
+  $$ \lleft[ \begin{longmath}[c]{0.33}
+               \polyA   
+             \end{longmath} \rright] = 
+     \lleft[ \begin{longmath}[c]{0.33}
+               \lleft( \polyB \rright) \cdot  %%%
+               \lleft( \polyC \rright)
+             \end{longmath} \rright] $$
+\end{code+}
+\begin{exec}
+  $$ \lleft[ \begin{longmath}[c]{0.33}
+               \polyA   
+             \end{longmath} \rright] = 
+     \lleft[ \begin{longmath}[c]{0.33}
+               \lleft( \polyB \rright) \cdot
+               \lleft( \polyC \rright)
+             \end{longmath} \rright] $$
+\end{exec}
+To make this look a bit nicer, you can add some extra space to the width of the box and arrange the lines from the top left to the bottom right. If the °width° parameter is given as °linewidth°"+"°extrawidth°, the lines are stacked so that the total width of the box is the sum of °linewidth° and °extrawidth°. Both values can be given as absolute dimensions or as fractions of the total display width. 
+\begin{code+}
+  $$ \lleft[ \begin{longmath}[c]{0.33+0.07}
+               \polyA   
+             \end{longmath} \rright] = 
+     \lleft[ \begin{longmath}[c]{0.33+0.07}
+               \lleft( \polyB \rright) \cdot  %%%
+               \lleft( \polyC \rright)
+             \end{longmath} \rright] $$
+\end{code+}
+\begin{exec}
+  $$ \lleft[ \begin{longmath}[c]{0.33+0.07}
+               \polyA   
+             \end{longmath} \rright] = 
+     \lleft[ \begin{longmath}[c]{0.33+0.07}
+               \lleft( \polyB \rright) \cdot
+               \lleft( \polyC \rright)
+             \end{longmath} \rright] $$
+\end{exec}
+A "longmath" box can replace any kind of subformula. Just specify the maximal width the subformula is allowed to have. If it fits into this width, it will be typeset normally. Otherwise, it is split into several lines. 
+\begin{code*}
+  $$ \frac{ \begin{longmath}{40mm+10mm} \polyA \end{longmath} }
+          { \begin{longmath}{40mm+10mm} \polyB \end{longmath} }
+     =      \begin{longmath}{40mm+10mm} \polyC \end{longmath}   $$
+\end{code*}
+\begin{exec}
+  $$ \frac{ \begin{longmath}{40mm+10mm} \polyA \end{longmath} }
+          { \begin{longmath}{40mm+10mm} \polyB \end{longmath} }
+     =      \begin{longmath}{40mm+10mm} \polyC \end{longmath}   $$
+\end{exec}
+\begin{code*}
+  \newcommand\polyX{ x^5 - x^4 + x^3 - x^2 + x - 1 }
+  \newcommand\polyY{ x^{10} - 2 x^9 + 3 x^8 - 4 x^7 + 5 x^6 - 6 x^5 + 5 x^4 - 4 x^3 + 3 x^2 - 2 x + 1 }
+  $$ \sqrt{ \begin{longmath}{40mm+10mm} \polyY \end{longmath} } 
+          = \begin{longmath}{40mm+10mm} \polyX \end{longmath} $$
+\end{code*}
+\begin{exec}
+  \newcommand\polyX{ x^5 - x^4 + x^3 - x^2 + x - 1 }
+  \newcommand\polyY{ x^{10} - 2 x^9 + 3 x^8 - 4 x^7 + 5 x^6 - 6 x^5 + 5 x^4 - 4 x^3 + 3 x^2 - 2 x + 1 }
+  $$ \sqrt{ \begin{longmath}{50mm+10mm} \polyY \end{longmath} } 
+    = \begin{longmath}{50mm+10mm} \polyX \end{longmath} $$
+\end{exec}
+
+There is also a smarter "longmath*" environment, which sets the width of the box ``intelligently'', so that the formula is split into equally long segments and the available space is used efficiently. The idea is to specify a maximal width, then let \TeX\ find the number of lines needed, and adapt the width to the total length divided by the number of lines. This will usually result in a box that is slightly shorter than the given width. 
+
+Whether this really succeeds depends on a sufficient number of possible breakpoints and stretchable and shrinkable glue in the formula, so that \TeX's algorithm can actually split it into equally long parts. Take it with a grain of salt and don't mind if it doesn't work properly in difficult cases. As an example, here is what we get without this feature. 
+\begin{code*}
+  To prove it, observe that each bracket is larger than $\frac 12$: 
+  $$ \lleft\{ \begin{longmath}[c]{0.8+0.1}
+       \lleft( 1 + \frac{1}{2} \rright) + \lleft( \harm{3}{1} \rright) + \lleft( \harm{5}{3} \rright) + 
+       \lleft( \harm{9}{7} \rright) + \lleft( \harm{17}{15} \rright) + \lleft( \harm{33}{3} 
+       + \cdots \rright. \end{longmath} \rright\} $$
+\end{code*}
+\begin{exec}
+  To prove it, observe that each bracket is larger than $\frac 12$: 
+  $$ \lleft\{ \begin{longmath}[c]{0.8+0.1}
+       \lleft( 1 + \frac{1}{2} \rright) + \lleft( \harm{3}{1} \rright) + \lleft( \harm{5}{3} \rright) + 
+       \lleft( \harm{9}{7} \rright) + \lleft( \harm{17}{15} \rright) + \lleft( \harm{33}{3} 
+       + \cdots \rright. \end{longmath} \rright\} $$
+\end{exec}
+If we replace "longmath" by "longmath*", but stick to the same width specification, we get this. 
+\begin{exec}
+  There is even a slightly ``shorter'' proof: 
+  $$ \lleft\{ \begin{longmath*}[c]{0.8+0.1}
+       \lleft( 1 + \frac{1}{2} \rright) + \lleft( \harm{3}{1} \rright) + \lleft( \harm{5}{3} \rright) + 
+       \lleft( \harm{9}{7} \rright) + \lleft( \harm{17}{15} \rright) + \lleft( \harm{33}{3} 
+       + \cdots \rright. \end{longmath*} \rright\} $$
+\end{exec}
+The spacing between the lines is controlled by a dimension register that can be adjusted. 
+
+\comm{"\longmathlinesep"} dimension to be added to the line skip in the "longmath" environment (default \the\longmathlinesep).
+
+This dimension is added to the current "\baselineskip" and "\lineskip" when the content of the box is split into lines and placed in a vertical box, basically using \TeX's "\openup" macro. Some additional effort is made to adjust the line spacing if the "longmath" environment is placed in a sub- or superscript as in this final example. 
+\begin{code*}
+  $$ \Omega = \lleft| \begin{longmath*}[c]{0.6+0.1}
+    \mathscr{Q} + \lleft[ \lleft( T · H · I^{\lleft(a+b\rright)^4} · S \rright) 
+    + I · S + A + \lleft\{ V · E^{\lleft(a^2+2ab+b^2\rright)^2} · R · Y + L · O · N · G 
+    + \lleft[ \int\limits_I^N T · \lleft( E^{G^R} \rright) · A_L \rright]
+    - \frac{ D^I · V^I }{ D · E · D } \mmbin / \lleft\{ B · Y 
+    + A × \sum\limits_{-\infty}^{\infty} O^F \lleft< S^c_a L^a_r \mmiddle | \prod\nolimits^s \rright>  
+    \rright\} \rright\} \rright] + C^\infty  \end{longmath*} \rright|
+    ^ { \lleft( \begin{longmath*}[c]{25mm+5mm} a+b+c+d+e+f+g+h+i+j+k+l+m \end{longmath*} \rright) } $$
+\end{code*}
+\begin{exec}
+  \ignorelimits 
+  $$ \Omega = \lleft| \begin{longmath*}[c]{0.6+0.1}
+    \mathscr{Q} + \lleft[ \lleft( T · H · I^{\lleft(a+b\rright)^4} · S \rright) 
+    + I · S + A + \lleft\{ V · E^{\lleft(a^2+2ab+b^2\rright)^2} · R · Y + L · O · N · G 
+    + \lleft[ \int\limits_I^N T · \lleft( E^{G^R} \rright) · A_L \rright]
+    - \frac{ D^I · V^I }{ D · E · D } \mmbin / \lleft\{ B · Y 
+    + A × \sum\limits_{-\infty}^{\infty} O^F \lleft< S^c_a L^a_r \mmiddle | \prod\nolimits^s \rright>  
+    \rright\} \rright\} \rright] + C^\infty  \end{longmath*} \rright|
+    ^ { \lleft( \begin{longmath*}[c]{25mm+5mm} a+b+c+d+e+f+g+h+i+j+k+l+m \end{longmath*} \rright) } $$
+\end{exec}
+
+
+\end{document}

@@ -6,6 +6,40 @@ this project uses date-based 'snapshot' version identifiers.
 
 ## [Unreleased]
 
+## [2024-05-08]
+
+### Changed
+- Use built-in conversion for CMYK colors with `dvisvgm` (see \#1538)
+
+### Fixed
+- CMYK output from `dvisvgm`
+
+## [2024-04-11]
+
+### Added
+- Support for 'raw' PDF object IDs
+
+### Changed
+- Update PDF object management code
+
+## [2024-03-14]
+
+### Removed
+- Range guard for opacity
+
+### Fixed
+- Initiation of opacity data (see \#1472)
+- ExtGState setup for stroking opacity (issue \#1472)
+- Inconsistent behavior of opacity functions w/o `pdfmanagement`
+  (issue \#1473)
+- Redundant braces in opacity backend for dvisvgm
+- Interaction of scope with box insertion with `dvips` (see \#1504)
+
+## [2024-02-20]
+
+### Fixed
+- Naming of a variable in the `draw` code
+
 ## [2024-01-04]
 
 ### Changed
@@ -14,7 +48,7 @@ this project uses date-based 'snapshot' version identifiers.
 ## [2023-11-09]
 
 ### Changed
-- Changed `luaotfload` integration to allow coexistance with (x)color.
+- Changed `luaotfload` integration to allow coexistence with (x)color.
 
 ## [2023-11-04]
 
@@ -199,7 +233,7 @@ this project uses date-based 'snapshot' version identifiers.
   backend)
 
 ### Changed
-- Implementation of color wtih (x)dvipdfmx (requires an up-to-date
+- Implementation of color with (x)dvipdfmx (requires an up-to-date
   backend)
 
 ## [2020-09-24]
@@ -321,7 +355,11 @@ this project uses date-based 'snapshot' version identifiers.
 - Include `l3backend` in file names
 - Moved backend code to internal for each 'parent' module
 
-[Unreleased]: https://github.com/latex3/latex3/compare/2024-01-04...HEAD
+[Unreleased]: https://github.com/latex3/latex3/compare/2024-05-08...HEAD
+[2024-05-08]: https://github.com/latex3/latex3/compare/2024-04-11...2024-05-08
+[2024-04-11]: https://github.com/latex3/latex3/compare/2024-03-14...2024-04-11
+[2024-03-14]: https://github.com/latex3/latex3/compare/2024-02-20...2024-03-14
+[2024-02-20]: https://github.com/latex3/latex3/compare/2024-01-04...2024-02-20
 [2024-01-04]: https://github.com/latex3/latex3/compare/2023-11-09...2024-01-04
 [2023-11-09]: https://github.com/latex3/latex3/compare/2023-11-04...2023-11-09
 [2023-11-04]: https://github.com/latex3/latex3/compare/2023-10-23...2023-11-04

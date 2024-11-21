@@ -1,6 +1,6 @@
 %% This is part of the OpTeX project, see http://petr.olsak.net/optex
 
-\_codedecl \newif {Special if-macros, is-macros and loops <2023-10-17>} % preloaded in format
+\_codedecl \newif {Special if-macros, is-macros and loops <2024-02-19>} % preloaded in format
 
    \_doc ----------------------------
    \secc Classical \code{\\newif}
@@ -95,8 +95,8 @@
    \_immediateassignment \_long\_gdef\_fbody#2{\_testparam##1..\_iftrue #3\_ea\_fbody\_fi}%
    \_fbody #1#2\_finbody\_getforstack
 }
-\_def\_testparam#1#2#3\_iftrue{\_ifx###1\_empty\_ea\_finbody\_else}
-\_def\_finbody#1\_finbody{}
+\_long\_def\_testparam#1#2#3\_iftrue{\_ifx###1\_empty\_ea\_finbody\_else}
+\_long\_def\_finbody#1\_finbody{}
 
 \_long\_def\foreach #1\do#2#{\_isempty{#2}\_iftrue
    \_afterfi{\_foreachA{#1}{##1}}\_else\_afterfi{\_foreachA{#1}{#2}}\_fi}
@@ -189,7 +189,7 @@
 \_public \foreachdef ;
 
    \_doc ----------------------------
-   \secc Is-macros
+   \secc Is-macros and selection of cases
    There are a collection of macros
    \^`\isempty`, \^`\istoksempty`, \^`\isequal`, \^`\ismacro`,
    \^`\isdefined`, \^`\isinlist`, \^`\isfile` and \^`\isfont`
@@ -339,14 +339,22 @@
    \`\qcasesof` `{<string>} <list of cases>` behaves like \^`\casesof` but it
    compares phrases with the given <string> using \^`\isequal`.
    The <list of cases> includes pairs
-   `{<phrase>} {<what to do if string=phrase>}` finalized by a
-   pair `\_finc {<what to do else>}`.
+   `{<phrases>} {<what to do if string=phrase>}` finalized by a
+   pair `\_finc {<what to do else>}`. The `<phrases>` is a single
+   phrase or phrases separated by `|` which means \"or". For example
+   the pair `{ab|cde|f} {<code>}` runs <code> if the given <string> is `ab` or `cde` or~`f`.
+   The usage of `\qcasesof` can be found in
+   \ulink[http://petr.olsak.net/optex/optex-tricks.html\#thedimen]{OpTeX trick 0132}.
    \_cod -----------------------------
 
 \_long\_def \_qcasesof #1#2#3{\_ifx\_finc#2\_ea\_ignoresecond \_else \_ea\_usesecond \_fi
-   {#3}{\_isequal{#1}{#2}\_iftrue \_ea\_ignoresecond \_else \_ea\_usesecond \_fi
-                                 {\_finc{#3}}{\_qcasesof{#1}}}%
+   {#3}{\_qcasesofA{#1}#2|\_qcasesofA|{\_finc{#3}}{\_qcasesof{#1}}}%
 }
+\_long\_def\_qcasesofA#1#2|{\_ifx\_qcasesofA#2\_ea\_usesecond \_else
+   \_isequal{#1}{#2}\_iftrue \_qcasesofB \_fi \_afterfi{\_qcasesofA{#1}}\_fi
+}
+\_long\_def\_qcasesofB #1\_qcasesofA|#2#3{\_fi\_fi#2}
+
 \_public \qcasesof ;
 
    \_doc -----------------------------
@@ -376,6 +384,8 @@
 
 \_endcode
 
+2024-02-19 \qcasesof reimplemented, it supports | for more phrases.
+2023-12-07 \_testparam define \long (big fixed).
 2023-10-17 \qcasesof introduced, \xcasesof reimplemented.
 2023-01-16 \isnextchar created expandable.
 2022-12-02 \xcasesof: its first parameter is \long too.

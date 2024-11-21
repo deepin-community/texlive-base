@@ -6,7 +6,8 @@ cct_init
 { relaycoil; S: `"\tt relaycoil"' at last [].s+(0,-16bp__)
   { "\sl V1" wid 10bp__ at last [].V1 rjust
     "\sl V2" at last [].V2 ljust }
-  K: relaycoil(NX) with .nw at last [].ne+(spc*4,0); "\tt (NX)" at (last [],S)
+  relaycoil(S) with .nw at last [].ne+(spc*2,0); "\tt (S)" at (last [],S)
+  K: relaycoil(NX) with .nw at last [].ne+(spc*3,0); "\tt (NX)" at (last [],S)
   { thinlines_
     spline <- from K.A1 left 7bp__ then up 4bp__ left 4bp__; "\sl A1" rjust
     arrow <- from K.A2 left 10bp__; "\sl A2" rjust
@@ -16,14 +17,15 @@ cct_init
     spline <- from K.B3 right 7bp__ then down 4bp__ right 4bp__; "\sl B3" ljust
     thicklines_
     }
-  relaycoil(AXSR) with .nw at last [].ne+(spc*5,0); "\tt (AXSR)" at (last [],S)
+  relaycoil(AXSR) with .nw at last [].ne+(spc*4,0); "\tt (AXSR)" at (last [],S)
   { "\sl V1" at last [].V1 rjust; "\sl V2" at last [].V2 rjust }
   relaycoil(BXSR) with .nw at last [].ne+(spc*2,0); "\tt (BXSR)" at (last [],S)
   { "\sl V1" at last [].V1 ljust; "\sl V2" at last [].V2 ljust }
-  relaycoil(SR) with .nw at last [].ne+(spc*3,0); "\tt (SR)" at (last [],S)
-  relaycoil(SO) with .nw at last [].ne+(spc,0); "\tt (SO)" at (last [],S)
-  relaycoil(SOR) with .nw at last [].ne+(spc,0); "\tt (SOR)" at (last [],S)
-  relaycoil(PC) with .nw at last [].ne+(spc,0); "\tt (PC)" at (last [],S)
+  relaycoil(SR) with .nw at last [].ne+(spc*2,0); "\tt (SR)" at (last [],S)
+  spx = spc*3/4
+  relaycoil(SO) with .nw at last [].ne+(spx,0); "\tt (SO)" at (last [],S)
+  relaycoil(SOR) with .nw at last [].ne+(spx,0); "\tt (SOR)" at (last [],S)
+  relaycoil(PC) with .nw at last [].ne+(spx,0); "\tt (PC)" at (last [],S)
   }
   spc = dimen_/4
 {

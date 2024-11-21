@@ -1,151 +1,105 @@
-# $Id: Makefile 905 2023-02-28 01:23:10Z karl $
-# Makefile for pdfTeX documentation.  Public domain.
+# $Id: Makefile 923 2024-02-20 18:48:39Z karl $
+# GNU makefile for pdfTeX documentation.  Public domain.
 
-# Get version we're documenting from the \def in the manual.
-pdftexversion=`sed -n 's,^.def.currentpdftex{\(.*\)},\1,p' manual/pdftex-t.tex`
+texfot = texfot
+pdflatex = $(texfot) pdflatex --file-line-error
 
-context = env PATH=/usr/local/texlive/dev/bin/x86_64-linux:$$PATH texexec --batchmode
-# context does not have \setupoutput.
-# texmfstart exits immediately.
+tinydoc = incl/pdfmin
+help_msg = incl/pdftex-help.txt
+syntax_summary = incl/pdftex-syntax.tex
 
-# what we distribute in TeX Live.
-default: pdftex-a.pdf pdftex-syntax.txt
+# dependencies for building the manual.
+deps = pdftex.tex pdftexmanual.cls \
+       $(syntax_summary) $(help_msg) $(tinydoc)-crop.pdf
 
-# the other formats (everything that can be built).
-all: pdftex-l.pdf pdftex-s.pdf booklet
+a4run = $(pdflatex) '\PassOptionsToClass{a4paper}{report} \input $<'
+ltrun = $(pdflatex) '\PassOptionsToClass{letterpaper}{report} \input $<'
 
-common_deps = pdftex-t.tex pdftex-w.txt pdftex-syntax.tex # pdftex-help.txt
-pdftex-a.pdf a:	$(common_deps)
-	$(context) --mode=a4 --result=$@ $<
+all: pdftex-a.pdf pdftex-l.pdf
 
-pdftex-l.pdf l:	$(common_deps)
-	$(context) --mode=letter --result=$@ $<
+pdftex-a.pdf: $(deps)
+	rm -f $@
+	$(a4run)
+	while grep 'Rerun to get' pdftex.log >/dev/null; do $(a4run); done
+	mv pdftex.pdf $@
 
-pdftex-s.pdf s:	$(common_deps) pdftex-i.tex
-	$(context) --mode=screen --result=$@ $<
+pdftex-l.pdf: $(deps)
+	rm -f $@
+	$(ltrun)
+	while grep 'Rerun to get' pdftex.log >/dev/null; do $(ltrun); done
+	mv pdftex.pdf $@
 
+# Run when making new manual for release; by hand, since it's too
+# irritating to depend on the binary.
+pdftex-help $(help_msg):
+	$(pdftex_binary) --help >$(help_msg)
+	(echo; echo; echo) >>$(help_msg)
+	$(pdftex_binary) --version >>$(help_msg)
+	
+# Primitives and syntax, in TeX for the printed manual.
+$(syntax_summary): pdftex.tex syntaxform.pl
+	perl syntaxform.pl pdftex.tex >$(syntax_summary) || rm -f $@
 
-# booklet version is not made by default.
-booklet:	pdftex-b.pdf pdftex-b-e.pdf pdftex-b-o.pdf
+# We want to typeset the PDF for a tiny input file. This should be
+# updated every year:
+# - update version numbers.
+# - make new binary in source tree.
+# - run make frontispiece.pdf.
+# (Also run make pdftex-help.)
+#
+pdftex_binary = ../../source/build-pdftex/texk/web2c/pdftex
+texdist_fonts = /usr/local/texlive/dev/texmf-dist/fonts
+#
+$(tinydoc)-src.pdf: $(tinydoc)-src.tex
+	env KPATHSEA_WARNING=0 TEXFONTS=$(texdist_fonts)// \
+	  $(pdftex_binary) -ini -output-directory=incl '$<'
 
-pdftex-b.pdf b:	pdftex-a.pdf
-	$(context) --pdfarrange --paper=a5a4 --print=up --addempty=1,2 \
-	--result=$@ $<
-
-pdftex-b-e.pdf:	pdftex-a.pdf
-	$(context) --pdfarrange --paper=a5a4 --print=up --addempty=1,2 \
-	--pages=even --result=$@ $<
-
-pdftex-b-o.pdf:	pdftex-a.pdf
-	$(context) --pdfarrange --paper=a5a4 --print=up --addempty=1,2 \
-	--pages=odd --result=$@ $<
-
-
-#  Creating the subsidiary/dependent files.
-
-# TeXable text for the title page.
-pdftex-w.txt: pdftex-w.pdf
+# The title page PDF as TeXable text.
+$(tinydoc)-src.txt: $(tinydoc)-src.pdf #GNUmakefile
+	test -s $<
 	cat $< \
 	| expand \
-	| fmt -s -w36 \
-	| grep --text . \
+	| grep -v '^$$' \
+	| fmt -s -w45 \
 	| expand >$@ || rm -f $@
-	wc -l pdftex-w.txt  # set titlepagelines=half of this
+	wc -l $@  # set titlepagelines=half this plus one:
 
-# PDF for the title page. This should be updated every year;
-# - update version numbers
-# - make new binary
-# - run this target
-# Also check pdftex-help.txt for updates.
-pdftex_binary = ../../source/build-pdftex/texk/web2c/pdftex
-pdftex-w.pdf: pdftex-w.tex Makefile
-	TEXFONTS=/usr/local/texlive/dev/texmf-dist/fonts// \
-	KPATHSEA_WARNING=0 \
-	$(pdftex_binary) -ini '$<'
+# Convert that TeXt to PDF.
+$(tinydoc)-fmt.pdf: $(tinydoc)-fmt.tex $(tinydoc)-src.txt
+	context $< >$(tinydoc)-fmt.fot 2>&1
+	test -s `basename $@`
+	mv `basename $(tinydoc)`-fmt.* incl/
 
-
-# Too annoying to remake help text every time; check by hand when needed.
-pdftex-help.txt: force
-	$(pdftex_binary) --help >$@ || rm -f $@
-force:
-
-# if we don't have a build tree around, try from PATH.
-build_binary := ../../source/build-pdftex/texk/web2c/pdftex
-ifneq "$(realpath $(build_binary))" ""
-pdftex_binary := $(build_binary)
-else
-pdftex_binary := pdftex
-endif
-
-# Primitives and syntax, in TeX for the printed manual, and then in
-# plain text for human convenience.
-pdftex-syntax.tex: pdftex-t.tex syntaxform.pl
-	perl syntaxform.pl pdftex-t.tex >pdftex-syntax.tex || rm -f $@
-
-pdftex-syntax.txt: pdftex-t.tex pdftex-syntax.tex syntaxform.awk
-	gawk -f syntaxform.awk pdftex-syntax.tex $< >$@ || rm -f $@
-
+$(tinydoc)-crop.pdf: $(tinydoc)-fmt.pdf
+	pdfcrop $< $@
 
 #  Install from this source directory to TL.
 
 # svn co svn://u:pw@tug.org/texlive/trunk/Master/texmf-dist/doc/pdftex
 tltree = /home/texlive/karl/Master/texmf-dist
-dest = $(tltree)/doc/pdftex/manual
+dest = $(tltree)/doc/pdftex/manual/
 
 INSTALL_DATA = cp -p
 
-install: default
-	$(INSTALL_DATA) ChangeLog Makefile README makefiles.cmd $(dest)
-	$(INSTALL_DATA) pdftex-a.pdf pdftex-syntax.txt $(dest)
-	$(INSTALL_DATA) pdftex-t.tex pdftex-w.tex pdftex-i.tex $(dest)
-	$(INSTALL_DATA) syntaxform.awk syntaxform.pl $(dest)
+install:
+	$(INSTALL_DATA) ChangeLog Makefile README $(dest)
+	$(INSTALL_DATA) pdftex-a.pdf pdftex.tex pdftexmanual.cls $(dest)
+	$(INSTALL_DATA) incl/*.txt incl/*.tex incl/pdfmin-crop.pdf $(dest)/incl
+	$(INSTALL_DATA) syntaxform.pl $(dest)
 
 
-#  Dist and clean.
-# tar/zip including pdftex-a.pdf, pdftex-l.pdf, pdftex-s.pdf,
-# although we don't ever make such distributions any more.
-
-distall=$(distnopdf) pdftex-a.pdf pdftex-l.pdf pdftex-s.pdf
-
-mandir=manual
-distdate=`date +%y%m%d`
-distrev=`awk '/Id:/{print $$4; exit}' $(mandir)/pdftex-t.tex`
-
-distnopdf=pdftex-w.tex pdftex-w.txt pdftex-t.tex \
-	pdftex-i.tex syntaxform.awk Makefile makefiles.cmd \
-	pdftex-syntax.txt pdftex-help.txt README ChangeLog
-
-alltar:	$(distall)
-	cd .. && tar cvjf $(mandir)/pdftex-$(pdftexversion)-userman-$(distrev).tar.bz2 \
-	$(patsubst %, $(mandir)/%, $(distall))
-
-allzip:	$(distall)
-	cd .. && zip $(mandir)/pdftex-$(pdftexversion)-userman-$(distrev).zip \
-	$(patsubst %, $(mandir)/%, $(distall))
-
-
-# tar/zip without PDF files:
-
-tar:	$(distnopdf)
-	cd .. && tar cvjf $(mandir)/pdftex-$(pdftexversion)-userman-$(distrev)-src.tar.bz2 \
-	$(patsubst %, $(mandir)/%, $(distnopdf))
-	ls -l *.tar.bz2
-
-zip:	$(distnopdf)
-	cd .. && zip $(mandir)/pdftex-$(pdftexversion)-userman-$(distrev)-src.zip \
-	$(patsubst %, $(mandir)/%, $(distnopdf))
-
-
+#  clean.
 clean:
-	rm -f *.log *.tuo *.tui *.top *.tmp *-mpgraph.mp
+	rm -f *.aux *.log *.out *.toc
+	rm -f incl/*.fot incl/*.log incl/*.tuc
+	rm -f incl/pdftex-syntax.tex
 
 maintainer-clean: clean
-	rm -f pdftex-a.pdf pdftex-l.pdf pdftex-s.pdf
-	rm -f pdftex-b.pdf pdftex-b-e.pdf pdftex-b-o.pdf
-	rm -f pdftex-help.txt pdftex-syntax.txt pdftex-syntax.tex
-	rm -f pdftex-w.pdf pdftex-w.txt
+	rm -f pdftex-a.pdf pdftex-l.pdf
+	rm -f incl/pdftex-help.txt incl/*.pdf
 
 clobber allclean realclean distclean: maintainer-clean
 
 spell:
-	myspell pdftex-t.tex
+	dw <pdftex.tex | grep -v cmr10; true
+	myspell pdftex.tex

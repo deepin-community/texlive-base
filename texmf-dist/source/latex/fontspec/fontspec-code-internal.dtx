@@ -1,4 +1,4 @@
-%%^^A%%  fontspec-code-internal.dtx -- part of FONTSPEC <wspr.io/fontspec>
+%%^^A%%  fontspec-code-internal.dtx -- part of FONTSPEC <latex3.github.io/fontspec>
 
 % \section{Internals}
 %
@@ -37,9 +37,11 @@
     \@@_font_suppress_not_found_error:
     \@@_init:
 
-    \@@_sanitise_fontname:Nn \l_fontspec_fontname_tl    {#2}
-    \@@_sanitise_fontname:Nn \l_@@_fontname_up_tl       {#2}
-    \@@_sanitise_fontname:Nn \l_@@_basename_tl          {#2}
+    \@@_sanitise_fontname:Nn \l_fontspec_fontname_tl {#2}
+    \tl_set_eq:NN \l_@@_fontname_up_tl \l_fontspec_fontname_tl
+    \tl_set_eq:NN \l_@@_basename_tl    \l_fontspec_fontname_tl
+
+%<debug>\typeout{^^J::::::::::::::: l_fontspec_fontname_tl~ =~ \l_fontspec_fontname_tl }
 
     \@@_if_detect_external:nT {#2}
      { \keys_set:nn {fontspec-preparse-external} {Path} }
@@ -55,6 +57,11 @@
 %<debug>\typeout{fontid: \l_@@_fontid_tl}
 
     \@@_preparse_features:
+
+%<debug>\typeout{^^J::::::::::::::: l_fontspec_fontname_tl~ =~ \l_fontspec_fontname_tl }
+%<debug>\typeout{::::::::::::::: _fontname_up_tl~ =~ \l_@@_fontname_up_tl }
+%<debug>\typeout{::::::::::::::: l_@@_extension_tl~ =~ \l_@@_extension_tl }
+
     \@@_load_font:
     \@@_set_scriptlang:
     \@@_get_features:n {}
@@ -71,6 +78,7 @@
     \group_end:
 
     \tl_set_eq:NN \l_fontspec_family_tl \g_@@_nfss_family_tl
+%<debug>\typeout{::::::::::::::::::::::::::::::}
   }
 %    \end{macrocode}
 % \end{macro}
@@ -84,19 +92,24 @@
 %
 % \begin{macro}{\@@_sanitise_fontname:Nn}
 % Assigns font name |#2| to token list variable |#1| and strips extension(s) from it in the case of an external font.
-% We strip spaces for luatex for consistency with luaotfload, although I'm not sure this is necessary any more.
-% At one stage this also lowercased the name, but this step has been removed unless someone can remind me why it was necessary.
 %    \begin{macrocode}
 \cs_new:Nn \@@_sanitise_fontname:Nn
   {
     \tl_set:Nx #1 {#2}
-%<LU>  \tl_remove_all:Nn #1 {~}
+    \tl_trim_spaces:N #1
+    \@@_process_ext:N #1
+  }
+
+\cs_new:Nn \@@_process_ext:N
+  {
     \clist_map_inline:Nn \l_@@_extensions_clist
       {
         \tl_if_in:NnT #1 {##1}
           {
+%<debug>  \typeout{::@@_process_ext:N~ --~ Removing~ EXT:~ ##1}
             \tl_remove_once:Nn #1 {##1}
             \tl_set:Nn \l_@@_extension_tl {##1}
+            \@@_font_is_file:
             \clist_map_break:
           }
       }
@@ -130,9 +143,9 @@
   {
     \str_if_eq:eeT { \str_lowercase:f {\l_@@_extension_tl} } {.ttc}
       {
-        \@@_sanitise_fontname:Nn \l_@@_fontname_it_tl   {#1}
-        \@@_sanitise_fontname:Nn \l_@@_fontname_bf_tl   {#1}
-        \@@_sanitise_fontname:Nn \l_@@_fontname_bfit_tl {#1}
+        \tl_set_eq:NN \l_@@_fontname_it_tl   \l_fontspec_fontname_tl
+        \tl_set_eq:NN \l_@@_fontname_bf_tl   \l_fontspec_fontname_tl
+        \tl_set_eq:NN \l_@@_fontname_bfit_tl \l_fontspec_fontname_tl
       }
   }
 %    \end{macrocode}
@@ -141,7 +154,9 @@
 % \begin{macro}{\@@_load_external_fontoptions:N}
 % Load a possible \texttt{.fontspec} font configuration file.
 % This file could set font-specific options for the font about to be loaded.
-% The parameter should be a tokenlist containing a sanitised fontname.
+% The parameter should be a token list containing a sanitised fontname.
+% In the past this used a space-stripped version of the name, so we check for the file
+% both with and without spaces to load it.
 %    \begin{macrocode}
 \cs_new:Nn \@@_load_external_fontoptions:N
   {
@@ -152,8 +167,15 @@
         \tl_remove_all:Nn \l_@@_ext_filename_tl {~}
         \prop_if_in:NVF \g_@@_fontopts_prop #1
          {
-          \exp_args:No \file_if_exist:nT { \l_@@_ext_filename_tl }
-           { \file_input:n { \l_@@_ext_filename_tl } }
+          \exp_args:No \file_if_exist:nTF { \l_@@_ext_filename_tl }
+            {
+              \file_input:n { \l_@@_ext_filename_tl }
+            }
+            {
+              \tl_remove_all:Nn \l_@@_ext_filename_tl {~}
+              \exp_args:No \file_if_exist:nT { \l_@@_ext_filename_tl }
+                { \file_input:n { \l_@@_ext_filename_tl } }
+            }
          }
       }
   }
@@ -231,7 +253,8 @@
   {
 %<debug>\typeout{:: @@_load_font}
 
-%<debug>\typeout{Set~ base~ font~ for~ preliminary~ analysis: \@@_construct_font_call:nn { \l_@@_fontname_up_tl } {} }
+    \@@_sanitise_fontname:Nn \l_@@_fontname_up_tl { \l_@@_fontname_up_tl }
+%<debug>\typeout{Set~ base~ font~ for~ preliminary~ analysis:~ "\l_@@_fontname_up_tl"~ with~ features~ "\l_@@_pre_feat_sclist" }
     \@@_primitive_font_set:NnnF \l_@@_test_font
       { \@@_construct_font_call:nn { \l_@@_fontname_up_tl } { \l_@@_pre_feat_sclist } }
       { \f@size pt - 2sp }
@@ -284,18 +307,27 @@
 %
 % \begin{macro}{\@@_font_is_file:,\@@_font_is_name:}
 % The \cs{@@_fontname_wrap:n} command takes the font name and either passes it through unchanged or wraps it in the syntax for loading a font `by filename'.
-% \XeTeX's syntax is followed since \pkg{luaotfload} provides compatibility.
+% For Lua\TeX\ there are two kinds kinds of filename based loading supported: Regular filename lookups which include system fonts and lookups restricted to kpse.
 %    \begin{macrocode}
 \cs_new:Nn \@@_font_is_name:
   {
-    \cs_set_eq:NN \@@_fontname_wrap:n \use:n
+%<XE>  \cs_set_eq:NN \@@_fontname_wrap:n \use:n
+%<LU>  \cs_set:Npn \@@_fontname_wrap:n ##1 { name: ##1 }
   }
 %    \end{macrocode}
 %
 %    \begin{macrocode}
 \cs_new:Nn \@@_font_is_file:
   {
-    \cs_set:Npn \@@_fontname_wrap:n ##1 { [ \l_@@_font_path_tl ##1 ] }
+%<debug>  \typeout{:: _font_is_file:}
+    \bool_set_true:N \l_@@_external_bool
+    \bool_lazy_and:nnTF { \l_@@_external_kpse_bool } { \tl_if_empty_p:N \l_@@_font_path_tl }
+      {
+        \cs_set:Npn \@@_fontname_wrap:n ##1 { kpse: ##1 }
+      }
+      {
+        \cs_set:Npn \@@_fontname_wrap:n ##1 { [ \l_@@_font_path_tl ##1 ] }
+      }
   }
 %    \end{macrocode}
 % \end{macro}
@@ -313,8 +345,8 @@
         \tl_if_empty:NF \l_@@_script_name_tl
           {
 %<debug>  \typeout{:::: Script=\l_@@_script_name_tl, Language=\l_@@_lang_name_tl}
-            \keys_set:nx {fontspec-opentype} {Script=\l_@@_script_name_tl}
-            \keys_set:nx {fontspec-opentype} {Language=\l_@@_lang_name_tl}
+            \keys_set:ne {fontspec-opentype} {Script=\l_@@_script_name_tl}
+            \keys_set:ne {fontspec-opentype} {Language=\l_@@_lang_name_tl}
           }
       }
   }
@@ -342,17 +374,17 @@
     \bool_if:NTF \l_@@_ot_bool
       {
 %<debug>  \typeout{::: Setting~ keys~ for~ OpenType~ font~ features:~"\l_@@_keys_leftover_clist"}
-        \keys_set:nV {fontspec-opentype} \l_@@_keys_leftover_clist
+        \keys_set_known:nV {fontspec-opentype} \l_@@_keys_leftover_clist
       }
       {
 %<debug>  \typeout{::: Setting~ keys~ for~ AAT/Graphite~ font~ features:~"\l_@@_keys_leftover_clist"}
         \bool_if:nT { \l_@@_atsui_bool || \l_@@_graphite_bool }
-          { \keys_set:nV {fontspec-aat} \l_@@_keys_leftover_clist }
+          { \keys_set_known:nV {fontspec-aat} \l_@@_keys_leftover_clist }
       }
 %</XE>
 %<*LU>
 %<debug>  \typeout{::: Setting~ keys~ for~ OpenType~ font~ features:~"\l_@@_keys_leftover_clist"}
-    \keys_set:nV {fontspec-opentype} \l_@@_keys_leftover_clist
+    \keys_set_known:nV {fontspec-opentype} \l_@@_keys_leftover_clist
 %</LU>
 
     \tl_if_empty:NF \l_@@_mapping_tl
@@ -360,7 +392,8 @@
 
     \str_if_eq:eeF { \l_@@_hexcol_tl \l_@@_opacity_tl }
                      { \c_@@_hexcol_tl \c_@@_opacity_tl }
-      { \@@_update_featstr:n { color = \l_@@_hexcol_tl\l_@@_opacity_tl } }
+%<XE>       { \@@_update_featstr:n { color = \l_@@_hexcol_tl\l_@@_opacity_tl } }
+%<LU>       { \@@_update_featstr:n { color = {\l_@@_hexcol_tl\l_@@_opacity_tl} } }
   }
 %    \end{macrocode}
 % \end{macro}
@@ -445,7 +478,7 @@
     \prop_gput:cnx {g_@@_fontinfo_ \g_@@_nfss_family_tl _prop} {fontdef}
       {
         \@@_construct_font_call:nn {\l_fontspec_fontname_tl}
-          { \l_@@_pre_feat_sclist \g_@@_rawfeatures_sclist }
+          { \l_@@_pre_feat_sclist \g_@@_rawfeatures_sclist \@@_get_variations: }
       }
     \prop_gput:cnV {g_@@_fontinfo_ \g_@@_nfss_family_tl _prop} {script-num} \l_@@_script_int
     \prop_gput:cnV {g_@@_fontinfo_ \g_@@_nfss_family_tl _prop} {lang-num}   \l_@@_language_int
@@ -511,6 +544,7 @@
 %    \begin{macrocode}
 \cs_new:Nn \@@_set_faces_aux:nnnnn
   {
+%<debug>  \typeout{:: @@_set_faces_aux:nnnnn  \exp_not:n { {#1} {#2} {#3} {#4} {#5} } }
     \fontspec_complete_fontname:Nn \l_@@_curr_fontname_tl {#3}
     \@@_make_font_shapes:Nnnnn \l_@@_curr_fontname_tl {#1} {#2} {#4} {#5}
   }
@@ -525,8 +559,10 @@
 \cs_new:Nn \fontspec_complete_fontname:Nn
   {
     \tl_set:Nx #1 {#2}
-    \tl_replace_all:Nnx #1 {*} {\l_@@_basename_tl}
-%<LU>  \tl_remove_all:Nn #1 {~}
+    \tl_if_in:NnF \l_fontspec_fontname_tl {*}
+      {
+        \tl_replace_all:Nne #1 {*} {\l_@@_basename_tl}
+      }
   }
 %    \end{macrocode}
 % \end{macro}
@@ -541,13 +577,13 @@
   {
     \tl_set:Nx \l_@@_this_font_tl {#3}
 
-    \tl_if_empty:xTF {#4}
+    \tl_if_empty:eTF {#4}
       { \clist_set:Nn \l_@@_sizefeat_clist {Size={-}} }
       { \@@_keys_set_known:nxN {fontspec-preparse-nested} {#4} \l_@@_tmp_tl }
 
     \tl_if_empty:NF \l_@@_this_font_tl
       {
-        \prop_put:Nxx \l_@@_nfssfont_prop {#1/#2}
+        \prop_put:Nee \l_@@_nfssfont_prop {#1/#2}
           { {#1}{#2}{\l_@@_this_font_tl}{#4}{\l_@@_sizefeat_clist} }
       }
   }
@@ -630,7 +666,7 @@
   {
     \bool_if:NF \l_@@_external_bool
       {
-        \tl_if_empty:xF {#2}
+        \tl_if_empty:eF {#2}
           {
             \tl_if_empty:NT #1
               {
@@ -649,7 +685,7 @@
     \group_begin:
     \@@_primitive_font_set:Nnn \l_@@_tmpa_font { \@@_construct_font_call:nn {#1}   { \l_@@_pre_feat_sclist } } { \f@size pt + 1sp }
     \@@_primitive_font_set:Nnn \l_@@_tmpb_font { \@@_construct_font_call:nn {#1#2} { \l_@@_pre_feat_sclist } } { \f@size pt + 1sp }
-    \str_if_eq:eeTF { \@@_primitive_font_get_name:N \l_@@_tmpa_font } { \@@_primitive_font_get_name:N \l_@@_tmpb_font }
+    \cs_if_eq:NNTF \l_@@_tmpa_font \l_@@_tmpb_font
       { \group_end: \prg_return_false: }
       { \group_end: \prg_return_true: }
   }
@@ -744,14 +780,14 @@
     \tl_clear:N \l_@@_size_tl
     \tl_set_eq:NN \l_@@_sizedfont_tl \l_@@_saved_fontname_tl % in case not spec'ed
 
-    \keys_set_known:nxN {fontspec-sizing} { \exp_after:wN \use:n #2 }
+    \keys_set_known:neN {fontspec-sizing} { \exp_after:wN \use:n #2 }
       \l_@@_sizing_leftover_clist
     \tl_if_empty:NT \l_@@_size_tl { \@@_error:n {no-size-info} }
 %<debug>\typeout{==~ size:~\l_@@_size_tl}
 
     % "normal"
     \@@_load_fontname:Nn \l_fontspec_fontname_tl {\l_@@_sizedfont_tl}
-    \@@_setup_nfss:Nnnn \l_@@_nfss_tl {#1} {\l_@@_sizing_leftover_clist} {}
+    \@@_setup_nfss:Nn \l_@@_nfss_tl { #1 , \l_@@_sizing_leftover_clist }
 %<debug>    \typeout{===~ sized~ font:~ \l_@@_sizedfont_tl}
 
     % small caps
@@ -776,21 +812,23 @@
 
     \bool_if:NF \l_@@_nosc_bool
       {
-        \@@_setup_nfss:Nnnn \l_@@_nfss_sc_tl
-          {#1} {\l_@@_sizing_leftover_clist} {\l_@@_fontfeat_curr_clist}
+        \@@_setup_nfss:Nn \l_@@_nfss_sc_tl
+          {#1 , \l_@@_sizing_leftover_clist , \l_@@_fontfeat_curr_clist}
       }
   }
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{\@@_setup_nfss:Nnnn}
+% \begin{macro}{\@@_setup_nfss:Nn}
 %    \begin{macrocode}
-\cs_new:Nn \@@_setup_nfss:Nnnn
+\cs_new:Nn \@@_setup_nfss:Nn
   {
 %<debug>\typeout{====~Setup~NFSS~shape:~<\l_@@_size_tl>~\l_fontspec_fontname_tl}
+%<debug>\typeout{====~Requested~features:~#2}
 
-    \@@_get_features:n { #2 , #3 , #4 }
-%<debug>\typeout{====~Gathered~features:~\g_@@_rawfeatures_sclist}
+    \@@_get_features:n { #2 }
+
+%<debug>\typeout{====~Gathered~features:~\g_@@_rawfeatures_sclist \@@_get_variations:}
 
     \tl_if_empty:NF \l_@@_scale_tl
       {
@@ -801,7 +839,7 @@
       {
         <\l_@@_size_tl> \l_@@_scale_tl
         \@@_construct_font_call:nn { \l_fontspec_fontname_tl }
-          { \l_@@_pre_feat_sclist \g_@@_rawfeatures_sclist }
+          { \l_@@_pre_feat_sclist \g_@@_rawfeatures_sclist \@@_get_variations: }
       }
   }
 %    \end{macrocode}
@@ -940,22 +978,25 @@
         } (#1/#2)~
         with~ NFSS~ spec.:~
         \l_@@_nfss_tl
-        \exp_not:n { \\ }
-        -~ \exp_not:N \str_case:nn { #1 / \@@_combo_sc_shape:n {#2} }
-        {
-          {\mddefault/\scdefault} {'small~ caps'~}
-          {\bfdefault/\scdefault} {'bold~ small~ caps'~}
-          {\mddefault/\scitdefault} {'italic~ small~ caps'~}
-          {\bfdefault/\scitdefault} {'bold~ italic~ small~ caps'~}
-          {\mddefault/\scsldefault} {'slanted~ small~ caps'~}
-          {\bfdefault/\scsldefault} {'bold~ slanted~ small~ caps'~}
-        }~( #1 / \@@_combo_sc_shape:n {#2} )~
-        with~ NFSS~ spec.:~
-        \l_@@_nfss_sc_tl
-        \tl_if_empty:fF {\l_@@_postadjust_tl}
+        \tl_if_empty:NF \l_@@_nfss_sc_tl
           {
-          \exp_not:N \\ and~ font~ adjustment~ code:
-          \exp_not:N \\ \l_@@_postadjust_tl
+            \exp_not:n { \\ }
+            -~ \exp_not:N \str_case:nn { #1 / \@@_combo_sc_shape:n {#2} }
+            {
+              {\mddefault/\scdefault} {'small~ caps'~}
+              {\bfdefault/\scdefault} {'bold~ small~ caps'~}
+              {\mddefault/\scitdefault} {'italic~ small~ caps'~}
+              {\bfdefault/\scitdefault} {'bold~ italic~ small~ caps'~}
+              {\mddefault/\scsldefault} {'slanted~ small~ caps'~}
+              {\bfdefault/\scsldefault} {'bold~ slanted~ small~ caps'~}
+            }~( #1 / \@@_combo_sc_shape:n {#2} )~
+            with~ NFSS~ spec.:~
+            \l_@@_nfss_sc_tl
+            \tl_if_empty:fF {\l_@@_postadjust_tl}
+              {
+              \exp_not:N \\ and~ font~ adjustment~ code:
+              \exp_not:N \\ \l_@@_postadjust_tl
+              }
           }
       }
   }
@@ -992,16 +1033,30 @@
 % \end{macro}
 %
 %
+% \begin{macro}{\@@_make_smallcaps:TF}
 % \begin{macro}{\@@_make_ot_smallcaps:TF}
 % \label{mac:makesmallcaps}
 % This macro checks if the font contains small caps.
 %    \begin{macrocode}
-%<LU>\cs_new:Nn \@@_make_smallcaps:TF
-%<XE>\cs_new:Nn \@@_make_ot_smallcaps:TF
+\cs_new:Nn \@@_make_ot_smallcaps:TF
   {
-    \exp_args:No \@@_check_ot_feat:NnTF \l_@@_fontface_cs_tl {smcp} {#1} {#2}
+    \bool_set_false:N \l_@@_tmpa_bool
+    \exp_args:Ne \clist_map_inline:nn { \l_@@_lang_tl , \g_@@_default_langs_clist }
+      {
+        \exp_args:Ne \clist_map_inline:nn { \l_@@_script_tl , \g_@@_default_scripts_clist }
+          {
+            \exp_args:No \@@_check_ot_feat:NnnnT \l_@@_fontface_cs_tl {smcp} {##1} {####1}
+              {
+%<debug>\typeout{SMCP~found~for~script/lang: ####1/##1~-~assuming~okay}
+                \bool_set_true:N \l_@@_tmpa_bool
+                \clist_map_break:
+              }
+          }
+      }
+    \bool_if:NTF \l_@@_tmpa_bool {#1} {#2}
   }
-%<*XE>
+%    \end{macrocode}
+%    \begin{macrocode}
 \cs_new:Nn \@@_make_smallcaps:TF
   {
     \bool_if:NTF \l_@@_ot_bool
@@ -1014,8 +1069,8 @@
           }
       }
   }
-%</XE>
 %    \end{macrocode}
+% \end{macro}
 % \end{macro}
 %
 % \begin{macro}{\@@_update_featstr:n}
@@ -1052,6 +1107,33 @@
 %    \end{macrocode}
 % \end{macro}
 %
+% \begin{macro}{\@@_get_variations:}
+% \cmd{\@@_get_variations:} builds the feature string representing the
+% current variation instance and/or axis settings.
+%    \begin{macrocode}
+\cs_generate_variant:Nn \tl_tail:n { e }
+\cs_new:Nn \@@_format_axis:nn
+  {
+    , #1 = #2
+  }
+\cs_new:Nn \@@_get_variations:
+  {
+    \tl_if_empty:NF \g_@@_instance_tl
+      {
+        instance = { \g_@@_instance_tl };
+      }
+      \prop_if_empty:NF \g_@@_rawvariations_prop
+      {
+        axis = {
+          \tl_tail:e {
+            \prop_map_function:NN \g_@@_rawvariations_prop \@@_format_axis:nn
+          }
+        };
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
 % \subsection{Initialisation}
 %
 % \begin{macro}{\@@_init:}
@@ -1074,10 +1156,6 @@
     \tl_gset_eq:NN \g_@@_nfss_enc_tl \g_fontspec_encoding_tl
 %<*LU>
     \tl_set:Nn \l_@@_mode_tl {node}
-    \int_set:Nn \prehyphenchar { `\- } % fixme
-    \int_zero:N \posthyphenchar        % fixme
-    \int_zero:N \preexhyphenchar       % fixme
-    \int_zero:N \postexhyphenchar      % fixme
 %</LU>
   }
 %    \end{macrocode}
@@ -1089,6 +1167,8 @@
 \cs_new:Nn \@@_init_fontface:
   {
     \tl_gclear:N \g_@@_rawfeatures_sclist
+    \prop_gclear:N \g_@@_rawvariations_prop
+    \tl_gclear:N \g_@@_instance_tl
     \tl_clear:N \l_@@_scale_tl
     \tl_set_eq:NN \l_@@_opacity_tl \c_@@_opacity_tl
     \tl_set_eq:NN \l_@@_hexcol_tl \c_@@_hexcol_tl
@@ -1208,9 +1288,10 @@
 
 % /©
 % ------------------------------------------------
-% The FONTSPEC package  <wspr.io/fontspec>
+% The FONTSPEC package  <latex3.github.io/fontspec>
 % ------------------------------------------------
-% Copyright  2004-2022  Will Robertson, LPPL "maintainer"
+% Copyright  2022-2024  The LaTeX project,  LPPL "maintainer"
+% Copyright  2004-2022  Will Robertson
 % Copyright  2009-2015  Khaled Hosny
 % Copyright  2013       Philipp Gesang
 % Copyright  2013-2016  Joseph Wright

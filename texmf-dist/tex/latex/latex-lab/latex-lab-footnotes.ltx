@@ -33,8 +33,8 @@
 %% 
 %% 
 %% File: latex-lab-footnotes.dtx
-\def\ltlabfootnotedate{2023-09-04}
-\def\ltlabfootnoteversion{0.8c}
+\def\ltlabfootnotedate{2024-09-30}
+\def\ltlabfootnoteversion{0.8g}
 
 \ProvidesFile{latex-lab-footnotes.ltx}
              [\ltlabfootnotedate\space v\ltlabfootnoteversion\space
@@ -57,7 +57,7 @@
 \bool_new:N       \l__fnote_autodetect_bool
 \bool_set_true:N  \l__fnote_autodetect_bool
 \tl_new:N  \l__fnote_currentstruct_tl
-\tl_set:Nn \l__fnote_currentstruct_tl {1}
+\tl_set:Nn \l__fnote_currentstruct_tl {2}
 \cs_generate_variant:Nn \hook_gput_code:nnn{nne}
 \cs_generate_variant:Nn \tag_struct_use:n {e}
 \cs_new_protected:Npn \fnote_step_fnmark:nn #1#2 {
@@ -95,7 +95,9 @@
 \NewHook{fntext/begin}
 \NewHook{fntext/end}
 \bool_new:N        \g_fnote_debug_bool
-\bool_gset_true:N  \g_fnote_debug_bool
+
+\cs_new_protected:Npn \DebugFNotesOn  { \bool_gset_true:N  \g_fnote_debug_bool  }
+\cs_new_protected:Npn \DebugFNotesOff { \bool_gset_false:N  \g_fnote_debug_bool }
 \cs_new_protected:Npn \__fnote_debug_footnotemark:
   {
     \bool_if:NT \g_fnote_debug_bool
@@ -155,6 +157,17 @@
 \cs_new_eq:NN \__fnote_footnotemark_finish: \__fnote_footnotemark_default_finish:
 \NewSocket{tagsupport/fnmark}{1}
 \cs_set_eq:NN  \@footnotemark \fnote_footnotemark:
+\str_if_exist:cF { l__socket_tagsupport/para/restore_plug_str }
+    {
+      \NewSocket{tagsupport/para/restore}{0}
+      \NewSocketPlug{tagsupport/para/restore}{default}
+        {
+          \tl_set:Nn    \l__tag_para_main_tag_tl {text-unit}
+          \tl_set_eq:NN \l__tag_para_tag_tl\l__tag_para_tag_default_tl
+          \bool_set_false:N\l__tag_para_flattened_bool
+        }
+      \AssignSocketPlug{tagsupport/para/restore}{default}
+    }
 \cs_new_protected:Npn \fnote_footnotetext:n #1 {
   \__fnote_debug_footnotetext:
   \hook_use:n {fntext/before}
@@ -170,6 +183,7 @@
     \floatingpenalty \@MM
     \hsize\columnwidth
     \@parboxrestore
+    \UseTaggingSocket{para/restore}
     \parindent 1em     % typical default used in \@makefntext moved up here
     \def\@currentcounter{footnote}
     \protected@edef \@currentlabel { \p@footnote \@thefnmark }
@@ -274,10 +288,14 @@
         \tl_if_in:NnTF \l__fnote_patch_tl { \hb@xt@ }
           { \cs_set_eq:NN \__fnote_tmp:w \__fnote_patch_hb@xt@:w }
           {
-            \tl_if_in:NnTF \l__fnote_patch_tl { \@makefnmark }
-              { \cs_set_eq:NN \__fnote_tmp:w \__fnote_patch_@makefnmark:w }
-              { \ERROR
-                \cs_set_eq:NN \__fnote_tmp:w \exp_stop_f: }
+            \tl_if_in:NnTF \l__fnote_patch_tl { \makebox }
+              { \cs_set_eq:NN \__fnote_tmp:w \__fnote_patch_makebox:w }
+              {
+                \tl_if_in:NnTF \l__fnote_patch_tl { \@makefnmark }
+                  { \cs_set_eq:NN \__fnote_tmp:w \__fnote_patch_@makefnmark:w }
+                  { \ERROR
+                    \cs_set_eq:NN \__fnote_tmp:w \exp_stop_f: }
+              }
           }
       }
     \tl_set:Nf \l__fnote_patch_tl
@@ -289,6 +307,8 @@
   { \exp_stop_f: #1 \@makefntext@processX { \hbox #2 } }
 \cs_new:Npn \__fnote_patch_hb@xt@:w #1 \hb@xt@ #2 #
   { \exp_stop_f: #1 \@makefntext@processX { \hb@xt@ #2 } }
+\cs_new:Npn \__fnote_patch_makebox:w #1 \makebox #2 #
+  { \exp_stop_f: #1 \@makefntext@processX { \makebox #2 } }
 \cs_new:Npn \__fnote_patch_@makefnmark:w #1 \@makefnmark
   { \exp_stop_f: #1 \@makefntext@processX { \use:n } { \@makefnmark } }
 \cs_new:Npn \@makefntext@processX #1#2{\UseSocket{tagsupport/fntext/mark}{#1{#2}}}
@@ -300,7 +320,8 @@
         \cs_set_eq:NN \@makefntext \fnote_makefntext:n
       }
       {
-        \__fnote_patch:
+        \cs_if_eq:NNF \@makefntext \footmisc@hang@makefntext
+                      { \__fnote_patch: }
       }
   }
 
@@ -445,10 +466,7 @@
 
 \cs_new_protected:Npn \__fnote_gput_ref:nn #1 #2 %#1 the structure number receiving the ref #2
   {
-    \tag_if_active:T
-      {
-        \tag_struct_gput:nne {#1}{ref}{\tag_struct_object_ref:e { #2 }}
-      }
+    \tag_struct_gput:nnn {#1}{ref_num}{#2}
   }
 \cs_new_protected:Npn \fnote_gput_refs:nn #1 #2 % pair of numbers
   {
@@ -456,8 +474,6 @@
     \__fnote_gput_ref:nn {#2}{#1}
   }
 \cs_generate_variant:Nn \fnote_gput_refs:nn {ee}
-\tl_new:N \l__fnote_dflt_struct_tl
-\tl_set:Nn \l__fnote_dflt_struct_tl {1}
 \NewSocketPlug{tagsupport/fntext/begin}{FENote}
   {
     \tag_mc_end_push:
@@ -466,10 +482,13 @@
         \tag_struct_begin:n { tag=footnote }
       }
       {
-        \tag_struct_begin:n { tag=footnote,parent=\l__fnote_dflt_struct_tl }
+        \tag_struct_begin:n
+          {
+            tag=footnote,
+            parent=\int_max:nn{2}{\tag_get:n{current_Sect}+0}
+          }
       }
     \tl_set:Ne \l__fnote_currentstruct_tl { \tag_get:n{struct_num} }
-    \tag_struct_begin:n { tag=footnotelabel }\tag_struct_end:
     \bool_if:NTF \l__fnote_autodetect_bool
       {
         \fnote_mark_gpop_all:ooN { \@thefnmark }{ \l_fnote_type_tl } \l__fnote_currentrefs_seq
@@ -496,7 +515,7 @@
      %\seq_show:N\l__fnote_currentrefs_seq
      \seq_map_inline:Nn\l__fnote_currentrefs_seq {\MakeLinkTarget*{footnote*.##1}}
      \MakeLinkTarget*{footnote*.\l__fnote_currentstruct_tl}
-     \tag_struct_begin:n { tag=NonStruct,parent=\l__fnote_currentstruct_tl +1 }
+     \tag_struct_begin:n { tag=footnotelabel,parent=\l__fnote_currentstruct_tl,firstkid }
       \tag_mc_begin:n { tag=Lbl }
        #1
       \tag_mc_end:

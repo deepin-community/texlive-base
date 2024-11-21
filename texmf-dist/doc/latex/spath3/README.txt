@@ -1,6 +1,6 @@
 ----------------------------------------------------------------
 spath3 --- LaTeX3 functions for manipulating PGF soft paths
-E-mail: loopspace@mathforge.org
+E-mail: Andrew Stacey <loopspace@mathforge.org>
 Released under the LaTeX Project Public License v1.3c or later
 See http://www.latex-project.org/lppl.txt
 ----------------------------------------------------------------

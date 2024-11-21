@@ -44,7 +44,7 @@
 %    }^^A
 % }
 %
-% \date{Released 2024-01-04}
+% \date{Released 2024-03-14}
 %
 % \maketitle
 %
@@ -192,8 +192,8 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \draw_path_corner_arc:nn #1#2
   {
-    \dim_set:Nn \l_@@_corner_xarc_dim {#1}
-    \dim_set:Nn \l_@@_corner_yarc_dim {#2}
+    \dim_set:Nn \l_@@_corner_xarc_dim { \fp_to_dim:n {#1} }
+    \dim_set:Nn \l_@@_corner_yarc_dim { \fp_to_dim:n {#2} }
     \bool_lazy_and:nnTF
       { \dim_compare_p:nNn \l_@@_corner_xarc_dim = { 0pt } }
       { \dim_compare_p:nNn \l_@@_corner_yarc_dim = { 0pt } }
@@ -700,16 +700,18 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \draw_path_rectangle:nn #1#2
   {
-    \@@_point_process:nnn
+    \bool_lazy_or:nnTF
+      { \l_@@_corner_arc_bool }
+      { \l_@@_matrix_active_bool }
       {
-        \bool_lazy_or:nnTF
-          { \l_@@_corner_arc_bool }
-          { \l_@@_matrix_active_bool }
-          { \@@_path_rectangle_rounded:nnnn }
-          { \@@_path_rectangle:nnnn }
+        \@@_point_process:nnn \@@_path_rectangle_rounded:nnnn
+          {#1} {#2}
       }
-      {#1}
-      {#2}
+      {
+        \@@_point_process:nnn \@@_path_rectangle:nnnn
+          { (#1) + ( \l_@@_xshift_dim , \l_@@_yshift_dim ) }
+          { #2 }
+      }
   }
 \cs_new_protected:Npn \@@_path_rectangle:nnnn #1#2#3#4
   {
@@ -766,8 +768,8 @@
     \@@_point_process:nnn
       {
         \@@_path_grid_auxi:eennnn
-          { \dim_eval:n { \dim_abs:n {#1} } }
-          { \dim_eval:n { \dim_abs:n {#2} } }
+          { \dim_abs:n {#1} }
+          { \dim_abs:n {#2} }
       }
       {#3} {#4}
   }
@@ -787,8 +789,8 @@
 \cs_new_protected:Npn \@@_path_grid_auxiii:nnnnnn #1#2#3#4#5#6
   {
     \@@_path_grid_auxiv:eennnnnn
-      { \fp_to_dim:n { #1 * trunc(#3/(#1)) } }
-      { \fp_to_dim:n { #2 * trunc(#4/(#2)) } }
+      { \fp_to_dim:n { #1 * ceil(#3/(#1)) } }
+      { \fp_to_dim:n { #2 * ceil(#4/(#2)) } }
       {#1} {#2} {#3} {#4} {#5} {#6}
   }
 \cs_new_protected:Npn \@@_path_grid_auxiv:nnnnnnnn #1#2#3#4#5#6#7#8
@@ -832,19 +834,20 @@
 %    \end{macrocode}
 % \end{variable}
 %
-% \begin{variable}{\l_@@_path_use_bb_bool, \l_@@_path_use_clear_bool}
+% \begin{variable}{\l_@@_path_use_clear_bool}
 %   Actions handled at the macro layer.
 %    \begin{macrocode}
-\bool_new:N \l_@@_path_use_bb_bool
 \bool_new:N \l_@@_path_use_clear_bool
 %    \end{macrocode}
 % \end{variable}
 %
 % \begin{macro}{\draw_path_use:n, \draw_path_use_clear:n}
+% \begin{macro}{\draw_path_replace_bb:}
+% \begin{macro}{\@@_path_replace_bb:NnN}
 % \begin{macro}{\@@_path_use:n}
 % \begin{macro}{\@@_path_use_action_draw:, \@@_path_use_action_fillstroke:}
 % \begin{macro}{\@@_path_use_stroke_bb:}  
-% \begin{macro}{\@@_path_use_stroke_bb_aux:NnN}
+% \begin{macro}{\@@_path_use_bb:NnN}
 %   There are a range of actions which can apply to a path: they are handled
 %   in a single function which can carry out several of them. The first step
 %   is to deal with the special case of clearing the path.
@@ -864,6 +867,23 @@
         \@@_path_reset_limits:
       }
       { \@@_path_use:n { #1 , clear } }
+  }
+\cs_new_protected:Npn \draw_path_replace_bb:
+  {
+    \@@_path_replace_bb:NnN x { max } +
+    \@@_path_replace_bb:NnN y { max } +
+    \@@_path_replace_bb:NnN x { min } -
+    \@@_path_replace_bb:NnN y { min } -
+    \@@_softpath_clear:
+    \@@_path_reset_limits:
+  }
+\cs_new_protected:Npn \@@_path_replace_bb:NnN #1#2#3
+  {
+    \dim_gset:cn { g_@@_ #1#2 _dim }
+      {
+          \dim_use:c { g_@@_path_ #1#2 _dim }
+        #3 0.5 \g_@@_linewidth_dim
+      }
   }
 %    \end{macrocode}
 %   Map over the actions and set up the data: mainly just booleans,
@@ -913,7 +933,10 @@
           }
       }
     \bool_if:NT \l_@@_path_use_clear_bool
-      { \@@_softpath_clear: }
+      {
+        \@@_softpath_clear:
+        \@@_path_reset_limits:
+      }
   }
 \cs_new_protected:Npn \@@_path_use_action_draw:
   {
@@ -930,12 +953,12 @@
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_path_use_stroke_bb:
   {
-    \@@_path_use_stroke_bb_aux:NnN x { max } +
-    \@@_path_use_stroke_bb_aux:NnN y { max } +
-    \@@_path_use_stroke_bb_aux:NnN x { min } -
-    \@@_path_use_stroke_bb_aux:NnN y { min } -
+    \@@_path_use_bb:NnN x { max } +
+    \@@_path_use_bb:NnN y { max } +
+    \@@_path_use_bb:NnN x { min } -
+    \@@_path_use_bb:NnN y { min } -
   }
-\cs_new_protected:Npn \@@_path_use_stroke_bb_aux:NnN #1#2#3
+\cs_new_protected:Npn \@@_path_use_bb:NnN #1#2#3
   {
     \dim_compare:nNnF { \dim_use:c { g_@@_ #1#2 _dim } } = { #3 -\c_max_dim }
       {
@@ -951,6 +974,8 @@
       }
   }
 %    \end{macrocode}
+% \end{macro}
+% \end{macro}
 % \end{macro}
 % \end{macro}
 % \end{macro}
@@ -1017,11 +1042,13 @@
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macrocode}
+% \subsection{Messages}
+%
+%    \begin{macrocode}
 \msg_new:nnnn { draw } { invalid-path-action }
   { Invalid~action~'#1'~for~path. }
   { Paths~can~be~used~with~actions~'draw',~'clip',~'fill'~or~'stroke'. }
-% \end{macrocode}
+%     \end{macrocode}
 %
 %    \begin{macrocode}
 %</package>

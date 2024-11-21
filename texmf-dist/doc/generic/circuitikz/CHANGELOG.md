@@ -1,6 +1,49 @@
 <!--- CircuiTikz - Changelog --->
 The major changes among the different CircuiTikZ versions are listed here. See <https://github.com/circuitikz/circuitikz/commits> for a full list of changes.
 
+* Version 1.7.0 (2024-08-03)
+
+    There are no big changes here, but the change to the resistor code (maybe one of the most used by the package) well deserves a minor version bump. A couple of new components, and several minor fixes.
+
+    - New component: new kind of current tap (suggested by [EEpchi and Dr4UX on GitHub](https://github.com/circuitikz/circuitikz/issues/807))
+    - New arrow tip `Jack Tap` to help drawing jack connectors (suggested by [Anisio Rogerio Braga](https://github.com/circuitikz/circuitikz/issues/806))
+    - Change the drawing of the thermocouple (suggested by [Dr4UX on GitHub](https://github.com/circuitikz/circuitikz/issues/811))
+    - Change and enhancement to the drawing of the American resistors (triggered by [Dr4UX on GitHub](https://github.com/circuitikz/circuitikz/issues/814)), fixing a long-standing small asymmetry that nobody noticed
+    - Minor adjustment for joins in `viscoe` component
+    - Minor additions (`rectjoinfill`) and fixes in documentation
+
+* Version 1.6.9 (2024-05-25)
+
+    Several new components and a bug fix for a nasty long-standing bug about switching diode types.
+
+    - Added a Relais-Shape (contributed by [Jakob "DraUX" on GitHub](https://github.com/circuitikz/circuitikz/pull/795)
+    - Added a center tap anchor for tube filament (suggested by [user bogger33 on GitHub](https://github.com/circuitikz/circuitikz/issues/792))
+    - Added neon lamps (two versions, suggested by [user bogger33 on GitHub](https://github.com/circuitikz/circuitikz/issues/793))
+    - Added a configurable spark gap (suggested by [user bogger33 on GitHub](https://github.com/circuitikz/circuitikz/issues/800))
+    - Fix a long-standing problem when [(locally) switching diode type](https://github.com/circuitikz/circuitikz/issues/794)
+
+* Version 1.6.8 (2024-05-05)
+
+    Several new components, more anchors, a bit of documentation enhancement; maybe the biggest change is the new "flexible" tube.
+
+    - Added `mid` anchor to all traditional switches
+    - Added a slashed generic European-style resistor (thanks to [Jana](https://tex.stackexchange.com/q/711702/38080))
+    - Added a multi-anode tube for implementing nixies and vfd (thanks to [GitHub user nogger33](https://github.com/circuitikz/circuitikz/issues/785))
+    - Switch the default compiler to pdflatex (see https://tex.stackexchange.com/q/709273/38080)
+    - Added a warning about color and engine in the documentation
+    - Enhanced the documentation for instruments (thanks to [Github user mxxmxm](https://github.com/circuitikz/circuitikz/issues/787))
+
+* Version 1.6.7 (2024-02-09)
+
+    Several new blocks, more flexible generic anchors for blocks, and a new option to align the signs on american-style voltage sources.
+
+    - Added `saturation` block (contributed by [P. Sacco <paul.sacco@estaca.eu>](https://github.com/circuitikz/circuitikz/issues/758))
+    - Added `iamp`, `sigmoid`, and `allornothing` blocks
+    - Added optical fiber `fiber` (contributed by [Christopher Beck](https://github.com/circuitikz/circuitikz/pull/771))
+    - Now the position of the lateral anchors (`left up` and similar) of blocks is configurable (suggested by [user "sputeanus" on GitHub](https://github.com/circuitikz/circuitikz/issues/769))
+    - Now you can choose how the signs on american-style sources rotate when the source is not vertical (suggested by [jotagah on GitHub](https://github.com/circuitikz/circuitikz/issues/773))
+    - New section in the manual about related packages
+
 * Version 1.6.6 (2023-12-09)
 
     Several new components.

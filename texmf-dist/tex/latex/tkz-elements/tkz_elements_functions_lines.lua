@@ -1,6 +1,6 @@
 -- tkz_elements_functions_lines.lua
--- date 2024/02/04
--- version 2.00c
+-- date 2024/07/16
+-- version 2.30c
 -- Copyright 2024  Alain Matthes
 -- This work may be distributed and/or modified under the
 -- conditions of the LaTeX Project Public License, either version 1.3
@@ -138,4 +138,25 @@ function in_segment_ (a,b,pt)
     else
        return false
     end
+end
+
+function report_ (za,zb,d,pt)
+   local t,len
+   len = point.mod(zb-za)
+   t = d/len
+   if pt == nil  
+   then  
+   return barycenter_({za,1-t},{zb,(t)})
+else 
+   return barycenter_({za,1-t},{zb,(t)}) +pt-za
+end
+end
+
+function colinear_at_ (za,zb,pt,k)
+  if k == nil  
+  then 
+	return  pt+zb-za
+else
+  return  pt+k*(zb-za)
+end
 end

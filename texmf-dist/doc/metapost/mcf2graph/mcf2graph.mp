@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% mcf2graph ver 5.11    Copyright (c) 2013-2024   Akira Yamaji
+% mcf2graph ver 5.13    Copyright (c) 2013-2024   Akira Yamaji
 %
 % Permission is hereby granted, free of charge, to any person obtaining a copy of this software
 % and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -22,7 +22,7 @@
 % This package is located at : http://www.ctan.org/pkg/mcf2graph
 % Suggestion or request mail to : mcf2graph@gmail.com 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-message "* This is mcf2graph ver 5.11  2024.01.21";
+message "* This is mcf2graph ver 5.13  2024.11.10";
 tracingstats:=1; prologues:=3; warningcheck:=0;
 %-------------------------------------------------------------------------------------------------
 newinternal string EN_;
@@ -33,13 +33,13 @@ string  row[][],save_str[],tbl_atom_str[],str_tbl[],arg_s[],mc[],ex[],ad[],op[],
         lib_tag[][],lib_val[][],mc,ex,ad,op,aux_delimiter,default_library,EN,FM,MW,MI,CAT,JN,CAS,
         USE,EXA,EXB,file_input,file_output,default_temp_file,mpfont,atomfont,tempc,temps,blanks,
         sC,sI,sS,sT,sV,forbiddens;
-pair    save_pair[],msize,mposition,fsize,fmargin,dum,save_mposition,?,?O,?w,?z;
+pair    save_pair[],msize,mposition,fsize,fmargin,save_mposition;
 %-------------------------------------------------------------------------------------------------
 fig_num:=str_cnt:=tbl_cnt:=mangle:=sw_frame:=sw_trimming:=sw_ext_all:=sw_abbreviate:=sw_expand:=0;
 sw_comment:=sw_output:=sw_numbering:=tag_cnt:=rw_cnt:=pcode_all:=0; 
 numbering_start:=1; numbering_end:=4095;
 %-------------------------------------------------------------------------------------------------
-aux_delimiter:=";"; blanks:= "            ";  forbiddens:=" &()[]{}^=;!'+,`~"; dum:=(-4091,0);
+aux_delimiter:=";"; blanks:= "            ";  forbiddens:=" &()[]{}^=;!'+,`~";
 for s="No","EN","JN","MW","MI","FM","CAT","CAS","USE","EXA","EXB": tag[incr tag_cnt]:=s; endfor
 MW_n:=0; Fig:=1; Mcode:=2; Calc:=4; Info:=8; Table:=16; Report:=32; MOL2k:=64; MOL3k:=128;
 Atom:=8; Bond:=16; Group:=32; Mol:=64; Outside:=1; Inside:=2; Bothside:=Outside+Inside;
@@ -73,6 +73,7 @@ vardef fsl(expr n)(expr s)= s&(substring(0,n-length(s)) of blanks) enddef;
 vardef fdr(expr n)(expr s)=
   if length(decimal(s))>n: substring (0,n) of decimal(s) else: fsr(n)(decimal(s)) fi enddef;
 vardef fdl(expr n)(expr s)= fsl(n)(decimal(s)) enddef;
+vardef Incr suffix $ == $:=$+-1; $ enddef;
 %=================================================================================================
 default_library:="main_lib.mcf"; default_temp_file:="temp.mcf";
 mpfont:="uhvr8r"; atomfont:="draw"; defaultfont:=mpfont;
@@ -109,8 +110,7 @@ if ahlength=5: message "* output MOL file(V2000)"; message "* "&jobname&"-nnn-"&
 ef ahlength=6: message "* output MOL file(V3000)"; message "* "&jobname&"-nnn-"&"EN"&".mol";
 ef ahlength=7: message "* output report file"; message "* file name="&jobname&"-report.txt"; fi
 clearit;
-%--------------------------------------------------------------------------------------------------
-?3:=?20:=Ph:=Ph1:=Ph2:=hz:=0; vt:=1;
+%-------------------------------------------------------------------------------------------------
 ratio_chain_ring:=0.66; ratio_atom_bond:=0.36; ratio_thickness_bond:=0.015;
 ratio_thickness_char:=0.1; ratio_char_bond:=1.5; ratio_bondgap_bond:=0.15;
 ratio_hashgap_bond:=0.12; ratio_hash_black:=0.4; ratio_wedge_bond:=0.12; ratio_atomgap_atom:=0.04;
@@ -121,12 +121,12 @@ fsize:=(30mm,20mm); fmargin:=(0.4mm,0.4mm); msize:=(1,1); mposition:=(0.5,0.5);
 ahangle:=45; ahlength:=4; defaultsize:=8; defaultscale:=1; labeloffset:=3; ext_defaultline:=0.5;
 lonepairdiam:=lonepairspace:=circlediam:=circlepen:=bboxmargin:=0; mc_length:=100;
 outputformatoptions:="";
-%==================================================================================================
-pcode_emb_start:=1000;     % 1001 => 1900   for embedded pcode (max 1900)
-pcode_emi_start:=1900;     % 1901 => 2000   for embedded internal pcode (max 100)
-pcode_usr_start:=2000;     % 2001 => 3000   for user     pcode (max 1000)
+%=================================================================================================
+pcode_emb_start:=1001;     % 1001 => 1900   for embedded pcode (max 900)
+pcode_emi_start:=1901;     % 1901 => 2000   for embedded internal pcode (max 100)
+pcode_usr_start:=2001;     % 2001 => 3000   for user     pcode (max 1000)
 pcode_int_start:=3000;     % 3001 => 4000   for internal pcode (max 1000)
-%--------------------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------------------
 def def_com(expr n)(text tx)= nA:=n; forsuffixes list=tx:: list:=nA; nA:=nA+1; endfor enddef;
 def_com(-4090)(_com,_jp_atom,_jp_absA,_jp_bond,_cyc,_cyc_sB,_cyc_eB,_set_line,_tmp_line,_chg_len,
   _get_len,_ring_len,_tmp_len,_rot_ang,_adj_ang,_chg_env,_tmp_env,_set_colorA,_set_colorB,
@@ -135,7 +135,7 @@ def_com(-4090)(_com,_jp_atom,_jp_absA,_jp_bond,_cyc,_cyc_sB,_cyc_eB,_set_line,_t
   _len_e,_len_ss,_len_ee,_group_s,_group_e,_rest,_charge,_from,_until,
   si,dl,dl_,dr,dr_,db,dm,dm_,tm,wf,wb,bd,bz,zf,zb,dt,wv,nl,vf,vb,nb,wf_r,wb_r,bd_r,arc_lb,arc_br,
   arc_lbr,arc_ltr,si_,wf_,wb_,zf_,zb_,wv_,bd_);
-%--------------------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------------------
 def parameter_list=
   sw_numbering,sw_expand,sw_output,sw_ext_all,sw_frame,sw_trimming,sw_abbreviate,ratio_atom_bond,
   ratio_thickness_bond,ratio_char_bond,ratio_chain_ring,ratio_bondgap_bond,ratio_hash_black,
@@ -144,7 +144,7 @@ def parameter_list=
   thickness_frame,offset_thickness,numbering_start,numbering_end,defaultsize,defaultscale,
   labeloffset,mangle,blength,fsize,fmargin,msize,mposition,defaultfont,atomfont,dottedline_gap
 enddef;
-%--------------------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------------------
 def init_par(text t)= nA:=nB:=nC:=0;
   for list=t: if numeric list: save_num[incr nA]:=list;
               ef pair list:    save_pair[incr nB]:=list;
@@ -152,7 +152,7 @@ def init_par(text t)= nA:=nB:=nC:=0;
               fi
   endfor
 enddef;
-%--------------------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------------------
 def store_par(text t)= nA:=nB:=nC:=0;
   for list=t: if numeric list: if save_num[incr nA]<>list:  save_num[nA]:=list; fi
               ef pair list:    if save_pair[incr nB]<>list: save_pair[nB]:=list; fi
@@ -160,7 +160,7 @@ def store_par(text t)= nA:=nB:=nC:=0;
               fi
   endfor
 enddef;
-%--------------------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------------------
 def restore_par(text t)= nA:=nB:=nC:=0;
   forsuffixes list=t: if numeric list: if list<>save_num[incr nA]:  list:=save_num[nA]; fi
                       ef pair    list: if list<>save_pair[incr nB]: list:=save_pair[nB]; fi
@@ -168,10 +168,10 @@ def restore_par(text t)= nA:=nB:=nC:=0;
                       fi
   endfor
 enddef;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 def beginfigm=
   begingroup
-  save ','',//,@,#,#@,##,\,\\,\*,|=,|<,**,++,_,f_ext,blen,ext,add,ang_br,fw_n,bw_n,
+  save ','',`,``,//,@,#,#@,##,\,\\,\*,|=,|<,**,++,_,f_ext,blen,ext,add,ang_br,fw_n,bw_n,
        info_cnt,bond_cntA,firstc,warning_cnt,hideH,hideH_cnt,cntM,cntA,cntB,
        minX,minY,maxX,maxY,posA,posM,lineB,sB,eB,angB,angA,lenB,angX,numS,sumA,bond_num,wdM,htM,
        chargeA,addA,add_rot,mol_pic,color_list,filter_s,no,mw,mi,fm;
@@ -181,21 +181,23 @@ def beginfigm=
   string mi,no,fm,mw,firstc,filter_s;
   picture mol_pic[];
   color color_list[];
-  %------------------------------------------------------------------------------------------------
+  %-----------------------------------------------------------------------------------------------
   store_par(parameter_list);
   no:=mc:=ex:=ad:=op:=temps:=mw:=mi:=fm:=filter_s:="";
   EN:=JN:=MW:=FM:=MI:=CAS:=CAT:=EXA:=EXB:=USE:="-";
   f_ext:=cntM:=mc_row:=ex_row:=ad_row:=op_row:=info_cnt:=err_cnt:=0;
   let ext=ext_to_fig; let add=add_to_molecule; let ++=add_to_molecule; let **=ext_to_fig;
-  def ' = read_ud enddef; def '' = readm enddef; def \ = drawm enddef; def \\ = putm enddef;
+  def '' = define_parts enddef; def '` = readm enddef;
+  def \ = drawm enddef; def \\ = putm enddef;
   def \* = checkm enddef; def $ = getm enddef; def @ expr p = mposition:=p; enddef;
-  def # expr p = fsize:=p; enddef; def #@ expr p = fmargin:=p; enddef;
+  def # expr p = fsize:=p; enddef; def #@ expr p = fmargin:=p; enddef; 
+  def `(expr s) = define_group_string(s)() enddef; def `` = define_group_string enddef;
   def ## expr p = msize:=p; enddef; def |=(expr n) = blength:=n; enddef;
   def |<(expr n) = max_blength:=n; enddef; def _ expr s = EN:=s; enddef;
   pcode_num:=pcode_usr_start; pcode_int:=pcode_int_start; fig_num:=fig_num+1;
   mol_pic[0]:=nullpicture;
 enddef;
-%--------------------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------------------
 def endfigm=
   %--------------------------------------------------------------------------------------------
   if cntM>=1:
@@ -306,14 +308,10 @@ def putm=
   if ex_row>=1: ext(scantokens(ex)) fi
 enddef;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-vardef '(text t)= pcode_num:=pcode_num+-1; read_mcf(pcode_num)(t); pcode_num enddef;
-vardef read_id(text t)= pcode_num:=pcode_num+-1;
-  read_mcf(pcode_num)(|,#rate_cr,t,##,(_com,_rest)); pcode_num enddef;
-vardef read_ud(text t)= pcode_num:=pcode_num+-1;
-  read_mcf(pcode_num)(dum,dum,|,t,(_com,_rest)); pcode_num enddef;
+vardef define_parts(text t)= pcode_num:=pcode_num+-1; read_mcf(pcode_num)(t); pcode_num enddef;
 vardef abs_adress primary n = if n LT 0:: (n+-360)-4095 else:: n-4095 fi enddef;
 primarydef a from_until b = (_from,a),(_until,b) enddef;
-primarydef a op_plus b = read_id(a,b) enddef;
+primarydef a op_quot b = add_parts(a,b) enddef;
 tertiarydef a bond__bond b = (a,b) enddef;
 tertiarydef a bond___bond b = (a+-2000,b) enddef;
 tertiarydef a bond____bond b = (a+-2000,b+-2000) enddef;
@@ -338,33 +336,29 @@ def group_wv secondary n = /n~wv enddef;  def group_nb secondary n = /n~nb endde
 def read_mcf(expr n)(text t)=
   begingroup
   if unknown inside_mc::
-    save /,//,/*,*/,**,*/*,~,^,',`,<,>,:,=,+,\,\\,*\,\*,*\*,@,@$,$,&,&$,#,##,{,},|,||,_,
+    save /,//,/*,*/,**,*/*,~,^,`,',<,>,:,=,+,\,\\,*\,\*,*\*,@,@$,$,&,&$,#,##,{,},|,||,_,
          --,---,----,CP,CA,CC,DL,FR,inside_mc;
     inside_mc:=1; | :=mark_adress; || :=reset_adress; ##:=reset_length; _:=NO_ATOM;
-    \:=0; \\:=zero_dm; *\:=zero_wf; \*:=zero_zf; *\*:=zero_wv;
-    let = ==op_equ; let : ==op_col; let ^==op_hat; let ~==op_til; let > ==op_lth; let `==op_bqu;
-    let -- == bond__bond; let --- == bond___bond; let ---- == bond____bond;
-    let }==); let @$==jump_atom_abs; let < ==rot_angle; let @==jump_atom; let &==cyc_atom;
-    let #==chg_length; let /==group_si; let //==group_dm; let */==group_wf; let /*==group_zf;
-    let */*==group_wv; let **==group_nb; let CP == pcode_add; let CA == pcode_add_adr;
+    \:=0; \\:=zero_dm; *\:=zero_wf; \*:=zero_zf; *\*:=zero_wv; let ' == op_quot;
+    let = ==op_equ; let : ==op_col; let ^ ==op_hat; let ~ ==op_til; let > ==op_lth;
+    let ` ==op_bqu; let -- == bond__bond; let --- == bond___bond; let ---- == bond____bond;
+    let } == ); let @$ ==jump_atom_abs; let < ==rot_angle; let @ ==jump_atom; let & ==cyc_atom;
+    let # ==chg_length; let / ==group_si; let // ==group_dm; let */ ==group_wf; let /* ==group_zf;
+    let */* ==group_wv; let ** ==group_nb; let CP == pcode_add; let CA == pcode_add_adr;
     let FR == fuse_ring_bonds; def DL(expr p)==CA(_set_line,dl,p) enddef;
     def CB(expr p)==CP(_mk_bond,p) enddef; def CC(expr p)==CP(_com,p) enddef;
-    def $==abs_adress enddef; def &$==&.$ enddef; def '==read_id enddef; let +==op_plus;
-    def {==read_number( enddef;
+    def $ ==abs_adress enddef; def &$ ==&.$ enddef; def { ==read_adress( enddef;
   fi
   %----------------------------------------------------------------------------------------------
   pcode_cnt[n]:=0;
   for list==t::
     if known list::
-      if pair list:: pcode_cnt[n]:= pcode_cnt[n]+-1;
-                     pcode_com[n][pcode_cnt[n]]:=xpart(list);
-                     pcode_par[n][pcode_cnt[n]]:=ypart(list);
+      if pair list::
+        pcode_com[n][Incr pcode_cnt[n]]:=xpart(list); pcode_par[n][pcode_cnt[n]]:=ypart(list);
       ef numeric list::
         if list==_nop:: message "unknown command in "AND decimal(n);
         ef list>=pcode_emb_start:: expand_pcode(n,list);
-        else::
-          pcode_cnt[n]:=pcode_cnt[n]+-1;
-          pcode_com[n][pcode_cnt[n]]:=_mk_bond; pcode_par[n][pcode_cnt[n]]:=list;
+        else:: pcode_com[n][Incr pcode_cnt[n]]:=_mk_bond; pcode_par[n][pcode_cnt[n]]:=list;
         fi
       fi
     else:: message "unknown command in "AND decimal(n);
@@ -377,41 +371,51 @@ def expand_pcode(expr n,a)=
   if n==0::
     for i==1 upto pcode_cnt[a]::
       if pcode_com[a][i]>=pcode_emb_start:: expand_pcode(n,pcode_com[a][i]);
-      else:: pcode_cnt[n]:=pcode_cnt[n]+-1;
-             pcode_com[n][pcode_cnt[n]]:=pcode_com[a][i];
-             pcode_par[n][pcode_cnt[n]]:=pcode_par[a][i];
+      else::
+        pcode_com[n][Incr pcode_cnt[n]]:=pcode_com[a][i];
+        pcode_par[n][pcode_cnt[n]]:=pcode_par[a][i];
       fi
     endfor
-  else::
-    pcode_cnt[n]:=pcode_cnt[n]+-1; pcode_com[n][pcode_cnt[n]]:=a;
+  else:: pcode_com[n][Incr pcode_cnt[n]]:=a;
   fi
 enddef;
 %-------------------------------------------------------------------------------------------------
-vardef read_number(text t)=
-  save :,','`;
-  let : == from_until; def ' == +-2000 enddef; def '` == +-2000` enddef;
+vardef read_adress(text t)=
+  save :,';
+  let : == from_until; def ' == +-2000 enddef;
   pcode_int:=pcode_int+-1;
   nA:=0;
   for list==t::
     if known list::
       if numeric list::
         if list==_nop:: message "unknown command in "AND decimal(pcode_int);
-        else:: nA:=nA+-1; pcode_com[pcode_int][nA]:=_numeric; pcode_par[pcode_int][nA]:=list;
+        else:: pcode_com[pcode_int][Incr nA]:=_numeric; pcode_par[pcode_int][nA]:=list;
         fi
       ef pair list::
         if xpart(list)==_from:: nB:=ypart(list);
-        ef xpart(list)==_until:: nC:=ypart(list);
-           for i==nB upto nC::
-             nA:=nA+-1; pcode_com[pcode_int][nA]:=_numeric; pcode_par[pcode_int][nA]:=i;
-           endfor
-        else:: nA:=nA+-1;
-               pcode_com[pcode_int][nA]:=xpart(list); pcode_par[pcode_int][nA]:=ypart(list);
+        ef xpart(list)==_until::
+           for i==nB upto ypart(list)::
+             pcode_com[pcode_int][Incr nA]:=_numeric; pcode_par[pcode_int][nA]:=i; endfor
+        else:: pcode_com[pcode_int][Incr nA]:=xpart(list); pcode_par[pcode_int][nA]:=ypart(list);
         fi
       fi
     else:: message "unknown command in "AND decimal(pcode_int);
     fi
   endfor
   pcode_cnt[pcode_int]:=nA; pcode_int
+enddef;
+%-------------------------------------------------------------------------------------------------
+vardef add_parts(expr a,b)=
+  if (a LT pcode_emb_start)and(b LT pcode_emb_start)::
+    pcode_com[Incr pcode_int][1]:=_numeric; pcode_par[pcode_int][1]:=a;
+    pcode_com[pcode_int][2]:=_numeric; pcode_par[pcode_int][2]:=b; pcode_cnt[pcode_int]:=2;
+  elseif (a>=pcode_int_start)and(b LT pcode_int_start)::
+    if b>=pcode_emb_start:: pcode_com[a][Incr pcode_cnt[a]]:=b;
+    else:: pcode_com[a][Incr pcode_cnt[a]]:=_numeric; pcode_par[a][pcode_cnt[a]]:=b;
+    fi
+  else:: pcode_com[Incr pcode_int][1]:=a; pcode_com[pcode_int][2]:=b; pcode_cnt[pcode_int]:=2;
+  fi
+  pcode_int
 enddef;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 def fuse_ring(expr a,b) =
@@ -509,11 +513,13 @@ enddef;
 vardef change_atom(expr a,b)=
   if known b:: pcode_int:=pcode_int+-1; nC:=0;
     if numeric b::
-      if (b GT pcode_emb_start)and(b<=pcode_atom_end):: CA(_chg_atom,b,a)
+      if (b GT pcode_emb_start)and(b<=pcode_atm_end):: CA(_chg_atom,b,a)
       ef b==NH::  CA(_chg_atom,N,a) if sw_expand==0:: CP(_tmp_line,nl) fi
                   CC(_group_s) CA(_group_si,H,a) CC(_group_e)
       ef b==N?::  CA(_chg_atom,N,a) CC(_group_s) CA(_group_si,_,a) CC(_group_e)
       ef b==N?2:: CA(_chg_atom,N,a) CC(_group_s) CA(_group_si,!,a) CC(_group_e)
+      ef b==?O::  CC(_group_s) CA(_group_dm,O,a) CC(_group_e)
+      ef b==?NH:: CC(_group_s) CA(_group_dm,NH,a) CC(_group_e)
       ef b==??::  CP(_tmp_rot, 35) CC(_group_s) CA(_group_si,_,a) CC(_group_e)
                   CP(_tmp_rot,-35) CC(_group_s) CA(_group_si,_,a) CC(_group_e)
       ef b==n_::  CC(_group_s) CP(_set_add,MIS) CP(_chg_add,a) CC(_group_e)
@@ -812,7 +818,9 @@ enddef;
 %-------------------------------------------------------------------------------------------------
 def add_group=
   if f_at=1: nE:=getA(adrT); check_adrA(nE); else: nE:=cntA+1; fi
-  group_cnt[incr group_num]:=0; store_group(_jp_absA,nE) store_group(_com,_len_s)
+  group_cnt[incr group_num]:=0; store_group(_jp_absA,nE)
+  store_group(_com,_mark)
+  store_group(_com,_len_s)
   if lineT<>nb: store_group(_tmp_line,lineT) fi
   if rotT<>0:   store_group(_rot_ang,rotT) fi
   if lenT<>rate_cr: store_group(_chg_len,lenT)
@@ -825,6 +833,7 @@ def add_group=
     for i=1 upto pcode_cnt[nP]: store_group(pcode_com[nP][i],pcode_par[nP][i]) endfor 
   fi
   store_group(_com,_len_e) store_group(_chg_env,hz) store_group(_com,_term)
+  store_group(_com,_rest)
   if f_lineT=0: lineT:=si; fi
   if f_lenT=0:  lenT:=rate_cr; fi 
   if f_rotT=0:  rotT:=0;   fi
@@ -898,12 +907,12 @@ enddef;
 %-------------------------------------------------------------------------------------------------
 vardef arrange_ang(expr n)=
   if cntB=0: angT:=(angT-180) mod 360; 180
-  else:  if    envB>=pcode_emb_start: pcode_par[envB][cntB-temp_cntB+3]
-         else: if envB=hz: if n=0:  60 ef n<=90: -60 ef n<=180:  60 ef n<270: -60 else:  60 fi
-               ef envB=vt: if n=0: -60 ef n<90:   60 ef n<=180: -60 ef n<=270: 60 else: -60 fi
-               ef abs(envB)<=180: envB
-               fi
-         fi
+  else: if envB>=pcode_emb_start: pcode_par[envB][cntB-temp_cntB]
+        else: if envB=hz: if n=0:  60 ef n<=90: -60 ef n<=180:  60 ef n<270: -60 else:  60 fi
+              ef envB=vt: if n=0: -60 ef n<90:   60 ef n<=180: -60 ef n<=270: 60 else: -60 fi
+              ef abs(envB)<=180: envB
+              fi
+        fi
   fi
 enddef;
 %-------------------------------------------------------------------------------------------------
@@ -1351,14 +1360,14 @@ vardef bond_stereo(expr n)=
 vardef bond_config(expr n)=
  if (n=wf)or(n=zb)or(n=bd): 1 ef (n=zf)or(n=wb)or(n=dt): 3 ef n=wv: 2 else: 0 fi enddef;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-vardef TA(expr s,WT,MI)=
+vardef define_atom(expr s,WT,MI)=
   str_cnt:=str_cnt+1; tbl_cnt:=tbl_cnt+1; pcode_num:=pcode_num+1;
   pcode_com[pcode_num][1]:=_set_atom; pcode_par[pcode_num][1]:=str_cnt; pcode_cnt[pcode_num]:=1;
   str_tbl[str_cnt]:=tbl_atom_str[tbl_cnt]:=s; tbl_atom[tbl_cnt]:=0;
   tbl_atom_wt[tbl_cnt]:=WT; tbl_atom_mi[tbl_cnt]:=MI; pcode_num
 enddef;
 %-------------------------------------------------------------------------------------------------
-vardef TB(expr s)(text t)=
+vardef define_group_string(expr s)(text t)=
   str_cnt:=str_cnt+1; tbl_cnt:=tbl_cnt+1; pcode_num:=pcode_num+1;
   pcode_com[pcode_num][1]:=_set_atom; pcode_par[pcode_num][1]:=str_cnt; pcode_cnt[pcode_num]:=1;
   str_tbl[str_cnt]:=tbl_atom_str[tbl_cnt]:=s; tbl_atom[tbl_cnt]:=0;
@@ -1366,98 +1375,103 @@ vardef TB(expr s)(text t)=
   pcode_num
 enddef;
 %=================================================================================================
-pcode_int:=pcode_emi_start; pcode_num:=pcode_emb_start;
+def define_atom_group_parts=
+  save `,``,';
+  def `=define_atom enddef; def ``=define_group_string enddef; def '= define_parts enddef;
+  pcode_int:=pcode_emi_start; pcode_num:=pcode_emb_start;
+  ?3:=?20:=Ph:=Ph1:=Ph2:=hz:=0; vt:=1;
+  %-----------------------------------------------------------------------------------------------
+  C:= `("C"   ,12.0107,   12.0000000);       H:= `("H"  , 1.00794,    1.00782503223);
+  D:= `("D"   ,2.012,      2.01410177812);   Ag:=`("{Ag}",107.868,  106.905095);
+  Al:=`("{Al}",26.9815,   26.98153853);      As:=`("{As}",74.9216,   74.92159457);
+  B:= `("B"   ,10.811,    11.00930536);      Ba:=`("{Ba}",137.33,   136.905816);
+  Be:=`("{Be}",9.01218,   0);
+  Bi:=`("{Bi}",208.9804,  208.980338);       Br:=`("{Br}",79.904,    78.9183376);
+  Ca:=`("{Ca}",40.078,    39.962590863);     Cd:=`("{Cd}",112.41,     110.904182);
+  Cl:=`("{Cl}",35.453,    34.968852);        Co:=`("{Co}",58.933194, 58.93319429);
+  Cr:=`("{Cr}",51.9961,   51.94050623);      Cs:=`("{Cs}",132.905,   132.90543);
+  Cu:=`("{Cu}",63.546,    62.92959772);     
+  F:= `("F"   ,18.9984,   18.99840316273);   Fe:=`("{Fe}",55.845,    55.93493633);
+  Hg:=`("{Hg}",200.59,    201.97064340);     I:= `("I"   ,126.90447,126.9044719);
+  K:= `("K"   ,39.0983,   38.9637064864);    Li:=`("{Li}",6.941,      7.0160034366);
+  Mg:=`("{Mg}",24.305,    23.985041697);     Mn:=`("{Mn}",54.938044, 54.93804391);
+  Mo:=`("{Mo}",95.95,     0);
+  N:= `("N"   ,14.0067,   14.00307400443);   Na:=`("{Na}",22.98977,  22.9897692820);
+  Ni:=`("{Ni}",58.693,    57.93534241);      O:= `("O"   ,15.9994,   15.99491461957);
+  P:= `("P"   ,30.973762, 30.97376199842);   Pb:=`("{Pb}",207.2,    205.974455);
+  Pd:=`("{Pd}",106.4,    107.905075);
+  S:= `("S"   ,32.065,    31.9720711744);    Sb:=`("{Sb}",121.75,   120.90381);
+  Se:=`("{Se}",78.971,    79.9165218);       Si:=`("{Si}",28.0855,   27.97692653465);
+  Sn:=`("{Sn}",118.71,   119.90220163);      Ta:=`("{Ta}",180.948,   0);
+  Te:=`("{Te}",127.60,    129.90623);        Ti:=`("{Ti}",47.867,    47.94794198);
+  U:= `("U",   238.0289, 238.05079);         V:= `("V",   50.9415,   50.943957);
+  W:= `("W",   183.85,   181.948225);        Zn:=`("{Zn}",65.409,    63.92914201);
+  NO_ATOM:=`("",0,0);
+  tbl_atom_end:=tbl_cnt;
+  %-----------------------------------------------------------------------------------------------
+  if sw_expand=0:
+    CH3:=``("C{H_3_}")(C,H,H,H); CH2:=``("C{H_3_}")(C,H,H); CN:=``("CN")(C,N); OH:=``("OH")(O,H);
+    COOH:=``("COOH")(C,O,O,H); COONa:=``("COO{Na}")(C,O,O,Na); CHO:=``("CHO")(C,H,O);
+    NO:=``("NO")(N,O); NO2:=``("N{O_2_}")(N,O,O); NH2:=``("N{H_2_}")(N,H,H);
+    SH:= ``("SH")(S,H); SO2H:=``("S{O_2_}H")(S,O,O,H); SO3H:=``("S{O_3_}H")(S,O,O,O,H);
+    ONa:=``("O{Na}")(O,Na); SO3Na:=``("S{O_3_}{Na}")(S,O,O,O,Na);
+  fi
+  %-----------------------------------------------------------------------------------------------
+  tbl_group_end:=tbl_cnt; pcode_atm_end:=pcode_num;
+  ?:='((_group_si,NO_ATOM)); ?wf:=?w:='((_group_wf,NO_ATOM)); ?zf:=?z:='((_group_zf,NO_ATOM));
+  ?O:='((_group_dm,O)); NH:='(N,/H~nl); ?NH:='((_group_dm,NH));
+  %-----------------------------------------------------------------------------------------------
+  ?H:='(/H); ?F:='(/F); ?Cl:='(/Cl); ?OH:='(/OH); ?OH:='(/COOH); ?NH2:='(/NH2);
+  for i=3 upto 20: ?[i]:='((_com,_len_ss),(_get_len,_ring_len),<((-180 DIV i)-90)
+    for j==2 upto i:: ,(360 DIV i) endfor,(_cyc_sB,1-i),(_com,_len_ee));
+  endfor
+  Ph:=Ph1:='(?6,-2=dl,-4=dl,-6=dl); Ph2:='(?6,-1=dl,-3=dl,-5=dl);
+  for i=5,6,7,8: for j=11 upto 15:  ?[i][j]:='((i,j)); endfor endfor
+  %-----------------------------------------------------------------------------------------------
+  !:=!1:='((_mk_bond,_arrange_ang)); !db:=!d:='(!~db); !tm:=!t:='(!~tm); !wf:=!w:='(!~wf);
+  !zf:=!z:='(!~zf); !wb:='(!~wb); !zb:='(!~zb); !dl:='(!~dl); !dr:='(!~dr); !dm:='(!~dm);
+  for i==2  upto 20:
+    ![i]:='((_com,_len_ss),(_get_len,_tmp_len),! for j==2 upto i::,! endfor ,(_com,_len_ee));
+  endfor
+  ?!:='(/_,!); ?!d:='(/_,!d); ?!2:='(/_,!2); ??!:='(/_,/_^60,60); ??:='(/_^35,/_^-35);
+  !?:='(!,/_); !?!:='(!?,!); !??!:='(!,??,!); ?2:='(/!); !?2:='(!,?2); ?2!:='(?2,!);
+  n_:='((_set_add,MIS)); p_:='((_set_add,PLS));
+  zero_wf:='(0~wf); zero_zf:='(0~zf); zero_dm:='(0~dm); zero_wv:='(0~wv);
+  mark_adress:='((_com,_mark)); reset_adress:='((_com,_moff)); reset_length:='((_com,_len_e));
+  %-----------------------------------------------------------------------------------------------
+  if sw_expand=1:
+    CH3:='(/H,/H^60,/H^-60); NH:='(N,/H); NH2:='(N,/H^60,/H^-60); NO2:='(N,//O^60,//O^-60);
+    OH:='(O,!,H); NO:='(N,//O); CONH2:='(//O,!,NH2); SH:='(S,!,H); SO2H:='(S,//O^60,/OH^-60);
+    SO3H:='(S,/OH,//O^60,//O^-60); CHO:='(//O^-60,/H^60); COOH:='(//O^-60,/OH^60); CN:='(!~tm,N);
+    ONa:='(O,!,Na); SO3Na:='(S,/ONa,//O^60,//O^-60);
+  fi
+  %-----------------------------------------------------------------------------------------------
+  ?F!F:='(/F,60,F); ?Cl!Cl:='(/Cl,60,Cl); ?Br!Br:='(/Br,60,Br); ?F?F!F:='(/F,/F^60,60,F);
+  ?Cl?Cl!Cl:='(/Cl,/Cl^60,60,Cl);
+  %-----------------------------------------------------------------------------------------------
+  N!:='(N,!); N?:='(N,/_); N!2:='(N,!3); N!2:='(N,!3); !N:='(!,N);
+  N?!:='(N,?!); N?2:='(N,?2); N?2!:='(N?2,!); N?!2:='(N,?!2);
+  S?O:='(S,?O); S?O!:='(S?O,!); ?O?O:='(?O^-35,?O^35); S?O?O:='(S,?O?O); S?O?O!:='(S?O?O,!);
+  O!:='(O,!); O!2:='(O,!2); O!3:='(O,!3); S!:='(S,!); S!2:='(S,!2); S!3:='(S,!3);
+  %-----------------------------------------------------------------------------------------------
+  ?O!:='(?O,!); ?O!2:='(?O,!2); ?O!3:='(?O,!3); !?O:='(!,?O); !?O!:='(!,?O!);
+  NH!:='(NH,!); NH!2:='(NH,!2); !NH:='(!,NH); !NH!:='(!,NH!);
+  %-----------------------------------------------------------------------------------------------
+  !OH:='(!,OH); !SH:='(!,SH); !NH2:='(!,NH2); !S?O:='(!,S?O); !O:='(!,O); !dO:='(!d,O);
+  !O!:='(!,O!); !O!2:='(!,O!2); !O!3:='(!,O!3); !S!:='(!,S!); !S!2:='(!,S!2); !S!3:='(!,S!3);
+  !COOH:='(!,COOH); ?COOH:='(/COOH); !CH3:='(!,CH3); !CN:='(!,CN); !CHO:='(!,CHO); !NO2:='(!,NO2);
+  !Cl:='(!,Cl); !Br:='(!,Br); !F:='(!,F); !?F!F:='(!,?F!F); !?Cl!Cl:='(!,?Cl!Cl);
+  !?F?F!F:='(!,?F?F!F); !?Cl?Cl!Cl:='(!,?Cl?Cl!Cl);
+  !?3:='(!,?3); !?4:='(!,?4); !?5:='(!,?5); !?6:='(!,?6); !?7:='(!,?7); !?8:='(!,?8);
+  !Ph:='(!,Ph); !?OH:='(!,?OH); ?OH!:='(?OH,!);
+  %-----------------------------------------------------------------------------------------------
+  lr:='(60 for i==1 upto 10:: ,-60,60 endfor); rl:='(-60 for i==1 upto 10:: ,60,-60 endfor);
+  %-----------------------------------------------------------------------------------------------
+  hexose_hp:='(#1.4,-30~wf_r,30~bd_r`1,30~wb_r,120,O,30,&1,##);
+  Pyranose_hp:='(#1.4,-35~wf_r,35~bd_r`1,30~wb_r,130`1.66,O,&1,##);
+enddef;
 %-------------------------------------------------------------------------------------------------
-C:= TA("C"   ,12.0107,   12.0000000);       H:= TA("H"  , 1.00794,    1.00782503223);
-D:= TA("D"   ,2.012,      2.01410177812);   Ag:=TA("{Ag}",107.868,  106.905095);
-Al:=TA("{Al}",26.9815,   26.98153853);      As:=TA("{As}",74.9216,   74.92159457);
-B:= TA("B"   ,10.811,    11.00930536);      Ba:=TA("{Ba}",137.33,   136.905816);
-Be:=TA("{Be}",9.01218,   0);
-Bi:=TA("{Bi}",208.9804,  208.980338);       Br:=TA("{Br}",79.904,    78.9183376);
-Ca:=TA("{Ca}",40.078,    39.962590863);     Cd:=TA("{Cd}",112.41,     110.904182);
-Cl:=TA("{Cl}",35.453,    34.968852);        Co:=TA("{Co}",58.933194, 58.93319429);
-Cr:=TA("{Cr}",51.9961,   51.94050623);      Cs:=TA("{Cs}",132.905,   132.90543);
-Cu:=TA("{Cu}",63.546,    62.92959772);     
-F:= TA("F"   ,18.9984,   18.99840316273);   Fe:=TA("{Fe}",55.845,    55.93493633);
-Hg:=TA("{Hg}",200.59,    201.97064340);     I:= TA("I"   ,126.90447,126.9044719);
-K:= TA("K"   ,39.0983,   38.9637064864);    Li:=TA("{Li}",6.941,      7.0160034366);
-Mg:=TA("{Mg}",24.305,    23.985041697);     Mn:=TA("{Mn}",54.938044, 54.93804391);
-Mo:=TA("{Mo}",95.95,     0);
-N:= TA("N"   ,14.0067,   14.00307400443);   Na:=TA("{Na}",22.98977,  22.9897692820);
-Ni:=TA("{Ni}",58.693,    57.93534241);      O:= TA("O"   ,15.9994,   15.99491461957);
-P:= TA("P"   ,30.973762, 30.97376199842);   Pb:=TA("{Pb}",207.2,    205.974455);
-Pd:=TA("{Pd}",106.4,    107.905075);
-S:= TA("S"   ,32.065,    31.9720711744);    Sb:=TA("{Sb}",121.75,   120.90381);
-Se:=TA("{Se}",78.971,    79.9165218);       Si:=TA("{Si}",28.0855,   27.97692653465);
-Sn:=TA("{Sn}",118.71,   119.90220163);      Ta:=TA("{Ta}",180.948,   0);
-Te:=TA("{Te}",127.60,    129.90623);        Ti:=TA("{Ti}",47.867,    47.94794198);
-U:= TA("U",   238.0289, 238.05079);         V:= TA("V",   50.9415,   50.943957);
-W:= TA("W",   183.85,   181.948225);        Zn:=TA("{Zn}",65.409,    63.92914201);
-NO_ATOM:=TA("",0,0);
-tbl_atom_end:=tbl_cnt;
-%-------------------------------------------------------------------------------------------------
-if sw_expand=0:
-  CH3:=TB("C{H_3_}")(C,H,H,H); CH2:=TB("C{H_3_}")(C,H,H); CN:=TB("CN")(C,N); OH:=TB("OH")(O,H);
-  COOH:=TB("COOH")(C,O,O,H); COONa:=TB("COO{Na}")(C,O,O,Na); CHO:=TB("CHO")(C,H,O);
-  NO:=TB("NO")(N,O); NO2:=TB("N{O_2_}")(N,O,O); NH2:=TB("N{H_2_}")(N,H,H);
-  SH:= TB("SH")(S,H); SO2H:=TB("S{O_2_}H")(S,O,O,H); SO3H:=TB("S{O_3_}H")(S,O,O,O,H);
-  ONa:=TB("O{Na}")(O,Na); SO3Na:=TB("S{O_3_}{Na}")(S,O,O,O,Na);
-fi
-%-------------------------------------------------------------------------------------------------
-tbl_group_end:=tbl_cnt; pcode_atom_end:=pcode_num;
-%=================================================================================================
-?:=(_group_si,NO_ATOM); ?w:=(_group_wf,NO_ATOM); ?z:=(_group_zf,NO_ATOM); ?O:=(_group_dm,O); 
-for i=3 upto 20: ?[i]:='((_com,_len_ss),(_get_len,_ring_len),<((-180 DIV i)-90)
-  for j==2 upto i:: ,(360 DIV i) endfor,(_cyc_sB,1-i),(_com,_len_ee));
-endfor
-Ph:=Ph1:='(?6,-2=dl,-4=dl,-6=dl); Ph2:='(?6,-1=dl,-3=dl,-5=dl);
-for i=5,6,7,8: for j=11 upto 15:  ?[i][j]:='((i,j)); endfor endfor
-%-------------------------------------------------------------------------------------------------
-!:=!1:='((_mk_bond,_arrange_ang)); !db:=!d:='(!~db); !tm:=!t:='(!~tm); !wf:=!w:='(!~wf);
-!zf:=!z:='(!~zf); !wb:='(!~wb); !zb:='(!~zb); !dl:='(!~dl); !dr:='(!~dr); !dm:='(!~dm);
-for i==2  upto 20:
-  ![i]:='((_com,_len_ss),(_get_len,_tmp_len),! for j==2 upto i::,! endfor ,(_com,_len_ee));
-endfor
-?!:='(/_,!); ?!d:='(/_,!d); ?!2:='(/_,!2); ??!:='(/_,/_^60,60); ??:='(/_^35,/_^-35);
-!?:='(!,/_); !?!:='(!?,!); !??!:='(!,??,!); ?2:='(/!); !?2:='(!,?2); ?2!:='(?2,!); !?2!:='(!?2,!);
-NH:='(N,/H~nl); n_:='((_set_add,MIS)); p_:='((_set_add,PLS));
-zero_wf:='(0~wf); zero_zf:='(0~zf); zero_dm:='(0~dm); zero_wv:='(0~wv);
-mark_adress:='((_com,_mark)); reset_adress:='((_com,_moff)); reset_length:='((_com,_len_e));
-%-------------------------------------------------------------------------------------------------
-if sw_expand=1:
-  CH3:='(/H,/H^60,/H^-60); NH:='(N,/H); NH2:='(N,/H^60,/H^-60); NO2:='(N,//O^60,//O^-60);
-  OH:='(O,!,H); NO:='(N,//O); CONH2:='(//O,!,NH2); SH:='(S,!,H); SO2H:='(S,//O^60,/OH^-60);
-  SO3H:='(S,/OH,//O^60,//O^-60); CHO:='(//O^-60,/H^60); COOH:='(//O^-60,/OH^60); CN:='(!~tm,N);
-  ONa:='(O,!,Na); SO3Na:='(S,/ONa,//O^60,//O^-60);
-fi
-%-------------------------------------------------------------------------------------------------
-?F!F:='(/F,60,F); ?Cl!Cl:='(/Cl,60,Cl); ?Br!Br:='(/Br,60,Br); ?F?F!F:='(/F,/F^60,60,F);
-?Cl?Cl!Cl:='(/Cl,/Cl^60,60,Cl);
-%-------------------------------------------------------------------------------------------------
-N!:='(N,!); N?:='(N,/_); N!2:='(N,!3); N!2:='(N,!3); !N:='(!,N);
-N?!:='(N,?!); N?2:='(N,?2); N?2!:='(N?2,!); N?!2:='(N,?!2);
-S?O:='(S,?O); S?O!:='(S?O,!); ?O?O:='(?O^-35,?O^35); S?O?O:='(S,?O?O); S?O?O!:='(S?O?O,!);
-O!:='(O,!); O!2:='(O,!2); O!3:='(O,!3); S!:='(S,!); S!2:='(S,!2); S!3:='(S,!3);
-%-------------------------------------------------------------------------------------------------
-?O!:='(?O,!); ?O!2:='(?O,!2); ?O!3:='(?O,!3); !?O:='(!,?O); !?O!:='(!,?O!);
-NH!:='(NH,!); NH!2:='(NH,!2); !NH:='(!,NH);!NH!:='(!,NH!); ?NH2:='(/NH2); ?NH:='(//NH);
-%-------------------------------------------------------------------------------------------------
-!OH:='(!,OH); !SH:='(!,SH); !NH2:='(!,NH2); !S?O:='(!,S?O); !O:='(!,O); !dO:='(!d,O);
-!O!:='(!,O!); !O!2:='(!,O!2); !O!3:='(!,O!3); !S!:='(!,S!); !S!2:='(!,S!2); !S!3:='(!,S!3);
-!COOH:='(!,COOH); ?COOH:='(/COOH); !CH3:='(!,CH3); !CN:='(!,CN); !CHO:='(!,CHO); !NO2:='(!,NO2);
-!Cl:='(!,Cl); !Br:='(!,Br); !F:='(!,F); !?F!F:='(!,?F!F); !?Cl!Cl:='(!,?Cl!Cl);
-!?F?F!F:='(!,?F?F!F); !?Cl?Cl!Cl:='(!,?Cl?Cl!Cl);
-!?3:='(!,?3); !?4:='(!,?4); !?5:='(!,?5); !?6:='(!,?6); !?7:='(!,?7); !?8:='(!,?8); !Ph:='(!,Ph);
-?H:='(/H); ?F:='(/F); ?Cl:='(/Cl); ?OH:='(/OH); !?OH:='(!,?OH); ?OH!:='(?OH,!);
-%-------------------------------------------------------------------------------------------------
-lr:='(0,0,0,60  for i==1 upto 10:: ,-60,60 endfor); 
-rl:='(0,0,0,-60 for i==1 upto 10:: ,60,-60 endfor);
-%-------------------------------------------------------------------------------------------------
-R:='("R");   R1:='("{R^1^}"); R2:='("{R^2^}"); R3:='("{R^3^}"); R4:='("R^4^");   R5:='("{R^5^}");
-R6:='("R6"); R7:='("{R^7^}"); R8:='("{R^8^}"); R9:='("{R^9^}"); R10:='("R^10^");R11:='("{R^11^}");
-%-------------------------------------------------------------------------------------------------
-hexose_hp:='(#1.4,-30~wf_r,30~bd_r`1,30~wb_r,120,O,30,&1,##);
-Pyranose_hp:='(#1.4,-35~wf_r,35~bd_r`1,30~wb_r,130`1.66,O,&1,##);
+define_atom_group_parts;
 %=================================================================================================
 init_par(parameter_list);
 %-------------------------------------------------------------------------------------------------

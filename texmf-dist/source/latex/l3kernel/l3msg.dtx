@@ -43,7 +43,7 @@
 %    }^^A
 % }
 %
-% \date{Released 2024-01-22}
+% \date{Released 2024-11-02}
 %
 % \maketitle
 %
@@ -92,7 +92,7 @@
 % will allow to filter out specifically messages from the \texttt{submodule}.
 %
 % Some authors may find the need to include spaces as |~| characters
-% tedious. This can be avoided by locally reseting the cateogry code
+% tedious. This can be avoided by locally resetting the category code
 % of \verb*| |.
 % \begin{verbatim}
 %   \char_set_catcode_space:n { `\ }
@@ -120,7 +120,7 @@
 %   used. An error is raised if the \meta{message} already exists.
 % \end{function}
 %
-% \begin{function}{\msg_set:nnnn, \msg_set:nnn, \msg_gset:nnnn, \msg_gset:nnn}
+% \begin{function}{\msg_set:nnnn, \msg_set:nnn}
 %   \begin{syntax}
 %     \cs{msg_set:nnnn} \Arg{module} \Arg{message} \Arg{text} \Arg{more text}
 %   \end{syntax}
@@ -203,7 +203,9 @@
 %   \end{quote}
 %   This function can be redefined to alter the language in which the
 %   message is given, using |#1| as the name of the \meta{module} to
-%   be included.
+%   be included. Any redefinition \emph{must} produce output containing
+%   the \meta{module} name, and will affect all messages using the
+%   \pkg{expl3} mechanism.
 % \end{function}
 %
 % \begin{function}[EXP]{\msg_critical_text:n}
@@ -217,7 +219,9 @@
 %   \end{quote}
 %   This function can be redefined to alter the language in which the
 %   message is given, using |#1| as the name of the \meta{module} to
-%   be included.
+%   be included. Any redefinition \emph{must} produce output containing
+%   the \meta{module} name, and will affect all messages using the
+%   \pkg{expl3} mechanism.
 % \end{function}
 %
 % \begin{function}[EXP]{\msg_error_text:n}
@@ -231,7 +235,9 @@
 %   \end{quote}
 %   This function can be redefined to alter the language in which the
 %   message is given, using |#1| as the name of the \meta{module} to
-%   be included.
+%   be included. Any redefinition \emph{must} produce output containing
+%   the \meta{module} name, and will affect all messages using the
+%   \pkg{expl3} mechanism.
 % \end{function}
 %
 % \begin{function}[EXP]{\msg_warning_text:n}
@@ -247,6 +253,9 @@
 %   message is given, using |#1| as the name of the \meta{module} to
 %   be included.  The \meta{type} of \meta{module} may be adjusted:
 %   |Package| is the standard outcome: see \cs{msg_module_type:n}.
+%   Any redefinition \emph{must} produce output containing
+%   the \meta{module} name, and will affect all messages using the
+%   \pkg{expl3} mechanism.
 % \end{function}
 %
 % \begin{function}[EXP]{\msg_info_text:n}
@@ -262,6 +271,9 @@
 %   message is given, using |#1| as the name of the \meta{module} to
 %   be included. The \meta{type} of \meta{module} may be adjusted:
 %   |Package| is the standard outcome: see \cs{msg_module_type:n}.
+%   Any redefinition \emph{must} produce output containing
+%   the \meta{module} name, and will affect all messages using the
+%   \pkg{expl3} mechanism.
 % \end{function}
 %
 % \begin{function}[EXP,updated = 2018-09-30]{\msg_see_documentation_text:n}
@@ -809,15 +821,17 @@
 %     \msg_new:nnnn, \msg_new:nnee, \msg_new:nnxx,
 %     \msg_new:nnn,  \msg_new:nne,  \msg_new:nnx
 %   }
-% \begin{macro}{\msg_gset:nnnn, \msg_gset:nnn}
 % \begin{macro}{\msg_set:nnnn, \msg_set:nnn}
 %   Setting a message simply means saving the appropriate text
 %   into two functions. A sanity check first.
 %    \begin{macrocode}
-\cs_new_protected:Npn \msg_new:nnnn #1#2
+\cs_new_protected:Npn \msg_new:nnnn #1#2#3#4
   {
     \@@_chk_free:nn {#1} {#2}
-    \msg_gset:nnnn {#1} {#2}
+    \cs_gset:cpn { \c_@@_text_prefix_tl #1 / #2 }
+      ##1##2##3##4 {#3}
+    \cs_gset:cpn { \c_@@_more_text_prefix_tl #1 / #2 }
+      ##1##2##3##4 {#4}
   }
 \cs_generate_variant:Nn \msg_new:nnnn { nnee , nnxx }
 \cs_new_protected:Npn \msg_new:nnn #1#2#3
@@ -832,17 +846,7 @@
   }
 \cs_new_protected:Npn \msg_set:nnn #1#2#3
   { \msg_set:nnnn {#1} {#2} {#3} { } }
-\cs_new_protected:Npn \msg_gset:nnnn #1#2#3#4
-  {
-    \cs_gset:cpn { \c_@@_text_prefix_tl #1 / #2 }
-      ##1##2##3##4 {#3}
-    \cs_gset:cpn { \c_@@_more_text_prefix_tl #1 / #2 }
-      ##1##2##3##4 {#4}
-  }
-\cs_new_protected:Npn \msg_gset:nnn #1#2#3
-  { \msg_gset:nnnn {#1} {#2} {#3} { } }
 %    \end{macrocode}
-% \end{macro}
 % \end{macro}
 % \end{macro}
 %
@@ -1923,25 +1927,25 @@
 %
 % \begin{macro}
 %   {
-%     \__kernel_msg_info:nnee    ,
-%     \__kernel_msg_warning:nne  ,
-%     \__kernel_msg_warning:nnee ,
-%     \__kernel_msg_error:nne    ,
-%     \__kernel_msg_error:nnee   ,
-%     \__kernel_msg_error:nneee
+%     \__kernel_msg_info:nnxx    ,
+%     \__kernel_msg_warning:nnx  ,
+%     \__kernel_msg_warning:nnxx ,
+%     \__kernel_msg_error:nnx    ,
+%     \__kernel_msg_error:nnxx   ,
+%     \__kernel_msg_error:nnxxx
 %   }
 %    \begin{macrocode}
-\cs_new_protected:Npn \__kernel_msg_info:nnee #1
+\cs_new_protected:Npn \__kernel_msg_info:nnxx #1
   { \msg_info:nnee { LaTeX / #1 } }
-\cs_new_protected:Npn \__kernel_msg_warning:nne #1
+\cs_new_protected:Npn \__kernel_msg_warning:nnx #1
   { \msg_warning:nne { LaTeX / #1 } }
-\cs_new_protected:Npn \__kernel_msg_warning:nnee #1
+\cs_new_protected:Npn \__kernel_msg_warning:nnxx #1
   { \msg_warning:nnee { LaTeX / #1 } }
-\cs_new_protected:Npn \__kernel_msg_error:nne #1
+\cs_new_protected:Npn \__kernel_msg_error:nnx #1
   { \msg_error:nne { LaTeX / #1 } }
-\cs_new_protected:Npn \__kernel_msg_error:nnee #1
+\cs_new_protected:Npn \__kernel_msg_error:nnxx #1
   { \msg_error:nnee { LaTeX / #1 } }
-\cs_new_protected:Npn \__kernel_msg_error:nneee #1
+\cs_new_protected:Npn \__kernel_msg_error:nnxxx #1
   { \msg_error:nneee { LaTeX / #1 } }
 %    \end{macrocode}
 % \end{macro}
@@ -2227,6 +2231,14 @@
           { internal~structure:\\\\\iow_indent:n {#4} }
       }
   }
+\msg_new:nnnn { prop } { bad-link }
+  { Variable~'#1'~is~not~a~valid~(linked)~prop. }
+  {
+    \c_@@_coding_error_text_tl
+    The~variable~'#1'~has~an~incorrect~internal~structure.~
+    Its~internal~entry~'#2'~points~to~'#3',~whose~name~is~not~of~the~
+    form~'#4~<key>'.
+  }
 \msg_new:nnnn { clist } { non-clist }
   { Variable~'#1'~is~not~a~valid~clist. }
   {
@@ -2235,6 +2247,24 @@
     \iow_indent:n {#2}\\\\
     should~be~a~clist~variable,~but~it~includes~empty~or~blank~items~
     without~braces.
+  }
+\msg_new:nnnn { prop } { misused }
+  { A~property~list~was~misused. }
+  {
+    \c_@@_coding_error_text_tl
+    A~property~list~variable~was~used~without~an~accessor~function.~
+    It~
+    \tl_if_empty:nTF {#1}
+      { is~empty. }
+      { contains~the~key-value~pairs \use_none:n #1 . }
+  }
+\msg_new:nnnn { prop } { inner-make }
+  { '#1'~ cannot~ be~ used~ in~ a~ group. }
+  {
+    \c_@@_coding_error_text_tl
+    The~ command~ '#1'~ was~ applied~ to~ the~ property~ list~
+    variable~ '#2', but~ the~ storage~ type~ can~ only~ be~ changed~
+    at~ the~ outermost~ group~ level.
   }
 %    \end{macrocode}
 %
@@ -2247,8 +2277,6 @@
   { Erroneous~variable~#1 used! }
 \msg_new:nnn { seq } { misused }
   { A~sequence~was~misused. }
-\msg_new:nnn { prop } { misused }
-  { A~property~list~was~misused. }
 \msg_new:nnn { prg } { negative-replication }
   { Negative~argument~for~\iow_char:N\\prg_replicate:nn. }
 \msg_new:nnn { prop } { prop-keyval }
@@ -2272,7 +2300,8 @@
   { The~integer~array~#1~contains~#2~items: \\ #3 . }
 \msg_new:nnn { prop } { show }
   {
-    The~property~list~#1~
+    The~ \str_if_eq:nnF {#3} { flat } { #3~ }
+    property~list~#1~
     \tl_if_empty:nTF {#2}
       { is~empty \\>~ . }
       { contains~the~pairs~(without~outer~braces): #2 . }
@@ -2304,6 +2333,12 @@
   {
     Run-time~backend~selection~may~only~be~carried~out~once~during~a~run.~
     This~second~attempt~to~set~them~will~be~ignored.
+  }
+\msg_new:nnnn { sys } { load-debug-in-preamble }
+  { Load~debug~support~in~the~preamble. }
+  {
+    Debugging~requires~support~loaded~in~the~preamble: \\
+    Use~\sys_load_debug:~before~\begin{document}.
   }
 \msg_new:nnnn { sys } { wrong-backend }
   { Backend~request~inconsistent~with~engine:~using~'#2'~backend. }

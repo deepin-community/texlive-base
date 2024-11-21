@@ -2,11 +2,11 @@
 # SampleFlow.m4
 darrow_init
 
-boxwid = 1.9
-boxht = 1.0 
+boxwid = 1.15
+boxht = 0.6
 linethick = 1.2
 
- define(`dlthick',0.25)
+ define(`dlthick',0.125)
  define(`dfillcolor',`0.7,0.7,0.7')
 
  define rbox {box rad boxht/10}
@@ -17,7 +17,7 @@ linethick = 1.2
     dleft
     darrow(to last box.w) } }
 
- command "{\sf\huge"
+ command "{\sf"
 
  B1: rbox
   { "Sample" ljust indent "Acquisition" ljust }

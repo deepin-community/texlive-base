@@ -6,15 +6,15 @@
 --
 -- pgfmolbio.dtx  (with options: `pgfmolbio-lua')
 --
--- Copyright (C) 2013 by Wolfgang Skala
+-- Copyright (C) 2024 by Wolfgang Esser-Skala
 --
 -- This work may be distributed and/or modified under the
--- conditions of the LaTeX Project Public License, either version 1.3
+-- conditions of the LaTeX Project Public License, either version 1.3c
 -- of this license or (at your option) any later version.
 -- The latest version of this license is in
---   http://www.latex-project.org/lppl.txt
--- and version 1.3 or later is part of all distributions of LaTeX
--- version 2005/12/01 or later.
+--   https://www.latex-project.org/lppl.txt
+-- and version 1.3c or later is part of all distributions of LaTeX
+-- version 2008/05/04 or later.
 --
 module("pgfmolbio", package.seeall)
 
@@ -22,11 +22,11 @@ module("pgfmolbio", package.seeall)
 if luatexbase then
   luatexbase.provides_module({
     name          = "pgfmolbio",
-    version       = 0.2,
-    date          = "2012/10/01",
+    version       = "0.21a",
+    date          = "2014/06/17",
     description   = "Molecular biology graphs wit LuaLaTeX",
-    author        = "Wolfgang Skala",
-    copyright     = "Wolfgang Skala",
+    author        = "Wolfgang Esser-Skala",
+    copyright     = "Wolfgang Esser-Skala",
     license       = "LPPL",
   })
 end

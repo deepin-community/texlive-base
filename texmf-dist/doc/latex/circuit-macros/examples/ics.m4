@@ -78,29 +78,38 @@ define(`ic74LS138',`[ Chip: box wid_ lg_chipwd ht_ 11*lg_pinsep
    lg_pin(Chip.se_+(0,9*lg_pinsep),Y7,Pin7,eN,7)
     `$1']')
 
+define(`ic555',`[ Chip: DIP_chip_outline(8)
+  foreach_(`x',
+   `lg_pin(Chip.nw-(0,lg_pinsep*m4Lx),x,Pin`'m4Lx,w,m4Lx)',
+    GND, TR, OUT, RESET)
+  foreach_(`x',
+   `lg_pin(Chip.se+(0,lg_pinsep*m4Lx),x,Pin`'eval(m4Lx+4),e,eval(m4Lx+4))',
+    CTRL, THR, DIS, Vcc)
+   `$1']')
+
 define(`ic4017',`[ Chip: DIP_chip_outline(16)
-  Loopover_(`x',
+  foreach_(`x',
    `lg_pin(Chip.nw-(0,lg_pinsep*m4Lx),x,Pin`'m4Lx,w,m4Lx)',
     PL, Q3, I3, I0, CLE, Q0, TC, GND)
-  Loopover_(`x',
+  foreach_(`x',
    `lg_pin(Chip.se+(0,lg_pinsep*m4Lx),x,Pin`'eval(m4Lx+8),e,eval(m4Lx+8))',
     MR, U/D, Q1, I1, I2, Q2, CLK, Vcc)
    `$1']')
 
 define(`ic4510',`[ Chip: DIP_chip_outline(16)
-  Loopover_(`x',
+  foreach_(`x',
    `lg_pin(Chip.nw-(0,lg_pinsep*m4Lx),x,Pin`'m4Lx,w,m4Lx)',
     PL, Q3, I3, I0, CLE, Q0, TC, GND)
-  Loopover_(`x',
+  foreach_(`x',
    `lg_pin(Chip.se+(0,lg_pinsep*m4Lx),x,Pin`'eval(m4Lx+8),e,eval(m4Lx+8))',
     MR, U/D, Q1, I1, I2, Q2, CLK, Vcc)
    `$1']')
 
 define(`icVS1053',`[ Chip: DIP_chip_outline(32)
-  Loopover_(`x',
+  foreach_(`x',
    `lg_pin(Chip.nw-(0,lg_pinsep*m4Lx),x,Pin`'m4Lx,w,m4Lx)',
     LOUT,ROUT,GBUF,AGND,AGND,DREG,Vcc,3V3,GND,MISO,MOSI,sclk,RST,CS,DCS,DCS)
-  Loopover_(`x',
+  foreach_(`x',
    `lg_pin(Chip.se+(0,lg_pinsep*m4Lx),x,Pin`'eval(m4Lx+16),e,eval(m4Lx+16))',
     SDCD,RX,TX,7,6,5,4,3,2,1,0,GND,3V3,AGND,MIC`$-$',MIC`$+$')
    `$1']')
@@ -114,13 +123,13 @@ define(`ArduinoUno',`[
 #
  plen = ifelse(`$4',,`2*L_unit',`$4')
 #
-Loopover_(`x',`ifelse(x,nul,,
+foreach_(`x',`ifelse(x,nul,,
  `Pin`'eval(5+m4Lx): line left_ plen from Connector.nw-(0,(5+m4Lx)*lg_pinsep)
   { "x" ljust at last line.start }')',
  IOREF, RESET,$+${3}V3,$+${5}V, GND, GND, VIN,
  nul, A0, A1, A2, A3, A4, A5)
 #
-Loopover_(`x',`ifelse(x,nul,,
+foreach_(`x',`ifelse(x,nul,,
  `Pin`'eval(22-m4Lx): line right_ plen from Connector.ne-(0,m4Lx*lg_pinsep)
   { "x" rjust at last line.start }')',
  SCL, SDA, AREF, GND, D13, D12, ic_tilde`'D11, ic_tilde`'D10, ic_tilde`'D9, D8,
@@ -137,22 +146,22 @@ define(`ArduinoLeonardo',`[
 #
  plen = ifelse(`$4',,`2*L_unit',`$4')
 #
-Loopover_(`x',`ifelse(x,nul,,
+foreach_(`x',`ifelse(x,nul,,
  `Pin`'eval(5+m4Lx): line left_ plen from Connector.nw-(0,(5+m4Lx)*lg_pinsep)
   { "x" ljust at last line.start }')',
  IOREF, RESET,$+${3}V3,$+${5}V, GND, GND, VIN,
  nul, A0, A1, A2, A3, A4, A5)
 #
-Loopover_(`x',`ifelse(x,nul,,
+foreach_(`x',`ifelse(x,nul,,
  `Pin`'eval(22-m4Lx): line right_ plen from Connector.ne-(0,m4Lx*lg_pinsep)
   { "x" rjust at last line.start }')',
  SCL, SDA, AREF, GND,
  ic_tilde`'D13, D12, ic_tilde`'D11, ic_tilde`'D10, ic_tilde`'D9, D8,
  nul, D7, ic_tilde`'D6, ic_tilde`'D5, D4, ic_tilde`'D3, D2, TX D1, RX D0)
 #
- `$4'] ')
+ `$4'] ') # `ArduinoLeonardo'
 
-                           `RPi( wid,ht,pinlen )'
+                           `RPi( wid,ht,pinlen )' # Raspberry Pi connector
 define(`RPi',`[
  define(`m4bwid',`ifelse(`$1',,`34*L_unit',`$1')')dnl
  define(`m4bht',`ifelse(`$2',,`21*lg_pinsep',`$2')')dnl
@@ -160,13 +169,13 @@ define(`RPi',`[
  GPIO: box wid m4bwid ht m4bht
  plen = ifelse(`$4',,`6*L_unit',`$4')
 #
-define A_LeftGPIO {
+define A_LeftGPIO { dnl pin downcount, internal label , pin no above line
  exec sprintf("Pin%g: line left_ plen from GPIO.nw-(0,%g)",\
   2*(`$'1)-1,(`$'1)*lg_pinsep)
   { "`$'3" ljust at last line.start }
   "`$'2" at last line.c above }
 #
-Loopover_(`x',`ifelse(x,nul,,`A_LeftGPIO(m4Lx,patsubst(x,;,`,'))')',
+foreach_(`x',`ifelse(x,nul,,`A_LeftGPIO(m4Lx,patsubst(x,;,`,'))')',
   ;3V3,
   2;SDA1, 3;SCL1, 4;GPIO\_GCLK,
   ;GND,
@@ -178,13 +187,13 @@ Loopover_(`x',`ifelse(x,nul,,`A_LeftGPIO(m4Lx,patsubst(x,;,`,'))')',
   5;, 6;, 13;, 19;, 26;,
   ;GND )
 #
-define A_RightGPIO {
+define A_RightGPIO { dnl pin downcount, internal label , pin no above line
  exec sprintf("Pin%g: line right_ plen from GPIO.ne-(0,%g)",\
   2*(`$'1),(`$'1)*lg_pinsep)
   { "`$'3" rjust at last line.start }
   "`$'2" at last line.c above }
 #
-Loopover_(`x',`ifelse(x,nul,,`A_RightGPIO(m4Lx,patsubst(x,;,`,'))')',
+foreach_(`x',`ifelse(x,nul,,`A_RightGPIO(m4Lx,patsubst(x,;,`,'))')',
   ;5V,
   ;5V,
   ;GND,
@@ -199,7 +208,7 @@ Loopover_(`x',`ifelse(x,nul,,`A_RightGPIO(m4Lx,patsubst(x,;,`,'))')',
   ;GND,
   16;, 20;, 21; ) 
 #
- `$4'] ')
+ `$4'] ') # `RPi'
 
                            `USB_C_Socket( wid, ht, pinlen )'
 define(`USB_C_Socket',`[
@@ -209,14 +218,14 @@ define(`USB_C_Socket',`[
  Base: box wid m4bwid ht m4bht rad 5/3*lg_pinsep
  plen = ifelse(`$4',,`6*L_unit',`$4')
 #
- Loopover_(`x',
+ foreach_(`x',
   `B`'eval(13-m4Lx): dnl
   line left_ plen from Base.n-(m4bwid/2,(m4Lx+0.5)*lg_pinsep)
    {"x" ljust at last line.start}',
   GND, RX1`$+$', RX1`$-$', VBUS, SBU2, D`$-$', D`$+$', CC2, VBUS, TX2`$-$',
   TX2`$+$', GND)
 #
- Loopover_(`x',
+ foreach_(`x',
   `A`'m4Lx: line right_ plen from Base.n+(m4bwid/2,-(m4Lx+0.5)*lg_pinsep)
    {"x" rjust at last line.start}',
   GND, TX1`$+$', TX1`$-$', VBUS, CC1, D`$+$', D`$-$', SBU1, VBUS, RX2`$-$',
@@ -235,7 +244,7 @@ define(`HDMI_micro',`[
   then left m4bwid*2/3 then to Here]
  plen = ifelse(`$4',,`6*L_unit',`$4')
 #
- Loopover_(`x',
+ foreach_(`x',
   `Pin`'m4Lx: line left_ plen from Base.nw-(0,m4bwid/3+m4Lx*lg_pinsep)
    {"x" ljust at last line.start}
    "m4Lx" at last line.c above',

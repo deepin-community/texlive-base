@@ -1,6 +1,6 @@
 -- tkz_elements-circles.lua
--- date 2024/02/04
--- version 2.00c
+-- date 2024/07/16
+-- version 2.30c
 -- Copyright 2024  Alain Matthes
 -- This work may be distributed and/or modified under the
 -- conditions of the LaTeX Project Public License, either version 1.3
@@ -82,9 +82,9 @@ end
 -- real --
 -----------------------
 function circle: power (pt)
-    local d
+  local d
     d = point.abs (self.center - pt)
-    return     d * d - self.radius * self.radius
+   return   d * d - self.radius * self.radius
 end
 -----------------------
 -- points --
@@ -140,7 +140,7 @@ function circle: tangent_from (pt)
    t1,t2 = tangent_from_ (self.center,self.through,pt) 
     return line :new (pt,t1),line : new (pt,t2)
  end
- -- version 1.80 
+
  function circle: radical_axis (C)
     local t1,t2
     if self.radius > C.radius then
@@ -151,7 +151,6 @@ function circle: tangent_from (pt)
   return line :new (t1,t2)
  end
  
- -- version 1.80
 function circle: radical_center (C1,C2)
 if C2 == nil then
     if self.radius > C1.radius then
@@ -163,7 +162,7 @@ else
     return radical_center3 (self,C1,C2)
 end
 end 
- -- version 1.80
+
 function circle : radical_circle (C1,C2)
    local rc
     if C2 == nil then

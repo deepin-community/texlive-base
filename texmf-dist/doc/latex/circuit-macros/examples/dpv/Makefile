@@ -4,9 +4,9 @@ LIBDIR = $$HOME/lib
 M4LIBS = svg.m4 DPVconfig.m4
 M4LIBS = svg.m4
 M4 = m4
-# PDFCONVERT = pdf2svg
+PDFCONVERT = pdf2svg
 # The current dvisvgm outputs CRLF line endings
-PDFCONVERT = dvisvgm
+# PDFCONVERT = dvisvgm
 
 # To process a single file, copy it to test.m4 and type "make tst"
 # to produce tstDPV.html
@@ -16,6 +16,10 @@ DPIC = dpic
 #DPIC = ../dpic/pascal/p2c/ftp/dpic
 #DPIC = ../dpic/bison/dpic
 #DPIC = ../dpic/bi*dev/dpic
+
+# Quiet mode for MiKTeX or texlive
+# QLATEX = latex --quiet
+QLATEX = latex -interaction=batchmode
 
 # To test the Windows executable.  Change these as needed for the operating
 # system.  NOTE: cscDPV.m4 and Connectors.m4 use awk and sed which
@@ -41,13 +45,15 @@ DPIC = dpic
 	echo "\begin{document}" >> F_$*.tex
 	echo "\input $*.tex" >> F_$*.tex
 	echo "\end{document}" >> F_$*.tex
-	pdflatex --quiet F_$*
+	pdf$(QLATEX) F_$*
 	$(M4) pgf.m4 F_$*.dim $*.m4 > $*.pic
 	$(DPIC) -g $*.pic >> $*.tex
-	pdflatex --quiet F_$*
+	pdf$(QLATEX) F_$*
 	if test "$(PDFCONVERT)" = "pdf2svg" ; then \
+      echo "Using pdf2svg" ; \
       pdf2svg F_$*.pdf $*.xsvg && cat $*.xsvg | tr -d '\r' > $*.svg ; \
     else \
+      echo "Using dvisvgm" ; \
       dvisvgm --pdf F_$*.pdf && cat F_$**.svg | tr -d '\r' > $*.svg ; \
       cp $*.svg $*.xsvg ; \
       fi
@@ -72,14 +78,14 @@ CCTDPV = \
  NLGDPV.svg NPDTDPV.svg NportDPV.svg OpampDPV.svg OptoisoDPV.svg \
  PconnDPV.svg PlateDPV.svg PushPullDPV.svg QuantumDPV.svg \
  RectifiersDPV.svg RelayDPV.svg ResistorsDPV.svg RotboxDPV.svg\
- SchottkyDPV.svg ShiftRDPV.svg SierpinskiDPV.svg \
- SixpoleDPV.svg SourcesDPV.svg SQUIDDPV.svg SwitchesDPV.svg \
+ SchottkyDPV.svg SevensegmentDPV.svg ShiftRDPV.svg SierpinskiDPV.svg \
+ SixpoleDPV.svg SourcesDPV.svg Spec555DPV.svg SwitchesDPV.svg \
  TTLnandDPV.svg TgateDPV.svg ThreeDPV.svg \
  TubediagsDPV.svg VariableDPV.svg WindingsDPV.svg XformDPV.svg \
- controlDPV.svg cscDPV.svg diamondDPV.svg ex00DPV.svg \
+ cbresistorDPV.svg controlDPV.svg cscDPV.svg diamondDPV.svg \
  ex01DPV.svg ex02DPV.svg ex03DPV.svg ex04DPV.svg ex05DPV.svg ex06DPV.svg \
  ex08DPV.svg ex09DPV.svg ex10DPV.svg ex11DPV.svg ex12DPV.svg \
- ex15DPV.svg ex16DPV.svg ex17DPV.svg ex18DPV.svg ex21DPV.svg \
+ ex15DPV.svg ex16DPV.svg ex18DPV.svg ex21DPV.svg \
  expDPV.svg fetDPV.svg graysurfDPV.svg keyboardDPV.svg lcctDPV.svg \
  pwrsupplyDPV.svg quickDPV.svg randomDPV.svg recycleDPV.svg relaycoilDPV.svg \
  roseDPV.svg sfgDPV.svg shapesDPV.svg SmithchartDPV.svg paletteDPV.svg \

@@ -36,6 +36,11 @@ PIC = dpic
 #PIC = $$HOME/dpic/pascaldev/test/dpic
 #PIC = $$HOME/dpic/pascal/test/dpic
 
+# Quiet mode for MiKTeX:
+# QLATEX = latex --quiet
+# Quiet mode for texlive:
+QLATEX = latex -interaction=batchmode
+
 #MODE = -p
 MODE = -g
 
@@ -62,11 +67,11 @@ TEXPICS = \
   Audio.tex Bip.tex Btree.tex Buttons.tex Byte.tex \
   Capacitors.tex CanLogic.tex Chips.tex Conn.tex Connectors.tex \
   Contacts.tex Contact.tex control.tex Crow.tex \
-  csc.tex Csource.tex Decoder.tex \
+  cbresistor.tex csc.tex Csource.tex Decoder.tex \
   Demultiplexer.tex diamond.tex Dini.tex Diodes.tex Drive.tex \
   EEP.tex Emarrows.tex Escher.tex EVplugs.tex \
-  ex00.tex ex01.tex ex02.tex ex03.tex ex04.tex ex05.tex ex06.tex ex08.tex \
-  ex09.tex ex10.tex ex11.tex ex12.tex ex15.tex ex16.tex ex17.tex ex18.tex \
+  ex01.tex ex02.tex ex03.tex ex04.tex ex05.tex ex06.tex ex08.tex \
+  ex09.tex ex10.tex ex11.tex ex12.tex ex15.tex ex16.tex ex18.tex \
   ex21.tex exp.tex fet.tex Flow.tex Fuses.tex \
   Geometry.tex GrayCode.tex graysurf.tex Grounds.tex \
   Headers.tex Heathkit.tex \
@@ -78,9 +83,9 @@ TEXPICS = \
   Quantum.tex quick.tex \
   random.tex Rectifiers.tex recycle.tex relaycoil.tex Relay.tex \
   Resistors.tex Rotbox.tex \
-  Schottky.tex sfg.tex shadowed.tex shapes.tex ShiftR.tex Sierpinski.tex \
-  Sixpole.tex \
-  Smithchart.tex Sources.tex SQUID.tex Switches.tex \
+  Schottky.tex Sevensegment.tex sfg.tex Shadowed.tex shapes.tex \
+  ShiftR.tex Sierpinski.tex Sixpole.tex \
+  Smithchart.tex Sources.tex Switches.tex \
   Tgate.tex Three.tex thyristor.tex TTLnand.tex Tubediags.tex \
   UNO.tex ujt.tex Variable.tex Windings.tex worm.tex Xform.tex XOR.tex
 
@@ -135,10 +140,10 @@ LTXFILE=printf "|documentclass[11pt]{article}\n\
 	@touch $(DIMFILE) F_$*.dim
 	$(M4) pstricks.m4 $(DIMFILE) F_$*.dim $*.m4 | $(PIC) -p > $*.tex
 	@$(LTXFILE) > F_$*.tex
-	latex --quiet F_$*
+	$(QLATEX) F_$*
 	touch F_$*.dim $(DIMFILE)
 	$(M4) pstricks.m4 $(DIMFILE) F_$*.dim $*.m4 | $(PIC) -p > $*.tex
-	latex --quiet F_$*
+	$(QLATEX) F_$*
 	mv F_$*.dvi $*.dvi
 	rm -f F_*
 .dvi.ps:
@@ -148,7 +153,7 @@ LTXFILE=printf "|documentclass[11pt]{article}\n\
 	@touch $(DIMFILE) F_$*.dim
 	$(M4) pstricks.m4 $(DIMFILE) F_$*.dim $*.m4 | $(PIC) -p > $*.tex
 	@$(LTXFILE) > F_$*.tex
-	latex --quiet F_$*
+	$(QLATEX) F_$*
 	dvips $(DVIPSOPTS) F_$* -o $*.ps
 	chmod 644 $*.ps
 	rm -f F_*
@@ -156,9 +161,9 @@ LTXFILE=printf "|documentclass[11pt]{article}\n\
 	@touch $(DIMFILE) F_$*.dim
 	$(M4) pstricks.m4 $(DIMFILE) F_$*.dim $*.m4 | $(PIC) -p > $*.tex
 	@$(LTXFILE) > F_$*.tex
-	latex --quiet F_$*
+	$(QLATEX) F_$*
 	$(M4) pstricks.m4 $(DIMFILE) F_$*.dim $*.m4 | $(PIC) -p > $*.tex
-	latex --quiet F_$*
+	$(QLATEX) F_$*
 	dvips F_$* -T128cm,28cm -o $*.ps
 # Recent changes to PSTricks(?) have clashed with the use of TeXtoEPS
 #  so use ps2epsi
@@ -171,9 +176,9 @@ LTXFILE=printf "|documentclass[11pt]{article}\n\
 	@touch $(DIMFILE) F_$*.dim
 	$(M4) pgf.m4 $(DIMFILE) F_$*.dim $*.m4 | $(PIC) -g > $*.tex
 	@$(PDFLTXSRC) > F_$*.tex
-	pdflatex --quiet F_$*
+	pdf$(QLATEX) F_$*
 	$(M4) pgf.m4 $(DIMFILE) F_$*.dim $*.m4 | $(PIC) -g > $*.tex
-	pdflatex --quiet F_$*
+	pdf$(QLATEX) F_$*
 	mv F_$*.pdf $*.pdf
 	rm -f F_*
 .m4.png:
@@ -192,7 +197,8 @@ LTXFILE=printf "|documentclass[11pt]{article}\n\
 #	rm $*.pdf
 .m4.svg:
 	make $*.pdf
-	dvisvgm --pdf $*.pdf $*.svg
+#	dvisvgm --pdf $*.pdf $*.svg
+	pdf2svg $*.pdf $*.svg
 	chmod 644 $*.svg
 #	rm $*.pdf
 
@@ -244,25 +250,25 @@ $(DOC).dvi: $(DOC).tex files.tex header.tex psmode
 
 tst:
 	@$(LTXFILE) | sed -e 's/{\.tex}/{test.tex}/' > tst.tex
-	make CONF=pstricks.m4 PIC=dpic MODE=-p test.tex; latex --quiet tst
+	make CONF=pstricks.m4 PIC=dpic MODE=-p test.tex; $(QLATEX) tst
 	rm -f test.tex test.pic
-	make CONF=pstricks.m4 PIC=dpic MODE=-p test.tex; latex --quiet tst
+	make CONF=pstricks.m4 PIC=dpic MODE=-p test.tex; $(QLATEX) tst
 	dvips $(DVIPSOPTS) tst -o tst.ps
 
 tst1:
 	@$(LTXFILE) | sed -e 's/{\.tex}/{test.tex}/' > tst.tex
-	make CONF=pstricks.m4 PIC=dpic MODE=-p test.tex; latex --quiet tst
+	make CONF=pstricks.m4 PIC=dpic MODE=-p test.tex; $(QLATEX) tst
 	dvips $(DVIPSOPTS) tst -o tst.ps
 
 tikz:
 	@$(LTXFILE) | sed -e 's/{\.tex}/{test.tex}/' -e 's/pstricks/tikz/' > tst.tex
-	make CONF=pgf.m4 PIC=dpic MODE=-g test.tex; latex --quiet tst
+	make CONF=pgf.m4 PIC=dpic MODE=-g test.tex; $(QLATEX) tst
 	dvips $(DVIPSOPTS) tst -o tst.ps
 
 gpic:
 	@$(LTXFILE) | sed -e 's/{\.tex}/{test.tex}/' > tst.tex
 	rm -f test.tex test.pic
-	make CONF=gpic.m4 PIC=pic MODE=-t test.tex; latex --quiet tst
+	make CONF=gpic.m4 PIC=pic MODE=-t test.tex; $(QLATEX) tst
 	dvips $(DVIPSOPTS) tst -o tst.ps
 
 echopics:

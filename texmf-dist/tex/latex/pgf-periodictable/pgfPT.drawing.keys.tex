@@ -4,11 +4,9 @@
 % --------------------------------------------------------------------------------------------------
 % «The keys for the layout and drawing the Periodic Table» ------------------------------------
 % --------------------------------------------------------------------------------------------------
-%% defining PGF keys: language list to use in the Periodic Table ------------------------------
 \pgfkeys{/pgfPerTable/.cd,%
-languages/.get=\pgfPTlanguages,%
-languages/.store in=\pgfPTlanguages,%
-languages/.default=\pgfPT@defaultLanguage,%
+languages/.code=\pgfPT@otherlanguages{#1},% v2.1.0
+languages/.default=\pgfPT@defaultLanguage,% v2.1.0
 other languages font/.get=\pgfPTotherLangFont,%
 other languages font/.store in=\pgfPTotherLangFont,%
 other languages font/.default=\tiny,%
@@ -18,6 +16,20 @@ other languages color/.default=black!70,%
 other lang/.code=\pgfPT@otherlangstyle{#1},%
 other lang/.default={f=\tiny,c=black!70}%
 }%
+% replace user ISO flag, if found, with 'user' (v2.1.0) -------------------------------------
+\newcount\pgfPT@nlang@count%
+\def\pgfPT@otherlanguages#1{%
+\pgfPT@nlang@count=0\relax%
+\edef\pgfPTlanguages{}%
+\@for\pgfPT@tmp:=#1\do{\advance\pgfPT@nlang@count by1\relax%
+\ifnum\pgfPT@nlang@count=1\relax%
+\ifx\pggPT@userlanguage@ISOcode\pgfPT@tmp\relax\edef\pgfPTlanguages{user}%
+\else\edef\pgfPTlanguages{\pgfPT@tmp}\fi%
+\else%
+\ifx\pggPT@userlanguage@ISOcode\pgfPT@tmp\relax\edef\pgfPTlanguages{\pgfPTlanguages,user}%
+\else\edef\pgfPTlanguages{\pgfPTlanguages,\pgfPT@tmp}\fi%
+\fi}%
+}% -------------------------------------------------------------------------------------------------
 % setting key with default value -----------------------------------------------------------------
 \pgfkeys{/pgfPerTable/.cd,languages,other languages font,other languages color}%
 % end !! PGF keys: language to use in the Periodic Table ---------------------------------------
@@ -177,6 +189,12 @@ group label color/.default=blue!50!black,%
 label LaAc font/.get=\pgfPTlabLaAcfont,%
 label LaAc font/.store in=\pgfPTlabLaAcfont,%
 label LaAc font/.default=\footnotesize\itshape,%
+group numbers/.get=\pgfPTgrnum,% new in v2.1.1
+group numbers/.store in=\pgfPTgrnum,%
+group numbers/.default=arabic,%
+Roman label color/.get=\pgfPTRomanlabgrcolor,% new in v2.1.1
+Roman label color/.store in=\pgfPTRomanlabgrcolor,%
+Roman label color/.default=blue!70!white,%
 LaAc/.code=\pgfPT@LaAcstyle{#1},%
 LaAc/.default={s=true,f=\footnotesize\itshape},%
 per/.code=\pgfPT@perstyle{#1},%
@@ -187,7 +205,30 @@ per+gr/.code=\pgfPT@pergrstyle{#1},%
 per+gr/.default={pc=red!50!black,gc=blue!50!black,f=\small\bfseries}%
 }%
 % setting keys with default values ---------------------------------------------------------------
-\pgfkeys{/pgfPerTable/.cd,label font,period label color,group label color,label LaAc font}%
+\pgfkeys{/pgfPerTable/.cd,label font,period label color,group label color,label LaAc font,group numbers,Roman label color}%
+% Groups in 'old' Roman numerals
+% CAS (USA) ; old IUPAC (Europe) ->
+\newif\ifpgfPT@grRoman@CAS\newif\ifpgfPT@grRoman\newif\ifpgfPT@grarabic%
+\def\pgfPT@gr@numbers#1{\edef\@pgfPT@grnum@atual{#1}\relax%
+\edef\@pgfPT@grnum@CAS{CAS}\edef\@pgfPT@grnum@IUPAC{IUPAC}%
+\edef\@pgfPT@grnum@CASarabic{CAS*}\edef\@pgfPT@grnum@IUPACarabic{IUPAC*}%
+\pgfPT@grRoman@CASfalse\pgfPT@grRomanfalse\pgfPT@grarabicfalse%
+\ifx\@pgfPT@grnum@atual\@pgfPT@grnum@CAS\relax\pgfPT@grRoman@CAStrue\pgfPT@grRomantrue\else%
+\ifx\@pgfPT@grnum@atual\@pgfPT@grnum@IUPAC\relax\pgfPT@grRomantrue\else%
+\ifx\@pgfPT@grnum@atual\@pgfPT@grnum@CASarabic\relax\pgfPT@grRoman@CAStrue\pgfPT@grRomantrue\pgfPT@grarabictrue\else%
+\ifx\@pgfPT@grnum@atual\@pgfPT@grnum@IUPACarabic\relax\pgfPT@grRomantrue\pgfPT@grarabictrue\fi\fi\fi\fi%
+}%
+\def\pgfPT@gr@Roman#1{\edef\@pgfPT@Z@atual{#1}\relax%
+\ifpgfPT@grRoman@CAS% CAS
+\ifcase\@pgfPT@Z@atual\relax\or I\hspace{.1ex}A\or II\hspace{.1ex}A\or III\hspace{.1ex}B\or IV\hspace{.1ex}B\or V\hspace{.1ex}B\or VI\hspace{.1ex}B\or VII\hspace{.1ex}B\or%
+\tikz{\path (0,0);\draw[line width=.2ex] (.1*\pgfPTcellwd,-.55ex) -- (.1*\pgfPTcellwd,0) -- (1.2*\pgfPTcellwd,0);}\or VIII\hspace{.1ex}B\or\tikz[xscale=-1]{\path (0,0);\draw[line width=.2ex] (.1*\pgfPTcellwd,-.55ex) -- (.1*\pgfPTcellwd,0) -- (1.2*\pgfPTcellwd,0);}%
+\or I\hspace{.1ex}B\or II\hspace{.1ex}B\or III\hspace{.1ex}A\or IV\hspace{.1ex}A\or V\hspace{.1ex}A\or VI\hspace{.1ex}A\or VII\hspace{.1ex}A\or VIII\hspace{.1ex}A\fi%
+\else% old IUPAC
+\ifcase\@pgfPT@Z@atual\relax\or I\hspace{.1ex}A\or II\hspace{.1ex}A\or III\hspace{.1ex}A\or IV\hspace{.1ex}A\or V\hspace{.1ex}A\or VI\hspace{.1ex}A\or VII\hspace{.1ex}A\or
+\tikz{\path (0,0);\draw[line width=.2ex] (.1*\pgfPTcellwd,-.55ex) -- (.1*\pgfPTcellwd,0) -- (1.2*\pgfPTcellwd,0);}\or VIII\hspace{.1ex}A\or\tikz[xscale=-1]{\path (0,0);\draw[line width=.2ex] (.1*\pgfPTcellwd,-.55ex) -- (.1*\pgfPTcellwd,0) -- (1.2*\pgfPTcellwd,0);}%
+\or I\hspace{.1ex}B\or II\hspace{.1ex}B\or III\hspace{.1ex}B\or IV\hspace{.1ex}B\or V\hspace{.1ex}B\or VI\hspace{.1ex}B\or VII\hspace{.1ex}B\or0\fi%
+\fi%
+}%
 % end !! PGF keys: labels of periods and groups ------------------------------------------------
 %
 % defining PGF keys: the cells of the periodic table to be drawn -------------------------------
@@ -335,7 +376,7 @@ name color/.store in=\pgfPTnamecolor,%
 name color/.default=black,%
 name font/.get=\pgfPTnamefont,%
 name font/.store in=\pgfPTnamefont,%
-name font/.default=\fontseries{l}\selectfont\tiny,%
+name font/.default=\tiny,% \fontseries{l}\selectfont (removed @ v2.1.2)
 name align/.get=\pgfPTnamealign,% new v1.0.0
 name align/.store in=\pgfPTnamealign,% left|center|right
 name align/.default=center%
@@ -432,16 +473,18 @@ eaff font/.default=\tiny\bfseries%
 % setting keys with default values -----------------------------------------------------------------
 \pgfkeys{/pgfPerTable/.cd,eaff color,eaff font}%
 % end !!
+\newif\ifpgfPTORoman% new in v2.1.1
 \pgfkeys{/pgfPerTable/.cd,%
 O color/.get=\pgfPTOcolor,%
 O color/.store in=\pgfPTOcolor,%
 O color/.default=black,%
 O font/.get=\pgfPTOfont,%
 O font/.store in=\pgfPTOfont,%
-O font/.default=\tiny\bfseries%
+O font/.default=\tiny\bfseries,%
+O Roman/.is if=pgfPTORoman% new in v2.1.1
 }%
 % setting keys with default values -----------------------------------------------------------------
-\pgfkeys{/pgfPerTable/.cd,O color,O font}%
+\pgfkeys{/pgfPerTable/.cd,O color,O font,O Roman=false}%
 % end !!
 \pgfkeys{/pgfPerTable/.cd,%
 Tmelt color/.get=\pgfPTTmeltcolor,%

@@ -1,7 +1,7 @@
 % \iffalse^^A meta-comment
 % ======================================================================
 % scrlayer.dtx
-% Copyright (c) Markus Kohm, 2012-2023
+% Copyright (c) Markus Kohm, 2012-2024
 %
 % This file is part of the LaTeX2e KOMA-Script bundle.
 %
@@ -18,7 +18,7 @@
 %
 % This work consists of all files listed in MANIFEST.md.
 % ======================================================================
-%%% From File: $Id: scrlayer.dtx 4058 2023-06-16 08:32:27Z kohm $
+%%% From File: $Id: scrlayer.dtx 4118 2024-09-02 12:05:30Z kohm $
 %<identify>%%%            (run: identify)
 %<init>%%%            (run: init)
 %<options>%%%            (run: options)
@@ -28,9 +28,9 @@
 \ifx\ProvidesFile\undefined\def\ProvidesFile#1[#2]{}\fi
 \begingroup
   \def\filedate$#1: #2-#3-#4 #5${\gdef\filedate{#2/#3/#4}}
-  \filedate$Date: 2023-06-16 10:32:27 +0200 (Fr, 16. Jun 2023) $
+  \filedate$Date: 2024-09-02 14:05:30 +0200 (Mo, 02 Sep 2024) $
   \def\filerevision$#1: #2 ${\gdef\filerevision{r#2}}
-  \filerevision$Revision: 4058 $
+  \filerevision$Revision: 4118 $
   \edef\reserved@a{%
     \noexpand\endgroup
     \noexpand\ProvidesFile{scrlayer.dtx}%
@@ -169,7 +169,6 @@
   }%
 }
 \newcommand*{\scrlayer@inherit@option}[2]{%
-%<trace>  \typeout{TRACE: Define key `#2' of member `#1'}%
   \DefineFamilyMember[#1]{KOMA}%
   \expandafter\let\csname KV@KOMA#1@#2\expandafter\endcsname
                   \csname KV@KOMA.scrlayer.sty@#2\endcsname
@@ -900,9 +899,21 @@
         \else
 %    \end{macrocode}
 % Level of left mark is less than level of right mark. This is
-% usual.
+% unusual, nevertheless it should work:
+% \changes{v3.42}{2024/09/02}{argument reversal corrected
+% (\href{https://sourceforge.net/p/koma-script/tickets/74/}{issue 74})}
 %    \begin{macrocode}
           \expandafter\def\csname #1mark\endcsname##1{%
+            \@mkboth{}{%
+              \ifnum \c@secnumdepth
+                   < \numexpr \csname #1numdepth\endcsname +0\relax
+              \else
+                \if@mainmatter \MakeMarkcase{\csname #1markformat\endcsname}\fi
+              \fi
+              \MakeMarkcase{##1}%
+            }%
+          }%
+          \expandafter\def\csname #2mark\endcsname##1{%
             \begingroup
               \@tempswafalse
               \if@twoside\@tempswatrue
@@ -911,23 +922,13 @@
             \if@tempswa
               \@mkleft{%
                 \ifnum \c@secnumdepth
-                     < \numexpr\csname #1numdepth\endcsname +0\relax
+                     < \numexpr\csname #2numdepth\endcsname +0\relax
                 \else
-                  \if@mainmatter \MakeMarkcase{\csname #1markformat\endcsname}\fi
+                  \if@mainmatter \MakeMarkcase{\csname #2markformat\endcsname}\fi
                 \fi
                 \MakeMarkcase{##1}%
               }%
             \fi
-          }%
-          \expandafter\def\csname #2mark\endcsname##1{%
-            \@mkboth{}{%
-              \ifnum \c@secnumdepth
-                   < \numexpr \csname #2numdepth\endcsname +0\relax
-              \else
-                \if@mainmatter \MakeMarkcase{\csname #2markformat\endcsname}\fi
-              \fi
-              \MakeMarkcase{##1}%
-            }%
           }%
         \fi
       \fi
@@ -936,10 +937,10 @@
 }
 %    \end{macrocode}
 % \begin{macro}{\ifscrlayer@level@prepared}
-% Test, whether or not this level has been prepared.
+%   Test, whether or not this level has been prepared.
+% \changes{v3.42}{2024/02/01}{removed overlooked debug message}
 %    \begin{macrocode}
 \newcommand*{\ifscrlayer@level@prepared}[1]{%
-  \typeout{1: \detokenize{#1}}%
   \scr@ifundefinedorrelax{#1numdepth}{%
     \PackageError{scrlayer}{numbering depth of `#1' unknown}{%
       Someone told me to use a section mark for level `#1',\MessageBreak

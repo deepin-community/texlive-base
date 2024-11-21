@@ -44,13 +44,11 @@
 %    }^^A
 % }
 %
-% \date{Released 2024-01-22}
+% \date{Released 2024-11-02}
 %
 % \maketitle
 %
 % \begin{documentation}
-%
-% \section{\pkg{l3intarray} documentation}
 %
 % For applications requiring heavy use of integers, this module provides
 % arrays which can be accessed in constant time (contrast \pkg{l3seq},
@@ -66,6 +64,8 @@
 % The use of \texttt{intarray} data is therefore recommended for cases where
 % the need for fast access is of paramount importance.
 %
+% \section{Creating and initialising integer array variables}
+%
 % \begin{function}[added = 2018-03-29]{\intarray_new:Nn, \intarray_new:cn}
 %   \begin{syntax}
 %     \cs{intarray_new:Nn} \meta{intarray~var} \Arg{size}
@@ -76,30 +76,10 @@
 %   always global.
 % \end{function}
 %
-% \begin{function}[EXP, added = 2018-03-29]{\intarray_count:N, \intarray_count:c}
-%   \begin{syntax}
-%     \cs{intarray_count:N} \meta{intarray~var}
-%   \end{syntax}
-%   Expands to the number of entries in the \meta{integer array variable}.
-%   Contrarily to \cs{seq_count:N} this is performed in constant time.
-% \end{function}
-%
-% \begin{function}[added = 2018-03-29]{\intarray_gset:Nnn, \intarray_gset:cnn}
-%   \begin{syntax}
-%     \cs{intarray_gset:Nnn} \meta{intarray~var} \Arg{position} \Arg{value}
-%   \end{syntax}
-%   Stores the result of evaluating the integer expression \meta{value}
-%   into the \meta{integer array variable} at the (integer expression)
-%   \meta{position}.  If the \meta{position} is not between $1$ and the
-%   \cs{intarray_count:N}, or the \meta{value}'s absolute value is
-%   bigger than $2^{30}-1$, an error occurs.  Assignments are always
-%   global.
-% \end{function}
-%
 % \begin{function}[added = 2018-05-04]
 %   {\intarray_const_from_clist:Nn, \intarray_const_from_clist:cn}
 %   \begin{syntax}
-%     \cs{intarray_const_from_clist:Nn} \meta{intarray~var} \meta{int expr clist}
+%     \cs{intarray_const_from_clist:Nn} \meta{intarray~var} \Arg{int expr clist}
 %   \end{syntax}
 %   Creates a new constant \meta{integer array variable} or raises an
 %   error if the name is already taken.  The \meta{integer array
@@ -114,6 +94,32 @@
 %   Sets all entries of the \meta{integer array variable} to zero.
 %   Assignments are always global.
 % \end{function}
+%
+% \section{Adding data to integer arrays}
+%
+% \begin{function}[added = 2018-03-29]{\intarray_gset:Nnn, \intarray_gset:cnn}
+%   \begin{syntax}
+%     \cs{intarray_gset:Nnn} \meta{intarray~var} \Arg{position} \Arg{value}
+%   \end{syntax}
+%   Stores the result of evaluating the integer expression \meta{value}
+%   into the \meta{integer array variable} at the (integer expression)
+%   \meta{position}.  If the \meta{position} is not between $1$ and the
+%   \cs{intarray_count:N}, or the \meta{value}'s absolute value is
+%   bigger than $2^{30}-1$, an error occurs.  Assignments are always
+%   global.
+% \end{function}
+%
+% \section{Counting entries in integer arrays}
+%
+% \begin{function}[EXP, added = 2018-03-29]{\intarray_count:N, \intarray_count:c}
+%   \begin{syntax}
+%     \cs{intarray_count:N} \meta{intarray~var}
+%   \end{syntax}
+%   Expands to the number of entries in the \meta{integer array variable}.
+%   Contrarily to \cs{seq_count:N} this is performed in constant time.
+% \end{function}
+%
+% \section{Using a single entry}
 %
 % \begin{function}[EXP, added = 2018-03-29]{\intarray_item:Nn, \intarray_item:cn}
 %   \begin{syntax}
@@ -134,6 +140,21 @@
 %   \meta{integer array} is empty, produce an error.
 % \end{function}
 %
+% \section{Integer array conditional}
+%
+% \begin{function}[pTF, added = 2024-03-31]
+%   {\intarray_if_exist:N, \intarray_if_exist:c}
+%   \begin{syntax}
+%     \cs{intarray_if_exist_p:N} \meta{intarray~var}
+%     \cs{intarray_if_exist:NTF} \meta{intarray~var} \Arg{true code} \Arg{false code}
+%   \end{syntax}
+%   Tests whether the \meta{intarray~var} is currently defined. This
+%   does not check that the \meta{intarray~var} really is an integer
+%   array variable.
+% \end{function}
+%
+% \section{Viewing integer arrays}
+%
 % \begin{function}[added = 2018-05-04]
 %   {\intarray_show:N, \intarray_show:c, \intarray_log:N, \intarray_log:c}
 %   \begin{syntax}
@@ -144,7 +165,7 @@
 %   terminal or writes them in the log file.
 % \end{function}
 %
-% \subsection{Implementation notes}
+% \section{Implementation notes}
 %
 % It is a wrapper around the \tn{fontdimen} primitive, used to store
 % arrays of integers (with a restricted range: absolute value at most
@@ -256,7 +277,7 @@ end, 'protected', 'global')
 % \end{macro}
 % \end{macro}
 %
-% Before we get to the first command implmented in Lua, we first need some
+% Before we get to the first command implemented in Lua, we first need some
 % definitions. Since \texttt{token.create} only works correctly if \TeX{}
 % has seen the tokens before, we first run a short \TeX{} sequence to ensure
 % that all relevant control sequences are known.
@@ -911,6 +932,16 @@ luacmd('@@_gset_range:w', function()
 %    \end{macrocode}
 %
 % \subsection{Common parts}
+%
+% \begin{macro}[pTF]{\intarray_if_exist:N, \intarray_if_exist:c}
+%   Copies of the \texttt{cs} functions defined in \pkg{l3basics}.
+%    \begin{macrocode}
+\prg_new_eq_conditional:NNn \intarray_if_exist:N \cs_if_exist:N
+  { TF , T , F , p }
+\prg_new_eq_conditional:NNn \intarray_if_exist:c \cs_if_exist:c
+  { TF , T , F , p }
+%    \end{macrocode}
+% \end{macro}
 %
 % \begin{macro}{\intarray_show:N, \intarray_show:c, \intarray_log:N, \intarray_log:c}
 %   Convert the list to a comma list (with spaces after each comma)

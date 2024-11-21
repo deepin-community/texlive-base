@@ -8,14 +8,14 @@
 %% 
 %%
 %% Source File: `colortbl.dtx'.
-%% Copyright 1996 1998 1999 2012 2018 2020 2022 David Carlisle
+%% Copyright 1996 1998 1999 2012 2018 2020 2022 2024 David Carlisle
 %%
 %% This file may be distributed under the terms of the LPPL.
 %% See readme for details.
 %%
 \NeedsTeXFormat{LaTeX2e}[1995/06/01]
 \ProvidesPackage{colortbl}
-          [2022/06/20 v1.0f Color table columns (DPC)]
+          [2024/07/06 v1.0i Color table columns (DPC)]
 \edef\@tempa{%
   \noexpand\AtEndOfPackage{%
     \catcode`\noexpand\^^A\the\catcode`\^^A\relax}}
@@ -38,8 +38,10 @@
       \d@llarbegin
       \insert@column
       \d@llarend\do@row@strut\hskip\stretch{.5}\or
-      \d@llarbegin \insert@column \d@llarend\do@row@strut \hfill \or
-      \hfill\kern\z@ \d@llarbegin \insert@column \d@llarend\do@row@strut \or
+      \d@llarbegin \insert@column \d@llarend\do@row@strut \hfill
+   \or
+      \hfill\kern\z@ \d@llarbegin \insert@column \d@llarend\do@row@strut
+   \or
       \ifx\ar@align@mcell\@undefined
         $\vcenter
          \@startpbox{\@nextchar}\insert@column \@endpbox $
@@ -50,8 +52,9 @@
         \do@row@strut
       \fi
    \or
-   \vtop \@startpbox{\@nextchar}\insert@column \@endpbox\do@row@strut \or
-   \vbox \@startpbox{\@nextchar}\insert@column \@endpbox\do@row@strut
+     \vtop \@startpbox{\@nextchar}\insert@column \@endpbox\do@row@strut
+   \or
+     \vbox \@startpbox{\@nextchar}\insert@column \@endpbox\do@row@strut
   \fi
  \egroup\egroup
 \begingroup
@@ -129,21 +132,17 @@
 \AtBeginDocument{%
   \expandafter\def\expandafter\@tabarray\expandafter{%
     \expandafter\CT@start\@tabarray}}
-\def\endarray{%
-  \crcr \egroup \egroup \@arrayright\gdef\@preamble{}\CT@end}
-\long\def\multicolumn#1#2#3{%
-   \multispan{#1}\begingroup
-   \def\@addamp{\if@firstamp \@firstampfalse \else
-                \@preamerr 5\fi}%
-   \@mkpream{#2}\@addtopreamble\@empty
-   \endgroup
-   \def\@sharp{#3}%
+\expandafter\def\expandafter\endarray\expandafter{\endarray\CT@end}
+\def\@tempa#1\@arstrut#2\relax{
+  \long\def\multicolumn##1##2##3{%
+    #1%
    \let\CT@cell@color\relax
    \let\CT@column@color\relax
    \let\CT@do@color\relax
-   \@arstrut \@preamble
-   \null
-   \ignorespaces}
+   \@arstrut
+   #2}}
+\expandafter\@tempa\multicolumn{#1}{#2}{#3}\relax
+\let\@temp\relax
 \def\@classvi{\ifcase \@lastchclass
       \@acol \or
       \ifx\CT@drsc@\relax
@@ -376,8 +375,12 @@
   \next}
 \lowercase{\def\HH@spacelet} {\futurelet\@tempb \HH@loop}
 \fi}
+\ExplSyntaxOn
+\cs_if_exist:NF\tag_mc_begin:n{
+  \cs_new:Npn\tag_mc_begin:n#1{}
+  \cs_new:Npn\tag_mc_end:{}
+}
 \AtBeginDocument{
-  \ifx\longtable\@undefined\else
     \def\LT@@hline{%
       \ifx\LT@next\hline
         \global\let\LT@next\@gobble
@@ -387,7 +390,10 @@
         \else
           \gdef\CT@LT@sep{%
             \multispan\LT@cols{%
-              \CT@drsc@\leaders\hrule\@height\doublerulesep\hfill}\cr}%
+              \tag_mc_begin:n{artifact}
+              \CT@drsc@\leaders\hrule\@height\doublerulesep\hfill
+              \tag_mc_end: \int_gdecr:N \g__tbl_row_int
+            }\cr}%
         \fi
       \else
         \global\let\LT@next\empty
@@ -396,13 +402,20 @@
       \fi
       \ifnum0=`{\fi}%
       \multispan\LT@cols
-       {\CT@arc@\leaders\hrule\@height\arrayrulewidth\hfill}\cr
+       {\tag_mc_begin:n{artifact}
+        \CT@arc@\leaders\hrule\@height\arrayrulewidth\hfill
+        \tag_mc_end: \int_gdecr:N \g__tbl_row_int
+       }\cr
       \CT@LT@sep
       \multispan\LT@cols
-       {\CT@arc@\leaders\hrule\@height\arrayrulewidth\hfill}\cr
+       {\tag_mc_begin:n{artifact}
+        \CT@arc@\leaders\hrule\@height\arrayrulewidth\hfill
+        \tag_mc_end: \int_gdecr:N \g__tbl_row_int
+       }\cr
       \noalign{\penalty\@M}%
       \LT@next}
-    \fi}
+    }
+\ExplSyntaxOff
 \endinput
 %%
 %% End of file `colortbl.sty'.

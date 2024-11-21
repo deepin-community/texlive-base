@@ -1,7 +1,7 @@
-%% $Id: hvfloat.tex 774 2023-10-16 13:44:29Z herbert $
-\listfiles
+%% $Id: hvfloat.tex 1014 2024-10-03 08:22:14Z herbert $
+%\listfiles
 \errorcontextlines=100
-\documentclass[twoside,paper=a4,usegeometry]{scrartcl}
+\documentclass[twoside,paper=a4,usegeometry,index=totoc]{scrartcl}
 \usepackage{fontspec}
 \usepackage[silent]{libertinus-otf}
 %\usepackage[scaled=0.85]{beramono}
@@ -188,6 +188,8 @@
    \marginnote{\fbox{\shortstack{float\\#1}}}\fi
 }
 
+\graphicspath{{images/}}
+
 \begin{document}
 \title{Package \texttt{hvfloat}\\
 Controlling captions, fullpage and doublepage floats\\ver \hvFloatFileVersion}
@@ -216,7 +218,10 @@ marginnote \fbox{float} is set into the margin. This is done also only for demon
 	objectAngle=120,
 	capAngle=-210,
 	objectPos=center
-]{figure}{\protect\fbox{\includegraphics[scale=0.9]{images/rose}}}{\protect\fbox{What a nice Caption :-)}}{fig:title}
+	objectFrame,
+]{figure}{\includegraphics[scale=0.9]{images/rose}}
+  {\protect\fbox{What a nice Caption :-)}}
+  {fig:title}
 
 \vspace*{\fill}
 
@@ -251,6 +256,7 @@ way with \Lcs{setlength} or \Lcs{addtolength}.
 The following packages are loaded by \Lpack{hvfloat} and the optional argument
 \Loption{hypcap} is passed to the packages \Lpack{caption} and \Lpack{subcaption}:
 
+\Lpack{fbox}, 
 \Lpack{caption}, 
 \Lpack{subcaption},
 \Lpack{atbegshi},
@@ -395,11 +401,14 @@ There are the following keywords:
 \Lkeyword{nonFloat} & false     & \rowvsp The object isn't put in a floating
     environment, but printed as standard text with an additional caption.
     \rownl The float counter is increased as usual and can be referenced.\\
+\Lkeyword{nonFloatTopSkip} & 2pt  & Skip between text and object with caption below for nonFloat objects.\\
 \Lkeyword{wide} & false         & \rowvsp The float can use
     \Ldim{textwidth}$\,+\,$\Ldim{marginparwidth} as horizontal width.\\
 \Lkeyword{inMargin} & false  & \rowvsp Put object and frame into the margin.\\
 \Lkeyword{objectFrame} & false  & \rowvsp Put a frame with no separation
     around the float object.\\
+\Lkeyword{fboxLines} & ltrb & \rowvsp Lines around the box l)eft, t)op, r)ight, b)ottom\\
+\Lkeyword{fboxSep} & 0pt & \rowvsp Additional box separation (like \Ldim{fboxsep})\\
 \Lkeyword{style} & \none        & \rowvsp Use a defined style.\\
 \Lkeyword{capFormat} & \none    & \rowvsp Define formatting options for
    \Lcs{caption}; see documentation of package \Lpack{caption}.\\
@@ -455,8 +464,7 @@ Code for figure \ref{fig:0}:
 \end{lstlisting}
 
 
-\MarginNote{Tab.~\ref{tab:0}}
-\hvFloat[capPos=top]{table}{%
+\savebox\hvOBox{%
 \begin{tabularx}{\textwidth}{l|l|X}
   \rmfamily Name & Type & Description\\\hline
   \CMD{hvFloat}  & command     & places object and caption in different ways\\
@@ -465,23 +473,30 @@ Code for figure \ref{fig:0}:
   \CMD{tabcaption} & command   & writes a table caption in a non floating environment\\
   \CMD{hvFloatSetDefaults} & command  & sets all options to the defaults\\
   \CMD{hvDefFloatStyle} & command & define a user style
-\end{tabularx}%
-}{With the only Option \texttt{capPos=top} to place the caption on top of the table, which is often the default.}{tab:0}
+\end{tabularx}}
+
+\MarginNote{Tab.~\ref{tab:0}}
+\hvFloat[capPos=top,useOBox]{table}{}
+  {With the only Option \texttt{capPos=top} to place the caption on 
+  top of the table, which is often the default.}
+  {tab:0}
 
 Code for table \ref{tab:0}:
 \begin{lstlisting}
-\hvFloat[capPos=top]{table}{%
-\begin{tabularx}{\textwidth}{>{\ttfamily}l|l|X}
+\savebox\hvOBox{%
+\begin{tabularx}{\textwidth}{l|l|X}
   \rmfamily Name & Type & Description\\\hline
   \CMD{hvFloat}  & command     & places object and caption in different ways\\
-  hvFloatEnv  & environment & places object and caption exactly Here\\
+  \Lenv{hvFloatEnv}  & environment & places object and caption exactly Here\\
   \CMD{figcaption} & command   & writes a figure caption in a non floating environment\\
   \CMD{tabcaption} & command   & writes a table caption in a non floating environment\\
   \CMD{hvFloatSetDefaults} & command  & sets all options to the defaults\\
   \CMD{hvDefFloatStyle} & command & define a user style
-\end{tabularx}}%
-{With the only Option \texttt{capPos=top} to place the caption on top of the table, which is often the default.}%
-{tab:0}
+\end{tabularx}}
+\hvFloat[capPos=top,useOBox]{table}{}
+  {With the only Option \texttt{capPos=top} to place the caption on 
+  top of the table, which is often the default.}
+  {tab:0}
 \end{lstlisting}
 
 See section~\ref{sec:tables} for some more informations about tabulars as objects.
@@ -535,6 +550,23 @@ minus the width of the object and the space between object and caption, which is
 \hvFloat[floatPos=!htb,capPos=after,objectFrame]{figure}{\includegraphics[scale=1.5]{images/rose}}%
   {Caption right beside with a \emph{natural} width, which is given by the width of the object,
   the separation between object and caption, and the current linewidth.}{fig:width1}
+
+
+The same with box lines only on the left and right:
+
+\begin{lstlisting}
+\hvFloat[floatPos=!htb,capPos=after,objectFrame,
+  fboxLines=lr,fboxSep=0pt]{figure}{\includegraphics[scale=1.5]{images/rose}}%
+  {Caption right beside with a \emph{natural} width, which is given by the width of the object,
+  the separation between object and caption, and the current linewidth.}{fig:width1A}
+\end{lstlisting}
+
+\MarginNote{Fig.~\ref{fig:width1A}}
+\hvFloat[floatPos=!htb,capPos=after,objectFrame,
+  fboxLines=lr,fboxSep=0pt]{figure}{\includegraphics[scale=1.5]{images/rose}}%
+  {Caption right beside with a \emph{natural} width, which is given by the width of the object,
+  the separation between object and caption, and the current linewidth.}{fig:width1A}
+
 
 
 \subsection{Relative linewidth}
@@ -1127,26 +1159,29 @@ the caption to the left, center, or right of the full width which is linewidth a
 
 %\hvblindtext
 
+\clearpage
+
 \section{Margin floats}
 
 With the optional argument \Lkeyword{inMargin} the opject and the caption can be placed into
 the margin. This is done internally with the command \Lcs{marginnote} from the package of the same name.
+
+
 
 %\marginnote{Fig.~\ref{thea}}
 \hvFloat[inMargin]{figure}{\includegraphics[width=\marginparwidth]{images/thea}}
   {An image in the margin of the document.}
   {thea}
 
-
 \begin{lstlisting}
 \hvFloat[inMargin]{figure}{\includegraphics[width=\marginparwidth]{images/thea}}
   {An image in the margin of the document.}
   {thea}
-
 ...
-
-\hvFloat[inMargin]{table}{\small\begin{tabular}{@{}ccc@{}}\hline Mon& Di& Mi\\ frei & Dienst & frei\\
+\savebox\hvOBox{\small\begin{tabular}{@{}
+  ccc@{}}\hline Mon& Di& Mi\\ frei & Dienst & frei\\
 	Dienst & Dienst & Frei\\\hline \end{tabular}}
+\hvFloat[inMargin,useOBox]{table}{}
   {A tabular in the margin just like the image.}
   {thea2}
 \end{lstlisting}
@@ -1155,9 +1190,13 @@ the margin. This is done internally with the command \Lcs{marginnote} from the p
 \hvblindtext
 
 
+\savebox\hvOBox{%
+  \small\begin{tabular}{@{}ccc@{}}\hline 
+  Mon& Di& Mi\\ frei & Dienst & frei\\
+  Dienst & Dienst & Frei\\\hline \end{tabular}%
+}
 %\marginnote{Fig.~\ref{thea2}}
-\hvFloat[inMargin]{table}{\small\tabcolsep=3pt\begin{tabular}{@{}ccc@{}}\hline Mon& Di& Mi\\ frei & Dienst & frei\\
-	Dienst & Dienst & Frei\\\hline \end{tabular}}
+\hvFloat[inMargin,useOBox]{table}{}
   {A tabular in the margin just like the image.}
   {thea2}
 
@@ -1363,7 +1402,7 @@ The code for table \ref{table:1} and \ref{table:2} is:
 \hvFloat[%
   floatPos=!hb,
   capPos=top,
-  useOBox=true]{table}{}{Demonstration of the \texttt{useOBox} Parameter}{table:1}
+  useOBox]{table}{}{Demonstration of the \texttt{useOBox} Parameter}{table:1}
 
 \hvblindtext
 
@@ -1383,14 +1422,14 @@ In this case leave the third parameter empty.
 \hvFloat[%
   floatPos=!hb,
   capPos=top,
-  useOBox=true]{table}{}{Demonstration of the \texttt{useOBox} Parameter}{table:1}
+  useOBox]{table}{}{Demonstration of the \texttt{useOBox} Parameter}{table:1}
 
 
 
 \MarginNote{Tab.~\ref{table:2}}
 \hvFloat[%
 	floatPos=!htb,%
-	useOBox=true,%
+	useOBox,%
 	objectAngle=90,%
 	capPos=right,%
 	capVPos=top,%
@@ -2710,7 +2749,7 @@ in the inner margin on both pages.
 \begin{lstlisting}
  \hvFloat[doubleFULLPAGE,capPos=right]%
   {figure}%
-  {\includegraphics[height=\paperheight]{images/rheinsberg-1000}}%
+  {\includegraphics[height=\paperheight]{images/rheinsberg}}%
   {A caption for a double-sided image that will be placed on the right-hand 
    part of the illustration. The illustration begins on the left edge of the paper. 
    No further text is placed on the pages. A short form is used for the LOF. 
@@ -2721,7 +2760,7 @@ in the inner margin on both pages.
 \MarginNote{Fig.~\ref{fig:doubleFULLPAGE1}}
  \hvFloat[doubleFULLPAGE,capPos=right]%
   {figure}%
-  {\includegraphics[height=\paperheight]{images/rheinsberg-1000}}%
+  {\includegraphics[height=\paperheight]{images/rheinsberg}}%
   {A caption for a double-sided image that will be placed on the right-hand 
    part of the illustration. The illustration begins on the left edge of the paper. 
    No further text is placed on the pages. A short form is used for the LOF. 
@@ -2742,15 +2781,15 @@ page~\pageref{foo}
 and the right part on page~\pageref{foo-2}. In the follwoing example~\ref{bar} the caption is on page~\pageref{bar-cap}, the left image part on page~\pageref{bar}
 and the right part on page~\pageref{bar-2}. All three labels points to the same figure or table number:
 
-\verb/\ref{foo} | \ref{foo-cap} | \ref{foo-2}/ $\rightarrow$ \ref{foo} | \ref{foo-cap} | \ref{foo-2}
+\verb/\ref{foo} | \ref{foo-cap} | \ref{foo-2}/ $\rightarrow$ Figure~\ref{foo} | Figure~\ref{foo-cap} | Figure~\ref{foo-2}
 
-\verb/\pageref{foo} | \pageref{foo-cap} | \pageref{foo-2}/ $\rightarrow$ \pageref{foo} | \pageref{foo-cap} | \pageref{foo-2}
+\verb/\pageref{foo} | \pageref{foo-cap} | \pageref{foo-2}/ $\rightarrow$ Page~\pageref{foo} | Page~\pageref{foo-cap} | Page~\pageref{foo-2}
 
 \begin{lstlisting}
  \hvFloat[doubleFULLPAGE,capPos=after]%
   {figure}%
   {\includegraphics[doubleFULLPAGE,
-    keepaspectratio=false]{images/rheinsberg-1000}}%
+    keepaspectratio=false]{images/rheinsberg}}%
   {A caption for a double-sided image that will be placed \textbf{after} 
    the image. The image begins on the left edge of the paper. 
    No further text is placed on the pages. A short form is used for the LOF. 
@@ -2763,7 +2802,7 @@ and the right part on page~\pageref{bar-2}. All three labels points to the same 
 \MarginNote{Fig.~\ref{foo}}
  \hvFloat[doubleFULLPAGE,capPos=after]%
   {figure}%
-  {\includegraphics[doubleFULLPAGE]{images/rheinsberg-1000}}%
+  {\includegraphics[doubleFULLPAGE]{images/rheinsberg}}%
   {A caption for a double-sided image that will be placed \textbf{after}
    the image. The image begins on the left edge of the paper. 
    No further text is placed on the pages. A short form is used for the LOF. 
@@ -2784,7 +2823,7 @@ and the right part on page~\pageref{bar-2}. All three labels points to the same 
  \hvFloat[doubleFULLPAGE,capPos=before]%
   {figure}%
   {\includegraphics[height=\paperheight,width=2\paperwidth,
-    keepaspectratio=false]{images/rheinsberg-1000}}%
+    keepaspectratio=false]{images/rheinsberg}}%
   {A caption for a double-sided image that will be placed \textbf{before} 
    the image. The image begins on the left edge of the paper. 
    No further text is placed on the pages. A short form is used for the LOF. 
@@ -2795,7 +2834,7 @@ and the right part on page~\pageref{bar-2}. All three labels points to the same 
 \MarginNote{Fig.~\ref{bar}}
  \hvFloat[doubleFULLPAGE,capPos=before]%
   {figure}%
-  {\includegraphics[height=\paperheight,width=2\paperwidth,keepaspectratio=false]{images/rheinsberg-1000}}%
+  {\includegraphics[height=\paperheight,width=2\paperwidth,keepaspectratio=false]{images/rheinsberg}}%
   {A caption for a double-sided image that will be placed \textbf{before}
    the image. The image begins on the left edge of the paper. 
    No further text is placed on the pages. A short form is used for the LOF. 
@@ -2806,9 +2845,9 @@ and the right part on page~\pageref{bar-2}. All three labels points to the same 
 
 \hvBlindtext
 
-\hvblindtext
+\hvBlindtext
 
-%\hvblindtext
+\hvblindtext
 
 \subsection{\Lkeyword{doublePAGE}}
 With this option the object also starts at the left paper margin but on the top of the text area.
@@ -3001,9 +3040,11 @@ of the object.
 
 \hvBlindtext
 
-\hvBlindtext
+%\hvBlindtext
 
 \hvBlindtext
+
+\vfill
 \begin{lstlisting}
 \hvFloat[doubleFullPage,capWidth=n,sameHeight,capPos=right]%
   {figure}%
@@ -3016,9 +3057,13 @@ of the object.
   {fig:doublePage001}
 \end{lstlisting}
 
+Now a pagebreak follows so that the following doublepage object should
+immediately placed on the next page. 
+\newpage
+
 
 \MarginNote{Fig. \ref{fig:doublePage001}}
-\hvFloat[doubleFullPage,capWidth=n,sameHeight,capPos=right]%
+\hvFloat[doubleFullPage,capWidth=n,sameHeight,capPos=left]%
   {figure}%
   {\includegraphics[doubleFullPage]{images/sonne-meer}}%
   [A doublepage image with a caption on the right side of the right part.]%
@@ -3032,6 +3077,17 @@ of the object.
 
 \hvBlindtext
 \hvBlindtext
+\hvBlindtext
+
+\hvBlindtext
+\hvblindtext
+\hvblindtext
+
+\hvblindtext
+\hvblindtext
+
+%\hvBlindtext
+%\hvBlindtext
 \hvBlindtext
 
 \hvBlindtext
@@ -3080,20 +3136,18 @@ Artikel gesamt & 2 & 6 & 13 & 8 & 4 & 3 & 5 & 4 & 0 & 6 & 3 & 5 &23 &10 & 8 & 15
 
 \hvBlindtext
 
-\hvFloat[doublePage,capPos=right,capVPos=top,floatCapSep=12pt]%
+\hvFloat[doublePage,capPos=right,capVPos=top,floatCapSep=12pt,useOBox]%
   {table}%
-  {\usebox\hvOBox}%%%%%%%%%%%%%%
+  {}%%%%%%%%%%%%%%
   [A doublepage tabular with a caption on the right side of the right part.]%
   {A caption for a double-sided tabular that will be placed on the right side of the
    right-hand part of the illustration. The illustration begins on the left edge of 
-   the paper. A short form is used for the LOF. 
-   The parameter is \texttt{doublePage}}%
+   the paper. A short form is used for the LOF. The parameter is \texttt{doublePage}}%
   {tab:doublePage3}
 \end{lstlisting}
 
 
-\marginpar{Tab.~\ref{tab:doublePage3}}
-\global\savebox\hvOBox{%
+\savebox\hvOBox{%
 \begin{tabular}{l*{18}r} \toprule
  & \textbf{1972} & \textbf{1973} & \textbf{1974} & \textbf{1975} & \textbf{1976} 
  & \textbf{1977} & \textbf{1978} & \textbf{1979} & \textbf{1980}  & \textbf{1981} & \textbf{1982} & \textbf{1983} & \textbf{1984} & \textbf{1985}
@@ -3121,15 +3175,48 @@ Artikel gesamt & 2 & 6 & 13 & 8 & 4 & 3 & 5 & 4 & 0 & 6 & 3 & 5 &23 &10 & 8 & 15
 \end{tabular}}
 
 
+\marginpar{Tab.~\ref{tab:doublePage3}}%
 \hvFloat[doublePage,capPos=right,capVPos=top,floatCapSep=12pt]%
   {table}%
-  {\usebox\hvOBox}%%%%%%%%%%%%%%
+  {\begin{tabular}{l*{18}r} \toprule
+ & \textbf{1972} & \textbf{1973} & \textbf{1974} & \textbf{1975} & \textbf{1976} 
+ & \textbf{1977} & \textbf{1978} & \textbf{1979} & \textbf{1980}  & \textbf{1981} & \textbf{1982} & \textbf{1983} & \textbf{1984} & \textbf{1985}
+ & \textbf{1986} & \textbf{1987} & \textbf{1988} & \textbf{1989}
+ \\\midrule
+\addlinespace[3pt]
+Zeile 1 & 1 & 3 & 1 & 1 & 1 & 0 & 1 & 1 & 0 & 0 & 0 & 0 &20 & 0 & 2 & 2 & 2 & 1\\\addlinespace[3pt]
+Zeile 2 & 1 & 1 & 3 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 2 & 1 & 3 & 4 & 4 & 6 & 4 & 2\\\addlinespace[3pt]
+Zeile 3 & 2 & 1 & 2 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 5 & 3 & 1 & 7 & 7 & 3\\\addlinespace[3pt]
+Zeile 4 & 1 & 0 & 5 & 1 & 2 & 0 & 0 & 0 & 0 & 2 & 1 & 0 & 1 & 0 & 3 & 7 & 2 & 1\\\addlinespace[3pt]
+Zeile 6 & 2 & 1 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 2 & 0 & 5 & 2 & 2 & 5 & 4 & 2\\\addlinespace[3pt]
+Zeile 5 & 0 & 0 & 4 & 2 & 1 & 2 & 2 & 1 & 0 & 0 & 0 & 1 & 1 & 0 & 2 & 5 & 4 & 3\\\addlinespace[3pt]
+Zeile 8 & 0 & 1 & 1 & 0 & 0 & 0 & 1 & 1 & 0 & 3 & 2 & 1 & 2 & 1 & 3 & 5 & 3 & 4\\\addlinespace[3pt]
+Zeile 9 & 0 & 0 & 0 & 0 & 0 & 1 & 2 & 1 & 0 & 0 & 0 & 0 & 4 & 2 & 1 & 4 & 5 & 2\\\addlinespace[3pt]
+Zeile10 & 0 & 1 & 3 & 0 & 1 & 0 & 1 & 0 & 0 & 1 & 1 & 0 & 1 & 1 & 1 & 4 & 4 & 1\\\addlinespace[3pt]
+Zeile11 & 0 & 2 & 2 & 1 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 2 & 6 & 1 & 0 & 2 & 1 & 1 \\\addlinespace[3pt]
+Zeile12 & 2 & 0 & 2 & 4 & 1 & 0 & 4 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 3\\\addlinespace[3pt]
+Lärm    & 2 & 3 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 2 & 0 & 0 & 2 & 2 & 2\\\addlinespace[3pt]
+Zeile13 & 0 & 1 & 0 & 0 & 1 & 0 & 3 & 0 & 0 & 0 & 0 & 0 & 2 & 0 & 1 & 3 & 0 & 2\\\addlinespace[3pt]
+Zeile14 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 3 & 3 & 2 & 1 & 1 & 0\\\addlinespace[3pt]
+Zeile15 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 4 & 0 & 0 & 3 & 1 & 1\\\addlinespace[3pt]
+Zeile16 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 3 & 5 & 0 & 1\\\addlinespace[3pt]\midrule
+Artikel gesamt & 2 & 6 & 13 & 8 & 4 & 3 & 5 & 4 & 0 & 6 & 3 & 5 &23 &10 & 8 & 15 & 13 &1 \\
+\bottomrule
+\end{tabular}}%%%%%%%%%%%%%%
   [A doublepage tabular with a caption on the right side of the right part.]%
   {A caption for a double-sided tabular that will be placed on the right side of the
    right-hand part of the illustration. The illustration begins on the left edge of 
    the paper. A short form is used for the LOF. 
    The parameter is \texttt{doublePage}}%
   {tab:doublePage3}
+
+
+Here comes some snonsense Text to show the output for a \Lcs{hvFloat} which appears
+exactly on top of a new even page. This should be detectted by the command so that the
+tabular is placed directly on the following double page, starting with the even pagenumber.
+
+
+\hvBlindtext
 
 \hvBlindtext
 

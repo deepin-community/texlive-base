@@ -1,5 +1,5 @@
 -- gitinfo-lua-cmd.lua
--- Copyright 2023 E. Nijenhuis
+-- Copyright 2024 E. Nijenhuis
 --
 -- This work may be distributed and/or modified under the
 -- conditions of the LaTeX Project Public License, either version 1.3c
@@ -14,14 +14,15 @@
 -- The Current Maintainer of this work is E. Nijenhuis.
 --
 -- This work consists of the files gitinfo-lua.sty gitinfo-lua.pdf
--- gitinfo-cmd.lua and gitinfo-lua.lua
+-- gitinfo-lua-cmd.lua, gitinfo-lua-recorder.lua and gitinfo-lua.lua
 
 local api = {
     cwd = nil,
     executable = 'git',
     default_sort = '',
     attribute_separator = '\\pop',
-    record_separator = '\\end'
+    record_separator = '\\end',
+    recorder = require('gitinfo-lua-recorder')
 }
 local cache = {}
 function cache:seek(_key)
@@ -37,11 +38,25 @@ function api.trim(s)
     return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
 
-function api:exec(command, do_caching, target_dir)
-    local cmd = self.executable .. ' ' .. command
+function api:exec(command, do_caching, target_dir, no_recording, path_spec)
     local cwd = target_dir or self.cwd
+    local cmd = self.executable
     if cwd then
-        cmd = 'cd ' .. cwd .. ';' .. cmd
+        cmd = cmd .. ' -C ' .. cwd
+    end
+    cmd = cmd .. ' ' .. command
+    if not no_recording then
+        api.recorder.record_head(cwd)
+    end
+    if path_spec then
+    	if type(path_spec) == 'table' then
+    	    cmd = cmd .. ' --'
+    	    for _,path in ipairs(path_spec) do
+    	        cmd = cmd .. ' ' .. path
+    	    end
+        elseif type(path_spec) == 'string' then
+            cmd = cmd .. ' -- ' .. path_spec
+    	end
     end
     if do_caching then
         local found, result = cache:seek(cmd)
@@ -51,7 +66,7 @@ function api:exec(command, do_caching, target_dir)
     end
     local f = io.popen(cmd)
     if f == nil then
-        return nil, "Couldn't execute git command.\n\tIs option '-shell-escape' turned on?"
+        return nil, "Couldn't execute git command.\n\tIs option '--shell-escape' turned on?"
     end
     local s = f:read('*a')
     if f:close() then
@@ -60,7 +75,7 @@ function api:exec(command, do_caching, target_dir)
         end
         return s
     else
-        return nil, 'Error executing git command'
+        return nil, 'Error executing git command\n\t"' .. cmd .. '"'
     end
 end
 
@@ -140,7 +155,7 @@ function api:parse_response(buffer)
     return results
 end
 
-function api:log(format_spec, revision, options, target_dir)
+function api:log(format_spec, revision, options, target_dir, path_spec)
     local format, err = self:parse_format_spec(format_spec)
     if err then
         return nil, err
@@ -153,7 +168,7 @@ function api:log(format_spec, revision, options, target_dir)
     if revision and revision ~= '' then
         cmd = cmd .. ' ' .. revision
     end
-    local response, err = self:exec(cmd, true, target_dir)
+    local response, err = self:exec(cmd, true, target_dir, false, path_spec)
     if not response then
         return nil, err
     end

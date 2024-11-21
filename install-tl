@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# $Id: install-tl 69711 2024-02-05 17:23:27Z karl $
+# $Id: install-tl 71853 2024-07-20 15:57:11Z preining $
 # Copyright 2007-2024
 # Reinhard Kotucha, Norbert Preining, Karl Berry, Siep Kroonenberg.
 # This file is licensed under the GNU General Public License version 2
@@ -12,7 +12,7 @@
 
 use strict; use warnings;
 
-my $svnrev = '$Revision: 69711 $';
+my $svnrev = '$Revision: 71853 $';
 $svnrev =~ m/: ([0-9]+) /;
 $::installerrevision = ($1 ? $1 : 'unknown');
 
@@ -361,16 +361,13 @@ my %profiledata;
 if (-r "installation.profile"
     && $opt_interaction
     && !exists $ENV{"TEXLIVE_INSTALL_NO_RESUME"}) {
-  if ($from_ext_gui) { # prepare for dialog interaction
-    print "mess_yesno\n";
-  }
+  print "mess_yesno\n" if $from_ext_gui; # prepare for dialog interaction
   my $pwd = Cwd::getcwd();
   print "ABORTED TL INSTALLATION FOUND: installation.profile (in $pwd)\n";
-  print
-    "Do you want to continue with the exact same settings as before (y/N): ";
+  print "Do you want to continue with the same settings as before (y/N): ";
   print "\nendmess\n" if $from_ext_gui;
   my $answer = <STDIN>;
-  if ($answer =~ m/^y(es)?$/i) {
+  if ($answer && $answer =~ m/^y(es)?$/i) {
     $opt_profile = "installation.profile";
   }
 }
@@ -599,6 +596,25 @@ if (!$opt_custom_bin && (platform() eq "i386-cygwin")) {
       tldie("$0: Sorry, the TL binaries require at least cygwin 1.7, "
             . "not $1.$2\n");
     }
+  }
+}
+#
+# More Cygwin: if the user doesn't have Cygwin's wget or curl,
+# it's unlikely anything good will happen.
+if ($^O eq 'cygwin'
+    && (! -x "/usr/bin/curl.exe" && ! -x "/usr/bin/wget.exe")) {
+      print "mess_yesno\n" if $from_ext_gui; # prepare for dialog interaction
+      print <<END_CYGWIN_WGET_MSG;
+It seems you are using Cygwin and have not installed Cygwin's
+curl or wget. See the TeX Live Guide information on Cygwin for required
+and recommended packages:
+  https://tug.org/texlive/doc/texlive-en/texlive-en.html#cygwin
+END_CYGWIN_WGET_MSG
+  print "Continue anyway (unlikely to work) (y/N): ";
+  print "\nendmess\n" if $from_ext_gui;
+  my $answer = <STDIN>;
+  if (! $answer || $answer !~ m/^y(es)?$/i) {
+    tldie("$0: Ok, goodbye. Please install the needed packages.\n");
   }
 }
 
@@ -1125,6 +1141,7 @@ sub do_installation {
   my $tlpobj = new TeXLive::TLPOBJ;
   $tlpobj->name("00texlive.config");
   my $t = $tlpdb->get_package("00texlive.config");
+  $tlpobj->category($t->category);
   $tlpobj->depends("minrelease/" . $tlpdb->config_minrelease,
                    "release/"    . $tlpdb->config_release);
   $localtlpdb->add_tlpobj($tlpobj);  
@@ -3582,7 +3599,7 @@ This script and its documentation were written for the TeX Live
 distribution (L<https://tug.org/texlive>) and both are licensed under the
 GNU General Public License Version 2 or later.
 
-$Id: install-tl 69711 2024-02-05 17:23:27Z karl $
+$Id: install-tl 71853 2024-07-20 15:57:11Z preining $
 =cut
 
 # to remake HTML version: pod2html --cachedir=/tmp install-tl >/tmp/itl.html

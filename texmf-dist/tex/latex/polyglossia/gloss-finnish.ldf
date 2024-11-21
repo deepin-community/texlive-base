@@ -1,4 +1,4 @@
-% Language definition file (part of polyglossia v1.66 -- 2023/12/11)
+% Language definition file (part of polyglossia v2.3 -- 2024/09/23)
 %
 \ProvidesFile{gloss-finnish.ldf}[polyglossia: module for Finnish]
 \PolyglossiaSetup{finnish}{
@@ -16,24 +16,54 @@
 % BCP-47 compliant aliases
 \setlanguagealias*{finnish}{fi}
 
-\define@boolkey{finnish}[finnish@]{babelshorthands}[true]{}
+\newif\if@finnish@schoolhyphens
+\newif\if@finnish@babelhyphens
 
-\define@boolkey{finnish}[finnish@]{schoolhyphens}[true]{}
+\DeclareKeys[polyglossia/gloss/finnish]
+  {
+    babelshorthands.if = finnish@babelshorthands,
+    babelshorthands.default:n = true,
+    hyphens.choice:,
+    hyphens / default.code =
+      {%
+        \@finnish@schoolhyphensfalse
+        \@finnish@babelhyphensfalse
+      },
+    hyphens / school.code =
+      {%
+        \@finnish@schoolhyphenstrue
+        \@finnish@babelhyphensfalse
+      },
+    hyphens / babel.code =
+      {%
+        \@finnish@schoolhyphensfalse
+        \@finnish@babelhyphenstrue
+      },
+    hyphens.default:n = default,
+    hyphens/unknown.code = \xpg@warning{Unknown Finnish hyphens `#1'},
+    schoolhyphens.choice:,
+    schoolhyphens / true.code =
+      {%
+        \@finnish@schoolhyphenstrue
+        \@finnish@babelhyphensfalse
+      },
+    schoolhyphens / false.code =
+      {%
+        \@finnish@schoolhyphensfalse
+      },
+    schoolhyphens.default:n = true
+  }
 
 % Register default options
-\xpg@initialize@gloss@options{finnish}{babelshorthands=false,schoolhyphens=false}
+\InitializeGlossOptions{finnish}{babelshorthands=false,hyphens=default}
 
 \ifsystem@babelshorthands
-  \setkeys{finnish}{babelshorthands=true}
+  \SetGlossOptions{finnish}{babelshorthands=true}
 \else
-  \setkeys{finnish}{babelshorthands=false}
+  \SetGlossOptions{finnish}{babelshorthands=false}
 \fi
 
-\ifcsundef{initiate@active@char}{%
-    \input{babelsh.def}%
-    \initiate@active@char{"}%
-    \shorthandoff{"}%
-}{}
+\InitializeBabelShorthands
 
 \def\finnish@shorthands{%
   \xpg@activate@shorthands%
@@ -42,7 +72,7 @@
   \declare@shorthand{finnish}{"|}{\textormath{\penalty\@M\discretionary{-}{}{\kern.03em}}{}}%
   \declare@shorthand{finnish}{""}{\hskip\z@skip}%
   \declare@shorthand{finnish}{"~}{\textormath{\leavevmode\hbox{-}}{-}}%
-  \declare@shorthand{finnish}{"=}{\penalty\@M-\hskip\z@skip}%
+  \declare@shorthand{finnish}{"=}{\hbox{-}\bbl@allowhyphens}%
   \declare@shorthand{finnish}{"/}{\textormath
     {\bbl@allowhyphens\discretionary{/}{}{/}\bbl@allowhyphens}{}}%
 }
@@ -77,17 +107,39 @@
 }
 
 \def\finnish@language{%
-  \iffinnish@schoolhyphens
-      \xpg@ifdefined{schoolfinnish}{%
-         \polyglossia@setup@language@patterns{schoolfinnish}%
+  \if@finnish@schoolhyphens
+      \IfLanguageDefinedTF{schoolfinnish}{%
+         \SetupPolyglossiaLangPatterns{schoolfinnish}%
       }{%
            \xpg@warning{Finnish 'School' hyphenation patterns (schoolfinnish) not available.\MessageBreak
 	                I will use the standard patterns for Finnish instead}%
-	   \polyglossia@setup@language@patterns{finnish}%
+	   \SetupPolyglossiaLangPatterns{finnish}%
      }%
   \else
-      \polyglossia@setup@language@patterns{finnish}%
+      \SetupPolyglossiaLangPatterns{finnish}%
   \fi
+}
+
+% activate babel-style hyphen settings if requested
+\AtBeginDocument{%
+    \if@finnish@babelhyphens
+	\let\xpg@save@hyphenpenalty\hyphenpenalty%
+	\let\xpg@save@exhyphenpenalty\exhyphenpenalty%
+	\let\xpg@save@doublehyphendemerits\doublehyphendemerits%
+	\let\xpg@save@finalhyphendemerits\finalhyphendemerits%
+	\addto\blockextras@finnish{%
+	  \hyphenpenalty=30%
+	  \exhyphenpenalty=30%
+	  \doublehyphendemerits=5000%
+	  \finalhyphendemerits=5000%
+	}%
+	\addto\noextras@finnish{%
+	  \let\hyphenpenalty\xpg@save@hyphenpenalty%
+	  \let\exhyphenpenalty\xpg@save@exhyphenpenalty%
+	  \let\doublehyphendemerits\xpg@save@doublehyphendemerits%
+	  \let\finalhyphendemerits\xpg@save@finalhyphendemerits%
+	}%
+    \fi
 }
 
 \def\datefinnish{%
@@ -111,10 +163,3 @@
 
 \endinput
 
-% TODO ? this is set in babel:
-\gappto\blockextrasfinnish{%
-  \babel@savevariable\hyphenpenalty\hyphenpenalty=30%
-  \babel@savevariable\exhyphenpenalty\exhyphenpenalty=30%
-  \babel@savevariable\doublehyphendemerits\doublehyphendemerits=5000%
-  \babel@savevariable\finalhyphendemerits\finalhyphendemerits=5000%
-}

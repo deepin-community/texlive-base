@@ -43,7 +43,7 @@
 %    }^^A
 % }
 %
-% \date{Released 2024-01-04}
+% \date{Released 2024-05-08}
 %
 % \maketitle
 %
@@ -68,7 +68,7 @@
 %
 % \begin{macro}{\@@_backend_literal:n, \@@_backend_literal:e}
 %   The same as literal PostScript: same arguments about positioning apply
-%   her.
+%   here.
 %    \begin{macrocode}
 \cs_new_eq:NN \@@_backend_literal:n \__kernel_backend_literal_postscript:n
 \cs_generate_variant:Nn \@@_backend_literal:n { e }
@@ -81,23 +81,20 @@
 %   but where we can't split material between separate calls. The
 %   |@beginspecial|/|@endspecial| pair are from |special.pro| and correct the
 %   scale and $y$-axis direction.
-%   In contrast to \pkg{pgf}, we don't save the current point:
-%   discussion with Tom Rokici suggested a better way to handle the necessary
-%   translations (see \cs{@@_backend_box_use:Nnnnn}). (Note that
-%   |@beginspecial|/|@endspecial| forms a backend scope.) The  |[begin]|/^^A
-%   |[end]| lines are handled differently from the rest as they are
-%   conceptually different: not really drawing literals but instructions to
-%   \texttt{dvips} itself.
+%   As for \pkg{pgf}, we need to save the current point as this is
+%   required for box placement. (Note that
+%   |@beginspecial|/|@endspecial| forms a backend scope.)
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_backend_begin:
   {
-    \__kernel_backend_literal:n { ps::[begin] }
+    \@@_backend_literal:n { [begin] }
+    \@@_backend_literal:n { /draw.x~currentpoint~/draw.y~exch~def~def }
     \@@_backend_literal:n { @beginspecial }
   }
 \cs_new_protected:Npn \@@_backend_end:
   {
     \@@_backend_literal:n { @endspecial }
-    \__kernel_backend_literal:n { ps::[end] }
+    \@@_backend_literal:n { [end] }
   }
 %    \end{macrocode}
 % \end{macro}
@@ -350,21 +347,23 @@
 %   Inside a picture |@beginspecial|/|@endspecial| are active, which is
 %   normally a good thing but means that the position and scaling would be off
 %   if the box was inserted directly. To deal with that, there are a number of
-%   possible approaches. The implementation here was suggested by Tom Rokici
-%   (author of \texttt{dvips}). We end the current special placement, then
-%   set the current point with a literal |[begin]|. As for general
-%   literals, we then use the stack to store the current point and move to
-%   it. To insert the required transformation, we have to flip the $y$-axis,
-%   once before and once after it. Then we get back to the \TeX{} reference
-%   point to insert our content. The clean up has to happen in the right
-%   places, hence the |[begin]|/|[end]| pair around |restore|. Finally,
-%   we can return to \enquote{normal} drawing mode. Notice that the set up
-%   here is very similar to that in \cs{@@_align_currentpoint_\ldots}, but
-%   the ordering of saving and restoring is different (intermixed).
+%   possible approaches. A previous implementation suggested by Tom Rokici
+%   used |@endspecial|/|@beginspecial|. This avoids needing internals of
+%   \texttt{dvips}, but fails if there the box is used inside a scope
+%   (see \url{https://github.com/latex3/latex3/issues/1504}). Instead,
+%   we use the same method as \pkg{pgf}, which means tracking the position
+%   at the PostScript level. Also note that using |@endspecial| would
+%   close the scope it creates, meaning that after a box insertion, any
+%   local changes would be lost.  Keeping \texttt{dvips} on track is
+%   non-trivial, hence the |[begin]|/|[end]| pair before the
+%   |save| and around the |restore|.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_backend_box_use:Nnnnn #1#2#3#4#5
   {
-    \@@_backend_literal:n { @endspecial }
+    \@@_backend_literal:n { save }
+    \@@_backend_literal:n { 72~Resolution~div~72~VResolution~div~neg~scale }
+    \@@_backend_literal:n { magscale { 1~DVImag~div~dup~scale } if }
+    \@@_backend_literal:n { draw.x~neg~draw.y~neg~translate }
     \@@_backend_literal:n { [end] }
     \@@_backend_literal:n { [begin] }
     \@@_backend_literal:n { save }
@@ -380,7 +379,7 @@
     \@@_backend_literal:n { restore }
     \@@_backend_literal:n { [end] }
     \@@_backend_literal:n { [begin] }
-    \@@_backend_literal:n { @beginspecial }
+    \@@_backend_literal:n { restore }
   }
 %    \end{macrocode}
 % \end{macro}
@@ -777,7 +776,7 @@
 % \end{macro}
 %
 % \begin{macro}{\@@_backend_begin:, \@@_backend_end:}
-%   A drawing needs to be set up such that the co-ordinate system is
+%   A drawing needs to be set up such that the coordinate system is
 %   translated. That is done inside a scope, which as described below
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_backend_begin:
@@ -943,7 +942,7 @@
               "url( \c_hash_str l3cp \int_use:N \g__kernel_clip_path_int)"
           }
       }
-    \tl_gclear:N \g_@@_path_tl
+    \tl_gclear:N \g_@@_backend_path_tl
     \bool_gset_false:N \g_@@_draw_clip_bool
   }
 %    \end{macrocode}

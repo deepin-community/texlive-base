@@ -1,7 +1,7 @@
 % \iffalse meta-comment
 % ======================================================================
 % scrkernel-version.dtx
-% Copyright (c) Markus Kohm, 2002-2023
+% Copyright (c) Markus Kohm, 2002-2024
 %
 % This file is part of the LaTeX2e KOMA-Script bundle.
 %
@@ -18,7 +18,7 @@
 %
 % This work consists of all files listed in MANIFEST.md.
 % ======================================================================
-%%% From File: $Id: scrkernel-version.dtx 4070 2023-07-07 07:08:40Z kohm $
+%%% From File: $Id: scrkernel-version.dtx 4133 2024-10-24 09:54:28Z kohm $
 %
 % ATTENTION: In this file parts of the code and documentation are before the
 % driver. This must be, because this part of the code is needed by the driver
@@ -63,94 +63,112 @@
 %
 % \begin{command}{\KOMAScriptVersion}
 % \changes{v2.95}{2002/06/25}{added}
-% This is the \KOMAScript{} version the file is related to. It is also added
-% to the classes and most of the packages by the installation drivers. This is
-% done using \file{scrdocstrip.tex} and additionally loading this file.
+% The main purpose of this command it to prevent mixture of files of
+% different \KOMAScript{} versions. But users can also use this command to
+% detect \KOMAScript{}. It is added to the classes and most of the packages
+% by the installation drivers. This is done using \file{scrdocstrip.tex} and
+% additionally loading this file.
 % \begin{macro}{\@CheckKOMAScriptVersion}
 % \changes{v2.95}{2002/06/25}{added}
+% \changes{v3.42}{2024/04/17}{command is defined only once but \pkg{expl3}
+%   hard}
+% \changes{v3.42}{2024/04/17}{command is no longer defined in \file{clo}
+%   or \file{lco} files}
 % Depending on \cs{KOMAScriptVersion} already defined or not, the existing
 % definition is compared with the version here or \cs{KOMAScriptVersion} is
 % newly and globally defined. This has to work not only in class or package
 % files, but also in document files. So \cs{makeatletter} inside a group is
 % needed for the internal macros. Additionally a guard \texttt{ignorethis} is
 % used, to avoid adding code, that is needed only for the installation driver,
-% also to classes or packages.
+% also to classes or packages. Note, the version check is also done in
+% \file{clo} or \file{lco} files, but the macros \cs{@CheckKOMAScriptVersion}
+% and \cs{@@CheckKOMAScriptVersion} are not defined in those, because those
+% files should not always be loaded by \KOMAScript{} classes or packages,
+% which would already define the command.
 %    \begin{macrocode}
-\begingroup
-  \catcode`\@11\relax
 %<*ignorethis>
-  \ifx\newcommand\undefined
-    \gdef\@CheckKOMAScriptVersion#1{%
-      \global\KOMAdefVariable{KOMAScriptVersion}{\space\space#1}%
-      \expandafter\ifx\csname ifbeta\endcsname\relax
-        \def\@defbeta##1 ##2 ##3KOMA-Script{%
-          \def\@cmpstrA{##3}\def\@cmpstrB{BETA }%
-          \ifx\@cmpstrA\@cmpstrB
-            \expandafter\expandafter\expandafter\global
-            \expandafter\expandafter\expandafter\let
-            \expandafter\csname ifbeta\expandafter\endcsname
-            \csname iftrue\endcsname
-          \fi
-        }\expandafter\@defbeta\KOMAvar@KOMAScriptVersion
-      \fi
-      \expandafter\ifx\csname ifbeta\endcsname\relax
-        \def\@defbeta##1 ##2.##3.##4 KOMA-Script\@nil{%
-          \def\@cmpstrA{##4}\def\@cmpstrB{}%
-          \ifx\@cmpstrA\@cmpstrB\else
-            \expandafter\expandafter\expandafter\global
-            \expandafter\expandafter\expandafter\let
-            \expandafter\csname ifbeta\expandafter\endcsname
-            \csname iftrue\endcsname
-          \fi
-        }\expandafter\@defbeta\KOMAvar@KOMAScriptVersion. KOMA-Script\@nil
-      \fi
-      \expandafter\ifx\csname ifbeta\endcsname\relax
-        \expandafter\expandafter\expandafter\global
-        \expandafter\expandafter\expandafter\let
-        \expandafter\csname ifbeta\expandafter\endcsname
-        \csname iffalse\endcsname
-      \fi
-      \aftergroup\endinput
-    }%
-  \else
+\ifx\newcommand\undefined
+  \catcode`\@11\relax
+  \def\@CheckKOMAScriptVersion#1{%
+    \global\KOMAdefVariable{KOMAScriptVersion}{\space\space#1}%
+    \expandafter\ifx\csname ifbeta\endcsname\relax
+      \def\@defbeta##1 ##2 ##3KOMA-Script{%
+        \def\@cmpstrA{##3}\def\@cmpstrB{BETA }%
+        \ifx\@cmpstrA\@cmpstrB
+          \expandafter\expandafter\expandafter\global
+          \expandafter\expandafter\expandafter\let
+          \expandafter\csname ifbeta\expandafter\endcsname
+          \csname iftrue\endcsname
+        \fi
+      }\expandafter\@defbeta\KOMAvar@KOMAScriptVersion
+    \fi
+    \expandafter\ifx\csname ifbeta\endcsname\relax
+      \def\@defbeta##1 ##2.##3.##4 KOMA-Script\@nil{%
+        \def\@cmpstrA{##4}\def\@cmpstrB{}%
+        \ifx\@cmpstrA\@cmpstrB\else
+          \expandafter\expandafter\expandafter\global
+          \expandafter\expandafter\expandafter\let
+          \expandafter\csname ifbeta\expandafter\endcsname
+          \csname iftrue\endcsname
+        \fi
+      }\expandafter\@defbeta\KOMAvar@KOMAScriptVersion. KOMA-Script\@nil
+    \fi
+    \expandafter\ifx\csname ifbeta\endcsname\relax
+      \expandafter\expandafter\expandafter\global
+      \expandafter\expandafter\expandafter\let
+      \expandafter\csname ifbeta\expandafter\endcsname
+      \csname iffalse\endcsname
+    \fi
+    \let\@CheckKOMAScriptVersion\undefined
+    \endinput
+  }%
+\else
+  \makeatletter
 %</ignorethis>
-  \ifx\KOMAScriptVersion\undefined
-    \newcommand*{\@CheckKOMAScriptVersion}[1]{%
+%<*class|package>
+\providecommand*{\@CheckKOMAScriptVersion}{%
+  \begingroup
+    \ExplSyntaxOff
+    \@@CheckKOMAScriptVersion
+}
+\providecommand*{\@@CheckKOMAScriptVersion}[1]{%
+    \@ifundefined{KOMAScriptVersion}{%
       \gdef\KOMAScriptVersion{#1}%
-    }%
-  \else
-    \newcommand*{\@CheckKOMAScriptVersion}[1]{%
+    }{%
       \def\@tempa{#1}%
       \ifx\KOMAScriptVersion\@tempa\else
-        \@latex@warning@no@line{%
-          \noexpand\KOMAScriptVersion\space is 
-          `\KOMAScriptVersion',\MessageBreak
+        \GenericWarning{\space\@spaces\@spaces\@spaces\@spaces}{%
+          Version warning:
+          \noexpand\KOMAScriptVersion is 
+          `\csname KOMAScriptVersion\endcsname',\MessageBreak
           but `#1' was expected!\MessageBreak
           You should not use classes, packages or files
           from\MessageBreak
-          different KOMA-Script versions%
+          different KOMA-Script versions\@gobble
         }%
       \fi
-    }
+    }%
+  \endgroup
+}
+%</class|package>
 %<*ignorethis>
-  \fi
+\fi
 %</ignorethis>
-  \fi
 %    \end{macrocode}
 % Note: Following line will be patched by \file{makebetaorrelase.sh} and
 % therefore the syntax or general structure of the line must not be changed!
 %    \begin{macrocode}
 %<*!v4>
-  \@CheckKOMAScriptVersion{2023/07/07 v3.41 KOMA-Script}%
+\@CheckKOMAScriptVersion{2024/10/24 v3.43 KOMA-Script}%
 %</!v4>
-%<v4>  \@nameuse{@CheckKOMAScriptVersion}{2023/07/07 v3.41 KOMA-Script}%
-\endgroup
+%<v4>  \@nameuse{@CheckKOMAScriptVersion}{2022/10/25 v3.99 ALPHA KOMA-Script}%
 %    \end{macrocode}
 % \end{macro}
 % \end{command}
 %
 % \iffalse
 %<*dtx>
+\makeatother
 \ProvidesFile{scrkernel-version.dtx}[\KOMAScriptVersion (versions)]
 \documentclass[USenglish]{koma-script-source-doc}
 \usepackage{babel}

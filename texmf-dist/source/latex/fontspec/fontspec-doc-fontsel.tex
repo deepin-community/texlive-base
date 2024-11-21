@@ -1,4 +1,4 @@
-%%^^A%%  fontspec-doc-fontsel.tex -- part of FONTSPEC <wspr.io/fontspec>
+%%^^A%%  fontspec-doc-fontsel.tex -- part of FONTSPEC <latex3.github.io/fontspec>
 
 \documentclass[a4paper]{l3doc}
 \usepackage{fontspec-doc-style}
@@ -129,6 +129,7 @@ wish to have them all installed in your system's font directories.
 In this case, it is more convenient to load them from a different location on your disk.
 This technique is also necessary in \XeTeX\ when loading OpenType fonts that are present within your \TeX\ distribution, such as \path{/usr/local/texlive/2013/texmf-dist/fonts/opentype/public}.
 Fonts in such locations are visible to \XeTeX\ but cannot be loaded by font name, only file name; \LuaTeX\ does not have this restriction.
+(If you for some reason want to restrict the fonts to the ones provided by your \TeX\ distribution even though you are using \LuaTeX\ you can use the \DescribeOption{KpseOnly}\texttt{KpseOnly} option)
 
 When selecting fonts by file name, any font that can be found in the default
 search paths may be used directly (including in the current directory)
@@ -230,7 +231,7 @@ To continue the example above, here we colour the different faces:
   \defaultfontfeatures[CharisSILR]{Color=blue}
   \defaultfontfeatures[CharisSILB]{Color=red}
 \end{Verbatim}
-Such configuration lines could be stored either inline inside \texttt{My Charis.fontspec}
+Such configuration lines could be stored either inline inside \texttt{MyCharis.fontspec}
 or within their own \texttt{.fontspec} files; in this way, \pkg{fontspec} is designed to
 handle `nested' configuration options.
 
@@ -335,14 +336,13 @@ A legacy \TeX\ font. {\unicodefont A unicode font.}
 
 Sometimes only a specific font face is desired, without accompanying italic or bold variants
 being automatically selected.
-This is common when selecting a fancy italic font, say, that has swash features unavailable
-in the upright forms. \cmd\newfontface\ is used for this purpose, shown
-in \exref{nfface}, which is repeated in \vref{sec:contextuals}.
+This is common when selecting a font for a very particular context within the document.
+For instance, say that a particular swash font is desired that isn't part of the document
+font setup. \cmd\newfontface\ could be used for this purpose, shown in \exref{nfface}.
 
 \begin{Xexample}{nfface}{Defining a single font face.}
-  \newfontface\fancy{Hoefler Text Italic}%
-      [Contextuals={WordInitial,WordFinal}]
-  \fancy where is all the vegemite
+  \newfontface\qedfont{EBGaramond-Regular.otf}[Style=Swash]
+  \qedfont QED
   % \emph, \textbf, etc., all don't work
 \end{Xexample}
 
@@ -365,21 +365,21 @@ in \exref{nfface}, which is repeated in \vref{sec:contextuals}.
 The automatic bold, italic, and bold italic font selections will not be
 adequate for the needs of every font: while some fonts mayn't even
 have bold or italic shapes, in which case a skilled (or lucky)
-designer may be able to chose well-matching accompanying shapes from
+designer may be able to choose well-matching accompanying shapes from
 a different font altogether, others can have a range of bold and
-italic fonts to chose among.  The \feat{BoldFont} and
+italic fonts to choose among.  The \feat{BoldFont} and
 \feat{ItalicFont} features are provided for these situations. If only
 one of these is used, the bold italic font is requested as the
 default from the \emph{new} font. See \exref{bff}.
 
-\begin{Xexample}{bff}{Explicit selection of the bold font.}
-  \fontspec{Helvetica Neue UltraLight}%
-           [BoldFont={Helvetica Neue}]
-                Helvetica Neue UltraLight         \\
-  {\itshape     Helvetica Neue UltraLight Italic} \\
-  {\bfseries               Helvetica Neue       } \\
-  {\bfseries\itshape       Helvetica Neue Italic} \\
-\end{Xexample}
+\begin{Lexample}{bff}{Explicit selection of the bold font.}
+  \setmainfont{Ysabeau-Hairline.otf}%
+           [BoldFont={Ysabeau-Thin.otf}]
+                Hairline         \\
+  {\itshape     Hairline Italic} \\
+  {\bfseries               Thin       } \\
+  {\bfseries\itshape       Thin Italic} \\
+\end{Lexample}
 
 If a bold italic shape is not defined, or you want to specify
 \emph{both} custom bold and italic shapes, the \feat{BoldItalicFont}
@@ -428,7 +428,7 @@ Without these, however, the \LaTeX\ font switches for slanted (\cs{textsl}, \cs{
 
 Swash font shapes in a family is supported by \LaTeX's commands \cs{textsw} and \cs{swshape}. These commands assume that swash shapes are in a sense `parallel' to italic shapes --- for instance, writing both \cs{swshape} and \cs{itshape} would not result in an italic swash shape (you would get whichever was declared last).
 The \pkg{fontspec} package adopts this approach, while recognising that OpenType fonts in theory could have any crazy combination of shapes such as `italic swash small caps'.
-Attempting to support arbitrarily complex situations makes setup (and the code) more difficult with let's say infrequent benefit --- \pkg{fontspec}'s alternate feature selection mechanisms (such as verb|\addfontfeature{Style=Swash}|) can be used in such situations.
+Attempting to support arbitrarily complex situations makes setup (and the code) more difficult with let's say infrequent benefit --- \pkg{fontspec}'s alternate feature selection mechanisms (such as |\addfontfeature{Style=Swash}|) can be used in such situations.
 
 Therefore, setup is quite simple:
 \begin{Verbatim}
@@ -511,14 +511,14 @@ Conversely, a font face defined in terms of a non-standard font shape will not.
 
 There are some standards for choosing shape and series codes; the \LaTeXe\ font selection guide\footnote{\texttt{texdoc fntguide}} has a comprehensive listing.
 
-The \feat{FontFace} command also interacts properly with the \feat{SizeFeatures} command as follows: (nonsense set of font selection choices)
+The \feat{FontFace} command also interacts properly with the \feat{SizeFeatures} command as follows:
 \begin{Verbatim}
   FontFace = {c}{n}{
-    Font = Times ,
+    Font = lmsans10-oblique.otf ,
     SizeFeatures = {
-      { Size =   -10 , Font = Georgia } ,
-      { Size = 10-15}                 , % default "Font = Times"
-      { Size = 15-   , Font = Cochin  } ,
+      { Size =   -10 , Font = lmsans8-oblique.otf   } ,
+      { Size = 10-15                                } ,
+      { Size = 15-   , Font = lmsans17-oblique.otf  } ,
     },
   },
 \end{Verbatim}
@@ -639,9 +639,10 @@ if it were a `naked' control sequence; \eg, `|M. \fontspec{...} N|' and
 
 % /©
 % ------------------------------------------------
-% The FONTSPEC package  <wspr.io/fontspec>
+% The FONTSPEC package  <latex3.github.io/fontspec>
 % ------------------------------------------------
-% Copyright  2004-2022  Will Robertson, LPPL "maintainer"
+% Copyright  2022-2024  The LaTeX project,  LPPL "maintainer"
+% Copyright  2004-2022  Will Robertson
 % Copyright  2009-2015  Khaled Hosny
 % Copyright  2013       Philipp Gesang
 % Copyright  2013-2016  Joseph Wright

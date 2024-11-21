@@ -21,9 +21,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesPackage{fancyhdr}%
-           [2022/11/09 v4.1
+           [2024/07/23 v4.3.1
                   Extensive control of page headers and footers]%
-% Copyright (C) 1994-2022 by Pieter van Oostrum <pieter@vanoostrum.org>
+% Copyright (C) 1994-2024 by Pieter van Oostrum <pieter@vanoostrum.org>
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newcommand\if@nch@mpty[1]{\def\temp@a{#1}\ifx\temp@a\@empty}
 \newif\iff@nch@check
@@ -129,10 +129,6 @@
   }%
 }
 \ProcessOptions*
-\newcommand\f@nch@errmsg[1]{%
-  \f@nch@ifundefined{PackageError}{\errmessage{#1}}{\PackageError{fancyhdr}{#1}{}}}
-\newcommand\f@nch@warning[1]{%
-  \f@nch@ifundefined{PackageWarning}{\errmessage{#1}}{\PackageWarning{fancyhdr}{#1}{}}}
 \newcommand{\f@nch@forc}[3]{\expandafter\f@nchf@rc\expandafter#1\expandafter{#2}{#3}}
 \newcommand{\f@nchf@rc}[3]{\def\temp@ty{#2}\ifx\@empty\temp@ty\else
                                     \f@nch@rc#1#2\f@nch@rc{#3}\fi}
@@ -157,7 +153,7 @@
   \if@twoside\else
     \iff@nch@twoside\else
       \if\f@nch@@eo e%
-        \f@nch@warning {\string#1's `E' option without twoside option is useless.\MessageBreak
+        \PackageWarning{fancyhdr} {\string#1's `E' option without twoside option is useless.\MessageBreak
           Please consider using the `twoside' option}%
   \fi\fi\fi
 }
@@ -166,8 +162,8 @@
   \f@nch@forc\tmpf@ra{#3}%
   {\expandafter\f@nch@ifin\tmpf@ra{eolcrhf,EOLCRHF}%
     {}{\edef\temp@c{\temp@c\tmpf@ra}}}%
-  \ifx\@empty\temp@c\else \f@nch@errmsg{Illegal char `\temp@c' in
-    \string#1 argument: [#3]}%
+  \ifx\@empty\temp@c\else \PackageError{fancyhdr}{Illegal char `\temp@c' in
+    \string#1 argument: [#3]}{}%
   \fi \f@nch@for\temp@c{#3}%
   {\f@nch@default\f@nch@@eo{eo}\temp@c
     \f@nch@fancyhf@Echeck{#1}%
@@ -183,8 +179,8 @@
   \f@nch@forc\tmpf@ra{#3}%
   {\expandafter\f@nch@ifin\tmpf@ra{eolrhf,EOLRHF}%
     {}{\edef\temp@c{\temp@c\tmpf@ra}}}%
-  \ifx\@empty\temp@c\else \f@nch@errmsg{Illegal char `\temp@c' in
-    \string#1 argument: [#3]}%
+  \ifx\@empty\temp@c\else \PackageError{fancyhdr}{Illegal char `\temp@c' in
+    \string#1 argument: [#3]}{}%
   \fi \f@nch@for\temp@c{#3}%
   {\f@nch@default\f@nch@@eo{eo}\temp@c
     \f@nch@fancyhf@Echeck{#1}%
@@ -231,9 +227,30 @@
 \let\f@nch@raggedleft\raggedleft
 \let\f@nch@raggedright\raggedright
 \let\f@nch@centering\centering
-\let\f@nch@everypar\everypar
+\ifdefined\ExplSyntaxOn
+  \ExplSyntaxOn
+  \let\f@nch@everypar\tex_everypar:D
+  \newcommand\f@nch@resetpar{%
+    \f@nch@everypar{}%
+    \cs_set_eq:NN \everypar\tex_everypar:D
+    \cs_set_eq:NN \par     \tex_par:D
+    \cs_set_eq:NN \@@par   \tex_par:D
+    \cs_set_eq:NN \endgraf \tex_par:D
+  }
+  \ExplSyntaxOff
+\else
+  \let\f@nch@everypar\everypar
+  \newcommand\f@nch@resetpar{%
+    \f@nch@everypar{}%
+  }
+\fi
 \newcommand\f@nch@noUppercase[2][]{#2}
-\def\f@nch@reset{\f@nch@everypar{}\restorecr\endlinechar=13
+\def\f@nch@reset{\f@nch@resetpar\restorecr\endlinechar=13
+  \catcode`\\=0\catcode`\{=1\catcode`\}=2\catcode`\$=3\catcode`\&=4
+  \catcode`\#=6\catcode`\^=7\catcode`\_=8\catcode`\ =10\catcode`\@=11
+  \catcode`\:=11\catcode`\~=13\catcode`\%=14
+  \catcode0=15 %NULL
+  \catcode9=10 %TAB
   \let\\\@normalcr \let\raggedleft\f@nch@raggedleft
   \let\raggedright\f@nch@raggedright \let\centering\f@nch@centering
   \def\baselinestretch{1}%
@@ -244,10 +261,8 @@
       \expandafter\def\csname MakeUppercase\space\space\space\endcsname
                                                    [####1]####2{####2}%
       ##1}}%
-  \f@nch@ifundefined{@newbaseline} % NFSS not present; 2.09 or 2e
-  {\f@nch@ifundefined{@normalsize} {\normalsize} % for ucthesis.cls
-   {\@normalsize}}%
-  {\@newbaseline}% NFSS (2.09) present
+  \f@nch@ifundefined{@normalsize} {\normalsize} % for ucthesis.cls
+   {\@normalsize}%
   }
 \newcommand*{\fancycenter}[1][1em]{%
   \@ifnextchar[{\f@nch@center{#1}}{\f@nch@center{#1}[3]}%
@@ -297,7 +312,7 @@
   \ifdim\ht0>#1\relax
     \iff@nch@check
       \dimen0=#1\advance\dimen0-\ht0
-      \f@nch@warning{%
+      \PackageWarning{fancyhdr}{%
         \string#1 is too small (\the#1): \MessageBreak
         Make it at least \the\ht0, for example:\MessageBreak
         \string\setlength{\string#1}{\the\ht0}%
@@ -471,8 +486,8 @@
   \def\@makecol{\ifvoid\footins\f@nch@footnotefalse\else\f@nch@footnotetrue\fi
     \let\topfloat\@toplist\let\botfloat\@botlist\latex@makecol}%
 }
-\newcommand\iftopfloat[2]{\ifx\topfloat\empty #2\else #1\fi}%
-\newcommand\ifbotfloat[2]{\ifx\botfloat\empty #2\else #1\fi}%
+\newcommand\iftopfloat[2]{\ifx\topfloat\@empty #2\else #1\fi}%
+\newcommand\ifbotfloat[2]{\ifx\botfloat\@empty #2\else #1\fi}%
 \newcommand\iffloatpage[2]{\if@fcolmade #1\else #2\fi}%
 \newcommand\iffootnote[2]{\iff@nch@footnote #1\else #2\fi}%
 \newcommand{\fancypagestyle}[1]{%
@@ -480,10 +495,10 @@
 }
 \long\def\f@nch@pagestyle#1[#2]#3{%
   \f@nch@ifundefined{ps@#2}{%
-    \f@nch@errmsg{\string\fancypagestyle: Unknown base page style `#2'}%
+    \PackageError{fancyhdr}{\string\fancypagestyle: Unknown base page style `#2'}{}%
   }{%
     \f@nch@ifundefined{f@nch@ps@#2-is-fancyhdr}{%
-      \f@nch@errmsg{\string\fancypagestyle: Base page style `#2' is not fancyhdr-based}%
+      \PackageError{fancyhdr}{\string\fancypagestyle: Base page style `#2' is not fancyhdr-based}{}%
     }%
     {%
       \@namedef{ps@#1}{\let\f@nch@gbl\relax\@nameuse{ps@#2}#3\relax}%

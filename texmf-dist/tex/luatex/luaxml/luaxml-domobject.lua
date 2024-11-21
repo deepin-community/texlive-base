@@ -2,12 +2,29 @@
 -- @module luaxml-domobject
 -- @author Michal Hoftich <michal.h21@gmail.com
 local dom = {}
-local xml = require("luaxml-mod-xml")
-local handler = require("luaxml-mod-handler")
-local css_query = require("luaxml-cssquery")
 
+local xml
+local handler
+local css_query
+local html
+if kpse then
+  xml = require("luaxml-mod-xml")
+  handler = require("luaxml-mod-handler")
+  css_query = require("luaxml-cssquery")
+  html = require("luaxml-mod-html")
+else
+  xml = require("luaxml.mod-xml")
+  handler = require("luaxml.mod-handler")
+  css_query = require("luaxml.cssquery")
+  html = require("luaxml.mod-html")
+end
+
+local HtmlParser = html.HtmlParser
 
 local void = {area = true, base = true, br = true, col = true, hr = true, img = true, input = true, link = true, meta = true, param = true}
+
+-- support also upper case names
+for k,v in pairs(void) do void[string.upper(k)] = true end
 
 local escapes = {
   [">"] = "&gt;",
@@ -17,6 +34,13 @@ local escapes = {
   ["'"] = "&#39;",
   ["`"] = "&#x60;"
 }
+
+-- declarations of local functions
+local html_to_dom
+local html_parse
+local parse
+
+
 
 local function escape(search, text)
   return text:gsub(search, function(ch)
@@ -78,9 +102,14 @@ local function serialize_dom(parser, current,level, output)
     local format = get_action(typ, "start")
     insert(format, el, prepare_attributes(attr))
   end
-  local function text(typ, text)
+  local function text(typ, text, parent)
+    local parent = parent or {}
     local format = get_action(typ, "text")
-    insert(format, escape_element(text))
+    if parent.verbatim then
+      insert(format, text)
+    else
+      insert(format, escape_element(text))
+    end
   end
   local function stop(typ, el)
     local format = get_action(typ, "stop")
@@ -128,7 +157,7 @@ local function serialize_dom(parser, current,level, output)
   end
 
   start(xtype, name, attributes)
-  text(xtype,text_content) 
+  text(xtype,text_content, (current or {})._parent) 
   local children = root._children or {}
   for _, child in ipairs(children) do
     output = serialize_dom(parser,child, level + 1, output)
@@ -140,7 +169,7 @@ end
 --- XML parsing function
 -- Parse the XML text and create the DOM object.
 -- @return DOM_Object
-local parse = function(
+parse = function(
   xmltext --- String to be parsed
   ,voidElements --- hash table with void elements
  )
@@ -266,6 +295,8 @@ local parse = function(
     for _, el in ipairs(current:get_children()) do
       if el:is_text() then
         text[#text+1] = el._text or ""
+      elseif  el._type == "CDATA" then
+        text[#text+1] = el._text or ""
       elseif el:is_element() then
         text[#text+1] = el:get_text()
       end
@@ -339,11 +370,12 @@ local parse = function(
     return el._parent
   end
 
-  --- Execute function on the current element and all it's children elements.
+  --- Execute function on the current element and all it's children nodes.
+  -- The differenct to DOM_Object:traverse_elements() is that it executes the function 
+  -- also on text nodes and all other kinds of XML nodes.
   -- The traversing of child elements of a given node can be disabled when the executed
   -- function returns false.
-  -- @return nothing
-  function DOM_Object:traverse_elements(
+  function DOM_Object:traverse(
     fn, --- function which will be executed on the current element and all it's children
     current --- [optional] element to be selected
     )
@@ -353,16 +385,67 @@ local parse = function(
       current = self:root_node() 
     end
     local status = true
-    if self:is_element(current) or self:get_node_type(current) == "ROOT"then
-      local status = fn(current)
+    local status = fn(current)
+    if current:is_element() or current:get_node_type() == "ROOT" then
       -- don't traverse child nodes when the user function return false
       if status ~= false then
-        for _, child in ipairs(self:get_children(current)) do
-          self:traverse_elements(fn, child)
+        for _, child in ipairs(current:get_children()) do
+          self:traverse(fn, child)
         end
       end
     end
   end
+
+  --- Execute function on the current element and all it's children elements.
+  --- The traversing of child elements of a given node can be disabled when the executed
+  -- function returns false.
+  -- @return nothing
+  function DOM_Object:traverse_elements(
+    fn, --- function which will be executed on the current element and all it's children
+    current --- [optional] element to be selected
+    )
+    local current = current or self --
+    current:traverse(function(node)
+      if node:is_element() or node:get_node_type() == "ROOT" then
+        fn(node)
+      end
+    end)
+  end
+
+  --- Get table with the inner text of an element, every text node is a separate table item. 
+  --- @return table
+  function DOM_Object:strings(
+    current --- [optional] element to be selected
+    )
+    local strings = {}
+    local current = current or self
+    current:traverse(function(node)
+      if node:get_node_type() == "TEXT" then
+        table.insert(strings, node._text or "")
+      end
+    end)
+    return strings
+  end
+
+  --- Get table with the inner text of an element - leading and trailing spaces are removed and elements that contain only white space are ignored.
+  --  @return table 
+  function DOM_Object:stripped_strings(
+    current --- [optional] element to be selected
+    )
+    local current = current or self
+    local strings = current:strings()
+    local cleaned = {}
+    for k,v in ipairs(strings) do
+      v = v:gsub("^%s*", ""):gsub("%s*$", "")
+      if v ~= "" then
+        table.insert(cleaned, v)
+      end
+    end
+    return cleaned
+  end
+
+
+
 
   --- Execute function on list of elements returned by DOM_Object:get_path()
   function DOM_Object:traverse_node_list( 
@@ -541,15 +624,169 @@ local parse = function(
     return el:get_sibling_node(-1)
   end
 
+  --- parse string as HTML or XML and return created elements
+  --- @return table elements
+  function DOM_Object:create_template(
+    str,
+    is_xml
+    )
+    -- <> is a dummy element, we just need to wrap everything in some element 
+    str = "<>" .. (str or "") .. "</>"
+    local template = is_xml and parse(str) or parse(str)
+    local root = template:root_node()._children[1]
+    return root
+  end
+
+  --- parse string as HTML or XML and insert it as a child of the current node
+  function DOM_Object:inner_html(
+    str, --- HTML or XML to be inserted
+    is_xml --- [optional] Pass true to parse as XML, otherwise parse as HTML
+  )
+    local el = self
+    local root = self:create_template(str, is_xml)
+    -- replace original children of the current element with children of the dummy element created by parsing
+    el._children = root._children
+    return el
+  end
+
+
+  ---  parse string as HTML or XML and insert it before current the element
+  function DOM_Object:insert_before_begin(
+    str, --- HTML or XML to be inserted
+    is_xml --- [optional] Pass true to parse as XML, otherwise parse as HTML
+  )
+    local el = self 
+    local root = self:create_template(str, is_xml)
+    local parent = el:get_parent()
+    local current_pos = el:find_element_pos()
+    local children = root:get_children()
+    for i = 1,  #children do
+      parent:add_child_node(children[i], current_pos + i - 1)
+    end
+  end
+
+  ---  parse string as HTML or XML and insert it at the beginning of the current the element
+  function DOM_Object:insert_after_begin(
+    str, --- HTML or XML to be inserted
+    is_xml --- [optional] Pass true to parse as XML, otherwise parse as HTML
+  )
+    local el = self 
+    local root = self:create_template(str, is_xml)
+    local children = root:get_children()
+    for i = 1,  #children do
+      el:add_child_node(children[i], i)
+    end
+  end
+
+  ---  parse string as HTML or XML and insert it at the end of the current the element
+  function DOM_Object:insert_before_end(
+    str, --- HTML or XML to be inserted
+    is_xml --- [optional] Pass true to parse as XML, otherwise parse as HTML
+  )
+    local el = self 
+    local root = self:create_template(str, is_xml)
+    local children = root:get_children()
+    for i = 1,  #children do
+      el:add_child_node(children[i])
+    end
+  end
+
+  ---  parse string as HTML or XML and insert it after current the element
+  function DOM_Object:insert_after_end(
+    str, --- HTML or XML to be inserted
+    is_xml --- [optional] Pass true to parse as XML, otherwise parse as HTML
+    )
+    local el = self
+    local root = self:create_template(str, is_xml)
+    local parent = el:get_parent()
+    local current_pos = el:find_element_pos()
+    local children = root:get_children()
+    for i = 1,  #children do
+      parent:add_child_node(children[i], current_pos + i)
+    end
+  end
+
 
   -- include the methods to all xml nodes
   save_methods(parser._handler.root)
   -- parser:
-  return parser
+  return parser, DOM_Object
 end
+
+-- table of elements that should be kept without XML escaping in the DOM serialization
+local verbatim_elements = {script=true, style=true}
+
+function html_to_dom(html_object)
+  -- convert parsed HTML DOM to the XML DOM
+  local dom, DOM_Object = parse("") -- use empty text to just initialize the DOM object
+  -- use root of the DOM object as the original parent
+  local current_parent = dom._handler.root
+
+  local function create_node(tbl)
+    -- create node suitable for LuaXML DOM object
+    tbl._children = {}
+    -- this should copy methods from the DOM object to the newly created object
+    tbl.__index = DOM_Object
+    return setmetatable(tbl, DOM_Object)
+  end
+
+  local function build_tree(object)
+    -- convert tree produced by the HTML parser to LuaXML DOM 
+    local typ = object._type 
+    -- process particular node types from the HTML parser
+    if typ == "doctype" then
+      current_parent:add_child_node(create_node {_name=object.name, _type="DTD"})
+    elseif typ == "comment" then
+      current_parent:add_child_node(create_node {_text=object.text, _type="COMMENT"})
+    elseif typ == "element" then
+      local attributes = {}
+      -- convert attributes to the form expected by the DOM object
+      for _, attr in ipairs(object.attr) do 
+        attributes[attr.name] = attr.value
+      end
+      local element = current_parent:create_element(object.tag, attributes)
+      -- disable escaping of text in dom:serialize() for <script> or <style> elements
+      if verbatim_elements[string.lower(object.tag)] then element.verbatim = true end
+      current_parent:add_child_node(element)
+      -- set the current element as parent for the processing of children
+      local old_parent = current_parent
+      current_parent = element
+      -- process children
+      for k,v in ipairs(object.children) do
+        build_tree(v)
+      end
+      -- restore original parent
+      current_parent = old_parent
+    elseif typ == "text" then
+      local text = current_parent:create_text_node(object.text)
+      current_parent:add_child_node(text)
+    else
+      -- for other node types, just process the children
+      for k,v in ipairs(object.children) do
+        build_tree(v)
+      end
+    end
+
+  end
+  build_tree(html_object)
+  return dom
+end
+
+--- Parse HTML text as a DOM object.
+--  It supports all methods as the object returned by the parse() function.
+-- @param html_str  string with the HTML code to be parsed
+-- @return DOM_Object
+function html_parse(html_str)
+  local html_obj = HtmlParser:init(html_str)
+  local html_dom = html_obj:parse()
+  return html_to_dom(html_dom)
+end
+
+
 
 --- @export
 return {
   parse = parse, 
-  serialize_dom= serialize_dom
+  serialize_dom= serialize_dom,
+  html_parse = html_parse
 }

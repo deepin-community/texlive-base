@@ -14,7 +14,7 @@ divert(-1)
                                    twdth=expr;    # tab width
                                    thgt=expr;     # tab hght
                                    thick=expr;    # outer line thickness (pt)
-                                   inthick=expr;  # inner line thickness (pt)
+                                   thickin=expr;  # inner line thickness (pt)
                                    BG=attributes; # shaded gray etc
                                    L1=attributes; # L1 attributes ...
                                    N=attributes;
@@ -23,21 +23,21 @@ divert(-1)
                                    CP=attributes; '
 define(`pEVskale',25.4)       dnl default plug size (20 mm)
 define(`EV_J1772',`[ pushkeys_(`$1', `wdth:20/pEVskale;
-    twdth:3.5/20*m4wdth; thgt:1.5/20*m4wdth; diamLNP:6/20*m4wdth;
-    thick:2; inthick:1.5; BG::N; L1::N; N::N; PE::N; PP::N; CP::N; ')
+    twdth:3.5/20*m4`'wdth; thgt:1.5/20*m4`'wdth; diamLNP:6/20*m4`'wdth;
+    thick:2; thickin:1.5; BG::N; L1::N; N::N; PE::N; PP::N; CP::N; ')
     tang = atan2(m4twdth/2,m4wdth/2)*rtod_
   TS: (Rect_(m4wdth/2,-90-tang)); TE: (Rect_(m4wdth/2,-90+tang))
   Tab: line thick m4thick from TS down_ m4thgt \
         then to TE-(0,m4thgt) then to TE m4BG
   Arc: arc thick m4thick to TS with .c at (0,0) m4BG
       round(at TS,last arc.thick); round(at TE,last arc.thick)
-  L1: circle diam m4diamLNP thick m4inthick at (Rect_(m4wdth/4,150)) m4L1
-  N:  circle diam m4diamLNP thick m4inthick at (Rect_(m4wdth/4, 30)) m4N
-  PE: circle diam m4diamLNP thick m4inthick at (0,-m4wdth/4) m4PE
-  PP: circle diam m4diamLNP*0.55 thick m4inthick at (Rect_(m4wdth/3,210)) m4PP
-  CP: circle diam m4diamLNP*0.55 thick m4inthick at (Rect_(m4wdth/3,-30)) m4CP
+  L1: circle diam m4diamLNP thick m4thickin at (Rect_(m4wdth/4,150)) m4L1
+  N:  circle diam m4diamLNP thick m4thickin at (Rect_(m4wdth/4, 30)) m4N
+  PE: circle diam m4diamLNP thick m4thickin at (0,-m4wdth/4) m4PE
+  PP: circle diam m4diamLNP*0.55 thick m4thickin at (Rect_(m4wdth/3,210)) m4PP
+  CP: circle diam m4diamLNP*0.55 thick m4thickin at (Rect_(m4wdth/3,-30)) m4CP
   `$2' popdef(`m4CP',`m4PP',`m4PE',`m4N',`m4L1',`m4BG',
-   `m4wdth',`m4diamLNP',`m4twdth',`m4thgt',`m4thick',`m4inthick') ]')
+   `m4wdth',`m4diamLNP',`m4twdth',`m4thgt',`m4thick',`m4thickin') ]')
 
                             `EV_J3068(keys,shade)
                              EV charging plug in a [] block
@@ -46,7 +46,7 @@ define(`EV_J1772',`[ pushkeys_(`$1', `wdth:20/pEVskale;
                                    twdth=expr;    # tab width
                                    thgt=expr;     # tab hght
                                    thick=expr;    # outer line thickness (pt)
-                                   inthick=expr;  # inner line thickness (pt)
+                                   thickin=expr;  # inner line thickness (pt)
                                    BG=attributes; # shaded gray etc
                                    L1|L2|L3=attributes; # pin attributes ...
                                    N=attributes;
@@ -55,7 +55,7 @@ define(`EV_J1772',`[ pushkeys_(`$1', `wdth:20/pEVskale;
                                    CP=attributes;
                              arg2= R:G:B background fill color '
 define(`EV_J3068',`[ pushkeys_(`$1',
-   `wdth:25/pEVskale; diamLNP:m4wdth*0.25; thick:2; inthick:1.5;
+   `wdth:25/pEVskale; diamLNP:m4`'wdth*0.25; thick:2; thickin:1.5;
     BG::N; L1::N; L2::N; L3::N; N::N; PE::N; PP::N; CP::N; ')
   C: Here
   NE: C+(Rect_(m4wdth/2,45)); NW: C+(Rect_(m4wdth/2,135))
@@ -68,14 +68,14 @@ define(`EV_J3068',`[ pushkeys_(`$1',
   arc thick m4thick to Ac+(0,m4diamLNP/2) with .c at Ac m4BG
   Top: line thick m4thick to (NW+NE-Ac, Here) m4BG
   arc thick m4thick to NW with .c at Here+(0,-m4diamLNP/2) m4BG
-  PE: circle diam m4diamLNP thick m4inthick at C m4PE
-  PP: circle diam m4diamLNP*0.55 thick m4inthick at C+(Rect_(m4wdth/3,45)) m4PP
-  CP: circle diam m4diamLNP*0.55 thick m4inthick at C+(Rect_(m4wdth/3,135)) m4CP
-  L1: circle diam m4diamLNP thick m4inthick at C+(m4wdth*.3,0) m4L1
-  L2: circle diam m4diamLNP thick m4inthick at C+(Rect_(m4wdth*.3,-60)) m4L2
-  L3: circle diam m4diamLNP thick m4inthick at C+(Rect_(m4wdth*.3,-120)) m4L3
-  N:  circle diam m4diamLNP thick m4inthick at C-(m4wdth*.3,0) m4N
-  `$3' popdef(`m4wdth',`m4diamLNP',`m4thick',`m4inthick',
+  PE: circle diam m4diamLNP thick m4thickin at C m4PE
+  PP: circle diam m4diamLNP*0.55 thick m4thickin at C+(Rect_(m4wdth/3,45)) m4PP
+  CP: circle diam m4diamLNP*0.55 thick m4thickin at C+(Rect_(m4wdth/3,135)) m4CP
+  L1: circle diam m4diamLNP thick m4thickin at C+(m4wdth*.3,0) m4L1
+  L2: circle diam m4diamLNP thick m4thickin at C+(Rect_(m4wdth*.3,-60)) m4L2
+  L3: circle diam m4diamLNP thick m4thickin at C+(Rect_(m4wdth*.3,-120)) m4L3
+  N:  circle diam m4diamLNP thick m4thickin at C-(m4wdth*.3,0) m4N
+  `$3' popdef(`m4wdth',`m4diamLNP',`m4thick',`m4thickin',
    `m4BG',`m4L1',`m4L2',`m4L3',`m4N',`m4PE',`m4PP',`m4CP') ]')
 
                             `EV_CCS1(J1772 keys,DC keys)
@@ -84,20 +84,20 @@ define(`EV_J3068',`[ pushkeys_(`$1',
                                    diamPM=expr;   # diam of DC+, DC- circles
                                    sep=expr;      # separation of Jack and DC
                                    thick=expr;    # outer line thickness (pt)
-                                   inthick=expr;  # inner line thickness (pt)
+                                   thickin=expr;  # inner line thickness (pt)
                                    BG=attributes; # shaded gray etc
                                    DCplus=attributes;
                                    DCminus=attributes; '
 define(`EV_CCS1',`[
   J: EV_J1772(`$1')
-  pushkeys_(`$2',`wdth:J.wid:23.5/20; hght:J.wid*11/20; diamPM:m4hght*7/11;
-                  sep:J.wid*3/30; thick:J.Arc.thick; inthick:J.PE.thick;
+  pushkeys_(`$2',`wdth:J.wid:23.5/20; hght:J.wid*11/20; diamPM:m4`'hght*7/11;
+                  sep:J.wid*3/30; thick:J.Arc.thick; thickin:J.PE.thick;
                   BG::N; DCplus::N; DCminus::N;')
   DC: [ Box: box thick m4thick wid m4wdth ht m4hght rad m4hght/2 m4BG
-    DCplus: circle thick m4inthick diam m4diamPM at Box.w+(m4hght/2,0) m4DCplus
-    DCminus:circle thick m4inthick diam m4diamPM at Box.e-(m4hght/2,0) m4DCminus
+    DCplus: circle thick m4thickin diam m4diamPM at Box.w+(m4hght/2,0) m4DCplus
+    DCminus:circle thick m4thickin diam m4diamPM at Box.e-(m4hght/2,0) m4DCminus
     ] with .n at J.s+(0,-m4sep)
-  popdef(`m4wdth',`m4hght',`m4diamPM',`m4sep',`m4thick',`m4inthick',`m4BG',
+  popdef(`m4wdth',`m4hght',`m4diamPM',`m4sep',`m4thick',`m4thickin',`m4BG',
    `m4DCplus',`m4DCminus')
   ]')
 
@@ -107,22 +107,22 @@ define(`EV_CCS1',`[
                                    diamPM=expr;   # diam of DC+, DC- circles
                                    sep=expr;      # separation of Jack and DC
                                    thick=expr;    # outer line thickness (pt)
-                                   inthick=expr;  # inner line thickness (pt)
+                                   thickin=expr;  # inner line thickness (pt)
                                    BG=attributes; # shaded gray etc
                                    DCplus=attributes;
                                    DCminus=attributes;
                              arg2= R:G:B background fill color '
 define(`EV_CCS2',`[
   J: EV_J3068(`$1',`$2')
-  pushkeys_(`$3',`wdth:J.wid:23.5/20; hght:J.wid*11/20; diamPM:m4hght*7/11;
-                  sep:J.wid*3/30; thick:J.Arc.thick; inthick:J.PE.thick;
+  pushkeys_(`$3',`wdth:J.wid:23.5/20; hght:J.wid*11/20; diamPM:m4`'hght*7/11;
+                  sep:J.wid*3/30; thick:J.Arc.thick; thickin:J.PE.thick;
                   BG::N; DCplus::N; DCminus::N;')
   DC: [ Box: box thick m4thick wid m4wdth ht m4hght rad m4hght/2 dnl
       m4BG ifelse(`$2',,,`shaded rgbstring(patsubst(`$2',:,`,'))')
-    DCplus: circle thick m4inthick diam m4diamPM at Box.w+(m4hght/2,0) m4DCplus
-    DCminus:circle thick m4inthick diam m4diamPM at Box.e-(m4hght/2,0) m4DCminus
+    DCplus: circle thick m4thickin diam m4diamPM at Box.w+(m4hght/2,0) m4DCplus
+    DCminus:circle thick m4thickin diam m4diamPM at Box.e-(m4hght/2,0) m4DCminus
     ] with .n at J.s+(0,-m4sep)
-  popdef(`m4wdth',`m4hght',`m4diamPM',`m4sep',`m4thick',`m4inthick',`m4BG',
+  popdef(`m4wdth',`m4hght',`m4diamPM',`m4sep',`m4thick',`m4thickin',`m4BG',
    `m4DCplus',`m4DCminus')
   ]')
 
@@ -130,12 +130,12 @@ define(`EV_CCS2',`[
                              EV charging plug in a [] block
                              keys: wdth=expr;     # plug width
                                    thick=expr;    # outer line thickness (pt)
-                                   inthick=expr;  # inner line thickness (pt)
+                                   thickin=expr;  # inner line thickness (pt)
                                    BG=attributes; # background shaded gray etc
                                    DCplus=|DCminusNS=|FG=|NC=|SS1=|DCP=|PP=|
                                    CL=|CH=|SS2=attributes # pin attributes ...'
 define(`EV_CHAdeMO',`[ pushdef(`m4sk',33/140/pEVskale) pushkeys_(`$1',
-   `wdth:140*m4sk; thick:m4wdth*9/140/(1bp__); inthick:m4thick*1.5/9;
+   `wdth:140*m4sk; thick:m4`'wdth*9/140/(1bp__); thickin:m4`'thick*1.5/9;
     BG::N; DCplus::N; DCminus::N;N::N;S::N;
     FG::N; NC::N; SS1::N; DCP::N; PP::N; CL::N; CH::N; SS2::N')
  C: circle thick m4thick diam m4wdth-m4thick bp__ m4BG
@@ -144,18 +144,18 @@ define(`EV_CHAdeMO',`[ pushdef(`m4sk',33/140/pEVskale) pushkeys_(`$1',
   line thick m4thick*0.6 from C+(Rect_(C.rad+m4thick bp__*3/4,138)) \
     to C+(Rect_(C.rad+m4thick bp__*3/4,130)) then right m4thick bp__ m4BG
   idiam = (m4wdth-m4thick bp__*2)*47/(27+47*2)
- N: circle diam idiam thick m4inthick with .n at C.n-(0,m4thick bp__/2) m4N
- S: circle diam idiam thick m4inthick with .s at C.s+(0,m4thick bp__/2) m4S
- E: circle diam idiam thick m4inthick at Cintersect(N,N.diam,S,S.diam) m4DCminus
- W: circle diam idiam thick m4inthick at Cintersect(S,S.diam,N,N.diam) m4DCplus
+ N: circle diam idiam thick m4thickin with .n at C.n-(0,m4thick bp__/2) m4N
+ S: circle diam idiam thick m4thickin with .s at C.s+(0,m4thick bp__/2) m4S
+ E: circle diam idiam thick m4thickin at Cintersect(N,N.diam,S,S.diam) m4DCminus
+ W: circle diam idiam thick m4thickin at Cintersect(S,S.diam,N,N.diam) m4DCplus
  foreach_(`Z',
-  `line thick m4inthick up Z.diam*0.6 right Z.diam*0.6 with .c at Z
-   line thick m4inthick up Z.diam*0.6 left Z.diam*0.6 with .c at Z',N,S)
+  `line thick m4thickin up Z.diam*0.6 right Z.diam*0.6 with .c at Z
+   line thick m4thickin up Z.diam*0.6 left Z.diam*0.6 with .c at Z',N,S)
  foreach_(`L',`L: circle diam idiam/4 thick linethick/2 \
    at N+(Rect_(idiam/4,90*m4Lx)) m4xpand(m4`'L)',FG,NC,DCP,SS1)
  foreach_(`L',`L: circle diam idiam/4 thick linethick/2 \
    at S+(Rect_(idiam/4,90*m4Lx)) m4xpand(m4`'L)',PP,CL,SS2,CH)
- `$3' popdef(`m4sk',`m4wdth',`m4thick',`m4inthick',`m4BG',
+ `$3' popdef(`m4sk',`m4wdth',`m4thick',`m4thickin',`m4BG',
   `m4DCplus',`m4DCminus',`m4N',`m4S',
   `m4FG',`m4NC',`m4SS1',`m4DCP',`m4PP',`m4CL',`m4CH',`m4SS2') ]')
 
@@ -173,7 +173,7 @@ define(`EV_CHAdeMO',`[ pushdef(`m4sk',33/140/pEVskale) pushkeys_(`$1',
                                    Gndinner=attributes;
                                    PP=attributes;
                                    CP=attributes; '
-define(`EV_NAC',`[ pushkeys_(`$1', `wdth:1.6; diamL:m4wdth*0.28; BG::N;
+define(`EV_NAC',`[ pushkeys_(`$1', `wdth:1.6; diamL:m4`'wdth*0.28; BG::N;
    L1::N; L1inner::N; L2::N; L2inner::N; Gndinner::N; inner::N;
    Gnd::N; PP::N; CP::N; ')
   sN = 1/pEVskale*m4wdth/1.6      # drawing coord scale factor

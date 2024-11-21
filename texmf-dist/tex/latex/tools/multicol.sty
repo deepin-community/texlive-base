@@ -12,7 +12,7 @@
 %% reports for it can be opened at https://latex-project.org/bugs/
 %% (but please observe conditions on bug reports sent to that address!)
 %% 
-%% Copyright (C) 1993-2023
+%% Copyright (C) 1993-2024
 %% The LaTeX Project and any individual authors listed elsewhere
 %% in this file.
 %% 
@@ -35,7 +35,7 @@
 %% given in the file `manifest.txt'.
 %% 
 %% Package `multicol' to use with LaTeX2e
-%% Copyright 1989-2023 Frank Mittelbach
+%% Copyright 1989-2024 Frank Mittelbach
 %%
 %%  In addition to the terms of LPPL any distributed version
 %%  (unchanged or modified) of multicol has to keep the statement
@@ -92,24 +92,21 @@
 %% not for the payment of a license fee per se (which might or might
 %% not follow from this evaluation).
 %%
-%% The license fee, if any, can be payed either to the LaTeX fund
+%% The license fee, if any, can be paid either to the LaTeX fund
 %% (see ltx3info.txt in the base LaTeX distribution) or to the author of
 %% the program who can be contacted at
 %%
 %%     Frank.Mittelbach@latex-project.org
 %%
-\NeedsTeXFormat{LaTeX2e}[2018-04-01]
 
-\providecommand\DeclareRelease[3]{}
-\providecommand\DeclareCurrentRelease[2]{}
-
+\DeclareRelease{}{1994-06-01}{multicol-2017-04-11.sty}
 \DeclareRelease{}{2017-04-11}{multicol-2017-04-11.sty}
 \DeclareRelease{v1.8}{2019-10-01}{multicol-2019-10-01.sty}
 \DeclareCurrentRelease{}{2021-11-15}
 
 \ProvidesPackage{multicol}
-          [2023/03/30 v1.9f  multicolumn formatting (FMi)]
-%%
+          [2024/09/14 v1.9i  multicolumn formatting (FMi)]
+
 \DeclareOption{twocolumn}
    {\PackageWarning{multicol}{May not work
              with the twocolumn option}}
@@ -876,9 +873,17 @@
    \emergencystretch 4pt
    \multiply\emergencystretch#1}
 
+\ExplSyntaxOn
+\str_if_exist:cF { l__socket_tagsupport/float/end_plug_str }
+  {
+    \NewSocket{tagsupport/float/end}{0}
+    \NewSocket{tagsupport/float/hmode/end}{0}
+  }
+\ExplSyntaxOff
 \def\set@floatcmds{%
  \let\@dblfloat\@dbflt
  \def\end@dblfloat{\@endfloatbox
+   \UseTaggingSocket{float/end}%
    \@largefloatcheck
    \outer@nobreak
    \ifnum\@floatpenalty<\z@
@@ -886,6 +891,7 @@
    \fi
    \ifnum\@floatpenalty=-\@Mii
      \@Esphack
+     \UseTaggingSocket{float/hmode/end}%
    \fi}}
 \def\kept@topmark{{}{}}
 \let\kept@firstmark\@empty
@@ -904,9 +910,16 @@
   \begingroup
    \vbadness\@M
    \setbox#1\copy#1%
-   \setbox#1\vsplit#1to\maxdimen
+   \mc@get@all@box@marks #1%
    \set@keptmarks
  \endgroup
+}
+\def\mc@get@all@box@marks #1{%
+  \setbox\@tempboxa\vsplit#1to\maxdimen
+  \ifvoid#1\else
+    \setbox#1\vbox{\unvbox\@tempboxa \unvbox#1}%
+    \mc@get@all@box@marks #1%
+  \fi
 }
 \def\set@keptmarks{%
    \ifx\kept@firstmark\@empty

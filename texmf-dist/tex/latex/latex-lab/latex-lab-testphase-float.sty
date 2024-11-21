@@ -33,8 +33,8 @@
 %% 
 %% 
 %% File: latex-lab-float.dtx (C) Copyright 2023 LaTeX Project
-\def\ltlabfloatdate{2023-07-20}
-\def\ltlabfloatversion{0.81a}
+\def\ltlabfloatdate{2024-09-20}
+\def\ltlabfloatversion{0.81f}
 \ProvidesExplPackage {latex-lab-testphase-float} {\ltlabfloatdate} {\ltlabfloatversion}
   {Code related to the tagging of floats}
 \prop_new:N \g__tag_float_sect_prop
@@ -42,8 +42,14 @@
 \seq_gput_right:Nn \g__tag_float_types_seq {figure}
 \seq_gput_right:Nn \g__tag_float_types_seq {table}
 \tl_new:N\@current@float@struct
+\int_new:N\g__tag_float_int
 \bool_new:N       \g__tag_float_sect_bool
 \bool_gset_true:N  \g__tag_float_sect_bool
+\cs_new_protected:Npn \__tag_float_init:
+ {
+   \int_gincr:N \g__tag_float_int
+   \tl_set:Ne \@current@float@struct { \int_use:N \g__tag_float_int}
+ }
 \cs_new_protected:Npn\__tag_float_init_collect:
   {
     \bool_if:NT\g__tag_float_sect_bool
@@ -51,7 +57,7 @@
         \seq_map_inline:Nn\g__tag_float_types_seq
           {
             \tag_struct_begin:n{tag=##1s,stash}
-            \prop_gput:Nnx\g__tag_float_sect_prop {##1-struct}{\int_use:N\c@g__tag_struct_abs_int}
+            \prop_gput:Nne\g__tag_float_sect_prop {##1-struct}{\int_use:N\c@g__tag_struct_abs_int}
             \tag_struct_end:
           }
       }
@@ -91,12 +97,39 @@
   {
    split-float .code:n =
     {
-      \__tag_float_end:
-      \__tag_float_begin:
-      \MakeLinkTarget[tagstructure]{g__tag_struct_abs_int}
+      \UseTaggingSocket{float/end}
+      \__tag_float_init:
+      \UseTaggingSocket{float/begin}
+      \MakeLinkTarget*{floatstructure.\@current@float@struct}
     }
  }
-
+\str_if_exist:cF { l__socket_tagsupport/float/begin_plug_str }
+  {
+    \NewSocket{tagsupport/float/hmode/begin}{0}
+    \NewSocket{tagsupport/float/hmode/end}{0}
+    \NewSocket{tagsupport/float/begin}{0}
+    \NewSocket{tagsupport/float/end}{0}
+  }
+\NewSocketPlug {tagsupport/float/hmode/begin}{default}
+  {
+    \__tag_float_stop_par:
+  }
+\AssignSocketPlug{tagsupport/float/hmode/begin}{default}
+\NewSocketPlug{tagsupport/float/hmode/end}{default}
+  {
+    \__tag_float_start_par:
+  }
+\AssignSocketPlug{tagsupport/float/hmode/end}{default}
+\NewSocketPlug{tagsupport/float/begin}{default}
+  {
+    \__tag_float_begin:
+  }
+\AssignSocketPlug{tagsupport/float/begin}{default}
+\NewSocketPlug{tagsupport/float/end}{default}
+  {
+    \__tag_float_end:
+  }
+\AssignSocketPlug{tagsupport/float/end}{default}
 \cs_new_protected:Npn \__tag_float_stop_par:
   {
     \tag_mc_end:
@@ -113,19 +146,18 @@
      }
    \tag_mc_begin:n{tag=P}
   }
-
 \cs_new_protected:Npn \__tag_float_begin:
  {%
   \bool_if:NTF\g__tag_float_sect_bool
    {
      \exp_args:Ne
      \tag_struct_begin:n{tag=float,parent=0\prop_item:No\g__tag_float_sect_prop{\@captype-struct}}%
-     \prop_gput:Nxx \g__tag_float_sect_prop {\@captype-used}{true}
+     \prop_gput:Nee \g__tag_float_sect_prop {\@captype-used}{true}
    }
    {
      \tag_struct_begin:n{tag=float}
    }
-     \tl_set:Nx\@current@float@struct{\tag_get:n{struct_num}}%
+     \tl_set:Ne\@current@float@struct{\tag_get:n{struct_num}}%
      \typeout{Float structure: \@current@float@struct}
  }
 
@@ -147,7 +179,7 @@
    \fi
    \ifhmode
      \@bsphack
-     \@nameuse{__tag_float_stoppar:} %<---end P
+     \UseTaggingSocket{float/hmode/begin}%
      \@floatpenalty -\@Mii
    \else
      \@floatpenalty-\@Miii
@@ -190,7 +222,8 @@
        }%
     \@fltovf
   \fi
-  \@nameuse{__tag_float_begin:}%
+  \csname __tag_float_init:\endcsname
+  \UseTaggingSocket{float/begin}%
   \global \setbox\@currbox
     \color@vbox
       \normalcolor
@@ -198,11 +231,11 @@
         \hsize\columnwidth
         \@parboxrestore
         \@floatboxreset
-        \MakeLinkTarget[tagstructure]{g__tag_struct_abs_int}%
+        \MakeLinkTarget*{\@captype.struct.\@current@float@struct}%
 }%
 \def\end@float{%
   \@endfloatbox
-  \@nameuse{__tag_float_end:}%
+  \UseTaggingSocket{float/end}%
   \ifnum\@floatpenalty <\z@
     \@largefloatcheck
     \@cons\@currlist\@currbox
@@ -214,14 +247,14 @@
       \penalty\@floatpenalty
     \else
       \vadjust{\penalty -\@Miv \vbox{}\penalty\@floatpenalty}\@Esphack
-      \@nameuse{__tag_float_start_par:} %restart P safe here??
+      \UseTaggingSocket{float/hmode/end}%
     \fi
   \fi
 }
 \def\end@dblfloat{%
   \if@twocolumn
     \@endfloatbox
-    \@nameuse{__tag_float_end:}%
+    \UseTaggingSocket{float/end}%
     \ifnum\@floatpenalty <\z@
       \@largefloatcheck
       \global\dp\@currbox1sp %
@@ -234,7 +267,7 @@
         \penalty\@floatpenalty
       \else
         \vadjust{\penalty -\@Miv \vbox{}\penalty\@floatpenalty}\@Esphack
-        \@nameuse{__tag_float_start_par:} %restart P safe here??
+        \UseTaggingSocket{float/hmode/end}%
       \fi
     \fi
   \else
@@ -243,53 +276,99 @@
 }%
 \ExplSyntaxOn
 \def\hyper@nopatch@caption{}
-\let\@kernel@refstepcounter\refstepcounter %as long it is not in the kernel
+\str_if_exist:cF { l__socket_tagsupport/caption/begin_plug_str }
+ {
+  \NewSocket{tagsupport/caption/begin}{1}
+  \NewSocket{tagsupport/caption/end}{0}
+  \NewSocket{tagsupport/caption/label/begin}{0}
+  \NewSocket{tagsupport/caption/label/end}{0}
+ }
+\str_if_exist:cF { l__socket_tagsupport/para/begin_plug_str }
+ {
+   \NewSocket{tagsupport/para/begin}
+   \NewSocket{tagsupport/para/end}
+ }
+\NewSocket{caption/label}{1}
+\NewSocketPlug{caption/label}{kernel}
+ {
+   #1:~
+ }
+\AssignSocketPlug{caption/label}{kernel}
+\NewSocketPlug {tagsupport/caption/begin}{default}
+  {
+     \tl_if_empty:eTF {#1}
+      {
+        \tag_struct_begin:n{tag=Caption,firstkid}
+      }
+      {
+        \tag_struct_begin:n{tag=Caption,parent=#1,firstkid}
+      }
+     \bool_set_true:N \l__tag_para_flattened_bool
+  }
+\AssignSocketPlug{tagsupport/caption/begin}{default}
+\NewSocketPlug {tagsupport/caption/end}{default}
+  {
+    \tag_struct_end:
+  }
+\AssignSocketPlug{tagsupport/caption/end}{default}
+\NewSocketPlug {tagsupport/caption/label/begin}{default}
+  {
+     \tagpdfparaOff
+     \tag_struct_begin:n{tag=Lbl}
+     \tag_mc_begin:n{}
+  }
+\AssignSocketPlug{tagsupport/caption/label/begin}{default}
+\NewSocketPlug {tagsupport/caption/label/end}{default}
+  {
+    \tag_mc_end:
+    \tag_struct_end:
+    \tagpdfparaOn
+  }
+\AssignSocketPlug{tagsupport/caption/label/end}{default}
 \def\caption{%
    \ifx\@captype\@undefined
-     \@latex@error{\noexpand\caption outside float}\@ehd
+     \@latex@error{\noexpand\caption\c_space_tl outside~float}\@ehd
      \expandafter\@gobble
    \else
-     \@kernel@refstepcounter\@captype
+     \tl_if_empty:NTF\@current@float@struct
+      {
+        \refstepcounter\@captype
+      }
+      {
+        \@kernel@refstepcounter\@captype
+        \xdef\@currentHref{\@captype.struct.\@current@float@struct}%
+      }
      \expandafter\@firstofone
    \fi
    {\@dblarg{\@caption\@captype}}%
 }
-\providecommand\theHg__tag_struct_abs_int{\int_use:N\c@g__tag_struct_abs_int}
-
 \AddToHook{begindocument}
   {
     \long\def\@makecaption#1#2{%
       \vskip\abovecaptionskip
-      \xdef\@currentHref{tagstructure.\@current@float@struct}%
-      \tag_stop:n{caption}
+      \SuspendTagging{\@makecaption}
       \sbox\@tempboxa{#1:~#2}%
-      \tag_start:n{caption}
-      \tagtool{para=false}
-      \tag_struct_begin:n{tag=Caption,parent=\@current@float@struct}
-     \seq_gpop_right:cN {g__tag_struct_kids_\@current@float@struct _seq}\l__tag_tmpa_tl
-     \seq_gput_left:cV  {g__tag_struct_kids_\@current@float@struct _seq}\l__tag_tmpa_tl
+      \ResumeTagging{\@makecaption}
+      \UseTaggingSocket{caption/begin}{\@current@float@struct}
       \ifdim \wd\@tempboxa >\hsize
-        \tag_struct_begin:n{tag=Lbl}
-        \tag_mc_begin:n{}
-          #1:~
-        \tag_mc_end:
-        \tag_struct_end:
-        \tag_mc_begin:n{}
-          #2\par
-        \tag_mc_end:
+      \UseTaggingSocket{caption/label/begin}
+      \UseSocket{caption/label}{#1}
+      \UseTaggingSocket{caption/label/end}
+      \UseTaggingSocket{para/begin}
+          #2
+      \par
       \else
           \global \@minipagefalse
         \hb@xt@\hsize{\hfil
-         \tag_struct_begin:n{tag=Lbl}
-          \tag_mc_begin:n{}
-           #1:~
-          \tag_mc_end:
-         \tag_struct_end:
-         \tag_mc_begin:n{}
+         \UseTaggingSocket{caption/label/begin}
+         \UseSocket{caption/label}{#1}
+         \UseTaggingSocket{caption/label/end}
+         \UseTaggingSocket{para/begin}
           #2
-         \tag_mc_end:\hfil}%
+         \UseTaggingSocket{para/end}
+         \hfil}%
        \fi
-       \tag_struct_end: %caption
+      \UseTaggingSocket{caption/end}
       \vskip\belowcaptionskip}
   }
 

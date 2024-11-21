@@ -271,9 +271,31 @@ languages.fo = function(collator_obj)
   tailoring "&ǀ<æ<<<Æ<<ä<<<Ä<<ę<<<Ę<ø<<<Ø<<ö<<<Ö<<ő<<<Ő<<œ<<<Œ<å<<<Å<<<aa<<<Aa<<<AA"
 end
 
+
 languages.fr = function(collator_obj)
+  -- accents: sorting order in French
+  local tailoring = function(s) collator_obj:tailor_string(s) end
+  tailoring("&æ=ae")
+  tailoring("&œ=oe")
+  tailoring("&th<þ<<<Þ")       -- Canadian, see SGQRI004.pdf
   return collator_obj
 end
+
+
+languages.fr_backward_accents = function(collator_obj)
+   -- reverse search for accents in French (recommended):
+  collator_obj.accents_backward = true
+  -- accents: sorting order in French
+  local tailoring = function(s) collator_obj:tailor_string(s) end
+  tailoring("&æ=ae")
+  tailoring("&œ=oe")
+  tailoring("&th<þ<<<Þ")       -- Canadian, see SGQRI004.pdf
+  -- lowercase before uppercase in French
+  --collator_obj:uppercase_first()
+  return collator_obj
+end
+
+
 
 languages.ga = function(collator_obj)
   return collator_obj
@@ -1071,11 +1093,14 @@ languages.yo = function(collator_obj)
   return collator_obj
 end
 
-languages.zj = function(collator_obj)
-  local tailoring = function(s) collator_obj:tailor_string(s) end
-  collator_obj:reorder{"han"}
-  -- tons of tailorings ommited
-  return collator_obj
+languages.zh = function(collator_obj)
+  local chinese
+  if kpse then
+    chinese = require "lua-uca.lua-uca-chinese"
+  else
+    chinese = require "lua-uca.chinese"
+  end
+  return chinese.zh(collator_obj)
 end
 
 languages.zu = function(collator_obj)

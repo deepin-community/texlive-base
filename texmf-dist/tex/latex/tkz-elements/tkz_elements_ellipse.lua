@@ -1,6 +1,6 @@
 -- tkz_elements-ellipses.lua
--- date 2024/02/04
--- version 2.00c
+-- date 2024/07/16
+-- version 2.30c
 -- Copyright 2024  Alain Matthes
 -- This work may be distributed and/or modified under the
 -- conditions of the LaTeX Project Public License, either version 1.3
@@ -90,18 +90,14 @@ function ellipse: tangent_at (pt)
 end
 
 function ellipse: tangent_from (pt)
-   local da,db,zx,zy,zz,u,v,L,U,V
-   zx    = 2 * self.Rx * math.cos(self.slope)
-   zy    = 2 * self.Rx * math.sin(self.slope)
-   zz    = self.Fb + point(zx,zy)
-   s1,s2 = intersection_cc_ (pt,self.Fa,self.Fb,zz)
-   u,v   = mediator_ (s2,self.Fa)
-   L     = line: new (u,v)
-   U,U   = intersection_le (L,self)
+   local u,v,U,V,w,s1,s2,s3,s4
+   w = report_ (self.Fb,self.Fa,2 * self.Rx)
+   s1,s2 = intersection_cc_ (pt,self.Fa,self.Fb,w)
    u,v   = mediator_ (s1,self.Fa)
-   L     = line: new (pt,u)
-   V,V  = intersection_le (L,self)
-   return line : new (pt,U), line : new (pt,V)
+   U     = intersection_ll_ (u,v,self.Fb,s1)
+   u,v   = mediator_ (s2,self.Fa)
+   V     = intersection_ll_ (u,v,self.Fb,s2)
+   return  line : new (pt,U) , line : new (pt,V)
 end
 
 function ellipse: in_out (pt)
@@ -117,4 +113,10 @@ function ellipse: in_out (pt)
         return false
      end
 end
+
+function ellipse: orthoptic_circle ()
+   local r = math.sqrt(self.Rx*self.Rx+self.Ry*self.Ry)
+   return circle : radius (self.center, r)
+end
+
 return ellipse

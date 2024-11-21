@@ -1,6 +1,6 @@
 % \iffalse meta-comment
 %
-%% Copyright (C) 2020-2022 by Marcel Krueger
+%% Copyright (C) 2020-2024 by Marcel Krueger
 %%
 %% This file may be distributed and/or modified under the
 %% conditions of the LaTeX Project Public License, either
@@ -244,16 +244,13 @@ local callback_define
 %    \end{macrocode}
 % HACK: Do not do this at home! We need to define the engine callback directly,
 % so we use the debug library to get the ``real'' \verb+callback.define+:
+% \changes{0.2.1}{2024-02-26}{Reimplement callback patching to be TL 2024 compatible}
 %    \begin{macrocode}
-for i=1,5 do
-local name, func = require'debug'.getupvalue(luatexbase.disable_callback, i)
-  if name == 'callback_register' then
-    callback_define = func
-    break
-  end
-end
-if not callback_define then
-  error[[Unable to find callback.define]]
+do
+  local saved_luatexbase, saved_callback_register = luatexbase, callback.register
+  luatexbase.uninstall()
+  callback_define = callback.register
+  luatexbase, callback.register = saved_luatexbase, saved_callback_register
 end
 
 local function filtered_append_to_vlist_filter(box,
@@ -941,7 +938,7 @@ require'lua-ul-patches-preserve-attr'
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesExplPackage
   {lua-ul}
-  {2022-05-31}{0.2.0}{Underlining and related functionality for LuaTeX}
+  {2024-02-26}{0.2.1}{Underlining and related functionality for LuaTeX}
 % \fi
 % First define some messages.
 %    \begin{macrocode}
@@ -1206,7 +1203,7 @@ require'lua-ul-patches-preserve-attr'
   }
   \NewDocumentCommand \strikeThrough {o +m} {
     \group_begin:
-    \@strikeThrough #2
+    \@strikeThrough[#1] #2
     \group_end:
   }
 

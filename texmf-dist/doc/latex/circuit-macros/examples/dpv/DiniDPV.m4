@@ -3,9 +3,10 @@
 # This diagram can be produced using, e.g.
 # m4 pdf.m4 Dini.m4 | dpic -d > Dini.pdf
 
+# https://tex.stackexchange.com/questions/516734/plot-dinis-surface
 threeD_init
 NeedDpicTools
-scale = 1.5
+scale = 2.0
 [
   viewazimuth = 0                 # View angles in degrees
   viewelevation = 20
@@ -189,5 +190,58 @@ array2(h,m4inx,53,54,55,58,59,57)
     for_(2,5,1,`to Project((v[x[m4x],1]),(v[x[m4x],2]),(v[x[m4x],3]))\')\
     to Project((v[x[1],1]),(v[x[1],2]),(v[x[1],3])) thick 0.2 fill_(0)
     }
-] scaled 2.5 with .sw at last [].se+(1,0)
+] scaled 2.5 with .sw at last [].se+(0.5,0)
+[
+#.PE
+#.PS
+## BlueBall.m4
+## https://latex.org/forum/viewtopic.php?f=5&t=30639 
+#threeD_init
+#NeedDpicTools
+
+  ballrad = 2.5
+  cylrad = ballrad*0.87
+  hht =sqrt(ballrad^2-cylrad^2)
+  azimuth = 0
+  elevation = atan2(hht,cylrad)
+  setview(azimuth,elevation*rtod_)
+  sinelev = sin(elevation)
+
+  linethick_(1)
+ C: shadedball(ballrad,,,,(0,1,1)) at (0,0)
+ Op: C+Project(0,0,hht)
+ O:  C+Project(0,0,-hht)
+  line dashed from Op+( cylrad,0) down Op.y-O.y
+  line dashed from Op+(-cylrad,0) down Op.y-O.y
+
+  define(`Normal',`cosd(`$1')*cylrad,sind(`$1')*cylrad,-hht')
+  define Cylvis { $`'2 = dot3D(Normal($`'1),View3D) }
+  findroot(Cylvis,5,170,1e-8,rA)
+ A: Project(Normal(rA))
+ B: O+(-(A.x-O.x),A.y-O.y)
+  aA = atan2(A.y-O.y,(A.x-O.x)*sinelev)
+  ellipsearc(cylrad*2,cylrad*2*sinelev,aA,-pi_-aA,0,cw) with .C at O
+  ellipsearc(cylrad*2,cylrad*2*sinelev,-pi_-aA-4*dtor_,aA+4*dtor_,,cw,dashed) \
+    with .C at O
+  ellipsearc(cylrad*2,cylrad*2*sinelev,-aA,pi_+aA,0,cw) with .C at Op
+  ellipsearc(cylrad*2,cylrad*2*sinelev,pi_+aA+4*dtor_,-aA-4*dtor_,,cw,dashed) \
+    with .C at Op
+
+  dot(at C); # "$T$" at last [].w rjust below
+  dot(at O); # "$O$" at last [].s below
+  dot(at A); # "$A$" at last [].s ljust below
+  dot(at B); # "$B$" at last [].s rjust below
+  dot(at Op); # "$O'$" at last [].n above
+ Ap: dot(at Op+(A-O)); # "$A'$" at Ap.n ljust above
+ Bp: dot(at Op+(B-O)); # "$B'$" at Bp.n rjust above
+
+  linethick_(0.4)
+  line dashed from Ap to A then to O then to Op
+  line dashed from A to C
+  line dashed from Bp to B
+  V: Between_(O,A,0.15)
+  U: C+Project(0,0,-hht+0.15)
+  line from U to U+(V-O) then to V
+  ] with .w at last [].e+(0.5,0)
+
 .PE

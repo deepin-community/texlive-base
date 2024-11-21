@@ -84,30 +84,32 @@
 %% find a complete unmodified copy of LaTeX2e at
 %% <http://mirror.ctan.org/tex-archive/macros/latex/base/>.
 %% 
-%%% From File: $Id: scrkernel-version.dtx 4070 2023-07-07 07:08:40Z kohm $
-\begingroup
-  \catcode`\@11\relax
-  \ifx\KOMAScriptVersion\undefined
-    \newcommand*{\@CheckKOMAScriptVersion}[1]{%
+%%% From File: $Id: scrkernel-version.dtx 4133 2024-10-24 09:54:28Z kohm $
+\providecommand*{\@CheckKOMAScriptVersion}{%
+  \begingroup
+    \ExplSyntaxOff
+    \@@CheckKOMAScriptVersion
+}
+\providecommand*{\@@CheckKOMAScriptVersion}[1]{%
+    \@ifundefined{KOMAScriptVersion}{%
       \gdef\KOMAScriptVersion{#1}%
-    }%
-  \else
-    \newcommand*{\@CheckKOMAScriptVersion}[1]{%
+    }{%
       \def\@tempa{#1}%
       \ifx\KOMAScriptVersion\@tempa\else
-        \@latex@warning@no@line{%
-          \noexpand\KOMAScriptVersion\space is
-          `\KOMAScriptVersion',\MessageBreak
+        \GenericWarning{\space\@spaces\@spaces\@spaces\@spaces}{%
+          Version warning:
+          \noexpand\KOMAScriptVersion is
+          `\csname KOMAScriptVersion\endcsname',\MessageBreak
           but `#1' was expected!\MessageBreak
           You should not use classes, packages or files
           from\MessageBreak
-          different KOMA-Script versions%
+          different KOMA-Script versions\@gobble
         }%
       \fi
-    }
-  \fi
-  \@CheckKOMAScriptVersion{2023/07/07 v3.41 KOMA-Script}%
-\endgroup
+    }%
+  \endgroup
+}
+\@CheckKOMAScriptVersion{2024/10/24 v3.43 KOMA-Script}%
 \providecommand*{\scr@clsextension}{\@clsextension}
 \AtBeginDocument{%
   \let\scr@clsextension\@clsextension
@@ -119,16 +121,16 @@
   article%
 }
 \ProvidesClass{\KOMAClassName}[%
-  2023/07/07 v3.41 KOMA-Script
+  2024/10/24 v3.43 KOMA-Script
   document class (\ClassName)%
 ]
-%%% From File: $Id: scrkernel-basics.dtx 4051 2023-04-26 16:01:28Z kohm $
+%%% From File: $Id: scrkernel-basics.dtx 4074 2023-07-14 15:56:59Z kohm $
 %%%            (run: load)
 \RequirePackage{scrkbase}[\KOMAScriptVersion]
-%%% From File: $Id: scrkernel-listsof.dtx 4032 2023-04-17 09:45:11Z kohm $
+%%% From File: $Id: scrkernel-listsof.dtx 4130 2024-10-24 08:14:37Z kohm $
 %%%            (run: prepare)
 \RequirePackage{tocbasic}[%
-  2023/07/07 v3.41 KOMA-Script
+  2024/10/24 v3.43 KOMA-Script
 ]
 \addtotoclist[ToC]{toc}
 \Ifstr{\ext@toc}{toc}{}{%
@@ -138,7 +140,7 @@
 }
 %%% From File: $Id: scrkernel-tocstyle.dtx 4060 2023-06-20 08:59:01Z kohm $
 %%%            (run: prepare)
-%%% From File: $Id: scrkernel-sections.dtx 4069 2023-06-29 08:55:54Z kohm $
+%%% From File: $Id: scrkernel-sections.dtx 4130 2024-10-24 08:14:37Z kohm $
 %%%            (run: prepare)
 \newcommand*{\scr@dotchangeatdocument}[1]{%
   \ClassError{\KOMAClassName}{%
@@ -199,7 +201,7 @@
 \newcommand*{\size@subparagraph}{}
 \newcommand*{\scr@fnt@subparagraph}{\size@subparagraph}
 \newcommand*{\sectfont}{\normalcolor\maybesffamily\bfseries}
-%%% From File: $Id: scrkernel-compatibility.dtx 4054 2023-05-10 14:35:36Z kohm $
+%%% From File: $Id: scrkernel-compatibility.dtx 4133 2024-10-24 09:54:28Z kohm $
 %%%            (run: init)
 \newcommand*
   {\scr@compatibility}{\scr@v@last}
@@ -288,10 +290,12 @@
 \@namedef{scr@v@3.39}{20}
 \@namedef{scr@v@3.40}{20}
 \@namedef{scr@v@3.41}{21}
-\@namedef{scr@v@last}{21}
-%%% From File: $Id: scrkernel-typearea.dtx 4032 2023-04-17 09:45:11Z kohm $
+\@namedef{scr@v@3.42}{21}
+\@namedef{scr@v@3.43}{3430}
+\@namedef{scr@v@last}{3430}
+%%% From File: $Id: scrkernel-typearea.dtx 4100 2024-02-01 09:40:30Z kohm $
 %%%            (run: init)
-%%% From File: $Id: scrkernel-compatibility.dtx 4054 2023-05-10 14:35:36Z kohm $
+%%% From File: $Id: scrkernel-compatibility.dtx 4133 2024-10-24 09:54:28Z kohm $
 %%%            (run: option)
 \newif\if@scr@emulatestandardclasses
 \let\scr@emulatestandardclassestrue\relax
@@ -348,7 +352,7 @@
         old KOMA-Script release. However, in that case you\MessageBreak
         could also need old releases of other packages and\MessageBreak
         even of the LaTeX kernel.\MessageBreak
-        You should also note, that the KOMA-Script developers\MessageBreak
+        Please also note, that the KOMA-Script developers\MessageBreak
         refuse support for documents using `version=#1'.\MessageBreak
         We recommend to eliminate all deprecated options\MessageBreak
         and commands. We also recommend to not use option\MessageBreak
@@ -385,7 +389,7 @@
 \newcommand*{\scr@v@is@eq}[1]{%
   \scr@compatibility=\@nameuse{scr@v@#1}
 }
-%%% From File: $Id: scrkernel-miscellaneous.dtx 4032 2023-04-17 09:45:11Z kohm $
+%%% From File: $Id: scrkernel-miscellaneous.dtx 4094 2023-12-05 16:17:40Z kohm $
 %%%            (run: option)
 \KOMA@key{draft}[true]{%
   \KOMA@set@ifkey{draft}{@tempswa}{#1}%
@@ -437,7 +441,7 @@
 \KOMA@kav@add{\KOMAClassFileName}{overfullrule}{false}
 \DeclareOption{leqno}{\input{leqno.clo}}
 \DeclareOption{fleqn}{\input{fleqn.clo}}
-%%% From File: $Id: scrkernel-language.dtx 4032 2023-04-17 09:45:11Z kohm $
+%%% From File: $Id: scrkernel-language.dtx 4107 2024-04-10 17:24:53Z kohm $
 %%%            (run: option)
 %%% From File: $Id: scrkernel-fonts.dtx 4034 2023-04-20 08:03:46Z kohm $
 %%%            (run: option)
@@ -596,7 +600,7 @@
                            {sfdefaults}{\if@sfdefaults true\else false\fi}%
   \fi
 }
-%%% From File: $Id: scrkernel-typearea.dtx 4032 2023-04-17 09:45:11Z kohm $
+%%% From File: $Id: scrkernel-typearea.dtx 4100 2024-02-01 09:40:30Z kohm $
 %%%            (run: options)
 \KOMA@key{twoside}[true]{%
   \if@atdocument\else\PassOptionsToPackage{twoside=#1}{typearea}\fi%
@@ -928,7 +932,7 @@
 \KOMA@DeclareDeprecatedOption{abstractoff}{abstract=false}
 %%% From File: $Id: scrkernel-tocstyle.dtx 4060 2023-06-20 08:59:01Z kohm $
 %%%            (run: option)
-%%% From File: $Id: scrkernel-sections.dtx 4069 2023-06-29 08:55:54Z kohm $
+%%% From File: $Id: scrkernel-sections.dtx 4130 2024-10-24 08:14:37Z kohm $
 %%%            (run: option)
 \KOMA@key{numbers}{%
   \KOMA@set@ncmdkey{numbers}{@tempa}{%
@@ -963,6 +967,26 @@
 \AfterAtEndOfPackage{hyperref}{%
   \AtBeginDocument{%
     \@ifpackageloaded{bookmark}{}{%
+      \if@scr@autoloadbookmarkpackage
+        \IfFileExists{bookmark.sty}{}{%
+          \ClassWarningNoLine{\KOMAClassName}{%
+            Using `bookmark' together with `hyperref' is
+            recommended,\MessageBreak
+            because of handling of possible bookmark level gaps.\MessageBreak
+            However, the package seems not to be installed and\MessageBreak
+            therefore cannot be loaded automatically.\MessageBreak
+            It is recommended to install package `bookmark'!\MessageBreak
+            However, you can avoid this warning without\MessageBreak
+            installation of package `bookmark', if you'd
+            deactivate\MessageBreak
+            automatically loading of `bookmark' using KOMA-Script\MessageBreak
+            option `bookmarkpackage=false' before
+            \string\begin{document}%
+          }%
+          \@scr@autoloadbookmarkpackagefalse
+          \KOMA@kav@replacevalue{\KOMAClassFileName}{bookmarkpackage}{false}%
+        }%
+      \fi
       \if@scr@autoloadbookmarkpackage
         \scr@ifundefinedorrelax{Hy@driver}{%
           \ClassWarning{\KOMAClassName}{%
@@ -1027,7 +1051,8 @@
             \if@filesw
               \ClassWarning{\KOMAClassName}{%
                 seems someone has broken package `auxhook'.\MessageBreak
-                Usually this happens, if `auxhook' is loaded or used\MessageBreak
+                Usually this happens, if `auxhook' is loaded or
+                used\MessageBreak
                 implicitly or explicitly by patching
                 \string\document%
                 \scr@ifundefinedorrelax{AtEndPreamble}{}{%
@@ -1457,7 +1482,7 @@
   \csname FN@mf@prepare\endcsname
   \ifhmode\spacefactor\@x@sf\fi
   \relax}
-%%% From File: $Id: scrkernel-listsof.dtx 4032 2023-04-17 09:45:11Z kohm $
+%%% From File: $Id: scrkernel-listsof.dtx 4130 2024-10-24 08:14:37Z kohm $
 %%%            (run: option)
 \newif\if@tocleft
 \KOMA@key{toc}{%
@@ -1968,17 +1993,17 @@
 \KOMA@DeclareDeprecatedOption{idxtotoc}{index=totoc}
 %%% From File: $Id: scrkernel-listsandtabulars.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: option)
-%%% From File: $Id: scrkernel-sections.dtx 4069 2023-06-29 08:55:54Z kohm $
+%%% From File: $Id: scrkernel-sections.dtx 4130 2024-10-24 08:14:37Z kohm $
 %%%            (run: execoption)
 \KOMAExecuteOptions{numbers=autoendperiod}
-%%% From File: $Id: scrkernel-miscellaneous.dtx 4032 2023-04-17 09:45:11Z kohm $
+%%% From File: $Id: scrkernel-miscellaneous.dtx 4094 2023-12-05 16:17:40Z kohm $
 %%%            (run: execoption)
 \KOMAExecuteOptions{%
   parskip=false,%
   headings=big%
 }
 \KOMAProcessOptions\relax
-%%% From File: $Id: scrkernel-compatibility.dtx 4054 2023-05-10 14:35:36Z kohm $
+%%% From File: $Id: scrkernel-compatibility.dtx 4133 2024-10-24 09:54:28Z kohm $
 %%%            (run: body)
 \AtBeginDocument{%
   \begingroup
@@ -2528,13 +2553,13 @@
   \@nomath\sfb}
 \DeclareRobustCommand*{\cal}{\@fontswitch\relax\mathcal}
 \DeclareRobustCommand*{\mit}{\@fontswitch\relax\mathnormal}
-%%% From File: $Id: scrkernel-language.dtx 4032 2023-04-17 09:45:11Z kohm $
+%%% From File: $Id: scrkernel-language.dtx 4107 2024-04-10 17:24:53Z kohm $
 %%%            (run: body)
       \def\today{\ifcase\month\or
         January\or February\or March\or April\or May\or June\or
         July\or August\or September\or October\or November\or December\fi
         \space\number\day, \number\year}%
-%%% From File: $Id: scrkernel-typearea.dtx 4032 2023-04-17 09:45:11Z kohm $
+%%% From File: $Id: scrkernel-typearea.dtx 4100 2024-02-01 09:40:30Z kohm $
 %%%            (run: body)
 \let\@BCOR                =\relax
 \let\@@BCOR               =\relax
@@ -3222,7 +3247,7 @@
 %%% From File: $Id: scrkernel-tocstyle.dtx 4060 2023-06-20 08:59:01Z kohm $
 %%%            (run: class,style,default)
 \CloneTOCEntryStyle{subsection}{default}
-%%% From File: $Id: scrkernel-sections.dtx 4069 2023-06-29 08:55:54Z kohm $
+%%% From File: $Id: scrkernel-sections.dtx 4130 2024-10-24 08:14:37Z kohm $
 %%%            (run: body)
 \BeforeClosingMainAux{%
   \if@autodot\if@filesw\immediate\write\@mainaux{%
@@ -5136,7 +5161,7 @@
 \fi
 \newcommand*{\scr@fnt@disposition}{\sectfont}
 \aliaskomafont{sectioning}{disposition}
-%%% From File: $Id: scrkernel-miscellaneous.dtx 4032 2023-04-17 09:45:11Z kohm $
+%%% From File: $Id: scrkernel-miscellaneous.dtx 4094 2023-12-05 16:17:40Z kohm $
 %%%            (run: body)
 \newif\if@restonecol
 \newcommand{\dictum}[2][]{\par%
@@ -5195,9 +5220,9 @@
   \endgroup
   \edef\is@thispageodd@setlabel{%
     \if@filesw
-      \unexpanded{\protected@write\@auxout{\let\arabic\relax}}{%
+      \unexpanded{\protected@write\@auxout{\let\number\relax}}{%
         \noexpand\string
-        \noexpand\new@tpo@label{\scr@tpo}{\noexpand\arabic{page}}}%
+        \noexpand\new@tpo@label{\scr@tpo}{\noexpand\number\c@page}}%
     \fi
     \noexpand\def\noexpand\is@thispageodd@setlabel
     {\unexpanded\expandafter{\is@thispageodd@setlabel}}%
@@ -5252,7 +5277,7 @@
     \reserved@a
     \ifin@\expandafter\@gobble\else\expandafter\@firstofone\fi
   }{%
-    \BeforePackage{#1}{%
+    \expandafter\providecommand\csname scr@class@#1@warning\endcsname{%
       \ClassWarning{\KOMAClassName}{%
         Usage of package `#1' together\MessageBreak
         with a KOMA-Script class is not recommended.\MessageBreak
@@ -5262,6 +5287,9 @@
         Nevertheless, using requested\MessageBreak
         package `#1'%
       }%
+    }%
+    \BeforePackage{#1}{%
+      \csname scr@class@#1@warning\endcsname
     }%
   }%
 }%
@@ -5547,7 +5575,7 @@
 \newcommand*{\indexpagestyle}{plain}
 \pagestyle{plain}
 \pagenumbering{arabic}
-%%% From File: $Id: scrlayer.dtx 4058 2023-06-16 08:32:27Z kohm $
+%%% From File: $Id: scrlayer.dtx 4118 2024-09-02 12:05:30Z kohm $
 %%%            (run: body)
 \providecommand*{\@mkleft}{%
   \IfActiveMkBoth{\markleft}{\@gobble}%
@@ -6487,7 +6515,7 @@
   \endgroup
   \@footnotemark
 }
-%%% From File: $Id: scrkernel-listsof.dtx 4032 2023-04-17 09:45:11Z kohm $
+%%% From File: $Id: scrkernel-listsof.dtx 4130 2024-10-24 08:14:37Z kohm $
 %%%            (run: body)
 \g@addto@macro{\numberline@numberpostfix}{\autodot}
 \usetocbasicnumberline[%
@@ -6590,17 +6618,34 @@
 }
 \newcommand*{\scr@float@listhead@warning}{%
   \ClassWarning{\KOMAClassName}{%
-    \string\float@listhead\space detected!\MessageBreak
+    Usage of \string\float@listhead\space detected!\MessageBreak
+    This could be, because you are using\MessageBreak
+    \@ifpackageloaded{floatrow}{%
+      \@ifpackageloaded{floatrowbytocbasic}{%
+        a package that does not support the KOMA-Script\MessageBreak
+        interface of KOMA-Script package `tocbasic`.\MessageBreak
+      }{%
+        package `floatrow` without `floatrowbytocbasic`.\MessageBreak
+      }%
+    }{%
+      \@ifpackageloaded{float}{%
+        \@ifpackageloaded{floatbytocbasic}{%
+          a package that does not support the KOMA-Script\MessageBreak
+          interface of KOMA-Script package `tocbasic`.\MessageBreak
+        }{%
+          package `float` without `floatbytocbasic`.\MessageBreak
+        }%
+      }{%
+        a package that does not support the KOMA-Script\MessageBreak
+        interface of KOMA-Script package `tocbasic`.\MessageBreak
+      }%
+    }%
     Implementation of \string\float@listhead\space became\MessageBreak
     deprecated in KOMA-Script v3.01 2008/11/14 and\MessageBreak
     has been replaced by several more flexible\MessageBreak
     features of package `tocbasic`.\MessageBreak
-    Maybe implementation of \string\float@listhead\space will\MessageBreak
-    be removed from KOMA-Script soon.\MessageBreak
-    Loading of package `scrhack' may help to\MessageBreak
-    avoid this warning, if you are using a\MessageBreak
-    a package that still implements the\MessageBreak
-    deprecated \string\float@listhead\space interface%
+    Implementation of \string\float@listhead\space will\MessageBreak
+    be removed from KOMA-Script soon%
   }%
 }
 \newcommand*{\scr@float@addtolists@warning}{%
@@ -6614,10 +6659,9 @@
     \string\float@addtolist\space interface has been\MessageBreak
     restricted to only some of the KOMA-Script\MessageBreak
     features and been removed from others.\MessageBreak
-    Loading of package `scrhack' may help to\MessageBreak
-    avoid this warning, if you are using a\MessageBreak
-    a package that still implements the\MessageBreak
-    deprecated \string\float@addtolist\space interface%
+    Since Version 3.43 support for deprecated\MessageBreak
+    \string\float@addtolist\space interface has been\MessageBreak
+    removed from all KOMA-Script classes%
   }%
   \global\let\scr@float@addtolists@warning\relax
 }

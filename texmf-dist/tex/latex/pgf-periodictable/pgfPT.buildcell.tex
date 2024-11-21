@@ -38,7 +38,9 @@
 \newif\ifpgfPT@dot\pgfPT@dotfalse%
 \newif\ifpgfPT@unnamedcell\pgfPT@unnamedcelltrue%
 \newdimen\pgfPT@cell@collumnwd\pgfPT@cell@collumnwd=0pt%
+\newdimen\pgfPT@cell@collumnwd@unnamedcell\pgfPT@cell@collumnwd@unnamedcell=0pt%
 \newdimen\pgfPT@cell@lineht\pgfPT@cell@lineht=0pt%
+\newdimen\pgfPT@cell@lineht@unnamedcell\pgfPT@cell@lineht@unnamedcell=0pt%
 \newdimen\pgfPT@tmpx\pgfPT@tmpx=0pt%
 \newdimen\pgfPT@tmpy\pgfPT@tmpy=0pt%
 \newdimen\pgfPT@tmpwd\pgfPT@tmpwd=0pt%
@@ -47,10 +49,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \def\pgfPTbuildcellstyle#1(#2,#3)[#4]{\pgfPT@unnamedcellfalse\relax%
 \pgfPTbuildcell(#2,#3)[#4]%
-\expandafter\edef\csname pgfPT@cellcontents@#1\endcsname{\pgfPT@cellcontents}%
-\expandafter\edef\csname ppfPT@thebuildcellcom@#1\endcsname{\textbackslash pgfPTbuildcell(\detokenize{#2},\detokenize{#3})\%\par[\detokenize{#4}]}%
-\expandafter\edef\csname pgfPT@nlinhas@#1\endcsname{#2}%
-\expandafter\edef\csname pgfPT@ncolunas@#1\endcsname{#3}%
+\expandafter\xdef\csname pgfPT@cellcontents@#1\endcsname{\pgfPT@cellcontents}%
+\expandafter\xdef\csname ppfPT@thebuildcellcom@#1\endcsname{\textbackslash pgfPTbuildcell(\detokenize{#2},\detokenize{#3})\%\par[\detokenize{#4}]}%
+\expandafter\xdef\csname pgfPT@nlinhas@#1\endcsname{#2}%
+\expandafter\xdef\csname pgfPT@ncolunas@#1\endcsname{#3}%
 \pgfPT@unnamedcelltrue\relax%
 }%
 \def\pgfPT@builtincellstyle#1(#2,#3)[#4]{\pgfPT@unnamedcellfalse\relax%
@@ -66,7 +68,8 @@
 %        \pgfPTbuildcell(<lines>,<columns>)[<entries>]
 %
 \def\pgfPTbuildcell(#1,#2)[#3]{%
-\ifpgfPT@unnamedcell\gdef\ppfPT@thebuildcellcom{\textbackslash pgfPTbuildcell(\detokenize{#1},\detokenize{#2})\%\par[\detokenize{#3}]}\fi%
+\ifpgfPT@unnamedcell\gdef\pgfPT@numlinhas@unnamedcell{#1}\gdef\pgfPT@numcolunas@unnamedcell{#2}%
+\gdef\ppfPT@thebuildcellcom{\textbackslash pgfPTbuildcell(\detokenize{#1},\detokenize{#2})\%\par[\detokenize{#3}]}\fi%
 \gdef\pgfPT@numlinhas{#1}\gdef\pgfPT@numcolunas{#2}%
 \pgfPT@cellcontentssize=0%
 \xdef\pgfPT@cellcontents{}% vanishes list contents
@@ -74,6 +77,10 @@
 \pgfmathsetlength{\pgfPT@cell@lineht}{\pgfPTcellht/#1}%
 \global\pgfPT@cell@lineht=\pgfPT@cell@lineht%
 \global\pgfPT@cell@collumnwd=\pgfPT@cell@collumnwd%
+\ifpgfPT@unnamedcell%
+\global\pgfPT@cell@lineht@unnamedcell=\pgfPT@cell@lineht%
+\global\pgfPT@cell@collumnwd@unnamedcell=\pgfPT@cell@collumnwd%
+\fi%
 \expandafter\pgfPTg@bblespaces#3\relax%
 \@for\@tmp:=\pgfPT@listn@spaces\do{\expandafter\pgfPT@buildcellcontents\@tmp\relax}%
 \ifpgfPT@unnamedcell\global\let\pgfPT@cellcontents@unnamed\pgfPT@cellcontents\relax\fi%
@@ -186,7 +193,7 @@
 \@for\pgfPT@tmp:=\pgfPT@builtincells@names\do{\edef\pgfPT@tempb{\pgfPT@tmp}\ifx\pgfPT@tempa\pgfPT@tempb\relax\def\pgfPT@builtin{1}\fi}%
 \ifnum\pgfPT@builtin=1\relax\textit{Built-in style}\else\textit{User style}\fi\ \textbf{#2}\relax%
 \if\pgfPT@preview@cellcontents\@empty\relax%
-\textit{ doesn't exist!}%
+\textit{ doesn't exist!} (\pgfPT@preview@cellcontents)%
 \else%
 \edef\pgfPT@numlinhas{\csname pgfPT@nlinhas@#2\endcsname}%
 \edef\pgfPT@numcolunas{\csname pgfPT@ncolunas@#2\endcsname}%
@@ -204,6 +211,8 @@
 \\ [2pt]The build command:\\ \textcolor{green!70!black}{\footnotesize\ppfPT@thebuildcellcom}\\ %
 \else\textbf{Using the last cell built}%
 \edef\pgfPT@preview@cellcontents{\csname pgfPT@cellcontents@unnamed\endcsname}%
+\let\pgfPT@numlinhas\pgfPT@numlinhas@unnamedcell\let\pgfPT@numcolunas\pgfPT@numcolunas@unnamedcell%
+\let\pgfPT@cell@lineht\pgfPT@cell@lineht@unnamedcell\let\pgfPT@cell@collumnwd\pgfPT@cell@collumnwd@unnamedcell%
 \\ [2pt]The build command:\\ \textcolor{green!70!black}{\footnotesize\ppfPT@thebuildcellcom}\\ %
 \fi\fi%
 \makebox[\linewidth][c]{%
@@ -326,8 +335,8 @@ at (-.5*\pgfPT@cell@collumnwd+\pgfPT@cell@collumnwd*\coluna,\pgfPT@cell@lineht) 
 \newif\ifpgfPT@spectra\pgfPT@spectrafalse%
 %\newif\ifpgfPT@DiscBy\pgfPT@DiscByfalse%
 % --------------------------------------------------------------------------------------------------
-\def\loadcell#1{Loading cell data\\ --\ #1\ -- CONTENTS\pgfPT@loadcell[#1]% DEBUG
-\@for\@tmp:=\pgfPT@load@cellcontents\do{\\ \@tmp}}% DEBUG
+%\def\loadcell#1{Loading cell data\\ --\ #1\ -- CONTENTS\pgfPT@loadcell[#1]% DEBUG
+%\@for\@tmp:=\pgfPT@load@cellcontents\do{\\ \@tmp}}% DEBUG
 % --------------------------------------------------------------------------------------------------
 \def\pgfPT@loadcell[#1]{\ignorespaces%
 \edef\pgfPT@testa{#1}%
@@ -354,7 +363,7 @@ at (-.5*\pgfPT@cell@collumnwd+\pgfPT@cell@collumnwd*\coluna,\pgfPT@cell@lineht) 
 % wd -> \pgfPT@<what>@wd
 % ht -> \pgfPT@<what>@ht
 % and turning the if<what> to true
-% what -> \@pgfPT@<what>rtue
+% what -> \@pgfPT@<what>true
     \ifdim\pgfPTcellwd=34pt\relax%
         \xdef\pgfPT@loadcell@scaleX{1}%
     \else%

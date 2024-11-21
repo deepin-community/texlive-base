@@ -1,5 +1,5 @@
 # tkz-euclide — for euclidean geometry
-Release 5.06c 2024/02/04
+Release 5.10c 2024/04/27
 
 ## Description
 
@@ -9,7 +9,8 @@ It uses a Cartesian coordinate system orthogonormal (unit 1cm)
  as well as tools to define the unique coordinates of points and to
 manipulate them. The idea is to allow you to follow step by step a construction
 that would be done by hand as naturally as possible.
-Now tkz-euclide introduces a "lua" option which allows to do most of the calculations using "lua".
+Now tkz-euclide introduces a `lua` option which allows to do most of the calculations using `lua`.
+A new option mini has been introduced. When one wishes to use tkz-euclide and tkz-elements together, it is recommended to load the package with this option. Thus, tkz-euclide will focus solely on the drawings.
 
 ## Licence
 
@@ -41,18 +42,20 @@ To use the package `tkz-euclide`, place the following lines in the preamble of
 your LaTeX document:
 
 ```
-\usepackage{tkz-euclide} or \usepackage[lua]{tkz-euclide}
+\usepackage{tkz-euclide}
 \begin{document}
 \begin{tikzpicture}
     your code
 \end{tikzpicture}
 ```
+
+This code can be compiled using either `pdflatex` or `lualatex`. In the latter case, the `lua` option allows most calculations to be performed with `lua`. If you do the calculations with `tkz-elements` then you can load `tkz-euclide` with the `mini` option. 
 If you use the `xcolor` package, load that package before `tkz-euclide` to avoid
 package conflicts.
 
 ## Documentation
 
-Documentation for `tkz-euclide` is available on `CTAN`. 
+Documentation for `tkz-euclide` is available on `CTAN`. A french version of the documentation is now available on my website [http://altermundus.fr](http://altermundus.fr)
 
 ## Examples
 
@@ -63,6 +66,11 @@ Other examples, in French, are on my site.
 
 
 ## History
+
+- 5.10c
+      - tkz-tool-eu-angles.arc.tex has been extracted from the file tkz-tool-eu-angles.tex
+      - Added `mini` option
+      - Added french documentation on my site (altermundus.fr)
 - 5.06c 
      - Correction of a bug with the macro \tkzLabelAngle and the option “angle”
      - Added \tkzSetUpCircle

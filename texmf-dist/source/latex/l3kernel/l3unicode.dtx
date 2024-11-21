@@ -43,7 +43,7 @@
 %    }^^A
 % }
 %
-% \date{Released 2024-01-22}
+% \date{Released 2024-11-02}
 %
 % \maketitle
 %
@@ -52,7 +52,7 @@
 % This module provides Unicode-specific functions along with loading data
 % from a range of Unicode Consortium files. Most of the code here is
 % internal, but there are a small set of public functions. These work with
-% Unicode \meta{codepoints} and are designed to give useable results with
+% Unicode \meta{codepoints} and are designed to give usable results with
 % both Unicode-aware and $8$-bit engines.
 %
 % \begin{function}[EXP, added = 2022-10-09, updated = 2022-11-09]
@@ -82,7 +82,7 @@
 %   range, the generated character tokens will be active (category code
 %   $13$); for codepoints in the ASCII range, the given \meta{catcode}
 %   will be used. To allow the result of this function to be used
-%   inside a expansion context, the result is protected by \cs{exp_not:n}.
+%   inside an expansion context, the result is protected by \cs{exp_not:n}.
 %
 %   \begin{texnote}
 %     Users of (u)p\TeX{} note that these engines are treated as $8$-bit in
@@ -719,15 +719,22 @@
             \tl_set:ce { l_@@_ #1 _block_tl }
               { \int_eval:n { \tl_use:c { l_@@_ #1 _block_tl } + 1 } }
           }
-        \prg_replicate:nn {#2}
+%    \end{macrocode}
+% Here, we avoid \cs{prg_replicate:nn} as the number of tokens generated would be
+% high: that shows in the format dump (although \TeX{} recovers memory during
+% the subsequent runs).
+%    \begin{macrocode}
+        \int_step_inline:nnn
+          { \tl_use:c { l_@@_ #1 _pos_tl } + 1 }
+          { \tl_use:c { l_@@_ #1 _pos_tl } + #2 }
           {
-            \tl_set:ce { l_@@_ #1 _pos_tl }
-              { \int_eval:n { \tl_use:c { l_@@_ #1 _pos_tl } + 1 } }
             \exp_args:Nc \__kernel_intarray_gset:Nnn
               { g_@@_ #1 _index_intarray }
-              { \tl_use:c { l_@@_ #1 _pos_tl } }
+              {##1}
               \l_@@_matched_block_tl
           }
+        \tl_set:ce { l_@@_ #1 _pos_tl }
+          { \int_eval:n { \tl_use:c { l_@@_ #1 _pos_tl } + #2 } } 
       \clist_clear:c { l_@@_ #1 _block_clist }
     }
 %    \end{macrocode}

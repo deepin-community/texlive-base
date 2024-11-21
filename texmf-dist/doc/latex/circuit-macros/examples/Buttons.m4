@@ -3,7 +3,6 @@
 gen_init
 NeedDpicTools
 
-
 divert(-1)
 #################################################################
 
@@ -67,36 +66,21 @@ define(`BoxButton',`[
   linedensity = ifelse(`$4',,150/scale,`$4')
   nsteps=10
   define BxBshadow {
-    box ht boxh wid boxw rad boxh/2 \
+    B: box ht boxh wid boxw rad boxh/2 \
       outlined rgbstring($`'2,$`'3,$`'4) at (0,($`'1)*4*linethick bp__)
     }
   Q: ShadeObject(BxBshadow,nsteps,
     0, 1,1,1,
     1, r3,g3,b3)
 #                               Shaded body
-  lthk = boxh/nsteps/(1bp__)
-  define BxBshade {
-    v = boxh*(1-($`'1))
-    h = (boxw-boxh)/2+sqrt((boxh/2)^2-(v-boxh/2)^2)
-    line from (-h,v) to (h,v) thick lthk outlined rgbstring($`'2,$`'3,$`'4)
-    }
-  nsteps = boxh*linedensity
-  C: ShadeObject(BxBshade,nsteps,
-    0,   r1, g1, b1,
-    0.45,r2, g2, b2,
-    1,   r3, g3, b3) with .n at Q.n
+  C: ColoredV(box,
+    (( 0,r1,g1,b1, 0.45,r2,g2,b2, 1,r3,g3,b3)):boxh/(Q.B.thick bp__)*2,
+    wid boxw ht boxh rad boxh/2 invis) with .n at Q.n
 #                               Shaded highlight
-  bh = boxh*0.4
-  bw = boxw*4/4.5
-  define BxBhighlight {
-    v = bh*(1-($`'1)); h = (bw-bh)/2+sqrt((bh/2)^2-(v-bh/2)^2)
-    line from (-h,v) to (h,v) thick lthk outlined rgbstring($`'2,$`'3,$`'4)
-    }
-  nsteps = bh*linedensity
-  ShadeObject(BxBhighlight,nsteps,
-    0,1,1,1,
-    8/nsteps,1,1,1,
-    1, r2,g2,b2) with .n at Q.n+(0,-boxh/20)
+  bh = boxht*0.4
+  ColoredV(box,((0,1,1,1, 8/(bh*linedensity),1,1,1, 1,r2,g2,b2)),
+    ht bh wid boxw*4/4.5 rad bh/2 invis) \
+    with .n at Q.n+(0,-boxh/20)
   `$5']')
 
 #################################################################

@@ -2,8 +2,6 @@
 
 set -e
 
-PROJECT_DIR="${1:-../../git-test-project}"
-
 set_author() {
   git config user.name $1
   git config user.email $2
@@ -22,15 +20,6 @@ bob() {
 charlie() {
   set_author 'Charlie' 'charlie@example.com'
 }
-
-if [[ -d "${PROJECT_DIR}" ]]; then
-  rm -rf "${PROJECT_DIR}"
-fi
-
-mkdir "${PROJECT_DIR}"
-cd "${PROJECT_DIR}"
-
-git init
 
 alice
 
@@ -53,7 +42,12 @@ bob
 
 curl https://raw.githubusercontent.com/github/gitignore/main/TeX.gitignore > .gitignore
 git add .gitignore
-git commit -m "Add gitignore" --date="2017-08-06 12:03"
+git commit -m "Add gitignore
+
+Get the TeX.gitignore from the gitignore repository and
+use it for this project.
+
+From github" --date="2017-08-06 12:03"
 
 charlie
 
