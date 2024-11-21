@@ -323,6 +323,84 @@
     \markelement{Lbl}{{\stopformulatagging#1}}}
 \def\tagging:ensurestopNote{\ensurestopelement{Note}}
 
+% \sectionstructure { subsection, section, chapter }
+\def\sectionstructure{%
+    \newtoks\tag:sect:resets \tag:sect:resets{}%
+    \splitcommalist\tag:sect:a}
+\def\tag:sect:a#1{\expandafter\tag:sect:b
+    \expandafter{\Uchar\uccode`#1}{#1}}
+\def\tag:sect:b#1#2{% Section section
+    \addstructuretype Sect #1\relax
+    \expandafter\newcount\csname #2nr\endcsname
+    \expandafter\edef\csname mark#2\endcsname{%
+        \noexpand\withoptions[]%
+        \expandafter\noexpand\csname #2:domark\endcsname}%
+    \expandafter\edef\csname #2:domark\endcsname[##1]{%
+        \unexpanded{\ifhmode\errhelp{You should place section markers
+            in the vertical list, before the header.}\errmessage
+            {Section marker in horizontal list}\fi}%
+        \global\advance\expandafter\noexpand
+            \csname #2nr\endcsname1
+        \noexpand\the\expandafter\noexpand
+            \csname #2:resets\endcsname
+        \startelement\noexpand\ifx=##1=\noexpand\else
+            title{##1}\noexpand\fi{#1}%
+        \nextpartag{H}\ignorespaces}%
+    \expandafter\newtoks\csname #2:resets\endcsname
+    \csname #2:resets\endcsname \tag:sect:resets
+    \etoksapp\tag:sect:resets{%
+        \noexpand\ensurestopelement{#1}%
+        \global\expandafter\noexpand\csname#2nr\endcsname0 }}
+
+% tagging the plain output routine
+\begingroup\catcode`\@=11
+\gdef\autotagplainoutput{%
+    \let \vfootnot = \tag:vfootnote
+    \begingroup
+        % these should not be expanded
+        \tag:mkrelax
+            \ifhmode \ifvmode \ifnum \ifdim \ifodd \ifeven
+            \ifcondition \unless \else \fi \next \tmp
+            \strut \strutbox \footstrut
+            \the \number \empty \folio
+            \line \leftline \rightline \centerline
+            \nointerlineskip \offinterlineskip
+            \textindent \narrower \hang \llap \rlap
+            \enspace \thinspace \hidewidth
+            \quad \qquad \enskip
+            \@sf \fo@t \footins
+        \tag:mkrelax
+        % redefine head- and footlines
+        \def\footline{\taggedfootline}%
+        \def\headline{\taggedheadline}%
+        \xdef\makeheadline{\makeheadline}%
+        \xdef\makefootline{\makefootline}%
+        \xdef\footnoterule{\markartifact{Layout}\footnoterule}
+        % redefine vfootnote
+        \def\textindent##1{\noexpand\nextpartag{}%
+            \noexpand\marknotelbl{\noexpand\textindent{##1}}%
+            \noexpand\startelement{P}}%
+        \xdef\vfootnote##1{\vfootnote{##1}}%
+        % redefine footnote
+        \let\vfootnote=\relax \let\textindent=\relax
+        \def\fi##1\@sf{\noexpand\fi\noexpand\marknoteref{##1}\@sf}
+        \xdef\footnote##1{\footnote{##1}}%
+    \endgroup}
+\endgroup
+\def\tag:mkrelax#1{\ifx\tag:mkrelax#1\tag:else
+    \let#1=\relax\expandafter\tag:mkrelax\tag:fi}
+\let\tag:else=\else \let\tag:fi=\fi
+\newtoks \taggedheadline \newtoks \taggedfootline
+\taggedheadline{\tagtoks:nonempty{Pagination /Subtype/Header}\headline}
+\taggedfootline{\tagtoks:nonempty{Pagination /Subtype/Footer}\footline}
+\def\tagtoks:nonempty#1#2{%
+    \edef\tagtoks:tmp{\the#2}%
+    \ifx\tagtoks:tmp\tagtoks:hfil
+        \the#2\else
+        \markartifact{#1}{\the#2}\fi}
+\def\tagtoks:hfil{\hfil}
+
+
 % 1 tagging formulas
 
 % \autotagformulas
@@ -408,7 +486,7 @@
 % \hyperlink <args> ... \endlink
 %   args: alt {...} attr {...} <type>
 %   type: dest {name} | url {url} | next | prev | first | last
-\protected\def\endlink{\pdfextension endlink\stopelement{Link}\relax}
+\protected\def\endlink{\pdfextension endlink\ensurestopelement{Link}\relax}
 \protected\def\startlink{\startelement{Link}\pdfextension startlink}
 \protected\def\hyperlink{\quitvmode\startlink\hyper:makelink}
 

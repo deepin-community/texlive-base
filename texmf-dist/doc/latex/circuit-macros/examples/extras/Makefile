@@ -51,7 +51,7 @@ BOXDIMS =
 
 DVIPSOPTS = -G0 -t letter
 DIMFILE = $(DOC).dim
-BS = tr '|' '\134'
+TRSLASH = tr '|' '\134'
 
 # Might be needed (change latex commands to $(LTX) )
 # LTX = latex --shell-escape
@@ -62,13 +62,13 @@ XTRASRC=printf "|documentclass[11pt]{article}\n\
 |usepackage{times,boxdims,siunitx,amssymb,tikz}\n\
 |setlength{|textwidth}{8in} |setlength{|textheight}{10.5in}\n\
 |setlength{|hoffset}{-2cm} |setlength{|voffset}{-3cm}\n\
-|begin{document}\n" | $(BS)
+|begin{document}\n" | $(TRSLASH)
 
 PDFLTXSRC=printf "|documentclass[11pt]{standalone}\n\
 |usepackage{times,boxdims,siunitx,amssymb,tikz,geometry}\n\
 |geometry{paperwidth=15in,paperheight=14in,margin=1in}\n\
 |pagestyle{empty}|thispagestyle{empty}\n\
-|begin{document}|noindent|input{"$*".tex}|end{document}\n" | $(BS)
+|begin{document}|noindent|input{"$*".tex}|end{document}\n" | $(TRSLASH)
 
 LTXFILE=printf "|documentclass[11pt]{article}\n\
 |usepackage[dvipsnames]{xcolor}\n\
@@ -81,7 +81,7 @@ LTXFILE=printf "|documentclass[11pt]{article}\n\
 |newbox|graph\n\
 |begin{document}\n\
 |noindent|input{"$*".tex}|box|graph\n\
-|end{document}\n" | $(BS)
+|end{document}\n" | $(TRSLASH)
 
 .SUFFIXES: .ps .dvi .tex .m4 .pic .eps .png .pdf .svg .tif .gif
 .m4.pic:
@@ -158,33 +158,39 @@ LTXFILE=printf "|documentclass[11pt]{article}\n\
 
 #########################################################################
 
-$(DOC).pdf:
+$(DOC).pdf: texfiles
 	@$(XTRASRC) > extras.tex
 	touch extras.dim
 	-for fl in `ls *.m4` ; do \
      file=`basename $$fl .m4` ; \
-     echo $$file.m4 ; \
-     $(M4) pgf.m4 extras.dim $$file.m4 | $(PIC) -g > $$file.tex ; \
-      printf "\n\n|noindent|parbox{|textwidth}{\n" | $(BS) >> extras.tex ; \
-      printf "|input{$$file.tex}\n" | $(BS) >> extras.tex ; \
+      printf "\n\n|noindent|parbox{|textwidth}{\n" | $(TRSLASH) >> extras.tex; \
+      printf "|input{$$file.tex}\n" | $(TRSLASH) >> extras.tex ; \
       printf "\n $$file.m4\n}\n|vspace{|baselineskip}" \
-       | sed -e 's/_/|_/g' | $(BS) >> extras.tex ; \
+       | sed -e 's/_/|_/g' | $(TRSLASH) >> extras.tex ; \
       done
-	printf "\n|end{document}\n" | $(BS) >> extras.tex
+	printf "\n|end{document}\n" | $(TRSLASH) >> extras.tex
 	pdflatex extras
-	-for file in $(XBOXDIMS) ; do \
-      rm -f $$file.tex ; \
-      $(M4) pgf.m4 extras.dim $$file.m4 | $(PIC) -g > $$file.tex ; \
-      done
-	pdflatex extras
+#	-for file in $(XBOXDIMS) ; do \
+#      rm -f $$file.tex ; \
+#      $(M4) pgf.m4 extras.dim $$file.m4 | $(PIC) -g > $$file.tex ; \
+#      done
+#	pdflatex extras
+
+texfiles:
+	touch extras.dim
+	for fl in `ls *.m4` ; do \
+     file=`basename $$fl .m4` ; \
+     echo $$file.m4 ; \
+     $(M4) pgf.m4 extras.dim $$file.m4 | $(PIC) -g > $$file.tex ; done
+	touch texfiles
 
 $(DOC).ps: psmode $(DOC).dvi
 
 psmode:
-	printf "|usepackage{pstricks,pst-grad}\n" | $(BS) > mode.tex
+	printf "|usepackage{pstricks,pst-grad}\n" | $(TRSLASH) > mode.tex
 
 pdfmode:
-	printf "|usepackage{tikz}\n" | $(BS) > mode.tex
+	printf "|usepackage{tikz}\n" | $(TRSLASH) > mode.tex
 
 $(DOC).dvi: $(DOC).tex files.tex header.tex psmode
 	touch $(DOC).dim
@@ -208,4 +214,4 @@ tst1:
 	dvips $(DVIPSOPTS) tst -o tst.ps
 
 clean:
-	rm -f *.ps *.pdf *.tex *.dim *.pic *.log *.dms *.aux *.svg
+	rm -f *.ps *.pdf *.tex *.dim *.pic *.log *.dms *.aux *.svg texfiles

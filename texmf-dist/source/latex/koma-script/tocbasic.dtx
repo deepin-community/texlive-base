@@ -18,7 +18,7 @@
 %
 % This work consists of all files listed in MANIFEST.md.
 % ======================================================================
-%%% From File: $Id: tocbasic.dtx 4067 2023-06-28 14:37:03Z kohm $
+%%% From File: $Id: tocbasic.dtx 4132 2024-10-24 09:32:44Z kohm $
 %<identify>%%%            (run: identify)
 %<prepare>%%%            (run: prepare)
 %<option>%%%            (run: option)
@@ -29,9 +29,9 @@
 \ifx\ProvidesFile\undefined\def\ProvidesFile#1[#2]{}\fi
 \begingroup
   \def\filedate$#1: #2-#3-#4 #5${\gdef\filedate{#2/#3/#4}}
-  \filedate$Date: 2023-06-28 16:37:03 +0200 (Mi, 28. Jun 2023) $
+  \filedate$Date: 2024-10-24 11:32:44 +0200 (Do, 24 Okt 2024) $
   \def\filerevision$#1: #2 ${\gdef\filerevision{r#2}}
-  \filerevision$Revision: 4067 $
+  \filerevision$Revision: 4132 $
 \endgroup
 \ProvidesFile{tocbasic.dtx}[\filedate\space\filerevision\space
 %</dtx>
@@ -124,6 +124,7 @@
 % manual, either the German \file{scrguide-de.pdf} or the English
 % \file{scrguide-en.pdf}.
 %
+%
 % \MaybeStop{\PrintIndex}
 %
 %
@@ -144,9 +145,32 @@
 % out-sourced into file \file{scrkernel-tocbasic.dtx}.
 %
 %
-% \subsection{Required packages}
+% \subsection{Requirements}
 % \label{sec:packages}
 %
+% \changes{v3.42}{2023/09/08}{We need at least \LaTeX{} 2022-06-01}
+% For full functionality at least \LaTeX{} 2022-06-01 is needed.
+%    \begin{macrocode}
+%<*prepare>
+\newif\if@tocbasic@old@latex@found
+\ifnum 0=\ifcsname IfFormatAtLeastTF\endcsname
+    \IfFormatAtLeastTF{2022-06-01}{1}{0}
+  \else
+    0
+  \fi\relax
+  \PackageWarningNoLine{tocbasic}{%
+    LaTeX kernel too old!\MessageBreak
+    For full functionality the package needs at least\MessageBreak
+    LaTeX 2022-06-01.\MessageBreak
+    You are using an older LaTeX version.\MessageBreak
+    So the functionality will be limited.\MessageBreak
+    Note that this also can result in error messages,\MessageBreak
+    that would not raise with an up-to-date LaTeX%
+  }
+  \@tocbasic@old@latex@foundtrue
+\fi
+%</prepare>
+%    \end{macrocode}
 % \changes{v3.41}{2023/06/28}{required packages moved to \texttt{prepare} run}
 % \changes{v3.41}{2023/06/28}{\pkg{expl3} and \pkg{xparse} are required}
 % Package \pkg*{scrbase} is needed to process all macro options.
@@ -169,14 +193,208 @@
 % \subsection{Options}
 % \label{sec:options}
 %
-% There are no options because the package should be used by class and package
-% authors not by users. So the package will be loaded using
-% \cs{RequirePackage}. Using different options by different packages would
-% result in an option clash. Nevertheless, the not existing options are
-% processed.
+% \changes{v3.42}{2023/09/08}{with old \LaTeX{} all options are unknown}
+%
+% \begin{option}{enablepatch,disablepatch}
+% \changes{v3.42}{2023/09/08}{new}
+% From version 3.42 there a several optional patches executed while
+% |\begin{document}|. Every one of that patch can be enabled or disabled.
+% \ExplSyntaxOn
+% \begin{macro}{\@@_patch_all_bool,\@@_patch_starttoc_bool,\@@_patch_chapter_bool,
+%               \@@_patch_listoffigures_bool,\@@_patch_listoftables_bool}
+% \ExplSyntaxOff
+% \changes{v3.42}{2023/09/08}{new}
+% Enabling and disabling will be done using a boolean variable with default
+% |false| (disabled). The |all| patch is somehow different. In enables or
+% disables doing all patches. So |disablepatch=all| does not disable all
+% patches but disables to ignore the single patches.
+%    \begin{macrocode}
+%<@@=tocbasic>
+%<*option>
+\if@tocbasic@old@latex@found\else
+  \ExplSyntaxOn
+
+  \bool_new:N \@@_patch_all_bool
+  \bool_new:N \@@_patch_starttoc_bool
+  \bool_new:N \@@_patch_chapter_bool
+  \bool_new:N \@@_patch_listoffigures_bool
+  \bool_new:N \@@_patch_listoftables_bool
+
+%    \end{macrocode}
+% \end{macro}
+% \ExplSyntaxOff
+% The most simple part of the story is the definition of the two
+% options. Both allow a comma separated list of patches to set the
+% corresponding boolean value to |true| or |false|.
+%    \begin{macrocode}
+  \DeclareKeys
+    {
+      enablepatch  .code             = \@@_endisable_patch:nn {#1} \c_true_bool,
+      enablepatch  .usage            = preamble,
+      enablepatch  .value_required:n = true,
+      disablepatch .code             = \@@_endisable_patch:nn {#1} \c_false_bool,
+      disablepatch .usage            = preamble,
+      disablepatch .value_required:n = true,
+    }
+
+%    \end{macrocode}
+% \ExplSyntaxOn
+% \begin{macro}{\@@_endisable_patch:nn}
+% \ExplSyntaxOff
+% \changes{v3.42}{2023/09/08}{new}
+% \changes{v3.43}{2024/10/22}{deprecated \cs{char\_uppercase:N} replaced by
+%   \cs{text\_uppercase:n}}
+% Switch the patch \#1 depending on argument \#2 or raise a warning for
+% unknown patches.
+%    \begin{macrocode}
+  \msg_new:nnnn { tocbasic } { unknown-patch }
+    {
+      \text_uppercase:n #1bling~of~unknown~patch~#2~ignored.
+    }
+    {
+      You've~tried~to~#1able~patch~#2,~
+      but~this~is~not~a~known~patch.~
+      Because~of~this~your~attempt~is~ignored.~
+      See~the~KOMA-Script~user~manual~for~more~information~about~known~patches.
+    }
+
+  \cs_new:Nn \@@_endisable_patch:nn
+    {
+      \clist_map_inline:nn { #1 }
+        {
+          \cs_if_exist:cTF { @@_patch_##1_bool }
+            {
+              \bool_set_eq:cN { @@_patch_##1_bool } #2
+            }
+            {
+              \exp_args:Nnnx \msg_warning:nnnn { tocbasic } { unknown-patch }
+                { \bool_if:NTF #2 { en } { dis } } { ##1 }
+            }
+        }
+    }
+
+  \ExplSyntaxOff
+\fi
+%</option>
+%    \end{macrocode}
+% \end{macro}
+% \ExplSyntaxOff
+% The patch codes are executed while |\begin{document}|. Some patches may be
+% dangerous, in which case message |dangerous-patch| is used.
+% \begin{description}
+% \item[ToDo:] We are using the old \cs{AtBeginDocument} here. Maybe a new
+%   hook would be cleaner.
+% \end{description}
+%    \begin{macrocode}
+%<*body>
+\if@tocbasic@old@latex@found\else
+  \ExplSyntaxOn
+  \msg_new:nnnn { tocbasic } { dangerous-patch }
+    {
+      Dangerous~#2~patch~enabled \str_if_empty:nF { #1 } { ~using~#1 } .
+    }
+    {
+      \str_if_empty:nF { #1 } { Class~#1~does~not~need~the~#2~patch.~ }
+      Using~this~patch~can~even~result~in~harm.~
+      If~you~are~not~sure~that~this~patch~is~needed,~
+      you~should~not~enable~it.~
+      Please,~see~the~KOMA-Script~user~manual~for~more~information~about~
+      the~#2~patch.
+    }
+
+  \AtBeginDocument
+    {
+
+%    \end{macrocode}
+% The patches are:
+% \begin{description}
+% \item[\texttt{all}:] activate all other patches. The \texttt{chapter} patch
+%   is not enabled for \KOMAScript{} classes. So if you want to use this patch
+%   with a \KOMAScript{} class\,---\,which usually will not make sense\,---\,,
+%   you have to use an explicit |enabelpatch=chapter|.
+%    \begin{macrocode}
+      \bool_if:NT \@@_patch_all_bool
+        {
+          \bool_set_true:N \@@_patch_starttoc_bool
+          \cs_if_exist:NF \KOMAClassName
+            { \bool_set_true:N \@@_patch_chapter_bool }
+          \bool_set_true:N \@@_patch_listoffigures_bool
+          \bool_set_true:N \@@_patch_listoftables_bool
+        }
+
+%    \end{macrocode}
+% \item[\texttt{chapter}:] patches \cs{@makechapterhead} to add \cs{addvspace}
+%   to every float list. It does \emph{not} patch \cs{@makeschapterhead}. Note
+%   that this patch should not be activated using a \KOMAScript{} class unless
+%   you are using an incompatible \cs{chapter} definition. This patch is
+%   potentially dangerous. So we raise at least a note and maybe a warning.
+%    \begin{macrocode}
+      \bool_if:NT \@@_patch_chapter_bool
+        {
+          \cs_if_exist:NTF \KOMAClassName
+            {
+              \exp_args:Nnnx \msg_warn:nnnn { tocbasic } { dangerous-patch }
+                { \KOMAClassName } { chapter }
+            }
+            {
+              \exp_args:Nnnx \msg_note:nnnn { tocbasic } { dangerous-patch }
+                { } { chapter }
+            }
+          \hook_gput_code:nnn { cmd/@makechapterhead/before } { tocbasic }
+            {
+              \doforeachtocfile[float]{
+                \addtocontents{\@currext}{\protect\addvspace{10\p@}}
+              }
+            }
+        }
+
+%    \end{macrocode}
+% \item[\texttt{starttoc}:] executes \cs{tocbasicautomode}
+%    \begin{macrocode}
+      \bool_if:NT \@@_patch_starttoc_bool \tocbasicautomode  
+
+%    \end{macrocode}
+% \item[\texttt{listoffigures}] redefines \cs{listoffigures} to use
+%   \pkg*{tocbasic} (but without changing \cs{l@figure}, because
+%   \cs{DeclareTOCSTyleEntry} already has defaults for \texttt{figure}).
+%    \begin{macrocode}
+      \bool_if:NT \@@_patch_listoffigures_bool
+        {
+          \renewcommand*{\listoffigures}{\listoftoc{\ext@figure}}%
+          \providecommand*{\listoflofname}{\listfigurename}%
+        }
+
+%    \end{macrocode}
+% \item[\texttt{listoftables}] redefines \cs{listoftables} to use
+%   \pkg*{tocbasic} (but without changing \cs{l@table}, because
+%   \cs{DeclareTOCSTyleEntry} already has defaults for \texttt{table}).
+%    \begin{macrocode}
+      \bool_if:NT \@@_patch_listoftables_bool
+        {
+          \renewcommand*{\listoftables}{\listoftoc{\ext@table}}%
+          \providecommand*{\listoflotname}{\listtablename}%
+        }
+
+%    \end{macrocode}
+% \end{description}
+%    \begin{macrocode}
+    }
+
+  \ExplSyntaxOff
+\fi
+%</body>
+%<@@=>
+%    \end{macrocode}
+% \end{option}
+% \ExplSyntaxOff
+%
 %    \begin{macrocode}
 %<*execoption>
-\ProcessOptions\relax
+\if@tocbasic@old@latex@found
+  \ProcessOptions
+\else
+  \ProcessKeyOptions
+\fi
 %</execoption>
 %    \end{macrocode}
 %

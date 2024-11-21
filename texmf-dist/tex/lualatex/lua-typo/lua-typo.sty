@@ -11,7 +11,7 @@
 %%
 \NeedsTeXFormat{LaTeX2e}[2021/06/01]
 \ProvidesPackage{lua-typo}
-                [2024-01-12 v.0.86 Daniel Flipo]
+                [2024-04-18 v.0.87 Daniel Flipo]
 \DeclareRelease{v0.4}{2021-01-01}{lua-typo-2021-04-18.sty}
 \DeclareRelease{v0.65}{2023-03-08}{lua-typo-2023-03-08.sty}
 \DeclareCurrentRelease{}{2023-09-13}
@@ -202,6 +202,15 @@ luatypo = { }
    }%
 \fi
 \AtBeginDocument{%
+  \@ifpackageloaded{reledmac}%
+    {\PackageWarning{lua-typo}{%
+        'lua-typo' is incompatible with\MessageBreak
+        the 'reledmac' package.\MessageBreak
+        'lua-typo' checking disabled.\MessageBreak
+        Reported}%
+     \LT@Nonetrue
+     \directlua{ luatypo.None = true }%
+    }{}%
   \directlua{
     luatypo.HYPHmax = tex.count.luatypoHyphMax
     luatypo.PAGEmin = tex.count.luatypoPageMin
@@ -229,10 +238,10 @@ luatypo = { }
 \ifLT@None
   \directlua{
     texio.write_nl(' ')
-    texio.write_nl('***********************************')
-    texio.write_nl('*** lua-typo loaded with NO option:')
+    texio.write_nl('************************************')
+    texio.write_nl('*** lua-typo running with NO option:')
     texio.write_nl('*** NO CHECK PERFORMED! ***')
-    texio.write_nl('***********************************')
+    texio.write_nl('************************************')
     texio.write_nl(' ')
    }%
 \else
@@ -924,6 +933,7 @@ local check_marginnote = function (head, line, colno, vpos, bpmn)
   local MarginparPos    = luatypo.MarginparPos
   local margintol       = luatypo.MParTol
   local marginpp        = tex.getdimen("marginparpush")
+  local textht          = tex.getdimen("textheight")
   local pflag  = false
   local ofirst = true
   local ufirst = true
@@ -977,7 +987,6 @@ local check_marginnote = function (head, line, colno, vpos, bpmn)
     last = head
     head = next
   end
-  local textht = tex.getdimen("textheight")
   if bottom > textht + margintol and MarginparPos then
      pflag = true
      local COLOR = luatypo.colortbl[17]
@@ -995,22 +1004,19 @@ local get_pagebody = function (head)
     fn = fn.next
   until fn.id == VLIST and fn.height > 0
   first = fn.list
-  for n in traverse_id(VLIST,first) do
-      if n.subtype == 0 and n.height >= textht-1 and
-         n.height <= textht+8                        then
-         body = n
-         break
-      else
-         local ff = n.list
-         for nn in traverse_id(VLIST,ff) do
-             if nn.subtype == 0 and nn.height >= textht-1 and
-                nn.height <= textht+8                          then
-                body = nn
-                break
-             end
-         end
-      end
-  end
+  repeat
+    for n in traverse_id(VLIST,first) do
+        if n.subtype == 0 and n.height >= textht-1 then
+           if n.height <= textht+8  then
+              body = n
+              break
+           else
+              first = n.list
+           end
+        else
+        end
+    end
+  until body or not first
   if not body then
      texio.write_nl('***lua-typo ERROR: PAGE BODY *NOT* FOUND!***')
   end
@@ -1290,22 +1296,21 @@ check_vtop = function (top, colno, vpos)
           color_line (head, COLOR)
           backpar = false
        end
-    elseif head and head.id == HLIST and head.subtype == BOX and
-           head.width > 0                                    then
-      if head.height == 0 then
-         bpmn, pflag = check_marginnote(head, line, colno, vpos, bpmn)
-         if pflag then pageflag = true end
-      else
-         local hf = head.list
-         if hf and hf.id == VLIST and hf.subtype == 0 then
-            break
+    elseif head and head.id == HLIST and head.subtype == BOX then
+      if head.width > 0 then
+         if head.height == 0 then
+            bpmn, pflag = check_marginnote(head, line, colno, vpos, bpmn)
+            if pflag then pageflag = true end
+            page_bottom, body_bottom = check_EOP(nextnode)
          else
-            vpos = vpos + head.height + head.depth
-            pageline = pageline + 1
-            line = pageline
-            page_bottom, body_bottom = check_EOP (nextnode)
+            local hf = head.list
+            if hf and hf.id == VLIST and hf.subtype == 0 then
+               break
+            end
          end
       end
+      vpos = vpos + head.height + head.depth
+      page_bottom, body_bottom = check_EOP (nextnode)
     elseif head.id == HLIST and
           (head.subtype == EQN or head.subtype == ALIGN) and
           (head.height > 0 or head.depth > 0) then
@@ -1374,7 +1379,7 @@ check_vtop = function (top, colno, vpos)
              local n = head
              repeat
                n = n.prev
-             until n.id == HLIST
+             until n.id == HLIST and n.subtype == LINE
              color_line (n, COLOR)
           end
           first_bot = false
@@ -1468,7 +1473,7 @@ luatypo.check_page = function (head)
 end
 return luatypo.check_page
 \end{luacode}
-\AtEndOfPackage{%
+\AtBeginDocument{%
   \directlua{
     if not luatypo.None then
        luatexbase.add_to_callback

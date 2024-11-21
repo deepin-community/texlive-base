@@ -20,1648 +20,1493 @@
 -- -------------------------------------------
 -- 
 -- This file is part of the LuaLaTeX package 'piton'.
--- Version 2.4 of 2024/01/15
+piton_version = "4.1" -- 2024/10/18
 
 
-if piton.comment_latex == nil then piton.comment_latex = ">" end
+
+
+
+piton.comment_latex = piton.comment_latex or ">"
 piton.comment_latex = "#" .. piton.comment_latex
-function piton.open_brace ()
-   tex.sprint("{")
-end
-function piton.close_brace ()
-   tex.sprint("}")
+local sprintL3
+function sprintL3 ( s )
+  tex.sprint ( luatexbase.catcodetables.expl , s )
 end
 local P, S, V, C, Ct, Cc = lpeg.P, lpeg.S, lpeg.V, lpeg.C, lpeg.Ct, lpeg.Cc
-local Cf, Cs , Cg , Cmt , Cb = lpeg.Cf, lpeg.Cs, lpeg.Cg , lpeg.Cmt , lpeg.Cb
-local R = lpeg.R
-local function Q(pattern)
+local Cs , Cg , Cmt , Cb = lpeg.Cs, lpeg.Cg , lpeg.Cmt , lpeg.Cb
+local B , R = lpeg.B , lpeg.R
+local Q
+function Q ( pattern )
   return Ct ( Cc ( luatexbase.catcodetables.CatcodeTableOther ) * C ( pattern ) )
 end
-local function L(pattern)
-  return Ct ( C ( pattern ) )
+local L
+function L ( pattern ) return
+  Ct ( C ( pattern ) )
 end
-local function Lc(string)
-  return Cc ( { luatexbase.catcodetables.expl , string } )
+local Lc
+function Lc ( string ) return
+  Cc ( { luatexbase.catcodetables.expl , string } )
 end
-local function K(style, pattern)
-  return
-     Lc ( "{\\PitonStyle{" .. style .. "}{" )
-     * Q ( pattern )
-     * Lc ( "}}" )
+local K
+function K ( style , pattern ) return
+  Lc ( [[ {\PitonStyle{ ]] .. style .. "}{" )
+  * Q ( pattern )
+  * Lc "}}"
 end
-local function WithStyle(style,pattern)
-  return
-       Ct ( Cc "Open" * Cc ( "{\\PitonStyle{" .. style .. "}{" ) * Cc "}}" )
-     * pattern
-     * Ct ( Cc "Close" )
+local WithStyle
+function WithStyle ( style , pattern ) return
+    Ct ( Cc "Open" * Cc ( [[{\PitonStyle{]] .. style .. "}{" ) * Cc "}}" )
+  * pattern
+  * Ct ( Cc "Close" )
 end
 Escape = P ( false )
-if piton.begin_escape ~= nil
-then
+EscapeClean = P ( false )
+if piton.begin_escape then
   Escape =
-    P(piton.begin_escape)
-    * L ( ( 1 - P(piton.end_escape) ) ^ 1 )
-    * P(piton.end_escape)
+    P ( piton.begin_escape )
+    * L ( ( 1 - P ( piton.end_escape ) ) ^ 1 )
+    * P ( piton.end_escape )
+  EscapeClean =
+    P ( piton.begin_escape )
+    * ( 1 - P ( piton.end_escape ) ) ^ 1
+    * P ( piton.end_escape )
 end
 EscapeMath = P ( false )
-if piton.begin_escape_math ~= nil
-then
+if piton.begin_escape_math then
   EscapeMath =
-    P(piton.begin_escape_math)
-    * Lc ( "\\ensuremath{" )
+    P ( piton.begin_escape_math )
+    * Lc "\\ensuremath{"
     * L ( ( 1 - P(piton.end_escape_math) ) ^ 1 )
-    * Lc ( "}" )
-    * P(piton.end_escape_math)
+    * Lc "}"
+    * P ( piton.end_escape_math )
 end
 lpeg.locale(lpeg)
-local alpha, digit = lpeg.alpha, lpeg.digit
+local alpha , digit = lpeg.alpha , lpeg.digit
 local space = P " "
-local letter = alpha + P "_"
-  + P "â" + P "à" + P "ç" + P "é" + P "è" + P "ê" + P "ë" + P "ï" + P "î"
-  + P "ô" + P "û" + P "ü" + P "Â" + P "À" + P "Ç" + P "É" + P "È" + P "Ê"
-  + P "Ë" + P "Ï" + P "Î" + P "Ô" + P "Û" + P "Ü"
+local letter = alpha + "_" + "â" + "à" + "ç" + "é" + "è" + "ê" + "ë" + "ï" + "î"
+                    + "ô" + "û" + "ü" + "Â" + "À" + "Ç" + "É" + "È" + "Ê" + "Ë"
+                    + "Ï" + "Î" + "Ô" + "Û" + "Ü"
 
 local alphanum = letter + digit
 local identifier = letter * alphanum ^ 0
-local Identifier = K ( 'Identifier' , identifier )
+local Identifier = K ( 'Identifier.Internal' , identifier )
 local Number =
   K ( 'Number' ,
-      ( digit^1 * P "." * digit^0 + digit^0 * P "." * digit^1 + digit^1 )
-      * ( S "eE" * S "+-" ^ -1 * digit^1 ) ^ -1
-      + digit^1
+      ( digit ^ 1 * P "." * # ( 1 - P "." ) * digit ^ 0
+        + digit ^ 0 * P "." * digit ^ 1
+        + digit ^ 1 )
+      * ( S "eE" * S "+-" ^ -1 * digit ^ 1 ) ^ -1
+      + digit ^ 1
     )
-local Word
-if piton.begin_escape ~= nil -- before : ''
-then Word = Q ( ( ( 1 - space - P(piton.begin_escape) - P(piton.end_escape) )
-                   - S "'\"\r[()]" - digit ) ^ 1 )
-else Word = Q ( ( ( 1 - space ) - S "'\"\r[()]" - digit ) ^ 1 )
+local lpeg_central = 1 - S " '\"\r[({})]" - digit
+if piton.begin_escape then
+  lpeg_central = lpeg_central - piton.begin_escape
 end
-local Space = ( Q " " ) ^ 1
+if piton.begin_escape_math then
+  lpeg_central = lpeg_central - piton.begin_escape_math
+end
+local Word = Q ( lpeg_central ^ 1 )
+local Space = Q " " ^ 1
 
-local SkipSpace = ( Q " " ) ^ 0
+local SkipSpace = Q " " ^ 0
 
 local Punct = Q ( S ".,:;!" )
 
-local Tab = P "\t" * Lc ( '\\l__piton_tab_tl' )
-local SpaceIndentation = Lc ( '\\__piton_an_indentation_space:' ) * ( Q " " )
-local Delim = Q ( S "[()]" )
-local VisualSpace = space * Lc "\\l__piton_space_tl"
+local Tab = "\t" * Lc [[ \__piton_tab: ]]
+local SpaceIndentation = Lc [[ \__piton_leading_space: ]] * Q " "
+local Delim = Q ( S "[({})]" )
+local SpaceInString = space * Lc [[ \l__piton_space_in_string_tl ]]
+local LPEG0 = { }
+local LPEG1 = { }
+local LPEG2 = { }
+local LPEG_cleaner = { }
+local Compute_braces
+function Compute_braces ( lpeg_string ) return
+  P { "E" ,
+       E =
+           (
+             "{" * V "E" * "}"
+             +
+             lpeg_string
+             +
+             ( 1 - S "{}" )
+           ) ^ 0
+    }
+end
+local Compute_DetectedCommands
+function Compute_DetectedCommands ( lang , braces ) return
+  Ct (
+       Cc "Open"
+        * C ( piton.DetectedCommands * space ^ 0 * P "{" )
+        * Cc "}"
+     )
+   * ( braces
+       / ( function ( s )
+             if s ~= '' then return
+               LPEG1[lang] : match ( s )
+             end
+           end )
+     )
+   * P "}"
+   * Ct ( Cc "Close" )
+end
+local Compute_LPEG_cleaner
+function Compute_LPEG_cleaner ( lang , braces ) return
+  Ct ( ( piton.DetectedCommands * "{"
+          * ( braces
+              / ( function ( s )
+                    if s ~= '' then return
+                      LPEG_cleaner[lang] : match ( s )
+                    end
+                  end )
+            )
+          * "}"
+         + EscapeClean
+         +  C ( P ( 1 ) )
+        ) ^ 0 ) / table.concat
+end
+local ParseAgain
+function ParseAgain ( code )
+  if code ~= '' then return
+    LPEG1[piton.language] : match ( code )
+  end
+end
 local Beamer = P ( false )
 local BeamerBeginEnvironments = P ( true )
 local BeamerEndEnvironments = P ( true )
-if piton_beamer
-then
-  local BeamerNamesEnvironments =
-    P "uncoverenv" + P "onlyenv" + P "visibleenv" + P "invisibleenv"
-    + P "alertenv" + P "actionenv"
-  BeamerBeginEnvironments =
-      ( space ^ 0 *
-        L
-          (
-            P "\\begin{" * BeamerNamesEnvironments * "}"
-            * ( P "<" * ( 1 - P ">" ) ^ 0 * P ">" ) ^ -1
-          )
-        * P "\r"
-      ) ^ 0
-  BeamerEndEnvironments =
-      ( space ^ 0 *
-        L ( P "\\end{" * BeamerNamesEnvironments * P "}" )
-        * P "\r"
-      ) ^ 0
-  function OneBeamerEnvironment(name,lpeg)
-    return
-        Ct ( Cc "Open"
-              * C (
-                    P ( "\\begin{" .. name ..   "}" )
-                    * ( P "<" * (1 - P ">") ^ 0 * P ">" ) ^ -1
-                  )
-             * Cc ( "\\end{" .. name ..  "}" )
-            )
-       * (
-           C ( ( 1 - P ( "\\end{" .. name .. "}" ) ) ^ 0 )
-           / ( function (s) return lpeg : match(s) end )
-         )
-       * P ( "\\end{" .. name ..  "}" ) * Ct ( Cc "Close" )
-  end
+piton.BeamerEnvironments = P ( false )
+for _ , x  in ipairs ( piton.beamer_environments )  do
+  piton.BeamerEnvironments = piton.BeamerEnvironments + x
 end
-local languages = { }
-local Operator =
-  K ( 'Operator' ,
-      P "!=" + P "<>" + P "==" + P "<<" + P ">>" + P "<=" + P ">=" + P ":="
-      + P "//" + P "**" + S "-~+/*%=<>&.@|"
-    )
-
-local OperatorWord =
-  K ( 'Operator.Word' , P "in" + P "is" + P "and" + P "or" + P "not" )
-
-local Keyword =
-  K ( 'Keyword' ,
-      P "as" + P "assert" + P "break" + P "case" + P "class" + P "continue"
-      + P "def" + P "del" + P "elif" + P "else" + P "except" + P "exec"
-      + P "finally" + P "for" + P "from" + P "global" + P "if" + P "import"
-      + P "lambda" + P "non local" + P "pass" + P "return" + P "try"
-      + P "while" + P "with" + P "yield" + P "yield from" )
-  + K ( 'Keyword.Constant' ,P "True" + P "False" + P "None" )
-
-local Builtin =
-  K ( 'Name.Builtin' ,
-      P "__import__" + P "abs" + P "all" + P "any" + P "bin" + P "bool"
-    + P "bytearray" + P "bytes" + P "chr" + P "classmethod" + P "compile"
-    + P "complex" + P "delattr" + P "dict" + P "dir" + P "divmod"
-    + P "enumerate" + P "eval" + P "filter" + P "float" + P "format"
-    + P "frozenset" + P "getattr" + P "globals" + P "hasattr" + P "hash"
-    + P "hex" + P "id" + P "input" + P "int" + P "isinstance" + P "issubclass"
-    + P "iter" + P "len" + P "list" + P "locals" + P "map" + P "max"
-    + P "memoryview" + P "min" + P "next" + P "object" + P "oct" + P "open"
-    + P "ord" + P "pow" + P "print" + P "property" + P "range" + P "repr"
-    + P "reversed" + P "round" + P "set" + P "setattr" + P "slice" + P "sorted"
-    + P "staticmethod" + P "str" + P "sum" + P "super" + P "tuple" + P "type"
-    + P "vars" + P "zip" )
-
-local Exception =
-  K ( 'Exception' ,
-      P "ArithmeticError" + P "AssertionError" + P "AttributeError"
-   + P "BaseException" + P "BufferError" + P "BytesWarning" + P "DeprecationWarning"
-   + P "EOFError" + P "EnvironmentError" + P "Exception" + P "FloatingPointError"
-   + P "FutureWarning" + P "GeneratorExit" + P "IOError" + P "ImportError"
-   + P "ImportWarning" + P "IndentationError" + P "IndexError" + P "KeyError"
-   + P "KeyboardInterrupt" + P "LookupError" + P "MemoryError" + P "NameError"
-   + P "NotImplementedError" + P "OSError" + P "OverflowError"
-   + P "PendingDeprecationWarning" + P "ReferenceError" + P "ResourceWarning"
-   + P "RuntimeError" + P "RuntimeWarning" + P "StopIteration"
-   + P "SyntaxError" + P "SyntaxWarning" + P "SystemError" + P "SystemExit"
-   + P "TabError" + P "TypeError" + P "UnboundLocalError" + P "UnicodeDecodeError"
-   + P "UnicodeEncodeError" + P "UnicodeError" + P "UnicodeTranslateError"
-   + P "UnicodeWarning" + P "UserWarning" + P "ValueError" + P "VMSError"
-   + P "Warning" + P "WindowsError" + P "ZeroDivisionError"
-   + P "BlockingIOError" + P "ChildProcessError" + P "ConnectionError"
-   + P "BrokenPipeError" + P "ConnectionAbortedError" + P "ConnectionRefusedError"
-   + P "ConnectionResetError" + P "FileExistsError" + P "FileNotFoundError"
-   + P "InterruptedError" + P "IsADirectoryError" + P "NotADirectoryError"
-   + P "PermissionError" + P "ProcessLookupError" + P "TimeoutError"
-   + P "StopAsyncIteration" + P "ModuleNotFoundError" + P "RecursionError" )
-
-local RaiseException = K ( 'Keyword' , P "raise" ) * SkipSpace * Exception * Q ( P "(" )
-
-local Decorator = K ( 'Name.Decorator' , P "@" * letter^1  )
-local DefClass =
-  K ( 'Keyword' , P "class" ) * Space * K ( 'Name.Class' , identifier )
-local ImportAs =
-  K ( 'Keyword' , P "import" )
-   * Space
-   * K ( 'Name.Namespace' ,
-         identifier * ( P "." * identifier ) ^ 0 )
-   * (
-       ( Space * K ( 'Keyword' , P "as" ) * Space
-          * K ( 'Name.Namespace' , identifier ) )
-       +
-       ( SkipSpace * Q ( P "," ) * SkipSpace
-          * K ( 'Name.Namespace' , identifier ) ) ^ 0
-     )
-local FromImport =
-  K ( 'Keyword' , P "from" )
-    * Space * K ( 'Name.Namespace' , identifier )
-    * Space * K ( 'Keyword' , P "import" )
-local PercentInterpol =
-  K ( 'String.Interpol' ,
-      P "%"
-      * ( P "(" * alphanum ^ 1 * P ")" ) ^ -1
-      * ( S "-#0 +" ) ^ 0
-      * ( digit ^ 1 + P "*" ) ^ -1
-      * ( P "." * ( digit ^ 1 + P "*" ) ) ^ -1
-      * ( S "HlL" ) ^ -1
-      * S "sdfFeExXorgiGauc%"
-    )
-local SingleShortString =
-  WithStyle ( 'String.Short' ,
-         Q ( P "f'" + P "F'" )
-         * (
-             K ( 'String.Interpol' , P "{" )
-              * K ( 'Interpol.Inside' , ( 1 - S "}':" ) ^ 0  )
-              * Q ( P ":" * (1 - S "}:'") ^ 0 ) ^ -1
-              * K ( 'String.Interpol' , P "}" )
-             +
-             VisualSpace
-             +
-             Q ( ( P "\\'" + P "{{" + P "}}" + 1 - S " {}'" ) ^ 1 )
-           ) ^ 0
-         * Q ( P "'" )
-       +
-         Q ( P "'" + P "r'" + P "R'" )
-         * ( Q ( ( P "\\'" + 1 - S " '\r%" ) ^ 1 )
-             + VisualSpace
-             + PercentInterpol
-             + Q ( P "%" )
-           ) ^ 0
-         * Q ( P "'" ) )
-
-local DoubleShortString =
-  WithStyle ( 'String.Short' ,
-         Q ( P "f\"" + P "F\"" )
-         * (
-             K ( 'String.Interpol' , P "{" )
-               * Q ( ( 1 - S "}\":" ) ^ 0 , 'Interpol.Inside' )
-               * ( K ( 'String.Interpol' , P ":" ) * Q ( (1 - S "}:\"") ^ 0 ) ) ^ -1
-               * K ( 'String.Interpol' , P "}" )
-             +
-             VisualSpace
-             +
-             Q ( ( P "\\\"" + P "{{" + P "}}" + 1 - S " {}\"" ) ^ 1 )
-            ) ^ 0
-         * Q ( P "\"" )
-       +
-         Q ( P "\"" + P "r\"" + P "R\"" )
-         * ( Q ( ( P "\\\"" + 1 - S " \"\r%" ) ^ 1 )
-             + VisualSpace
-             + PercentInterpol
-             + Q ( P "%" )
-           ) ^ 0
-         * Q ( P "\"" ) )
-
-local ShortString = SingleShortString + DoubleShortString
-local balanced_braces =
-  P { "E" ,
-       E =
-           (
-             P "{" * V "E" * P "}"
-             +
-             ShortString
-             +
-             ( 1 - S "{}" )
-           ) ^ 0
-    }
-if piton_beamer
-then
-  Beamer =
-      L ( P "\\pause" * ( P "[" * ( 1 - P "]" ) ^ 0 * P "]" ) ^ -1 )
-    +
+BeamerBeginEnvironments =
+    ( space ^ 0 *
+      L
+        (
+          P [[\begin{]] * piton.BeamerEnvironments * "}"
+          * ( "<" * ( 1 - P ">" ) ^ 0 * ">" ) ^ -1
+        )
+      * "\r"
+    ) ^ 0
+BeamerEndEnvironments =
+    ( space ^ 0 *
+      L ( P [[\end{]] * piton.BeamerEnvironments * "}" )
+      * "\r"
+    ) ^ 0
+local Compute_Beamer
+function Compute_Beamer ( lang , braces )
+  local lpeg = L ( P [[\pause]] * ( "[" * ( 1 - P "]" ) ^ 0 * "]" ) ^ -1 )
+  lpeg = lpeg +
       Ct ( Cc "Open"
-            * C (
-                  (
-                    P "\\uncover" + P "\\only" + P "\\alert" + P "\\visible"
-                    + P "\\invisible" + P "\\action"
-                  )
-                  * ( P "<" * (1 - P ">") ^ 0 * P ">" ) ^ -1
+            * C ( piton.BeamerCommands
+                  * ( "<" * ( 1 - P ">" ) ^ 0 * ">" ) ^ -1
                   * P "{"
                 )
             * Cc "}"
          )
-       * ( C ( balanced_braces ) / (function (s) return MainLoopPython:match(s) end ) )
-       * P "}" * Ct ( Cc "Close" )
-    + OneBeamerEnvironment ( "uncoverenv" , MainLoopPython )
-    + OneBeamerEnvironment ( "onlyenv" , MainLoopPython )
-    + OneBeamerEnvironment ( "visibleenv" , MainLoopPython )
-    + OneBeamerEnvironment ( "invisibleenv" , MainLoopPython )
-    + OneBeamerEnvironment ( "alertenv" , MainLoopPython )
-    + OneBeamerEnvironment ( "actionenv" , MainLoopPython )
-    +
-      L (
-          ( P "\\alt" )
-          * P "<" * (1 - P ">") ^ 0 * P ">"
-          * P "{"
-        )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
+       * ( braces /
+           ( function ( s ) if s ~= '' then return LPEG1[lang] : match ( s ) end end ) )
+       * "}"
+       * Ct ( Cc "Close" )
+  lpeg = lpeg +
+    L ( P [[\alt]] * "<" * ( 1 - P ">" ) ^ 0 * ">{" )
+     * ( braces /
+         ( function ( s ) if s ~= '' then return LPEG1[lang] : match ( s ) end end ) )
+     * L ( P "}{" )
+     * ( braces /
+         ( function ( s ) if s ~= '' then return LPEG1[lang] : match ( s ) end end ) )
+     * L ( P "}" )
+  lpeg = lpeg +
+      L ( P [[\temporal]] * "<" * ( 1 - P ">" ) ^ 0 * ">{" )
+      * ( braces
+          / ( function ( s )
+              if s ~= '' then return LPEG1[lang] : match ( s ) end end ) )
       * L ( P "}{" )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
+      * ( braces
+          / ( function ( s )
+              if s ~= '' then return LPEG1[lang] : match ( s ) end end ) )
+      * L ( P "}{" )
+      * ( braces
+          / ( function ( s )
+              if s ~= '' then return LPEG1[lang] : match ( s ) end end ) )
       * L ( P "}" )
-    +
-      L (
-          ( P "\\temporal" )
-          * P "<" * (1 - P ">") ^ 0 * P ">"
-          * P "{"
-        )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
-      * L ( P "}{" )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
-      * L ( P "}{" )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
-      * L ( P "}" )
-end
-DetectedCommands =
-      Ct ( Cc "Open"
-            * C (
-                  piton.ListCommands
-                  * ( P "<" * (1 - P ">") ^ 0 * P ">" ) ^ -1
-                  * P "{"
-                )
-            * Cc "}"
-         )
-       * ( C ( balanced_braces ) / (function (s) return MainLoopPython:match(s) end ) )
-       * P "}" * Ct ( Cc "Close" )
-local PromptHastyDetection = ( # ( P ">>>" + P "..." ) * Lc ( '\\__piton_prompt:' ) ) ^ -1
-local Prompt = K ( 'Prompt' , ( ( P ">>>" + P "..." ) * P " " ^ -1 ) ^ -1  )
-local EOL =
-  P "\r"
-  *
-  (
-    ( space^0 * -1 )
-    +
-    Ct (
-         Cc "EOL"
-         *
-         Ct (
-              Lc "\\__piton_end_line:"
-              * BeamerEndEnvironments
-              * BeamerBeginEnvironments
-              * PromptHastyDetection
-              * Lc "\\__piton_newline: \\__piton_begin_line:"
-              * Prompt
-            )
-       )
-  )
-  *
-  SpaceIndentation ^ 0
-local SingleLongString =
-  WithStyle ( 'String.Long' ,
-     ( Q ( S "fF" * P "'''" )
-         * (
-             K ( 'String.Interpol' , P "{"  )
-               * K ( 'Interpol.Inside' , ( 1 - S "}:\r" - P "'''" ) ^ 0  )
-               * Q ( P ":" * (1 - S "}:\r" - P "'''" ) ^ 0 ) ^ -1
-               * K ( 'String.Interpol' , P "}"  )
-             +
-             Q ( ( 1 - P "'''" - S "{}'\r" ) ^ 1 )
-             +
-             EOL
-           ) ^ 0
-       +
-         Q ( ( S "rR" ) ^ -1  * P "'''" )
-         * (
-             Q ( ( 1 - P "'''" - S "\r%" ) ^ 1 )
-             +
-             PercentInterpol
-             +
-             P "%"
-             +
-             EOL
-           ) ^ 0
-      )
-      * Q ( P "'''" ) )
-
-local DoubleLongString =
-  WithStyle ( 'String.Long' ,
-     (
-        Q ( S "fF" * P "\"\"\"" )
-        * (
-            K ( 'String.Interpol', P "{"  )
-              * K ( 'Interpol.Inside' , ( 1 - S "}:\r" - P "\"\"\"" ) ^ 0 )
-              * Q ( P ":" * (1 - S "}:\r" - P "\"\"\"" ) ^ 0 ) ^ -1
-              * K ( 'String.Interpol' , P "}"  )
-            +
-            Q ( ( 1 - P "\"\"\"" - S "{}\"\r" ) ^ 1 )
-            +
-            EOL
-          ) ^ 0
-      +
-        Q ( ( S "rR" ) ^ -1  * P "\"\"\"" )
-        * (
-            Q ( ( 1 - P "\"\"\"" - S "%\r" ) ^ 1 )
-            +
-            PercentInterpol
-            +
-            P "%"
-            +
-            EOL
-          ) ^ 0
-     )
-     * Q ( P "\"\"\"" )
-  )
-local LongString = SingleLongString + DoubleLongString
-local StringDoc =
-    K ( 'String.Doc' , P "\"\"\"" )
-      * ( K ( 'String.Doc' , (1 - P "\"\"\"" - P "\r" ) ^ 0  ) * EOL
-          * Tab ^ 0
-        ) ^ 0
-      * K ( 'String.Doc' , ( 1 - P "\"\"\"" - P "\r" ) ^ 0 * P "\"\"\"" )
-local CommentMath =
-  P "$" * K ( 'Comment.Math' , ( 1 - S "$\r" ) ^ 1  ) * P "$"
-
-local Comment =
-  WithStyle ( 'Comment' ,
-     Q ( P "#" )
-     * ( CommentMath + Q ( ( 1 - S "$\r" ) ^ 1 ) ) ^ 0 )
-  * ( EOL + -1 )
-local CommentLaTeX =
-  P(piton.comment_latex)
-  * Lc "{\\PitonStyle{Comment.LaTeX}{\\ignorespaces"
-  * L ( ( 1 - P "\r" ) ^ 0 )
-  * Lc "}}"
-  * ( EOL + -1 )
-local expression =
-  P { "E" ,
-       E = ( P "'" * ( P "\\'" + 1 - S "'\r" ) ^ 0 * P "'"
-             + P "\"" * (P "\\\"" + 1 - S "\"\r" ) ^ 0 * P "\""
-             + P "{" * V "F" * P "}"
-             + P "(" * V "F" * P ")"
-             + P "[" * V "F" * P "]"
-             + ( 1 - S "{}()[]\r," ) ) ^ 0 ,
-       F = ( P "{" * V "F" * P "}"
-             + P "(" * V "F" * P ")"
-             + P "[" * V "F" * P "]"
-             + ( 1 - S "{}()[]\r\"'" ) ) ^ 0
-    }
-local Param =
-  SkipSpace * Identifier * SkipSpace
-   * (
-         K ( 'InitialValues' , P "=" * expression )
-       + Q ( P ":" ) * SkipSpace * K ( 'Name.Type' , letter ^ 1  )
-     ) ^ -1
-local Params = ( Param * ( Q "," * Param ) ^ 0 ) ^ -1
-local DefFunction =
-  K ( 'Keyword' , P "def" )
-  * Space
-  * K ( 'Name.Function.Internal' , identifier )
-  * SkipSpace
-  * Q ( P "(" ) * Params * Q ( P ")" )
-  * SkipSpace
-  * ( Q ( P "->" ) * SkipSpace * K ( 'Name.Type' , identifier  ) ) ^ -1
-  * K ( 'ParseAgain' , ( 1 - S ":\r" )^0  )
-  * Q ( P ":" )
-  * ( SkipSpace
-      * ( EOL + CommentLaTeX + Comment ) -- in all cases, that contains an EOL
-      * Tab ^ 0
-      * SkipSpace
-      * StringDoc ^ 0 -- there may be additionnal docstrings
-    ) ^ -1
-local ExceptionInConsole = Exception *  Q ( ( 1 - P "\r" ) ^ 0 ) * EOL
-local MainPython =
-       EOL
-     + Space
-     + Tab
-     + Escape + EscapeMath
-     + CommentLaTeX
-     + Beamer
-     + DetectedCommands
-     + LongString
-     + Comment
-     + ExceptionInConsole
-     + Delim
-     + Operator
-     + OperatorWord * ( Space + Punct + Delim + EOL + -1 )
-     + ShortString
-     + Punct
-     + FromImport
-     + RaiseException
-     + DefFunction
-     + DefClass
-     + Keyword * ( Space + Punct + Delim + EOL + -1 )
-     + Decorator
-     + Builtin * ( Space + Punct + Delim + EOL + -1 )
-     + Identifier
-     + Number
-     + Word
-MainLoopPython =
-  (  ( space^1 * -1 )
-     + MainPython
-  ) ^ 0
-local python = P ( true )
-
-python =
-  Ct (
-       ( ( space - P "\r" ) ^0 * P "\r" ) ^ -1
-       * BeamerBeginEnvironments
-       * PromptHastyDetection
-       * Lc '\\__piton_begin_line:'
-       * Prompt
-       * SpaceIndentation ^ 0
-       * MainLoopPython
-       * -1
-       * Lc '\\__piton_end_line:'
-     )
-languages['python'] = python
-local Delim = Q ( P "[|" + P "|]" + S "[()]" )
-local Punct = Q ( S ",:;!" )
-local cap_identifier = R "AZ" * ( R "az" + R "AZ" + S "_'" + digit ) ^ 0
-local Constructor = K ( 'Name.Constructor' , cap_identifier )
-local ModuleType = K ( 'Name.Type' , cap_identifier )
-local identifier =
-  ( R "az" + P "_") * ( R "az" + R "AZ" + S "_'" + digit ) ^ 0
-local Identifier = K ( 'Identifier' , identifier )
-local expression_for_fields =
-  P { "E" ,
-       E = ( P "{" * V "F" * P "}"
-             + P "(" * V "F" * P ")"
-             + P "[" * V "F" * P "]"
-             + P "\"" * (P "\\\"" + 1 - S "\"\r" )^0 * P "\""
-             + P "'" * ( P "\\'" + 1 - S "'\r" )^0 * P "'"
-             + ( 1 - S "{}()[]\r;" ) ) ^ 0 ,
-       F = ( P "{" * V "F" * P "}"
-             + P "(" * V "F" * P ")"
-             + P "[" * V "F" * P "]"
-             + ( 1 - S "{}()[]\r\"'" ) ) ^ 0
-    }
-local OneFieldDefinition =
-    ( K ( 'KeyWord' , P "mutable" ) * SkipSpace ) ^ -1
-  * K ( 'Name.Field' , identifier ) * SkipSpace
-  * Q ":" * SkipSpace
-  * K ( 'Name.Type' , expression_for_fields )
-  * SkipSpace
-
-local OneField =
-    K ( 'Name.Field' , identifier ) * SkipSpace
-  * Q "=" * SkipSpace
-  * ( C ( expression_for_fields ) / ( function (s) return LoopOCaml:match(s) end ) )
-  * SkipSpace
-
-local Record =
-  Q "{" * SkipSpace
-  *
-    (
-      OneFieldDefinition * ( Q ";" * SkipSpace * OneFieldDefinition ) ^ 0
-      +
-      OneField * ( Q ";" * SkipSpace * OneField ) ^ 0
-    )
-  *
-  Q "}"
-local DotNotation =
-  (
-      K ( 'Name.Module' , cap_identifier )
-        * Q "."
-        * ( Identifier + Constructor + Q "(" + Q "[" + Q "{" )
-
-      +
-      Identifier
-        * Q "."
-        * K ( 'Name.Field' , identifier )
-  )
-  * ( Q "." * K ( 'Name.Field' , identifier ) ) ^ 0
-local Operator =
-  K ( 'Operator' ,
-      P "!=" + P "<>" + P "==" + P "<<" + P ">>" + P "<=" + P ">=" + P ":="
-      + P "||" + P "&&" + P "//" + P "**" + P ";;" + P "::" + P "->"
-      + P "+." + P "-." + P "*." + P "/."
-      + S "-~+/*%=<>&@|"
-    )
-
-local OperatorWord =
-  K ( 'Operator.Word' ,
-      P "and" + P "asr" + P "land" + P "lor" + P "lsl" + P "lxor"
-      + P "mod" + P "or" )
-
-local Keyword =
-  K ( 'Keyword' ,
-      P "assert" + P "as" + P "begin" + P "class" + P "constraint" + P "done"
-  + P "downto" + P "do" + P "else" + P "end" + P "exception" + P "external"
-  + P "for" + P "function" + P "functor" + P "fun"  + P "if"
-  + P "include" + P "inherit" + P "initializer" + P "in"  + P "lazy" + P "let"
-  + P "match" + P "method" + P "module" + P "mutable" + P "new" + P "object"
-  + P "of" + P "open" + P "private" + P "raise" + P "rec" + P "sig"
-  + P "struct" + P "then" + P "to" + P "try" + P "type"
-  + P "value" + P "val" + P "virtual" + P "when" + P "while" + P "with" )
-  + K ( 'Keyword.Constant' , P "true" + P "false" )
-
-local Builtin =
-  K ( 'Name.Builtin' , P "not" + P "incr" + P "decr" + P "fst" + P "snd" )
-local Exception =
-  K (   'Exception' ,
-       P "Division_by_zero" + P "End_of_File" + P "Failure"
-     + P "Invalid_argument" + P "Match_failure" + P "Not_found"
-     + P "Out_of_memory" + P "Stack_overflow" + P "Sys_blocked_io"
-     + P "Sys_error" + P "Undefined_recursive_module" )
-local Char =
-  K ( 'String.Short' , P "'" * ( ( 1 - P "'" ) ^ 0 + P "\\'" ) * P "'" )
-local balanced_braces =
-  P { "E" ,
-       E =
-           (
-             P "{" * V "E" * P "}"
-             +
-             P "\"" * ( 1 - S "\"" ) ^ 0 * P "\""  -- OCaml strings
-             +
-             ( 1 - S "{}" )
-           ) ^ 0
-    }
-if piton_beamer
-then
-  Beamer =
-      L ( P "\\pause" * ( P "[" * ( 1 - P "]" ) ^ 0 * P "]" ) ^ -1 )
-    +
-      Ct ( Cc "Open"
-            * C (
-                  (
-                    P "\\uncover" + P "\\only" + P "\\alert" + P "\\visible"
-                    + P "\\invisible" + P "\\action"
-                  )
-                  * ( P "<" * (1 - P ">") ^ 0 * P ">" ) ^ -1
-                  * P "{"
-                )
-            * Cc "}"
-         )
-       * ( C ( balanced_braces ) / (function (s) return MainLoopOCaml:match(s) end ) )
-       * P "}" * Ct ( Cc "Close" )
-    + OneBeamerEnvironment ( "uncoverenv" , MainLoopOCaml )
-    + OneBeamerEnvironment ( "onlyenv" , MainLoopOCaml )
-    + OneBeamerEnvironment ( "visibleenv" , MainLoopOCaml )
-    + OneBeamerEnvironment ( "invisibleenv" , MainLoopOCaml )
-    + OneBeamerEnvironment ( "alertenv" , MainLoopOCaml )
-    + OneBeamerEnvironment ( "actionenv" , MainLoopOCaml )
-    +
-      L (
-          ( P "\\alt" )
-          * P "<" * (1 - P ">") ^ 0 * P ">"
-          * P "{"
-        )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
-      * L ( P "}{" )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
-      * L ( P "}" )
-    +
-      L (
-          ( P "\\temporal" )
-          * P "<" * (1 - P ">") ^ 0 * P ">"
-          * P "{"
-        )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
-      * L ( P "}{" )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
-      * L ( P "}{" )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
-      * L ( P "}" )
-end
-DetectedCommands =
-      Ct ( Cc "Open"
-            * C (
-                  piton.ListCommands
-                  * ( P "<" * (1 - P ">") ^ 0 * P ">" ) ^ -1
-                  * P "{"
-                )
-            * Cc "}"
-         )
-       * ( C ( balanced_braces ) / (function (s) return MainLoopOCaml:match(s) end ) )
-       * P "}" * Ct ( Cc "Close" )
-local EOL =
-  P "\r"
-  *
-  (
-    ( space^0 * -1 )
-    +
-    Ct (
-         Cc "EOL"
-         *
-         Ct (
-              Lc "\\__piton_end_line:"
-              * BeamerEndEnvironments
-              * BeamerBeginEnvironments
-              * PromptHastyDetection
-              * Lc "\\__piton_newline: \\__piton_begin_line:"
-              * Prompt
-            )
-       )
-  )
-  *
-  SpaceIndentation ^ 0
-local ocaml_string =
-       Q ( P "\"" )
-     * (
-         VisualSpace
-         +
-         Q ( ( 1 - S " \"\r" ) ^ 1 )
-         +
-         EOL
-       ) ^ 0
-     * Q ( P "\"" )
-local String = WithStyle ( 'String.Long' , ocaml_string )
-local ext = ( R "az" + P "_" ) ^ 0
-local open = "{" * Cg(ext, 'init') * "|"
-local close = "|" * C(ext) * "}"
-local closeeq =
-  Cmt ( close * Cb('init'),
-        function (s, i, a, b) return a==b end )
-local QuotedStringBis =
-  WithStyle ( 'String.Long' ,
-      (
-        Space
-        +
-        Q ( ( 1 - S " \r" ) ^ 1 )
-        +
-        EOL
-      ) ^ 0  )
-
-local QuotedString =
-   C ( open * ( 1 - closeeq ) ^ 0  * close ) /
-  ( function (s) return QuotedStringBis : match(s) end )
-local Comment =
-  WithStyle ( 'Comment' ,
-     P {
-         "A" ,
-         A = Q "(*"
-             * ( V "A"
-                 + Q ( ( 1 - P "(*" - P "*)" - S "\r$\"" ) ^ 1 ) -- $
-                 + ocaml_string
-                 + P "$" * K ( 'Comment.Math' , ( 1 - S "$\r" ) ^ 1 ) * P "$" -- $
-                 + EOL
-               ) ^ 0
-             * Q "*)"
-       }   )
-local balanced_parens =
-  P { "E" ,
-       E =
-           (
-             P "(" * V "E" * P ")"
-             +
-             ( 1 - S "()" )
-           ) ^ 0
-    }
-local Argument =
-  K ( 'Identifier' , identifier )
-  + Q "(" * SkipSpace
-    * K ( 'Identifier' , identifier ) * SkipSpace
-    * Q ":" * SkipSpace
-    * K ( 'Name.Type' , balanced_parens ) * SkipSpace
-    * Q ")"
-local DefFunction =
-  K ( 'Keyword' , P "let open" )
-   * Space
-   * K ( 'Name.Module' , cap_identifier )
-  +
-  K ( 'Keyword' , P "let rec" + P "let" + P "and" )
-    * Space
-    * K ( 'Name.Function.Internal' , identifier )
-    * Space
-    * (
-        Q "=" * SkipSpace * K ( 'Keyword' , P "function" )
-        +
-        Argument
-         * ( SkipSpace * Argument ) ^ 0
-         * (
-             SkipSpace
-             * Q ":"
-             * K ( 'Name.Type' , ( 1 - P "=" ) ^ 0 )
-           ) ^ -1
-      )
-local DefModule =
-  K ( 'Keyword' , P "module" ) * Space
-  *
-    (
-          K ( 'Keyword' , P "type" ) * Space
-        * K ( 'Name.Type' , cap_identifier )
-      +
-        K ( 'Name.Module' , cap_identifier ) * SkipSpace
-        *
-          (
-            Q "(" * SkipSpace
-              * K ( 'Name.Module' , cap_identifier ) * SkipSpace
-              * Q ":" * SkipSpace
-              * K ( 'Name.Type' , cap_identifier ) * SkipSpace
-              *
-                (
-                  Q "," * SkipSpace
-                    * K ( 'Name.Module' , cap_identifier ) * SkipSpace
-                    * Q ":" * SkipSpace
-                    * K ( 'Name.Type' , cap_identifier ) * SkipSpace
-                ) ^ 0
-              * Q ")"
-          ) ^ -1
-        *
-          (
-            Q "=" * SkipSpace
-            * K ( 'Name.Module' , cap_identifier )  * SkipSpace
-            * Q "("
-            * K ( 'Name.Module' , cap_identifier ) * SkipSpace
-              *
-              (
-                Q ","
-                *
-                K ( 'Name.Module' , cap_identifier ) * SkipSpace
-              ) ^ 0
-            * Q ")"
-          ) ^ -1
-    )
-  +
-  K ( 'Keyword' , P "include" + P "open" )
-  * Space * K ( 'Name.Module' , cap_identifier )
-local TypeParameter = K ( 'TypeParameter' , P "'" * alpha * # ( 1 - P "'" ) )
-MainOCaml =
-       EOL
-     + Space
-     + Tab
-     + Escape + EscapeMath
-     + Beamer
-     + DetectedCommands
-     + TypeParameter
-     + String + QuotedString + Char
-     + Comment
-     + Delim
-     + Operator
-     + Punct
-     + FromImport
-     + Exception
-     + DefFunction
-     + DefModule
-     + Record
-     + Keyword * ( Space + Punct + Delim + EOL + -1 )
-     + OperatorWord * ( Space + Punct + Delim + EOL + -1 )
-     + Builtin * ( Space + Punct + Delim + EOL + -1 )
-     + DotNotation
-     + Constructor
-     + Identifier
-     + Number
-     + Word
-
-LoopOCaml = MainOCaml ^ 0
-
-MainLoopOCaml =
-  (  ( space^1 * -1 )
-     + MainOCaml
-  ) ^ 0
-local ocaml = P ( true )
-
-ocaml =
-  Ct (
-       ( ( space - P "\r" ) ^0 * P "\r" ) ^ -1
-       * BeamerBeginEnvironments
-       * Lc ( '\\__piton_begin_line:' )
-       * SpaceIndentation ^ 0
-       * MainLoopOCaml
-       * -1
-       * Lc ( '\\__piton_end_line:' )
-     )
-languages['ocaml'] = ocaml
-local Delim = Q ( S "{[()]}" )
-local Punct = Q ( S ",:;!" )
-local identifier = letter * alphanum ^ 0
-
-local Operator =
-  K ( 'Operator' ,
-      P "!=" + P "==" + P "<<" + P ">>" + P "<=" + P ">="
-      + P "||" + P "&&" + S "-~+/*%=<>&.@|!"
-    )
-
-local Keyword =
-  K ( 'Keyword' ,
-      P "alignas" + P "asm" + P "auto" + P "break" + P "case" + P "catch"
-      + P "class" + P "const" + P "constexpr" + P "continue"
-      + P "decltype" + P "do" + P "else" + P "enum" + P "extern"
-      + P "for" + P "goto" + P "if" + P "nexcept" + P "private" + P "public"
-      + P "register" + P "restricted" + P "return" + P "static" + P "static_assert"
-      + P "struct" + P "switch" + P "thread_local" + P "throw" + P "try"
-      + P "typedef" + P "union" + P "using" + P "virtual" + P "volatile"
-      + P "while"
-    )
-  + K ( 'Keyword.Constant' ,
-        P "default" + P "false" + P "NULL" + P "nullptr" + P "true"
-      )
-
-local Builtin =
-  K ( 'Name.Builtin' ,
-      P "alignof" + P "malloc" + P "printf" + P "scanf" + P "sizeof"
-    )
-
-local Type =
-  K ( 'Name.Type' ,
-      P "bool" + P "char" + P "char16_t" + P "char32_t" + P "double"
-      + P "float" + P "int" + P "int8_t" + P "int16_t" + P "int32_t"
-      + P "int64_t" + P "long" + P "short" + P "signed" + P "unsigned"
-      + P "void" + P "wchar_t"
-    )
-
-local DefFunction =
-  Type
-  * Space
-  * Q ( "*" ) ^ -1
-  * K ( 'Name.Function.Internal' , identifier )
-  * SkipSpace
-  * # P "("
-local DefClass =
-  K ( 'Keyword' , P "class" ) * Space * K ( 'Name.Class' , identifier )
-local String =
-  WithStyle ( 'String.Long' ,
-      Q "\""
-      * ( VisualSpace
-          + K ( 'String.Interpol' ,
-                P "%" * ( S "difcspxXou" + P "ld" + P "li" + P "hd" + P "hi" )
+  for _ , x in ipairs ( piton.beamer_environments ) do
+    lpeg = lpeg +
+          Ct ( Cc "Open"
+               * C (
+                      P ( [[\begin{]] .. x .. "}" )
+                      * ( "<" * ( 1 - P ">") ^ 0 * ">" ) ^ -1
+                    )
+               * Cc ( [[\end{]] .. x ..  "}" )
               )
-          + Q ( ( P "\\\"" + 1 - S " \"" ) ^ 1 )
-        ) ^ 0
-      * Q "\""
-    )
-local balanced_braces =
-  P { "E" ,
-       E =
-           (
-             P "{" * V "E" * P "}"
-             +
-             String
-             +
-             ( 1 - S "{}" )
-           ) ^ 0
-    }
-if piton_beamer
-then
-  Beamer =
-      L ( P "\\pause" * ( P "[" * ( 1 - P "]" ) ^ 0 * P "]" ) ^ -1 )
-    +
-      Ct ( Cc "Open"
-            * C (
-                  (
-                    P "\\uncover" + P "\\only" + P "\\alert" + P "\\visible"
-                    + P "\\invisible" + P "\\action"
-                  )
-                  * ( P "<" * (1 - P ">") ^ 0 * P ">" ) ^ -1
-                  * P "{"
-                )
-            * Cc "}"
-         )
-       * ( C ( balanced_braces ) / (function (s) return MainLoopC:match(s) end ) )
-       * P "}" * Ct ( Cc "Close" )
-    + OneBeamerEnvironment ( "uncoverenv" , MainLoopC )
-    + OneBeamerEnvironment ( "onlyenv" , MainLoopC )
-    + OneBeamerEnvironment ( "visibleenv" , MainLoopC )
-    + OneBeamerEnvironment ( "invisibleenv" , MainLoopC )
-    + OneBeamerEnvironment ( "alertenv" , MainLoopC )
-    + OneBeamerEnvironment ( "actionenv" , MainLoopC )
-    +
-      L (
-          ( P "\\alt" )
-          * P "<" * (1 - P ">") ^ 0 * P ">"
-          * P "{"
-        )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
-      * L ( P "}{" )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
-      * L ( P "}" )
-    +
-      L (
-          ( P "\\temporal" )
-          * P "<" * (1 - P ">") ^ 0 * P ">"
-          * P "{"
-        )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
-      * L ( P "}{" )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
-      * L ( P "}{" )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
-      * L ( P "}" )
-end
-DetectedCommands =
-      Ct ( Cc "Open"
-            * C (
-                  piton.ListCommands
-                  * ( P "<" * (1 - P ">") ^ 0 * P ">" ) ^ -1
-                  * P "{"
-                )
-            * Cc "}"
-         )
-       * ( C ( balanced_braces ) / (function (s) return MainLoopC:match(s) end ) )
-       * P "}" * Ct ( Cc "Close" )
-local EOL =
-  P "\r"
-  *
-  (
-    ( space^0 * -1 )
-    +
-    Ct (
-         Cc "EOL"
-         *
-         Ct (
-              Lc "\\__piton_end_line:"
-              * BeamerEndEnvironments
-              * BeamerBeginEnvironments
-              * PromptHastyDetection
-              * Lc "\\__piton_newline: \\__piton_begin_line:"
-              * Prompt
+          * (
+              ( ( 1 - P ( [[\end{]] .. x .. "}" ) ) ^ 0 )
+                  / ( function ( s )
+                        if s ~= '' then return
+                          LPEG1[lang] : match ( s )
+                        end
+                      end )
             )
-       )
-  )
-  *
-  SpaceIndentation ^ 0
-local Preproc =
-  K ( 'Preproc' , P "#" * (1 - P "\r" ) ^ 0  ) * ( EOL + -1 )
-local CommentMath =
-  P "$" * K ( 'Comment.Math' , ( 1 - S "$\r" ) ^ 1  ) * P "$"
-
-local Comment =
-  WithStyle ( 'Comment' ,
-     Q ( P "//" )
-     * ( CommentMath + Q ( ( 1 - S "$\r" ) ^ 1 ) ) ^ 0 )
-  * ( EOL + -1 )
-
-local LongComment =
-  WithStyle ( 'Comment' ,
-               Q ( P "/*" )
-               * ( CommentMath + Q ( ( 1 - P "*/" - S "$\r" ) ^ 1 ) + EOL ) ^ 0
-               * Q ( P "*/" )
-            ) -- $
-local CommentLaTeX =
-  P(piton.comment_latex)
-  * Lc "{\\PitonStyle{Comment.LaTeX}{\\ignorespaces"
-  * L ( ( 1 - P "\r" ) ^ 0 )
-  * Lc "}}"
-  * ( EOL + -1 )
-local MainC =
-       EOL
-     + Space
-     + Tab
-     + Escape + EscapeMath
-     + CommentLaTeX
-     + Beamer
-     + DetectedCommands
-     + Preproc
-     + Comment + LongComment
-     + Delim
-     + Operator
-     + String
-     + Punct
-     + DefFunction
-     + DefClass
-     + Type * ( Q ( "*" ) ^ -1 + Space + Punct + Delim + EOL + -1 )
-     + Keyword * ( Space + Punct + Delim + EOL + -1 )
-     + Builtin * ( Space + Punct + Delim + EOL + -1 )
-     + Identifier
-     + Number
-     + Word
-MainLoopC =
-  (  ( space^1 * -1 )
-     + MainC
-  ) ^ 0
-languageC =
-  Ct (
-       ( ( space - P "\r" ) ^0 * P "\r" ) ^ -1
-       * BeamerBeginEnvironments
-       * Lc '\\__piton_begin_line:'
-       * SpaceIndentation ^ 0
-       * MainLoopC
-       * -1
-       * Lc '\\__piton_end_line:'
-     )
-languages['c'] = languageC
-local identifier =
-  letter * ( alphanum + P "-" ) ^ 0
-  + P '"' * ( ( alphanum + space - P '"' ) ^ 1 ) * P '"'
-
-local Operator =
-  K ( 'Operator' ,
-      P "=" + P "!=" + P "<>" + P ">=" + P ">" + P "<=" + P "<"  + S "*+/"
-    )
-local function Set (list)
-  local set = {}
-  for _, l in ipairs(list) do set[l] = true end
-  return set
+          * P ( [[\end{]] .. x .. "}" )
+          * Ct ( Cc "Close" )
+  end
+  return lpeg
 end
-
-local set_keywords = Set
- {
-   "ADD" , "AFTER" , "ALL" , "ALTER" , "AND" , "AS" , "ASC" , "BETWEEN" , "BY" ,
-   "CHANGE" , "COLUMN" , "CREATE" , "CROSS JOIN" , "DELETE" , "DESC" , "DISTINCT" ,
-   "DROP" , "FROM" , "GROUP" , "HAVING" , "IN" , "INNER" , "INSERT" , "INTO" , "IS" ,
-   "JOIN" , "LEFT" , "LIKE" , "LIMIT" , "MERGE" , "NOT" , "NULL" , "ON" , "OR" ,
-   "ORDER" , "OVER" , "RIGHT" , "SELECT" , "SET" , "TABLE" , "THEN" , "TRUNCATE" ,
-   "UNION" , "UPDATE" , "VALUES" , "WHEN" , "WHERE" , "WITH"
- }
-
-local set_builtins = Set
- {
-   "AVG" , "COUNT" , "CHAR_LENGHT" , "CONCAT" , "CURDATE" , "CURRENT_DATE" ,
-   "DATE_FORMAT" , "DAY" , "LOWER" , "LTRIM" , "MAX" , "MIN" , "MONTH" , "NOW" ,
-   "RANK" , "ROUND" , "RTRIM" , "SUBSTRING" , "SUM" , "UPPER" , "YEAR"
- }
-local Identifier =
-  C ( identifier ) /
-  (
-    function (s)
-        if set_keywords[string.upper(s)] -- the keywords are case-insensitive in SQL
-        then return { "{\\PitonStyle{Keyword}{" } ,
-                    { luatexbase.catcodetables.other , s } ,
-                    { "}}" }
-        else if set_builtins[string.upper(s)]
-             then return { "{\\PitonStyle{Name.Builtin}{" } ,
-                         { luatexbase.catcodetables.other , s } ,
-                         { "}}" }
-             else return { "{\\PitonStyle{Name.Field}{" } ,
-                         { luatexbase.catcodetables.other , s } ,
-                         { "}}" }
-             end
-        end
-    end
-  )
-local String =
-  K ( 'String.Long' , P "'" * ( 1 - P "'" ) ^ 1 * P "'" )
-local balanced_braces =
-  P { "E" ,
-       E =
-           (
-             P "{" * V "E" * P "}"
-             +
-             String
-             +
-             ( 1 - S "{}" )
-           ) ^ 0
-    }
-if piton_beamer
-then
-  Beamer =
-      L ( P "\\pause" * ( P "[" * ( 1 - P "]" ) ^ 0 * P "]" ) ^ -1 )
-    +
-      Ct ( Cc "Open"
-            * C (
-                  (
-                    P "\\uncover" + P "\\only" + P "\\alert" + P "\\visible"
-                    + P "\\invisible" + P "\\action"
-                  )
-                  * ( P "<" * (1 - P ">") ^ 0 * P ">" ) ^ -1
-                  * P "{"
-                )
-            * Cc "}"
-         )
-       * ( C ( balanced_braces ) / (function (s) return MainLoopSQL:match(s) end ) )
-       * P "}" * Ct ( Cc "Close" )
-    + OneBeamerEnvironment ( "uncoverenv" , MainLoopSQL )
-    + OneBeamerEnvironment ( "onlyenv" , MainLoopSQL )
-    + OneBeamerEnvironment ( "visibleenv" , MainLoopSQL )
-    + OneBeamerEnvironment ( "invisibleenv" , MainLoopSQL )
-    + OneBeamerEnvironment ( "alertenv" , MainLoopSQL )
-    + OneBeamerEnvironment ( "actionenv" , MainLoopSQL )
-    +
-      L (
-          ( P "\\alt" )
-          * P "<" * (1 - P ">") ^ 0 * P ">"
-          * P "{"
-        )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
-      * L ( P "}{" )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
-      * L ( P "}" )
-    +
-      L (
-          ( P "\\temporal" )
-          * P "<" * (1 - P ">") ^ 0 * P ">"
-          * P "{"
-        )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
-      * L ( P "}{" )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
-      * L ( P "}{" )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
-      * L ( P "}" )
-end
-DetectedCommands =
-      Ct ( Cc "Open"
-            * C (
-                  piton.ListCommands
-                  * ( P "<" * (1 - P ">") ^ 0 * P ">" ) ^ -1
-                  * P "{"
-                )
-            * Cc "}"
-         )
-       * ( C ( balanced_braces ) / (function (s) return MainLoopSQL:match(s) end ) )
-       * P "}" * Ct ( Cc "Close" )
-local EOL =
-  P "\r"
-  *
-  (
-    ( space^0 * -1 )
-    +
-    Ct (
-         Cc "EOL"
-         *
-         Ct (
-              Lc "\\__piton_end_line:"
-              * BeamerEndEnvironments
-              * BeamerBeginEnvironments
-              * Lc "\\__piton_newline: \\__piton_begin_line:"
-            )
-       )
-  )
-  *
-  SpaceIndentation ^ 0
-local CommentMath =
-  P "$" * K ( 'Comment.Math' , ( 1 - S "$\r" ) ^ 1  ) * P "$"
-
-local Comment =
-  WithStyle ( 'Comment' ,
-     Q ( P "--" )  -- syntax of SQL92
-     * ( CommentMath + Q ( ( 1 - S "$\r" ) ^ 1 ) ) ^ 0 )
-  * ( EOL + -1 )
-
-local LongComment =
-  WithStyle ( 'Comment' ,
-               Q ( P "/*" )
-               * ( CommentMath + Q ( ( 1 - P "*/" - S "$\r" ) ^ 1 ) + EOL ) ^ 0
-               * Q ( P "*/" )
-            ) -- $
-local CommentLaTeX =
-  P(piton.comment_latex)
-  * Lc "{\\PitonStyle{Comment.LaTeX}{\\ignorespaces"
-  * L ( ( 1 - P "\r" ) ^ 0 )
-  * Lc "}}"
-  * ( EOL + -1 )
-local function LuaKeyword ( name )
-return
-   Lc ( "{\\PitonStyle{Keyword}{" )
-   * Q ( Cmt (
-               C ( identifier ) ,
-               function(s,i,a) return string.upper(a) == name end
-             )
-       )
-   * Lc ( "}}" )
-end
-local TableField =
-     K ( 'Name.Table' , identifier )
-     * Q ( P "." )
-     * K ( 'Name.Field' , identifier )
-
-local OneField =
-  (
-    Q ( P "(" * ( 1 - P ")" ) ^ 0 * P ")" )
-    +
-    K ( 'Name.Table' , identifier )
-      * Q ( P "." )
-      * K ( 'Name.Field' , identifier )
-    +
-    K ( 'Name.Field' , identifier )
-  )
-  * (
-      Space * LuaKeyword ( "AS" ) * Space * K ( 'Name.Field' , identifier )
-    ) ^ -1
-  * ( Space * ( LuaKeyword ( "ASC" ) + LuaKeyword ( "DESC" ) ) ) ^ -1
-
-local OneTable =
-     K ( 'Name.Table' , identifier )
-   * (
-       Space
-       * LuaKeyword ( "AS" )
-       * Space
-       * K ( 'Name.Table' , identifier )
-     ) ^ -1
-
-local WeCatchTableNames =
-     LuaKeyword ( "FROM" )
-   * ( Space + EOL )
-   * OneTable * ( SkipSpace * Q ( P "," ) * SkipSpace * OneTable ) ^ 0
-  + (
-      LuaKeyword ( "JOIN" ) + LuaKeyword ( "INTO" ) + LuaKeyword ( "UPDATE" )
-      + LuaKeyword ( "TABLE" )
-    )
-    * ( Space + EOL ) * OneTable
-local MainSQL =
-       EOL
-     + Space
-     + Tab
-     + Escape + EscapeMath
-     + CommentLaTeX
-     + Beamer
-     + DetectedCommands
-     + Comment + LongComment
-     + Delim
-     + Operator
-     + String
-     + Punct
-     + WeCatchTableNames
-     + ( TableField + Identifier ) * ( Space + Operator + Punct + Delim + EOL + -1 )
-     + Number
-     + Word
-MainLoopSQL =
-  (  ( space^1 * -1 )
-     + MainSQL
-  ) ^ 0
-languageSQL =
-  Ct (
-       ( ( space - P "\r" ) ^ 0 * P "\r" ) ^ -1
-       * BeamerBeginEnvironments
-       * Lc '\\__piton_begin_line:'
-       * SpaceIndentation ^ 0
-       * MainLoopSQL
-       * -1
-       * Lc '\\__piton_end_line:'
-     )
-languages['sql'] = languageSQL
-local CommentMath =
-  P "$" * K ( 'Comment.Math' , ( 1 - S "$\r" ) ^ 1  ) * P "$"
-
-local Comment =
-  WithStyle ( 'Comment' ,
-     Q ( P "#" )
-     * ( CommentMath + Q ( ( 1 - S "$\r" ) ^ 1 ) ) ^ 0 )
-  * ( EOL + -1 )
-
-local String =
-  WithStyle ( 'String.Short' ,
-      Q "\""
-      * ( VisualSpace
-          + Q ( ( P "\\\"" + 1 - S " \"" ) ^ 1 )
-        ) ^ 0
-      * Q "\""
-    )
-
-local balanced_braces =
-  P { "E" ,
-       E =
-           (
-             P "{" * V "E" * P "}"
-             +
-             String
-             +
-             ( 1 - S "{}" )
-           ) ^ 0
-    }
-
-if piton_beamer
-then
-  Beamer =
-      L ( P "\\pause" * ( P "[" * ( 1 - P "]" ) ^ 0 * P "]" ) ^ -1 )
-    +
-      Ct ( Cc "Open"
-            * C (
-                  (
-                    P "\\uncover" + P "\\only" + P "\\alert" + P "\\visible"
-                    + P "\\invisible" + P "\\action"
-                  )
-                  * ( P "<" * (1 - P ">") ^ 0 * P ">" ) ^ -1
-                  * P "{"
-                )
-            * Cc "}"
-         )
-       * ( C ( balanced_braces ) / (function (s) return MainLoopMinimal:match(s) end ) )
-       * P "}" * Ct ( Cc "Close" )
-    + OneBeamerEnvironment ( "uncoverenv" , MainLoopMinimal )
-    + OneBeamerEnvironment ( "onlyenv" , MainLoopMinimal )
-    + OneBeamerEnvironment ( "visibleenv" , MainLoopMinimal )
-    + OneBeamerEnvironment ( "invisibleenv" , MainLoopMinimal )
-    + OneBeamerEnvironment ( "alertenv" , MainLoopMinimal )
-    + OneBeamerEnvironment ( "actionenv" , MainLoopMinimal )
-    +
-      L (
-          ( P "\\alt" )
-          * P "<" * (1 - P ">") ^ 0 * P ">"
-          * P "{"
-        )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
-      * L ( P "}{" )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
-      * L ( P "}" )
-    +
-      L (
-          ( P "\\temporal" )
-          * P "<" * (1 - P ">") ^ 0 * P ">"
-          * P "{"
-        )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
-      * L ( P "}{" )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
-      * L ( P "}{" )
-      * K ( 'ParseAgain.noCR' , balanced_braces )
-      * L ( P "}" )
-end
-
-DetectedCommands =
-      Ct ( Cc "Open"
-            * C (
-                  piton.ListCommands
-                  * ( P "<" * (1 - P ">") ^ 0 * P ">" ) ^ -1
-                  * P "{"
-                )
-            * Cc "}"
-         )
-       * ( C ( balanced_braces ) / (function (s) return MainLoopMinimal:match(s) end ) )
-       * P "}" * Ct ( Cc "Close" )
-
-local EOL =
-  P "\r"
-  *
-  (
-    ( space^0 * -1 )
-    +
-    Ct (
-         Cc "EOL"
-         *
-         Ct (
-              Lc "\\__piton_end_line:"
-              * BeamerEndEnvironments
-              * BeamerBeginEnvironments
-              * Lc "\\__piton_newline: \\__piton_begin_line:"
-            )
-       )
-  )
-  *
-  SpaceIndentation ^ 0
-
 local CommentMath =
   P "$" * K ( 'Comment.Math' , ( 1 - S "$\r" ) ^ 1  ) * P "$" -- $
-
+local PromptHastyDetection =
+  ( # ( P ">>>" + "..." ) * Lc [[ \__piton_prompt: ]] ) ^ -1
+local Prompt = K ( 'Prompt' , ( ( P ">>>" + "..." ) * P " " ^ -1 ) ^ -1  )
+local EOL =
+  P "\r"
+  *
+  (
+    space ^ 0 * -1
+    +
+    Ct (
+         Cc "EOL"
+         *
+         Ct ( Lc [[ \__piton_end_line: ]]
+              * BeamerEndEnvironments
+              *
+                (
+                    -1
+                  +
+                    BeamerBeginEnvironments
+                  * PromptHastyDetection
+                  * Lc [[ \__piton_newline:\__piton_begin_line: ]]
+                  * Prompt
+                )
+            )
+       )
+  )
+  * ( SpaceIndentation ^ 0 * # ( 1 - S " \r" ) ) ^ -1
 local CommentLaTeX =
-  P(piton.comment_latex)
-  * Lc "{\\PitonStyle{Comment.LaTeX}{\\ignorespaces"
+  P ( piton.comment_latex )
+  * Lc [[{\PitonStyle{Comment.LaTeX}{\ignorespaces]]
   * L ( ( 1 - P "\r" ) ^ 0 )
   * Lc "}}"
   * ( EOL + -1 )
+do
+  local Operator =
+    K ( 'Operator' ,
+        P "!=" + "<>" + "==" + "<<" + ">>" + "<=" + ">=" + ":=" + "//" + "**"
+        + S "-~+/*%=<>&.@|" )
 
-local identifier = letter * alphanum ^ 0
+  local OperatorWord =
+    K ( 'Operator.Word' , P "in" + "is" + "and" + "or" + "not" )
+  local For = K ( 'Keyword' , P "for" )
+              * Space
+              * Identifier
+              * Space
+              * K ( 'Keyword' , P "in" )
 
-local Identifier = K ( 'Identifier' , identifier )
+  local Keyword =
+    K ( 'Keyword' ,
+        P "as" + "assert" + "break" + "case" + "class" + "continue" + "def" +
+        "del" + "elif" + "else" + "except" + "exec" + "finally" + "for" + "from" +
+        "global" + "if" + "import" + "lambda" + "non local" + "pass" + "return" +
+        "try" + "while" + "with" + "yield" + "yield from" )
+    + K ( 'Keyword.Constant' , P "True" + "False" + "None" )
 
-local MainMinimal =
-       EOL
-     + Space
-     + Tab
-     + Escape + EscapeMath
-     + CommentLaTeX
-     + Beamer
-     + DetectedCommands
-     + Comment
-     + Delim
-     + String
-     + Punct
-     + Identifier
-     + Number
-     + Word
+  local Builtin =
+    K ( 'Name.Builtin' ,
+        P "__import__" + "abs" + "all" + "any" + "bin" + "bool" + "bytearray" +
+        "bytes" + "chr" + "classmethod" + "compile" + "complex" + "delattr" +
+        "dict" + "dir" + "divmod" + "enumerate" + "eval" + "filter" + "float" +
+        "format" + "frozenset" + "getattr" + "globals" + "hasattr" + "hash" +
+        "hex" + "id" + "input" + "int" + "isinstance" + "issubclass" + "iter" +
+        "len" + "list" + "locals" + "map" + "max" + "memoryview" + "min" + "next"
+        + "object" + "oct" + "open" + "ord" + "pow" + "print" + "property" +
+        "range" + "repr" + "reversed" + "round" + "set" + "setattr" + "slice" +
+        "sorted" + "staticmethod" + "str" + "sum" + "super" + "tuple" + "type" +
+        "vars" + "zip" )
 
-MainLoopMinimal =
-  (  ( space^1 * -1 )
-     + MainMinimal
-  ) ^ 0
+  local Exception =
+    K ( 'Exception' ,
+        P "ArithmeticError" + "AssertionError" + "AttributeError" +
+        "BaseException" + "BufferError" + "BytesWarning" + "DeprecationWarning" +
+        "EOFError" + "EnvironmentError" + "Exception" + "FloatingPointError" +
+        "FutureWarning" + "GeneratorExit" + "IOError" + "ImportError" +
+        "ImportWarning" + "IndentationError" + "IndexError" + "KeyError" +
+        "KeyboardInterrupt" + "LookupError" + "MemoryError" + "NameError" +
+        "NotImplementedError" + "OSError" + "OverflowError" +
+        "PendingDeprecationWarning" + "ReferenceError" + "ResourceWarning" +
+        "RuntimeError" + "RuntimeWarning" + "StopIteration" + "SyntaxError" +
+        "SyntaxWarning" + "SystemError" + "SystemExit" + "TabError" + "TypeError"
+        + "UnboundLocalError" + "UnicodeDecodeError" + "UnicodeEncodeError" +
+        "UnicodeError" + "UnicodeTranslateError" + "UnicodeWarning" +
+        "UserWarning" + "ValueError" + "VMSError" + "Warning" + "WindowsError" +
+        "ZeroDivisionError" + "BlockingIOError" + "ChildProcessError" +
+        "ConnectionError" + "BrokenPipeError" + "ConnectionAbortedError" +
+        "ConnectionRefusedError" + "ConnectionResetError" + "FileExistsError" +
+        "FileNotFoundError" + "InterruptedError" + "IsADirectoryError" +
+        "NotADirectoryError" + "PermissionError" + "ProcessLookupError" +
+        "TimeoutError" + "StopAsyncIteration" + "ModuleNotFoundError" +
+        "RecursionError" )
 
-languageMinimal =
-  Ct (
-       ( ( space - P "\r" ) ^ 0 * P "\r" ) ^ -1
-       * BeamerBeginEnvironments
-       * Lc '\\__piton_begin_line:'
-       * SpaceIndentation ^ 0
-       * MainLoopMinimal
-       * -1
-       * Lc '\\__piton_end_line:'
+  local RaiseException = K ( 'Keyword' , P "raise" ) * SkipSpace * Exception * Q "("
+  local Decorator = K ( 'Name.Decorator' , P "@" * letter ^ 1  )
+  local DefClass =
+    K ( 'Keyword' , "class" ) * Space * K ( 'Name.Class' , identifier )
+  local ImportAs =
+    K ( 'Keyword' , "import" )
+     * Space
+     * K ( 'Name.Namespace' , identifier * ( "." * identifier ) ^ 0 )
+     * (
+         ( Space * K ( 'Keyword' , "as" ) * Space
+            * K ( 'Name.Namespace' , identifier ) )
+         +
+         ( SkipSpace * Q "," * SkipSpace
+            * K ( 'Name.Namespace' , identifier ) ) ^ 0
+       )
+  local FromImport =
+    K ( 'Keyword' , "from" )
+      * Space * K ( 'Name.Namespace' , identifier )
+      * Space * K ( 'Keyword' , "import" )
+  local PercentInterpol =
+    K ( 'String.Interpol' ,
+        P "%"
+        * ( "(" * alphanum ^ 1 * ")" ) ^ -1
+        * ( S "-#0 +" ) ^ 0
+        * ( digit ^ 1 + "*" ) ^ -1
+        * ( "." * ( digit ^ 1 + "*" ) ) ^ -1
+        * ( S "HlL" ) ^ -1
+        * S "sdfFeExXorgiGauc%"
+      )
+  local SingleShortString =
+    WithStyle ( 'String.Short' ,
+           Q ( P "f'" + "F'" )
+           * (
+               K ( 'String.Interpol' , "{" )
+                * K ( 'Interpol.Inside' , ( 1 - S "}':" ) ^ 0  )
+                * Q ( P ":" * ( 1 - S "}:'" ) ^ 0 ) ^ -1
+                * K ( 'String.Interpol' , "}" )
+               +
+               SpaceInString
+               +
+               Q ( ( P "\\'" + "\\\\" + "{{" + "}}" + 1 - S " {}'" ) ^ 1 )
+             ) ^ 0
+           * Q "'"
+         +
+           Q ( P "'" + "r'" + "R'" )
+           * ( Q ( ( P "\\'" + "\\\\" + 1 - S " '\r%" ) ^ 1 )
+               + SpaceInString
+               + PercentInterpol
+               + Q "%"
+             ) ^ 0
+           * Q "'" )
+  local DoubleShortString =
+    WithStyle ( 'String.Short' ,
+           Q ( P "f\"" + "F\"" )
+           * (
+               K ( 'String.Interpol' , "{" )
+                 * K ( 'Interpol.Inside' , ( 1 - S "}\":" ) ^ 0 )
+                 * ( K ( 'String.Interpol' , ":" ) * Q ( (1 - S "}:\"") ^ 0 ) ) ^ -1
+                 * K ( 'String.Interpol' , "}" )
+               +
+               SpaceInString
+               +
+               Q ( ( P "\\\"" + "\\\\" + "{{" + "}}" + 1 - S " {}\"" ) ^ 1 )
+              ) ^ 0
+           * Q "\""
+         +
+           Q ( P "\"" + "r\"" + "R\"" )
+           * ( Q ( ( P "\\\"" + "\\\\" + 1 - S " \"\r%" ) ^ 1 )
+               + SpaceInString
+               + PercentInterpol
+               + Q "%"
+             ) ^ 0
+           * Q "\""  )
+
+  local ShortString = SingleShortString + DoubleShortString
+  local braces =
+    Compute_braces
+     (
+         ( P "\"" + "r\"" + "R\"" + "f\"" + "F\"" )
+             * ( P "\\\"" + 1 - S "\"" ) ^ 0 * "\""
+       +
+         ( P '\'' + 'r\'' + 'R\'' + 'f\'' + 'F\'' )
+             * ( P '\\\'' + 1 - S '\'' ) ^ 0 * '\''
      )
-languages['minimal'] = languageMinimal
+  if piton.beamer then Beamer = Compute_Beamer ( 'python' , braces ) end
+  DetectedCommands = Compute_DetectedCommands ( 'python' , braces )
+  LPEG_cleaner.python = Compute_LPEG_cleaner ( 'python' , braces )
+  local SingleLongString =
+    WithStyle ( 'String.Long' ,
+       ( Q ( S "fF" * P "'''" )
+           * (
+               K ( 'String.Interpol' , "{" )
+                 * K ( 'Interpol.Inside' , ( 1 - S "}:\r" - "'''" ) ^ 0  )
+                 * Q ( P ":" * (1 - S "}:\r" - "'''" ) ^ 0 ) ^ -1
+                 * K ( 'String.Interpol' , "}"  )
+               +
+               Q ( ( 1 - P "'''" - S "{}'\r" ) ^ 1 )
+               +
+               EOL
+             ) ^ 0
+         +
+           Q ( ( S "rR" ) ^ -1  * "'''" )
+           * (
+               Q ( ( 1 - P "'''" - S "\r%" ) ^ 1 )
+               +
+               PercentInterpol
+               +
+               P "%"
+               +
+               EOL
+             ) ^ 0
+        )
+        * Q "'''"  )
+  local DoubleLongString =
+    WithStyle ( 'String.Long' ,
+       (
+          Q ( S "fF" * "\"\"\"" )
+          * (
+              K ( 'String.Interpol', "{"  )
+                * K ( 'Interpol.Inside' , ( 1 - S "}:\r" - "\"\"\"" ) ^ 0 )
+                * Q ( ":" * (1 - S "}:\r" - "\"\"\"" ) ^ 0 ) ^ -1
+                * K ( 'String.Interpol' , "}"  )
+              +
+              Q ( ( 1 - S "{}\"\r" - "\"\"\"" ) ^ 1 )
+              +
+              EOL
+            ) ^ 0
+        +
+          Q ( S "rR" ^ -1  * "\"\"\"" )
+          * (
+              Q ( ( 1 - P "\"\"\"" - S "%\r" ) ^ 1 )
+              +
+              PercentInterpol
+              +
+              P "%"
+              +
+              EOL
+            ) ^ 0
+       )
+       * Q "\"\"\""
+    )
+  local LongString = SingleLongString + DoubleLongString
+  local StringDoc =
+      K ( 'String.Doc' , P "r" ^ -1 * "\"\"\"" )
+        * ( K ( 'String.Doc' , (1 - P "\"\"\"" - "\r" ) ^ 0  ) * EOL
+            * Tab ^ 0
+          ) ^ 0
+        * K ( 'String.Doc' , ( 1 - P "\"\"\"" - "\r" ) ^ 0 * "\"\"\"" )
+  local Comment =
+    WithStyle
+     ( 'Comment' ,
+       Q "#" * ( CommentMath + Q ( ( 1 - S "$\r" ) ^ 1 ) ) ^ 0  -- $
+     )
+    * ( EOL + -1 )
+  local expression =
+    P { "E" ,
+         E = ( "'" * ( P "\\'" + 1 - S "'\r" ) ^ 0 * "'"
+               + "\"" * ( P "\\\"" + 1 - S "\"\r" ) ^ 0 * "\""
+               + "{" * V "F" * "}"
+               + "(" * V "F" * ")"
+               + "[" * V "F" * "]"
+               + ( 1 - S "{}()[]\r," ) ) ^ 0 ,
+         F = (   "{" * V "F" * "}"
+               + "(" * V "F" * ")"
+               + "[" * V "F" * "]"
+               + ( 1 - S "{}()[]\r\"'" ) ) ^ 0
+      }
+  local Params =
+    P { "E" ,
+         E = ( V "F" * ( Q "," * V "F" ) ^ 0 ) ^ -1 ,
+         F = SkipSpace * ( Identifier + Q "*args" + Q "**kwargs" ) * SkipSpace
+             * (
+                   K ( 'InitialValues' , "=" * expression )
+                 + Q ":" * SkipSpace * K ( 'Name.Type' , identifier )
+               ) ^ -1
+      }
+  local DefFunction =
+    K ( 'Keyword' , "def" )
+    * Space
+    * K ( 'Name.Function.Internal' , identifier )
+    * SkipSpace
+    * Q "("  * Params * Q ")"
+    * SkipSpace
+    * ( Q "->" * SkipSpace * K ( 'Name.Type' , identifier ) ) ^ -1
+    * ( C ( ( 1 - S ":\r" ) ^ 0 ) / ParseAgain )
+    * Q ":"
+    * ( SkipSpace
+        * ( EOL + CommentLaTeX + Comment ) -- in all cases, that contains an EOL
+        * Tab ^ 0
+        * SkipSpace
+        * StringDoc ^ 0 -- there may be additional docstrings
+      ) ^ -1
+  local ExceptionInConsole = Exception *  Q ( ( 1 - P "\r" ) ^ 0 ) * EOL
+  local EndKeyword
+    = Space + Punct + Delim + EOL + Beamer + DetectedCommands + Escape +
+    EscapeMath + -1
+  local Main =
+       space ^ 0 * EOL -- faut-il le mettre en commentaire ?
+       + Space
+       + Tab
+       + Escape + EscapeMath
+       + CommentLaTeX
+       + Beamer
+       + DetectedCommands
+       + LongString
+       + Comment
+       + ExceptionInConsole
+       + Delim
+       + Operator
+       + OperatorWord * EndKeyword
+       + ShortString
+       + Punct
+       + FromImport
+       + RaiseException
+       + DefFunction
+       + DefClass
+       + For
+       + Keyword * EndKeyword
+       + Decorator
+       + Builtin * EndKeyword
+       + Identifier
+       + Number
+       + Word
+  LPEG1.python = Main ^ 0
+  LPEG2.python =
+    Ct (
+         ( space ^ 0 * "\r" ) ^ -1
+         * BeamerBeginEnvironments
+         * PromptHastyDetection
+         * Lc [[ \__piton_begin_line: ]]
+         * Prompt
+         * SpaceIndentation ^ 0
+         * ( space ^ 1 * -1 + space ^ 0 * EOL + Main ) ^ 0
+         * -1
+         * Lc [[ \__piton_end_line: ]]
+       )
+end
+do
+  local SkipSpace = ( Q " " + EOL ) ^ 0
+  local Space = ( Q " " + EOL ) ^ 1
+  local braces = Compute_braces ( "\"" * ( 1 - S "\"" ) ^ 0 * "\"" )
+  if piton.beamer then
+    Beamer = Compute_Beamer ( 'ocaml' , braces )
+  end
+  DetectedCommands = Compute_DetectedCommands ( 'ocaml' , braces )
+  local Q
+  function Q ( pattern ) return
+    Ct ( Cc ( luatexbase.catcodetables.CatcodeTableOther ) * C ( pattern ) )
+    + Beamer + DetectedCommands + EscapeMath + Escape
+  end
+  local K
+  function K ( style , pattern ) return
+    Lc ( [[ {\PitonStyle{ ]] .. style  .. "}{" )
+    * Q ( pattern )
+    * Lc "}}"
+  end
+  local WithStyle
+  function WithStyle ( style , pattern ) return
+      Ct ( Cc "Open" * Cc ( [[{\PitonStyle{]] .. style .. "}{" ) * Cc "}}" )
+    * ( pattern + Beamer + DetectedCommands + EscapeMath + Escape )
+    * Ct ( Cc "Close" )
+  end
+  local balanced_parens =
+    P { "E" , E = ( "(" * V "E" * ")" + ( 1 - S "()" ) ) ^ 0 }
+  local ocaml_string =
+    Q "\""
+  * (
+      SpaceInString
+      +
+      Q ( ( 1 - S " \"\r" ) ^ 1 )
+      +
+      EOL
+    ) ^ 0
+  * Q "\""
+  local String = WithStyle ( 'String.Long' , ocaml_string )
+  local ext = ( R "az" + "_" ) ^ 0
+  local open = "{" * Cg ( ext , 'init' ) * "|"
+  local close = "|" * C ( ext ) * "}"
+  local closeeq =
+    Cmt ( close * Cb ( 'init' ) ,
+          function ( s , i , a , b ) return a == b end )
+  local QuotedStringBis =
+    WithStyle ( 'String.Long' ,
+        (
+          Space
+          +
+          Q ( ( 1 - S " \r" ) ^ 1 )
+          +
+          EOL
+        ) ^ 0  )
+  local QuotedString =
+    C ( open * ( 1 - closeeq ) ^ 0  * close ) /
+    ( function ( s ) return QuotedStringBis : match ( s ) end )
+  local Comment =
+    WithStyle ( 'Comment' ,
+      P {
+          "A" ,
+          A = Q "(*"
+              * ( V "A"
+                  + Q ( ( 1 - S "\r$\"" - "(*" - "*)" ) ^ 1 ) -- $
+                  + ocaml_string
+                  + "$" * K ( 'Comment.Math' , ( 1 - S "$\r" ) ^ 1 ) * "$" -- $
+                  + EOL
+                ) ^ 0
+              * Q "*)"
+        }   )
+  local Delim = Q ( P "[|" + "|]" + S "[()]" )
+  local Punct = Q ( S ",:;!" )
+  local cap_identifier = R "AZ" * ( R "az" + R "AZ" + S "_'" + digit ) ^ 0
+  local Constructor =
+    K ( 'Name.Constructor' ,
+        Q "`" ^ -1 * cap_identifier
+        + Q "::"
+        + Q "[" * SkipSpace * Q "]" )
+  local ModuleType = K ( 'Name.Type' , cap_identifier )
+  local OperatorWord =
+    K ( 'Operator.Word' ,
+        P "asr" + "land" + "lor" + "lsl" + "lxor" + "mod" + "or" )
+  local governing_keyword = P "and" + "begin" + "class" + "constraint" +
+        "end" + "external" + "functor" + "include" + "inherit" + "initializer" +
+        "in" + "let" + "method" + "module" + "object" + "open" + "rec" + "sig" +
+        "struct" + "type" + "val"
+  local Keyword =
+    K ( 'Keyword' ,
+        P "assert" + "as" + "done" + "downto" + "do" + "else" + "exception"
+        + "for" + "function"  + "fun" + "if" + "lazy" + "match" + "mutable"
+        + "new" + "of" + "private" + "raise" + "then" + "to" + "try"
+        + "virtual" + "when" + "while" + "with" )
+    + K ( 'Keyword.Constant' , P "true" + "false" )
+    + K ( 'Keyword.Governing', governing_keyword )
+  local EndKeyword
+    = Space + Punct + Delim + EOL + Beamer + DetectedCommands + Escape
+       + EscapeMath + -1
+  local identifier = ( R "az" + "_" ) * ( R "az" + R "AZ" + S "_'" + digit ) ^ 0
+                     - ( OperatorWord + Keyword ) * EndKeyword
+  local Identifier = K ( 'Identifier.Internal' , identifier )
+  local Char =
+    K ( 'String.Short',
+      P "'" *
+      (
+        ( 1 - S "'\\" )
+        + "\\"
+          * ( S "\\'ntbr \""
+              + digit * digit * digit
+              + P "x" * ( digit + R "af" + R "AF" )
+                      * ( digit + R "af" + R "AF" )
+                      * ( digit + R "af" + R "AF" )
+              + P "o" * R "03" * R "07" * R "07" )
+      )
+      * "'" )
+  local TypeParameter =
+    K ( 'TypeParameter' ,
+        "'" * Q"_" ^ -1 * alpha ^ 1 * ( # ( 1 - P "'" ) + -1 ) )
+  local expression_for_fields_type =
+    P { "E" ,
+        E =  (   "{" * V "F" * "}"
+              + "(" * V "F" * ")"
+              + TypeParameter
+              + ( 1 - S "{}()[]\r;" ) ) ^ 0 ,
+        F = (    "{" * V "F" * "}"
+              + "(" * V "F" * ")"
+              + ( 1 - S "{}()[]\r\"'" ) + TypeParameter ) ^ 0
+      }
+  local expression_for_fields_value =
+    P { "E" ,
+        E =  (   "{" * V "F" * "}"
+              + "(" * V "F" * ")"
+              + "[" * V "F" * "]"
+              + String + QuotedString + Char
+              + ( 1 - S "{}()[]\r;" ) ) ^ 0 ,
+        F = (    "{" * V "F" * "}"
+              + "(" * V "F" * ")"
+              + "[" * V "F" * "]"
+              + ( 1 - S "{}()[]\r\"'" )) ^ 0
+      }
+  local OneFieldDefinition =
+      ( K ( 'Keyword' , "mutable" ) * SkipSpace ) ^ -1
+    * K ( 'Name.Field' , identifier ) * SkipSpace
+    * Q ":" * SkipSpace
+    * K ( 'TypeExpression' , expression_for_fields_type )
+    * SkipSpace
+  local OneField =
+      K ( 'Name.Field' , identifier ) * SkipSpace
+    * Q "=" * SkipSpace
+    * ( expression_for_fields_value / ParseAgain )
+    * SkipSpace
+  local Record =
+    Q "{" * SkipSpace
+    *
+      (
+        OneFieldDefinition
+        * ( Q ";" * SkipSpace * ( Comment * SkipSpace ) ^ 0 * OneFieldDefinition ) ^ 0
+        +
+        OneField * ( Q ";" * SkipSpace * ( Comment * SkipSpace ) ^ 0 * OneField ) ^ 0
+      )
+    * SkipSpace
+    * Q ";" ^ -1
+    * SkipSpace
+    * Comment ^ -1
+    * SkipSpace
+    * Q "}"
+  local DotNotation =
+    (
+        K ( 'Name.Module' , cap_identifier )
+          * Q "."
+          * ( Identifier + Constructor + Q "(" + Q "[" + Q "{" ) ^ -1
+        +
+         Identifier
+          * Q "."
+          * K ( 'Name.Field' , identifier )
+    )
+    * ( Q "." * K ( 'Name.Field' , identifier ) ) ^ 0
+  local Operator =
+    K ( 'Operator' ,
+        P "!=" + "<>" + "==" + "<<" + ">>" + "<=" + ">=" + ":=" + "||" + "&&" +
+        "//" + "**" + ";;" + "->" + "+." + "-." + "*." + "/."
+        + S "-~+/*%=<>&@|" )
+  local Builtin =
+    K ( 'Name.Builtin' , P "not" + "incr" + "decr" + "fst" + "snd" + "ref" )
+  local Exception =
+    K (   'Exception' ,
+        P "Division_by_zero" + "End_of_File" + "Failure" + "Invalid_argument" +
+        "Match_failure" + "Not_found" + "Out_of_memory" + "Stack_overflow" +
+        "Sys_blocked_io" + "Sys_error" + "Undefined_recursive_module" )
+  LPEG_cleaner.ocaml = Compute_LPEG_cleaner ( 'ocaml' , braces )
+  local Argument =
+    (  Q "~" * Identifier * Q ":" * SkipSpace ) ^ -1
+    *
+    ( K ( 'Identifier.Internal' , identifier )
+      + Q "(" * SkipSpace
+        * K ( 'Identifier.Internal' , identifier ) * SkipSpace
+        * Q ":" * SkipSpace
+        * K ( 'TypeExpression' , balanced_parens ) * SkipSpace
+        * Q ")"
+    )
+  local DefFunction =
+    K ( 'Keyword.Governing' , "let open" )
+    * Space
+    * K ( 'Name.Module' , cap_identifier )
+    +
+    K ( 'Keyword.Governing' , P "let rec" + "let" + "and" )
+      * Space
+      * K ( 'Name.Function.Internal' , identifier )
+      * Space
+      * (
+          Q "=" * SkipSpace * K ( 'Keyword' , "function" )
+          +
+          Argument
+          * ( SkipSpace * Argument ) ^ 0
+          * (
+              SkipSpace
+              * Q ":"
+              * K ( 'TypeExpression' , ( 1 - P "=" ) ^ 0 )
+            ) ^ -1
+        )
+  local DefModule =
+    K ( 'Keyword.Governing' , "module" ) * Space
+    *
+      (
+            K ( 'Keyword.Governing' , "type" ) * Space
+          * K ( 'Name.Type' , cap_identifier )
+        +
+          K ( 'Name.Module' , cap_identifier ) * SkipSpace
+          *
+            (
+              Q "(" * SkipSpace
+                * K ( 'Name.Module' , cap_identifier ) * SkipSpace
+                * Q ":" * SkipSpace
+                * K ( 'Name.Type' , cap_identifier ) * SkipSpace
+                *
+                  (
+                    Q "," * SkipSpace
+                      * K ( 'Name.Module' , cap_identifier ) * SkipSpace
+                      * Q ":" * SkipSpace
+                      * K ( 'Name.Type' , cap_identifier ) * SkipSpace
+                  ) ^ 0
+                * Q ")"
+            ) ^ -1
+          *
+            (
+              Q "=" * SkipSpace
+              * K ( 'Name.Module' , cap_identifier )  * SkipSpace
+              * Q "("
+              * K ( 'Name.Module' , cap_identifier ) * SkipSpace
+                *
+                (
+                  Q ","
+                  *
+                  K ( 'Name.Module' , cap_identifier ) * SkipSpace
+                ) ^ 0
+              * Q ")"
+            ) ^ -1
+      )
+    +
+    K ( 'Keyword.Governing' , P "include" + "open" )
+    * Space
+    * K ( 'Name.Module' , cap_identifier )
+  local DefType =
+    K ( 'Keyword.Governing' , "type" )
+    * Space
+    * K ( 'TypeExpression' , Q ( 1 - P "=" ) ^ 1 )
+    * SkipSpace
+    * ( Q "+=" + Q "=" )
+    * SkipSpace
+    * (
+        Record
+        +
+        WithStyle
+         (
+           'TypeExpression' ,
+           (
+             ( EOL + Q ( 1 - P ";;" - governing_keyword ) ) ^ 0
+             * ( # ( governing_keyword ) + Q ";;" )
+           )
+         )
+      )
+  local Main =
+      space ^ 0 * EOL
+      + Space
+      + Tab
+      + Escape + EscapeMath
+      + Beamer
+      + DetectedCommands
+      + TypeParameter
+      + String + QuotedString + Char
+      + Comment
+      + Operator
+      + Q "~" * Identifier * ( Q ":" ) ^ -1
+      + Q ":" * # (1 - P ":") * SkipSpace
+          * K ( 'TypeExpression' , balanced_parens ) * SkipSpace * Q ")"
+      + Exception
+      + DefType
+      + DefFunction
+      + DefModule
+      + Record
+      + Keyword * EndKeyword
+      + OperatorWord * EndKeyword
+      + Builtin * EndKeyword
+      + DotNotation
+      + Constructor
+      + Identifier
+      + Punct
+      + Delim
+      + Number
+      + Word
+  LPEG1.ocaml = Main ^ 0
+  LPEG2.ocaml =
+    Ct (
+        ( P ":" + Identifier * SkipSpace * Q ":" )
+          * SkipSpace
+          * K ( 'TypeExpression' , ( 1 - P "\r" ) ^ 0 )
+        +
+        ( space ^ 0 * "\r" ) ^ -1
+        * BeamerBeginEnvironments
+        * Lc [[ \__piton_begin_line: ]]
+        * SpaceIndentation ^ 0
+        * ( ( space * Lc [[ \__piton_trailing_space: ]] ) ^ 1 * -1
+              + space ^ 0 * EOL
+              + Main
+          ) ^ 0
+        * -1
+        * Lc [[ \__piton_end_line: ]]
+      )
+end
+do
+  local Delim = Q ( S "{[()]}" )
+  local Punct = Q ( S ",:;!" )
+  local identifier = letter * alphanum ^ 0
 
-function piton.Parse(language,code)
-  local t = languages[language] : match ( code )
-  if t == nil
-  then
-    tex.sprint("\\PitonSyntaxError")
+  local Operator =
+    K ( 'Operator' ,
+        P "!=" + "==" + "<<" + ">>" + "<=" + ">=" + "||" + "&&"
+          + S "-~+/*%=<>&.@|!" )
+
+  local Keyword =
+    K ( 'Keyword' ,
+        P "alignas" + "asm" + "auto" + "break" + "case" + "catch" + "class" +
+        "const" + "constexpr" + "continue" + "decltype" + "do" + "else" + "enum" +
+        "extern" + "for" + "goto" + "if" + "nexcept" + "private" + "public" +
+        "register" + "restricted" + "return" + "static" + "static_assert" +
+        "struct" + "switch" + "thread_local" + "throw" + "try" + "typedef" +
+        "union" + "using" + "virtual" + "volatile" + "while"
+      )
+    + K ( 'Keyword.Constant' , P "default" + "false" + "NULL" + "nullptr" + "true" )
+
+  local Builtin =
+    K ( 'Name.Builtin' ,
+        P "alignof" + "malloc" + "printf" + "scanf" + "sizeof" )
+
+  local Type =
+    K ( 'Name.Type' ,
+        P "bool" + "char" + "char16_t" + "char32_t" + "double" + "float" + "int" +
+        "int8_t" + "int16_t" + "int32_t" + "int64_t" + "long" + "short" + "signed"
+        + "unsigned" + "void" + "wchar_t" ) * Q "*" ^ 0
+
+  local DefFunction =
+    Type
+    * Space
+    * Q "*" ^ -1
+    * K ( 'Name.Function.Internal' , identifier )
+    * SkipSpace
+    * # P "("
+  local DefClass =
+    K ( 'Keyword' , "class" ) * Space * K ( 'Name.Class' , identifier )
+  String =
+    WithStyle ( 'String.Long' ,
+        Q "\""
+        * ( SpaceInString
+            + K ( 'String.Interpol' ,
+                  "%" * ( S "difcspxXou" + "ld" + "li" + "hd" + "hi" )
+                )
+            + Q ( ( P "\\\"" + 1 - S " \"" ) ^ 1 )
+          ) ^ 0
+        * Q "\""
+      )
+  local braces = Compute_braces ( "\"" * ( 1 - S "\"" ) ^ 0 * "\"" )
+  if piton.beamer then Beamer = Compute_Beamer ( 'c' , braces ) end
+  DetectedCommands = Compute_DetectedCommands ( 'c' , braces )
+  LPEG_cleaner.c = Compute_LPEG_cleaner ( 'c' , braces )
+  local Preproc = K ( 'Preproc' , "#" * ( 1 - P "\r" ) ^ 0  ) * ( EOL + -1 )
+  local Comment =
+    WithStyle ( 'Comment' ,
+       Q "//" * ( CommentMath + Q ( ( 1 - S "$\r" ) ^ 1 ) ) ^ 0 ) -- $
+              * ( EOL + -1 )
+
+  local LongComment =
+    WithStyle ( 'Comment' ,
+                 Q "/*"
+                 * ( CommentMath + Q ( ( 1 - P "*/" - S "$\r" ) ^ 1 ) + EOL ) ^ 0
+                 * Q "*/"
+              ) -- $
+  local EndKeyword
+    = Space + Punct + Delim + EOL + Beamer + DetectedCommands + Escape +
+    EscapeMath  + -1
+  local Main =
+       space ^ 0 * EOL
+       + Space
+       + Tab
+       + Escape + EscapeMath
+       + CommentLaTeX
+       + Beamer
+       + DetectedCommands
+       + Preproc
+       + Comment + LongComment
+       + Delim
+       + Operator
+       + String
+       + Punct
+       + DefFunction
+       + DefClass
+       + Type * ( Q "*" ^ -1 + EndKeyword )
+       + Keyword * EndKeyword
+       + Builtin * EndKeyword
+       + Identifier
+       + Number
+       + Word
+  LPEG1.c = Main ^ 0
+  LPEG2.c =
+    Ct (
+         ( space ^ 0 * P "\r" ) ^ -1
+         * BeamerBeginEnvironments
+         * Lc [[ \__piton_begin_line: ]]
+         * SpaceIndentation ^ 0
+         * ( space ^ 1 * -1 + space ^ 0 * EOL + Main ) ^ 0
+         * -1
+         * Lc [[ \__piton_end_line: ]]
+       )
+end
+do
+  local LuaKeyword
+  function LuaKeyword ( name ) return
+    Lc [[ {\PitonStyle{Keyword}{ ]]
+    * Q ( Cmt (
+                C ( letter * alphanum ^ 0 ) ,
+                function ( s , i , a ) return string.upper ( a ) == name end
+              )
+        )
+    * Lc "}}"
+  end
+  local identifier =
+    letter * ( alphanum + "-" ) ^ 0
+    + P '"' * ( ( 1 - P '"' ) ^ 1 ) * '"'
+  local Operator =
+    K ( 'Operator' , P "=" + "!=" + "<>" + ">=" + ">" + "<=" + "<"  + S "*+/" )
+  local Set
+  function Set ( list )
+    local set = { }
+    for _ , l in ipairs ( list ) do set[l] = true end
+    return set
+  end
+  local set_keywords = Set
+   {
+     "ADD" , "AFTER" , "ALL" , "ALTER" , "AND" , "AS" , "ASC" , "BETWEEN" , "BY" ,
+     "CHANGE" , "COLUMN" , "CREATE" , "CROSS JOIN" , "DELETE" , "DESC" , "DISTINCT" ,
+     "DROP" , "EXCEPT" , "FROM" , "GROUP" , "HAVING" , "IN" , "INNER" ,
+     "INSERT" , "INTERSECT" , "INTO" , "IS" , "JOIN" , "LEFT" , "LIKE" , "LIMIT" ,
+     "MERGE" , "NOT" , "NULL" , "OFFSET" , "ON" , "OR" , "ORDER" , "OVER" ,
+     "RIGHT" , "SELECT" , "SET" , "TABLE" , "THEN" , "TRUNCATE" , "UNION" ,
+     "UPDATE" , "VALUES" , "WHEN" , "WHERE" , "WITH"
+   }
+  local set_builtins = Set
+   {
+     "AVG" , "COUNT" , "CHAR_LENGHT" , "CONCAT" , "CURDATE" , "CURRENT_DATE" ,
+     "DATE_FORMAT" , "DAY" , "LOWER" , "LTRIM" , "MAX" , "MIN" , "MONTH" , "NOW" ,
+     "RANK" , "ROUND" , "RTRIM" , "SUBSTRING" , "SUM" , "UPPER" , "YEAR"
+   }
+  local Identifier =
+    C ( identifier ) /
+    (
+      function ( s )
+          if set_keywords[string.upper(s)] then return
+            { [[{\PitonStyle{Keyword}{]] } ,
+            { luatexbase.catcodetables.other , s } ,
+            { "}}" }
+          else
+            if set_builtins[string.upper(s)] then return
+              { [[{\PitonStyle{Name.Builtin}{]] } ,
+              { luatexbase.catcodetables.other , s } ,
+              { "}}" }
+            else return
+              { [[{\PitonStyle{Name.Field}{]] } ,
+              { luatexbase.catcodetables.other , s } ,
+              { "}}" }
+            end
+          end
+      end
+    )
+  local String = K ( 'String.Long' , "'" * ( 1 - P "'" ) ^ 1 * "'" )
+  local braces = Compute_braces ( "'" * ( 1 - P "'" ) ^ 1 * "'" )
+  if piton.beamer then Beamer = Compute_Beamer ( 'sql' , braces ) end
+  DetectedCommands = Compute_DetectedCommands ( 'sql' , braces )
+  LPEG_cleaner.sql = Compute_LPEG_cleaner ( 'sql' , braces )
+  local Comment =
+    WithStyle ( 'Comment' ,
+       Q "--"   -- syntax of SQL92
+       * ( CommentMath + Q ( ( 1 - S "$\r" ) ^ 1 ) ) ^ 0 ) -- $
+    * ( EOL + -1 )
+
+  local LongComment =
+    WithStyle ( 'Comment' ,
+                 Q "/*"
+                 * ( CommentMath + Q ( ( 1 - P "*/" - S "$\r" ) ^ 1 ) + EOL ) ^ 0
+                 * Q "*/"
+              ) -- $
+  local EndKeyword
+    = Space + Punct + Delim + EOL + Beamer + DetectedCommands + Escape +
+      EscapeMath + -1
+  local TableField =
+         K ( 'Name.Table' , identifier )
+       * Q "."
+       * K ( 'Name.Field' , identifier )
+
+  local OneField =
+    (
+      Q ( "(" * ( 1 - P ")" ) ^ 0 * ")" )
+      +
+          K ( 'Name.Table' , identifier )
+        * Q "."
+        * K ( 'Name.Field' , identifier )
+      +
+      K ( 'Name.Field' , identifier )
+    )
+    * (
+        Space * LuaKeyword "AS" * Space * K ( 'Name.Field' , identifier )
+      ) ^ -1
+    * ( Space * ( LuaKeyword "ASC" + LuaKeyword "DESC" ) ) ^ -1
+
+  local OneTable =
+       K ( 'Name.Table' , identifier )
+     * (
+         Space
+         * LuaKeyword "AS"
+         * Space
+         * K ( 'Name.Table' , identifier )
+       ) ^ -1
+
+  local WeCatchTableNames =
+       LuaKeyword "FROM"
+     * ( Space + EOL )
+     * OneTable * ( SkipSpace * Q "," * SkipSpace * OneTable ) ^ 0
+    + (
+        LuaKeyword "JOIN" + LuaKeyword "INTO" + LuaKeyword "UPDATE"
+        + LuaKeyword "TABLE"
+      )
+      * ( Space + EOL ) * OneTable
+  local EndKeyword
+    = Space + Punct + Delim + EOL + Beamer
+        + DetectedCommands + Escape + EscapeMath + -1
+  local Main =
+       space ^ 0 * EOL
+       + Space
+       + Tab
+       + Escape + EscapeMath
+       + CommentLaTeX
+       + Beamer
+       + DetectedCommands
+       + Comment + LongComment
+       + Delim
+       + Operator
+       + String
+       + Punct
+       + WeCatchTableNames
+       + ( TableField + Identifier ) * ( Space + Operator + Punct + Delim + EOL + -1 )
+       + Number
+       + Word
+  LPEG1.sql = Main ^ 0
+  LPEG2.sql =
+    Ct (
+         ( space ^ 0 * "\r" ) ^ -1
+         * BeamerBeginEnvironments
+         * Lc [[ \__piton_begin_line: ]]
+         * SpaceIndentation ^ 0
+         * ( space ^ 1 * -1 + space ^ 0 * EOL + Main ) ^ 0
+         * -1
+         * Lc [[ \__piton_end_line: ]]
+       )
+end
+do
+  local Punct = Q ( S ",:;!\\" )
+
+  local Comment =
+    WithStyle ( 'Comment' ,
+                Q "#"
+                * ( CommentMath + Q ( ( 1 - S "$\r" ) ^ 1 ) ) ^ 0 -- $
+              )
+       * ( EOL + -1 )
+
+  local String =
+    WithStyle ( 'String.Short' ,
+                Q "\""
+                * ( SpaceInString
+                    + Q ( ( P "\\\"" + 1 - S " \"" ) ^ 1 )
+                  ) ^ 0
+                * Q "\""
+              )
+  local braces = Compute_braces ( P "\"" * ( P "\\\"" + 1 - P "\"" ) ^ 1 * "\"" )
+
+  if piton.beamer then Beamer = Compute_Beamer ( 'minimal' , braces ) end
+
+  DetectedCommands = Compute_DetectedCommands ( 'minimal' , braces )
+
+  LPEG_cleaner.minimal = Compute_LPEG_cleaner ( 'minimal' , braces )
+
+  local identifier = letter * alphanum ^ 0
+
+  local Identifier = K ( 'Identifier.Internal' , identifier )
+
+  local Delim = Q ( S "{[()]}" )
+
+  local Main =
+       space ^ 0 * EOL
+       + Space
+       + Tab
+       + Escape + EscapeMath
+       + CommentLaTeX
+       + Beamer
+       + DetectedCommands
+       + Comment
+       + Delim
+       + String
+       + Punct
+       + Identifier
+       + Number
+       + Word
+  LPEG1.minimal = Main ^ 0
+
+  LPEG2.minimal =
+    Ct (
+         ( space ^ 0 * "\r" ) ^ -1
+         * BeamerBeginEnvironments
+         * Lc [[ \__piton_begin_line: ]]
+         * SpaceIndentation ^ 0
+         * ( space ^ 1 * -1 + space ^ 0 * EOL + Main ) ^ 0
+         * -1
+         * Lc [[ \__piton_end_line: ]]
+       )
+end
+do
+
+  local braces =
+      P { "E" ,
+           E = ( "{" * V "E" * "}" + ( 1 - S "{}" ) ) ^ 0
+        }
+
+  if piton.beamer then Beamer = Compute_Beamer ( 'verbatim' , braces ) end
+
+  DetectedCommands = Compute_DetectedCommands ( 'verbatim' , braces )
+
+  LPEG_cleaner.verbatim = Compute_LPEG_cleaner ( 'verbatim' , braces )
+  local lpeg_central = 1 - S " \\\r"
+  if piton.begin_escape then
+    lpeg_central = lpeg_central - piton.begin_escape
+  end
+  if piton.begin_escape_math then
+    lpeg_central = lpeg_central - piton.begin_escape_math
+  end
+  local Word = Q ( lpeg_central ^ 1 )
+
+  local Main =
+       space ^ 0 * EOL
+       + Space
+       + Tab
+       + Escape + EscapeMath
+       + Beamer
+       + DetectedCommands
+       + Q [[\]]
+       + Word
+  LPEG1.verbatim = Main ^ 0
+
+  LPEG2.verbatim =
+    Ct (
+         ( space ^ 0 * "\r" ) ^ -1
+         * BeamerBeginEnvironments
+         * Lc [[ \__piton_begin_line: ]]
+         * SpaceIndentation ^ 0
+         * ( space ^ 1 * -1 + space ^ 0 * EOL + Main ) ^ 0
+         * -1
+         * Lc [[ \__piton_end_line: ]]
+       )
+end
+function piton.Parse ( language , code )
+  piton.language = language
+  local t = LPEG2[language] : match ( code )
+  if t == nil then
+    sprintL3 [[ \__piton_error_or_warning:n { SyntaxError } ]]
     return -- to exit in force the function
   end
   local left_stack = {}
   local right_stack = {}
-  for _ , one_item in ipairs(t)
-  do
-     if one_item[1] == "EOL"
-     then
-          for _ , s in ipairs(right_stack)
-            do tex.sprint(s)
-            end
-          for _ , s in ipairs(one_item[2])
-            do tex.tprint(s)
-            end
-          for _ , s in ipairs(left_stack)
-            do tex.sprint(s)
-            end
-     else
-          if one_item[1] == "Open"
-          then
-               tex.sprint( one_item[2] )
-               table.insert(left_stack,one_item[2])
-               table.insert(right_stack,one_item[3])
-          else
-               if one_item[1] == "Close"
-               then
-                    tex.sprint( right_stack[#right_stack] )
-                    left_stack[#left_stack] = nil
-                    right_stack[#right_stack] = nil
-               else
-                    tex.tprint(one_item)
-               end
-          end
-     end
+  for _ , one_item in ipairs ( t ) do
+    if one_item[1] == "EOL" then
+      for _ , s in ipairs ( right_stack ) do
+        tex.sprint ( s )
+      end
+      for _ , s in ipairs ( one_item[2] ) do
+        tex.tprint ( s )
+      end
+      for _ , s in ipairs ( left_stack ) do
+        tex.sprint ( s )
+      end
+    else
+      if one_item[1] == "Open" then
+        tex.sprint( one_item[2] )
+        table.insert ( left_stack , one_item[2] )
+        table.insert ( right_stack , one_item[3] )
+      else
+        if one_item[1] == "Close" then
+          tex.sprint ( right_stack[#right_stack] )
+          left_stack[#left_stack] = nil
+          right_stack[#right_stack] = nil
+        else
+          tex.tprint ( one_item )
+        end
+      end
+    end
   end
 end
-function piton.ParseFile(language,name,first_line,last_line)
+
+function piton.ParseFile
+  ( lang , name , first_line , last_line , splittable , split )
   local s = ''
   local i = 0
-  for line in io.lines(name)
-  do i = i + 1
-     if i >= first_line
-     then s = s .. '\r' .. line
-     end
-     if i >= last_line then break end
+  for line in io.lines ( name ) do
+    i = i + 1
+    if i >= first_line then
+      s = s .. '\r' .. line
+    end
+    if i >= last_line then break end
   end
-  if string.byte(s,1) == 13
-  then if string.byte(s,2) == 239
-       then if string.byte(s,3) == 187
-            then if string.byte(s,4) == 191
-                 then s = string.sub(s,5,-1)
-                 end
-            end
-       end
+  if string.byte ( s , 1 ) == 13 then
+    if string.byte ( s , 2 ) == 239 then
+      if string.byte ( s , 3 ) == 187 then
+        if string.byte ( s , 4 ) == 191 then
+          s = string.sub ( s , 5 , -1 )
+        end
+      end
+    end
   end
-  piton.Parse(language,s)
-end
-function piton.ParseBis(language,code)
-  local s = ( Cs ( ( P '##' / '#' + 1 ) ^ 0 ) ) : match ( code )
-  return piton.Parse(language,s)
-end
-function piton.ParseTer(language,code)
-  local s = ( Cs ( ( P '\\__piton_breakable_space:' / ' ' + 1 ) ^ 0 ) )
-            : match ( code )
-  return piton.Parse(language,s)
-end
-local function gobble(n,code)
-  function concat(acc,new_value)
-    return acc .. new_value
-  end
-  if n==0
-  then return code
+  if split == 1 then
+    piton.RetrieveGobbleSplitParse ( lang , 0 , splittable , s )
   else
-       return Cf (
-                   Cc ( "" ) *
-                   ( 1 - P "\r" ) ^ (-n)  * C ( ( 1 - P "\r" ) ^ 0 )
-                     * ( C ( P "\r" )
-                     * ( 1 - P "\r" ) ^ (-n)
-                     * C ( ( 1 - P "\r" ) ^ 0 )
-                    ) ^ 0 ,
-                    concat
-                 ) : match ( code )
+    piton.RetrieveGobbleParse ( lang , 0 , splittable , s )
   end
 end
-local function add(acc,new_value)
-  return acc + new_value
+function piton.RetrieveGobbleParse ( lang , n , splittable , code )
+  local s
+  s = ( ( P " " ^ 0 * "\r" ) ^ -1 * C ( P ( 1 ) ^ 0 ) * -1 ) : match ( code )
+  piton.GobbleParse ( lang , n , splittable , s )
+end
+function piton.ParseBis ( lang , code )
+  local s = ( Cs ( ( P '##' / '#' + 1 ) ^ 0 ) ) : match ( code )
+  return piton.Parse ( lang , s )
+end
+function piton.ParseTer ( lang , code )
+  local s
+  s = ( Cs ( ( P [[\__piton_breakable_space: ]] / ' ' + 1 ) ^ 0 ) )
+      : match ( code )
+  s = ( Cs ( ( P [[\__piton_leading_space: ]] / '' + 1 ) ^ 0 ) )
+      : match ( s )
+  return piton.Parse ( lang , s )
 end
 local AutoGobbleLPEG =
-    ( space ^ 0 * P "\r" ) ^ -1
-    * Cf (
-           (
-             ( P " " ) ^ 0 * P "\r"
-             +
-             Cf ( Cc(0) * ( P " " * Cc(1) ) ^ 0 , add )
-             * ( 1 - P " " ) * ( 1 - P "\r" ) ^ 0 * P "\r"
-           ) ^ 0
-           *
-           ( Cf ( Cc(0) * ( P " " * Cc(1) ) ^ 0 , add )
-           * ( 1 - P " " ) * ( 1 - P "\r" ) ^ 0 ) ^ -1 ,
-           math.min
-         )
+      (  (
+           P " " ^ 0 * "\r"
+           +
+           Ct ( C " " ^ 0 ) / table.getn
+           * ( 1 - P " " ) * ( 1 - P "\r" ) ^ 0 * "\r"
+         ) ^ 0
+         * ( Ct ( C " " ^ 0 ) / table.getn
+              * ( 1 - P " " ) * ( 1 - P "\r" ) ^ 0 ) ^ -1
+       ) / math.min
 local TabsAutoGobbleLPEG =
-    ( space ^ 0 * P "\r" ) ^ -1
-    * Cf (
-           (
-             ( P "\t" ) ^ 0 * P "\r"
-             +
-             Cf ( Cc(0) * ( P "\t" * Cc(1) ) ^ 0 , add )
-             * ( 1 - P "\t" ) * ( 1 - P "\r" ) ^ 0 * P "\r"
-           ) ^ 0
-           *
-           ( Cf ( Cc(0) * ( P "\t" * Cc(1) ) ^ 0 , add )
-           * ( 1 - P "\t" ) * ( 1 - P "\r" ) ^ 0 ) ^ -1 ,
-           math.min
-         )
+       (
+         (
+           P "\t" ^ 0 * "\r"
+           +
+           Ct ( C "\t" ^ 0 ) / table.getn
+           * ( 1 - P "\t" ) * ( 1 - P "\r" ) ^ 0 * "\r"
+         ) ^ 0
+         * ( Ct ( C "\t" ^ 0 ) / table.getn
+             * ( 1 - P "\t" ) * ( 1 - P "\r" ) ^ 0 ) ^ -1
+       ) / math.min
 local EnvGobbleLPEG =
-  ( ( 1 - P "\r" ) ^ 0 * P "\r" ) ^ 0
-    * Cf ( Cc(0) * ( P " " * Cc(1) ) ^ 0 , add ) * -1
-function piton.GobbleParse(language,n,code)
-  if n==-1
-  then n = AutoGobbleLPEG : match(code)
-  else if n==-2
-       then n = EnvGobbleLPEG : match(code)
-       else if n==-3
-            then n = TabsAutoGobbleLPEG : match(code)
-            end
-       end
-  end
-  piton.Parse(language,gobble(n,code))
-  if piton.write ~= ''
-  then local file = assert(io.open(piton.write,piton.write_mode))
-       file:write(code)
-       file:close()
+      ( ( 1 - P "\r" ) ^ 0 * "\r" ) ^ 0
+    * Ct ( C " " ^ 0 * -1 ) / table.getn
+local remove_before_cr
+function remove_before_cr ( input_string )
+  local match_result = ( P "\r" ) : match ( input_string )
+  if match_result then return
+    string.sub ( input_string , match_result )
+  else return
+    input_string
   end
 end
-function piton.CountLines(code)
-  local count = 0
-  for i in code : gmatch ( "\r" ) do count = count + 1 end
-  tex.sprint(
-      luatexbase.catcodetables.expl ,
-      '\\int_set:Nn \\l__piton_nb_lines_int {' .. count .. '}' )
+local gobble
+function gobble ( n , code )
+  code = remove_before_cr ( code )
+  if n == 0 then return
+    code
+  else
+    if n == -1 then
+      n = AutoGobbleLPEG : match ( code )
+    else
+      if n == -2 then
+        n = EnvGobbleLPEG : match ( code )
+      else
+        if n == -3 then
+          n = TabsAutoGobbleLPEG : match ( code )
+        end
+      end
+    end
+    if n == 0 then return
+      code
+    else return
+      ( Ct (
+             ( 1 - P "\r" ) ^ (-n) * C ( ( 1 - P "\r" ) ^ 0 )
+               * ( C "\r" * ( 1 - P "\r" ) ^ (-n) * C ( ( 1 - P "\r" ) ^ 0 )
+           ) ^ 0 )
+        / table.concat
+      ) : match ( code )
+    end
+  end
 end
-function piton.CountNonEmptyLines(code)
+function piton.GobbleParse ( lang , n , splittable , code )
+  piton.ComputeLinesStatus ( code , splittable )
+  piton.last_code = gobble ( n , code )
+  piton.last_language = lang
+  piton.CountLines ( piton.last_code )
+  sprintL3 [[ \bool_if:NT \g__piton_footnote_bool \savenotes ]]
+  piton.Parse ( lang , piton.last_code )
+  sprintL3 [[ \vspace{2.5pt} ]]
+  sprintL3 [[ \bool_if:NT \g__piton_footnote_bool \endsavenotes ]]
+  sprintL3 [[ \par ]]
+  if piton.write and piton.write ~= '' then
+    local file = io.open ( piton.write , piton.write_mode )
+    if file then
+      file : write ( piton.get_last_code ( ) )
+      file : close ( )
+    else
+      sprintL3 [[ \__piton_error_or_warning:n { FileError } ]]
+    end
+  end
+end
+function piton.GobbleSplitParse ( lang , n , splittable , code )
+  local chunks
+  chunks =
+     (
+       Ct (
+            (
+              P " " ^ 0 * "\r"
+              +
+              C ( ( ( 1 - P "\r" ) ^ 1 * "\r" - ( P " " ^ 0 * "\r" ) ) ^ 1 )
+            ) ^ 0
+          )
+     ) : match ( gobble ( n , code ) )
+  sprintL3 [[ \begingroup ]]
+  sprintL3
+    (
+      [[ \PitonOptions { split-on-empty-lines = false, gobble = 0, ]]
+      .. "language = " .. lang .. ","
+      .. "splittable = " .. splittable .. "}"
+    )
+  for k , v in pairs ( chunks ) do
+    if k > 1 then
+      sprintL3 [[ \l__piton_split_separation_tl ]]
+    end
+    tex.sprint
+      (
+        [[\begin{]] .. piton.env_used_by_split .. "}\r"
+        .. v
+        .. [[\end{]] .. piton.env_used_by_split .. "}"
+      )
+  end
+  sprintL3 [[ \endgroup ]]
+end
+function piton.RetrieveGobbleSplitParse ( lang , n , splittable , code )
+  local s
+  s = ( ( P " " ^ 0 * "\r" ) ^ -1 * C ( P ( 1 ) ^ 0 ) * -1 ) : match ( code )
+  piton.GobbleSplitParse ( lang , n , splittable , s )
+end
+piton.string_between_chunks =
+ [[ \par \l__piton_split_separation_tl \mode_leave_vertical: ]]
+ .. [[ \int_gzero:N \g__piton_line_int ]]
+function piton.get_last_code ( )
+  return LPEG_cleaner[piton.last_language] : match ( piton.last_code )
+end
+function piton.CountLines ( code )
   local count = 0
   count =
-  ( Cf (  Cc(0) *
-          (
-            ( P " " ) ^ 0 * P "\r"
-            + ( 1 - P "\r" ) ^ 0 * P "\r" * Cc(1)
-          ) ^ 0
-          * (1 - P "\r" ) ^ 0 ,
-         add
-       ) * -1 ) : match (code)
-  tex.sprint(
-      luatexbase.catcodetables.expl ,
-      '\\int_set:Nn \\l__piton_nb_non_empty_lines_int {' .. count .. '}' )
+     ( Ct ( ( ( 1 - P "\r" ) ^ 0 * C "\r" ) ^ 0
+            * ( ( 1 - P "\r" ) ^ 1 * Cc "\r" ) ^ -1
+            * -1
+          ) / table.getn
+     ) : match ( code )
+  sprintL3 ( string.format ( [[ \int_set:Nn  \l__piton_nb_lines_int { %i } ]] , count ) )
 end
-function piton.CountLinesFile(name)
+function piton.CountNonEmptyLines ( code )
   local count = 0
-  io.open(name) -- added
-  for line in io.lines(name) do count = count + 1 end
-  tex.sprint(
-      luatexbase.catcodetables.expl ,
-      '\\int_set:Nn \\l__piton_nb_lines_int {' .. count .. '}' )
+  count =
+     ( Ct ( ( P " " ^ 0 * "\r"
+              + ( 1 - P "\r" ) ^ 0 * C "\r" ) ^ 0
+            * ( 1 - P "\r" ) ^ 0
+            * -1
+          ) / table.getn
+     ) : match ( code )
+  sprintL3
+   ( string.format ( [[ \int_set:Nn  \l__piton_nb_non_empty_lines_int { %i } ]] , count ) )
 end
-function piton.CountNonEmptyLinesFile(name)
+function piton.CountLinesFile ( name )
   local count = 0
-  for line in io.lines(name)
-  do if not ( ( ( P " " ) ^ 0 * -1 ) : match ( line ) )
-     then count = count + 1
-     end
+  for line in io.lines ( name ) do count = count + 1 end
+  sprintL3
+   ( string.format ( [[ \int_set:Nn \l__piton_nb_lines_int { %i } ]], count ) )
+end
+function piton.CountNonEmptyLinesFile ( name )
+  local count = 0
+  for line in io.lines ( name ) do
+    if not ( ( P " " ^ 0 * -1 ) : match ( line ) ) then
+       count = count + 1
+    end
   end
-  tex.sprint(
-      luatexbase.catcodetables.expl ,
-      '\\int_set:Nn \\l__piton_nb_non_empty_lines_int {' .. count .. '}' )
+  sprintL3
+   ( string.format ( [[ \int_set:Nn \l__piton_nb_non_empty_lines_int { % i } ]] , count ) )
 end
 function piton.ComputeRange(marker_beginning,marker_end,file_name)
   local s = ( Cs ( ( P '##' / '#' + 1 ) ^ 0 ) ) : match ( marker_beginning )
@@ -1669,27 +1514,468 @@ function piton.ComputeRange(marker_beginning,marker_end,file_name)
   local first_line = -1
   local count = 0
   local last_found = false
-  for line in io.lines(file_name)
-  do if first_line == -1
-     then if string.sub(line,1,#s) == s
-          then first_line = count
+  for line in io.lines ( file_name ) do
+    if first_line == -1 then
+      if string.sub ( line , 1 , #s ) == s then
+        first_line = count
+      end
+    else
+      if string.sub ( line , 1 , #t ) == t then
+        last_found = true
+        break
+      end
+    end
+    count = count + 1
+  end
+  if first_line == -1 then
+    sprintL3 [[ \__piton_error_or_warning:n { begin~marker~not~found } ]]
+  else
+    if last_found == false then
+      sprintL3 [[ \__piton_error_or_warning:n { end~marker~not~found } ]]
+    end
+  end
+  sprintL3 (
+      [[ \int_set:Nn \l__piton_first_line_int { ]] .. first_line .. ' + 2 }'
+      .. [[ \int_set:Nn \l__piton_last_line_int { ]] .. count .. ' }' )
+end
+function piton.ComputeLinesStatus ( code , splittable )
+  local lpeg_line_beamer
+  if piton.beamer then
+    lpeg_line_beamer =
+       space ^ 0
+        * P [[\begin{]] * piton.BeamerEnvironments * "}"
+        * ( "<" * ( 1 - P ">" ) ^ 0 * ">" ) ^ -1
+       +
+       space ^ 0
+        * P [[\end{]] * piton.BeamerEnvironments * "}"
+  else
+    lpeg_line_beamer = P ( false )
+  end
+  local lpeg_empty_lines =
+    Ct (
+         ( lpeg_line_beamer * "\r"
+           +
+           P " " ^ 0 * "\r" * Cc ( 0 )
+           +
+           ( 1 - P "\r" ) ^ 0 * "\r" * Cc ( 1 )
+         ) ^ 0
+         *
+         ( lpeg_line_beamer + ( 1 - P "\r" ) ^ 1 * Cc ( 1 ) ) ^ -1
+       )
+    * -1
+  local lpeg_all_lines =
+    Ct (
+         ( lpeg_line_beamer * "\r"
+           +
+           ( 1 - P "\r" ) ^ 0 * "\r" * Cc ( 1 )
+         ) ^ 0
+         *
+         ( lpeg_line_beamer + ( 1 - P "\r" ) ^ 1 * Cc ( 1 ) ) ^ -1
+       )
+    * -1
+  piton.empty_lines = lpeg_empty_lines : match ( code )
+  local lines_status
+  local s = splittable
+  if splittable < 0 then s = - splittable end
+  if splittable > 0 then
+    lines_status = lpeg_all_lines : match ( code )
+  else
+    lines_status = lpeg_empty_lines : match ( code )
+    for i , x in ipairs ( lines_status ) do
+      if x == 0 then
+        for j = 1 , s - 1 do
+          if i + j > #lines_status then break end
+          if lines_status[i+j] == 0 then break end
+            lines_status[i+j] = 2
+        end
+        for j = 1 , s - 1 do
+          if i - j == 1 then break end
+          if lines_status[i-j-1] == 0 then break end
+          lines_status[i-j-1] = 2
+        end
+      end
+    end
+  end
+  for j = 1 , s - 1 do
+    if j > #lines_status then break end
+    if lines_status[j] == 0 then break end
+    lines_status[j] = 2
+  end
+  for j = 1 , s - 1 do
+    if #lines_status - j == 0 then break end
+    if lines_status[#lines_status - j] == 0 then break end
+    lines_status[#lines_status - j] = 2
+  end
+  piton.lines_status = lines_status
+end
+function piton.new_language ( lang , definition )
+  lang = string.lower ( lang )
+  local alpha , digit = lpeg.alpha , lpeg.digit
+  local extra_letters = { "@" , "_" , "$" } -- $
+  function add_to_letter ( c )
+    if c ~= " " then table.insert ( extra_letters , c ) end
+  end
+  function add_to_digit ( c )
+    if c ~= " " then digit = digit + c end
+  end
+  local other = S ":_@+-*/<>!?;.()[]~^=#&\"\'\\$" -- $
+  local extra_others = { }
+  function add_to_other ( c )
+    if c ~= " " then
+      extra_others[c] = true
+      other = other + P ( c )
+    end
+  end
+  local def_table
+  if ( S ", " ^ 0 * -1 ) : match ( definition ) then
+    def_table = {}
+  else
+    local strict_braces  =
+      P { "E" ,
+          E = ( "{" * V "F" * "}" + ( 1 - S ",{}" ) ) ^ 0  ,
+          F = ( "{" * V "F" * "}" + ( 1 - S "{}" ) ) ^ 0
+        }
+    local cut_definition =
+      P { "E" ,
+          E = Ct ( V "F" * ( "," * V "F" ) ^ 0 ) ,
+          F = Ct ( space ^ 0 * C ( alpha ^ 1 ) * space ^ 0
+                  * ( "=" * space ^ 0 * C ( strict_braces ) ) ^ -1 )
+        }
+    def_table = cut_definition : match ( definition )
+  end
+  local tex_braced_arg = "{" * C ( ( 1 - P "}" ) ^ 0 ) * "}"
+  local tex_arg = tex_braced_arg + C ( 1 )
+  local tex_option_arg =  "[" * C ( ( 1 - P "]" ) ^ 0 ) * "]" + Cc ( nil )
+  local args_for_tag
+    =  tex_option_arg
+       * space ^ 0
+       * tex_arg
+       * space ^ 0
+       * tex_arg
+  local args_for_morekeywords
+    = "[" * C ( ( 1 - P "]" ) ^ 0 ) * "]"
+       * space ^ 0
+       * tex_option_arg
+       * space ^ 0
+       * tex_arg
+       * space ^ 0
+       * ( tex_braced_arg + Cc ( nil ) )
+  local args_for_moredelims
+    = ( C ( P "*" ^ -2 ) + Cc ( nil ) ) * space ^ 0
+      * args_for_morekeywords
+  local args_for_morecomment
+    = "[" * C ( ( 1 - P "]" ) ^ 0 ) * "]"
+       * space ^ 0
+       * tex_option_arg
+       * space ^ 0
+       * C ( P ( 1 ) ^ 0 * -1 )
+  local sensitive = true
+  local style_tag , left_tag , right_tag
+  for _ , x in ipairs ( def_table ) do
+    if x[1] == "sensitive" then
+      if x[2] == nil or ( P "true" ) : match ( x[2] ) then
+        sensitive = true
+      else
+        if ( P "false" + P "f" ) : match ( x[2] ) then sensitive = false end
+      end
+    end
+    if x[1] == "alsodigit" then x[2] : gsub ( "." , add_to_digit ) end
+    if x[1] == "alsoletter" then x[2] : gsub ( "." , add_to_letter ) end
+    if x[1] == "alsoother" then x[2] : gsub ( "." , add_to_other ) end
+    if x[1] == "tag" then
+      style_tag , left_tag , right_tag = args_for_tag : match ( x[2] )
+      style_tag = style_tag or [[\PitonStyle{Tag}]]
+    end
+  end
+  local Number =
+    K ( 'Number' ,
+        ( digit ^ 1 * "." * # ( 1 - P "." ) * digit ^ 0
+          + digit ^ 0 * "." * digit ^ 1
+          + digit ^ 1 )
+        * ( S "eE" * S "+-" ^ -1 * digit ^ 1 ) ^ -1
+        + digit ^ 1
+      )
+  local string_extra_letters = ""
+  for _ , x in ipairs ( extra_letters ) do
+    if not ( extra_others[x] ) then
+     string_extra_letters = string_extra_letters .. x
+    end
+  end
+  local letter = alpha + S ( string_extra_letters )
+                  + P "â" + "à" + "ç" + "é" + "è" + "ê" + "ë" + "ï" + "î"
+                    + "ô" + "û" + "ü" + "Â" + "À" + "Ç" + "É" + "È" + "Ê" + "Ë"
+                    + "Ï" + "Î" + "Ô" + "Û" + "Ü"
+  local alphanum = letter + digit
+  local identifier = letter * alphanum ^ 0
+  local Identifier = K ( 'Identifier.Internal' , identifier )
+  local split_clist =
+    P { "E" ,
+         E = ( "[" * ( 1 - P "]" ) ^ 0 * "]" ) ^ -1
+             * ( P "{" ) ^ 1
+             * Ct ( V "F" * ( "," * V "F" ) ^ 0 )
+             * ( P "}" ) ^ 1 * space ^ 0 ,
+         F = space ^ 0 * C ( letter * alphanum ^ 0 + other ^ 1 ) * space ^ 0
+      }
+  local keyword_to_lpeg
+  function keyword_to_lpeg ( name ) return
+    Q ( Cmt (
+              C ( identifier ) ,
+              function ( s , i , a ) return
+                string.upper ( a ) == string.upper ( name )
+              end
+            )
+      )
+  end
+  local Keyword = P ( false )
+  local PrefixedKeyword = P ( false )
+  for _ , x in ipairs ( def_table )
+  do if x[1] == "morekeywords"
+        or x[1] == "otherkeywords"
+        or x[1] == "moredirectives"
+        or x[1] == "moretexcs"
+     then
+        local keywords = P ( false )
+        local style = [[\PitonStyle{Keyword}]]
+        if x[1] == "moredirectives" then style = [[\PitonStyle{Directive}]] end
+        style =  tex_option_arg : match ( x[2] ) or style
+        local n = tonumber ( style )
+        if n then
+          if n > 1 then style = [[\PitonStyle{Keyword]] .. style .. "}" end
+        end
+        for _ , word in ipairs ( split_clist : match ( x[2] ) ) do
+          if x[1] == "moretexcs" then
+            keywords = Q ( [[\]] .. word ) + keywords
+          else
+            if sensitive
+            then keywords = Q ( word  ) + keywords
+            else keywords = keyword_to_lpeg ( word ) + keywords
+            end
           end
-     else if string.sub(line,1,#t) == t
-          then last_found = true
-               break
-          end
+        end
+        Keyword = Keyword +
+           Lc ( "{" .. style .. "{" ) * keywords * Lc "}}"
      end
-     count = count + 1
+     if x[1] == "keywordsprefix" then
+       local prefix = ( ( C ( 1 - P " " ) ^ 1 ) * P " " ^ 0 ) : match ( x[2] )
+       PrefixedKeyword = PrefixedKeyword
+          + K ( 'Keyword' , P ( prefix ) * ( letter ^ 1 + other ) )
+     end
   end
-  if first_line == -1
-  then tex.sprint("\\PitonBeginMarkerNotFound")
-  else if last_found == false
-       then tex.sprint("\\PitonEndMarkerNotFound")
-       end
+  local long_string  = P ( false )
+  local Long_string = P ( false )
+  local LongString = P (false )
+  local central_pattern = P ( false )
+  for _ , x in ipairs ( def_table ) do
+    if x[1] == "morestring" then
+      arg1 , arg2 , arg3 , arg4 = args_for_morekeywords : match ( x[2] )
+      arg2 = arg2 or [[\PitonStyle{String.Long}]]
+      if arg1 ~= "s" then
+        arg4 = arg3
+      end
+      central_pattern = 1 - S ( " \r" .. arg4 )
+      if arg1 : match "b" then
+        central_pattern = P ( [[\]] .. arg3 ) + central_pattern
+      end
+      if arg1 : match "d" or arg1 == "m" then
+        central_pattern = P ( arg3 .. arg3 ) + central_pattern
+      end
+      if arg1 == "m"
+      then prefix = B ( 1 - letter - ")" - "]" )
+      else prefix = P ( true )
+      end
+     long_string = long_string +
+         prefix
+         * arg3
+         * ( space + central_pattern ) ^ 0
+         * arg4
+     local pattern =
+         prefix
+         * Q ( arg3 )
+         * ( SpaceInString + Q ( central_pattern ^ 1 ) + EOL ) ^ 0
+         * Q ( arg4 )
+      Long_string = Long_string + pattern
+      LongString = LongString +
+         Ct ( Cc "Open" * Cc ( "{" ..  arg2 .. "{" ) * Cc "}}" )
+         * pattern
+         * Ct ( Cc "Close" )
+    end
   end
-  tex.sprint(
-      luatexbase.catcodetables.expl ,
-      '\\int_set:Nn \\l__piton_first_line_int {' .. first_line .. ' + 2 }'
-      .. '\\int_set:Nn \\l__piton_last_line_int {' .. count .. ' }' )
+  local braces = Compute_braces ( long_string )
+  if piton.beamer then Beamer = Compute_Beamer ( lang , braces ) end
+
+  DetectedCommands = Compute_DetectedCommands ( lang , braces )
+
+  LPEG_cleaner[lang] = Compute_LPEG_cleaner ( lang , braces )
+  local CommentDelim = P ( false )
+
+  for _ , x in ipairs ( def_table ) do
+    if x[1] == "morecomment" then
+      local arg1 , arg2 , other_args = args_for_morecomment : match ( x[2] )
+      arg2 = arg2 or [[\PitonStyle{Comment}]]
+      if arg1 : match "i" then arg2 = [[\PitonStyle{Discard}]] end
+      if arg1 : match "l" then
+        local arg3 = ( tex_braced_arg + C ( P ( 1 ) ^ 0 * -1 ) )
+                     : match ( other_args )
+        if arg3 == [[\#]] then arg3 = "#" end -- mandatory
+        CommentDelim = CommentDelim +
+            Ct ( Cc "Open"
+                 * Cc ( "{" .. arg2 .. "{" ) * Cc "}}" )
+                 * Q ( arg3 )
+                 * ( CommentMath + Q ( ( 1 - S "$\r" ) ^ 1 ) ) ^ 0 -- $
+            * Ct ( Cc "Close" )
+            * ( EOL + -1 )
+      else
+        local arg3 , arg4 =
+          ( tex_arg * space ^ 0 * tex_arg ) : match ( other_args )
+        if arg1 : match "s" then
+          CommentDelim = CommentDelim +
+              Ct ( Cc "Open" * Cc ( "{" .. arg2 .. "{" ) * Cc "}}" )
+              * Q ( arg3 )
+              * (
+                  CommentMath
+                  + Q ( ( 1 - P ( arg4 ) - S "$\r" ) ^ 1 ) -- $
+                  + EOL
+                ) ^ 0
+              * Q ( arg4 )
+              * Ct ( Cc "Close" )
+        end
+        if arg1 : match "n" then
+          CommentDelim = CommentDelim +
+            Ct ( Cc "Open" * Cc ( "{" .. arg2 .. "{" ) * Cc "}}" )
+             * P { "A" ,
+                  A = Q ( arg3 )
+                      * ( V "A"
+                          + Q ( ( 1 - P ( arg3 ) - P ( arg4 )
+                                  - S "\r$\"" ) ^ 1 ) -- $
+                          + long_string
+                          +   "$" -- $
+                              * K ( 'Comment.Math' , ( 1 - S "$\r" ) ^ 1 ) --$
+                              * "$" -- $
+                          + EOL
+                        ) ^ 0
+                      * Q ( arg4 )
+                 }
+            * Ct ( Cc "Close" )
+        end
+      end
+    end
+    if x[1] == "moredelim" then
+      local arg1 , arg2 , arg3 , arg4 , arg5
+        = args_for_moredelims : match ( x[2] )
+      local MyFun = Q
+      if arg1 == "*" or arg1 == "**" then
+        function MyFun ( x )
+          if x ~= '' then return
+            LPEG1[lang] : match ( x )
+          end
+        end
+      end
+      local left_delim
+      if arg2 : match "i" then
+        left_delim = P ( arg4 )
+      else
+        left_delim = Q ( arg4 )
+      end
+      if arg2 : match "l" then
+        CommentDelim = CommentDelim +
+            Ct ( Cc "Open" * Cc ( "{" .. arg3 .. "{" ) * Cc "}}" )
+            * left_delim
+            * ( MyFun ( ( 1 - P "\r" ) ^ 1 ) ) ^ 0
+            * Ct ( Cc "Close" )
+            * ( EOL + -1 )
+      end
+      if arg2 : match "s" then
+        local right_delim
+        if arg2 : match "i" then
+          right_delim = P ( arg5 )
+        else
+          right_delim = Q ( arg5 )
+        end
+        CommentDelim = CommentDelim +
+            Ct ( Cc "Open" * Cc ( "{" .. arg3 .. "{" ) * Cc "}}" )
+            * left_delim
+            * ( MyFun ( ( 1 - P ( arg5 ) - "\r" ) ^ 1 ) + EOL ) ^ 0
+            * right_delim
+            * Ct ( Cc "Close" )
+      end
+    end
+  end
+
+  local Delim = Q ( S "{[()]}" )
+  local Punct = Q ( S "=,:;!\\'\"" )
+  local Main =
+       space ^ 0 * EOL
+       + Space
+       + Tab
+       + Escape + EscapeMath
+       + CommentLaTeX
+       + Beamer
+       + DetectedCommands
+       + CommentDelim
+       + LongString
+       + Delim
+       + PrefixedKeyword
+       + Keyword * ( -1 + # ( 1 - alphanum ) )
+       + Punct
+       + K ( 'Identifier.Internal' , letter * alphanum ^ 0 )
+       + Number
+       + Word
+  LPEG1[lang] = Main ^ 0
+  LPEG2[lang] =
+    Ct (
+         ( space ^ 0 * P "\r" ) ^ -1
+         * BeamerBeginEnvironments
+         * Lc [[ \__piton_begin_line: ]]
+         * SpaceIndentation ^ 0
+         * ( space ^ 1 * -1 + space ^ 0 * EOL + Main ) ^ 0
+         * -1
+         * Lc [[ \__piton_end_line: ]]
+       )
+  if left_tag then
+    local Tag = Ct ( Cc "Open" * Cc ( "{" .. style_tag .. "{" ) * Cc "}}" )
+                * Q ( left_tag * other ^ 0 ) -- $
+                * ( ( ( 1 - P ( right_tag ) ) ^ 0 )
+                  / ( function ( x ) return LPEG0[lang] : match ( x ) end ) )
+                * Q ( right_tag )
+                * Ct ( Cc "Close" )
+    MainWithoutTag
+            = space ^ 1 * -1
+            + space ^ 0 * EOL
+            + Space
+            + Tab
+            + Escape + EscapeMath
+            + CommentLaTeX
+            + Beamer
+            + DetectedCommands
+            + CommentDelim
+            + Delim
+            + LongString
+            + PrefixedKeyword
+            + Keyword * ( -1 + # ( 1 - alphanum ) )
+            + Punct
+            + K ( 'Identifier.Internal' , letter * alphanum ^ 0 )
+            + Number
+            + Word
+    LPEG0[lang] = MainWithoutTag ^ 0
+    local LPEGaux = Tab + Escape + EscapeMath + CommentLaTeX
+                    + Beamer + DetectedCommands + CommentDelim + Tag
+    MainWithTag
+            = space ^ 1 * -1
+            + space ^ 0 * EOL
+            + Space
+            + LPEGaux
+            + Q ( ( 1 - EOL - LPEGaux ) ^ 1 )
+    LPEG1[lang] = MainWithTag ^ 0
+    LPEG2[lang] =
+      Ct (
+           ( space ^ 0 * P "\r" ) ^ -1
+           * BeamerBeginEnvironments
+           * Lc [[ \__piton_begin_line: ]]
+           * SpaceIndentation ^ 0
+           * LPEG1[lang]
+           * -1
+           * Lc [[ \__piton_end_line: ]]
+         )
+  end
 end
 

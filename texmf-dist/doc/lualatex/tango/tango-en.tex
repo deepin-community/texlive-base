@@ -1,0 +1,753 @@
+% !TEX TS-program = LuaLaTeX
+\documentclass[english,ColorTheme=Red,FontSize=10pt]{tango}
+%\setmonofont{Latin Modern Mono}[Scale=MatchUppercase]
+\usepackage{longtable,csquotes,lipsum,tcolorbox}
+\usepackage[dvipsnames]{xcolor}
+\newcommand\DO[1]{\textcolor{ColorOne}{\bfseries #1}}
+\newcommand\TO[1]{\textsf{#1}}
+%%
+\NewDocumentCommand\showtheme{m}
+{{\tgosetup{ColorTheme=#1}
+\parbox{2.1cm}{\centering
+\textsf{#1\rule[-3pt]{0pt}{10pt}}\\
+\colorbox{ColorOne}{\parbox{1.5cm}{\rule[-5pt]{0pt}{15pt}}}
+\par
+\colorbox{ColorTwo}{\parbox{1.5cm}{\rule[-5pt]{0pt}{15pt}}}
+\par
+}}}
+%
+%\tgosmartlists
+\renewtgolabels1{\lefthand}
+\definecolor{ColorThree}{rgb}{0.93,0.95,0.97}
+\tcbset{colback=ColorTwo,colframe=ColorTwo,sharp corners}
+\frenchspacing
+%\setcounter{section}{88}
+\begin{document}
+
+\renewcommand{\arraystretch}{1.1}
+\title{\textcolor{ColorOne}{\floweroneleft}\,The tango document class\,\textcolor{ColorOne}{\floweroneright}}
+\author{\href{mailto:michel.bovani@icloud.com}{Michel \textsc{Bovani}}\\
+Tango web page: \href{https://tango.mathriochka.net}{https://tango.mathriochka.net}}
+\date{\today\\v. 0.8.0}
+{\sffamily
+\maketitle
+
+}
+\thispagestyle{empty}
+
+\tgoshorttoc
+\section{What the tango document class is}
+
+
+Tango is a Latex document class (\verb=\documentclass[<options>]{tango}=) for use by mathematics teachers (roughly speaking, from high school to undergraduate level). It makes it possible to typeset several types of documents, from the short handout to the complete textbook. The \enquote{maths dedicated aspect} essentially consists in:
+\begin{itemize}
+\item loading maths packages;
+\item offering dedicated commands and environments for statements (definitions, propositions, theorems…), exercises, numbering.
+\end{itemize}
+
+Tango is reasonably configurable, even if certain choices are imposed: mandatory use of lualatex, opentype fonts and recent installation, in particular. The tango class defines eight output formats, five of which are suitable for tablets, e-readers and smartphones; a system currently under development can be used to introduce a particular input for a given output format (for example, forcing a page break for the A5 format only). Finally, the tango class can be used for projects of a more general nature than maths lessons: science courses, but even more general usage with some extra configuration effort (see the Candide directory in the examples). 
+
+Another class of documents for presenting school work (training exercises, test or exam subjects) will soon be available, called \enquote{bravo}.
+
+
+
+
+\section{Options overview}
+Please note that the table below only lists the options actually managed by the tango class. Other options, if used when calling the class, can simply be passed to certain packages. This is the case, for example, with the babel language options, or the \TO{math-style} option, which is systematically passed to the \TO{unicode-math} package.
+
+Default values are in bold red. Bold options marked with a \TO{\textbf{star*}} can be used in the preamble and in the body of the document with the \verb=\tgosetup{}= command: for example, in order to change the colors inside the document, you can use \verb+\tgosetup{ColorTheme=Navy}+. Other options can only be mentioned when the tango class is called.
+
+
+\begin{longtable}{p{0.23\linewidth}p{0.7\linewidth}}
+\caption[]{The tango class options}\\
+\textbf{Option}&\textbf{Usage}\\
+\hline\endhead
+\hline\multicolumn{2}{r}{\emph{Continued next page}}\endfoot
+\hline\endlastfoot
+
+\hline
+\TO{%
+french, english, british, american, canadian, australian, newzealand, german, ngerman, naustrian, nswissgerman, italian, spanish}.& Tango will transmit all language options to the \TO{babel} package. However, the translation of specific names used by tango (such as theorem, exercise, etc.) is only guaranteed for the languages listed opposite. Please note that even English speakers must \emph{imperatively} pass a language option to tango.
+
+See section~\ref{lang} below.\\
+\hline
+\TO{no-statement}&\TO{no-statement=true/\DO{false}}. The  \TO{thm}, \TO{defin}, \TO{lem}, \TO{coro}, \TO{propo} environments (for theorems, definitions, lemmas, corollaries, propositions) are defined by default. The no-statement option allows you to define them later, on request (see \verb=\newstatement= and \verb=\renewstatement= commands in section~\ref{st-section} page~\pageref{st-section}).\\
+\hline
+\TO{no-hyperref}&\TO{no-hyperref=true/\DO{false}}. If you're only planning a single paper output….\\
+\hline
+\TO{no-indent/indent}&\TO{no-indent=true/\DO{false}}. Indents are present by default. The option \TO{noindent} (meaning \TO{no-indent = true}) returns us to the left margin. The \TO{indent} option also exists, but is not very useful!\\
+\hline
+\TO{no-titleindent}/\TO{titleindent}&Title indents are present by default only in French (because in French typography, the first paragraph after a title must be indented: so I prefer in this case the titles to be indented too). You can use no-tiltleindent in French and titleindent in English to change the default behavior. These options must be called after the language options.\\
+\hline
+\TO{\textbf{ThmNamePos*}}&\TO{ThmNamePos=<value>} where \TO{<value>} can be \TO{\DO{left}} or \TO{right}. The name of the statement (Theorem, Definition, etc.) is displayed to the left or right of the box.\\
+\hline
+\TO{PubliClass}&\TO{PubliClass=<value>} where \TO{<value>} can be \TO{\DO{article}} or \TO{book}. Indicates the base document class used (Latex standard \TO{article} document class or Latex standard \TO{book} document class.) The tango class is designed so that short handouts or monographs composed with the \TO{article} version can then be grouped together as chapters in the same volume with the \TO{book} version. See the \texttt{mathematics} directory in the \texttt{examples} documentation. With the \TO{article} version, the \verb=\part= and \verb=\tableofontents= commands are disabled. The \verb=\tgoshorttoc= command can be used to obtain a summary at the beginning of a monograph.\\
+\hline
+\TO{oneside/twoside}& The option \TO{twoside} makes recto/verso, \TO{oneside} simply makes recto. The default is \TO{\DO{oneside}}. For now, there's no adjustment of inner and outer margins with twoside but it's easy to adapt it to your needs with the \verb=\geometry= command in the preamble. Note that one may prefer \TO{twoside=false} to \TO{oneside} (why not?).\\
+\hline
+\TO{FontSize}&\TO{FontSize=<value>} where \TO{<value>} can be \TO{9pt}, \TO{\DO{10pt}}, \TO{11pt} ou \TO{12pt}.\\
+\hline
+\TO{\textbf{ColorTheme*}}&\TO{ColorTheme=<value>} where  \TO{<value>} can be \TO{Blue, Navy, USAF, Azur, Red, Framboise, Brique, Sienne, Caramel, Olive, Tannen, \DO{GrayGray}, BlackAndWhite, Ink} or \TO{Steel}. These values are worth trying out: each defines a set of two colors, one solid (ColorOne) for titles and one very light (ColorTwo) for box backgrounds.\\
+\hline
+\TO{\textbf{ColorOne*}/\textbf{ColorTwo*}}& These options allow the user to define the colors of a personal theme separately; the argument must be a suitable argument for \verb=\definecolor=. See xcolor package (loaded without options by the tango class) documentation. 
+\begin{example}[Examples]
+ \begin{itemize}
+ \item\TO{ColorOne=}\verb={rgb}{0.75,0.1,0.05}=
+  \item\TO{ColorOne=}\verb={cmyk}{0,0.8,0.8,0.2}=
+ \item\TO{ColorTwo=}\verb={{rgb}{0.75,0.96,0.75}}= (note that external braces may be used, but are not mandatory).
+\end{itemize} 
+\end{example}
+\\
+\hline
+\TO{\textbf{ColorOneNamed*}} / \\
+\TO{\textbf{ColorTwoNamed*}}&
+These options allow the user to define the colors of a personal theme separately; the argument must be a suitable argument for \verb=\colorlet=. See xcolor package (loaded without options by the tango class) documentation. 
+\begin{example}[Examples]
+ \begin{itemize}
+ \item\TO{ColorOneNamed=}\verb={red!70!blue}=
+\item\TO{ColorTwoNamed=}\verb={yellow!12}=
+ \end{itemize} 
+\end{example}
+If you want to use a predefined set of colors, say \TO{dvipsnames}, you may reload the \TO{xcolor} package with the \TO{dvipsnames} option in your preamble, and then use the \verb=\tgosetup= command:
+\begin{itemize}
+\item \verb+\tgosetup{ColorOneNamed={RedOrange!80!BrickRed}}+
+ \end{itemize} 
+\\
+\hline
+\TO{Output}&\TO{Output=<value>} where \TO{<value>} can be \TO{\DO{A4paper}, Letter, A5paper, BigTablet, Tablet, SmallTablet, eReader} or \TO{Smartphone}. \TO{BigTablet}, \TO{Tablet} and \TO{SmallTablet} correspond to 13-, 11- and 8.5-inch screens respectively. \TO{eReader} is for a 6-inch e-reader. It should be noted that in the case of \TO{eReader} and \TO{Smartphone}, the requested format is larger than the actual format, so that the font sizes are much smaller than required. So the \TO{FontSize=9pt} option produces a result on their screens that may be difficult to read.\\
+\hline
+ \TO{Numbers}& \TO{Numbers=<value>} where \TO{<value>} can be \TO{TextOldStyle, OldStyle, MathOldStyle, FullOldstyle}. If you don't ask for anything, you get the \enquote{lining} numbers.
+\begin{itemize}
+\item \TO{Numbers=TextOldStyle} activates oldstyle (or lower-case) digits (like these {\olddigits 0123456789}) of the erewhon font (basic text font) for the entire document.
+\item \TO{Numbers=OldStyle} activates oldsyle (or lower-case) digits for all text fonts used in the document.
+\item \TO{Numbers=MathOldStyle} activates lower-case digits only in mathematics (I can't think of any good reason to do this!).
+\item \TO{Numbers=FullOldStyle} activates lower-case digits for all text fonts as well as for mathematics.
+\end{itemize}
+It should be noted that it is always possible to switch locally from the digits selected with this option to one of their variants (for example, section titles are systematically numbered using \enquote{lining} digits, since these titles are themselves capitalized).\\
+\hline
+\TO{StylisticSet}&\TO{StylisticSet=\{<value1>, <value2>,…\}} where \TO{<value1>, <value2>,} etc. are to be taken from \TO{upint, leqslant, smaller, subsetneq} and \TO{parallelslant}. These options concern the Erewhon-Math font, which is a (very) extended opentype version by Daniel \textsc{Flipo} of the math fonts of the Fourier-Gutenberg system. For more information, see the Erewhon-Math documentation (\verb=texdoc erewhon-math= in any good terminal).\\
+\hline
+\TO{CharacterVariant}&\TO{CharacterVariant=\{<value1>, <value2>,…\}} where \TO{<value1>, <value2>,} etc. can be chosen from \TO{zero, hslash, emptyset, epsilon, kappa, pi, phi, rho, sigma, theta, partial, Ecal, Qcal} and \TO{Tcal}. These options concern the Erewhon-Math font, which is a (very) extended opentype version by Daniel \textsc{Flipo} of the math fonts of the Fourier-Gutenberg system. For more information, see the Erewhon-Math documentation (\verb=texdoc erewhon-math= in any good terminal).\end{longtable}
+
+%\medskip
+
+\section{Packages loaded by the tango document class}
+I only mention here the packages directly loaded by the tango class. Each of these packages can in turn load others...
+\begin{itemize}
+\item \verb=\RequirePackage{xcolor}=. The \TO{xcolor} package is used by the tango class to define the colors of the various themes.  It is called without any options, but you can reload it in the preamble of your document with options such as \TO{dvipsnames}, \TO{svgnames} or \TO{x11names}.
+\item\verb=\RequirePackage{mathtools}=. The \TO{mathtools} package loads the \TO{amsmath} package, to which it adds a complement.
+\item\verb=\RequirePackage{geometry}=. Used by the tango class in order to define the page design of the various outputs formats. You can use the \verb=\geometry=. command in the document preamble to modify this layout.
+\item\verb=\RequirePackage{enumitem}=. Used by the tango class to configure the various \TO{list}-based environments in its own way (see section~\ref{lists}). These settings can be modified by the user in the preamble.
+\item\verb=\RequirePackage{titletoc}=. Used by the tango class to fix the table of contents appearance which can be modified by the user in the preamble.
+\item\verb=\RequirePackage[pagestyles,toctitles,newlinetospace,clearempty]{titlesec}=. Used by the tango class to configure the appearance of titles at different levels.  This can be modified by the user in the preamble. The default English version adds the \TO{noindentafter} option.
+\item\verb=\RequirePackage{ccaption,caption}=. Used by the tango class to configure the captions appearance for figures and tables. (See section~\ref{figtable}).
+\item\verb=\RequirePackage{fontspec}\RequirePackage{unicode-math}=. The tango class requires \TO{lualatex}, opentype fonts, and Unicode settings. 
+\item\verb=\RequirePackage{fourier-orns}=. See the section~\ref{fnts} below.
+\item\verb=\RequirePackage{iflang}=. Used by tango to send a class error message if no language option is given. 
+\item\verb=\RequirePackage{babel}=. The babel package is called without options. It is up to you to pass babel options to the tango class. See section~\ref{lang} below.
+\item\verb+\RequirePackage[colorlinks,linkcolor=ColorOne,urlcolor=ColorOne]{hyperref}+. This \TO{hyperref} configuration can be modified using the \verb=\hypersetup= command in your preamble. You can also use the \TO{no-hyperref} option.
+\item\verb=\RequirePackage{array,graphicx,microtype,numprint,float,afterpage}=. These packages are provided but not explicitly used by tango.
+\end{itemize}
+
+
+\section{Fonts}\label{fnts}
+
+\subsection{The tango font system}
+Tango's main font is Erewhon, an opentype version of Utopia (a PostScript type~1 font which was designed in 1989 by Robert \textsc{Slimbach} and once donated by Adobe to the X-consortium and featured on TeXlive). Unlike Utopia, Erewhon, designed by Michael \textsc{Sharpe}, covers a large number of languages and offers a wide range of functions, available through opentype features. It should be noted that Adobe distributes a commercial opentype version of Utopia, which is less rich in glyphs than Erewhon, but has an intermediate font-weight and optical character sizes.
+
+The tango mathematical font is Erewhon~Math, a scientific complement to Erewhon designed by Daniel \textsc{Flipo}. Erewhon Math is in a way the opentype counterpart of Fourier-GUTenberg, the scientific complement to Utopia type~1 designed by me in 2002. Erewhon~Math offers a large number of functions made accessible by Daniel through the \TO{fourier-otf} package. The tango class does not load \TO{fourier-otf}, but uses all its functions through a system of options.
+
+The sans-serif font of the tango system is Noto Sans, scaled. Noto Sans is a sans-serif font for text in Latin, Cyrillic and Greek characters, with multiple weights and widths. 
+
+The main (chapter) title font is Roboto Condensed Bold (as a condensed version of Noto Sans is not available on TeXlive).
+
+The monospaced font is Inconsolatazi4, scaled.
+
+Finally, tango calls the \TO{fourier-orns} package, a symbols and logos complement to the fourier system which has now an opentype version. 
+
+\subsection{Replacing the tango font system}
+It is, of course, possible to use the  \TO{fontspec} \verb=\setmainfont=, \verb=\setsansfont= and \verb=\setmonofont= commands and the \TO{unicode-math} \verb=\setmathfont= command in the preamble in order to modify the parameters of the tango class: this is not advisable, in my humble opinion. But one day there will probably be another class in the tango distribution which will use another font system. Such a document class could be called charlie, or foxtrot or zulu….
+
+\subsection{Font commands and text font commands}
+Here, I call \enquote{Font commands}  commands whose scope can only be limited by a group or an environment. I call \enquote{Text font commands}, on the other hand, commands whose scope is limited to their argument, which must not contain a paragraph break. For example, \verb=\bfseries= is a \enquote{font command} and \verb=\textbf= is a \enquote{text font command}. Here is what is provided by tango (see table~\ref{otfcmd}, \pageref{otfcmd}). All these commands should work with Erewhon and with Noto Sans as well.
+\begin{table}[ht]
+\XTabletCommand{\centering\setlength\tabcolsep{9pt}}
+\TabletCommand{\centering}
+\caption{Tango opentype commands}\label{otfcmd}
+\ifTgoTabletOutput\begin{tabular}{l | l | l | l}%
+\else
+\begin{tabular}{llll}%
+\fi
+\hline
+\multicolumn{1}{c}{\textsf{\bfseries Command}}&
+\multicolumn{1}{c}{\textsf{\bfseries Nature}}&
+\multicolumn{1}{c}{\textsf{\bfseries Example}}&
+\multicolumn{1}{c}{\textsf{\bfseries Result}}\\
+\hline
+\verb=\superiors=&\textsf{font command} & \verb=M{\superiors rs}=&M{\superiors rs}\\
+\hline
+\verb=\scinferiors=&\textsf{font command}  &\verb={\scinferiors C6H12O3}= &{\scinferiors C6H12O3}\\
+\hline
+\verb=\smartfracs=&\textsf{font command}  &\verb=2{\smartfracs1/3}= &2{\smartfracs1/3} \\
+\hline
+\verb=\fullsc=&\textsf{text font command}  &\verb=\fullsc{Chapter}= &\fullsc{Chapter} \\
+\hline
+\verb=\textsup=&\textsf{text font command}  &\verb=M\textsup{rs}=&M\textsup{rs} \\
+\hline
+\verb=\textscinf=&\textsf{text font command}  &\verb=\textscinf{C6H12O3}= &\textscinf{C6H12O3} \\
+\hline
+\verb=\smartfrac=&\textsf{text font command}  &\verb=2\smartfrac{3/4}= &2\smartfrac{3/4} \\
+\hline
+\verb=\olddigits=&\textsf{font command}  &\verb={\olddigits01234}= &{\olddigits01234} \\
+\hline
+\verb=\liningdigits=&\textsf{font command}  &\verb={\olddigits01\liningdigits01}= &{\olddigits01\liningdigits01} \\
+\hline
+\verb=\propdigits=&\textsf{font command}  &\verb={\propdigits011\olddigits011}= &{\propdigits011\olddigits011} \\
+\hline
+\verb=\tabulardigits=&\textsf{font command}  &\verb={\tabulardigits011\olddigits011}= &{\tabulardigits011\olddigits011} \\
+\hline
+\end{tabular}
+
+
+\end{table}
+
+
+\section{Using tango}
+
+\subsection{Generalities}
+The tango interface is not so different from that of the standard \TO{article} and \TO{book} document classes. Configuration is essentially a matter of choosing options.
+
+For advanced use, it is useful to refer to the documentation for the various packages: first, of course, \TO{unicode-math}, \TO{fontspec}, \TO{mathtools} and \TO{amsmath}. But if you want to change the style of titles, for example, you could take a look at the \TO{titlesec} documentation, and to change the style of lists (enumerate, itemize, etc.), take a look at \TO{enumitem}. The \TO{geometry} package is essential for anyone wanting to obtain a particular layout. And so on. 
+\subsection{Modified standard commands}
+Since documents designed with the \TO{article} option can become chapters in a book composed later with the \TO{book} option, the \verb+\part+ command inherited from the \TO{article} class has been deactivated (only for article-typeset documents)
+
+Similarly, the \TO{article} version benefits from a \verb+\tgotitle+ command that lets you define the main title of the document. The \verb+\tgotitle*+ version exists but does nothing more or less than the unstarred command. However, in the \TO{book} version, \verb+\tgotitle+ is  an alias for \verb+\chapter+ (and \verb+\tgotitle*+ is  an alias for \verb+\chapter*+), so the unnumbered title of a handout very easily becomes the numbered title of a chapter in a book. This, of course, assumes that the \verb+\includeonly+/\verb+\include+ mechanism is used... A model (currently written in French) is provided in the \TO{examples} directory.
+
+The command \verb+\tableofcontents+ can only be used with the \TO{book} option; it is deactivated with the \TO{article} option: in this case, you have to use \verb+\tgoshorttoc+ instead (of course \verb+\tgoshorttoc+ is in turn deactivated in the \TO{book} version). Note that, if you need multiple or partial tocs, you have to use a dedicated package.
+
+\subsection{Using two or more output formats}
+What I'm describing here is still rudimentary and experimental. It will be developed further if it proves successful. 
+
+For each output format, two particular commands are provided. For example, in case of the \TO{Smartphone} output option, you have \verb+\SmartphoneCommand+ and \verb+\XSmartphoneCommand+. The \verb+\SmartphoneCommand+ argument is only taken into account if \TO{Output=Smartphone} have been used. Conversely, the \verb+\XSmartphoneCommand+ argument is only taken into account if this option has not been used.
+\begin{example}[Examples]
+\begin{itemize}
+\item \verb+\SmartphoneCommand{\pagebreak}+ asks for a page break only for the smartphone output.
+\item \verb+\XSmartphoneCommand{\[< long math formula >\]}+
+\par \verb+\SmartphoneCommand{\begin{multline*}<split formula>\end{multine*}}+
+\par asks for a multline version of a formula only for the smartphone output
+\end{itemize}
+\end{example}
+
+Provided commands are:
+\begin{itemize}
+\item\verb+\AfourCommand+ and \verb+\XAfourCommand+ for the A4 format;
+\item\verb+\LetterCommand+ and \verb+\XLetterCommand+ for the letter format;
+\item\verb+\AfiveCommand+ and \verb+\XAfiveCommand+ for the A5 format;
+\item\verb+\BigTabletCommand+ and \verb+\XBigTabletCommand+ for the big tablet format;
+\item\verb+\TabletCommand+ and \verb+\XTabletCommand+ for the tablet format;
+\item\verb+\SmallTabletCommand+ and \verb+\XSmallTabletCommand+ for the small tablet format;
+\item\verb+\eReaderCommand+ and \verb+\XeReaderCommand+ for the e-reader format;
+\item\verb+\SmartphoneCommand+ and \verb+\XSmartphoneCommand+ for the smartphone format.
+\end{itemize}
+\subsection{All the color themes}
+\indent\par
+\hspace*{0pt}\hfil\showtheme{Blue}\hfil\showtheme{Azur}\hfil\showtheme{Navy}\hfil\showtheme{USAF}\hfil%
+\showtheme{Framboise}\hfil\null
+\par\bigskip\par
+\hspace*{0pt}\hfil\showtheme{Red}\hfil\showtheme{Brique}\hfil\showtheme{Caramel}\hfil\showtheme{Sienne}\hfil\showtheme{Olive}\hfil\null
+\par\bigskip\par
+\hspace*{0pt}\hfil\showtheme{Tannen}\hfil\showtheme{GrayGray}\hfil\showtheme{Steel}\hfil\showtheme{Ink}\hfil\showtheme{BlackAndWhite}\hfil\null
+
+\section{Language settings}\label{lang}
+A language option \emph{must} be passed to the \TO{babel} package via the tango class: this is true \emph{even} for English-speaking people. A class error message will be generated otherwise. If you ignore this message you will get no hyphenation patterns at all!
+
+Tango also has some reserved words, which are (when an english language option is passed to tango):\begin{verbatim}
+\newcommand\TgoTheoremName{Theorem}
+\newcommand\TgoDefinitionName{Definition}
+\newcommand\TgoPropositionName{Proposition}
+\newcommand\TgoLemmaName{Lemma}
+\newcommand\TgoCorollaryName{Corollary}
+\newcommand\TgoRemarkName{Remark}
+\newcommand\TgoExampleName{Example}
+\newcommand\TgoContentsName{Contents}
+\newcommand\TgoExerciseName{Exercise}
+\newcommand\TgoExercisesSubsectionName{Exercises}
+\newcommand\TgoExercisesSectionName{Exercises}
+\end{verbatim}
+
+Although any language option recognized by babel will (in principle) be taken into account as soon as it is passed to tango, the translation of these reserved words only happens for the following languages: 
+\begin{itemize}
+\item\TO{french};
+\item\TO{english, british, american, canadian, australian, newzealand};
+\item\TO{german, ngerman, naustrian, nswissgerman};
+\item\TO{italian};
+\item\TO{spanish}.
+\end{itemize}
+
+Other languages benefit from babel's facilities, but tango's reserved words are not translated.
+So here's what concerned users can do.
+
+\begin{enumerate}
+\item Translate these names in your language (for now it is done only for the french language), using \verb+\renewcommand+. 
+\item (Better) Mail me  all the necessary information (at least babel language option used and your translation of the tango names) and I will adapt the tango class to your language.
+\end{enumerate}
+\section{Statements}\label{st-section}
+
+\subsection{Predefined statements}
+The environments offered by the tango document class for the statements were defined using the \verb+\newstatement+ command, whose syntax is:
+\begin{tcolorbox}
+\begin{verbatim}
+\newstatement{<environment>}{<counter>}{<statement-name>}[<optionnal-font-command>]
+\end{verbatim}
+\end{tcolorbox}
+For example, the \TO{thm}, \TO{defin}, \TO{propo}, \TO{coro} and \TO{lem} environments have been defined using something like:
+\begin{tcolorbox}
+\begin{verbatim}
+\newcounter{thm} \newstatement{thm}{thm}{Theorem}[\itshape]
+\newcounter{defin} \newstatement{defin}{defin}{Definition}
+\newcounter{propo} \newstatement{propo}{propo}{Proposition}[\itshape]
+\newcounter{coro} \newstatement{coro}{coro}{Corollary}
+\newcounter{lem} \newstatement{lem}{lem}{Lemma}
+\end{verbatim}
+\end{tcolorbox}
+
+
+If you type:
+
+\begin{tcolorbox}
+\begin{verbatim}
+\begin{propo}
+The sum of two odd integers is an even integer.
+\end{propo}
+\begin{thm}[pons asinorum]
+The angles at the base of an isosceles triangle are equal.
+\end{thm}
+\end{verbatim}
+\end{tcolorbox}
+
+you will obtain:
+\begin{propo}
+The sum of two odd integers is an even integer.
+\end{propo}
+\begin{thm}[pons asinorum]
+The angles at the base of an isosceles triangle are equal.
+\end{thm}
+
+As you can see, each statement defined with \verb+\newstatement+ has an optional bracketed argument (which is displayed within parentheses after the statement name and number). Please, note that these environments should not be used inside a \TO{list}-based environment (like center, quote, enumerate, itemize…).
+
+For each statement defined with \verb+\newstatement+ there is also
+\begin{itemize}
+\item a starred form with no statement number:
+\begin{tcolorbox}
+\begin{verbatim}
+\begin{coro*}
+The angles at the base of an isosceles triangle are equal.
+\end{coro*}
+\end{verbatim}
+\end{tcolorbox}
+\end{itemize}
+\begin{coro*}
+The angles at the base of an isosceles triangle are equal.
+\end{coro*}
+\begin{itemize}
+\item and an optional first argument delimited with \verb+< >+ to replace locally the full theorem name.
+\begin{tcolorbox}
+\begin{verbatim}
+\begin{thm*}<D'Alembert-Gauss theorem>[fundamental theorem of algebra]
+Every non-constant single-variable polynomial with
+complex coefficients has at least one complex root.
+\end{thm*}
+\end{verbatim}
+\end{tcolorbox}
+\end{itemize}
+\begin{thm*}<D'Alembert-Gauss theorem>[fundamental theorem of algebra]
+Every non-constant single-variable polynomial with complex coefficients has at least one complex root.
+\end{thm*}
+
+\subsection{Defining your own statements}
+If you need a new statement type, say an axm environment for axioms, it's easy:
+\begin{tcolorbox}
+\begin{verbatim}
+\newcounter{axio} \newstatement{axm}{axio}{Axiom}
+\end{verbatim}
+\end{tcolorbox}
+Note that it is up to you to define the counter for this new environment: if this counter does not still exist, it has to be created with \verb+\newcounter+. Of course, the counter name may be different from the environment name. If you have used the \TO{no-statement} option, you will have to define all the statements you need, with the environment names you prefer.
+
+\subsection{Redefining existing statements}
+The \verb+\newstatement+ command has a \verb+\renewstatement+ companion to redefine existing statement environment. Precisely, you need to use \verb+\renewstatement{foo}…+ instead of \verb+\newstatement{foo}…+ if and only if the \verb+foo+ environment has already been defined.
+
+\begin{example}[Examples]
+\begin{enumerate}
+\item You can redefine the \TO{propo} environment in such a way that it uses the same counter as the \TO{thm} environment and is displayed in the upright font:
+\begin{tcolorbox}
+\begin{verbatim}
+\renewstatement{propo}{thm}{Proposition}
+\setcounter{thm}{0}
+\begin{propo}
+The sum of two odd integers is an even integer.
+\end{propo}
+\begin{thm}
+The angles at the base of an isosceles triangle are equal.
+\end{thm}
+\end{verbatim}
+\end{tcolorbox}
+\end{enumerate}
+\renewstatement{propo}{thm}{Proposition}
+\setcounter{thm}{0}
+\begin{propo}
+The sum of two odd integers is an even integer.
+\end{propo}
+\begin{thm}
+The angles at the base of an isosceles triangle are equal.
+\end{thm}
+
+\begin{enumerate}[resume]
+\item If you have already written \emph{all} your algebra book in Latex, with propositions, theorems and corollaries and you realize that, \emph{now}, you want there is no more difference between propositions, theorems and corollaries: the three types of statements should be typeset in italic, named \enquote{Proposition} and numbered with the same counter, you can just use in your preamble:
+
+\begin{tcolorbox}
+\begin{verbatim}
+\renewstatement{coro}{thm}{Proposition}[\itshape]
+\renewstatement{propo}{thm}{Proposition}[\itshape]
+\renewstatement{thm}{thm}{Proposition}[\itshape]
+\setcounter{thm}{0}
+\begin{propo}
+The sum of two odd integers is an even integer.
+\end{propo}
+\begin{thm}
+The sum of two even integers is an even integer.
+\end{thm}
+\begin{coro}
+If two integers have the same parity, their sum is even.
+\end{coro}
+\end{verbatim}
+\end{tcolorbox}
+and you will get
+
+\end{enumerate}
+\renewstatement{coro}{thm}{Proposition}[\itshape]
+\renewstatement{propo}{thm}{Proposition}[\itshape]
+\renewstatement{thm}{thm}{Proposition}[\itshape]
+\setcounter{thm}{0}
+\begin{propo}
+The sum of two odd integers is an even integer.
+\end{propo}
+\begin{thm}
+The sum of two even integers is an even integer.
+\end{thm}
+\begin{coro}
+If two integers have the same parity, their sum is even.
+\end{coro}
+
+
+instead of 
+
+\setcounter{thm}{0}\setcounter{propo}{0}
+\renewstatement{thm}{thm}{Theorem}[\itshape]
+\renewstatement{propo}{propo}{Proposition}[\itshape]
+\renewstatement{coro}{coro}{Corollary}
+\begin{propo}
+The sum of two odd integers is an even integer.
+\end{propo}
+\begin{thm}
+The sum of two even integers is an even integer.
+\end{thm}
+\begin{coro}
+If two integers have the same parity, their sum is even.
+\end{coro}
+\begin{enumerate}[resume]
+\item And finally \verb+\renewstatement+ and \verb+\newstatement+ have a starred form with which statement numbers are displayed \emph{before} the statement name. More, if the statement counter is the subsection or subsubsection counter, the concerned statement titles are displayed in the same form and placement as subsection or subsubsection  titles; of course the placement depends on the value of \TO{notitleindent}.
+\begin{tcolorbox}
+\begin{verbatim}
+\renewstatement*{thm}{thm}{Theorem}
+\begin{thm}<D'Alembert-Gauss theorem>[fundamental theorem of algebra]
+Every non-constant single-variable polynomial with
+complex coefficients has at least one complex root.
+\end{thm}
+\renewstatement*{thm}{subsection}{Theorem}[\itshape]
+\begin{thm}<D'Alembert-Gauss theorem>[fundamental theorem of algebra]
+Every non-constant single-variable polynomial with
+complex coefficients has at least one complex root.
+\end{thm}
+\renewstatement*{thm}{subsubsection}{Theorem}
+\begin{thm}<D'Alembert-Gauss theorem>[fundamental theorem of algebra]
+Every non-constant single-variable polynomial with
+complex coefficients has at least one complex root.
+\end{thm}
+\end{verbatim}
+\end{tcolorbox}
+\end{enumerate}
+\end{example}
+\renewstatement*{thm}{thm}{Theorem}
+\begin{thm}<D'Alembert-Gauss theorem>[fundamental theorem of algebra]
+Every non-constant single-variable polynomial with complex coefficients has 
+at least one complex root.
+\end{thm}
+\renewstatement*{thm}{subsection}{Theorem}[\itshape]
+\begin{thm}<D'Alembert-Gauss theorem>[fundamental theorem of algebra]
+Every non-constant single-variable polynomial with complex coefficients has 
+at least one complex root.
+\end{thm}
+\renewstatement*{thm}{subsubsection}{Theorem}
+\begin{thm}<D'Alembert-Gauss theorem>[fundamental theorem of algebra]
+Every non-constant single-variable polynomial with complex coefficients has 
+at least one complex root.
+\end{thm}
+
+
+
+\section{Exercises}
+\subsection{Typesetting exercises}
+Tango provides the \verb+\exo+ command which lets you typeset a numbered exercise (the counter is \TO{tgoexo}). There is a starred version, which is not numbered. As for the statements, the bracketed option provides a complementary title between parenthesis and the \enquote{\TO{< >}} marked first option provides a substitution title.
+\begin{tcolorbox}
+\begin{verbatim}
+\exo 
+Prove that if $G$ is a finite group and $H$ a subgroup of $G$,
+then the order of $H$ divides the order of $G$.
+\exo[Lagrange theorem]
+Prove that if $G$ is a finite group and $H$ a subgroup of $G$,
+then the order of $H$ divides the order of $G$.
+\end{verbatim}
+\end{tcolorbox}
+\exo 
+Prove that if $G$ is a finite group and $H$ a subgroup of $G$, then the order of $H$ divides the order of $G$.
+\exo[Lagrange theorem]
+Prove that if $G$ is a finite group and $H$ a subgroup of $G$,
+then the order of $H$ divides the order of $G$.
+\begin{tcolorbox}
+\begin{verbatim}
+\newcommand\tgostar{\raisebox{-0.5ex}{\large\textborn}}
+\exo*<Chinese remainder problem>[\tgostar\tgostar\tgostar]
+Let $n_1,\ldots, n_k$ be integers greater than $1$ and let us denote by $N$
+the product of the $n_i$. Prove that if the $n_i are pairwise coprime, and if
+$a_1,\ldots, a_k$ are any integers, then the system
+\begin{align*}
+x&\equiv a_1 \pmod{n_1}\\
+&\!\vdots\\
+x&\equiv a_k \pmod{n_k}
+\end{align*}
+has a solution, and any two solutions are congruent modulo $N$.
+\end{verbatim}
+\end{tcolorbox}
+\newcommand\tgostar{\raisebox{-0.5ex}{\large\textborn}}
+\exo*<Chinese remainder problem>[\tgostar\tgostar\tgostar]
+Let $n_1,\ldots, n_k$ be integers greater than $1$ and let us denote by $N$ the product of the $n_i$.
+Prove that if the $n_i$ are pairwise coprime, and if $a_1,\ldots, a_k$ are any integers, then the system
+\begin{align*}
+x&\equiv a_1 \pmod{n_1}\\
+&\!\vdots\\
+x&\equiv a_k \pmod{n_k}
+\end{align*}
+has a solution, and any two solutions are congruent modulo $N$.
+\subsection{The secexo and chapexo environments}
+These environments are designed to present a part devoted to exercises at the end of a section (in the case of \TO{secexo}) or a chapter (in the case of \TO{chapexo}). Within these environments, you can use the command \verb+\exo+
+
+The title, in capitals and centred, is \enquote{EXERCISES} by default. The optional argument in square brackets allows you to choose another. This title is added to the table of contents.
+
+Finally, there is a starred form (\verb+\begin{secexo*)+…\verb+\end{secexo*}+ which allows you to compose the exercises within these sections in a smaller font size (exept if the main font size is nine points). 
+
+\begin{tcolorbox}
+\begin{verbatim}
+\begin{secexo*}[Example of an exercises subsection]
+\exo Prove that the sum of two even integers is an even integer.
+\exo Prove that the sum of two odd integers is an even integer.
+\end{secexo*}
+\end{verbatim}
+\end{tcolorbox}
+\begin{secexo*}[Example of an exercises subsection]
+\exo Prove that the sum of two even integers is an even integer.
+\exo Prove that the sum of two odd integers is an even integer.
+\end{secexo*}
+
+\section{Lists}\label{lists}
+\subsection{General principles}
+All the horizontal motion in tango is performed in steps equal to an integer multiple of the \verb+\TgoStandardMargin+ length parameter. When the tango class is loaded, the value of this parameter is set to 1.5em, as are paragraph indentation and title indentation (unless these two values are fixed to zero). Successive labels in the enumerate and itemize environments are therefore successively positioned at 1.5em, 3em, 4.5em, etc. from the main margin. It could be unadvised to change these settings (or this should be done using the enumitem package).
+\subsection{List based environments}
+There are two main lists configurations. The first, active by default, is set with \verb+\tgostandardlists+; the second is set with \verb+\tgosmartlists+.
+%
+With \verb+\tgostandardlists+ the text corresponding to a given level is shifted to the right (by a value equal to \verb+\TgoStandardMargin+...) with respect to the corresponding label.
+%
+With \verb+\tgosmartlists+, conversely, the text corresponding to a given level is shifted to the left (by a value equal to \verb+\TgoStandardMargin+...) in relation to the corresponding label.
+\renewtgolabels*\tgostandardlists
+
+Here is the default behaviour of the \TO{itemize} environment (\TO{enumerate} is not different).
+\begin{itemize}
+\item Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Ut purus elit, vestibulum ut, placerat ac, adipiscing vitae, felis. Curabitur dictum gravida mauris. Nam arcu libero, nonummy eget, consectetuer id, vulputate a, magna.
+\item Donec vehicula augue eu neque. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Mauris ut leo. Cras viverra metus rhoncus sem. Nulla et lectus vestibulum urna fringilla ultrices. Phasellus eu tellus sit amet tortor gravida placerat.
+\begin{itemize}
+\item Integer sapien est, iaculis in, pretium quis, viverra ac, nunc. Praesent eget sem vel leo ultrices bibendum. Aenean faucibus. Morbi dolor nulla, malesuada eu, pulvinar at, mollis ac, nulla. Curabitur auctor semper nulla.
+\begin{itemize}
+\item Donec vehicula augue eu neque. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.
+\begin{itemize}
+\item Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Mauris ut leo. Praesent eget sem vel leo ultrices bibendum. Aenean faucibus. Morbi dolor nulla, malesuada eu, pulvinar at, mollis ac, nulla. Curabitur auctor semper nulla.
+\end{itemize}
+\item Donec varius orci eget risus. Duis nibh mi, congue eu, accumsan eleifend, sagittis quis, diam. 
+\end{itemize}\end{itemize}
+\item  Cras viverra metus rhoncus sem. Nulla et lectus vestibulum urna fringilla ultrices. Phasellus eu tellus sit amet tortor gravida placerat.
+\end{itemize}
+
+\bigskip
+
+And now with \verb+\tgosmartlists+ \tgosmartlists
+\begin{itemize}
+\item Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Ut purus elit, vestibulum ut, placerat ac, adipiscing vitae, felis. Curabitur dictum gravida mauris. Nam arcu libero, nonummy eget, consectetuer id, vulputate a, magna.
+\item Donec vehicula augue eu neque. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Mauris ut leo. Cras viverra metus rhoncus sem. Nulla et lectus vestibulum urna fringilla ultrices. Phasellus eu tellus sit amet tortor gravida placerat.
+\begin{itemize}
+\item Integer sapien est, iaculis in, pretium quis, viverra ac, nunc. Praesent eget sem vel leo ultrices bibendum. Aenean faucibus. Morbi dolor nulla, malesuada eu, pulvinar at, mollis ac, nulla. Curabitur auctor semper nulla.
+\begin{itemize}
+\item Donec vehicula augue eu neque. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.
+\begin{itemize}
+\item Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Mauris ut leo. Praesent eget sem vel leo ultrices bibendum. Aenean faucibus. Morbi dolor nulla, malesuada eu, pulvinar at, mollis ac, nulla. Curabitur auctor semper nulla.
+\end{itemize}
+\item Donec varius orci eget risus. Duis nibh mi, congue eu, accumsan eleifend, sagittis quis, diam. 
+\end{itemize}\end{itemize}
+\item  Cras viverra metus rhoncus sem. Nulla et lectus vestibulum urna fringilla ultrices. Phasellus eu tellus sit amet tortor gravida placerat.
+\end{itemize}
+
+Note that \verb+\tgosmartlists+ seems most interesting when you use mainly the first level of these environments.
+Since the \verb+\tgosmartlists+ doesn't support very well a construction like
+\begin{tcolorbox}
+\begin{verbatim}
+\begin{enumerate}
+\item\begin{enumerate}\item
+…
+\end{verbatim}
+\end{tcolorbox}
+that is frequent in exercises questions,
+the \TO{secexo} and \TO{chapexo} environments set locally the lists to \verb+\tgostandardlists+. It is not the case with the \verb+\exo+ command which has no local context. \tgostandardlists
+
+\subsection{Redefining labels of itemize lists}
+Tango provides a \verb+\renewtgolabels+ command which permits to modify the labels of the \TO{itemize} environment. Arguments are numbered from 1 to 4 (there is four levels of itemize lists in Latex) and must be used like in the examples below.
+\begin{example}[Examples]
+\begin{itemize}
+\item\verb=\renewtgolabels1{\lefthand}= will replace the first label by the \verb=\lefthand= symbol.
+\renewtgolabels1{\lefthand}
+\item\verb=\renewtgolabels4{\textbullet}1{\openbullet}3{\textemdash}= changes the label for the first (again), the third and the fourth levels. Level 2 remains unchanged. As you can see, the order of the arguments is unimportant. \renewtgolabels4{\textbullet}1{\openbullet}3{\textemdash}
+\end{itemize}
+\end{example}
+
+There is also a starred form that restore the initial label (as at the load of the class) which are \verb=\textbullet=, \textbullet, for the level 1, \verb=\textopenbullet=, \textopenbullet,  for the level 2, \verb=\starredbullet=, \starredbullet, for the level 3 and \verb=\textperiodcentered=, \textperiodcentered{} for the level 4 (note that this is the tango default, but \emph{not} the Latex default).
+
+\renewtgolabels*
+\begin{example}[Examples]
+\begin{itemize}
+\item\verb=\renewtgolabels*= restore all the initial values.
+\item\verb=\renewtgolabels*2{\textendash}= restore initial values except for the second level which is changed to \textendash.
+\end{itemize}
+\end{example}
+
+
+\section{Other environments}
+In addition to the statements environments, the tango class offers the following environments:
+\subsection{The remark and  example environments}
+\begin{tcolorbox}
+\begin{verbatim}
+\begin{remark} 
+This is a very good remark.
+\end{remark}
+\begin{example} 
+This is a very short example.
+\end{example}
+\end{verbatim}
+\end{tcolorbox}
+\begin{remark} 
+This is a very good remark.
+\end{remark}
+\begin{example} 
+This is a very short example.
+\end{example}
+
+These two environments have a bracketed optional argument which displays a replacement title. For example:
+\begin{tcolorbox}
+\begin{verbatim}
+\begin{example}[Remarks]
+\begin{enumerate}
+\item A first (very good) remark.
+\item A second remark (which is best, if possible).
+\end{enumerate}
+\end{example}
+\end{verbatim}
+\end{tcolorbox}
+\begin{example}[Remarks]
+\begin{enumerate}
+\item A first (very good) remark.
+\item A second remark (which is best, if possible).
+\end{enumerate}
+\end{example}
+
+\subsection{The  alert environment}
+\begin{tcolorbox}
+\begin{verbatim}
+\begin{alert}
+You should not even try to use \verb+\expandafter\expandafter\expandafter+
+unless you are actually a very experimented \TeX{} user, because you could get 
+a terrible headhache.
+\end{alert}
+\end{verbatim}
+\end{tcolorbox}
+\begin{alert}
+ You should not even try to use \verb+\expandafter\expandafter\expandafter+
+unless you are actually a very experimented \TeX{} user, because you could get 
+a terrible headhache.
+\end{alert}
+
+The \TO{alert} environment also support an optional bracketed argument.
+\begin{tcolorbox}
+\begin{verbatim}
+\begin{alert}[\bomb]
+You should not even try to use \verb+\expandafter\expandafter\expandafter+
+unless you are actually a very experimented \TeX{} user, because you could get 
+a terrible headhache.
+\end{alert}
+\end{verbatim}
+\end{tcolorbox}
+\begin{alert}[\bomb]
+ You should not even try to use \verb+\expandafter\expandafter\expandafter+
+unless you are actually a very experimented \TeX{} user, because you could get 
+a terrible headhache.
+\end{alert}
+
+\subsection{The proof environment}
+The \TO{proof} environment is adapted from the \TO{amsthm} package. It also support a bracketed optional argument for a replacement title. The \verb+\qedhere+ command is also usable.
+\renewstatement{thm}{thm}{Theorem}[\itshape]
+\setcounter{thm}{0}
+\begin{tcolorbox}
+\begin{verbatim}
+\begin{thm}
+The sum of two odd integers is an even integer.
+\end{thm}
+\begin{proof}
+Let $p$ and $q$ be two odd integers. We have to prove that there
+exists an integer $n$ such that $p+q=2n$.
+We know that there is an integer $p_1$ and an integer $q_1$ such that
+\[p=2p_1+1\text{ and } q=2q_1+1,\]
+hence
+\begin{align*}p+q&=(2p_1+1)+(2q_1+1)\\
+&=2\underbrace{(p_1+q_1+1)}_{n}\qedhere
+\end{align*}
+\end{proof}
+\end{verbatim}
+\end{tcolorbox}
+\begin{thm}
+The sum of two odd integers is an even integer.
+\end{thm}
+\begin{proof}
+Let $p$ and $q$ be two odd integers. We have to prove that there exists an integer $n$ such that $p+q=2n$.
+We know that there is an integer $p_1$ and an integer $q_1$ such that
+\[p=2p_1+1\text{ and } q=2q_1+1,\]
+hence
+\begin{align*}p+q&=(2p_1+1)+(2q_1+1)\\
+&=2\underbrace{(p_1+q_1+1)}_{n}\qedhere
+\end{align*}
+\end{proof}
+
+\section{Figures, tables, floats and captions}\label{figtable}
+Thanks to the \TO{caption} package, the following have been defined:
+\begin{itemize}
+\item\verb+\tgofigcaption+ (for figures);
+\item and \verb+\tgotabcaption+ (for tables).
+\end{itemize}
+These two commands provide captions similar in appearance to what could be obtained with \verb+\caption+, but also work in the case of non-floating objects.
+
+In this way it is possible to include small tables and figures in a fixed position, with nothing in their appearance to distinguish them from floating objects (whose use is still recommended in most cases).
+
+\end{document}

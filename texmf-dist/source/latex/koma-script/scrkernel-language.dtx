@@ -18,16 +18,16 @@
 %
 % This work consists of all files listed in MANIFEST.md.
 % ======================================================================
-%%% From File: $Id: scrkernel-language.dtx 4032 2023-04-17 09:45:11Z kohm $
+%%% From File: $Id: scrkernel-language.dtx 4107 2024-04-10 17:24:53Z kohm $
 %<option>%%%            (run: option)
 %<body>%%%            (run: body)
 %<*dtx>
 \ifx\ProvidesFile\undefined\def\ProvidesFile#1[#2]{}\fi
 \begingroup
   \def\filedate$#1: #2-#3-#4 #5${\gdef\filedate{#2/#3/#4}}
-  \filedate$Date: 2023-04-17 11:45:11 +0200 (Mo, 17. Apr 2023) $
+  \filedate$Date: 2024-04-10 19:24:53 +0200 (Mi, 10 Apr 2024) $
   \def\filerevision$#1: #2 ${\gdef\filerevision{r#2}}
-  \filerevision$Revision: 4032 $
+  \filerevision$Revision: 4107 $
   \edef\reserved@a{%
     \noexpand\endgroup
     \noexpand\ProvidesFile{scrkernel-language.dtx}
@@ -169,7 +169,6 @@
 \newcommand*{\scr@def@activateactivelanguageaftergroup}[2]{%
   \@onelevel@sanitize\languagename
   \@tempswafalse
-%<trace>  \typeout{comparing `\languagename' and `\scr@reserved@a'}%
   \ifx\languagename\scr@reserved@a
     \@tempswatrue
   \else
@@ -194,7 +193,6 @@
           \expandafter\ifx\csname if@swiss@locale\expandafter\endcsname
           \csname iftrue\endcsname swiss\else german\fi\fi
       }%
-%<trace>      \typeout{comparing also `\scr@reserved@a' and `\scr@reserved@b'}%
       \@onelevel@sanitize\scr@reserved@b
       \ifx\scr@reserved@a\scr@reserved@b \@tempswatrue\fi
     \fi
@@ -1032,8 +1030,12 @@
 %
 %
 % \begin{macro}{\g@addnumerical@date}
+% \changes{v3.42}{2024/04/10}{recognize and use \pkg{datetime2}}
 % We need to redefine the already existing textual date of a language package
-% by a numerical one.
+% by a numerical one. The code also supports \pkg{datetime2} and should even
+% work with obsolete package \pkg{datetime}. However, usage of \pkg{datetime}
+% is not recommended. And it even works, if someone defines \cs{DTMtoday}
+% using \cs{today}, which should not be done!
 %    \begin{macrocode}
 %<*letter&body>
 \newcommand*{\g@addnumerical@date}[2]{%
@@ -1046,14 +1048,41 @@
     }%
   }{%
     \expandafter\g@addto@macro\csname date#1\endcsname{%
-      \let\sym@date=\today%
       \def\num@date{#2}%
-      \def\today{\if@orgdate\sym@date\else\num@date\fi}%
+      \ifx\today\sym@num@date
+        \@ifundefined{DTMtoday}{%
+%<class>          \ClassWarning{scrlttr2}
+%<package>          \PackageWarning{scrletter}
+          {%
+            no original date found for language `#1'\MessageBreak
+            --> using numerical date%
+          }%
+          \let\sym@date\num@date
+        }{%
+          \begingroup
+            \gdef\scr@global@tempa{\let\sym@date\DTMtoday}%
+            \def\today{\gdef\scr@global@tempa{\let\sym@date\num@date}}%
+            \sbox\@tempboxa{\sym@date}%
+          \endgroup
+          \scr@global@tempa
+        }%
+      \else
+        \DeclareCommandCopy{\sym@date}{\today}%
+        \let\today=\sym@num@date
+      \fi
     }%
   }%
 }
+%    \end{macrocode}
+% \begin{macro}{\sym@num@date}
+%   \changes{v3.42}{2024/04/10}{added}
+% Used inside \cs{date\meta{language name}} to define \cs{today} respecting
+% option \opt{numericaldate}.
+%    \begin{macrocode}
+\newcommand*{\sym@num@date}{\if@orgdate\sym@date\else\num@date\fi}
 %</letter&body>
 %    \end{macrocode}
+% \end{macro}
 % \end{macro}
 %
 %

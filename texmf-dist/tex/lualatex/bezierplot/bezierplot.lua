@@ -1,19 +1,24 @@
 #!/usr/bin/env lua
 -- Linus Romer, published 2018 under LPPL Version 1.3c
--- version 1.4 2019-06-18
+-- version 1.6 2024-11-02
 abs = math.abs
 acos = math.acos
 asin = math.asin
 atan = math.atan
 cos = math.cos
+cosh = math.cosh
+deg = math.deg
 exp = math.exp
 e = math.exp(1)
+huge = math.huge
 log = math.log
 pi = math.pi
+rad = math.rad
 sin = math.sin
+sinh = math.sinh
 sqrt = math.sqrt
 tan = math.tan
-huge = math.huge
+tanh = math.tanh
 
 -- just a helper for debugging:
 local function printdifftable(t)
@@ -54,8 +59,8 @@ end
 
 local function round(num, decimals)
 	local result = tonumber(string.format("%." .. (decimals or 0) .. "f", num))
-	if abs(result) == 0 then
-		return 0
+	if math.floor(result) == result then
+		return math.floor(result)
 	else
 		return result
 	end
@@ -275,101 +280,27 @@ local function do_parameters_fit(a,b,c,d,funcstring,funcgraph,maxerror,isinverse
 	return true
 end
 
--- f(x)=a*x^3+b*x+c
+-- f(x)=a*x^3+b*x^2+c*x +d
 local function parameters_cubic(xp,yp,xq,yq,xr,yr,xs,ys)
-	local a = (((xp^2 * xq) * yr) - ((xp^2 * xq) * ys) 
-	- ((xp^2 * xr) * yq) + ((xp^2 * xr) * ys) + ((xp^2 * xs) * yq)
-	- ((xp^2 * xs) * yr) - ((xp * xq^2) * yr) + ((xp * xq^2) * ys) 
-	+ ((xp * xr^2) * yq) - ((xp * xr^2) * ys) - ((xp * xs^2) * yq) 
-	+ ((xp * xs^2) * yr) + ((xq^2 * xr) * yp) - ((xq^2 * xr) * ys) 
-	- ((xq^2 * xs) * yp) + ((xq^2 * xs) * yr) - ((xq * xr^2) * yp) 
-	+ ((xq * xr^2) * ys) + ((xq * xs^2) * yp) - ((xq * xs^2) * yr) 
-	+ ((xr^2 * xs) * yp) - ((xr^2 * xs) * yq) - ((xr * xs^2) * yp) 
-	+ ((xr * xs^2) * yq)) / 
-	(((xp^3 * xq^2) * xr) - ((xp^3 * xq^2) * xs) 
-	- ((xp^3 * xq) * xr^2) + ((xp^3 * xq) * xs^2) 
-	+ ((xp^3 * xr^2) * xs) - ((xp^3 * xr) * xs^2) 
-	- ((xp^2 * xq^3) * xr) + ((xp^2 * xq^3) * xs) 
-	+ ((xp^2 * xq) * xr^3) - ((xp^2 * xq) * xs^3) 
-	- ((xp^2 * xr^3) * xs) + ((xp^2 * xr) * xs^3) 
-	+ ((xp * xq^3) * xr^2) - ((xp * xq^3) * xs^2) 
-	- ((xp * xq^2) * xr^3) + ((xp * xq^2) * xs^3) 
-	+ ((xp * xr^3) * xs^2) - ((xp * xr^2) * xs^3) 
-	- ((xq^3 * xr^2) * xs) + ((xq^3 * xr) * xs^2) 
-	+ ((xq^2 * xr^3) * xs) - ((xq^2 * xr) * xs^3) 
-	- ((xq * xr^3) * xs^2) + ((xq * xr^2) * xs^3))
-	local b = ((((-xp^3) * xq) * yr) + ((xp^3 * xq) * ys) 
-	+ ((xp^3 * xr) * yq) - ((xp^3 * xr) * ys) - ((xp^3 * xs) * yq) 
-	+ ((xp^3 * xs) * yr) + ((xp * xq^3) * yr) - ((xp * xq^3) * ys) 
-	- ((xp * xr^3) * yq) + ((xp * xr^3) * ys) + ((xp * xs^3) * yq) 
-	- ((xp * xs^3) * yr) - ((xq^3 * xr) * yp) + ((xq^3 * xr) * ys) 
-	+ ((xq^3 * xs) * yp) - ((xq^3 * xs) * yr) + ((xq * xr^3) * yp) 
-	- ((xq * xr^3) * ys) - ((xq * xs^3) * yp) + ((xq * xs^3) * yr) 
-	- ((xr^3 * xs) * yp) + ((xr^3 * xs) * yq) + ((xr * xs^3) * yp) 
-	- ((xr * xs^3) * yq)) / 
-	(((xp^3 * xq^2) * xr) - ((xp^3 * xq^2) * xs) 
-	- ((xp^3 * xq) * xr^2) + ((xp^3 * xq) * xs^2) 
-	+ ((xp^3 * xr^2) * xs) - ((xp^3 * xr) * xs^2) 
-	- ((xp^2 * xq^3) * xr) + ((xp^2 * xq^3) * xs) 
-	+ ((xp^2 * xq) * xr^3) - ((xp^2 * xq) * xs^3) 
-	- ((xp^2 * xr^3) * xs) + ((xp^2 * xr) * xs^3) 
-	+ ((xp * xq^3) * xr^2) - ((xp * xq^3) * xs^2) 
-	- ((xp * xq^2) * xr^3) + ((xp * xq^2) * xs^3) 
-	+ ((xp * xr^3) * xs^2) - ((xp * xr^2) * xs^3) 
-	- ((xq^3 * xr^2) * xs) + ((xq^3 * xr) * xs^2) 
-	+ ((xq^2 * xr^3) * xs) - ((xq^2 * xr) * xs^3) 
-	- ((xq * xr^3) * xs^2) + ((xq * xr^2) * xs^3))
-	local c = (((xp^3 * xq^2) * yr) - ((xp^3 * xq^2) * ys) 
-	- ((xp^3 * xr^2) * yq) + ((xp^3 * xr^2) * ys) 
-	+ ((xp^3 * xs^2) * yq) - ((xp^3 * xs^2) * yr) 
-	- ((xp^2 * xq^3) * yr) + ((xp^2 * xq^3) * ys) 
-	+ ((xp^2 * xr^3) * yq) - ((xp^2 * xr^3) * ys) 
-	- ((xp^2 * xs^3) * yq) + ((xp^2 * xs^3) * yr) 
-	+ ((xq^3 * xr^2) * yp) - ((xq^3 * xr^2) * ys) 
-	- ((xq^3 * xs^2) * yp) + ((xq^3 * xs^2) * yr) 
-	- ((xq^2 * xr^3) * yp) + ((xq^2 * xr^3) * ys) 
-	+ ((xq^2 * xs^3) * yp) - ((xq^2 * xs^3) * yr) 
-	+ ((xr^3 * xs^2) * yp) - ((xr^3 * xs^2) * yq) 
-	- ((xr^2 * xs^3) * yp) + ((xr^2 * xs^3) * yq)) / 
-	(((xp^3 * xq^2) * xr) - ((xp^3 * xq^2) * xs) 
-	- ((xp^3 * xq) * xr^2) + ((xp^3 * xq) * xs^2) 
-	+ ((xp^3 * xr^2) * xs) - ((xp^3 * xr) * xs^2) 
-	- ((xp^2 * xq^3) * xr) + ((xp^2 * xq^3) * xs) 
-	+ ((xp^2 * xq) * xr^3) - ((xp^2 * xq) * xs^3) 
-	- ((xp^2 * xr^3) * xs) + ((xp^2 * xr) * xs^3) 
-	+ ((xp * xq^3) * xr^2) - ((xp * xq^3) * xs^2) 
-	- ((xp * xq^2) * xr^3) + ((xp * xq^2) * xs^3) 
-	+ ((xp * xr^3) * xs^2) - ((xp * xr^2) * xs^3) 
-	- ((xq^3 * xr^2) * xs) + ((xq^3 * xr) * xs^2) 
-	+ ((xq^2 * xr^3) * xs) - ((xq^2 * xr) * xs^3) 
-	- ((xq * xr^3) * xs^2) + ((xq * xr^2) * xs^3))
-	local d = ((((xp^(3) * xq^(2)) * xr) * ys) 
-	- (((xp^(3) * xq^(2)) * xs) * yr) - (((xp^(3) * xq) * xr^(2)) * ys) 
-	+ (((xp^(3) * xq) * xs^(2)) * yr) + (((xp^(3) * xr^(2)) * xs) * yq) 
-	- (((xp^(3) * xr) * xs^(2)) * yq) - (((xp^(2) * xq^(3)) * xr) * ys) 
-	+ (((xp^(2) * xq^(3)) * xs) * yr) + (((xp^(2) * xq) * xr^(3)) * ys) 
-	- (((xp^(2) * xq) * xs^(3)) * yr) - (((xp^(2) * xr^(3)) * xs) * yq) 
-	+ (((xp^(2) * xr) * xs^(3)) * yq) + (((xp * xq^(3)) * xr^(2)) * ys) 
-	- (((xp * xq^(3)) * xs^(2)) * yr) - (((xp * xq^(2)) * xr^(3)) * ys) 
-	+ (((xp * xq^(2)) * xs^(3)) * yr) + (((xp * xr^(3)) * xs^(2)) * yq) 
-	- (((xp * xr^(2)) * xs^(3)) * yq) - (((xq^(3) * xr^(2)) * xs) * yp) 
-	+ (((xq^(3) * xr) * xs^(2)) * yp) + (((xq^(2) * xr^(3)) * xs) * yp) 
-	- (((xq^(2) * xr) * xs^(3)) * yp) - (((xq * xr^(3)) * xs^(2)) * yp) 
-	+ (((xq * xr^(2)) * xs^(3)) * yp)) / 
-	(((xp^(3) * xq^(2)) * xr) - 
-	((xp^(3) * xq^(2)) * xs) - ((xp^(3) * xq) * xr^(2)) 
-	+ ((xp^(3) * xq) * xs^(2)) + ((xp^(3) * xr^(2)) * xs) 
-	- ((xp^(3) * xr) * xs^(2)) - ((xp^(2) * xq^(3)) * xr) 
-	+ ((xp^(2) * xq^(3)) * xs) + ((xp^(2) * xq) * xr^(3)) 
-	- ((xp^(2) * xq) * xs^(3)) - ((xp^(2) * xr^(3)) * xs) 
-	+ ((xp^(2) * xr) * xs^(3)) + ((xp * xq^(3)) * xr^(2)) 
-	- ((xp * xq^(3)) * xs^(2)) - ((xp * xq^(2)) * xr^(3)) 
-	+ ((xp * xq^(2)) * xs^(3)) + ((xp * xr^(3)) * xs^(2)) 
-	- ((xp * xr^(2)) * xs^(3)) - ((xq^(3) * xr^(2)) * xs) 
-	+ ((xq^(3) * xr) * xs^(2)) + ((xq^(2) * xr^(3)) * xs) 
-	- ((xq^(2) * xr) * xs^(3)) - ((xq * xr^(3)) * xs^(2)) 
-	+ ((xq * xr^(2)) * xs^(3)))
-	return a, b, c, d
+	return (((xq-xp)*xr^2+(xp^2-xq^2)*xr+xp*xq^2-xp^2*xq)*ys+((xp-xq)
+	*xs^2+(xq^2-xp^2)*xs-xp*xq^2+xp^2*xq)*yr+((xr-xp)*xs^2+(xp^2-xr^2)
+	*xs+xp*xr^2-xp^2*xr)*yq+((xq-xr)*xs^2+(xr^2-xq^2)*xs-xq*xr^2+xq^2
+	*xr)*yp)/((xq-xp)*(xr-xp)*(xr-xq)*(xs-xp)*(xs-xq)*(xs-xr)),
+	-(((xq-xp)*xr^3+(xp^3-xq^3)*xr+xp*xq^3-xp^3*xq)*ys+((xp-
+	xq)*xs^3+(xq^3-xp^3)*xs-xp*xq^3+xp^3*xq)*yr+((xr-xp)*xs^3+(xp^3
+	-xr^3)*xs+xp*xr^3-xp^3*xr)*yq+((xq-xr)*xs^3+(xr^3-xq^3)*xs-xq*xr^3
+	+xq^3*xr)*yp)/((xq-xp)*(xr-xp)*(xr-xq)*(xs-xp)*(xs-xq)*(xs-xr)),
+	(((xq^2-xp^2)*xr^3+(xp^3-xq^3)*xr^2+xp^2*xq^3-xp^3*xq^2)
+	*ys+((xp^2-xq^2)*xs^3+(xq^3-xp^3)*xs^2-xp^2*xq^3+xp^3*xq^2)*yr
+	+((xr^2-xp^2)*xs^3+(xp^3-xr^3)*xs^2+xp^2*xr^3-xp^3*xr^2)*yq+((xq^2
+	-xr^2)*xs^3+(xr^3-xq^3)*xs^2-xq^2*xr^3+xq^3*xr^2)*yp)/((xq-xp)
+	*(xr-xp)*(xr-xq)*(xs-xp)*(xs-xq)*(xs-xr)),
+	-(((xp*xq^2-xp^2*xq)*xr^3+(xp^3*xq-xp*xq^3)*xr^2+(xp^2
+	*xq^3-xp^3*xq^2)*xr)*ys+((xp^2*xq-xp*xq^2)*xs^3+(xp*xq^3-xp^3*xq)
+	*xs^2+(xp^3*xq^2-xp^2*xq^3)*xs)*yr+((xp*xr^2-xp^2*xr)*xs^3+(xp^3*xr
+	-xp*xr^3)*xs^2+(xp^2*xr^3-xp^3*xr^2)*xs)*yq+((xq^2*xr-xq*xr^2)*xs^3
+	+(xq*xr^3-xq^3*xr)*xs^2+(xq^3*xr^2-xq^2*xr^3)*xs)*yp)/((xq-xp)
+	*(xr-xp)*(xr-xq)*(xs-xp)*(xs-xq)*(xs-xr))
 end
 
 -- f(x)=a*x+b
@@ -511,7 +442,7 @@ end
 -- and try to approximate it with a cubic bezier curve
 -- (round to rndx and rndy when printing)
 -- if maxerror <= 0, the function will not be recursive anymore
-local function graphtobezierapprox(f,g,starti,endi,maxerror)
+local function graphtobezierapprox(f,g,starti,endi,maxerror,recursiondepth)
 	local px = g[starti][1]
 	local py = g[starti][2]
 	local dp = g[starti][3]
@@ -521,24 +452,47 @@ local function graphtobezierapprox(f,g,starti,endi,maxerror)
 	-- we compute the corner point c, where the controls would meet
 	local cx = ((dp * px) - (ds * sx) - py + sy) / (dp - ds)
 	local cy = (dp * ((ds * px) - (ds * sx) - py + sy) / (dp - ds)) + py
+	local delta_cpx = .01*(cx-px)
+	local delta_cpy = .01*(cy-py)
+	local delta_csx = .01*(cx-sx)
+	local delta_csy = .01*(cy-sy)
 	-- now we slide q between p and c & r between s and c
 	-- and search for the best qx and best rx
-	local qx = px+.01*(cx-px)
-	local qy = py+.01*(cy-py)
-	local rx = sx+.01*(cx-sx)
-	local ry = sy+.01*(cy-sy)
+	local qx = px+delta_cpx
+	local qy = py+delta_cpy
+	local rx = sx+delta_csx
+	local ry = sy+delta_csy
 	local err = squareerror(f,g,starti,endi,qx,qy,rx,ry)
+	local newerror
+	local best_j = 1
 	for i = 2, 99 do
-		for j = 2, 99 do
-			xa = px+i*.01*(cx-px)
-			ya = py+i*.01*(cy-py)
-			xb = sx+j*.01*(cx-sx)
-			yb = sy+j*.01*(cy-sy)
+		xa = px+i*delta_cpx
+		ya = py+i*delta_cpy
+		for j = 10, 90, 10 do -- determine j roughly
+			xb = sx+j*delta_csx
+			yb = sy+j*delta_csy
 			-- now check, if xa and xb fit better
 			-- than the last qx and rx did
 			-- (sum of squares must be smaller)
-			local newerror = squareerror(f,g,starti,endi,xa,ya,xb,yb)
+			newerror = squareerror(f,g,starti,endi,xa,ya,xb,yb)
 			if newerror < err then
+				best_j = j
+				qx = xa
+				qy = ya
+				rx = xb
+				ry = yb
+				err = newerror
+			end
+		end
+		for j = best_j-9, best_j+9 do -- determine j better
+			xb = sx+j*delta_csx
+			yb = sy+j*delta_csy
+			-- now check, if xa and xb fit better
+			-- than the last qx and rx did
+			-- (sum of squares must be smaller)
+			newerror = squareerror(f,g,starti,endi,xa,ya,xb,yb)
+			if newerror < err then
+				best_j = j
 				qx = xa
 				qy = ya
 				rx = xb
@@ -547,7 +501,7 @@ local function graphtobezierapprox(f,g,starti,endi,maxerror)
 			end
 		end
 	end
-	if maxerror > 0 then
+	if maxerror > 0 and recursiondepth > 0 then
 		-- check if it is close enough: (recycling err, xa, ya)
 		err = 0
 		for t = .1, .9, .1 do
@@ -577,8 +531,8 @@ local function graphtobezierapprox(f,g,starti,endi,maxerror)
 					interindex = i
 				end
 			end
-			local left = graphtobezierapprox(f,g,starti,interindex,maxerror)
-			local right = graphtobezierapprox(f,g,interindex,endi,maxerror)
+			local left = graphtobezierapprox(f,g,starti,interindex,maxerror,recursiondepth-1)
+			local right = graphtobezierapprox(f,g,interindex,endi,maxerror,recursiondepth-1)
 			for i=1, #right do --now append the right to the left:
 				left[#left+1] = right[i]
 			end
@@ -854,7 +808,12 @@ function bezierplot(functionstring,xminstring,xmaxstring,yminstring,ymaxstring,s
 	else	
 	---------- generic case (no special function) ----------------		
 		if arbitrary_samples then
-			-- go through the connected parts
+			-- go through the connected parts...
+			-- due to numerical errors we have to use a maximal
+			-- recursion depth, which is hard wired here
+			-- (a small number should suffice since there are
+			-- no extrema nor inflection points inbetween)
+			local maxrecursiondepth = 2 
 			for part = 1, #graphs do 
 				local dg = diffgraph(f,graphs[part],xstep)
 				--printdifftable(dg) -- for debugging
@@ -863,9 +822,9 @@ function bezierplot(functionstring,xminstring,xmaxstring,yminstring,ymaxstring,s
 				for k = 2, #dg do
 					if dg[k][5] or dg[k][6] then -- extrema and inflection points
 						local tobeadded = graphtobezierapprox(
-						f,dg,startindex,k,10*yerror)
+						f,dg,startindex,k,10*yerror,maxrecursiondepth)
 						-- tobeadded may contain a multiple of 6 entries
-					-- e.g. {1,2,3,4,5,6,7,8,9,10,11,12}
+						-- e.g. {1,2,3,4,5,6,7,8,9,10,11,12}
 						for i = 1, math.floor(#tobeadded/6) do
 							bezierpoints[#bezierpoints+1] = {}
 							for j = 1, 6 do
@@ -877,7 +836,7 @@ function bezierplot(functionstring,xminstring,xmaxstring,yminstring,ymaxstring,s
 				end
 				if startindex ~= #dg then -- if no special points inbetween
 					local tobeadded = graphtobezierapprox(f,dg,
-					startindex,#dg,10*yerror)
+					startindex,#dg,10*yerror,maxrecursiondepth)
 					-- tobeadded may contain a multiple of 6 entries
 					-- e.g. {1,2,3,4,5,6,7,8,9,10,11,12}
 					for i = 1, math.floor(#tobeadded/6) do
@@ -903,10 +862,20 @@ function bezierplot(functionstring,xminstring,xmaxstring,yminstring,ymaxstring,s
 	return beziertabletostring(bezierpoints,rndx,rndy,isreverse,notation)		
 end
 
--- main program --
+-- This Lua script has to work as a "main" with an external
+-- call from pdfLaTeX as well as a "library" with a direct lua use
+-- of the function bezierplot() when used with LuaLaTeX
+-- However, Lua does not seem to support a natural distinction
+-- of the main and the library:
+-- https://stackoverflow.com/questions/4521085/main-function-in-lua
+-- As https://www.tug.org/pipermail/luatex/2024-February/007935.html
+-- states, LuaTeX 1.18 has disabled the use of the debug library.
+-- Hence, using "pcall(debug.getlocal, 4, 1)" is no longer possible
+-- without restriction. The problem with the now chosen method is
+-- that arg could be defined as a global variable in the calling code.
 
-if not pcall(debug.getlocal, 4, 1) then
---if debug.getinfo(3) == nil then
+-- main program --
+if (arg ~= nil and arg[-1] ~= nil) then 
 	if #arg >= 1 then
 		local xmin = -5
 		local xmax = 5
@@ -935,6 +904,3 @@ if not pcall(debug.getlocal, 4, 1) then
 		print(bezierplot(arg[1],xmin,xmax,ymin,ymax,samples,notation))
 	end
 end
-
-
-

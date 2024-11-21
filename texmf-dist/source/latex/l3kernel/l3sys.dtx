@@ -43,7 +43,7 @@
 %    }^^A
 % }
 %
-% \date{Released 2024-01-22}
+% \date{Released 2024-11-02}
 %
 % \maketitle
 %
@@ -324,6 +324,66 @@
 %   Execute \meta{tokens} through shell escape at shipout.
 % \end{function}
 %
+% \section{System queries}
+%
+% Some queries can be made about the file system, etc., without needing to
+% use unrestricted shell escape. This is carried out using the script
+% \texttt{l3sys-query}, which is documented separately. The wrappers here
+% use this script, if available, to obtain system information that is
+% not directly available within the \TeX{} run. Note that if restricted
+% shell escape is disabled, no results can be obtained.
+%
+% \begin{function}[added = 2024-03-08, updated = 2024-04-08]
+%   {\sys_get_query:nN, \sys_get_query:nnN, \sys_get_query:nnnN}
+%   \begin{syntax}
+%     \cs{sys_get_query:nN} \Arg{cmd} \meta{tl var}
+%     \cs{sys_get_query:nnN} \Arg{cmd} \Arg{spec} \meta{tl var}
+%     \cs{sys_get_query:nnnN} \Arg{cmd} \Arg{options} \Arg{spec} \meta{tl var}
+%   \end{syntax}
+%   Sets the \meta{tl var} to the information returned by the
+%   \texttt{l3sys-query} \meta{cmd}, potentially supplying the \meta{options}
+%   and \meta{spec} to the query call. The valid \meta{cmd} names are at present
+%   \begin{itemize}
+%     \item \texttt{pwd} Returns the present working directory
+%     \item \texttt{ls} Returns a directory listing, using the \meta{spec} to
+%       select files and applying the \meta{options} if given
+%   \end{itemize}
+%   The \meta{spec} is likely to contain the wildcards |*| or |?|,
+%   and will automatically be passed to
+%   the script without shell expansion. In a glob is needed within the
+%   \meta{options}, this will need to be protected from shell expansion
+%   using |'| tokens.
+%
+%   The \meta{spec} and \meta{options}, if given, are expanded fully
+%   before passing to the underlying script.
+%
+%   Spaces in the output are stored as active tokens, allowing them to be
+%   replaced by for example a visible space easily. Other non-letter
+%   characters in the ASCII range are set to category code~12.  The category
+%   codes for characters out of the ASCII range are left unchanged: typically
+%   this will mean that with an 8-bit engine, accented values can be typeset
+%   directly whilst in Unicode engines, standard category code setup will
+%   apply.
+%
+%   If more than one line of text is returned by the \meta{cmd}, these will be
+%   separated by character~13 (|^^M|) tokens of category code~12. In most
+%   cases, \cs{sys_split_query:nnnN} should be preferred when multi-line
+%   output is expected.
+% \end{function}
+%
+% \begin{function}[added = 2024-03-08]
+%   {\sys_split_query:nN, \sys_split_query:nnN, \sys_split_query:nnnN}
+%   \begin{syntax}
+%     \cs{sys_split_query:nN} \Arg{cmd} \meta{seq var}
+%     \cs{sys_split_query:nnN} \Arg{cmd} \Arg{spec} \meta{seq var}
+%     \cs{sys_split_query:nnnN} \Arg{cmd} \Arg{options} \Arg{spec} \meta{seq var}
+%   \end{syntax}
+%   Works as described for \cs{sys_split_query:nnnN}, but sets the \meta{seq var}
+%   to contain one entry for each line returned by \texttt{l3sys-query}.
+%   This function should therefore be preferred where multi-line return is
+%   expected, e.g.~for the \texttt{ls} command.
+% \end{function}
+%
 % \section{Loading configuration data}
 %
 % \begin{function}[added = 2019-09-12]{\sys_load_backend:n}
@@ -389,6 +449,12 @@
 %<*package>
 %<*tex>
 %    \end{macrocode}
+%
+% \begin{macro}{\l_@@_tmp_tl}
+%    \begin{macrocode}
+\tl_new:N \l_@@_tmp_tl
+%    \end{macrocode}
+% \end{macro}
 %
 % \subsubsection{Detecting the engine}
 %
@@ -691,13 +757,25 @@
 % \end{variable}
 %
 % \begin{macro}{\sys_load_debug:}
-%   Simple.
+%   The most complicated thing here is that we can only use
+%   \cs{__kernel_sys_configuration_load:n} in the preamble in \LaTeX{}.
 %    \begin{macrocode}
 \cs_new_protected:Npn \sys_load_debug:
   {
     \bool_if:NF \g_@@_debug_bool
       { \__kernel_sys_configuration_load:n { l3debug } }
     \bool_gset_true:N \g_@@_debug_bool
+  }
+\cs_if_exist:NT \@expl@finalise@setup@@@@
+  {
+    \tl_gput_right:Nn \@expl@finalise@setup@@@@
+      {
+        \tl_gput_right:Nn \@kernel@after@begindocument
+          {
+            \cs_gset_protected:Npn \sys_load_debug:
+              { \msg_error:nn { sys } { load-debug-in-preamble } }
+          }
+      }
   }
 %    \end{macrocode}
 % \end{macro}
@@ -952,7 +1030,7 @@ end
 % \begin{variable}{\c_sys_timestamp_str}
 %   A simple expansion: Lua\TeX{} chokes if we use \tn{pdffeedback} here,
 %   hence the direct use of Lua. Notice that the function there is in the
-%   \texttt{pdf} library but isn actually tied to PDF.
+%   \texttt{pdf} library but isn't actually tied to PDF.
 %    \begin{macrocode}
 \@@_everyjob:n
   {
@@ -1069,6 +1147,110 @@ end
       { \int_compare_p:nNn \c_sys_shell_escape_int = 2 }
   }
 %    \end{macrocode}
+% \end{macro}
+%
+% \subsection{System queries}
+%
+% \begin{macro}{\sys_get_query:nN}
+% \begin{macro}{\sys_get_query:nnN}
+% \begin{macro}
+%   {
+%     \sys_get_query:nnnN,
+%     \@@_get_query_auxi:nnnN, \@@_get_query_auxi:neeN,
+%     \@@_get_query_auxii:nnnN, \@@_get_query_auxii:neeN
+%   }
+%   Calling the query system is quite straight-forward: most of the effort is
+%   in making the read-back catcode-safe. We also want to trim off the trailing
+%   |^^M| from the last line.
+%    \begin{macrocode}
+\cs_new_protected:Npn \sys_get_query:nN #1#2
+  { \sys_get_query:nnnN {#1} { } { } #2 }
+\cs_new_protected:Npn \sys_get_query:nnN #1#2#3
+  { \sys_get_query:nnnN {#1} { } {#2} #3 }
+\cs_new_protected:Npn \sys_get_query:nnnN #1#2#3#4
+  {
+    \tl_clear:N #4
+    \@@_get_query_auxi:neeN {#1} {#2} {#3} #4
+  }
+\cs_new:Npn \@@_get_query_auxi:nnnN #1#2#3#4
+  {
+    \@@_get_query_auxii:neeN {#1}
+      { \tl_if_blank:nF {#2} { \tl_to_str:n { ~ #2 } } }
+      {
+        \tl_if_blank:nF {#3}
+          {
+            \c_space_tl
+            \sys_if_shell_restricted:F '
+            \tl_to_str:n {#3}
+            \sys_if_shell_restricted:F '
+          }
+      }
+      #4
+  }
+\cs_generate_variant:Nn \@@_get_query_auxi:nnnN { nee }
+\cs_new_protected:Npn \@@_get_query_auxii:nnnN #1#2#3#4
+  {
+    \sys_if_shell:T
+      {
+        \sys_get_shell:nnN
+          { l3sys-query~#1 #2 #3 }
+          {
+            \int_step_inline:nnn { 0 } { `A - 1 }
+              { \char_set_catcode_other:n {##1} }
+            \int_step_inline:nnn { `Z + 1 } { `a - 1 }
+              { \char_set_catcode_other:n {##1} }
+            \int_step_inline:nnn { `z + 1 } { 127 }
+              { \char_set_catcode_other:n {##1} }
+            \char_set_catcode_active:n { `\  }
+            \tex_endlinechar:D 13 \scan_stop:
+          }
+        \l_@@_tmp_tl
+        \tl_if_empty:NF \l_@@_tmp_tl
+          {
+            \exp_after:wN \@@_get_query:Nw \exp_after:wN #4
+              \l_@@_tmp_tl \q_stop
+          }
+      }
+  }
+\cs_generate_variant:Nn \@@_get_query_auxii:nnnN { nee }
+\group_begin:
+  \tex_lccode:D `\* = 13 \scan_stop:
+  \tex_lowercase:D
+    {
+      \group_end:
+      \cs_new_protected:Npn \@@_get_query:Nw #1#2 * \q_stop
+    }
+    { \tl_set:Nn #1 {#2} }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}{\sys_split_query:nN}
+% \begin{macro}{\sys_split_query:nnN}
+% \begin{macro}{\sys_split_query:nnnN}
+%   A wrapper for convenience.
+%    \begin{macrocode}
+\cs_new_protected:Npn \sys_split_query:nN #1#2
+  { \sys_split_query:nnnN {#1} { } { } #2 }
+\cs_new_protected:Npn \sys_split_query:nnN #1#2#3
+  { \sys_split_query:nnnN {#1} { } {#2} #3 }
+\group_begin:
+  \tex_lccode:D `\* = 13 \scan_stop:
+  \tex_lowercase:D
+    {
+      \group_end:
+      \cs_new_protected:Npn \sys_split_query:nnnN #1#2#3#4
+        {
+          \seq_clear:N #4
+          \sys_get_query:nnnN {#1} {#2} {#3} \l_@@_tmp_tl
+          \tl_if_empty:NF \l_@@_tmp_tl
+            { \seq_set_split:NnV #4 * \l_@@_tmp_tl }
+         }
+    }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
 % \end{macro}
 %
 % \subsubsection{Held over from \pkg{l3file}}

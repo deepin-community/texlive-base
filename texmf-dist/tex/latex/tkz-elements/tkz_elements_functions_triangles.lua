@@ -1,6 +1,6 @@
 -- tkz_elements_functions_triangles.lua
--- date 2024/02/04
--- version 2.00c
+-- date 2024/07/16
+-- version 2.30c
 -- Copyright 2024  Alain Matthes
 -- This work may be distributed and/or modified under the
 -- conditions of the LaTeX Project Public License, either version 1.3
@@ -259,6 +259,29 @@ function feuerbach_tr_ (a,b,c)
     intersection_cc_ (e,m,jb,hb),
     intersection_cc_ (e,m,jc,hc)
 end
+
+function similar_ (a,b,c)
+  local x,y,z,g
+   g = centroid_ (a,b,c)
+   x = homothety_ (g,-2,a)
+   y = homothety_ (g,-2,b)
+   z = homothety_ (g,-2,c)
+   return x,y,z
+end
+--------------------
+-- ellipse --
+--------------------
+function steiner_ (a,b,c)
+   local g,fa,fb,delta,m,v
+   g = centroid_ (a,b,c)
+   delta = a*a+b*b+c*c -a*b-a*c-b*c
+   fa = (a+b+c - point.sqrt(delta))/3
+   fb = (a+b+c + point.sqrt(delta))/3
+   m = midpoint_(b,c)
+   r = (length(fa,m)+length(fb,m))/2
+   v = report_ (fb,fa,r,g)
+   return ellipse: foci (fb,fa,v)
+end
 --------------------
 -- miscellanous --
 --------------------
@@ -274,7 +297,9 @@ function check_equilateral_ (a,b,c)
     C = a - b
     if (point.abs(A)-point.abs(B) < tkz_epsilon) and (point.abs(B)-point.abs(C) < tkz_epsilon) 
     then
-       return true else return false
+       return true
+     else 
+        return false
     end
 end
 

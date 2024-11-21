@@ -32,7 +32,6 @@
 %% and covered by LPPL is defined by the unpacking scripts (with
 %% extension |.ins|) which are part of the distribution.
 %%
-
 \def\BabelStringsDefault{unicode}
 \let\xebbl@stop\relax
 \AddBabelHook{xetex}{encodedcommands}{%
@@ -46,6 +45,9 @@
 \AddBabelHook{xetex}{stopcommands}{%
   \xebbl@stop
   \let\xebbl@stop\relax}
+\def\bbl@input@classes{% Used in CJK intraspaces
+  \input{load-unicode-xetex-classes.tex}%
+  \let\bbl@input@classes\relax}
 \def\bbl@intraspace#1 #2 #3\@@{%
   \bbl@csarg\gdef{xeisp@\languagename}%
     {\XeTeXlinebreakskip #1em plus #2em minus #3em\relax}}
@@ -90,24 +92,11 @@
         \AtBeginDocument{\bbl@patchfont{\bbl@ispacesize}}%
       \fi}%
   \fi}
-\ifx\DisableBabelHook\@undefined\endinput\fi
+\ifx\DisableBabelHook\@undefined\endinput\fi %%%% TODO: why
+\bbl@trace{Font handling with fontspec}
 \AddBabelHook{babel-fontspec}{afterextras}{\bbl@switchfont}
 \AddBabelHook{babel-fontspec}{beforestart}{\bbl@ckeckstdfonts}
 \DisableBabelHook{babel-fontspec}
-\bbl@trace{Font handling with fontspec}
-\ifx\ExplSyntaxOn\@undefined\else
-  \def\bbl@fs@warn@nx#1#2{% \bbl@tempfs is the original macro
-    \in@{,#1,}{,no-script,language-not-exist,}%
-    \ifin@\else\bbl@tempfs@nx{#1}{#2}\fi}
-  \def\bbl@fs@warn@nxx#1#2#3{%
-    \in@{,#1,}{,no-script,language-not-exist,}%
-    \ifin@\else\bbl@tempfs@nxx{#1}{#2}{#3}\fi}
-  \def\bbl@loadfontspec{%
-    \let\bbl@loadfontspec\relax
-    \ifx\fontspec\@undefined
-      \usepackage{fontspec}%
-    \fi}%
-\fi
 \@onlypreamble\babelfont
 \newcommand\babelfont[2][]{%  1=langs/scripts 2=fam
   \bbl@foreach{#1}{%
@@ -118,8 +107,10 @@
     \fi}%
   \edef\bbl@tempa{#1}%
   \def\bbl@tempb{#2}%  Used by \bbl@bblfont
-  \bbl@loadfontspec
-  \EnableBabelHook{babel-fontspec}% Just calls \bbl@switchfont
+  \ifx\fontspec\@undefined
+    \usepackage{fontspec}%
+  \fi
+  \EnableBabelHook{babel-fontspec}%
   \bbl@bblfont}
 \newcommand\bbl@bblfont[2][]{% 1=features 2=fontname, @font=rm|sf|tt
   \bbl@ifunset{\bbl@tempb family}%
@@ -243,17 +234,10 @@
       {\\\newfontscript{\bbl@cl{sname}}{\bbl@cl{sotf}}}%
     \<keys_if_exist:nnF>{fontspec-opentype}{Language/\bbl@cl{lname}}%
       {\\\newfontlanguage{\bbl@cl{lname}}{\bbl@cl{lotf}}}%
-    \let\\\bbl@tempfs@nx\<__fontspec_warning:nx>%
-    \let\<__fontspec_warning:nx>\\\bbl@fs@warn@nx
-    \let\\\bbl@tempfs@nxx\<__fontspec_warning:nxx>%
-    \let\<__fontspec_warning:nxx>\\\bbl@fs@warn@nxx
     \\\renewfontfamily\\#4%
-      [\bbl@cl{lsys},%
+      [\bbl@cl{lsys},% xetex removes unknown features :-(
        \ifcase\bbl@engine\or RawFeature={family=\bbl@tempb},\fi
        #2]}{#3}% ie \bbl@exp{..}{#3}
-  \bbl@exp{%
-    \let\<__fontspec_warning:nx>\\\bbl@tempfs@nx
-    \let\<__fontspec_warning:nxx>\\\bbl@tempfs@nxx}%
   \begingroup
      #4%
      \xdef#1{\f@family}%     eg, \bbl@rmdflt@lang{FreeSerif(0)}
@@ -302,7 +286,7 @@
     \XeTeXcharclass`#1 \bbl@tempc
   \fi
   \count@`#1\relax}
-\newcommand\IfBabelIntercharT[1]{%
+\newcommand\bbl@ifinterchar[1]{%
   \let\bbl@tempa\@gobble        % Assume to ignore
   \edef\bbl@tempb{\zap@space#1 \@empty}%
   \ifx\bbl@KVP@interchar\@nnil\else
@@ -314,6 +298,8 @@
         \fi}%
   \fi
   \bbl@tempa}
+\newcommand\IfBabelIntercharT[2]{%
+  \bbl@carg\bbl@add{bbl@icsave@\CurrentOption}{\bbl@ifinterchar{#1}{#2}}}%
 \newcommand\babelcharclass[3]{%
   \EnableBabelHook{babel-interchar}%
   \bbl@csarg\newXeTeXintercharclass{xeclass@#2@#1}%
@@ -346,20 +332,19 @@
   \else\ifnum\count@=\z@
     \bbl@charclass{-}%
   \else
-    \bbl@error{Double hyphens aren't allowed in \string\babelcharclass\\%
-               because it's potentially ambiguous}%
-              {See the manual for further info}%
+    \bbl@error{double-hyphens-class}{}{}{}%
   \fi\fi}
+\def\bbl@ignoreinterchar{%
+  \ifnum\language=\l@nohyphenation
+    \expandafter\@gobble
+  \else
+    \expandafter\@firstofone
+  \fi}
 \newcommand\babelinterchar[5][]{%
   \let\bbl@kv@label\@empty
   \bbl@forkv{#1}{\bbl@csarg\edef{kv@##1}{##2}}%
   \@namedef{\zap@space bbl@xeinter@\bbl@kv@label @#3@#4@#2 \@empty}%
-    {\ifnum\language=\l@nohyphenation
-       \expandafter\@gobble
-     \else
-       \expandafter\@firstofone
-     \fi
-     {#5}}%
+    {\bbl@ignoreinterchar{#5}}%
   \bbl@csarg\let{ic@\bbl@kv@label @#2}\@firstofone
   \bbl@exp{\\\bbl@for\\\bbl@tempa{\zap@space#3 \@empty}}{%
     \bbl@exp{\\\bbl@for\\\bbl@tempb{\zap@space#4 \@empty}}{%
@@ -374,26 +359,20 @@
               @#3@#4@#2 \@empty\endcsname}}}}
 \DeclareRobustCommand\enablelocaleinterchar[1]{%
   \bbl@ifunset{bbl@ic@#1@\languagename}%
-    {\bbl@error
-       {'#1' for '\languagename' cannot be enabled.\\%
-        Maybe there is a typo.}%
-       {See the manual for further details.}}%
+    {\bbl@error{unknown-interchar}{#1}{}{}}%
     {\bbl@csarg\let{ic@#1@\languagename}\@firstofone}}
 \DeclareRobustCommand\disablelocaleinterchar[1]{%
   \bbl@ifunset{bbl@ic@#1@\languagename}%
-    {\bbl@error
-       {'#1' for '\languagename' cannot be disabled.\\%
-        Maybe there is a typo.}%
-       {See the manual for further details.}}%
+    {\bbl@error{unknown-interchar-b}{#1}{}{}}%
     {\bbl@csarg\let{ic@#1@\languagename}\@gobble}}
 \providecommand\bbl@provide@intraspace{}
 \bbl@trace{Redefinitions for bidi layout}
-\def\bbl@sspre@caption{%
+\def\bbl@sspre@caption{%  TODO: Unused!
   \bbl@exp{\everyhbox{\\\bbl@textdir\bbl@cs{wdir@\bbl@main@language}}}}
 \ifx\bbl@opt@layout\@nnil\else % if layout=..
 \def\bbl@startskip{\ifcase\bbl@thepardir\leftskip\else\rightskip\fi}
 \def\bbl@endskip{\ifcase\bbl@thepardir\rightskip\else\leftskip\fi}
-\ifx\bbl@beforeforeign\leavevmode % A poor test for bidi=
+\ifnum\bbl@bidimode>\z@  % TODO: always?
   \def\@hangfrom#1{%
     \setbox\@tempboxa\hbox{{#1}}%
     \hangindent\ifcase\bbl@thepardir\wd\@tempboxa\else-\wd\@tempboxa\fi

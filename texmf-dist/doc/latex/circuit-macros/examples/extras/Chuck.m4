@@ -216,11 +216,5 @@ dimension_thick
   r_dimen(from D[3]+(0,-14) right 35,0,35)
   r_dimen(from (0,D[3].y-14) right 35,0,35)
 
-# arrow <- down 30 left 30 from D[3] chop 16/2 chop 0 then left 5
-# "16 DRILL 23 CBORE" rjust "4 HOLES" rjust
-
-# arrow <- from (-305/2,30.6+10+2) up 5 left 5 then up 13
-# s_box(SEE (A)) with .sw at Here+(-5pt__,2pt__)
-
 command "}%"
 .PE

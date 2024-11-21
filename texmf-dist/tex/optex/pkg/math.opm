@@ -3,7 +3,7 @@
 % This file can serve as an template for other package files
 % See end of the file for more information
 
-\_def\_math_version {0.11, 2023-04-15}
+\_def\_math_version {0.15, 2024-04-28}
 \_codedecl \replacemissingchars {Doing math more comfortably <\_math_version>}
 \_namespace{math}
 
@@ -21,12 +21,16 @@
       \_nokvx {\_opwarning{\_the\_kvdict: unknown option "##1", ignored}}%
       \_kvx {vert}     {\.smartvert}%     sets | as math active, to do better |x| or ||x||
       \_kvx {dots}     {\.smartdots}%     \dots behaves like \ldots or \cdots
+      \_kvx {interval} {\_let\_=\.interval}% enables \_<0,1)
+      \_kvx {rmsbsp}   {\.rmsbsp}%        activates x_[text] and x^[text]
       \_kvx {bfserif}  {\.bfserif}%       \bf, \bi select fonts with serifs
+      \_kvx {flexipa}  {\.flexipa}%       flexible partial symbol
       \_kvx {mstyle}   {\.mstyle{##1}}%   sets mstyle=TeX or ISO or french or upright
       \_kvx {bstyle}   {\.bstyle{##1}}%   sets bstyle=TeX or ISO or upright or OpTeX
       \_kvx {rmchars}  {\.rmchars{##1}}%  does \.rmchars{<list>}
       \_kvx {vargreek} {\.vargreek{##1}}% does \.vargreek{<list>}
       \_kvx {text}     {\.dotext{##1}}%   does \.dotext{<list>}
+      \_kvx {enablefic}{\.enablefic}%     enables final italic correction
       \_readkv{#1}%
    \.restorekvdict
 }
@@ -124,6 +128,23 @@
 \_nspublic \smartdots ;
 
    \_doc
+   The macro \`\.interval` reads following tokens until the `)` or `>` is found in the input
+   queue and replaces \code{<} to `\langle` and `>` to rangle. The reading and replacing
+   process saves the tokens to the `\intevalL` macro only and finaly this macro is launched.
+   \_cod
+
+\_def\.interval{\_def\.intervalL{}\.intervalA}
+\_def\.intervalA{\_nospacefuturelet\.next\.intervalB}
+\_def\.intervalB{\_ifx\.next\_bgroup \_ea\.intervalC \_else \_ea\.intervalD \_fi}
+\_def\.intervalC#1{\_addto\.intervalL{{#1}}\.intervalA}
+\_def\.intervalD#1{\_casesof #1
+   < {\_addto\.intervalL{\langle}\.intervalA}
+   > {\_addto\.intervalL{\rangle}\.intervalL}
+   ) {\_addto\.intervalL{)}\.intervalL}
+   \_finc {\_addto\.intervalL{#1}\.intervalA}%
+}
+
+   \_doc
    \`\smartvert` sets `|` as math-active character and declares it
    equal to `\.autovert` macro. This macro checks two variants: there
    is single `|` or there is double `||`. It runs \`\.autovertA` or
@@ -140,6 +161,22 @@
    \_def\.smartvert{\_let~=\.autovert \_mathcode`|="8000 }}
 
 \_nspublic \smartvert ;
+
+   \_doc
+   \`\rmsbsp` activates `^` and `_` so they check the next character.
+   If it is `[` then `\mathbox` is used for subscript or superscript, else
+   normal behavior of subscript or superscript is kept.
+   \_cod
+
+\_def\.rmsbsp{%
+   \_adef ^{\_isnextchar[{\.rmsp}{\_sp}}
+   \_adef _{\_isnextchar[{\.rmsb}{\_sb}}
+   \_def\.rmsp[##1]{\_sp{\_mathbox{##1}}}
+   \_def\.rmsb[##1]{\_sb{\_mathbox{##1}}}
+   \_catcode `\^=12   \_catcode`\_=11
+   \_mathcode`_="8000 \_mathcode`^="8000
+}
+\_nspublic \rmsbsp ;
 
    \_doc
    The control sequences \`\N`, \`\Z`, \`\Q`, \`\R`, \`\C`
@@ -245,6 +282,43 @@
 }
 
 \_nspublic \bfserif ;
+
+   \_doc
+   \`\flexipa` (or \`\flexiblepartial`) runs
+   \~`\partialsymbolvars` `{it}`\,`{rm}`\,`{bfsans}`\,`{it}`\,`{bfitsans}`.
+   The \`\partialsymbolvars` macro adds two tokens `\.partialvar \m<var>partial`
+   to `\_mit`, `\_marm`, `\_mabf`, `\_mait`, `\_mabi` macros.
+   The \`\.partialvar` macro sets appropriate
+   `\_Umathcode` of the `\.partialchar` to the code given by the parameter
+   `\m<var>partial`. Five macros
+   \`\mbfpartial`, \`\mitpartial`, \`\mbfitpartial`, \`\mbfsanspartial`, \`\mbfitsanspartial`
+   are declared in the macro file `unimath-table.opm`.
+   The math character \`\mrmpartial` (for upright variant) is declared here.
+   \_cod
+
+\_chardef\.partialchar="2202
+\_Umathchardef\.mrmpartial=0 1 \.partialchar
+\_def\.partialvar #1{\_Umathcode \.partialchar 0 1
+                                 \_ifx#1\.mrmpartial \.partialchar \_else\_ea`#1 \_fi
+}
+\_def\.inadd#1#2{\_ea\.inaddA#1{#2}#1}
+\_def\.inaddA\_inmath#1#2#3{\_protected\_def#3{\_inmath{#1#2}}}
+
+\_def\.partialsymbolvars #1#2#3#4#5{%
+   \_ifx\_ncharrmA\_undefined \_opwarning{\_string\flexipa: Unicode math must be loaded first}%
+   \_else
+      \_def\.tmp{\_ea\_addto \_ea\_mit  \_ea {\_ea\.partialvar \_csname m#1partial\_endcsname}}%
+      \_ifx\_mit\mit \.tmp \_let\mit=\_mit \_else \.tmp \_fi
+      \_ea\.inadd \_ea\_marm \_ea {\_ea\.partialvar \_csname m#2partial\_endcsname}%
+      \_ea\.inadd \_ea\_mabf \_ea {\_ea\.partialvar \_csname m#3partial\_endcsname}%
+      \_ea\.inadd \_ea\_mait \_ea {\_ea\.partialvar \_csname m#4partial\_endcsname}%
+      \_ea\.inadd \_ea\_mabi \_ea {\_ea\.partialvar \_csname m#5partial\_endcsname}%
+      \_mit
+   \_fi
+}
+\_def\.flexipa{\.partialsymbolvars {it}{rm}{bfsans}{it}{bfitsans}}
+\_newpublic \_let \flexiblepartial=\.flexipa
+\_nspublic \flexipa \partialsymbolvars \mrmpartial ;
 
    \_doc
    The options `mstyle`, resp. `bstyle` run \`\.mstyle`, resp. \`\.bstyle`
@@ -436,6 +510,40 @@
 
 \_nspublic \mathclap \mathrlap \mathllap ;
 
+   \_doc
+   \`\enablefic` enables final italic correction. The relevant lua function is
+   registered to `mlist_to_hlist` callback and \`\finalitalcorr` is set to one.
+   \_cod
+
+\_newcount \.finalitalcorr
+\_directlua{
+   function math.final_ital_corr(head, style)
+        if style=="text" and tex.count.\_pkglabel _finalitalcorr>0 then
+            for n in node.traverse(head) do
+                if n.next == nil and n.id == 29 then % last is glyph
+                    local k = font.fonts[n.font].characters[n.char].italic
+                    if not(k==nil) and (k>0) then
+                        local kn = node.new("kern")
+                        kn.kern = k kn.subtype = 3
+                        node.insert_after(head, n, kn) % kern node is inserted
+                    end
+                end
+            end
+        end
+        return head
+   end
+}
+\_def\.enablefic {\_directlua{ % math.final_ital_corr is registered to mlist_to_hlist
+   luatexbase.add_to_callback("mlist_to_hlist",
+       function(head, style, penalties)
+           head = node.mlist_to_hlist(head, style, penalties)
+           return math.final_ital_corr(head, style)
+       end, "italcorr after math")
+   }
+   \.finalitalcorr=1
+}
+\_nspublic \enablefic \finalitalcorr ;
+
 \_endnamespace
 \_endcode
 
@@ -451,6 +559,7 @@ The following macros are defined in this package:
   gives better controlling of sizes of parentheses.
 * \~`\smartdots` declares `\dots` macro more intelligent.
   \~`\smartvert` declares \"`|`" for better spacing.
+* \~`\rmsbsp` activates roman subscripts and superscripts in `[...]`.
 * There are many common math macros for sets or for operators, for example
   \~`\R` or \~`\sgn`.
 * \~`\eqsystem` enables to write systems of equations comfortably,
@@ -458,6 +567,7 @@ The following macros are defined in this package:
   \~`\subeqmark` prints the given suffix as a part of the equation mark.
 * \~`\scriptspaces` sets more spaces around rel, bin in script and scripscript styles.
 * \~`\bfserif` sets `\bf` and `\bi` for math typesetting as for bold-serif, bold-italic-serif.
+* \~`\flexipa` enables flexible partial symbol.
 * \~`\rmchars` sets selected characters printed as `\rm`,
   \~`\vargreek` sets Greek leters to their variants.
 * \~`\textvariables`, \~`\textdigits`, \~`\textmoremath`
@@ -465,22 +575,28 @@ The following macros are defined in this package:
   (variables, digits, more characters).
 * \~`\replacemissingchars` allows to re-declare all characters missing in math font
   for printing them from additional math font.
+* \~`\enablefic` enables final italic correction of inline-math lists.
 \enditems
 
-Eight options are provided by the `math` package. You can set them by
+Following options are provided by the `math` package. You can set them by
 \^`\mathset``{<options>}` after `\load[math]`, for example
 `\mathset{dots, vert, vargreek={\epsilon,\rho}}`. The options are:
 \begitems
 * `dots` sets more inteligent `\dots`, the same as \~`\smartdots`.
+* `interval` sets `\_` as prefix of intervals, see section~\ref[interval].
 * `vert` sets more inteligent `|`, the same as \~`\smartvert`.
+* `rmsbsp` sets roman sub/supscripts in `[...]`, the same as \~`\rmsbsp`.
 * `bfserif` sets bold-serif, bold-italic-serif, the same as \~`\bfserif`.
+* `flexipa` enables flexible partial symbol, the same as \~`\flexipa`.
 * `mstyle=<style>`, `bstyle=<style>` are math styles explained in section~\ref[mstyle].
 * `rmchars={<list>}` sets `\rm` for selected characters, the same as \~`\rmchars`,
    see section~\ref[rmchars].
 * `vargreek={<list>}` sets variants for Greek letetters, the same as \~`\vargreek`,
    see section~\ref[rmchars].
 * `text={<list>}` sets \~`\textvariables`, \~`\textdigits`, or \~`\textmoremath`,
-  see section~\ref[textvars].
+  see section~\ref[textvars],
+* `enablefic` enables final italic correction of inline-math lists, does
+  \~`\enablefic`.
 \enditems
 
 This package is not definitive. I plan to add more features in new versions
@@ -545,6 +661,28 @@ You can try this after the \^`\smartdots` declaration:
 `$a_1 + a_2 + \dots + a_n$ ` prints $a_1 + a_2 + \dots + a_n$,
 
 
+\sec[interval] Creating intervals more comfortable
+
+Several math books uses `\langle`, `\rangle` for denoting the interval boundary
+if the boundary number is element of the interval too. For example  `$\langle 0,1)$`
+is printed as $\langle 0,1)$ and it
+means an interval from zero to one, zero is element of the interval but one
+isn't. The \TeX/ source of such math books looks badly because we cannot mark
+them like \code{$<0,1)$} because it prints $\string<0,1)$ but we want $\langle 0,1)$.
+
+This package creates the \^`\.interval` macro which can be set to be equal to `\_`
+(using the `interval` option). Then `\_`  can be used just before the interval
+as a prefix. The \code{<} or `>` are automatically replaced by `\langle`, `\rangle`
+if `\_` is prefixed. So, you can write \code{$\\_<0,1)$} or `$\_(0,1>$` or \code{$\\_<0,1>$}
+or `$\_(0,1)$` in order to get $\langle0,1)$ or $(0,1\rangle$ or $\langle0,1\rangle$
+or $(0,1)$. The source with such intervals looks better.
+
+Note that `interval` option does `\let\_=`\^`\.interval`, so the original
+meaning of the `\_` control sequence (from plain \TeX/) is re-defined.
+The `\_` control sequence can be used for this purpose because
+the next token is `(` or \code{<}, i.e. it is non-letter.
+
+
 \sec Using vertical bars with better spacing
 
 The character \"`|`" is declared with Ord class by default in Plain \TeX/,
@@ -565,6 +703,12 @@ $$
      |\sum a_n|+||x|| &\quad \hbox{if \scantextokens{`\smartvert`} is initialized.}
   }
 $$
+
+
+\sec Roman subscript and superscript in `[...]`
+
+When you declare \^`\rmsbsp`, then you can write `x_[text]` or `x^[text]`
+and it is equivalent to `x_{\mathbox{text}}` or `x^{\mathbox{text}}`.
 
 
 \sec Basic and typical macros for sets, functions etc.
@@ -758,6 +902,34 @@ sign must follow and then the `{<list>}` with syntax mentioned above. For exampl
 `\mathset{vargreek={\epsilon,\rho}}`.
 
 
+\sec[flexipa] Flexible partial symbol $\partial$
+
+Classical \TeX/ with Computer Modern fonts uses slanted `\partial` symbol
+$\mitpartial$. On the other hand, default setting of Unicode math gives
+upright `\partial` $\rm\partial$ but six variants of this symbol are provided:
+roman (upright) \^`\mrmpartial` $\mrmpartial$, bold \^`\mbfpartial` $\mbfpartial$,
+italic \^`\mitpartial` $\mitpartial$, bold italic \^`\mbfitpartial` $\mbfitpartial$,
+bold sans serif \^`\mbfsanspartial` $\mbfsanspartial$, bold italic sans serif
+\^`\mbfitsanspartial` $\mbfitsanspartial$.
+
+When you declare \^`\flexipa` or \^`\flexiblepartial` or use the `flexipa`
+package option, then the `\partial` symbols get italic variant as default
+and behaves like others Greek symbols: it changes its variant according to
+the `\rm`, `\it`, `\bf`, `\bi` selectors in math mode. You can declare what
+variant of the `\partial` character will be shown at what selector. This can
+be done by the \^`\partialsymbolvars`~`<default> <rm> <bf> <it> <bi>` macro.
+Each of these five parameters can be `{rm}` or `{bf}` or `{it}` or `{bfit}`
+or `{bfsans}` or `{bfitsans}`. For example the third parameter declares
+what variant of the partial symbol is printed when `\bf` selector is used
+in math mode. The `\flexipa` macro runs the following default setting:
+\begtt
+\partialsymbolvars {it} {rm} {bfsans} {it} {bfitsans}
+\endtt
+It means that default is italic variant and when `\rm` is selected then roman
+(upright) variant is printed, when `\bf` is selected then bold sans serif
+variant is printed etc.
+
+
 \sec[textvars] Variables and digits from currently used text font
 
 When Unicode math font is loaded then all variables and digits are printed
@@ -813,6 +985,31 @@ If the additional math font doesn't provide all Unicode math characters
 then you can load a next additional math font using another \o`\addUmathfont` and do
 \^`\replacemissingchars`\,`<family>` again. Only those characters not replaced
 by previous steps are replaced.
+
+
+\sec Final italic correction
+
+Classical \TeX/ adds italic correction after each Ord atom with a single
+letter from math italic font including the last one in inline-math. \LuaTeX/
+and \OpTeX/ does the same only when classical `tfm` math fonts are used. When
+you switch to Unicode math, the italic correction of the last glyph of the
+inline-math list is lost, unfortunately. Try this:
+
+\begtt
+$T$' the italic correction after $T$ is inserted (classical fonts)
+
+\fontfam[lm]
+$T$' the italic correction after $T$ isn't inserted (Unicode fonts)
+\bye
+\endtt
+
+This package provides the \^`\enablefic` command which enables the classical TeX
+feature: the final italic correction of the inline-math list is automatically added.
+
+When \^`\enablefic` (or `enablefic` option) is declared then you can control
+the behavior of this feature by the \^`\finalitalcorr` register: if it is positive
+then the feature is activated and if it is zero, the feature is deactivated.
+The \^`\enablefic` macro sets \^`\finalitalcorr``=1`.
 
 
 \sec Miscelaneous commands
@@ -901,6 +1098,7 @@ The user can read this warning and declare the macro after
 `\load[<pkg>]` in this case.
 
    \_doc
+   %  optex -jobname math-doc '\docgen math'
    \load [doc,math]
    \def\opurl{http://petr.olsak.net/ftp/olsak/optex/optex-doc.pdf}
    \def\tnurl{http://petr.olsak.net/ftp/olsak/optex/tex-nutshell.pdf}
@@ -931,6 +1129,10 @@ The user can read this warning and declare the macro after
 
 \endinput
 
+0.15  2024-04-28  \_ as interval prefix added.
+0.14  2024-03-18  \flexipa introduced.
+0.13  2024-03-06  \enablefic introduced.
+0.12  2024-03-02  \rmsbsp introduced.
 0.11  2023-04-15: \bbigp introduced.
 0.10  2023-03-12: \mathclap etc. introduced.
 0.09  2023-03-11: mstyle, bstyle options introduced.

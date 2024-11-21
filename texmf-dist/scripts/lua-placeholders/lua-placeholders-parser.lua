@@ -19,6 +19,7 @@
 -- lua-placeholders-parser.lua and lua-placeholders-types.lua
 
 local LUA_VERSION = string.sub(_VERSION, 5, -1)
+local kpse = kpse or require('kpse')
 
 yaml_supported = false
 
@@ -32,7 +33,7 @@ end
 local current_path = os.getenv('LUA_PATH')
 if current_path then
     texio.write_nl('Info: LUA path setup up correctly. Great job!')
-else
+elseif not tiny_found then
     -- Set the LUA_PATH and LUA_CPATH using 'luarocks -lua-version <LuaLaTeX version> path'
     texio.write_nl('Warning: No LUA_PATH set. Looking for LuaRocks installation...')
     local handle = io.popen('luarocks --lua-version ' .. LUA_VERSION .. ' path')
@@ -60,6 +61,8 @@ else
     else
         tex.error('Error: could not open a shell. Is shell-escape turned on?')
     end
+else
+    texio.write_nl('Warning: no LUA_PATH set.')
 end
 texio.write_nl('\n')
 
@@ -85,6 +88,7 @@ return function(filename)
     end
     local raw = file:read "*a"
     file:close()
+    kpse.record_input_file(filename)
     if ext == 'json' then
         return utilities.json.tolua(raw)
     else

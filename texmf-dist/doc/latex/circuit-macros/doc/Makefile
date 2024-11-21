@@ -40,6 +40,9 @@ BOXDIMS = AntennasMan.tex bi_trans.tex ConfigA.tex ConfigB.tex ConfigC.tex \
 
 LATEX = latex
 LATEX = latex --quiet
+
+BIBTEX=BIBINPUTS=. bibtex
+
 M4 = m4 -I $(LIBDIR)
 # If M4PATH has been set:
 M4 = m4
@@ -90,13 +93,13 @@ $(DOC).ps:
 
 $(DOC).$(SFX): mode.tex citations $(PICTEX)
 	@printf "\n $(DOC).SFX=$(DOC).$(SFX):\n\n"
-	$(LATEX) $(DOC) ; bibtex $(DOC)
+	$(LATEX) $(DOC) ; $(BIBTEX) $(DOC)
     -@if grep -s "Warning: Reference " $(DOC).log ; then \
            @printf "\n Warning:\n\n" ; \
-           $(LATEX) $(DOC) ; bibtex $(DOC) ; \
+           $(LATEX) $(DOC) ; $(BIBTEX) $(DOC) ; \
          elif test ! -f $(DOC).$(SFX) ; then\
            @printf "\n No file $(DOC).$(SFX)\n\n" ; \
-           $(LATEX) $(DOC) ; bibtex $(DOC) ; fi
+           $(LATEX) $(DOC) ; $(BIBTEX) $(DOC) ; fi
 
 ACsymbol.tex DCsymbol.tex:
 	touch $(DOC).dim
@@ -105,16 +108,16 @@ ACsymbol.tex DCsymbol.tex:
 
 citations: mode.tex $(DOC).bbl $(PICTEX)
 	@printf "\n citations:\n\n"
-	$(LATEX) $(DOC) ; bibtex $(DOC)
+	$(LATEX) $(DOC) ; $(BIBTEX) $(DOC)
 	touch citations
 
 $(DOC).bbl: $(DOC).bib $(DOC).aux
-	bibtex $(DOC)
+	$(BIBTEX) $(DOC)
 
 # $(DOC).aux: mode.tex $(DOCSRC) heading.tex $(VERBATIM) $(PICTEX)
 $(DOC).aux: mode.tex $(DOCSRC) $(VERBATIM) $(PICTEX)
 	@printf "\n $(DOC).aux:\n\n"
-	$(LATEX) $(DOC) ; bibtex $(DOC)
+	$(LATEX) $(DOC) ; $(BIBTEX) $(DOC)
 	rm -f $(BOXDIMS)
 	make $(BOXDIMS)
 

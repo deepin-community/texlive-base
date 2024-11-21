@@ -10,16 +10,17 @@ all: ctan/memoize.zip
 # Prepare the CTAN submission.
 
 PACKAGE = memoize
-VERSION = 1.1.2
+VERSION = 1.3.0
 YEAR = 2024
-MONTH = 01
-DAY = 21
+MONTH = 04
+DAY = 02
 
 FORMAT = generic
 
 COMMON = memoize nomemoize memoizable
 PLAIN = memoize-extract-one.tex
 GENERIC = memoizable.code.tex
+LATEX = memoize-biblatex.code.tex
 SOURCE = memoize.edtx memoize.ins
 
 SCRIPTS := memoize-extract memoize-clean

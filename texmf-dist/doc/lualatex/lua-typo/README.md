@@ -108,6 +108,10 @@ Changes
 * v.0.86: 
   - corrected typo in the `signature` function;
   - compatibility with package `stfloats` added.
+
+* v.0.87: 
+  - improved page body detection.
+  - warning about incompability with the `reledmac` package added.
   
 --
 Copyright 2020--2024 Daniel Flipo 

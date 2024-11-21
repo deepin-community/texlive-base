@@ -32,10 +32,7 @@
 -- and covered by LPPL is defined by the unpacking scripts (with
 -- extension |.ins|) which are part of the distribution.
 --
-
 -- Data from Unicode and ConTeXt
-
-Babel = Babel or {}
 
 Babel.ranges = {
  {0x0590, 0x05FF, 'r'},
@@ -43,16 +40,13 @@ Babel.ranges = {
  {0x07C0, 0x085F, 'r'},
  {0x0860, 0x086F, 'al'},
  {0x08A0, 0x08FF, 'al'},
- {0xE000, 0xF8FF, 'on'}, -- PUA
  {0xFB1D, 0xFB4F, 'r'},
  {0xFB50, 0xFDFF, 'al'},
  {0xFE70, 0xFEFF, 'al'},
  {0x10800, 0x10C4F, 'r'},
  {0x1E800, 0x1E8DF, 'r'},
  {0x1E900, 0x1E95F, 'r'},
- {0x1F300, 0x1F9FF, 'on'},
- {0xF0000, 0xFFFFD, 'on'}, -- PUA
- {0x100000, 0x10FFFD, 'on'} -- PUA
+ {0x1F300, 0x1F9FF, 'on'}
 }
 
 Babel.characters = {

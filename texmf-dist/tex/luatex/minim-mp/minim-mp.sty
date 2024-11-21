@@ -11,35 +11,35 @@
 \def\mnm@setnormalfont{{\normalfont
     \xdef\mnm@normalfont{\expandafter\csstring\the\font}}}
 
-% a one-off metapost environment
-\newenvironment{metapost}[1][]{%
-    \begingroup \catcode`\#=12
-    \let\mpcolor = \minimpcolor
-    \csname:metapost:\endcsname[#1]}
-    {\csname end:metapost:\endcsname \endgroup}
-\NewDocumentEnvironment{:metapost:}{O{}+b}{%
+% global instance configuration
+\everymp0{pre}{mp}{defaultfont:="\mnm@normalfont";}
+\everymp0{pre}{tex}{%
     \mnm@setnormalfont
-    \let\protect=\noexpand
-    \directmetapost[#1]{%
-        defaultfont:="\mnm@normalfont"; #2; }%
-    \let\protect=\mnm@protect}{}
+    \let\mpcolor = \minimpcolor
+    \let\protect = \noexpand}
+\everymp0{post}{tex}{%
+    \let\protect=\mnm@protect}
+
+% a one-off metapost environment
+\newenvironment{metapost}[1][]{\begingroup
+     \catcodetable\csname minim:mp:catcodes:mpcode\endcsname
+     \csname:metapost:\endcsname[#1]}
+    {\csname end:metapost:\endcsname}
+\NewDocumentEnvironment{:metapost:}{O{}+b}{\endgroup
+    \directmetapost[#1]{#2}}{}
 
 % separate metapost instances
 \newcommand\newmetapostenvironment[2][]{%
     \newmetapostinstance[#1]\mnm@tmp
     \expandafter\let\csname #2@instance\endcsname\mnm@tmp
-    \newenvironment{#2}{%
-         \begingroup \catcode`\#=12
-         \let\mpcolor = \minimpcolor
+    \everymp\mnm@tmp{post}{tex}{%
+        \getallmpimages \csname #2@instance\endcsname}
+    \newenvironment{#2}{\begingroup
+         \catcodetable\csname minim:mp:catcodes:mpcode\endcsname
          \csname:#2:\endcsname}
-        {\csname end:#2:\endcsname \endgroup}%
-    \NewDocumentEnvironment{:#2:}{+b}{%
-        \mnm@setnormalfont
-        \let\protect=\noexpand
-        \runmetapostimage
-            \csname #2@instance\endcsname
-            {defaultfont:="\mnm@normalfont";##1;}%
-        \let\protect=\mnm@protect}{}}
+        {\csname end:#2:\endcsname}%
+    \NewDocumentEnvironment{:#2:}{+b}{\endgroup
+        \runmetapost \csname #2@instance\endcsname{##1}}{}}
 
 % \mpcolor support
 \def\minimpcolor#1#{\dominimpcolor{#1}}
@@ -50,3 +50,37 @@
 \newtoks\mpcolorspectoks \newtoks\mpcolorruntoks \newtoks\mpcolorvaltoks
 \mpcolorruntoks{\expandafter\extractcolorspec\the\mpcolorspectoks\mptmpcolor
     \expandafter\mpcolorvaltoks\expandafter\@gobble\mptmpcolor}
+
+% as a rather fragile drop-in replacement for luamplib
+\DeclareOption{luamplib}{%
+    \def\mplibtextextlabel#1{} % always enabled
+    \def\mplibshowlog#1{\directlua{
+        require 'minim-mp'.on_line = %
+            \ifcsname minimp@switch@#1\endcsname
+                true \else false \fi }}
+    \def\mplibcodeinherit#1{%
+        \ifcsname minimp@switch@#1\endcsname
+            \newmetapostenvironment[jobname='\jobname']{@mplibcode}
+            \let\mplibcode=\@mplibcode
+            \let\endmplibcode=\@mplibcode
+        \else
+            \let\mplibcode=\metapost
+            \let\endmplibcode=\endmetapost
+        \fi}
+    \mplibcodeinherit{disable}
+    \def\mplibsetformat#1{\directlua{
+        require 'minim-mp'.default_format = '#1.mp' }}
+    \def\mplibnumbersystem#1{\directlua{
+        require 'minim-mp'.default_math = '#1' }}
+    \newcommand\everymplib[2][0]{%
+        \everymp{#1}{pre}{mp}{defaultfont:="\mnm@normalfont";#2}}
+    \newcommand\everyendmplib[2][0]{%
+        \everymp{#1}{post}{mp}{#2}}
+} \ProcessOptions*
+
+\let\minimp@switch@@enable=\relax
+\let\minimp@switch@@enabled=\relax
+\let\minimp@switch@@true=\relax
+\let\minimp@switch@@yes=\relax
+
+

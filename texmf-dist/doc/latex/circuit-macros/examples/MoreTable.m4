@@ -72,5 +72,5 @@ vm = 0.28
    {xtal(,type=R;outerdiam=0.2) ; move ;"`{\tt xtal(,type=R)}'" ljust}
 }
 
-] with .nw at Heater.sw+(0,-0.3)
+] with .nw at Heater.sw+(0,-0.4)
 .PE

@@ -102,6 +102,14 @@ function M.enable_debugging()
 end
 E.enable_debugging = M.enable_debugging
 
+alloc.luadef('debugmetapost', M.enable_debugging)
+
+local function debug(...)
+    if debugging then
+        alloc.log(...)
+    end
+end
+
 local function print_prop(append, obj, prop)
     if obj[prop] then
         local val = string.gsub(tostring(obj[prop]), '\r', '<CR>')
@@ -136,9 +144,8 @@ local function print_knots(append, obj, ptype)
 end
 
 function A.printobj(append, obj)
-    if not debugging then return end
     local nc = append.node_count
-    append:literal('%%Object Type: %s', obj.type)
+    append:literal('%% Object Type: %s', obj.type)
     print_prop(append, obj, 'text')
     print_prop(append, obj, 'font')
     print_prop(append, obj, 'dsize')
@@ -151,16 +158,16 @@ function A.printobj(append, obj)
     print_knots(append, obj, 'htap')
     if obj.pen then
         local x = obj.pen.type or 'not elliptical'
-        append:literal('%%     pen: see below, form: %s', x)
+        append:literal('%%     pen is %s', x)
         x = mplib.pen_info(obj)
-        append:literal('%%        | width: %s', tostring(x.width))
-        append:literal('%%        |    sx: %s', tostring(x.sx))
-        append:literal('%%        |    sy: %s', tostring(x.sy))
-        append:literal('%%        |    rx: %s', tostring(x.rx))
-        append:literal('%%        |    ry: %s', tostring(x.ry))
-        append:literal('%%        |    tx: %s', tostring(x.tx))
-        append:literal('%%        |    ty: %s', tostring(x.ty))
-        print_knots(append, obj, 'pen')
+        append:literal('%%     width: %s', tostring(x.width))
+        append:literal('%%        sx: %s', tostring(x.sx))
+        append:literal('%%        sy: %s', tostring(x.sy))
+        append:literal('%%        rx: %s', tostring(x.rx))
+        append:literal('%%        ry: %s', tostring(x.ry))
+        append:literal('%%        tx: %s', tostring(x.tx))
+        append:literal('%%        ty: %s', tostring(x.ty))
+        print_knots(append, obj, 'pen path')
     end
     if obj.dash then
         local d = ''
@@ -228,7 +235,7 @@ end
 local function parse_lua_table(name, str)
     local f, msg = load('return '..str, name, 't')
     if msg then return alloc.err(msg) end
-    t = f()
+    local t = f()
     if not t or type(t) ~= 'table' then
         return alloc.err('%s attributes must be given as lua table', name)
     end
@@ -420,7 +427,9 @@ function A.linestate (append, object)
        append.dashed = false
        table.insert(res, '[] 0 d')
     end
-    append:literal(table.concat(res, ' '))
+    if #res > 0 then
+        append:literal(table.concat(res, ' '))
+    end
 end
 
 --2 path literals
@@ -482,7 +491,7 @@ function A.curve(append, path, open, concat)
     elseif #path == 1 then
         append_line(path[1], 'l') -- special case: draw a point
     end
-    append:literal(table.concat(res, ' '))
+    append:literal(table.concat(res, '\n'))
 end
 
 -- And actually draw the path.
@@ -556,7 +565,9 @@ end
 
 local function parse_object(append, object)
     append.object_info = { }
-    append:printobj(object)
+    if debugging then
+        append:printobj(object)
+    end
     local processor = nil
     for sp, instr in split_specials(object.prescript) do
         if not sp then
@@ -772,9 +783,9 @@ local function get_boxresource_center (id)
     end
 end
 
-E.set_boxresource_dimensions = set_boxresource_dimensions 
-E.get_boxresource_dimensions = get_boxresource_dimensions 
-E.get_boxresource_center = get_boxresource_center 
+E.set_boxresource_dimensions = set_boxresource_dimensions
+E.get_boxresource_dimensions = get_boxresource_dimensions
+E.get_boxresource_center = get_boxresource_center
 
 local function save_as_boxresource(pic)
     -- attributes
@@ -1018,8 +1029,8 @@ M.instances  = instances
 
 -- parameters: wd, ht+dp, dp
 local function make_transform(w, h, d)
-    return string.format('identity xscaled %fpt yscaled %fpt shifted (0,-%fpt)',
-        w/65536, (h+d)/65536, d/65536)
+    return string.format('identity xscaled %fpt yscaled %fpt shifted (0,%fpt)',
+        w/65536, (h+d)/65536, -d/65536)
 end
 
 local status_names = { [0] = 'good', 'warning', 'error', 'fatal' }
@@ -1028,16 +1039,19 @@ local function print_status(st)
 end
 
 M.on_line = false
+M.max_errprint = 1
 local function print_log (nr, res, why)
     local i = instances[nr]
     -- only write to term if on_line or if exit status increases
-    local log, alog
+    local log, alog --luacheck:ignore 231
     if M.on_line or res.status > i.status then
-        local nrlines, maxlines = 0, 16
         alog = alloc.amsg
+        local nr_errs = 0
         log = function(...)
-            if M.on_line or nrlines < maxlines then
-                nrlines = nrlines + 1
+            if  string.sub(table.pack(...)[2],1,2) == "! " then
+                nr_errs = nr_errs + 1
+            end
+            if M.max_errprint < 1 or M.max_errprint >= nr_errs then
                 alloc.msg(...)
             else
                 alloc.log(...)
@@ -1050,17 +1064,18 @@ local function print_log (nr, res, why)
     end
     -- split log into lines; discard empty lines at the end
     local report = res.log and res.log:explode('\n') or { }
-    while report[#report] == '' do
-        report[#report] = nil
-    end
     -- write out the log
-    log('┌ %smetapost instance %s (%d)', why or '', i.jobname, i.nr)
+    log('┌ %smetapost instance {%s} (%d)', why or '', i.jobname, i.nr)
     for _,line in ipairs(report) do
-        log('│ %s', line)
+        if line ~= '' and line ~= "(Please type a command or say `end')" then
+            log('│ %s', line)
+        end
     end
     log('└ %s', print_status(res.status))
     -- generate error or warning if needed
     if res.status > i.status then
+        local ecl = tex.errorcontextlines -- TODO: why does TeX fill the error context
+        tex.errorcontextlines = 0         -- with repeated <inserted text> BAD ???
         if res.status == 3 then
             alloc.err('Metapost instance now defunct')
         elseif res.status == 2 then
@@ -1068,6 +1083,7 @@ local function print_log (nr, res, why)
         elseif res.status == 1 then
             alloc.msg('Metapost code caused warning')
         end
+        tex.errorcontextlines = ecl
     end
     -- save the exit status for later comparison
     i.status = res.status
@@ -1107,6 +1123,9 @@ local function process_results(nr, res)
             local fig = res.fig[i]
             local name = fig:filename()
             local append = init_append()
+            if debugging then
+                append:literal('%% START OF MP FIGURE %s (instance %d)', name, nr)
+            end
             -- parse and append all objects
             append:save()
             local objects = fig:objects()
@@ -1114,6 +1133,9 @@ local function process_results(nr, res)
                 parse_object (append, objects[j])
             end
             append:restore()
+            if debugging then
+                append:literal('%% END OF MP FIGURE %s (instance %d)', name, nr)
+            end
             -- bounding box and baseline information
             local bb = fig:boundingbox()
             local llx, lly, urx, ury = table.unpack(bb)
@@ -1174,12 +1196,19 @@ end
 -- change in the future.)
 
 local function mkluastring(s)
-    return "'"..(s:gsub('\\', '\\\\'):gsub("'", "\\'"):gsub('\n', '\\n')).."'"
+    return "'"..(s
+        :gsub('\\', '\\\\')
+        :gsub("'", "\\'")
+        :gsub('\n', '\\n')
+        :gsub('\013', '\\r')
+        :gsub('\000', '\\000')
+    ).."'"
 end
 
 local function runscript(code)
+    debug('┌ runscript: %s', code)
     -- (possibly) pass directly to function
-    local fn, arg = code:match('^%[%[(.+)%]%](.*)')
+    local fn, arg = code:match('^%[%[(.-)%]%](.*)')
     if fn then code = 'return '..fn .. mkluastring(arg) end
     -- execute the script
     local f, msg = load(code, current_instance.jobname, 't', current_instance.env)
@@ -1187,32 +1216,39 @@ local function runscript(code)
     if f then
         local result = f()
         if result == nil then
+            debug('└ (no return value)')
             return
         else
             local t = type(result)
             if t == 'number' then
-                return string.format('%.16f', result)
+                result = string.format('%.16f', result)
             elseif t == 'string' then
-                return result
+                result = result
             elseif t == 'table' and result[1] == 'box_size' then
-                return make_transform(result[2], result[3], result[4])
+                result = make_transform(result[2], result[3], result[4])
             elseif t == 'table' and #result < 5 then
                 local fmt = #result == 1 and '%.16f'
                          or #result == 2 and '(%.16f, %.16f)'
                          or #result == 3 and '(%.16f, %.16f, %.16f)'
                          or #result == 4 and '(%.16f, %.16f, %.16f, %.16f)'
-                return fmt:format(table.unpack(result))
+                result = fmt:format(table.unpack(result))
             elseif t == 'table' and #result == 6 then
-                return table.concat({
-                        'begingroup save t; transform t;',
+                result = table.concat({
+                        'begingroup save t; transform t',
                         'xxpart t = %.16f', 'xypart t = %.16f',
                         'yxpart t = %.16f', 'yypart t = %.16f',
                         'xpart t = %.16f',  'ypart t = %.16f',
                         't endgroup' },
                     ';'):format(table.unpack(result))
             else
-                return tostring(result)
+                result = tostring(result)
             end
+            if #result > 120 then
+                debug('└ %s etc. etc.', result:sub(1,110))
+            else
+                debug('└ %s', result)
+            end
+            return result
         end
     else
         local mp_msg = string.gsub(msg, '"', '"&ditto&"')
@@ -1248,6 +1284,22 @@ function E.quote_for_lua(s)
     return E.quote(mkluastring(s))
 end
 
+-- These are here so that luametafun does not bug out immediately. Please note 
+-- that using metafun is not otherwise supported or recommended.
+local cct_maketext = alloc.registernumber('minim:mp:catcodes:maketext')
+E.catcodes = { numbers =
+    { inicatcodes = cct_maketext , texcatcodes = cct_maketext
+    , luacatcodes = cct_maketext , notcatcodes = cct_maketext
+    , vrbcatcodes = cct_maketext , prtcatcodes = cct_maketext
+    , ctxcatcodes = cct_maketext , txtcatcodes = cct_maketext
+}   }
+E.mp = mp or { } --luacheck: ignore 113
+-- all functions below seem nonessential
+E.mp.mf_path_reset = E.mp.mf_path_reset or function() end
+E.mp.mf_finish_saving_data = E.mp.mf_finish_saving_data or function() end
+E.mp.report = E.mp.report or function() end
+
+
 --2 typesetting with tex
 
 -- The result of the maketext function is fed back into metapost; on that side, 
@@ -1268,19 +1320,51 @@ end
 local function maketext(text, mode)
     if mode == 0 then -- btex or maketext
         local nr = alloc.new_box()
+        debug('┌ btex: %s', text)
         table.insert(current_instance.boxes, nr)
         local assignment = string.format('\\global\\setbox%s=\\hbox{\\the\\everymaketext %s}', nr, text)
         tex.runtoks(function() tex.print(current_instance.catcodes, assignment:explode('\n')) end)
         local box = tex.box[nr]
+        debug('└ etex: box %d', nr)
         return string.format('_set_maketext_result_(%d, %s)', nr,
             make_transform(box.width, box.height, box.depth))
     elseif mode == 1 then -- verbatimtex
+        debug('┌ verbatimtex: %s', text)
         tex.runtoks(function() tex.print(current_instance.catcodes, text:explode('\n')) end)
+        debug('└ etex')
     end
 end
 
+-- a font cache for infont and glyph of
+local infont_fonts = { }
+local function get_infont_font(fnt)
+    local csname = 'minim-mp infont '..fnt
+    local res = infont_fonts[csname]
+    if res then
+        debug('├ resolved font "%s" (%d)', fnt, res)
+    else
+        tex.runtoks(function()
+            tex.print(current_instance.catcodes, string.format(
+                '\\expandafter\\font\\csname %s\\endcsname={%s}\\relax', csname, fnt))
+        end)
+        res = font.id(csname)
+        infont_fonts[csname] = res
+        debug('├ loaded font "%s" (%d)', fnt, res)
+    end
+    return res
+end
+
+local function fontid_from_csname(fnt)
+    local id = font.id(fnt)
+    if id < 0 then return end
+    debug('├ resolved font \\%s (%d)', fnt, id)
+    return id
+end
+
 local function getfontid(fnt)
-    return tonumber(fnt) or font.id(fnt)
+    return tonumber(fnt)
+        or fontid_from_csname(fnt)
+        or get_infont_font(fnt)
 end
 
 local typeset_box = alloc.new_box('infont box')
@@ -1330,7 +1414,6 @@ function M.make_glyph(glyphname, fnt)
         alloc.err('Font not found: %s (id %s)', fnt, fontid)
         return { }, 10
     end
-    local fontname = thefont.psname
     local gid = luaotfload.aux.gid_of_name(fontid, glyphname)
     if not gid then
         alloc.err('Font %s has no glyph named %s', thefont.psname, glyphname)
@@ -1363,17 +1446,23 @@ function M.make_glyph(glyphname, fnt)
 end
 
 local function get_glyphname(c_id)
-    return luaotfload.aux.name_of_slot(c_id)
+    if type(c_id) == 'string' then return c_id end
+    local res = luaotfload.aux.name_of_slot(c_id)
+    debug('├ name of glyph %d is %s', c_id, res)
+    return res
 end
 
 function E.get_glyph(c_id, fnt)
-    local name = (type(c_id) == 'string') and c_id or get_glyphname(c_id)
+    debug('┌ glyph %s of %s', c_id, fnt)
+    local name = get_glyphname(c_id)
     local contours, size = M.make_glyph(name, fnt)
     local res = { }
     for _, c in ipairs(contours) do
-        table.insert(res, string.format(
-            '%s scaled %f', c, size/65536/1000))
+        local scaled = string.format('%s scaled %f', c, size/65536/1000)
+        debug('│ %s', scaled)
+        table.insert(res, scaled)
     end
+    debug('└ %d contours returned', #res)
     return table.concat(res, ', ')
 end
 
@@ -1393,6 +1482,9 @@ M.get_contours = E.get_contours
 
 --2 opening, running and and closing instances
 
+M.default_format = 'plain.mp'
+M.default_mathmode = 'scaled'
+
 local function apply_default_instance_opts(t)
     return
         { ini_version  = true
@@ -1401,8 +1493,8 @@ local function apply_default_instance_opts(t)
         , find_file    = new_file_finder()
         --, script_error = ...
         , job_name     = t.jobname
-        , math_mode    = t.math or 'scaled'
-        , random_seed  = t.seed or nil
+        , math_mode    = t.mathmode or t.math or M.default_mathmode
+        , random_seed  = t.randomseed or t.seed or nil
         -- , file_line_error_style
         , make_text    = maketext
         , run_script   = runscript
@@ -1434,22 +1526,38 @@ function M.run (nr, code)
         return
     end
     current_instance = self
+    if debugging then
+        alloc.log('┌ metapost chunk for {%s} (%d)', self.jobname, nr)
+        for _, line in ipairs(code:explode('\013')) do
+            alloc.log('│ %s', line)
+        end
+        alloc.log('└')
+    end
+    local cct = tex.catcodetable
+    tex.catcodetable = self.catcodes
     local res = self.instance:execute(code)
+    tex.catcodetable = cct
     print_log(nr, res)
     local picts = process_results(nr, res)
     save_image_list(self, picts)
 end
 
-M.init_code = { 'let dump=endinput;', 'input INIT;', 'input minim-mp.mp;', 'input minim.mp;' }
+M.init_code = { 'let dump=endinput;'
+              , 'boolean mplib; mplib:=true;'
+              , 'input INIT;'
+              , 'input minim.mp;'
+              , 'input minim-mp.mp;' }
 local maketext_catcodes = alloc.registernumber('minim:mp:catcodes:maketext')
 
 function M.open (t)
     local nr = #instances + 1
-    t.jobname = t.jobname or ':metapost:'
+    tex.count['mp:cur:inst'] = nr
     -- creating instance options
-    local init = string.gsub(table.concat(M.init_code, ''), 'INIT', t.format or 'plain.mp')
+    t.jobname = t.jobname or ':metapost:'
+    local init = string.gsub(table.concat(M.init_code, ''), 'INIT', t.format or M.default_format)
     local opts = apply_default_instance_opts(t)
     local instance = mplib.new(opts)
+    tex.runtoks 'mp:init:env'
     -- adding the instance
     instances[nr] =
         { nr        = nr
@@ -1463,11 +1571,13 @@ function M.open (t)
         }
     current_instance = instances[nr]
     print_log(nr, instance:execute(init), 'opening ')
+    tex.count['mp:cur:inst'] = -1
     return nr
 end
 
 function M.close (nr)
     local i = instances[nr]
+    tex.count['mp:cur:inst'] = nr
     if i.instance then
         local res = i.instance:finish()
         print_log(nr, res, 'closing ')
@@ -1477,6 +1587,7 @@ function M.close (nr)
         tex.box[b] = nil
     end
     instances[nr] = false
+    tex.count['mp:cur:inst'] = -1
 end
 
 --2 retrieving and using results
@@ -1548,25 +1659,30 @@ end
 local scan_int = token.scan_int
 local scan_string = token.scan_string
 
-local code_catcodes = alloc.registernumber('minim:mp:catcodes:mpcode')
-local function scan_codestring()
-    local cct = tex.catcodetable
-    tex.catcodetable = code_catcodes
-    local res = token.scan_string()
-    tex.catcodetable = cct
-    return res
-end
-
 alloc.luadef('closemetapostinstance', function() M.close(scan_int()) end)
 
+local code_catcodes = alloc.registernumber('minim:mp:catcodes:mpcode')
+
 alloc.luadef('runmetapost', function()
-    M.run(scan_int(), scan_codestring())
-end, 'protected')
-alloc.luadef('runmetapostimage', function()
-    local i = scan_int()
-    local code = 'beginfig(0)'..scan_codestring()..';endfig;'
-    M.run(i, code)
-    node.write(M.get_image(i))
+    local id = scan_int()
+    tex.count['mp:cur:inst'] = id
+    -- run tex code before
+    tex.runtoks 'mp:inst:pre:tex'
+    -- scan the argument with inert catcodes
+    local cct = tex.catcodetable
+    tex.catcodetable = code_catcodes
+    token.scan_keyword '\013' -- ^^M has catcode 12 now
+    local code = token.scan_string()
+    tex.catcodetable = cct
+    -- prepare the argument further
+    tex.toks['mp:mpcode'] = code
+    tex.runtoks 'mp:makempcode'
+    code = tex.toks['mp:mpcode']
+    -- run the code
+    M.run(id, code)
+    -- run tech code after
+    tex.runtoks 'mp:inst:post:tex'
+    tex.count['mp:cur:inst'] = -1
 end, 'protected')
 
 alloc.luadef('getnextmpimage', function()

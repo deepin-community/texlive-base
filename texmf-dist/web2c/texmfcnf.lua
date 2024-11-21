@@ -1,12 +1,12 @@
 -- todo: come up with an auto-texlive identification (texmf-dist)
 
-local hiddentexlivepath = ".texlive2023"
+local hiddentexlivepath = ".texlive2024"
 
 return {
 
     type    = "configuration",
     version = "1.1.3",
-    date    = "2023-03-10", -- 2021-05-12 2011-06-02
+    date    = "2024-02-10", -- 2021-05-12 2011-06-02
     time    = "14:59:00",
     comment = "ConTeXt MkIV and LMTX configuration file",
     author  = "Hans Hagen, PRAGMA-ADE, Hasselt NL",
@@ -77,8 +77,16 @@ return {
             TEXMFSYSCONFIG  = "selfautoparent:texmf-config",
 
             -- The texmf-local path is only used for (maybe) some additional configuration file.
-
-            TEXMFLOCAL      = "selfautoparent:texmf-local",
+	    -- Changed texmf-local to use ../ per Bruno Voisin,
+	    --   https://tug.org/pipermail/tex-live/2024-March/050300.html
+	    -- Needed: mtxrun --generate; mtxrun --script fonts --reload
+	    -- Then to test, e.g.:
+	    --   mtxrun --resolve-path TEXMFLOCAL
+	    --   mtxrun --find-file LucidaBrightOT.otf
+	    -- More info:
+	    --   https://wiki.contextgarden.net/Use_the_fonts_you_want
+	    --   https://wiki.contextgarden.net/Mtxrun#base and #fontsa
+            TEXMFLOCAL      = "selfautoparent:../texmf-local",
             TEXMFFONTS      = "selfautoparent:texmf-fonts",
             TEXMFPROJECT    = "selfautoparent:texmf-project",
 

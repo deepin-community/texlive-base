@@ -1,4 +1,4 @@
-% Language definition file (part of polyglossia v1.66 -- 2023/12/11)
+% Language definition file (part of polyglossia v2.3 -- 2024/09/23)
 %
 % Created on September 1, 2019
 % Last updated on May 17, 2020
@@ -41,36 +41,9 @@
 
 \newif\if@kurdish@kurmanji
 \def\kurdish@variant{sorani}
-\define@choicekey*+{kurdish}{variant}[\xpg@val\xpg@nr]{sorani,kurmanji}[sorani]{%
-   \ifcase\xpg@nr\relax
-      % sorani:
-      \def\kurdish@variant{sorani}%
-      \@kurdish@kurmanjifalse%
-   \or
-      % kurmanji:
-      \def\kurdish@variant{kurmanji}%
-      \@kurdish@kurmanjitrue%
-   \fi
-   \kurdish@set@variety%
-   \xpg@info{Option: kurdish, variant=\xpg@val}%
-}{\xpg@warning{Unknown Kurdish variant `#1'}}
 
 \newif\if@kurdish@latin
 \newif\if@kurdish@arabic
-\define@choicekey*+{kurdish}{script}[\xpg@val\xpg@nr]{arabic,latin}{%
-   \ifcase\xpg@nr\relax
-      % arabic:
-      \@kurdish@latinfalse%
-      \@kurdish@arabictrue%
-   \or
-      % latin:
-      \@kurdish@latintrue%
-      \@kurdish@arabicfalse%
-   \fi
-   \kurdish@set@variety%
-   \xpg@info{Option: kurdish, script=\xpg@val}%
-}{\xpg@warning{Unknown Kurdish script `#1'}}
-
 
 \newif\if@western@numerals
 \newif\if@force@western@numerals
@@ -87,7 +60,7 @@
          \SetLanguageKeys{kurdish}{script=Latin,direction=LR,scripttag=latn,babelname=kurdish,bcp47=ckb-Arab,bcp47-language=ckb,bcp47-script=Arab,bcp47-casing=ckb-Arab}%
      \fi
      \def\kurdish@script{latin}
-     \xpg@fontsetup@latin{kurdish}%
+     \SetupLatinPolyglossiaFont{kurdish}%
   \else
      \if@kurdish@arabic% arabic explicitly set
         \if@kurdish@kurmanji
@@ -97,61 +70,84 @@
         \else
             \SetLanguageKeys{kurdish}{script=Arabic,direction=RL,scripttag=arab,babelname=kurdish,bcp47=ckb-Arab,bcp47-language=ckb,bcp47-script=Arab,bcp47-casing=ckb-Arab}%
         \fi
-        \xpg@fontsetup@nonlatin{kurdish}%
+        \SetupNonLatinPolyglossiaFont{kurdish}%
      \else% sorani=arabic, kurmanji=latin
         \if@kurdish@kurmanji
             \@western@numeralstrue%
             \SetLanguageKeys{kurdish}{script=Latin,direction=LR,scripttag=latn,babelname=kurmanji,bcp47=kmr-Latn,bcp47-language=kmr,bcp47-script=Latn,bcp47-casing=kmr-Latn}%
-            \xpg@fontsetup@latin{kurdish}%
+            \SetupLatinPolyglossiaFont{kurdish}%
             \def\kurdish@script{latin}
         \else
             \SetLanguageKeys{kurdish}{script=Arabic,direction=RL,scripttag=arab,babelname=kurdish,bcp47=ckb-Arab,bcp47-language=ckb,bcp47-script=Arab,bcp47-casing=ckb-Arab}%
-            \xpg@fontsetup@nonlatin{kurdish}%
+            \SetupNonLatinPolyglossiaFont{kurdish}%
         \fi
      \fi
   \fi
 }
 
 \newif\if@western@numerals
-\define@choicekey*+{kurdish}{numerals}[\xpg@val\xpg@nr]{eastern,western}[eastern]{%
-   \ifcase\xpg@nr\relax
-      % eastern:
-      \@western@numeralsfalse%
-   \or
-      % western:
-      \@western@numeralstrue%
-      \@force@western@numeralstrue%
-   \fi
-   \xpg@info{Option: Kurdish, numerals=\xpg@val}%
-}{\xpg@warning{Unknown Kurdish numerals option `#1'}}
 
 \newif\ifkurdish@customsep\kurdish@customsepfalse
 \def\xpg@sepmark{}
-\define@key{kurdish}{sectionsep}[.]{%
-   \kurdish@customseptrue%
-   \gdef\xpg@sepmark{#1}%
-}
-
-%this is needed for \abjad in arabicnumbers.sty
-\define@boolkey{kurdish}[kurdish@]{abjadjimnotail}[true]{%
-  \ifkurdish@abjadjimnotail
-    \abjad@jim@notailtrue%
-  \else
-    \abjad@jim@notailfalse
-  \fi%
-}
-
-% NOT YET USED
-\define@key{kurdish}{locale}[default]{%
-  \def\@kurdish@locale{#1}}
 
 %TODO add option for CALENDAR
 
+\DeclareKeys[polyglossia/gloss/kurdish]
+  {
+    variant.choice:,
+    variant / sorani.code =
+      {%
+        \def\kurdish@variant{sorani}%
+        \@kurdish@kurmanjifalse
+        \kurdish@set@variety
+      },
+    variant / kurmanji.code =
+      {%
+        \def\kurdish@variant{kurmanji}%
+        \@kurdish@kurmanjitrue
+        \kurdish@set@variety
+      },
+    variant.default:n = sorani,
+    variant/unknown.code = \xpg@warning{Unknown Kurdish variant `#1'},
+    script.choice:,
+    script / arabic.code =
+      {%
+        \@kurdish@latinfalse
+        \@kurdish@arabictrue
+        \kurdish@set@variety
+      },
+    script / latin.code =
+      {%
+        \@kurdish@latintrue
+        \@kurdish@arabicfalse
+        \kurdish@set@variety
+      },
+    script.default:n = sorani,
+    script/unknown.code = \xpg@warning{Unknown Kurdish script `#1'},
+    numerals.choice:,
+    numerals / eastern.code =
+      {%
+        \@western@numeralsfalse
+      },
+    numerals / western.code =
+      {%
+        \@western@numeralstrue
+        \@force@western@numeralstrue
+      },
+    numerals.default:n = eastern,
+    numerals/unknown.code = \xpg@warning{Unknown Kurdish numerals value `#1'},
+    sectionsep.code = \gdef\xpg@sepmark{#1}\kurdish@customseptrue,
+    sectionsep.default:n = .,
+    abjadjimnotail.if = abjad@jim@notail,
+    abjadjimnotail.default:n = true,
+    locale.store = \@kurdish@locale
+  }
+
 % Register default options
-\xpg@initialize@gloss@options{kurdish}{variant=sorani,locale=default,script=arabic,abjadjimnotail=false,numerals=eastern}
+\InitializeGlossOptions{kurdish}{variant=sorani,locale=default,script=arabic,abjadjimnotail=false,numerals=eastern}
 
 \def\kurdish@language{%
-   \polyglossia@setup@language@patterns{\kurdish@pattern}%
+   \SetupPolyglossiaLangPatterns{\kurdish@pattern}%
 }%
 
 \def\kurdishNativemonth#1{\ifcase#1%
@@ -404,16 +400,16 @@
 }
 
 \def\nokurdish@xetex@capsformat{%
-   \ifcsdef{xpg@save@sepmark}{%
+   \ifcsname xpg@save@sepmark\endcsname%
      \SepMark{\xpg@save@sepmark}
-   }{}%
+   \fi%
 }
 
 \def\kurdish@luatex@capsformat{%
   %
   % change chapter and part headings
   \ifkurdish@customsep
-     \ifcsdef{chapter}{%
+     \ifcsname chapter\endcsname%
         \let\xpg@save@thesection\thesection%
         \renewcommand*\thesection{\thechapter\xpg@sepmark\@arabic\c@section}
         \let\xpg@save@theequation\theequation%
@@ -425,7 +421,7 @@
         \let\xpg@save@thetable\thetable%
 	\renewcommand*\thetable{%
 	    \ifnum\c@chapter>\z@\thechapter\xpg@sepmark\fi\@arabic\c@table}
-     }{}
+     \fi%
      \let\xpg@save@thesubsection\thesubsection%
      \renewcommand\thesubsection
 	{\thesection\xpg@sepmark\@arabic\c@subsection}
@@ -440,30 +436,30 @@
 }
 
 \def\nokurdish@luatex@capsformat{%
-   \ifcsdef{xpg@save@thesection}{%
+   \ifcsname xpg@save@thesection\endcsname%
         \let\thesection\xpg@save@thesection%
-   }{}%
-   \ifcsdef{xpg@save@theequation}{%
+   \fi%
+   \ifcsname xpg@save@theequation\endcsname%
         \let\theequation\xpg@save@theequation%
-   }{}%
-   \ifcsdef{xpg@save@thefigure}{%
+   \fi%
+   \ifcsname xpg@save@thefigure\endcsname%
         \let\thefigure\xpg@save@thefigure%
-   }{}%
-   \ifcsdef{xpg@save@thetable}{%
+   \fi%
+   \ifcsname xpg@save@thetable\endcsname%
         \let\thetable\xpg@save@thetable%
-   }{}%
-   \ifcsdef{xpg@save@thesubsection}{%
+   \fi%
+   \ifcsname xpg@save@thesubsection\endcsname%
         \let\thesubsection\xpg@save@thesubsection%
-   \ifcsdef{xpg@save@thesubsubsection}{%
+      \ifcsname xpg@save@thesubsubsection\endcsname%
         \let\thesubsubsection\xpg@save@thesubsubsection%
-   }{}%
-   }{}%
-   \ifcsdef{xpg@save@theparagraph}{%
+      \fi%
+   \fi%
+   \ifcsname xpg@save@theparagraph\endcsname%
         \let\theparagraph\xpg@save@theparagraph%
-   }{}%
-   \ifcsdef{xpg@save@thesubparagraph}{%
+   \fi%
+   \ifcsname xpg@save@thesubparagraph\endcsname%
         \let\thesubparagraph\xpg@save@thesubparagraph%
-   }{}%
+   \fi%
 }
 
 \def\blockextras@kurdish{%

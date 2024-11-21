@@ -23,9 +23,9 @@ if not modules then
 end
 
 modules.lua_placeholders = {
-    version = "1.0.0",
-    date = "2024/01/23",
-    comment = 'Extended LaTeX Parameter Interface — for specifying and inserting document parameters',
+    version = "1.0.3",
+    date = "2024/04/02",
+    comment = 'Lua Placeholders — for specifying and inserting document parameters',
     author = 'Erik Nijenhuis',
     license = 'free'
 }
@@ -78,7 +78,10 @@ function api.recipe(path, namespace_name)
     else
         namespace:load_recipe(raw_recipe)
     end
+    tex.print('\\NewHook{namespace/' .. name .. '}')
+    tex.print('\\NewHook{namespace/' .. name .. '/loaded}')
     tex.print('\\UseOneTimeHook{namespace/' .. name .. '}')
+    texio.write_nl(name)
     if namespace.payload_file and not namespace.payload_loaded then
         local raw_payload = load_resource(namespace.payload_file)
         if raw_payload.namespace then
@@ -200,7 +203,11 @@ function api.with_rows(key, namespace, csname)
                 texio.write_nl("Warning: no values set for " .. param.key)
                 local format = row_content
                 for col_key, col in pairs(param.columns) do
-                    format = format:gsub('\\' .. col_key, '{\\paramplaceholder{' .. (col.placeholder or col_key) .. '}}')
+                    if col.default ~= nil then
+                        format = format:gsub('\\' .. col_key, col:val())
+                    else
+                        format = format:gsub('\\' .. col_key, '{\\paramplaceholder{' .. (col.placeholder or col_key) .. '}}')
+                    end
                 end
                 tex.print(format)
             else

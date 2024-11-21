@@ -1,6 +1,6 @@
 # pgfornament – Drawing of Vectorian ornaments with PGF/TikZ
 
-Release 1.2 2020/05/28
+Release 1.3 2024/08/14
 
 ## Description
 
@@ -55,6 +55,9 @@ your LaTeX document.
 Documentations for `pgfornament` and `tikzrput`  are available on CTAN and in your TeX distribution.
 
 ## History
+
+- v 1.3 Correction of bug (spurious space) by  Tibor Tómács and correction of the documentation.
+
 - v 1.2 Correction of bug (spurious space) by  LianTze Lim.
 
 - v 1.00 Add the Han ornanments and some new macros. Add some examples to the  documentation. Thanks to Pablo Gonzáles L to help me with "Git".

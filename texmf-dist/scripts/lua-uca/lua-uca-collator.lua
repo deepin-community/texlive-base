@@ -1,15 +1,46 @@
 -- object for Unicode string collation
 local math = require "math"
-local tailoring_lib = require "lua-uca.lua-uca-tailoring"
-local reordering_table = require "lua-uca.lua-uca-reordering-table"
+local tailoring_lib
+local reordering_table
 local uni_normalize
--- in LuaTeX, load the lua-uni-normalize library
 if kpse then
+  tailoring_lib = require "lua-uca.lua-uca-tailoring"
+  reordering_table = require "lua-uca.lua-uca-reordering-table"
+  -- in LuaTeX, load the lua-uni-normalize library
   uni_normalize = require "lua-uni-normalize"
+else
+  tailoring_lib = require "lua-uca.tailoring"
+  reordering_table = require "lua-uca.reordering-table"
+end
+
+local utf8 = utf8
+if jit then
+  package.cpath = package.cpath .. ";?.dylib;?.so;?.dll"
+  utf8 = require "lua-utf8" -- https://github.com/starwing/luautf8.git
 end
 
 local collator = {}
 collator.__index = collator
+
+-- enable Unicode normalization
+local normalize_method = false
+
+function collator.use_nfc()
+  if uni_normalize then
+    normalize_method = "NFC"
+  else
+    return nil, "lua-uni-normalize is not available"
+  end
+end
+
+function collator.use_nfd()
+  if uni_normalize then
+    normalize_method = "NFD"
+  else
+    return nil, "lua-uni-normalize is not available"
+  end
+end
+
 
 local function copy_table(tbl)
   local t = {}
@@ -86,7 +117,7 @@ function collator:read_weight(codepoints, pos)
     -- if we go out of the codepoint array
     if not newcodepoint then return nil end
     local child = children[newcodepoint]
-    if child then 
+    if child then
       local nextchild, nextpos = read_children(child, newpos)
       if nextchild then return nextchild, nextpos end
       if child.value then return child.value, newpos end
@@ -106,7 +137,7 @@ end
 
 -- get weights for the next characters
 function collator:get_weights(codepoints, pos)
-  local weights, next_pos = self:read_weight(codepoints, pos) 
+  local weights, next_pos = self:read_weight(codepoints, pos)
   -- return implicit weights for codepoints that are not in the database
   if not weights then
     weights, next_pos = self:get_implicit_weight(codepoints, pos)
@@ -122,12 +153,13 @@ function collator:get_lowest_char(codepoints, pos)
   -- find the lowest key in the table
   local min = math.min
   local max = math.max
+  local pos = pos or 1
   local minimal = 0xffffffffff
   local maximal = -0xfffffffff
   local function get_lowest_key(tbl)
     local minimal, maximal = minimal, maximal
     if tbl.minimal then return tbl.minimal, tbl.maximal end
-    for k,v in pairs(tbl) do 
+    for k,v in pairs(tbl) do
       minimal,maximal = min(k, minimal), max(k, maximal)
     end
     tbl.minimal, tbl.maximal = minimal, maximal
@@ -152,7 +184,7 @@ function collator:get_lowest_char(codepoints, pos)
 
 
   local weights, next_pos = self:read_weight(codepoints, pos)
-  local x 
+  local x
   if weights then
     local weight_to_char = self.weight_to_char or self:weight_to_codepoints()
     self.weight_to_char = weight_to_char
@@ -187,21 +219,42 @@ end
 function collator:make_sort_key(codepoints)
   local levels = {}
   local pos = 1
-  local weights 
+  local weights
   local sort_key = {}
   while true do
-    -- 
+    --
     weights, pos = self:get_weights(codepoints, pos)
     levels = self:update_levels(levels, weights)
     -- break when we reach end of the codepoints array
     if not pos then break end
   end
-  for i, elements in ipairs(levels) do 
+  for i, elements in ipairs(levels) do
     for _, element in ipairs(elements) do
       table.insert(sort_key, element)
     end
     -- zero separates levels in the sort key
     table.insert(sort_key, 0)
+  end
+  -- (df) Reverse sort for accents?
+  if self.accents_backward then
+    local start,stop
+    local i = 1
+    repeat
+      if sort_key[i] == 0 then
+        if start then
+          stop = i-1
+        else
+          start = i+1
+        end
+      end
+      i = i+1
+    until stop or not sort_key[i]
+    -- swap secondary values
+    while start and stop and stop > start do
+      sort_key[start], sort_key[stop] = sort_key[stop], sort_key[start]
+      start = start+1
+      stop = stop-1
+    end
   end
   return sort_key
 end
@@ -209,7 +262,7 @@ end
 function collator:compare(a, b)
   -- sort using sort keys
   local min = math.min(#a, #b)
-  for i = 1, min do 
+  for i = 1, min do
     if a[i] ~= b[i] then return a[i] < b[i] end
   end
   -- this should happen only when the strings are equal
@@ -223,11 +276,12 @@ local codepoints_cache = {}
 function collator:string_to_codepoints(a)
   if codepoints_cache[a] then return codepoints_cache[a] end
   -- try unicode normalization, if it is available
-  -- it uses libraries available in LuaTeX, so it doesn't work with 
+  -- it uses libraries available in LuaTeX, so it doesn't work with
   -- stock Lua
   local normalized = a
-  if uni_normalize then 
-    normalized = uni_normalize.NFC(a) 
+  if normalize_method then
+    -- it seems that normalization doesn't work correctly
+    normalized = uni_normalize[normalize_method](a)
   end
   local codepoints = {}
   for _, code in utf8.codes(normalized) do codepoints[#codepoints+1] = code end
@@ -265,7 +319,7 @@ end
 
 
 --- change sorting ordering
--- 
+--
 function collator:tailor(base, target, tailoring_table)
   -- get the value of the base character
   local value = self:get_weights(base, 1)
@@ -306,12 +360,12 @@ end
 -- expand characters to another characters
 function collator:equal(base, target)
   local new_weight = {}
-  local values, pos 
+  local values, pos
   pos = 1
   while true do
     value, pos = self:get_weights(target, pos)
-    for _, v in ipairs(value) do 
-      new_weight[#new_weight + 1] = v 
+    for _, v in ipairs(value) do
+      new_weight[#new_weight + 1] = v
     end
     if not pos then break end
   end
@@ -327,7 +381,7 @@ function collator:uppercase_first()
   self.tailoring_multiplier[3] = -1
   self.is_uppercase_first = true
   for k,v in ipairs(uppercase_values) do is_uppercase[v] = true end
-  
+
   local function change_case(element)
     local value =  element.value or {}
     for _, collation_element in ipairs(value) do
@@ -339,8 +393,8 @@ function collator:uppercase_first()
     end
     -- recursivelly process children
     local children = element.children or {}
-    for x, child in pairs(children) do 
-      change_case(child) 
+    for x, child in pairs(children) do
+      change_case(child)
     end
   end
   for _, element in pairs(self.codes) do

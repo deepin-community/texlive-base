@@ -32,15 +32,19 @@
 -- and covered by LPPL is defined by the unpacking scripts (with
 -- extension |.ins|) which are part of the distribution.
 --
-
-Babel = Babel or {}
-
 -- eg, Babel.fontmap[1][<prefontid>]=<dirfontid>
 
 Babel.fontmap = Babel.fontmap or {}
 Babel.fontmap[0] = {}      -- l
 Babel.fontmap[1] = {}      -- r
 Babel.fontmap[2] = {}      -- al/an
+
+-- To cancel mirroring. Also OML, OMS, U?
+Babel.symbol_fonts = Babel.symbol_fonts or {}
+Babel.symbol_fonts[font.id('tenln')] = true
+Babel.symbol_fonts[font.id('tenlnw')] = true
+Babel.symbol_fonts[font.id('tencirc')] = true
+Babel.symbol_fonts[font.id('tencircw')] = true
 
 Babel.bidi_enabled = true
 Babel.mirroring_enabled = true
@@ -85,9 +89,17 @@ local function insert_numeric(head, state)
   return head, new_state
 end
 
+local function glyph_not_symbol_font(node)
+  if node.id == GLYPH then
+    return not Babel.symbol_fonts[node.font]
+  else
+   return false
+  end
+end
+
 -- TODO - \hbox with an explicit dir can lead to wrong results
 -- <R \hbox dir TLT{<R>}> and <L \hbox dir TRT{<L>}>. A small attempt
--- was s made to improve the situation, but the problem is the 3-dir
+-- was made to improve the situation, but the problem is the 3-dir
 -- model in babel/Unicode and the 2-dir model in LuaTeX don't fit
 -- well.
 
@@ -109,6 +121,7 @@ function Babel.bidi(head, ispar, hdir)
   local has_hyperlink = false
 
   local ATDIR = Babel.attr_dir
+  local attr_d
 
   local save_outer
   local temp = node.get_attribute(head, ATDIR)
@@ -140,8 +153,10 @@ function Babel.bidi(head, ispar, hdir)
     -- current one is not added until we start processing the neutrals.
 
     -- three cases: glyph, dir, otherwise
-    if item.id == GLYPH
+    if glyph_not_symbol_font(item)
        or (item.id == 7 and item.subtype == 2) then
+
+      if node.get_attribute(item, ATDIR) == 128 then goto nextnode end
 
       local d_font = nil
       local item_r
@@ -150,6 +165,7 @@ function Babel.bidi(head, ispar, hdir)
       else
         item_r = item
       end
+
       local chardata = characters[item_r.char]
       d = chardata and chardata.d or nil
       if not d or d == 'nsm' then
@@ -269,7 +285,7 @@ function Babel.bidi(head, ispar, hdir)
         temp = 'on'     -- W6
       end
       for e = first_et, #nodes do
-        if nodes[e][1].id == GLYPH then nodes[e][2] = temp end
+        if glyph_not_symbol_font(nodes[e][1]) then nodes[e][2] = temp end
       end
       first_et = nil
       has_en = false
@@ -277,6 +293,7 @@ function Babel.bidi(head, ispar, hdir)
 
     -- Force mathdir in math if ON (currently works as expected only
     -- with 'l')
+
     if inmath and d == 'on' then
       d = ('TRT' == tex.mathdir) and 'r' or 'l'
     end
@@ -292,9 +309,12 @@ function Babel.bidi(head, ispar, hdir)
       table.insert(nodes, {item, d, outer_first})
     end
 
+    node.set_attribute(item, ATDIR, 128)
     outer_first = nil
 
-  end
+    ::nextnode::
+
+  end -- for each node
 
   -- TODO -- repeated here in case EN/ET is the last node. Find a
   -- better way of doing things:
@@ -309,7 +329,7 @@ function Babel.bidi(head, ispar, hdir)
       temp = 'on'     -- W6
     end
     for e = first_et, #nodes do
-      if nodes[e][1].id == GLYPH then nodes[e][2] = temp end
+      if glyph_not_symbol_font(nodes[e][1]) then nodes[e][2] = temp end
     end
   end
 
@@ -345,7 +365,7 @@ function Babel.bidi(head, ispar, hdir)
       for r = first_on, q - 1 do
         nodes[r][2] = temp
         item = nodes[r][1]    -- MIRRORING
-        if Babel.mirroring_enabled and item.id == GLYPH
+        if Babel.mirroring_enabled and glyph_not_symbol_font(item)
              and temp == 'r' and characters[item.char] then
           local font_mode = ''
           if item.font > 0 and font.fonts[item.font].properties then
@@ -453,5 +473,14 @@ function Babel.bidi(head, ispar, hdir)
     end
   end
 
+  return head
+end
+-- Make sure anything is marked as 'bidi done' (including nodes inserted
+-- after the babel algorithm).
+function Babel.unset_atdir(head)
+  local ATDIR = Babel.attr_dir
+  for item in node.traverse(head) do
+    node.set_attribute(item, ATDIR, 128)
+  end
   return head
 end

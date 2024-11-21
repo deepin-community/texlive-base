@@ -20,7 +20,6 @@ KOMA-Script bundle of LaTeX classes and packages.
 * `koma-script-source-doc.dtx`
 * `scraddr.dtx`
 * `scrextend.dtx`
-* `scrhack.dtx`
 * `scrjura.dtx`
 * `scrkernel-addressfiles.dtx`
 * `scrkernel-basics.dtx`
@@ -58,7 +57,6 @@ KOMA-Script bundle of LaTeX classes and packages.
 * `scrstrip.inc`
 * `scrstrop.inc`
 * `scrdocstrip.tex`
-* `scrdoc.cls` (deprecated)
 
 ## Typeset documentation source files
 
@@ -84,8 +82,9 @@ distributions of the KOMA-Script bundle of LaTeX classes and packages.
   manual. All other files are part of both, the English and the German user
   manual.
 
-* `scrlttr2-examples.dtx` (has to unpacked using “`tex scrlttr2-examples.dtx`”
-  before using LaTeX to produce the user manuals)
+* `scrlttr2-examples.dtx` (has to be unpacked using 
+  “`tex scrlttr2-examples.dtx`” before using LaTeX to produce the user
+  manuals)
 * `scrguide.cls`
 * `scrguide.ist`
 * `scrguide.gst`
@@ -105,7 +104,8 @@ distributions of the KOMA-Script bundle of LaTeX classes and packages.
 * `scrtime-en.tex` 
 * `scraddr-en.tex` 
 * `scrextend-en.tex` 
-* `scrjura-en.tex` 
+* `scrjura-en.tex`
+* `scrjura-example-en.tex`
 * `scrlogo-en.tex` 
 * `common-options-en.tex` 
 * `common-compatibility-en.tex` 
@@ -128,10 +128,12 @@ distributions of the KOMA-Script bundle of LaTeX classes and packages.
 * `scrlfile-en.tex` 
 * `scrwfile-en.tex` 
 * `tocbasic-en.tex` 
-* `scrhack-en.tex` 
+* `book-remarkbox-nopatch-en.tex`
+* `book-remarkbox-patch-en.tex`
 * `scrlayer-en.tex` 
 * `scrlayer-scrpage-experts-en.tex` 
-* `scrlayer-notecolumn-en.tex` 
+* `scrlayer-notecolumn-en.tex`
+* `scrlayer-notecolumn-example-en.tex`
 * `typearea-experts-en.tex` 
 * `scrbookreportarticle-experts-en.tex` 
 * `scrlttr2-experts-en.tex` 
@@ -150,6 +152,7 @@ distributions of the KOMA-Script bundle of LaTeX classes and packages.
 * `scraddr-de.tex` 
 * `scrextend-de.tex` 
 * `scrjura-de.tex` 
+* `scrjura-example-de.tex`
 * `scrlogo-de.tex` 
 * `common-options-de.tex` 
 * `common-compatibility-de.tex` 
@@ -172,10 +175,12 @@ distributions of the KOMA-Script bundle of LaTeX classes and packages.
 * `scrlfile-de.tex` 
 * `scrwfile-de.tex` 
 * `tocbasic-de.tex` 
-* `scrhack-de.tex` 
+* `book-remarkbox-nopatch-de.tex`
+* `book-remarkbox-patch-de.tex`
 * `scrlayer-de.tex` 
-* `scrlayer-scrpage-experts-de.tex` 
-* `scrlayer-notecolumn-de.tex` 
+* `scrlayer-scrpage-experts-de.tex`
+* `scrlayer-notecolumn-de.tex`
+* `scrlayer-notecolumn-example-de.tex`
 * `typearea-experts-de.tex` 
 * `scrbookreportarticle-experts-de.tex` 
 * `scrlttr2-experts-de.tex` 
@@ -199,10 +204,8 @@ of the KOMA-Script bundle of LaTeX classes and packages.
 * `README.scrbase.sty`
 * `README.scrbook.cls`
 * `README.scrdate.sty`
-* `README.scrdoc.cls`
 * `README.scrextend.sty`
 * `README.scrfontsizes.sty`
-* `README.scrhack.sty`
 * `README.scrjura.sty`
 * `README.scrkbase.sty`
 * `README.scrlayer-notecolumn.sty`
@@ -235,7 +238,6 @@ of LaTeX classes and packages.
 * `scrdate.sty`
 * `scrextend.sty`
 * `scrfontsizes.sty`
-* `scrhack.sty`
 * `scrjura.sty`
 * `scrkbase.sty`
 * `scrlayer-notecolumn.sty`
@@ -321,7 +323,6 @@ KOMA-Script bundle of LaTeX classes and packages.
 * `scrarticle.html`
 * `scrlayer-notecolumn.html`
 * `scraddr.html`
-* `scrhack.html`
 * `scrlfile-hook-3.34.html`
 * `scrtime.html`
 * `scrlttr2.html`

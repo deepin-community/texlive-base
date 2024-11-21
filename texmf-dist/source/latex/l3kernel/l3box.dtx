@@ -43,7 +43,7 @@
 %    }^^A
 % }
 %
-% \date{Released 2024-01-22}
+% \date{Released 2024-11-02}
 %
 % \maketitle
 %
@@ -849,7 +849,8 @@
 %   \begin{syntax}
 %     \cs{box_rotate:Nn} \meta{box} \Arg{angle}
 %   \end{syntax}
-%   Rotates the \meta{box} by \meta{angle} (in degrees) anti-clockwise about
+%   Rotates the \meta{box} by \meta{angle} (a \meta{fp expr} in degrees)
+%   anti-clockwise about
 %   its reference point. The reference point of the updated box is moved
 %   horizontally such that it is at the left side of the smallest rectangle
 %   enclosing the rotated material. The updated \meta{box} is an |hbox|,
@@ -866,7 +867,7 @@
 %   \end{syntax}
 %   Scales the \meta{box} by factors \meta{x-scale} and \meta{y-scale} in
 %   the horizontal and vertical directions, respectively (both scales are
-%   integer expressions). The updated \meta{box} is an |hbox|, irrespective
+%   \meta{fp expr}). The updated \meta{box} is an |hbox|, irrespective
 %   of the nature of the \meta{box} before the scaling is applied. Negative
 %   scalings cause the material in the \meta{box} to be reversed in
 %   direction, but the reference point of the \meta{box} is unchanged.
@@ -905,9 +906,9 @@
 %   \begin{syntax}
 %     \cs{box_set_trim:Nnnnn} \meta{box} \Arg{left} \Arg{bottom} \Arg{right} \Arg{top}
 %   \end{syntax}
-%   Adjusts the bounding box of the \meta{box} \meta{left} is removed from
+%   Adjusts the bounding box of the \meta{box}: \meta{left} is removed from
 %   the left-hand edge of the bounding box, \meta{right} from the right-hand
-%   edge and so fourth. All adjustments are \meta{dim exprs}.
+%   edge, and so forth. All adjustments are \meta{dim exprs}.
 %   Material outside of the bounding box is still displayed in the output
 %   unless \cs{box_set_clipped:N} is subsequently applied.
 %   The updated \meta{box} is an
@@ -927,8 +928,8 @@
 %     \cs{box_set_viewport:Nnnnn} \meta{box} \Arg{llx} \Arg{lly} \Arg{urx} \Arg{ury}
 %   \end{syntax}
 %   Adjusts the bounding box of the \meta{box} such that it has lower-left
-%   co-ordinates (\meta{llx}, \meta{lly}) and upper-right co-ordinates
-%   (\meta{urx}, \meta{ury}). All four co-ordinate positions are
+%   coordinates (\meta{llx}, \meta{lly}) and upper-right coordinates
+%   (\meta{urx}, \meta{ury}). All four coordinate positions are
 %   \meta{dim exprs}. Material outside of the bounding box is
 %   still displayed in the output unless \cs{box_set_clipped:N} is
 %   subsequently applied.
@@ -1343,9 +1344,9 @@
   { \exp_args:No \@@_log:nNnn { \tex_the:D \tex_interactionmode:D } }
 \cs_new_protected:Npn \@@_log:nNnn #1#2#3#4
   {
-    \int_set:Nn \tex_interactionmode:D { 0 }
+    \int_gset:Nn \tex_interactionmode:D { 0 }
     \@@_show:NNff 0 #2 { \int_eval:n {#3} } { \int_eval:n {#4} }
-    \int_set:Nn \tex_interactionmode:D {#1}
+    \int_gset:Nn \tex_interactionmode:D {#1}
   }
 \cs_generate_variant:Nn \box_log:Nnn { c }
 %    \end{macrocode}
@@ -1845,7 +1846,7 @@
 %       \put(40,49){E}
 %       \put(21,59){O}
 %     \end{picture}
-%     \caption{Co-ordinates of a box prior to rotation.}
+%     \caption{Coordinates of a box prior to rotation.}
 %     \label{fig:l3box:rotation}
 %   \end{figure}
 %   The formulae are, for a point $P$ and angle $\alpha$:
@@ -2065,7 +2066,7 @@
   }
 %    \end{macrocode}
 %   With at least one real scaling to do, the next phase is to find the new
-%   edge co-ordinates. In the $x$~direction this is relatively easy: just
+%   edge coordinates. In the $x$~direction this is relatively easy: just
 %   scale the right edge. In the $y$~direction, both dimensions have to be
 %   scaled, and this again needs the absolute scale value.
 %   Once that is all done, the common resize/rescale code can be employed.
@@ -2279,7 +2280,7 @@
 \cs_generate_variant:Nn \box_autosize_to_wd_and_ht:Nnn { c }
 \cs_new_protected:Npn \box_gautosize_to_wd_and_ht:Nnn #1#2#3
   { \@@_autosize:NnnnN #1 {#2} {#3} { \box_ht:N #1 } \hbox_gset:Nn }
-\cs_generate_variant:Nn \box_autosize_to_wd_and_ht:Nnn { c }
+\cs_generate_variant:Nn \box_gautosize_to_wd_and_ht:Nnn { c }
 \cs_new_protected:Npn \box_autosize_to_wd_and_ht_plus_dp:Nnn #1#2#3
   {
     \@@_autosize:NnnnN #1 {#2} {#3} { \box_ht:N #1 + \box_dp:N #1 }
@@ -2296,8 +2297,9 @@
   {
     #5 #1
       {
-        \fp_set:Nn \l_@@_scale_x_fp { ( #2 ) / \box_wd:N #1 }
-        \fp_set:Nn \l_@@_scale_y_fp { ( #3 ) / ( #4 ) }
+        \fp_set:Nn \l_@@_scale_x_fp { ( \dim_to_fp:n {#2} ) / \box_wd:N #1 }
+        \fp_set:Nn \l_@@_scale_y_fp
+          { (  \dim_to_fp:n {#3} ) / ( \dim_to_fp:n {#4} ) }
         \fp_compare:nNnTF \l_@@_scale_x_fp > \l_@@_scale_y_fp
           { \fp_set_eq:NN \l_@@_scale_x_fp \l_@@_scale_y_fp }
           { \fp_set_eq:NN \l_@@_scale_y_fp \l_@@_scale_x_fp }

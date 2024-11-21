@@ -7,7 +7,7 @@
 %% spath3_code.dtx  (with options: `spath3')
 %% ----------------------------------------------------------------
 %% spath3 --- Functions for manipulating PGF soft paths
-%% E-mail: loopspace@mathforge.org
+%% E-mail: Andrew Stacey <loopspace@mathforge.org>
 %% Released under the LaTeX Project Public License v1.3c or later
 %% See http://www.latex-project.org/lppl.txt
 %% ----------------------------------------------------------------
@@ -15,7 +15,7 @@
 \NeedsTeXFormat{LaTeX2e}
 \RequirePackage{expl3}
 \RequirePackage{pgf}
-\ProvidesExplPackage {spath3} {2022/08/24} {2.7} {Functions for
+\ProvidesExplPackage {spath3} {2024/05/31} {2.8} {Functions for
 manipulating PGF soft paths}
 \RequirePackage{xparse}
 \cs_new_protected:Nn \__spath_tl_put_right_braced:Nn
@@ -80,6 +80,8 @@ manipulating PGF soft paths}
 
 \bool_new:N \l__spath_rect_bool
 \bool_new:N \l_spath_movetorelevant_bool
+\bool_new:N \l_spath_arrow_shortening_bool
+\bool_set_true:N \l_spath_arrow_shortening_bool
 \tl_new:N \l__spath_intersecta_tl
 \tl_new:N \l__spath_intersectb_tl
 \tl_const:Nn \c_spath_moveto_tl {\pgfsyssoftpath@movetotoken}
@@ -121,7 +123,7 @@ manipulating PGF soft paths}
   {
     \tl_set:Nx \l__spath_tmpc_tl {\tl_head:N \l__spath_tmpa_tl}
     \tl_set:Nx \l__spath_tmpa_tl {\tl_tail:N \l__spath_tmpa_tl}
-    \tl_case:NnF \l__spath_tmpc_tl
+    \token_case_meaning:NnF \l__spath_tmpc_tl
     {
       \c_spath_moveto_tl
       {
@@ -355,7 +357,7 @@ manipulating PGF soft paths}
   \int_set:Nn \l__spath_tmpa_int {0}
   \tl_map_inline:nn {#1} {
     \tl_set:Nn \l__spath_tmpa_tl {##1}
-    \tl_case:NnT \l__spath_tmpa_tl
+    \token_case_meaning:NnT \l__spath_tmpa_tl
     {
       \c_spath_lineto_tl {}
       \c_spath_curveto_tl {}
@@ -390,7 +392,7 @@ manipulating PGF soft paths}
   \int_set:Nn \l__spath_tmpa_int {0}
   \tl_map_inline:nn {#1} {
     \tl_set:Nn \l__spath_tmpa_tl {##1}
-    \tl_case:Nn \l__spath_tmpa_tl
+    \token_case_meaning:Nn \l__spath_tmpa_tl
     {
       \c_spath_moveto_tl
       {
@@ -510,7 +512,7 @@ manipulating PGF soft paths}
   }
   {
     \tl_set:Nx \l__spath_tmpb_tl {\tl_head:N \l__spath_tmpa_tl}
-    \tl_case:Nn \l__spath_tmpb_tl
+    \token_case_meaning:Nn \l__spath_tmpb_tl
     {
       \c_spath_moveto_tl
       {
@@ -674,7 +676,7 @@ manipulating PGF soft paths}
   }
   {
     \tl_set:Nx \l__spath_tmpb_tl {\tl_head:N \l__spath_tmpa_tl}
-    \tl_case:Nn \l__spath_tmpb_tl
+    \token_case_meaning:Nn \l__spath_tmpb_tl
     {
       \c_spath_moveto_tl
       {
@@ -792,7 +794,7 @@ manipulating PGF soft paths}
       \tl_set:Nx \l__spath_tmpc_tl {\tl_head:N \l__spath_tmpa_tl}
       \bool_set_false:N \l__spath_rect_bool
 
-      \tl_case:NnTF \l__spath_tmpc_tl
+      \token_case_meaning:NnTF \l__spath_tmpc_tl
       {
         \c_spath_moveto_tl {
 
@@ -1196,8 +1198,8 @@ manipulating PGF soft paths}
     \tl_clear:N \l__spath_tmpa_tl
     \tl_put_right:Nn \l__spath_tmpa_tl {
       \ExplSyntaxOn
-      \tl_clear_new:N #1
-      \tl_set:Nn #1 {#2}
+      \tl_gclear_new:N #1
+      \tl_gset:Nn #1 {#2}
       \ExplSyntaxOff
     }
     \protected@write\@auxout{}{
@@ -2339,6 +2341,18 @@ manipulating PGF soft paths}
   \spath_gbake_shorten:NV #1#1
 }
 \cs_generate_variant:Nn \spath_gbake_shorten:N {c}
+\cs_set_eq:Nc \__spath_pgf_arrow_compute_shortening:n {pgf@arrow@compute@shortening}
+\cs_new_nopar:Npn \__spath_arrow_compute_shortening:n #1
+{
+  \__spath_pgf_arrow_compute_shortening:n {#1}
+  \bool_if:NF \l_spath_arrow_shortening_bool
+  {
+    \dim_sub:cn {pgf@xb} {\dim_use:c {pgf@xa}}
+    \dim_zero:c {pgf@xa}
+  }
+}
+
+\cs_set_eq:cN {pgf@arrow@compute@shortening} \__spath_arrow_compute_shortening:n
 \cs_new_protected_nopar:Npn \__spath_close:n #1
 {
   \group_begin:
@@ -2459,7 +2473,7 @@ manipulating PGF soft paths}
     \tl_set:Nx \l__spath_tmpc_tl {\tl_head:N \l__spath_tmpa_tl}
     \tl_set:Nx \l__spath_tmpa_tl {\tl_tail:N \l__spath_tmpa_tl}
 
-    \tl_case:NnF \l__spath_tmpc_tl
+    \token_case_meaning:NnF \l__spath_tmpc_tl
     {
       \c_spath_closepath_tl {
 
@@ -3108,7 +3122,7 @@ manipulating PGF soft paths}
   }
   {
     \tl_set:Nx \l__spath_tmpc_tl {\tl_head:N \l__spath_tmpa_tl}
-    \tl_case:NnF \l__spath_tmpc_tl
+    \token_case_meaning:NnF \l__spath_tmpc_tl
     {
       \c_spath_curvetoa_tl
       {
@@ -3346,7 +3360,7 @@ manipulating PGF soft paths}
   {
     \tl_set:Nx \l__spath_tmpf_tl {\tl_head:N \l__spath_tmpe_tl}
     \tl_set:Nx \l__spath_tmpe_tl {\tl_tail:N \l__spath_tmpe_tl }
-    \tl_case:Nn \l__spath_tmpf_tl
+    \token_case_meaning:Nn \l__spath_tmpf_tl
     {
       \c_spath_lineto_tl
       {
@@ -3400,7 +3414,7 @@ manipulating PGF soft paths}
   }
   {
 
-    \tl_case:Nn \l__spath_tmpf_tl
+    \token_case_meaning:Nn \l__spath_tmpf_tl
     {
       \c_spath_lineto_tl
       {
@@ -4078,7 +4092,7 @@ manipulating PGF soft paths}
 
       \tl_clear:N \l__spath_tmpc_tl
 
-      \tl_case:Nn \l__spath_tmpb_tl
+      \token_case_meaning:Nn \l__spath_tmpb_tl
       {
         \c_spath_moveto_tl
         {
@@ -4312,7 +4326,7 @@ manipulating PGF soft paths}
 
       \tl_clear:N \l__spath_tmpc_tl
 
-      \tl_case:Nn \l__spath_tmpb_tl
+      \token_case_meaning:Nn \l__spath_tmpb_tl
       {
         \c_spath_moveto_tl
         {
@@ -5317,7 +5331,7 @@ manipulating PGF soft paths}
   \tl_map_inline:nn {#1}
   {
     \tl_set:Nn \l__spath_tmpb_tl {##1}
-    \tl_case:NnF \l__spath_tmpb_tl
+    \token_case_meaning:NnF \l__spath_tmpb_tl
     {
       \c_spath_moveto_tl
       {
@@ -5414,10 +5428,14 @@ manipulating PGF soft paths}
 \cs_new_protected_nopar:Npn \spath_protocol_path:n #1
 {
   \spath_minbb:Nn \l__spath_tmpa_tl {#1}
-  \exp_last_unbraced:NV \pgf@protocolsizes\l__spath_tmpa_tl
+  \dim_set:Nn \l__spath_tmpa_dim {\tl_item:Nn \l__spath_tmpa_tl {1}}
+  \dim_set:Nn \l__spath_tmpb_dim {\tl_item:Nn \l__spath_tmpa_tl {2}}
+  \pgf@protocolsizes\l__spath_tmpa_dim\l__spath_tmpb_dim
 
   \spath_maxbb:Nn \l__spath_tmpa_tl {#1}
-  \exp_last_unbraced:NV \pgf@protocolsizes\l__spath_tmpa_tl
+  \dim_set:Nn \l__spath_tmpa_dim {\tl_item:Nn \l__spath_tmpa_tl {1}}
+  \dim_set:Nn \l__spath_tmpb_dim {\tl_item:Nn \l__spath_tmpa_tl {2}}
+  \pgf@protocolsizes\l__spath_tmpa_dim\l__spath_tmpb_dim
 }
 \cs_generate_variant:Nn \spath_protocol_path:n {V}
 \cs_new_protected_nopar:Npn \spath_set_current_path:n #1
@@ -5549,7 +5567,7 @@ manipulating PGF soft paths}
 }
 \cs_generate_variant:Nn \spath_set_tikz_data:n {V, v}
 %% 
-%% Copyright (C) 2011-2021 by Andrew Stacey <loopspace@mathforge.org>
+%% Copyright (C) 2011-2024 by Andrew Stacey <loopspace@mathforge.org>
 %% 
 %% This work may be distributed and/or modified under the
 %% conditions of the LaTeX Project Public License (LPPL), either
@@ -5574,7 +5592,7 @@ manipulating PGF soft paths}
 %%                                  calligraphy.pdf
 %%                                  knots.pdf
 %%                                  spath3.pdf
-%%                                  README
+%%                                  README.txt
 %% 
 %%
 %% End of file `spath3.sty'.

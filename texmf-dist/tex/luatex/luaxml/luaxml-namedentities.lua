@@ -40,7 +40,7 @@ return {
 ["nsqsube"]="⋢",
 ["Nacute"]="Ń",
 ["mcomma"]="⨩",
-["ApplyFunction"]=utf8.char(8289),
+["ApplyFunction"]=utf8.char(0x2061),
 ["rfisht"]="⥽",
 ["phmmat"]="ℳ",
 ["rarrw"]="↝",

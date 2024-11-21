@@ -1,4 +1,4 @@
-%%^^A%%  fontspec-doc-opentype.tex -- part of FONTSPEC <wspr.io/fontspec>
+%%^^A%%  fontspec-doc-opentype.tex -- part of FONTSPEC <latex3.github.io/fontspec>
 
 
 \documentclass[a4paper]{l3doc}
@@ -213,7 +213,6 @@ Thanks to \name{Jonathan Kew}, \name{Yves Codet} and
 \begin{Xexample}[firstline=14,lastline=23]{script-lang}{An example of various Scripts and Languages.}
 \def\testfeature#1#2{%^^A
   \fontspec{\examplefont}#2 & \fontspec[#1]{\examplefont}#2\\[1ex]}
-\def \examplefont{CODE2000.TTF}
 \def \arabictext{العربي}
 \def \devanagaritext{हिन्दी}
 \def \bengalitext{লেখ}
@@ -224,6 +223,7 @@ Thanks to \name{Jonathan Kew}, \name{Yves Codet} and
 \def \hebrewtext{רִדְתָּֽהּ}
 \def \vietnamesetext{cấp số mỗi}
 \begin{tabular}{r@{\quad}l}
+  \gdef\examplefont{CODE2000.TTF}
   \testfeature{Script=Arabic}{\arabictext}
   \testfeature{Script=Devanagari}{\devanagaritext}
   \testfeature{Script=Bengali}{\bengalitext}
@@ -985,8 +985,8 @@ Coverage will vary by font; see \exref{ot-frac}.
 Some (Asian fonts predominantly) also provide for the \opt{Alternate} option.
 
 \begin{Lexample}{ot-frac}{The \feat{Fractions} feature.}
-\setsansfont{Lato}[Fractions=On]
-\setmonofont{IBM Plex Mono}[Fractions=On]
+\setsansfont{IBMPlexSans-Regular.otf}[Fractions=On]
+\setmonofont{IBMPlexMono-Regular.otf}[Fractions=On]
 
 \sffamily 1/2 47/11 1/1000 \par
 \ttfamily 1/2 47/11
@@ -1036,6 +1036,15 @@ will look. OpenType fonts may contain the following options:
 \opt{SmallCaps}, \opt{PetiteCaps},
 \opt{UppercaseSmallCaps}, \opt{UppercasePetiteCaps}, and
 \opt{Unicase}.
+Additionally \opt{Uppercase} and \opt{Lowercase} are supported for all fonts
+in \LuaTeX.
+In contrast to earlier version, the \opt{Uppercase} and \opt{Lowercase} options
+turn the text into uppercase or lowercase and do not require the text to already
+have the right casing. The old behavior of \opt{Uppercase} is available with
+\verb|Style=Uppercase|. When the \opt{Uppercase} option is selected,
+\verb|Style=Uppercase| and \verb|Kerning=Uppercase| are automatically applied if
+supported by the font.
+
 
 \begin{features}{Letters}
 \otf*{SmallCaps}{smcp}
@@ -1043,6 +1052,8 @@ will look. OpenType fonts may contain the following options:
 \otf*{UppercaseSmallCaps}{c2sc}
 \otf*{UppercasePetiteCaps}{c2pc}
 \otf*{Unicase}{unic}
+\otf*{Uppercase}{}
+\otf*{Lowercase}{}
 \cmidrule{2-4}
 \otf{ResetAll}{}
 \end{features}
@@ -1058,9 +1069,11 @@ This difference is shown in \exref{caps}.
 `Unicase' is a weird hybrid of upper and lower case letters.
 
 \begin{Lexample}{caps}{Small caps from lowercase or uppercase letters.}
-  \fontspec{texgyreadventor-regular.otf}[Letters=SmallCaps]
+  \fontspec{Coelac.otf}[Letters=SmallCaps]
    THIS SENTENCE no verb                \\
-  \fontspec{texgyreadventor-regular.otf}[Letters=UppercaseSmallCaps]
+  \fontspec{Coelac.otf}[Letters=UppercaseSmallCaps]
+   THIS SENTENCE no verb                \\
+  \fontspec{Coelac.otf}[Letters=PetiteCaps]
    THIS SENTENCE no verb
 \end{Lexample}
 
@@ -1196,7 +1209,7 @@ particular substitutions are organised with which feature largely up to the font
 
  \begin{Xexample}[firstline=2]{style-alt}{Example of the \opt{Alternate} option of the \feat{Style} feature.}
   \Large
-  \fontspec{Quattrocento-Regular.otf}
+  \fontspec{Quattrocento-Regular.ttf}
    M Q W                      \\
   \addfontfeature{Style=Alternate}
    M Q W
@@ -1208,7 +1221,7 @@ in \exref{style-uppercase}; note the raised position of the hyphen
 to better match the surrounding letters.
 It will (probably) not actually map letters to uppercase.
  \note{If you want automatic uppercase letters, look to \LaTeX's
-      \cmd\MakeUppercase\ command.}
+      \cmd\MakeUppercase\ command or, when using \LuaTeX, to the \feat{Letters} feature.}
 This option used to be selected under the \feat{Letters} feature, but moved here
 as it generally does not actually affect the letters themselves.
 The \feat{Kerning} feature also contains an \opt{Uppercase} option,
@@ -1224,29 +1237,15 @@ which adds a small amount of spacing in between letters (see \vref{sec:kerning})
 
 In other features, larger breadths of changes can be seen, covering
 the style of an entire alphabet.
-See \exref{style-itrub}; here, the \opt{Italic} option affects the Latin text
-and the \opt{Ruby} option the Japanese.
-
-\begin{Xexample}[firstline=2]{style-itrub}{Example of the \opt{Italic} and \opt{Ruby} options of the \feat{Style} feature.}
+For instance, in some Japanese fonts features such as |Style=Italic| or |Style=Ruby|
+respectively change the style of all Latin characters to italic or all Hiragana characters to a darker optical shape:
+\begin{Verbatim}[firstline=2]
   \Large \def\kana{ようこそ ワカヨタレソ}
   \fontspec{Hiragino Mincho Pro}
    Latin \kana        \\
   \addfontfeature{Style={Italic, Ruby}}
    Latin \kana
-\end{Xexample}
-
-Note the difference here between the default and the horizontal style kana
-in \exref{style-hvkana}: the horizontal style is slightly wider.
-
-\begin{Xexample}[firstline=2]{style-hvkana}{Example of the \opt{HorizontalKana} and \opt{VerticalKana} options of the \feat{Style} feature.}
-  \Large \def\kana{ようこそ ワカヨタレソ}
-   \fontspec{Hiragino Mincho Pro}
-    \kana   \\
-  {\addfontfeature{Style=HorizontalKana}
-    \kana } \\
-  {\addfontfeature{Style=VerticalKana}
-    \kana }
-\end{Xexample}
+\end{Verbatim}
 
 
 \subsubsection{Stylistic Set variations --- \texttt{ssNN}}
@@ -1340,16 +1339,15 @@ and Japanese typesetting.
 
 Some fonts are equipped with an extensive range of
 numbers and numerals in different forms. These are accessed with the
-\feat{Annotation} feature (OpenType feature |nalt|), selected numerically as shown in
-\exref{ot-annot}. Note that the indexing starts from zero.
-
-\begin{Xexample}{ot-annot}{Annotation forms for OpenType fonts.}
+\feat{Annotation} feature (OpenType feature |nalt|), selected numerically.
+Note that the indexing starts from zero.
+\begin{Verbatim}
   \fontspec{Hiragino Maru Gothic Pro}
    1 2 3 4 5 6 7 8 9
   \def\x#1{\\{\addfontfeature{Annotation=#1}
             1 2 3 4 5 6 7 8 9 }}
   \x0\x1\x2\x3\x4\x5\x6\x7\x7\x8\x9
-\end{Xexample}
+\end{Verbatim}
 
 
 \subsubsection{Character width}\label{sec:CharacterWidth}
@@ -1378,34 +1376,20 @@ latter case, there are also half-width forms for squeezing more kana
 glyphs (which are less complex than the kanji they are amongst) into
 a given block of space. The same features are given to roman letters
 in Japanese fonts, for typesetting foreign words in the same style
-as the surrounding text.
+as the surrounding text. Example omitted until I find an open source
+font which supports these features.
+%\begin{Verbatim}
+%  \def\texta{ようこそ}\def\textb{ワカヨタレソ}
+%  \def\test{\makebox[2cm][l]{\texta}%
+%            \makebox[2.5cm][l]{\textb}%
+%            \makebox[2.5cm][l]{abcdef}}
+%  \fontspec{Hiragino Mincho Pro}
+%  {\addfontfeature{CharacterWidth=Proportional}\test}\\
+%  {\addfontfeature{CharacterWidth=Full}\test}\\
+%  {\addfontfeature{CharacterWidth=Half}\test}
+%\end{Verbatim}
 
-\begin{Xexample}[firstline=2]{charwdprop}{Proportional or fixed width forms.}
-  \def\texta{ようこそ}\def\textb{ワカヨタレソ}
-  \def\test{\makebox[2cm][l]{\texta}%
-            \makebox[2.5cm][l]{\textb}%
-            \makebox[2.5cm][l]{abcdef}}
-  \fontspec{Hiragino Mincho Pro}
-  {\addfontfeature{CharacterWidth=Proportional}\test}\\
-  {\addfontfeature{CharacterWidth=Full}\test}\\
-  {\addfontfeature{CharacterWidth=Half}\test}
-\end{Xexample}
 
-The same situation occurs with numbers, which are provided in
-increasingly illegible compressed forms seen in \exref{charwd}.
-
-\begin{Xexample}[firstline=2]{charwd}{Numbers can be compressed significantly.}
-  \centering
-  \fontspec[Renderer=AAT]{Hiragino Mincho Pro}
-  {\addfontfeature{CharacterWidth=Full}
-   ---12321---}\\
-  {\addfontfeature{CharacterWidth=Half}
-   ---1234554321---}\\
-  {\addfontfeature{CharacterWidth=Third}
-   ---123456787654321---}\\
-  {\addfontfeature{CharacterWidth=Quarter}
-   ---12345678900987654321---}
-\end{Xexample}
 
 
 \subsubsection{CJK shape}
@@ -1429,14 +1413,12 @@ fonts support the following \feat{CJKShape} options:
 \opt{JIS1990}, and \opt{Expert}. OpenType also supports the \opt{NLC} option.
 
 \begin{Xexample}[firstline=2]{ot-cjk-shape}{Different standards for CJK ideograph presentation.}
-  \LARGE\def\text{ 唖噛躯 妍并訝}
-  \fontspec{Hiragino Mincho Pro}
+  \LARGE\def\text{\noindent 唖噛躯 妍并訝}
+  \fontspec{NotoSansJP-Regular.ttf}
   {\addfontfeature{CJKShape=Traditional}
   \text }                          \\
   {\addfontfeature{CJKShape=NLC}
-  \text }                          \\
-  {\addfontfeature{CJKShape=Expert}
-  \text }
+  \text }                          
 \end{Xexample}
 
 
@@ -1465,9 +1447,10 @@ however; please get in touch if there are improvements that could be made.
 
 % /©
 % ------------------------------------------------
-% The FONTSPEC package  <wspr.io/fontspec>
+% The FONTSPEC package  <latex3.github.io/fontspec>
 % ------------------------------------------------
-% Copyright  2004-2022  Will Robertson, LPPL "maintainer"
+% Copyright  2022-2024  The LaTeX project,  LPPL "maintainer"
+% Copyright  2004-2022  Will Robertson
 % Copyright  2009-2015  Khaled Hosny
 % Copyright  2013       Philipp Gesang
 % Copyright  2013-2016  Joseph Wright

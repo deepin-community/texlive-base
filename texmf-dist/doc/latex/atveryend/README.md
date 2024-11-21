@@ -1,13 +1,14 @@
-# atveryend
+# atveryend package for LaTeX
 
-atveryend package for LaTeX
+Version: 2024-08-06 v1.12
 
+This LaTeX package provides some wrapper commands
+around LaTeX end document hooks. 
 
-This LaTeX package provides two hooks for \end{document}
-that are executed after the hook of \AtEndDocument.
-\AfterLastShipout can be used for code that is to be executed
-right after the last \clearpage before the aux file
-is closed. \AtVeryEndDocument is used for code after closing
-and final reading of the aux file.
+## Copyright (C)
+*    2009-2011 Heiko Oberdiek
+*    2016-2024 Oberdiek Package Support Group
 
+## License
+LATEX Project Public License, version 1.3c or later.
 

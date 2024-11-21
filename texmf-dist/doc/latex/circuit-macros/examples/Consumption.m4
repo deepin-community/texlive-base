@@ -473,14 +473,18 @@ Cl: s_box(Coal) at dtop(2000,0.36+3pt__)
  rs_box(Population) at dtop(1975,0.9)
  define(`text_ang',90)
 
+ command "\newcommand{\pct}{$\mskip\thinmuskip$\char37}"
 brpos = 2016
 Q:s_box(`$\left.\vbox to 1.50in{}\right\}$') with .w at dtop(brpos,1.04)
-  Label: rs_box(`\shortstack{90\,\%\\ nonrenewable}') with .w at Q.e
+# Label: rs_box(`\shortstack{90\,\%\\ nonrenewable}') with .w at Q.e
+  Label: rs_box(`90\pct') at Q.e+(5bp__,0)
+         rs_box(`nonrenewable') with .w at last "".e+(2bp__,0)
 
   s_box(`$\left.\vbox to 0.2in{}\right\}$') with .w at dtop(brpos+0.5,0.1)
 
-  rs_box(`\shortstack[l]{10\,\%\\ renewable}') \
-    with .sw at (Label.w,dtop(brpos,0.05))
+# rs_box(`\shortstack[l]{10\,\%\\ renewable}')
+  rs_box(`10\pct') with .sw at (Label.w,dtop(brpos,0.05))
+  rs_box(`renewable') with .sw at last "".se+(2bp__,0)
 
   linethick_(0.6)
   arrow <- from dtop(1998,1.55) left 0.15 up 0.2
@@ -519,6 +523,6 @@ Q: NPopulation.end + (-1.25,-0.1)
 #print maxpswid-(last [].wid-maxx)
 
 #print (last [].wid,last [].ht)
-showbox_
+#showbox_
 }
 .PE

@@ -1,5 +1,5 @@
 ---luakeys.lua
----Copyright 2021-2023 Josef Friedrich
+---Copyright 2021-2024 Josef Friedrich
 ---
 ---This work may be distributed and/or modified under the
 ---conditions of the LaTeX Project Public License, either version 1.3c
@@ -265,54 +265,6 @@ local utils = (function()
     throw_error_message(message, help)
   end
 
-  ---
-  ---Scan for an optional argument.
-  ---
-  ---@param initial_delimiter? string # The character that marks the beginning of an optional argument (by default `[`).
-  ---@param end_delimiter? string # The character that marks the end of an optional argument (by default `]`).
-  ---
-  ---@return string|nil # The string that was enclosed by the delimiters. The delimiters themselves are not returned.
-  local function scan_oarg(initial_delimiter,
-    end_delimiter)
-    if initial_delimiter == nil then
-      initial_delimiter = '['
-    end
-
-    if end_delimiter == nil then
-      end_delimiter = ']'
-    end
-
-    ---
-    ---@param t Token
-    ---
-    ---@return string
-    local function convert_token(t)
-      if t.index ~= nil then
-        return utf8.char(t.index)
-      else
-        return '\\' .. t.csname
-      end
-    end
-
-    local function get_next_char()
-      local t = token.get_next()
-      return convert_token(t), t
-    end
-
-    local char, t = get_next_char()
-    if char == initial_delimiter then
-      local oarg = {}
-      char = get_next_char()
-      while char ~= end_delimiter do
-        table.insert(oarg, char)
-        char = get_next_char()
-      end
-      return table.concat(oarg, '')
-    else
-      token.put_next(t)
-    end
-  end
-
   local function visit_tree(tree, callback_func)
     if type(tree) ~= 'table' then
       throw_error_message(
@@ -557,7 +509,7 @@ local utils = (function()
 
     ---@private
     local function print_message(message, ...)
-      local args = {...}
+      local args = { ... }
       for index, value in ipairs(args) do
         args[index] = colorize(value)
       end
@@ -698,7 +650,6 @@ local utils = (function()
     tex_printf = tex_printf,
     throw_error_message = throw_error_message,
     throw_error_code = throw_error_code,
-    scan_oarg = scan_oarg,
     ansi_color = ansi_color,
     log = log,
   }
@@ -1226,23 +1177,23 @@ local function main()
         Variable('unit')
       ) / capture_dimension,
 
+      sign = Set('-+'),
+
+      digit = Range('09'),
+
+      integer = (Variable('sign')^-1) * white_space^0 * (Variable('digit')^1),
+
+      fractional = (Pattern('.') ) * (Variable('digit')^1),
+
+      ---(integer fractional?) / (sign? white_space? fractional)
+      tex_number = (Variable('integer') * (Variable('fractional')^-1)) +
+                   ((Variable('sign')^-1) * white_space^0 * Variable('fractional')),
+
       ---for is.number()
       number_only = Variable('number') * -1,
 
       ---capture number
       number = Variable('tex_number') / tonumber,
-
-      ---sign? white_space? (integer+ fractional? / fractional)
-      tex_number =
-        Variable('sign')^0 * white_space^0 *
-        (Variable('integer')^1 * Variable('fractional')^0) +
-        Variable('fractional'),
-
-      sign = Set('-+'),
-
-      fractional = Pattern('.') * Variable('integer')^1,
-
-      integer = Range('09')^1,
 
       ---'bp' / 'BP' / 'cc' / etc.
       ---https://raw.githubusercontent.com/latex3/lualibs/master/lualibs-util-dim.lua
@@ -1670,6 +1621,8 @@ local function main()
                 local picked_value = nil
                 if is[pick_type](v) then
                   picked_value = v
+                elseif pick_type == 'string' and is.number(v) then
+                  picked_value = tostring(v)
                 end
 
                 if picked_value ~= nil then
@@ -1977,41 +1930,146 @@ local function main()
   end
 
   ---
+  ---@param defs DefinitionCollection
+  ---@param opts? OptionCollection
+  local function define(defs, opts)
+    return function(kv_string, inner_opts)
+      local options
+
+      if inner_opts ~= nil and opts ~= nil then
+        options = utils.merge_tables(opts, inner_opts)
+      elseif inner_opts ~= nil then
+        options = inner_opts
+      elseif opts ~= nil then
+        options = opts
+      end
+
+      if options == nil then
+        options = {}
+      end
+
+      options.defs = defs
+
+      return parse(kv_string, options)
+    end
+  end
+
+  ---@alias KeySpec table<integer|string, string>
+
+  local DefinitionManager = (function()
+    ---@class DefinitionManager
+    DefinitionManager = {}
+
+    ---@private
+    DefinitionManager.__index = DefinitionManager
+
+    ---
+    ---@param key string
+    ---
+    ---@return Definition
+    function DefinitionManager:get(key)
+      return self.defs[key]
+    end
+
+    ---
+    ---@param key_spec KeySpec
+    ---@param clone? boolean
+    ---
+    ---@return DefinitionCollection
+    function DefinitionManager:include(key_spec, clone)
+      local selection = {}
+      for key, value in pairs(key_spec) do
+        local src
+        local dest
+        if type(key) == 'number' then
+          src = value
+          dest = value
+        else
+          src = key
+          dest = value
+        end
+        if clone then
+          selection[dest] = utils.clone_table(self.defs[src])
+        else
+          selection[dest] = self.defs[src]
+        end
+      end
+      return selection
+    end
+
+    ---
+    ---@param key_spec KeySpec
+    ---@param clone? boolean
+    ---
+    ---@return DefinitionCollection
+    function DefinitionManager:exclude(key_spec, clone)
+      local spec = {}
+      for key, value in pairs(key_spec) do
+        if type(key) == 'number' then
+          spec[value] = value
+        else
+          spec[key] = value
+        end
+      end
+
+      local selection = {}
+      for key, def in pairs(self.defs) do
+        if spec[key] == nil then
+          if clone then
+            selection[key] = utils.clone_table(def)
+          else
+            selection[key] = def
+          end
+        end
+      end
+      return selection
+    end
+
+    ---
+    ---@param key_selection KeySpec
+    function DefinitionManager:parse(kv_string, key_selection)
+      return parse(kv_string, { defs = self:include(key_selection) })
+    end
+
+    ---
+    ---@param key_selection KeySpec
+    function DefinitionManager:define(key_selection)
+      return define(self:include(key_selection))
+    end
+
+    ---@param defs DefinitionCollection
+    ---
+    ---@return DefinitionManager
+    return function(defs)
+      local manager = {}
+
+      for key, def in pairs(defs) do
+        if def.name ~= nil and type(key) == 'number' then
+          defs[def.name] = def
+          defs[key] = nil
+        end
+      end
+
+      setmetatable(manager, DefinitionManager)
+      manager.defs = defs
+      return manager
+    end
+  end)()
+
+  ---
   ---A table to store parsed key-value results.
   local result_store = {}
 
   return {
     new = main,
 
-    version = { 0, 13, 0 },
+    version = { 0, 15, 0 },
 
-    ---@see parse
     parse = parse,
 
-    ---
-    ---@param defs DefinitionCollection
-    ---@param opts? OptionCollection
-    define = function(defs, opts)
-      return function(kv_string, inner_opts)
-        local options
+    define = define,
 
-        if inner_opts ~= nil and opts ~= nil then
-          options = utils.merge_tables(opts, inner_opts)
-        elseif inner_opts ~= nil then
-          options = inner_opts
-        elseif opts ~= nil then
-          options = opts
-        end
-
-        if options == nil then
-          options = {}
-        end
-
-        options.defs = defs
-
-        return parse(kv_string, options)
-      end
-    end,
+    DefinitionManager = DefinitionManager,
 
     ---@see default_opts
     opts = default_opts,

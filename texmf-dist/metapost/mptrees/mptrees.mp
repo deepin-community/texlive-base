@@ -2,10 +2,10 @@
 %%                        mptrees.mp                          %%
 %%               Probability trees with MetaPost              %%
 %%                    o.peault@posteo.net                     %%
-%%                 Version 23.04 (April 2023)                 %%
+%%                  Version 24.04 (April 2024)                %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 string mptreesversion;
-mptreesversion:="23.04";
+mptreesversion:="24.04";
 %
 % This work may be distributed and/or modified under the conditions of
 % the LaTeX Project Public License, either version 1.3 of this license
@@ -13,6 +13,7 @@ mptreesversion:="23.04";
 % license is in http://www.latex-project.org/lppl.txt
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 message "mptrees version " & mptreesversion;
 
 if not known mplib: input latexmp fi;
@@ -23,7 +24,7 @@ arbres_latexmp:=true;
 
 boolean mpt_begtr; % is begintree used ?
 mpt_begtr:=false;
-numeric mpt_passe; 
+numeric mpt_passe;
 mpt_passe:=1;
 
 
@@ -31,7 +32,7 @@ mpt_passe:=1;
 
 def begintree=
  mpt_begtr:=true;
- scantokens "def mpt_tree=" 
+ scantokens "def mpt_tree="
 enddef;
 
 let endtree = enddef;
@@ -41,11 +42,10 @@ numeric mpt_tmpdirtree;
 
 % à la fin de begintree, on exécute deux fois mpt_tree
 extra_endfig:="if mpt_begtr: mpt_tree currentpicture:=nullpicture; mpt_passe:=2; AdjustNodes; mpt_tree; mpt_begtr:=false;mpt_passe:=1 fi;" & extra_endfig;
-%extra_endfig:="if mpt_begtr: mpt_tree drawoptions(withcolor blue); mpt_passe:=2;  AdjustNodes; mpt_tree; mpt_begtr:=false;mpt_passe:=1 fi;" & extra_endfig;
 
 
 numeric posprob;   % position de l'étiquette sur la branche
-posprob:=0.6;
+posprob:=-1;
 
 numeric scaleprob;
 scaleprob:=0.85;   % échelle de l'étiquette sur la branche
@@ -72,6 +72,9 @@ linewidth:=0.5bp;
 color linecolor;
 linecolor:=black;
 
+numeric nodelinewidth; % épaisseur de la ligne autour des noeuds
+nodelinewidth:=-1; % change pour tree et graph
+
 pair Orig_arbre[][];  % sommet de l'arbre i,j
 Orig_arbre[1][1]:=origin;
 
@@ -91,7 +94,7 @@ numeric mptLargeur[][],mptHauteur[][];  % diff largeur au rang i, diff hauteur r
 
 numeric countligne[];  % nombre de ligne pour le niveau i
 for i=0 upto 128: countligne[i]:=0; endfor
- 
+
 %numeric typedec;  % 0 origine dépend de la taille de l'évènement, 1 taille fixée
 numeric shiftev;   % taille du décalage dans le cas où typedec=1
 shiftev:=-1; % dans ce cas, typedec =0
@@ -170,7 +173,7 @@ enddef;
 
 
 % longueur du segment qui traverse la figure p selon l'angle inc
-vardef longdir(expr p,inc)= 
+vardef longdir(expr p,inc)=
   if urcorner p = llcorner p:
     0
   elseif (abs inc <= abs angle (urcorner p -llcorner p)) or (abs inc > 180 - abs angle (urcorner p -llcorner p)):
@@ -214,17 +217,18 @@ vardef superellipsebox(expr p)=
    b=0.5[urcorner l,ulcorner l];
    c=0.5[ulcorner l,llcorner l];
    d=0.5[llcorner l,lrcorner l];
-   l:=superellipse(a,b,c,d,superellipseparam);
+   if (mpt_isgraph and (not naturalwidth) and (not mpt_isprob)):
+      l:=superellipse(1/2 right, 1/2 up, 1/2 left, 1/2 down, superellipseparam);
+      l:=l scaled nodewidth
+   elseif naturalwidth:
+      l:=superellipse(a,b,c,d,superellipseparam);
+      l:=l shifted -center l
+   else:
+      l:=superellipse(a,b,c,d,superellipseparam)
+   fi;
    l
 enddef;
 
-vardef supellformat(expr p,cl,cb,cf)=
-image(%
- fill superellipsebox(p) withcolor cb;
- draw superellipsebox(p) withcolor cl;
- draw p withcolor cf;
-)
-enddef;
 
 % Circle
 vardef circlebox(expr p)=
@@ -233,23 +237,71 @@ vardef circlebox(expr p)=
   a:=urcorner bbox p;
   b:=llcorner bbox p;
   c:=0.5[a,b];
-  fullcircle scaled (abs(b-a)-2) shifted c
+  if (mpt_isgraph and (not naturalwidth) and (not mpt_isprob)):
+     fullcircle scaled nodewidth
+  elseif naturalwidth and (not mpt_isprob):
+     fullcircle scaled (abs(b-a)-2)
+  else:
+     fullcircle scaled (abs(b-a)-2) shifted c
+  fi
 enddef;
 
-vardef circleformat(expr p,cl,cb,cf)=
+
+% square
+vardef squarebox(expr p)=
+  save H,L;
+  numeric H,L;
+  L=abs((urcorner bbox p) - (ulcorner bbox p));
+  H=abs((urcorner bbox p) - (lrcorner bbox p));
+  if H>L: L:= H fi;
+  if (mpt_isgraph and (not naturalwidth) and (not mpt_isprob)):
+    unitsquare shifted (-0.5,-0.5) scaled nodewidth
+  elseif naturalwidth:
+     unitsquare shifted (-0.5,-0.5) scaled L
+  else:
+     unitsquare shifted (-0.5,-0.5) scaled L shifted center bbox p
+  fi
+enddef;
+
+
+
+
+
+
+vardef circleprobformat(expr p,cf)=
 image(%
- fill circlebox(p) withcolor cb;
- draw circlebox(p) withcolor cl;
- draw p withcolor cf;
+ myfill circlebox(p) withcolor background;
+ draw p withcolor cf _op_ mpt_po_;
 )
 enddef;
 
-% bbox
-vardef bboxformat(expr p,cl,cb,cf)=
+
+
+
+
+vardef formatprobbox(expr p,cl,cb,cf)=
 image(%
- fill bbox p withcolor cb;
- draw bbox p withcolor cl;
- draw p withcolor cf;
+ if (cb<>white) or (mpt_isprobover) or (mpt_bgc): myfill probshape(p) withcolor cb mpt_opbg_ fi;
+ draw probshape(p) withcolor cl withpen pencircle scaled nodelinewidth mpt_po_;
+ if arbrebool or mpt_isprob: draw p withcolor cf mpt_po_ fi;
+)
+enddef;
+
+vardef formatnodebox(expr p,cl,cb,cf)=
+save pp;path pp;
+if mpt_isgraph: pp:= mpt_nodepath[num] shifted -mpt_nodecoord[num] else: pp:=nodeshape(p) fi;
+image(%
+ if (cb<>white) or (mpt_isprobover) or (mpt_bgc): fill pp withcolor cb mpt_opbg_ fi;
+ draw pp withcolor cl withpen pencircle scaled nodelinewidth mpt_po_;
+ if arbrebool or mpt_isprob: draw p shifted (center pp-center p) withcolor cf mpt_po_ fi;
+)
+enddef;
+
+vardef formatleavebox(expr p,cl,cb,cf)=
+image(%
+ if (cb<>white) or (mpt_isprobover) or (mpt_bgc): fill leaveshape(p) withcolor cb mpt_opbg_ fi;
+ draw leaveshape(p) withcolor cl withpen pencircle scaled nodelinewidth mpt_po_;
+ if arbrebool or mpt_isprob: draw p withcolor cf mpt_po_ fi;
 )
 enddef;
 
@@ -263,40 +315,42 @@ probformat:="";
 
 
 
-
 vardef formatprob(expr p)=
+save pp;path pp;
+pp:=probshape(p);
  save cl,cb,cf;
  color cl,cb,cf;
  cl:=problinecolor;
  cb:=probbgcolor;
  cf:=probfgcolor;
- if probformat="superellipse":
-   supellformat(p,cl,cb,cf)
- elseif probformat="circle":
-   circleformat(p,cl,cb,cf)
- elseif probformat="bbox":
-   bboxformat(p,cl,cb,cf)
+ if mpt_isprobover and (probformat="") and mpt_probsh_ori:
+    circleprobformat(p,cf)
+ elseif (probformat="") and mpt_probsh_ori:
+   image (draw p withcolor cf mpt_po_)
  else:
-   image (draw p withcolor cf)
+   formatprobbox(p,cl,cb,cf)
  fi
 enddef;
 
 vardef formatnodeev(expr p)=
+save pp;path pp;
+pp:=nodeshape(p);
  save cl,cb,cf;
  color cl,cb,cf;
  cl:=nodelinecolor;
  cb:=nodebgcolor;
  cf:=nodefgcolor;
- if nodeformat="superellipse":
-   supellformat(p,cl,cb,cf)
- elseif nodeformat="circle":
-   circleformat(p,cl,cb,cf)
- elseif nodeformat="bbox":
-   bboxformat(p,cl,cb,cf)
+ if nodelinewidth=-1:
+    nodelinewidth:= if mpt_isgraph: 1 else: 0.5 fi
+ fi;
+ if (not mpt_isgraph) and (nodeformat="") and mpt_nodesh_ori:
+   image (draw p withcolor cf mpt_po_)
  else:
-   image (draw p withcolor cf)
+   formatnodebox(p,cl,cb,cf)
  fi
 enddef;
+
+
 
 vardef formatnodeleave(expr p)=
  save cl,cb,cf;
@@ -304,18 +358,16 @@ vardef formatnodeleave(expr p)=
  cl:=leavelinecolor;
  cb:=leavebgcolor;
  cf:=leavefgcolor;
- if leaveformat="superellipse":
-   supellformat(p,cl,cb,cf)
- elseif leaveformat="circle":
-   circleformat(p,cl,cb,cf)
- elseif leaveformat="bbox":
-   bboxformat(p,cl,cb,cf)
- elseif leaveformat="none":
+ if leaveformat="none":
    image (draw p withcolor cf)
- else:
+ elseif leaveformat="":
    formatnodeev(p)
+ else:
+   formatleavebox(p,cl,cb,cf)
  fi
 enddef;
+
+
 
 
 vardef formatnode(expr p)=
@@ -327,12 +379,63 @@ vardef formatnode(expr p)=
 enddef;
 
 
+boolean mpt_nodesh_ori,mpt_probsh_ori;
+mpt_nodesh_ori:=false;
+mpt_probsh_ori:=false;
+
+
+% Forme du chemin autour de la oproba
+vardef probshape(expr p)=
+ mpt_probsh_ori:=true;
+ if probformat="superellipse":
+   superellipsebox(p)
+ elseif probformat="circle":
+   circlebox(p)
+ elseif probformat="square":
+   squarebox(p)
+ else:
+   bbox p %shifted -center bbox p
+ fi
+enddef;
+
+% Forme du chemin autour du noeud
+vardef nodeshape(expr p)=
+ mpt_nodesh_ori:=true;
+ if nodeformat="superellipse":
+   superellipsebox(p)
+ elseif (nodeformat="circle") or (nodeformat=""):
+   circlebox(p)
+ elseif nodeformat="square":
+   squarebox(p)
+ else:
+   bbox p %shifted -center bbox p
+ fi
+enddef;
+
+vardef leaveshape(expr p)=
+ if leaveformat="superellipse":
+   superellipsebox(p)
+ elseif (leaveformat="circle"):
+   circlebox(p)
+ elseif leaveformat="square":
+   squarebox(p)
+ else:
+   bbox p %shifted -center bbox p
+ fi
+enddef;
+
+
+
+
+
+vardef formatnodepath(expr p)=
+ nodeshape(p)
+enddef;
+
 %%% Prints events
 
 vardef theevlabel(expr s,z,inc)=
   save d; numeric d;
-%  save p;picture p;
-%  p:=formatnode(s);
   d=0.5*longdir(s,inc);
   s shifted (z - center s + (d+labeloffset)*dir(inc))
 enddef;
@@ -434,8 +537,33 @@ enddef;
 
 
 %%%%%%%% Dessin de la branche
+
 vardef dessinbranche(expr Ori,Fin)=
-  if branchtype="segment":
+  edgeshape(Ori,Fin)
+enddef;
+
+
+vardef dessinarete(expr Ori,Fin)=
+   save an,dec;
+   numeric an;pair decdeb,decfin;
+   an:=angle(Fin-Ori);
+   if edgeshift<>0:
+      startedgeshift:=edgeshift;endedgeshift:=edgeshift
+   fi;
+   decdeb:=(0,startedgeshift) rotated an;
+   decfin:=(0,endedgeshift) rotated an;
+   edgeshape(Ori+decdeb,Fin+decfin)
+enddef;
+
+
+
+vardef edgeshape(expr Ori,Fin)=
+   save an;
+   numeric an;
+  if mpt_isgraph:
+    an:=angle(Fin-Ori);
+    (Ori){dir (an+edgeangleaa[0])}..{dir (an-edgeangleaa[1])}(Fin)
+  elseif branchtype="segment":
     Ori--Fin
   elseif branchtype="curve":
     curveline(Ori,Fin)
@@ -463,7 +591,7 @@ vardef branche_abs(expr Ori,Fin,Eve,Pro)=
    figtmp=image(%
       if branchtype<>"none":
          if edgearrow:
-            drawarrow 
+            drawarrow
          else:
             draw
          fi
@@ -508,6 +636,7 @@ vardef _arbre_(expr Ori)(text t)(text r)= % (pt)(pt1,pt2...)(ev,proba,ev,proba..
   picture figtmp,labeltmp[];
   numeric counttmp,countlab,tmpcountligne;
   pair Fintmp[];
+  mpt_isgraph:=false;
   if dirtree<>0: dirlabel:=dirtree fi;
   if colonne_cour=1:
        countligne[1]:=1;countligne[0]:=1;
@@ -537,7 +666,7 @@ vardef _arbre_(expr Ori)(text t)(text r)= % (pt)(pt1,pt2...)(ev,proba,ev,proba..
           labeltmp[1]:=formatnode(labeltmp[1]);
           labeltmp[2]:=formatprob(labeltmp[2]);
           draw branche_abs(Ori,mptFinBranche[colonne_cour+1][counttmp],labeltmp[1] scaled scaleev,labeltmp[2]);
-          Orig_arbre[colonne_cour+1][counttmp]:=mptFinBranche[colonne_cour+1][counttmp] shifted 
+          Orig_arbre[colonne_cour+1][counttmp]:=mptFinBranche[colonne_cour+1][counttmp] shifted
               if shiftev<0: ((longdir(labeltmp[1] scaled scaleev,dirlabel) + 2labeloffset)*(1,0))
               else: (shiftev,0)
               fi
@@ -556,7 +685,7 @@ enddef;
 
 
 
-vardef arbre_decv(expr Ori,horiz,Ymax)(text t)(text r)= 
+vardef arbre_decv(expr Ori,horiz,Ymax)(text t)(text r)=
           % (pt,dec horiz)(dy1,dy2...)(ev,proba,ev,proba...)
   save Fin,compt,Ytmp;
   numeric compt,Ytmp;
@@ -643,7 +772,7 @@ vardef reg.arbre[][](text t)(text r)=
  ligne_cour:=@;
  compt:=0;
    for i=t:
-    if numeric i: 
+    if numeric i:
        compt:=compt+1;
        decal[compt]:=i
     fi;
@@ -671,7 +800,7 @@ vardef comp.arbre[][](text t)(text r)=
       hide(tmp_compt:=tmp_compt+1;)
       if (tmp_compt>1) and (not string i):
          ,Orig_arbre[colonne_cour][ligne_cour]+i
-      elseif not string i: 
+      elseif not string i:
          Orig_arbre[colonne_cour][ligne_cour]+i
       fi
     endfor
@@ -680,7 +809,7 @@ vardef comp.arbre[][](text t)(text r)=
   _arbre_(Orig_arbre[colonne_cour][ligne_cour])(tmp_text)(r)
 enddef;
 
-    
+
 %%%%%%%%%%%%%%%%%%%%%%%%% Modif 10/16 - Décalage par rapport à l'origine
 vardef dec.arbre[][](text t)(text r)=
   save decal;
@@ -781,15 +910,21 @@ enddef;
 
 pair current_tree;
 
+boolean arbrebool; % est-on à l'intérieur d'un arbre ?
+arbrebool:=false;
+
 vardef arbre[][](text t)(text r)=
+  arbrebool:=true;
+  naturalwidth:=false;
   init_loc_var;
+  if posprob=-1: posprob:=0.6 fi;
   save tmp_type,tmp_compt,tmp_chdb;
   numeric tmp_type,tmp_compt,tmp_comptii;
   string tmp_chdb;
   tmp_compt:=0;tmp_comptii:=0;
   for i=t:
     tmp_comptii:=tmp_comptii+1;
-    if numeric i: 
+    if numeric i:
        tmp_compt:=tmp_compt+1
     elseif string i:
        tmp_chdb:=singletodoublequote(i);
@@ -830,7 +965,7 @@ vardef stree[][](text t)(text r)=
  numeric cc,ll;
  cc:=colonne.#@;
  ll:=@;
- def tmptxt= 
+ def tmptxt=
     for i=r:
       i,"",
     endfor
@@ -844,7 +979,7 @@ enddef;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 vardef ymean(expr i,j)=
-  (0 
+  (0
    for k=1 upto mptNbBranches[i][j]:
     + ypart (mptFinBrancheRel[i][j][k] rotated -dirtree)
   endfor)/mptNbBranches[i][j]
@@ -900,7 +1035,7 @@ numeric mpt_decbranche[][][];
 
 
 
-def AdjustNodes= 
+def AdjustNodes=
   tmplig:=0;
   for i=1 upto countligne[colonne_cour]:
     for j= 1 upto mptNbBranches[colonne_cour][i]:
@@ -914,7 +1049,7 @@ def AdjustNodes=
     for i=1 upto countligne[col]:
      if known mptNbBranches[col][i]:
       for j= 1 upto mptNbBranches[col][i]:
-         if known exist.arbre[col][i]: 
+         if known exist.arbre[col][i]:
              tmplig:=tmplig+1;
            if known exist.arbre[col+1][tmplig]:
               mptFinBrancheRel[col][i][j]:=
@@ -1016,7 +1151,7 @@ vardef bernoulliprocess(expr n)(text t)(text r)=
   tmp_ct:=0;
   for i=r:
     tmp_ct:=tmp_ct+1;
-    if string i: 
+    if string i:
       tmp_ch[tmp_ct]:=i
     fi;
   endfor
@@ -1045,7 +1180,7 @@ vardef bernoulliprocessL(expr n)(text t)(text r)=
   tmp_ct:=0;
   for i=r:
     tmp_ct:=tmp_ct+1;
-    if string i: 
+    if string i:
       tmp_chi[tmp_ct]:=i
     fi;
   endfor
@@ -1100,4 +1235,743 @@ vardef binomialtreeL(expr n)(expr L,H)=
 enddef;
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%                         GRAPHES
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%
+%% Paramètres
+%%%%%
+
+
+numeric nodewidth,edgelinewidth,edgearrowpos,edgeshift,startegdeshift;
+nodewidth:=0.6cm;
+edgelinewidth:=1;
+edgearrowpos:=1;
+edgeshift:=0;
+startedgeshift:=0;
+
+boolean naturalwidth;
+naturalwidth:=false;
+
+numeric nodelabeloffset, nodeedgeoffset; % pour la position des étiquettes
+nodelabeloffset:=2;
+nodeedgeoffset:=-101;
+
+
+
+numeric edgeangle,loopangle,loopsize,loopstartangle;
+edgeangle:=0;
+loopangle:=90;
+loopsize:=-1;
+loopstartangle:=30;
+
+
+%%% Format du nom des sommets
+string defnodename;
+defnodename:="A";
+string nodename;
+nodename:="array";
+numeric startnodename;
+startnodename=1;
+
+
+boolean printnodename;
+printnodename:=true;
+
+
+
+numeric mpt_numtotal; % nombre total de sommets
+mpt_numtotal:=0;
+
+pair mpt_nodecoord[]; % coordonnées du noeud i
+string mpt_nodename[]; % nom du noeud i
+path mpt_nodepath[]; % chemin autour du noeud i
+string mpt_nodelpart[],mpt_nodenumpart[]; % parties alphanumérique et numérique du nom du noeud
+
+color gridcolor;
+gridcolor:=0.7white;
+
+numeric gridlinewidth;
+gridlinewidth:=0.5;
+
+
+
+%%%% Variables privées
+boolean mpt_dir;  %arête orientée ou non
+mpt_dir:=false;
+
+boolean mpt_isgraph;
+mpt_isgraph:=false;
+
+picture mpt_tmp_fig_cbg;
+path mpt_tmp_branche;
+string mpt_tmp_prob;
+
+path mpt_tmp_path;
+
+boolean mpt_isprob,mpt_isprobover;
+mpt_isprob:=false;
+mpt_isprobover:=false;
+
+
+boolean mpt_bgc;
+mpt_bgc:=false;
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%% Noeuds
+
+vardef mptlpart(expr tt)=
+  save tmp;
+  string tmp;
+  tmp:="";
+  for i =1 upto length tt:
+    if not isdigit substring(i-1,i) of tt:
+      tmp:=tmp & substring(i-1,i) of tt
+    fi;
+  endfor
+  tmp
+enddef;
+
+vardef mptnumpart(expr tt)=
+  save tmp;
+  string tmp;
+  tmp:="";
+  for i =1 upto length tt:
+    if isdigit substring(i-1,i) of tt:
+      tmp:=tmp & substring(i-1,i) of tt
+    fi;
+  endfor
+  tmp
+enddef;
+
+% définit le noeud et certains attributs
+def defnode(suffix ptA)(expr A)=
+  save tmpchcomp,tmpchlet,tmpchnum;
+  string tmpchcomp,tmpchlet,tmpchnum;
+   mpt_isgraph:=true;arbrebool:=false;
+  tmpchcomp:= str ptA;
+  tmpchlet:=mptlpart(str ptA);
+  tmpchnum:=mptnumpart(str ptA);
+  if tmpchnum="":
+     pair ptA;
+     ptA:=A;
+  else:
+     scantokens("if not known " & tmpchlet & ": pair " & tmpchlet & "[] fi;" & tmpchlet & tmpchnum & ":=("& decimal(xpart A)&","& decimal(ypart A) & ");")
+  fi;
+  mpt_numtotal:=mpt_numtotal+1;
+  mpt_nodecoord[mpt_numtotal]:=A;
+  mpt_nodename[mpt_numtotal]:= tmpchcomp;
+  mpt_nodelpart[mpt_numtotal]:= tmpchlet;
+  mpt_nodenumpart[mpt_numtotal]:= tmpchnum;
+  mpt_nodepath[mpt_numtotal]:= formatnodepath(labelarbres(str ptA) scaled scaleev) shifted A;
+enddef;
+
+
+def defnodestr(expr ptA)(expr A)=   % Quand le premier paramètre est une chaine simple
+  save tmpchcomp,tmpchlet,tmpchnum;
+  string tmpchcomp,tmpchlet,tmpchnum;
+  mpt_isgraph:=true;arbrebool:=false;
+  tmpchcomp:= ptA;
+  tmpchlet:=ptA;
+  tmpchnum:="";
+  scantokens("pair " & tmpchcomp & ";" & tmpchcomp & ":=("& decimal(xpart A)&","& decimal(ypart A) & ");")
+  mpt_numtotal:=mpt_numtotal+1;
+  mpt_nodecoord[mpt_numtotal]:=A;
+  mpt_nodename[mpt_numtotal]:= tmpchcomp;
+  mpt_nodelpart[mpt_numtotal]:= tmpchlet;
+  mpt_nodenumpart[mpt_numtotal]:= tmpchnum;
+  mpt_nodepath[mpt_numtotal]:= formatnodepath(labelarbres(tmpchcomp) scaled scaleev) shifted A;
+enddef;
+
+
+def defnodes(text t)=   % Pour définir plusieurs noeuds à la fois
+ mpt_isgraph:=true;arbrebool:=false;
+ if (nodename="array") or (nodename="arabic"):
+  for i=t:
+    mpt_numtotal:=mpt_numtotal+1;
+    if mpt_numtotal=1:
+       scantokens("pair " & defnodename & "[];")
+    fi;
+    scantokens(defnodename & decimal(mpt_numtotal) & ":=("& decimal(xpart i)&","& decimal(ypart i) & ");");
+    mpt_nodecoord[mpt_numtotal]:=i;
+    mpt_nodename[mpt_numtotal]:= defnodename & decimal(mpt_numtotal);
+    mpt_nodelpart[mpt_numtotal]:= defnodename;
+    mpt_nodenumpart[mpt_numtotal]:= decimal(mpt_numtotal);
+    mpt_nodepath[mpt_numtotal]:= formatnodepath(labelarbres(mpt_nodename[mpt_numtotal]) scaled scaleev) shifted mpt_nodecoord[mpt_numtotal];
+  endfor
+ elseif (nodename="Alph") or (nodename="alph"):
+  save tmp_str,tmp_nn;
+  string tmp_str;
+  numeric tmp_nn;
+  tmp_nn:= if nodename="Alph": 64 else: 96 fi;
+  for i=t:
+    tmp_str:=char(mpt_numtotal+startnodename+tmp_nn);
+    defnodestr(tmp_str)(i);
+  endfor
+ fi
+enddef;
+
+
+% Renvoie le rang d'un noeud par suffixe
+vardef searchnode(suffix ptA)=
+  save val,st;
+  numeric val;
+  string st;
+  st= str ptA;
+  for i=1 upto mpt_numtotal:
+     if mpt_nodename[i]=st:
+       val=i
+     fi;
+     exitif known val;
+  endfor
+  val
+enddef;
+
+% Renvoie le rang d'un noeud suivi d'une chaine
+vardef searchnodech(suffix s)(expr c)=
+  searchnode(s)
+enddef;
+
+% Renvoie le path d'un noeud
+vardef nodepath(suffix ptA)=
+  save nn;
+  numeric nn;
+  nn:=searchnode(ptA);
+  mpt_nodepath[nn]
+enddef;
+
+
+
+% Dessin du noeud
+vardef thenode@#(text t)=
+  save tmp_fig,tmpstr;
+  picture tmp_fig;
+  string tmp_str;
+  if long_texte(t)=1:
+     tmp_fig:=thenodenum@#(searchnode(t))
+  else:
+     for i=t:
+       if string i: tmp_fig:=thenodenum@#(searchnodech(t),i) fi;
+     endfor
+  fi;
+  tmp_fig
+enddef;
+
+vardef thenodenum@#(text t)=
+   save tmp_pt,ch,dess,latch,num;
+   numeric num;
+   pair tmp_pt;
+   string ch,latch;
+   picture dess;
+   mpt_isgraph:=true;arbrebool:=false;
+%   interim labeloffset:=nodelabeloffset+nodewidth/2;
+   interim labeloffset:=nodelabeloffset;
+   if ((ASCII str @# < 58) or (ASCII str @# = 91)) and (str @#<>""):
+       def mylabel = labelang enddef
+   else:
+       def mylabel = label enddef
+   fi;
+   if long_texte(t)=1:
+        num:=t;
+        dess:=image(
+          ch:="$" & _chainec(mpt_nodename[num]) & "$";
+          if nodename="arabic": ch := "$" & decimal(num) & "$" fi;
+          mpt_nodepath[num]:=formatnodepath(labelarbres(ch) scaled scaleev) shifted mpt_nodecoord[num];
+          draw formatnodeev(labelarbres(ch) scaled scaleev) shifted mpt_nodecoord[num];
+          if printnodename:
+            mylabel@#(textext(ch) scaled scaleev, ptofpath@#(mpt_nodepath[num],mpt_nodecoord[num])) withcolor nodefgcolor mpt_po_
+          fi)
+   else:
+      dess:=image(%
+      for PP=t:
+        if numeric PP:
+           num:=PP;
+           tmp_pt:=mpt_nodecoord[num];
+        else:
+          mpt_nodepath[num]:=formatnodepath(labelarbres(PP) scaled scaleev) shifted mpt_nodecoord[num];
+          draw formatnodeev(labelarbres(PP) scaled scaleev) shifted tmp_pt;
+          if printnodename:
+           if string PP:
+              mylabel@#(textext(PP),ptofpath@#(mpt_nodepath[num],mpt_nodecoord[num])) withcolor nodefgcolor mpt_po_;
+           else:
+              mylabel@#(PP scaled defaultscale,ptofpath@#(mpt_nodepath[num],mpt_nodecoord[num])) withcolor nodefgcolor mpt_po_;
+           fi
+          fi
+        fi;
+      endfor)
+   fi;
+   dess
+enddef;
+
+vardef node@#(text s)=
+  save mpt_boolnum;
+  boolean mpt_boolnum;
+  mpt_boolnum:=false;
+  for i=s:
+    if numeric i:
+       mpt_boolnum:=true
+    fi;
+  endfor
+  if mpt_boolnum:
+    thenodenum@#(s)
+  else:
+    thenode@#(s)
+  fi
+enddef;
+
+
+vardef firstnode@#(suffix s)(text t) text r=
+ drawnode@#(s) r;
+ def tmp_text= t enddef;
+enddef;
+
+
+vardef nodes@#(text t) text s=  % Dessin des noeuds à partir de leur rang
+  save tmp_pt;
+  pair tmp_pt;
+  save mpt_boolnum;
+  boolean mpt_boolnum;
+  mpt_boolnum:=false;
+  for i=t:
+    if numeric i:
+       mpt_boolnum:=true
+    fi;
+  endfor
+  image(
+  if long_texte(t)=0:
+     for i=1 upto mpt_numtotal:
+       drawnode@#(i) s;
+     endfor
+  elseif mpt_boolnum:
+    for i=t:
+      drawnode@#(i) s;
+    endfor
+  else:
+    save n;numeric n;
+    n=long_texte(t);
+    def tmp_text= t enddef;
+    for i=1 upto n-1:
+      firstnode@#(tmp_text) s;
+    endfor
+    drawnode@#(tmp_text) s;
+  fi
+  )
+enddef;
+
+
+
+vardef drawnode@#(text p) text t =
+   mpt_drop(t);
+   mpt_tmp_fig_cbg:=image(draw (0,0) mpt_po_);
+   draw node@#(p);
+   mpt_bgc:=false;
+   mpt_drop();
+enddef;
+
+def drawnodes = draw nodes enddef;
+
+
+
+%%%%%%%%%%%%%
+%% Arêtes
+%%%%%%%%%%%%%
+% chemin entre les noeuds de rangs n et m, angles en param
+vardef theedgeAB(expr m,n)=
+  save an,ta,pb,pathab,A,B,C,tmpoffset;
+  numeric an,tmpoffset;
+  numeric ta,tb;
+  pair A,B,C;
+  if nodeedgeoffset=-101: tmpoffset:=0
+  else:                   tmpoffset:=nodeedgeoffset
+  fi;
+  tmpoffset:=tmpoffset+nodelinewidth/2+edgelinewidth/2;
+  A:=mpt_nodecoord[m];
+  B:=mpt_nodecoord[n];
+  path pathab;
+  if m<>n:
+     pathab:=dessinarete(A,B);
+    ta=xpart(pathab intersectiontimes mpt_nodepath[m]);
+    tb=xpart(pathab intersectiontimes mpt_nodepath[n]);
+    pathab:= subpath(ta,tb) of pathab;
+    ta:= arctime tmpoffset of pathab;
+    tb:= arctime ((arclength pathab)-tmpoffset) of pathab;
+    pathab:= subpath (ta, tb) of pathab;
+  else:
+    pathab:=theloopA(n)
+  fi;
+  pathab
+enddef;
+
+
+
+% boucle sur le noeud n
+vardef theloopA(expr n)=
+  save pathaa,aapath,A,B,C,tmpoffset,ta,tb;
+  pair A,B,C;
+  numeric tmpoffset,ta,tb;
+  path pathaa,aapath;
+  if nodeedgeoffset=-101: tmpoffset:=0
+  else:                   tmpoffset:=nodeedgeoffset
+  fi;
+  tmpoffset:=tmpoffset+nodelinewidth/2+edgelinewidth/2;
+  C:=mpt_nodecoord[n];
+  pathaa:=C{dir (-tmp_loopangle[1]+tmp_loopangle[0])}..
+          (C+((0.5loopsize,0.77loopsize) rotated (tmp_loopangle[0]-90))){dir (tmp_loopangle[0])}..
+          (C+((loopsize,0) rotated (tmp_loopangle[0]))){dir (tmp_loopangle[0]+90)}..
+          (C+((-0.5loopsize,0.7loopsize) rotated (tmp_loopangle[0]-90))){dir (tmp_loopangle[0]+180)}..
+          {dir (tmp_loopangle[1]+tmp_loopangle[0]+180)}C;
+  aapath:= reverse pathaa;
+  ta=xpart(subpath(0,0.5*length pathaa) of pathaa intersectiontimes mpt_nodepath[n]);
+  tb=xpart(subpath(0,0.5*length aapath) of aapath intersectiontimes mpt_nodepath[n]);
+  pathaa:= subpath (ta,(length pathaa) - tb) of pathaa;
+  ta:= arctime tmpoffset of pathaa;
+  tb:= arctime ((arclength pathaa)-tmpoffset) of pathaa;
+  pathaa:= subpath (ta, tb) of pathaa;
+  pathaa
+enddef;
+
+% Chemin entre les noeuds A et B, angles dans p
+vardef theedge(suffix A,B)(text p)=
+  save nA,nB,tmp_fig;
+  numeric nA,nB;
+  picture tmp_fig;
+  nA:=searchnode(A);
+  nB:=searchnode(B);
+  theedgenum(nA,nB)(p)
+enddef;
+
+% Chemin entre les noeuds nA et nB, angles dans p
+vardef theedgenum(expr nA,nB)(text p)=
+  save tmp_fig;
+  picture tmp_fig;
+  numeric edgeangleaa[],tmp_loopangle[];
+  edgeangleaa[0]=edgeangleaa[1]=edgeangle;
+  tmp_loopangle[0]:=loopangle;tmp_loopangle[1]:=loopstartangle;
+  mpt_isgraph:=true;arbrebool:=false;
+  nn:=0;
+  for i=p:
+    if numeric i:
+       if nn=0: edgeangleaa[0]:=i;edgeangleaa[1]:=i;tmp_loopangle[0]:=i
+       else: edgeangleaa[1]:=-i;tmp_loopangle[1]:=i
+       fi;
+       nn:=nn+1;
+    elseif string i:
+       mpt_tmp_prob:=i;
+    fi
+  endfor
+  theedgeAB(nA,nB)
+enddef;
+
+% Figure représentant le chemin avec (ou non) la flèche
+vardef theedgenumfig(expr nA,nB)(text p)=
+  save tmppath;
+  path tmppath;
+  tmppath:=theedgenum(nA,nB)(p);
+  image(draw tmppath withpen pencircle scaled edgelinewidth withcolor linecolor mpt_po_;
+       if mpt_dir:
+         filldraw arrowhead subpath(0, edgearrowpos*length mpt_tmp_path) of mpt_tmp_path mpt_po_
+       fi;
+       )
+enddef;
+
+vardef edges@#(text s)(text p) text t=  % dessine plusieurs arêtes simultanément
+  save a,b,isp;
+  numeric a,b;
+  boolean isp;
+  isp:=false;
+  image(
+    for i=s:
+    if pair i:
+      if isp: drawedge@#(a,b)(p) t; fi;
+      a:= xpart i;b:= ypart i;
+      isp:=true;
+    else:
+       drawedge@#(a,b)(i,p) t;
+       isp:=false
+    fi;
+  endfor
+  if isp: drawedge(a,b)(p) t; fi
+  )
+enddef;
+
+
+
+
+
+
+vardef theedgepond@#(suffix A,B)(text p)=
+  save nA,nB;
+  numeric nA,nB;
+  nA:=searchnode(A);
+  nB:=searchnode(B);
+  theedgepondnum@#(nA,nB)(p)
+enddef;
+
+vardef theedgepondnum@#(expr nA,nB)(text p)=
+  save tmpfig,tmppath,tmppt,mpt_isprob,mpt_isprobover;
+  boolean mpt_isprob,mpt_isprobover;
+  mpt_isprob:=true;
+  path tmppath;
+  picture tmpfig;
+  pair tmppt;
+  if str @#="": mpt_isprobover:=true else: mpt_isprobover:=false fi;
+  if ((ASCII str @# < 58) or (ASCII str @# = 91)) and (str @#<>""):
+      def mylabel = labelang enddef
+  else:
+      def mylabel = labelmp enddef
+  fi;
+  tmppath:=theedgenum(nA,nB)(p);
+  tmppt:=point (arctime posprob*(arclength  tmppath) of tmppath) of tmppath;
+  image(draw theedgenum(nA,nB)(p) withpen pencircle scaled edgelinewidth withcolor linecolor mpt_po_;
+        if mpt_dir:
+           filldraw arrowhead subpath(0, edgearrowpos*length mpt_tmp_path) of mpt_tmp_path mpt_po_
+        fi;
+        mylabel@#(formatprob(labelarbres(mpt_tmp_prob) scaled scaleprob),tmppt))
+enddef;
+
+vardef edge@#(text s)(text p)=
+  save mpt_boolprob,mpt_boolnum;
+  boolean mpt_boolprob,mpt_boolnum;
+  mpt_boolprob:=false;
+  mpt_boolnum:=false;
+  if posprob=-1: posprob:=0.5 fi;
+  if loopsize=-1:
+       loopsize:=1.5nodewidth;
+       if loopsize<0.6cm: loopsize:=0.6cm fi;
+  fi;
+  for i=p:
+    if string i:
+      mpt_boolprob:=true
+    fi;
+  endfor
+  for i=s:
+    if numeric i:
+       mpt_boolnum:=true
+    fi;
+  endfor
+  if mpt_boolnum:
+     mpt_tmp_path:=theedgenum(s)(p);
+     if mpt_boolprob:
+        theedgepondnum@#(s)(p)
+     else:
+        theedgenumfig(s)(p)
+     fi
+  else:
+     mpt_tmp_path:=theedge(s)(p);
+     if mpt_boolprob:
+        theedgepond@#(s)(p)
+     else:
+        theedge(s)(p)
+     fi
+  fi
+enddef;
+
+%%%%%%%%%% Drawing edges
+
+vardef drawedge@#(text s)(text p) text t=
+   mpt_drop(t);
+   mydraw edge@#(s)(p) withpen pencircle scaled edgelinewidth;
+   mpt_drop();
+enddef;
+
+vardef drawedges@#(text s)(text p) text t=
+  mydraw edges@#(s)(p) t
+enddef;
+
+
+vardef drawdiredge@#(text s)(text p) text t=
+  save mpt_dir;
+  boolean mpt_dir;
+  mpt_dir:=true;
+  drawedge@#(s)(p) t;
+enddef;
+
+vardef drawdiredges@#(text s)(text p) text t=
+  save mpt_dir;
+  boolean mpt_dir;
+  mpt_dir:=true;
+  drawedges@#(s)(p) t;
+enddef;
+
+
+vardef drawgraph@#(text s)(text p) text t=  % dessine les noeuds et les arêtes
+  drawnodes@#() t;
+  drawedges@#(s)(p) t;
+enddef;
+
+vardef drawdirgraph@#(text s)(text p) text t=  % dessine les noeuds et les arêtes
+  drawnodes@#() t;
+  drawdiredges@#(s)(p) t;
+enddef;
+
+
+%%%%%%%%%%%%%% Managing colors
+
+def mpt_drop(text t) =
+  def mpt_po_ = t enddef;
+enddef;
+
+mpt_drop();
+def withbgcolor expr c=
+  hide(mpt_bgc:=true; def mpt_opbg_ = withcolor c enddef)
+enddef;
+
+def mpt_opbg_ = enddef;
+
+%%%%%%%%%%%%%% Grids
+
+vardef thegridcomp(expr xmin,ymin,xmax,ymax,pas,u)=
+  image(
+  for i=xmin step pas until xmax:
+     draw (i*u,ymin*u)--(i*u,ymax*u) withcolor gridcolor withpen pencircle scaled gridlinewidth;
+     label.bot(textext("$" & decimal(i)& "$") scaled 0.6,(i*u,ymin*u)) withcolor gridcolor;
+   endfor
+  for i=ymin step pas until ymax:
+     draw (xmin*u,i*u)--(xmax*u,i*u) withcolor gridcolor withpen pencircle scaled gridlinewidth;
+     label.lft(textext("$" & decimal(i)& "$") scaled 0.6,(xmin*u,i*u)) withcolor gridcolor;
+   endfor
+  )
+enddef;
+
+
+vardef grid(text t)(text s)=
+  save minmax,pasun,c;
+  numeric minmax[],pasun[],c;
+  c:=0;
+  pasun[1]:=1cm;
+  pasun[2]:=1;
+  for i=s:
+    c:=c+1;
+    pasun[c]:=i;
+  endfor
+  c:=0;
+  for i=t:
+    c:=c+1;
+    minmax[c]:=i;
+  endfor
+  if c=4:
+    thegridcomp(minmax[1],minmax[2],minmax[3],minmax[4],pasun[2],pasun[1])
+  else:
+    thegridcomp(0,0,minmax[1],minmax[2],pasun[2],pasun[1])
+  fi
+enddef;
+
+def drawgrid= draw grid enddef;
+
+
+
+%%%%%%%%%%%%%%%
+%% Outils
+%%%%%%%%%%%%%%%%
+
+
+vardef isdigit primary d =
+    ("0"<=d)and(d<="9")
+enddef ;
+
+% Convertit un suffixe en chaine avec les chiffres en indice
+vardef _chaine(suffix s)=
+  save c,d;
+  string c,d;
+  d:= str s;
+  if length(d)=1:
+     c:=d
+     elseif isdigit (substring (1,2) of d):
+            c:= (substring (0,1) of d) & "_{" & substring (1,infinity) of d & "}"
+            else: c:=str s
+  fi;
+  c
+enddef;
+
+vardef _chainec(expr d)=
+  save c;
+  string c;
+  if length(d)=1:
+     c:=d
+  elseif isdigit (substring (1,2) of d):
+     c:= (substring (0,1) of d) & "_{" & substring (1,infinity) of d & "}"
+  elseif isdigit (substring (2,3) of d):
+     c:= (substring (0,2) of d) & "_{" & substring (2,infinity) of d & "}"
+  else:
+     c:=d
+  fi;
+  c
+enddef;
+
+% longueur d'un paramètre text
+vardef long_texte(text t)=
+  save i;
+  numeric i;
+  i:=0;
+  for n=t: i:=i+1; endfor
+  i
+enddef;
+
+
+% Placement fin des étiquettes
+vardef thelabelang@#(expr s,z)=
+     save tmpang,tmpfig,tmppt,tmppath,tmpstr;
+     string tmpstr;
+     numeric tmpang;
+     pair tmppt;
+     path tmppath;
+     save p; picture p;
+     tmpstr := str @#;
+     if picture s:  p=s
+     else:    p = textext(s)
+     fi;
+     tmppath := llcorner p -- lrcorner p -- urcorner p -- ulcorner p -- cycle;
+     if ASCII tmpstr = 91:
+        tmpang := scantokens substring(1,length(tmpstr)-1) of tmpstr
+     else:
+        tmpang := scantokens tmpstr
+     fi;
+     tmppt := tmppath intersectionpoint ((0.5urcorner p+0.5llcorner p)-- (0.5urcorner p +0.5llcorner p+ 100 * (dir (180+tmpang))));
+      p shifted (-tmppt + z + labeloffset*(cosd(tmpang),sind(tmpang)) )
+enddef;
+
+
+% draw et fill sans _op_
+def myfill expr c = addto currentpicture contour c enddef;
+def mydraw expr p =
+  addto currentpicture
+  if picture p:
+    also p
+  else:
+    doublepath p withpen currentpen
+  fi
+enddef;
+
+
+
+
+def labelang = draw thelabelang enddef;
+def labelmp = mydraw thelabel enddef;
+
+
+vardef ptofpath@#(expr p, c)= % Trouve le point du chemin p à la position @# par rapport à c
+ save diam; numeric diam; diam:=abs(urcorner bbox p - llcorner bbox p);
+ save tmpang;numeric tmpang;
+ if (str @#=""):
+   c
+ elseif ((ASCII str @# < 58) or (ASCII str @# = 91)):
+   if ASCII str @# = 91:
+      tmpang := scantokens substring(1,length(str @#)-1) of str @#
+   else:
+      tmpang := scantokens str @#
+   fi;
+   (c--((c+diam*(1,0)) rotatedaround(c,tmpang))) intersectionpoint p
+ else:
+  (c--(c+diam*laboff@#)) intersectionpoint p
+ fi
+enddef;
 

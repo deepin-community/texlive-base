@@ -1,8 +1,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% MCF compile template file                    by Akira Yamaji  2024.01.21
+% MCF compile template file                    by Akira Yamaji  2024.11.10
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if unknown mcftograph: input mcf2graph; fi  %%% it must be version 5.11
-message "* mcf_template 2024.01.21";
+if unknown mcftograph: input mcf2graph; fi  %%% it must be version 5.13
+message "* mcf_template 2024.11.10";
 message "";
 %------------------------------------------------------------------------------
 %%%%ext(defaultscale:=.3; label.rt(EN,(0,0));)

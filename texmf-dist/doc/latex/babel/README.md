@@ -1,18 +1,18 @@
-## Babel 24.1
+## Babel 24.13
 
-2024-01-07
+2024-11-08
 
-This package manages culturally-determined typographical (and other)
-rules, and hyphenation patterns for a wide range of languages. Many
-language styles work with pdflatex, as well as with xelatex and
-lualatex out of the box. A few even work with plain formats. Included
-is a set of ini files for about 300 languages.
+`babel` is the multilingual framework to localize documents in
+LaTeX, LuaLaTeX, XeLaTeX. It manages culturally-determined
+typographical (and other) rules for about 170 to 300 languages,
+depending on the engine, with several levels of coverage. A few
+languages even work with Plain formats.
 
 The latest stable version is available on <https://ctan.org/pkg/babel>.
 
-Changes in version 24.1 are described in:
+Changes in version 24.13 are described in:
 
-https://latex3.github.io/babel/news/whats-new-in-babel-24.1.html
+https://latex3.github.io/babel/news/whats-new-in-babel-24.13.html
 
 Apart from the manual, you can find information on some aspects of babel at:
 
@@ -43,16 +43,18 @@ You may also report them to the current maintainer more informally on:
 
    https://latex3.github.io/babel/contact.html
 
-Bugs related to specific languages are best reported to their
+Bugs related to specific languages are best reported to theirs
 respective authors.
 
 ### Summary of latest changes
 ```
-24.1 2024-01-07
-     * New version numbering scheme.
-     * New key in \babelprovide: interchar (xe).
-     * Definitions for French interchar=punctuation.space (xe) and
-       transforms=punctuation.space (lua).
+24.13  2024-11-08
+       * French: Added ‘transform values’ for punctuation.space.
+       * Pashto: Persian and Islamic calendar (which fixes an error,
+         too).
+       * Fixes:
+         - Uyghur hyphenation mechanism stopped working.
+         - The Hebrew calendar converter raised an error.
 ```
 
 ### Previous changes

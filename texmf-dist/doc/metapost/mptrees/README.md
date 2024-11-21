@@ -1,9 +1,8 @@
-Package mptrees - Version 23.04 - April 27, 2023
+Package mptrees - Version 24.04 - April 8th, 2024
 
 ---
 
-This package provides MetaPost tools for drawing simple probability trees.
-One main command, some variants and several parameters to control the output are provided.
+This package provides MetaPost tools for drawing simple probability trees and graphs (in discrete geometry).
 
 ---
 

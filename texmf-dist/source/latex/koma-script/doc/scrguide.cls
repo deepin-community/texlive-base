@@ -216,7 +216,6 @@
 \RequirePackage{multicol}
 \RequirePackage{marginnote}
 \RequirePackage{tabularx}
-\RequirePackage{scrhack}%
 \RequirePackage{mparhack}%
 %    \end{macrocode}
 %
@@ -1928,7 +1927,7 @@
     \setbox\desccaptionb@xfirst\vbox{%
       \tabular{p{\labelwidth}}%
         \multicolumn{1}{@{}p{\dimexpr\labelwidth+2\tabcolsep}@{}}{%
-          \captionaboveof{table}[##1]{##2\unskip\strut}%
+          \captionaboveof{table}[{##1}]{##2\unskip\strut}%
         }\tabularnewline[%
         \dimexpr \abovecaptionskip-\normalbaselineskip\relax
 %        \dimexpr \abovecaptionskip-\abovecaptionskipcorrection\relax

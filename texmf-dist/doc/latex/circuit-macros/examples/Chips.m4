@@ -9,8 +9,11 @@ Chips: [
   ic4017
   {"\sf 4017" at last [].Chip.sw below ljust}
   move
-  ic4510
-  {"\sf 4510" at last [].Chip.sw below ljust}
+# ic4510
+# {"\sf 4510" at last [].Chip.sw below ljust}
+# move
+  ic555
+  {"\sf 555" at last [].Chip.sw below ljust}
   move
   icVS1053
   {"\sf VS1053" at last [].Chip.sw below ljust}

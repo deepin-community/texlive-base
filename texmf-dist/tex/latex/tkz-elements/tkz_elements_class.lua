@@ -1,6 +1,6 @@
 -- tkz_elements_class.lua 
--- date 2024/02/04
--- version 2.00c
+-- date 2024/07/16
+-- version 2.30c
 -- from class.lua (Simple Lua Classes from Lua-users wiki)
 -- Compatible with Lua 5.1 (not 5.0).
 --  http://lua-users.org/wiki/SimpleLuaClasses DavidManura 

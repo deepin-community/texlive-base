@@ -11,7 +11,27 @@ available with OpenType (and other) fonts, including upper and lower case number
 proportional and monospaced numbers, swash letters, ligature control, and many
 many others.
 
-See the documentation `fontspec.pdf` for full information.
+
+Documentation
+-------------
+
+See the PDF documentation for complete user information (including examples):
+
+    texdoc fontspec
+
+Additional online documentation is provided at:
+  <http://latex3.github.io/fontspec/>
+
+The package code is documented in typeset PDF form via
+
+    texdoc fontspec-code
+
+Licence
+-------
+
+This package is distributed under the terms and conditions of the LaTeX Project Public License (LPPL), version 1.3a or higher. 
+
+The maintainer of the package is Will Robertson and the LaTeX3 project.
 
 
 Summary of user commands
@@ -54,24 +74,30 @@ Release versions of fontspec are available from CTAN:
   <http://www.ctan.org/pkg/fontspec>
 
 Development and historical versions are available from Github:
-  <http://github.com/wspr/fontspec>
+  <http://github.com/latex3/fontspec>
 
 Please offer suggestions and file bug reports in the issue tracker:
-  <http://github.com/wspr/fontspec/issues>
+  <http://github.com/latex3/fontspec/issues>
 
-If you are running TeX Live, you can update to the latest version of this package by running
+If you are running TeX Live, you can update to the latest version of this
+package by running
 
     tlmgr install fontspec
 
-If you wish to manually download the latest release version from CTAN, get the pre-built TDS package and extract it into your local texmf tree:
+If you wish to manually download the latest release version from CTAN,
+get the pre-built TDS package and extract it into your local texmf tree:
 
-    http://mirror.ctan.org/install/macros/latex/contrib/fontspec.tds.zip
+    http://mirror.ctan.org/install/macros/unicodetex/latex/fontspec.tds.zip
 
-If you wish to use the latest development version from Github, either use git to obtain the bleeding edge version with
+Historical releases are available via GitHub:  
+  <https://github.com/latex3/fontspec/releases>  
+  <https://github.com/latex3/fontspec/tags>
 
-    git clone git://github.com/wspr/fontspec.git
+If you wish to use the latest development version from Github,
+use git to obtain the latest repository code with
 
-(For bleeding edge versions, see the `working` branch.)
+    git clone git://github.com/latex3/fontspec.git
+
 Having obtained the package from Github, install the package code by running
 
     l3build install

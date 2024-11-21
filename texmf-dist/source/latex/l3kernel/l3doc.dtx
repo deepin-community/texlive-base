@@ -71,7 +71,7 @@ and all files in that bundle must be distributed together.
 % This isn't included in the typeset documentation because it's a bit
 % ugly:
 %<*class>
-\ProvidesExplClass{l3doc}{2024-01-22}{}
+\ProvidesExplClass{l3doc}{2024-11-02}{}
   {L3 Experimental documentation class}
 %</class>
 % \fi
@@ -84,7 +84,7 @@ and all files in that bundle must be distributed together.
 %    require you to do updates, if the class changes.}}
 %
 % \author{\Team}
-% \date{Released 2024-01-22}
+% \date{Released 2024-11-02}
 % \maketitle
 % \tableofcontents
 %
@@ -365,7 +365,7 @@ and all files in that bundle must be distributed together.
 %   \begin{syntax}
 %     \cs{tn} \oarg{options} \marg{csname}
 %   \end{syntax}
-%   Analoguous to \cs{cs} but intended for \enquote{traditional} \TeX{}
+%   Analogous to \cs{cs} but intended for \enquote{traditional} \TeX{}
 %   or \LaTeXe{} commands; they are indexed accordingly.  This is in
 %   fact equivalent to \cs{cs} |[module=TeX, replace=false,|
 %   \meta{options}|]| \Arg{csname}.
@@ -471,7 +471,7 @@ and all files in that bundle must be distributed together.
 %     \cs{tl_if_empty_p:N} \meta{tl~var}
 %     \cs{tl_if_empty:NTF} \meta{tl~var} \Arg{true code} \Arg{false code}
 %   \end{syntax}
-%   Tests if the \meta{token list variable} is entirely empty
+%   Tests if the \meta{tl~var} is entirely empty
 %   (\emph{i.e.}~contains no tokens at all).
 % \end{function}
 % \end{verbatim}
@@ -484,7 +484,7 @@ and all files in that bundle must be distributed together.
 %         \cs{tl_if_empty_p:N} \meta{tl~var}
 %         \cs{tl_if_empty:NTF} \meta{tl~var} \Arg{true code} \Arg{false code}
 %       \end{syntax}
-%       Tests if the \meta{token list variable} is entirely empty
+%       Tests if the \meta{tl~var} is entirely empty
 %       (\emph{i.e.}~contains no tokens at all).
 %     \end{function}
 %   \end{minipage}
@@ -959,8 +959,8 @@ and all files in that bundle must be distributed together.
 %    \begin{macrocode}
 \bool_new:N \g_@@_typeset_documentation_bool
 \bool_new:N \g_@@_typeset_implementation_bool
-\bool_set_true:N \g_@@_typeset_documentation_bool
-\bool_set_true:N \g_@@_typeset_implementation_bool
+\bool_gset_true:N \g_@@_typeset_documentation_bool
+\bool_gset_true:N \g_@@_typeset_implementation_bool
 %    \end{macrocode}
 % \end{variable}
 %
@@ -1531,12 +1531,23 @@ and all files in that bundle must be distributed together.
 %    \begin{macrocode}
 \bool_if:NT \g_@@_lmodern_bool
   {
-    \RequirePackage[T1]{fontenc}
-    \RequirePackage{lmodern}
-    \group_begin:
-      \ttfamily
-      \DeclareFontShape{T1}{lmtt}{m}{it}{<->ec-lmtto10}{}
-    \group_end:
+    \bool_lazy_or:nnTF
+      { \sys_if_engine_luatex_p: }{ \sys_if_engine_xetex_p: }
+      {
+        \group_begin:
+          \ttfamily
+          \DeclareFontShape{TU}{lmtt}{m}{it}
+            {<-> \UnicodeFontFile{lmmonoslant10-regular}{}}{}
+        \group_end:      
+      }
+      {
+        \RequirePackage[T1]{fontenc}
+        \RequirePackage{lmodern}
+        \group_begin:
+          \ttfamily
+          \DeclareFontShape{T1}{lmtt}{m}{it}{<->ec-lmtto10}{}
+        \group_end:
+      }
   }
 %    \end{macrocode}
 %
@@ -1618,7 +1629,7 @@ and all files in that bundle must be distributed together.
 %
 % \subsection{Design}
 %
-% Increase the text width slightly so that width the standard fonts
+% Increase the text width slightly so that with the standard fonts
 % 72~columns of code may appear in a \env{macrocode} environment.
 % Increase the marginpar width slightly, for long command names.  And
 % increase the left margin by a similar amount.
@@ -1655,7 +1666,7 @@ and all files in that bundle must be distributed together.
 %
 % \begin{macro}{\l@section, \l@subsection}
 %   Customise the table of contents (as we have so many sections).
-%   Different design and/or structure is called for).
+%   Different design and/or structure is called for.
 %    \begin{macrocode}
 \@addtoreset{section}{part}
 \cs_gset:Npn \l@section #1#2
@@ -1740,7 +1751,7 @@ and all files in that bundle must be distributed together.
 %   A document-level command.
 %    \begin{macrocode}
 \DeclareDocumentCommand \meta { m }
-  { \@@_meta:n {#1} }
+  { \texttt{ \@@_meta:n {#1} } }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1760,10 +1771,11 @@ and all files in that bundle must be distributed together.
   { < \tl_to_str:n {#1} > }
 \pdfstringdefDisableCommands
   {
-    \cs_set_eq:NN \cmd  \@@_pdfstring_cmd:w
-    \cs_set_eq:NN \cs   \@@_pdfstring_cs:w
-    \cs_set_eq:NN \tn   \@@_pdfstring_cs:w
-    \cs_set_eq:NN \meta \@@_pdfstring_meta:w
+    \cs_set_eq:NN \cmd       \@@_pdfstring_cmd:w
+    \cs_set_eq:NN \cs        \@@_pdfstring_cs:w
+    \cs_set_eq:NN \tn        \@@_pdfstring_cs:w
+    \cs_set_eq:NN \meta      \@@_pdfstring_meta:w
+    \cs_set_eq:NN \@@_meta:n \@@_pdfstring_meta:w
   }
 %    \end{macrocode}
 % \end{macro}
@@ -1775,10 +1787,10 @@ and all files in that bundle must be distributed together.
 %   Finally, \cs{Arg} is the same as \cs{marg}.
 %    \begin{macrocode}
 \newcommand\Arg[1]
-  { \texttt{\char`\{} \meta{#1} \texttt{\char`\}} }
+  { \texttt{\char`\{} \@@_meta:n {#1} \texttt{\char`\}} }
 \providecommand\marg[1]{ \Arg{#1} }
-\providecommand\oarg[1]{ \texttt[ \meta{#1} \texttt] }
-\providecommand\parg[1]{ \texttt( \meta{#1} \texttt) }
+\providecommand\oarg[1]{ \texttt[ \@@_meta:n {#1} \texttt] }
+\providecommand\parg[1]{ \texttt( \@@_meta:n {#1} \texttt) }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -2126,11 +2138,9 @@ and all files in that bundle must be distributed together.
       { \hyperlink { explTF } }
       { \mbox }
       {
-        \color{black}
         \itshape TF
         \makebox[0pt][r]
           {
-            \cs_if_exist:NT \Codedoc@explTF { \color{red} }
             \underline { \phantom{\itshape TF} \kern-0.1em }
           }
       }
@@ -2161,10 +2171,18 @@ and all files in that bundle must be distributed together.
 %
 % \begin{macro}{\@@_names_get_seq:nN}
 %   The argument~|#1| (argument of a |function| or |macro| environment)
-%   has catcodes $10$ (space), $12$ (other) and $13$ (active).  Sanitize
-%   catcodes.  If the |verb| option was used, output a one-item
-%   sequence.  Otherwise, remove any \enquote{\%} character at the
-%   beginning of a line.  Remove tabs and newlines.  Finally, convert
+%   has catcodes $10$ (space), $12$ (other) and $13$ (active), and
+%   since \LaTeX{} 2024-06-01 also macro \cs{obeyedline} in replacement
+%   of active |^^M| tokens (due to the revised behavior of |+v|
+%   argument type in |ltcmd|).
+%   If the |verb| option was used, sanitize catcodes and output
+%   a one-item sequence.
+%   Otherwise, remove any \enquote{\%} character at the beginning of
+%   a line using new end-of-line marker \cs{obeyedline}.  Remove any
+%   remaining \cs{obeyedline}.  Then sanitize catcodes so we keep those
+%   verbatim \cs{obeyedline} typed in by user.  Remove remaining
+%   \enquote{\%} character at the beginning of a line using traditional
+%   |^^M| marker. Remove tabs and newlines.  Finally, convert
 %   |_@@| and |@@| to |__|\meta{module name} (if it is non-empty).  At
 %   this point, \cs{l_@@_tmpa_tl} contains a comma-delimited list of
 %   names, where |@| and~|_| have category code letter.  Turn it to a
@@ -2173,13 +2191,18 @@ and all files in that bundle must be distributed together.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_names_get_seq:nN #1#2
   {
-    \__kernel_tl_set:Nx \l_@@_tmpa_tl { \tl_to_str:n {#1} }
     \bool_if:NTF \l_@@_names_verb_bool
       {
         \seq_clear:N #2
-        \seq_put_right:NV #2 \l_@@_tmpa_tl
+        \seq_put_right:No #2 { \tl_to_str:n {#1} }
       }
       {
+        \tl_set:Nn \l_@@_tmpa_tl {#1}
+        \tl_remove_all:Ne \l_@@_tmpa_tl
+          { \exp_not:N \obeyedline \c_percent_str }
+        \tl_remove_all:Ne \l_@@_tmpa_tl
+          { \exp_not:N \obeyedline }
+        \__kernel_tl_set:Nx \l_@@_tmpa_tl { \tl_to_str:N \l_@@_tmpa_tl }
         \tl_remove_all:Ne \l_@@_tmpa_tl
           { \iow_char:N \^^M \c_percent_str }
         \tl_remove_all:Ne \l_@@_tmpa_tl { \tl_to_str:n { ^ ^ A } }
@@ -2528,7 +2551,7 @@ and all files in that bundle must be distributed together.
 \cs_new_protected:Npn \@@_function_typeset_stop:
   {
     \par
-    \dim_set:Nn \prevdepth { \box_dp:N \l_@@_descr_coffin }
+    \dim_set:Nn \prevdepth { \coffin_dp:N \l_@@_descr_coffin }
     \allowbreak
   }
 %    \end{macrocode}
@@ -2593,7 +2616,7 @@ and all files in that bundle must be distributed together.
     \dim_zero:N \l_@@_trial_width_dim
     \hcoffin_set:Nn \l_@@_functions_coffin { \@@_typeset_functions: }
     \dim_set:Nn \l_@@_trial_width_dim
-      { \box_wd:N \l_@@_functions_coffin }
+      { \coffin_wd:N \l_@@_functions_coffin }
     \bool_set:Nn \l_@@_long_name_bool
       { \dim_compare_p:nNn \l_@@_trial_width_dim > \marginparwidth }
   }
@@ -2642,7 +2665,7 @@ and all files in that bundle must be distributed together.
         \coffin_join:NnnNnnnn
           \l_@@_output_coffin {l} {b}
           \l_@@_descr_coffin  {l} {t}
-          {0.75\marginparwidth + \marginparsep} {-\medskipamount}
+          {\marginparwidth + \marginparsep} {-\medskipamount}
         \coffin_typeset:Nnnnn \l_@@_output_coffin
           {\l_@@_descr_coffin-l} {\l_@@_descr_coffin-t}
           {0pt} {0pt}
@@ -2694,8 +2717,7 @@ and all files in that bundle must be distributed together.
 % \end{macro}
 %
 % ^^A TODO: collect all index targets from a given function environment in a box and stick it at the top.
-% \begin{macro}
-%   {\@@_typeset_function_block:nN, \@@_typeset_function_block:eN}
+% \begin{macro}{\@@_typeset_function_block:nN}
 % \begin{macro}{\@@_function_index:n, \@@_function_index:e}
 %   |#1| is a csname, |#2| a boolean indicating whether to add |TF| or not.
 %    \begin{macrocode}
@@ -2711,7 +2733,6 @@ and all files in that bundle must be distributed together.
       { \@@_typeset_variant_list:nN {#1} #2 }
     \\
   }
-\cs_generate_variant:Nn \@@_typeset_function_block:nN { e }
 \cs_new_protected:Npn \@@_function_index:n #1
   {
     \seq_gput_right:Nn \g_doc_functions_seq {#1}
@@ -2839,7 +2860,7 @@ and all files in that bundle must be distributed together.
       {
         \textwidth
         \bool_if:NT \l_@@_long_name_bool
-          { + 0.75 \marginparwidth - \l_@@_trial_width_dim }
+          { + \marginparwidth - \l_@@_trial_width_dim }
       }
     \hbox_gset:Nw \g_@@_syntax_box
       \small \ttfamily
@@ -3205,18 +3226,22 @@ and all files in that bundle must be distributed together.
         \tl_set:Nn \l_@@_tmpa_tl {#1}
         \tl_replace_all:NnV \l_@@_tmpa_tl
           { ~ } \c_catcode_other_space_tl
-        \@@_macroname_prefix:o \l_@@_tmpa_tl
-        \@@_macroname_suffix:N #2
+        \@@_print_macroname_aux:on
+          \l_@@_tmpa_tl { \bool_if:NT #2 { \@@_typeset_TF: } }
       }
   }
-\cs_new_protected:Npn \@@_macroname_prefix:n #1
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_print_macroname_aux:nn, \@@_print_macroname_aux:on}
+%  |#1| is prefix, |#2| is optional |TF| suffix.
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_print_macroname_aux:nn #1#2
   {
     \@@_if_macro_internal:nTF {#1}
-      { \@@_typeset_aux:n {#1} } {#1}
+      { \@@_typeset_aux:n { #1 #2 } } { #1 #2 }
   }
-\cs_generate_variant:Nn \@@_macroname_prefix:n { o }
-\cs_new_protected:Npn \@@_macroname_suffix:N #1
-  { \bool_if:NTF #1 { \@@_typeset_TF: } { } }
+\cs_generate_variant:Nn \@@_print_macroname_aux:nn { o }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -3315,7 +3340,7 @@ and all files in that bundle must be distributed together.
 %   we can check now whether the macro is tested.  If the \env{macro}
 %   environment which is being ended is the outermost one, then wrap
 %   each macro in \tn{texttt} (with the addition of |TF| if relevant)
-%   and typeset two informations: that this ends the definition of some
+%   and typeset two pieces of information: that this ends the definition of some
 %   macros, and that they are documented on some page.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_macro_end:
@@ -3709,7 +3734,7 @@ and all files in that bundle must be distributed together.
   {
     \clist_map_inline:nn {#1}
       {
-        \clist_put_right:Nn \g_docinput_clist {##1}
+        \clist_gput_right:Nn \g_docinput_clist {##1}
         \@@_input:n {##1}
       }
   }
@@ -3727,10 +3752,22 @@ and all files in that bundle must be distributed together.
 %
 % \begin{macro}{\DocInclude}
 %   More or less exactly the same as \tn{include}, but uses
-%   \tn{DocInput} on a \file{.dtx} file, not \tn{input} on a \file{.tex}
-%   file.
+%   \tn{DocInput} on a \file{.fdd} or \file{.dtx} file (without file
+%   extension), not \tn{input} on a \file{.tex} file.
 %
 %    \begin{macrocode}
+\msg_new:nnn { l3doc } { missing-endgroup }
+  {
+    \str_if_eq:VnTF \@currenvir { document }
+      {
+        There~are~\int_use:N \tex_currentgrouplevel:D
+        \c_space_tl unclosed~groups~in~#1.
+      }
+      {
+        The~\@currenvir \c_space_tl environment~on~line~\@currenvline
+        \c_space_tl doesn't~have~a~matching~\iow_char:N\\end{\@currenvir}.
+      }
+  }
 \NewDocumentCommand \DocInclude { m }
   {
     \relax\clearpage
@@ -3741,6 +3778,13 @@ and all files in that bundle must be distributed together.
     \int_compare:nNnTF \@auxout = \@partaux
       { \@latexerr{\string\include\space cannot~be~nested}\@eha }
       { \@docinclude {#1} }
+    % check missing \endgroup, e.g., missing "\end{macro}" in time
+    \int_compare:nNnF { \tex_currentgrouplevel:D } = { 0 }
+      {
+        \int_compare:nNnT { \tex_interactionmode:D } = { 0 }
+          { \int_gset:Nn \tex_interactionmode:D { 1 } }
+        \msg_fatal:nne { l3doc } { missing-endgroup } { \currentfile }
+      }
   }
 %    \end{macrocode}
 %
@@ -3815,7 +3859,7 @@ and all files in that bundle must be distributed together.
           { MMMMV - \filesep \int_use:N \c@CodelineNo }
       }
   }
-\tl_gclear:N \filesep
+\tl_clear_new:N \filesep
 \cs_new_protected:Npn \@@_index_page_hc:nn #1#2
   {
     \protected@write \@indexfile {}
@@ -4087,7 +4131,7 @@ and all files in that bundle must be distributed together.
             \int_set:Nn \l_@@_tmpa_int { \tex_interactionmode:D }
             \errorstopmode
             \ClassError { l3doc } { \l_@@_tmpa_tl } { }
-            \int_set:Nn \tex_interactionmode:D { \l_@@_tmpa_int }
+            \int_gset:Nn \tex_interactionmode:D { \l_@@_tmpa_int }
           }
       }
   }
@@ -4230,7 +4274,6 @@ and all files in that bundle must be distributed together.
       {#2}
       \l_@@_index_internal_bool
   }
-\cs_generate_variant:Nn \@@_special_index:nn { o }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -4474,7 +4517,7 @@ and all files in that bundle must be distributed together.
 %
 % \begin{macro}{\@@_key_trim_module:n, \@@_key_drop_underscores:}
 %   Helper that removes from \cs{l_@@_index_module_tl} everything after
-%   the first occurence of |#1|.  Helper that removes any leading
+%   the first occurrence of |#1|.  Helper that removes any leading
 %   underscore from \cs{l_@@_index_key_tl}.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_key_trim_module:n #1

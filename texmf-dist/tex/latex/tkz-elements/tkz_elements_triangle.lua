@@ -1,6 +1,6 @@
 -- tkz_elements_triangles.lua
--- date 2024/02/04
--- version 2.00c
+-- date 2024/07/16
+-- version 2.30c
 -- Copyright 2024  Alain Matthes
 -- This work may be distributed and/or modified under the
 -- conditions of the LaTeX Project Public License, either version 1.3
@@ -56,21 +56,20 @@ end
 -----------------------
 -- points --
 -----------------------
--- version 1.80
 function triangle: trilinear (a,b,c)
-   return barycenter_ ( {self.pa,a*self.a },{self.pb,b*self.b},{self.pc,c*self.c} )
+   return barycenter_ ({self.pa,a*self.a},{self.pb,b*self.b},{self.pc,c*self.c})
 end
 
 function triangle: barycentric (a,b,c)
-   return barycenter_ ( {self.pa,a },{self.pb,b},{self.pc,c} )
+   return barycenter_ ({self.pa,a},{self.pb,b},{self.pc,c})
 end
 
 function triangle: bevan_point ()
-   return circum_center_ ( self : excentral_tr())
+   return circum_center_ ( excentral_tr_ ( self.pa , self.pb , self.pc))
 end
 
 function triangle: mittenpunkt_point ()
-   return lemoine_point_ ( self : excentral_tr())
+   return lemoine_point_ ( excentral_tr_ ( self.pa , self.pb , self.pc))
 end
 
 function triangle: gergonne_point ()
@@ -141,12 +140,26 @@ end
 function triangle :  soddy_center ()
    return soddy_center_ (self.pa,self.pb,self.pc)
 end
+
+function triangle :  conway_points ()
+    local a1,a2,b1,b2,c1,c2
+     a1 =      report_ (self.pb,self.pa,length(self.pb,self.pc),self.pa)
+     a2 =      report_ (self.pc,self.pa,length(self.pb,self.pc),self.pa)
+     b1 =      report_ (self.pa,self.pb,length(self.pa,self.pc),self.pb)
+     b2 =      report_ (self.pc,self.pb,length(self.pa,self.pc),self.pb)
+     c1 =      report_ (self.pb,self.pc,length(self.pb,self.pa),self.pc)
+     c2 =      report_ (self.pa,self.pc,length(self.pb,self.pa),self.pc)
+     return a1,a2,b1,b2,c1,c2
+  end
 -------------------
 -- Result -> line
 -------------------
 -- N,H,G,O -- check_equilateral_ (a,b,c)
 function triangle: euler_line ()
-  return  line : new (self.orthocenter,self.circumcenter)
+  if not check_equilateral_(self.pa,self.pb,self.pc) 
+     then 
+        return  line : new (self.orthocenter,self.circumcenter)
+     end
 end
 
 function triangle: symmedian_line (n)
@@ -212,7 +225,7 @@ local a,b,c
   end
 end
 
-function triangle: antiparallel(pt,n)   -- n =1 swap n=2 2 swap
+function triangle: antiparallel(pt,n)   -- n = 1 swap ; n= 2 2 swap
 local a,b,c,i,u,v,w
    a = self.pa
    b = self.pb
@@ -303,6 +316,42 @@ function triangle :  soddy_circle ()
    s,i = soddy_center_ (self.pa,self.pb,self.pc)
    return circle : new ( s , i )
 end
+
+function triangle :  cevian_circle (p)
+    local pta,ptb,ptc
+     pta,ptb,ptc = cevian_  (self.pa,self.pb,self.pc,p)
+     return circle : new (circum_circle_ (pta,ptb,ptc),pta)
+  end
+
+function triangle :  symmedial_circle ()
+  local pta,ptb,ptc,p
+   p = lemoine_point_ ( self.pa , self.pb , self.pc)
+   pta,ptb,ptc = cevian_  (self.pa,self.pb,self.pc,p)
+   return circle : new (circum_circle_ (pta,ptb,ptc),pta)
+end
+  
+function triangle :  conway_circle ()
+  local i,t
+   i = in_center_ (self.pa,self.pb,self.pc)
+   t =      report_ (self.pb,self.pa,length(self.pb,self.pc),self.pa)
+   return circle : new (i,t)
+end
+
+function triangle :  pedal_circle (pt)
+  local x,y,z,c
+  x = projection_ (self.pb,self.pc,pt)
+  y = projection_ (self.pa,self.pc,pt)
+  z = projection_ (self.pa,self.pb,pt)
+  c = circum_center_ (x,y,z)
+  return circle : new (c,x)
+end    
+
+function triangle: bevan_circle ()
+   local o,r,s,t
+   o = circum_center_ ( excentral_tr_ ( self.pa , self.pb , self.pc))
+   r,s,t = excentral_tr_ ( self.pa , self.pb , self.pc)
+return  circle : new  (o, r)
+end
 -------------------
 -- Result -> triangle
 -------------------
@@ -356,10 +405,49 @@ function triangle: symmedian ()
    return triangle : new  (cevian_  (self.pa,self.pb,self.pc,p))
 end
 
+function triangle: symmedial ()
+   local p
+   p = lemoine_point_ ( self.pa , self.pb , self.pc)
+   return triangle : new  (cevian_  (self.pa,self.pb,self.pc,p))
+end
+
 function triangle: euler ()
    return triangle : new  (euler_points_ (self.pa,self.pb,self.pc) )
 end
 
+function triangle: pedal (pt)
+  local x,y,z
+  x = projection_ (self.pb,self.pc,pt)
+  y = projection_ (self.pa,self.pc,pt)
+  z = projection_ (self.pa,self.pb,pt)
+   return triangle : new  (x,y,z)
+end
+
+function triangle: similar ()
+   return triangle : new  (similar_ (self.pa,self.pb,self.pc) )
+end
+-------------------
+-- Result -> ellipse
+-------------------
+function triangle: steiner_inellipse ()
+   return steiner_ (self.pa,self.pb,self.pc)
+end
+
+function triangle: steiner_circumellipse ()
+   local e
+   e =  steiner_ (self.pa,self.pb,self.pc)
+   return ellipse: radii (e.center,2*e.Rx,2*e.Ry,e.slope )
+end
+
+function triangle: euler_ellipse ()
+   if  self : check_acutangle ()
+   then
+      local a,b
+      a,b  = intersection_lc_ (self.orthocenter,self.circumcenter,
+                        self.eulercenter,self.ab.mid)
+      return ellipse: foci (self.orthocenter,self.circumcenter,a)
+   end
+end
 -------------------
 -- Result -> miscellaneous
 -------------------
@@ -406,6 +494,16 @@ function triangle: check_equilateral ()
  return check_equilateral_ (self.pa,self.pb,self.pc)
 end
 
+function triangle: check_acutangle()
+    local asq = self.a * self.a
+    local bsq = self.b * self.b
+    local csq = self.c * self.c
+    if asq + bsq > csq and bsq + csq > asq and csq + asq > bsq then
+        return true
+    else
+        return false
+    end
+end
 
 
 return triangle

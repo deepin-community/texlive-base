@@ -20,7 +20,7 @@ A: Autologix(
 #                             replaced by NOT gates.
 B: Autologix(Or(And(B,Not(C)),And(Not(A),B,C)),N) \
   with .sw at A.e+(0.4,0.25)
-  "{\sl Out}" at B.Out above ljust
+  "{\sl B.Out}" at B.Out above ljust
   `"\shortstack[l]{\tt B: Autologix( \\ \tt \
      Or(And(B,Not(C)),And(Not(A),B,C)),N)}"' \
     wid 242pt__ ht 20pt__ at B.s+(0,-0.2)

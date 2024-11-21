@@ -9,7 +9,7 @@ cct_init
    "\sl R1.end" at R1.end above
    "\sl Tap1" at Tap1 rjust
    "\sl Tap2" at Tap2 ljust
-  `"\tt right\_; t = 0.2in\_\_" ljust \
+  `"\tt right\_; t = 0.2 in\_\_" ljust \
    "\tt R1:$\;$resistor(,{,}E)" ljust \
    "\tt addtaps(<-,0.2,-t,0.8,t)" ljust' at R1.end+(0.3,0)
 

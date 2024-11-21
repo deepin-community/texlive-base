@@ -1,6 +1,6 @@
 -- tkz_elements_point.lua
--- date 2024/02/04
--- version 2.00c
+-- date 2024/07/16
+-- version 2.30c
 -- Copyright 2024  Alain Matthes
 -- This work may be distributed and/or modified under the
 -- conditions of the LaTeX Project Public License, either version 1.3
@@ -26,6 +26,7 @@ point = class(function(p,re,im)
        p.type     = 'point'
        p.argument = math.atan(p.im, p.re)
        p.modulus  = math.sqrt(p.re * p.re  + p.im * p.im)
+       p.mtx      = matrix : new {{p.re},{p.im}}
 end)
 
 local sqrt = math.sqrt
@@ -94,46 +95,62 @@ function point.__div(x,y)
 end
 
 function point.__tostring(z)
-   if (z.re == 0) then
-      if (z.im == 0) then
+  local real = z.re
+  local imag = z.im
+   if (real == 0) then
+      if (imag == 0) then 
          return "0"
       else
-         if  (z.im ==1) then
+         if  (imag == 1) then
             return ""  .. "i"
-         else  
-            if  (z.im ==-1) then
-               return ""  .. "-i" 
-            else          
-         return "" .. z.im .. "i"
+         else
+            if  (imag == -1) then
+               return ""  .. "-i"
+            else
+            local  imag = string.format( "%."..tkz_dc.."f",imag)
+         return "" .. imag .. "i"
       end
       end
       end
    else
-      if (z.im > 0) then 
-        if  (z.im ==1) then
-           return "" .. z.re .. "+"  .. "i" 
-        else     
-         return "" .. z.re .. "+" .. z.im .. "i" 
+      if (imag > 0) then
+        if  (imag ==1) then 
+            if is_integer (real) then real = math.round(real) else
+            real = string.format( "%."..tkz_dc.."f",real) end
+           return "" .. real .. "+"  .. "i"
+        else
+          if is_integer (real) then real = math.round(real) else
+          real = string.format( "%."..tkz_dc.."f",real) end
+            imag = string.format( "%."..tkz_dc.."f",imag)
+         return "" .. real .. "+" .. imag .. "i"
      end
-      elseif (z.im < 0) then
-         if  (z.im ==-1) then
-            return "" .. z.re .. "-"  .. "i" 
-         else     
-         return "" .. z.re .. z.im .. "i" 
-      end 
+      elseif (imag < 0) then
+         if  (imag == -1) then
+           if is_integer (real) then real = math.round(real) else
+           real = string.format( "%."..tkz_dc.."f",real) end
+             imag = string.format( "%."..tkz_dc.."f",imag)
+            return "" .. real .. "-"  .. "i"
+         else
+           if is_integer (real) then real = math.round(real) else
+           real = string.format( "%."..tkz_dc.."f",real) end
+             imag = string.format( "%."..tkz_dc.."f",imag)
+         return "" .. real .. imag .. "i"
+      end
       else
-         return "" .. z.re
-      
+        if is_integer (real) then real = math.round(real) else
+        real = string.format( "%."..tkz_dc.."f",real) end
+         return "" .. real
+
       end
    end
 end
 
 function point.__tonumber(z)
-   if (z.im == 0) then
-      return z.re
-   else
-      return nil
-   end
+  if (z.im == 0) then
+    return z.re
+  else
+    return nil
+  end
 end
 
 function point.__eq(z1,z2)
@@ -148,46 +165,61 @@ local function pyth(a, b)
 end
 
 function point.conj(z)
-  return point(z.re,-z.im)
+    local cx = topoint(z)
+  return point(cx.re,-cx.im)
 end
 
 function point.mod(z)
-    local function sqr(x) return x*x end
-  return pyth (z.re,z.im)
+  local cx = topoint(z)
+  local function sqr(x) return x*x end
+  return pyth (cx.re,cx.im)
 end
 
 function point.abs (z) 
+  local cx = topoint(z)
   local function sqr(x) return x*x end
-  return sqrt(sqr(z.re)  + sqr(z.im))
+  return sqrt(sqr(cx.re)  + sqr(cx.im))
 end
 
 function point.norm (z)
-    local function sqr(x) return x*x end
-   return (sqr(z.re)  + sqr(z.im))
+ local cx = topoint(z)
+ local function sqr(x) return x*x end
+   return (sqr(cx.re)  + sqr(cx.im))
+end
+
+function point.power (z,n)
+  if type(z) == number then return z^n
+  else
+    local m = (z.modulus)^n
+    local a = angle_normalize((z.argument)*n)   
+   return scale * polar_ (m,a)
+ end
 end
 
 function point.arg (z)
-   return math.atan(z.im, z.re)
+  cx = topoint(z)
+  return math.atan(cx.im, cx.re)
 end
 
 function point.get(z)
    return z.re, z.im
 end
 
-function point: sqrt()
-  local y = sqrt((point.mod(self)-self.re)/2)
-  local x = self.im/(2*y)
-  return point(x,y)
+function point.sqrt(z)
+  local cx = topoint(z)
+  local len = math.sqrt( (cx.re)^2+(cx.im)^2 )
+  local sign = (cx.im < 0 and -1 ) or 1
+  return point(math.sqrt((cx.re+len)/2), sign*math.sqrt((len-cx.re)/2) )
 end
 
 -- methods ---
 
 function point: new ( a,b )
-    return scale * point (a,b )
+  return scale * point (a,b )
 end
 
 function point: polar ( radius, phi )
-	return point: new (radius * math.cos(phi), radius * math.sin(phi))
+  return point: new (radius * math.cos(phi), radius * math.sin(phi))
 end
 
 function point: polar_deg ( radius, phi )
@@ -195,18 +227,18 @@ function point: polar_deg ( radius, phi )
 end
 
 function point: north(d)
-   local d = d or 1
+  local d = d or 1
    return self+ polar_ ( d ,  math.pi/2 )
 end
 
 function point: south(d)
-    local d = d or 1
-      return self + polar_ ( d , 3 * math.pi/2 )
-   end
+  local d = d or 1
+    return self + polar_ ( d , 3 * math.pi/2 )
+end
    
 function point: east(d)
-    local d = d or 1
-   return self+ polar_( d ,  0 )
+  local d = d or 1
+  return self+ polar_( d ,  0 )
 end
 
 function point: west(d)
@@ -325,4 +357,8 @@ end
 
 function point : at (z)
    return point(self.re+z.re,self.im+z.im)
+end
+
+function point : print ()
+    tex.print(tostring(self))
 end

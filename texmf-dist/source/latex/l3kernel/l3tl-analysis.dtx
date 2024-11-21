@@ -44,7 +44,7 @@
 %    }^^A
 % }
 %
-% \date{Released 2024-01-22}
+% \date{Released 2024-11-02}
 %
 % \maketitle
 %
@@ -196,18 +196,15 @@
 % \end{variable}
 %
 % \begin{variable}
-%   {\l_@@_analysis_token, \l_@@_analysis_char_token, \l_@@_analysis_next_token}
+%   {\l_@@_analysis_token, \l_@@_analysis_char_token}
 %   The tokens in the token list are probed with the \TeX{} primitive
 %   \tn{futurelet}. We use \cs{l_@@_analysis_token} in that
 %   construction. In some cases, we convert the following token to a
 %   string before probing it: then the token variable used is
-%   \cs{l_@@_analysis_char_token}. When getting tokens from the input
-%   stream we may need to look two tokens ahead, for which we use
-%   \cs{l_@@_analysis_next_token}.
+%   \cs{l_@@_analysis_char_token}.
 %    \begin{macrocode}
 \cs_new_eq:NN \l_@@_analysis_token ?
 \cs_new_eq:NN \l_@@_analysis_char_token ?
-\cs_new_eq:NN \l_@@_analysis_next_token ?
 %    \end{macrocode}
 % \end{variable}
 %
@@ -1219,24 +1216,25 @@
 %   {
 %     \peek_analysis_map_inline:n,
 %     \@@_peek_analysis_loop:NNn, \@@_peek_analysis_test:,
-%     \@@_peek_analysis_exp:N, \@@_peek_analysis_exp_active:N,
+%     \@@_peek_analysis_exp:N, \@@_peek_analysis_exp_aux:N,
 %     \@@_peek_analysis_nonexp:N, \@@_peek_analysis_cs:N,
 %     \@@_peek_analysis_char:N, \@@_peek_analysis_char:w,
 %     \@@_peek_analysis_special:, \@@_peek_analysis_retest:,
-%     \@@_peek_analysis_next:, \@@_peek_analysis_nextii:,
 %     \@@_peek_analysis_str:,
 %     \@@_peek_analysis_str:w, \@@_peek_analysis_str:n,
 %     \@@_peek_analysis_active_str:n, \@@_peek_analysis_explicit:n,
 %     \@@_peek_analysis_escape:, \@@_peek_analysis_collect:w,
 %     \@@_peek_analysis_collect:n, \@@_peek_analysis_collect_loop:,
-%     \@@_peek_analysis_collect_test:, \@@_peek_analysis_collect_end:NNN
+%     \@@_peek_analysis_collect_test:, \@@_peek_analysis_collect_end:NNNN
 %   }
 %   Save the user's code in a control sequence that is suitable for
 %   nested maps.  We may wish to pass to this function an \tn{outer}
 %   control sequence or active character; for this we will undefine
-%   potentially-\tn{outer} tokens within a group, closed after the
-%   function reads its arguments (for an \tn{outer} active character
-%   there is no good alternative).  This user's code function also
+%   any expandable token (testing if it is \tn{outer} is much slower)
+%   within a group, closed immediately after the function reads its
+%   arguments to avoid affecting the user's code or even our peek code
+%   (there is no risk of undefining \cs{group_end:} itself since that is
+%   not expandable).  This user's code function also
 %   calls the loop auxiliary, and includes the trailing
 %   \cs{prg_break_point:Nn} for when the user wants to stop the loop.
 %   The loop auxiliary must remove that break point because it must look
@@ -1254,7 +1252,10 @@
         #1
         \@@_peek_analysis_loop:NNn
           \prg_break_point:Nn \peek_analysis_map_break:
-            { \group_align_safe_end: }
+            {
+              \int_gdecr:N \g__kernel_prg_map_int
+              \group_align_safe_end:
+            }
       }
     \@@_peek_analysis_loop:NNn ? ? ?
   }
@@ -1262,7 +1263,11 @@
 %   The loop starts a group (closed by the user-code function defined
 %   above) with a normalized escape character, and checks if the next
 %   token is special or \texttt{N}-type (distinguishing expandable from
-%   non-expandable tokens).
+%   non-expandable tokens).  The test for nonexpandable tokens in
+%   \cs{@@_peek_analysis_test:} must be done after the tests for
+%   begin-group, end-group, and space tokens, in case \cs{l_peek_token}
+%   is either \tn{outer} or is a primitive \TeX{} conditional, as such
+%   tokens cannot be skipped over correctly by conditional code.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_peek_analysis_loop:NNn #1#2#3
   {
@@ -1298,14 +1303,20 @@
 %   Expandable tokens (which are automatically |N|-type) can be
 %   \tn{outer} macros, hence the need for \cs{exp_after:wN} and
 %   \cs{exp_not:N} in the code above, which allows the next function to
-%   safely grab the token as an argument.  We run some code that is
-%   expanded using the primitive \cs{cs_set_nopar:Npe} rather than
-%   \cs{tl_set:Ne} to avoid grabbing it as an argument as |#1| may be
-%   \tn{outer}.  To allow~|#1| as an argument of the user's function
-%   (stored in \cs{l_@@_peek_code_tl}), we set it equal to
-%   \cs{scan_stop:}, but we do it at the last minute because |#1|
-%   may be some pretty important function such as \cs{exp_after:wN}.
-%   Then we put the user's function and the elaborate first argument
+%   safely grab the token as an argument.  To allow the
+%   possibly-\tn{outer} token~|#1| as an argument of the \meta{user's
+%   function} (which is protected and stored in \cs{l_@@_peek_code_tl}),
+%   we set it equal to a harmless macro.  This must be done at the very
+%   last minute because |#1| may be some pretty important function such
+%   as \cs{exp_after:wN}.  Using a primitive \cs{cs_set_nopar:Npe}
+%   expansion (to avoid \tn{outer} problems) we set up to run the code
+%   \tn{let} |#1| \meta{user's function} \meta{user's function} followed
+%   by arguments involving~|#1|.  Regardless of~|#1| (including the
+%   user's function itself), the user's function is run.  It always
+%   starts with \cs{group_end:}, which has not been redefined since |#1|
+%   started out as expandable, and which restores the definition of~|#1|.
+%
+%   Then we put the elaborate first argument
 %   \cs{__kernel_exp_not:w} \cs{exp_after:wN} |{| \cs{exp_not:N} |#1| |}|:
 %   indeed we cannot use \cs{exp_not:n} |{#1}| as this breaks for an
 %   \tn{outer} macro and we cannot use \cs{exp_not:N} |#1|, as
@@ -1318,38 +1329,35 @@
 %   the two cases is easy: since we have made the escape character
 %   printable, \cs{token_to_str:N} gives at least two characters for a
 %   control sequence versus a single one for an active character
-%   (possibly being a space).  Producing the right outcome is trickier,
-%   as |#1| cannot appear in either branch of the conditional (it could
-%   be \tn{outer}, or simply a \TeX{} conditional), and can only be
-%   safely discarded by \cs{use_none:n} if it is first hit with
-%   \cs{exp_not:N}.
+%   (possibly being a space, in which case the trailing brace group is
+%   taken as the first argument of \cs{@@_peek_analysis_exp_aux:Nw}).
+%   Importantly, |#1| could be an \tn{outer} token (as it is only set to
+%   \cs{scan_stop:} at the last minute) but once we apply
+%   \cs{token_to_str:N} we no longer need to worry about it.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_peek_analysis_exp:N #1
   {
     \cs_set_nopar:Npe \l_@@_peek_code_tl
       {
-        \tex_let:D \exp_not:N #1 \scan_stop:
-        \exp_not:o \l_@@_peek_code_tl
+        \tex_let:D \exp_not:N #1 \l_@@_peek_code_tl
+        \l_@@_peek_code_tl
         {
           \exp_not:n { \__kernel_exp_not:w \exp_after:wN }
             { \exp_not:N \exp_not:N \exp_not:N #1 }
         }
-        \if:w \scan_stop:
-              \exp_after:wN \use_none:n \token_to_str:N #1 \prg_do_nothing:
-              \scan_stop:
-          \exp_after:wN \exp_after:wN
-          \exp_after:wN \@@_peek_analysis_exp_active:N
-        \else:
-          { -1 } 0
-          \exp_after:wN \exp_after:wN
-          \exp_after:wN \use_none:n
-        \fi:
-        \exp_not:N #1
+        \exp_after:wN \@@_peek_analysis_exp_aux:Nw
+        \token_to_str:N #1 { } \s_@@
       }
     \l_@@_peek_code_tl
   }
-\cs_new:Npe \@@_peek_analysis_exp_active:N #1
-  { { \exp_not:N \int_value:w `#1 } \token_to_str:N D }
+\cs_new:Npe \@@_peek_analysis_exp_aux:Nw #1#2 \s_@@
+  {
+    \exp_not:N \if_meaning:w \scan_stop: #2 \scan_stop:
+      { \exp_not:N \int_value:w `#1 ~ } \token_to_str:N D
+    \exp_not:N \else:
+      { -1 } 0
+    \exp_not:N \fi:
+  }
 %    \end{macrocode}
 %   For normal non-expandable tokens we must distinguish characters
 %   (including active ones and macro parameter characters) from control
@@ -1358,10 +1366,9 @@
 %   sequence call the user code with suitable arguments, wrapping |#1|
 %   within \cs{exp_not:n} just in case it happens to be equal to a macro
 %   parameter character.  We do not skip \cs{exp_not:n} when
-%   unnecessary, because there might be situations where the argument
-%   could be used by the user after further redefinitions of the token,
-%   and it seems more convenient to know that \cs{exp_not:n} is always
-%   used.
+%   unnecessary, because this auxiliary is also called in
+%   \cs{@@_peek_analysis_retest:} where we have changed some control
+%   sequences or active characters to \cs{scan_stop:} temporarily.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_peek_analysis_nonexp:N #1
   {
@@ -1390,12 +1397,17 @@
 %   characters to anything else than character code~$32$), then we apply
 %   \cs{@@_analysis_b_char:Nn}, which detects active characters by
 %   comparing them to \cs{tex_undefined:D}, and we must have undefined
-%   the active space for this test to work ---we use an |e|-expanding
-%   assignment to get the active space in the right place.  Finally
-%   \cs{@@_peek_analysis_char:w} puts the arguments in the correct
-%   order, including \cs{exp_not:n} for macro parameter characters and
-%   active characters (the latter could be macro parameter characters,
-%   and it seems more uniform to always put \cs{exp_not:n}).
+%   the active space (locally) for this test to work.
+%   To define \cs{@@_peek_analysis_char:N} itself we use an
+%   |e|-expanding assignment to get the active space in the right place
+%   after making it (just for this definition) unexpandable.
+%   Finally \cs{@@_peek_analysis_char:w} receives the \meta{charcode},
+%   \meta{user function}, \meta{catcode}, and \meta{token}, and places
+%   the arguments in the correct order.  It keeps \cs{exp_not:n} for
+%   macro parameter characters and active characters (the latter could
+%   be macro parameter characters, and it seems more uniform to always
+%   put \cs{exp_not:n}), and otherwise eliminates it by expanding once
+%   with \cs{exp_args:NNNo}.
 %    \begin{macrocode}
 \group_begin:
 \char_set_active_eq:NN \ \scan_stop:
@@ -1458,9 +1470,9 @@
 \cs_new_protected:Npn \@@_peek_analysis_retest:
   {
     \if_meaning:w \l_@@_analysis_token \scan_stop:
-      \exp_after:wN \@@_peek_analysis_normal:N
+      \exp_after:wN \@@_peek_analysis_nonexp:N
     \else:
-      \exp_after:wN \@@_peek_analysis_next:
+      \exp_after:wN \@@_peek_analysis_str:
     \fi:
   }
 %    \end{macrocode}
@@ -1469,41 +1481,22 @@
 %   begin-group or end-group token (catcode $1$ or~$2$), and we excluded
 %   a few cases that would be difficult later (empty control sequence,
 %   active character with the same character code as its meaning or as
-%   the escape character).  Now look at the \meta{next token} following
-%   it using a combination of \tn{afterassignment} and \tn{futurelet}.
-%   (In fact look twice to reset an internal \TeX{} flag in case the
-%   \meta{next token} had been hit with \cs{exp_not:N}.)
-%   The syntax of this primitive is \tn{futurelet} \meta{peek token}
-%   \meta{first token} \meta{next token}, and it sets \meta{peek token}
-%   equal to \meta{next token}.  Traditionally, one takes \meta{first
-%   token} to be some macro that regains control of the code and, e.g.,
-%   analyses \meta{peek token}.  Here, both \meta{first token} and
-%   \meta{next token} are mostly unknown tokens in the input stream (but
-%   we know the \meta{first token} has catcode $1$, $2$ or $10$), where
-%   \meta{first token} was already stored as \cs{l_peek_token}, and we
-%   regain control using \tn{afterassignment}, which inserts its
-%   argument after the assignment, hence after \meta{peek token} but
-%   before \meta{first token}.
-%    \begin{macrocode}
-\cs_new_protected:Npn \@@_peek_analysis_next:
-  {
-    \tl_if_empty:oT { \tex_the:D \tex_everyeof:D }
-      { \tex_everyeof:D { \scan_stop: } }
-    \tex_afterassignment:D \@@_peek_analysis_nextii:
-    \tex_futurelet:D \l_@@_analysis_next_token
-  }
-\cs_new_protected:Npn \@@_peek_analysis_nextii:
-  {
-    \tex_afterassignment:D \@@_peek_analysis_str:
-    \tex_futurelet:D \l_@@_analysis_next_token
-  }
-%    \end{macrocode}
-%   We then hit the \meta{first token} with \cs{token_to_str:N} and grab
-%   characters until finding \cs{l_@@_analysis_next_token}.  More
+%   the escape character).  The idea is to apply \cs{token_to_str:N} to
+%   the \meta{token} then grab characters (of category code~$12$ except
+%   for spaces that have category code~$10$) to reconstruct it.  In
+%   earlier versions of the code we would peek at the \meta{next token}
+%   that lies after \meta{token} in the input stream, which would help
+%   us be more accurate in reconstructing the \meta{token} case in edge
+%   cases (mentioned below), but this had the side-effect of tokenizing
+%   the input stream (turning characters into tokens) farther ahead than
+%   needed.
+%
+%   We hit the \meta{token} with \cs{token_to_str:N} and start grabbing
+%   characters.  More
 %   precisely, by looking at the first character in the string
-%   representation of the \meta{first token} we distinguish three cases:
+%   representation of the \meta{token} we distinguish three cases:
 %   a stringified control sequence starts with the escape character; for
-%   an explicit character we find that same character; for an explicit
+%   an explicit character we find that same character; for an active
 %   character we find anything else (we made sure to exclude the case of
 %   an active character whose string representation coincides with the
 %   other two cases).
@@ -1591,14 +1584,11 @@
 %   know that until we had run all the various tests including
 %   stringifying the token.  We are thus left with the hard work of
 %   picking up one by one the characters in the csname (being careful
-%   about spaces), until finding a token that matches the \meta{next
-%   token} picked up earlier (which was not stringified), such that the
-%   control sequence that we found so far indeed has the expected
-%   meaning \cs{l_peek_token}.  This comparison with \cs{l_peek_token}
-%   catches a reasonably common case like \cs{c_group_begin_token} |_|
-%   in which the trailing |_| has category code other: without
-%   comparison of the constructed csname with \cs{l_peek_token}
-%   collection would stop at \cs[no-index]{c}, which is wrong.
+%   about spaces), until the constructed csname has the expected
+%   meaning.  This fails if someone defines a token like
+%   \cs[no-index]{bgroup@my} whose string representation starts the same
+%   as another token with the same meaning being an implicit character
+%   token of category code $1$, $2$, or $10$.
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_peek_analysis_escape:
   {
@@ -1615,25 +1605,27 @@
   }
 \cs_new_protected:Npn \@@_peek_analysis_collect_loop:
   {
-    \tex_futurelet:D \l_@@_analysis_token
-      \@@_peek_analysis_collect_test:
-  }
-\cs_new_protected:Npn \@@_peek_analysis_collect_test:
-  {
-    \if_meaning:w \l_@@_analysis_token \l_@@_analysis_next_token
-      \exp_after:wN \if_meaning:w \cs:w \l_@@_internal_a_tl \cs_end: \l_peek_token
-        \@@_peek_analysis_collect_end:NNN
+    \exp_after:wN \if_meaning:w
+      \cs:w
+      \if_cs_exist:w \l_@@_internal_a_tl \cs_end:
+        \l_@@_internal_a_tl
+      \else:
+        c_one % anything short
       \fi:
+      \cs_end:
+      \l_peek_token
+      \@@_peek_analysis_collect_end:NNNN
     \fi:
-    \@@_peek_analysis_collect:w
+    \tex_futurelet:D \l_@@_analysis_token
+      \@@_peek_analysis_collect:w
   }
 %    \end{macrocode}
-%   End by calling the user code with suitable arguments (here |#1|,
-%   |#2| are \cs{fi:}), which closes the group begun early on.
+%   As in all other cases, end by calling the user code with suitable
+%   arguments (here |#1| is \cs{fi:}).
 %    \begin{macrocode}
-\cs_new_protected:Npn \@@_peek_analysis_collect_end:NNN #1#2#3
+\cs_new_protected:Npn \@@_peek_analysis_collect_end:NNNN #1#2#3#4
   {
-    #1 #2
+    #1
     \tl_put_right:Ne \l_@@_peek_code_tl
       {
         { \exp_not:N \exp_not:n { \exp_not:c { \l_@@_internal_a_tl } } }

@@ -1,6 +1,6 @@
 % The Dynkin Diagrams package.
 %
-% Version 3.141 592 653 589 793 238 4
+% Version 3.141 592 653 589 793 238 46
 %
 % This package draws Dynkin diagrams in LaTeX 
 % documents, using the TikZ package.
@@ -13,7 +13,7 @@
 % Released under the LaTeX Project Public License v1.3c or later, see 
 % http://www.latex-project.org/lppl.txt
 \NeedsTeXFormat{LaTeX2e}[1994/06/01]
-\ProvidesPackage{dynkin-diagrams}[2023/06/02 Dynkin diagrams]
+\ProvidesPackage{dynkin-diagrams}[2024/07/05 Dynkin diagrams]
 \RequirePackage{tikz}
 \RequirePackage{xstring}
 \RequirePackage{etoolbox}
@@ -1873,6 +1873,7 @@
 }%
 
 
+
 %% \dynkinQuadrupleEdge{<p>}{<q>}
 %% \dynkinQuadrupleEdge*{<p>}{<q>}
 %% Draws an oriented edge of valence 4 from root <p> to root <q> on the current Dynkin diagram.
@@ -2041,6 +2042,8 @@
 % Is the right side of the Dynkin diagram folded?
 \newif\ifdynkin@Coxeter
 % Should we draw Coxeter diagrams?
+\newif\ifdynkin@Coxeter@above
+% Should we draw Coxeter diagram extra labels above or below?
 \newif\ifdynkin@Kac@arrows
 % Should we draw arrows following Kac?
 \newif\ifdynkin@odd
@@ -2097,6 +2100,8 @@
 	},
 	Coxeter/.is if = dynkin@Coxeter,
 	Coxeter=false,
+	Coxeter above/.is if = dynkin@Coxeter@above,
+	Coxeter above=true,
 	double edges/.style = {
 	 	fold style/.style = {
 	 		draw=black,
@@ -2598,6 +2603,10 @@
 {%
 	\global\dynkin@rank=\dynkin@string\relax%
 	\global\dynkin@nodes=\dynkin@string\relax%
+	\ifWitt@symbol%
+		\global\advance\dynkin@rank by -1\relax%
+		\global\advance\dynkin@nodes by -1\relax%
+	\fi
 	\ifdynkin@is@twisted%
 		\IfStrEqCase{\dynkin@series}%
 		{%
@@ -2800,7 +2809,6 @@
 		% Turn Satake codes into Dynkin diagram expressions in \dynkin@string.
 		\dynkin@grok@Satake@codes%
 	}%
-
 	% Expand out any digits in \dynkin@string into multiples of the various root marks.
 	\expand@Dynkin@Roots@Digits%
 	% Assign to \dynkin@roots the input string \dynkin@string with all . symbols removed,
@@ -2881,20 +2889,41 @@
 	\global\dynkin@rank@minus@three\the\dynkin@rank@minus@two\relax%
 	\global\advance\dynkin@rank@minus@three by -1\relax%
 }%
+
+\newif\ifWitt@symbol
 \newcount\dynkin@lenny%
 %% \dynkin@grok@series
 %% Interprets the dynkin@series, to see if it is extended, twisted, and what twisted series it is.
 \NewDocumentCommand\dynkin@grok@series{}%
 {%
-	\StrLen{\dynkin@series}[\dynkin@lenny]
+	\StrLen{\dynkin@series}[\dynkin@lenny]\relax%
 	\ifnum\dynkin@lenny>1\relax%
 		\dynkin@error@series%
 	\fi%
+% We need to check if the series is a Witt symbol.
+	\IfSubStr{PSRQTUVW}{\dynkin@series}%
+	{%
+		\global\Witt@symboltrue%
+		\IfStrEqCase{\dynkin@series}%
+		{%
+			{P}{\global\xdef\dynkin@series{A}}%
+			{S}{\global\xdef\dynkin@series{B}}%
+			{R}{\global\xdef\dynkin@series{C}}%
+			{Q}{\global\xdef\dynkin@series{D}}%
+			{T}{\global\xdef\dynkin@series{E}}%
+			{U}{\global\xdef\dynkin@series{F}}%
+			{V}{\global\xdef\dynkin@series{G}}%
+			{W}{\global\xdef\dynkin@series{I}}%
+		}%
+	}%
+	{%
+		\global\Witt@symbolfalse%	
+	}%
 	\edef\series{\dynkin@series}%
 	\IfStrEqCase{\dynkin@twisted@series}%
 	{%
 		{0}{}%
-		{1}{ \global\dynkin@is@extendedtrue}%
+		{1}{\global\dynkin@is@extendedtrue}%
 		{2}{%
 			\IfSubStr{ADE}{\dynkin@series}%
 			{%
@@ -3459,19 +3488,6 @@
 				}%
 				[\global#5=#4\relax]%
 			}%
-			{G}%
-			{%
-				\IfStrEqCase{#3}%
-				{%
-					{Carter}{\global#5=%
-							\stringCharacterInPosition{21}{#4}%
-							\relax}%
-					{Dynkin}{\global#5=%
-							\stringCharacterInPosition{21}{#4}%
-							\relax}%
-				}%
-				[\global#5=#4\relax]%
-			}%
 		}%
 		[\global#5=#4\relax]%
 	}%
@@ -3640,25 +3656,6 @@
 			}%
 			[\global#5=#3\relax]%
 		}%
-		{G}%
-		{%
-			\IfStrEqCase{#4}%
-			{%
-				{Carter}%
-				{%
-					\global#5=%
-					\stringCharacterInPosition{21}{#3}%
-					\relax%
-				}%
-				{Dynkin}%
-				{%
-					\global#5=%
-					\stringCharacterInPosition{21}{#3}%
-					\relax%
-				}%
-			}%
-			[\global#5=#3\relax]%
-		}%
 	}%
 	[\global#5=#3\relax]%
 	}%
@@ -3777,12 +3774,14 @@
 		}%
 		{G}%
 		{%
-			\IfStrEqCase{\dynkin@ordering}%
-			{%
-				{Carter}{\global\dynkin@Root@Number=\stringCharacterInPosition{21}{#1}\relax}%
-				{Dynkin}{\global\dynkin@Root@Number=\stringCharacterInPosition{21}{#1}\relax}%
-			}%
-			[\global\dynkin@Root@Number=#1\relax]%
+			\global\dynkin@Root@Number=#1\relax%
+%			\IfStrEqCase{\dynkin@ordering}%
+%			{%
+%				{Carter}{\global\dynkin@Root@Number=\stringCharacterInPosition{21}{#1}\relax}%
+%				{Dynkin}{\global\dynkin@Root@Number=\stringCharacterInPosition{21}{#1}\relax}%
+%				{Kac}{\global\dynkin@Root@Number=\stringCharacterInPosition{21}{#1}\relax}%
+%			}%
+%			[\global\dynkin@Root@Number=#1\relax]%
 		}%
 	}%
 	[\global\dynkin@Root@Number=#1\relax]%
@@ -4338,9 +4337,15 @@
 	\else%
 		\ifdynkin@Coxeter%
 			\Adynkin%
-			\dynkinEdgeLabel%
-				{\the\dynkin@rank@minus@one}%
-				{\the\dynkin@rank}{4}%
+			\ifdynkin@Coxeter@above%
+				\dynkinEdgeLabel%
+					{\the\dynkin@rank@minus@one}%
+					{\the\dynkin@rank}{4}%
+			\else%
+				\dynkinEdgeLabel*%
+					{\the\dynkin@rank@minus@one}%
+					{\the\dynkin@rank}{4}%
+			\fi%
 		\else
 			% Create the roots.
 			\ifnum\dynkin@ply>1\relax%
@@ -4994,7 +4999,11 @@
 			\dynkinEdge*{SingleEdge}{1}{2}%
 			\dynkinEdge*{SingleEdge}{2}{3}%
 			\dynkinEdge*{SingleEdge}{3}{4}%
-			\dynkinEdgeLabel{2}{3}{4}%
+			\ifdynkin@Coxeter@above%
+				\dynkinEdgeLabel{2}{3}{4}%
+			\else%
+				\dynkinEdgeLabel*{2}{3}{4}%
+			\fi%
 		\else%
 			\dynkinEdge*{SingleEdge}{1}{2}%
 			\dynkinEdge*{SingleEdge}{3}{4}%
@@ -5002,6 +5011,9 @@
 		\fi%
 	\fi%
 }%
+
+\newif\ifGtwo@old@dynkin@reverse@arrows
+
 %% \Gdynkin 
 %% Draws a G series Dynkin diagram.
 \NewDocumentCommand\Gdynkin{}%
@@ -5013,14 +5025,72 @@
 			\dynkin@jump{1}%
 			\dynkinPlaceRootHere*{1}{left}{above}%
 			\dynkinPlaceRootRelativeTo*{2}{1}{southfold}{left}{below}%
+			\ifdynkin@reverse@arrows%
+				\global\Gtwo@old@dynkin@reverse@arrowstrue\relax%
+			\else%
+				\global\Gtwo@old@dynkin@reverse@arrowsfalse\relax%
+			\fi%
+			\IfStrEqCase{\dynkin@ordering}%
+			{%
+				{Adams}{%
+					\ifdynkin@reverse@arrows%
+						\global\dynkin@reverse@arrowsfalse\relax%
+					\else%
+						\global\dynkin@reverse@arrowstrue\relax%
+					\fi\relax}%
+				{Bourbaki}{%
+					\ifdynkin@reverse@arrows%
+						\global\dynkin@reverse@arrowsfalse\relax%
+					\else%
+						\global\dynkin@reverse@arrowstrue\relax%
+					\fi\relax}%
+				{Carter}{\relax}%
+				{Dynkin}{\relax}%
+				{Kac}{\relax}%
+			}%
+			[\relax]%
 			\dynkinEdge*{TripleDownRightSemiCircle}{1}{2}%
+			\ifGtwo@old@dynkin@reverse@arrows%
+				\global\dynkin@reverse@arrowstrue\relax%
+			\else%
+				\global\dynkin@reverse@arrowsfalse\relax%
+			\fi%
 			\ifdynkin@arrows%
 				\dynkinLeftFold*{1}{2}%
 			\fi%
 		\else%
 			\dynkinPlaceRootHere*{1}{below}{above}%
 			\dynkinPlaceRootRelativeTo*{2}{1}{east}{below}{above}%
-			\dynkinTripleEdge*{1}{2}%
+			\ifdynkin@reverse@arrows%
+				\global\Gtwo@old@dynkin@reverse@arrowstrue\relax%
+			\else%
+				\global\Gtwo@old@dynkin@reverse@arrowsfalse\relax%
+			\fi%
+			\IfStrEqCase{\dynkin@ordering}%
+			{%
+				{Adams}{%
+					\ifdynkin@reverse@arrows%
+						\global\dynkin@reverse@arrowsfalse\relax%
+					\else%
+						\global\dynkin@reverse@arrowstrue\relax%
+					\fi\relax}%
+				{Bourbaki}{%
+					\ifdynkin@reverse@arrows%
+						\global\dynkin@reverse@arrowsfalse\relax%
+					\else%
+						\global\dynkin@reverse@arrowstrue\relax%
+					\fi\relax}%
+				{Carter}{\relax}%
+				{Dynkin}{\relax}%
+				{Kac}{\relax}%
+			}%
+			[\relax]%
+			\dynkinTripleEdge*{1}{2}\relax%
+			\ifGtwo@old@dynkin@reverse@arrows%
+				\global\dynkin@reverse@arrowstrue\relax%
+			\else%
+				\global\dynkin@reverse@arrowsfalse\relax%
+			\fi%
 		\fi%
 	\fi%
 }%
@@ -5030,7 +5100,11 @@
 \newcommand*{\Hdynkin}%
 {%
 	\Adynkin%
-	\dynkinEdgeLabel{1}{2}{5}%
+	\ifdynkin@Coxeter@above%
+		\dynkinEdgeLabel{1}{2}{5}%
+	\else%
+		\dynkinEdgeLabel*{1}{2}{5}%
+	\fi%
 }%
 %% \Idynkin 
 %% Draws an I series Coxeter diagram.
@@ -5038,7 +5112,11 @@
 {%
 	\dynkin@rank=2\relax%
 	\Adynkin%
-	\dynkinEdgeLabel{1}{2}{\dynkin@gonality}%
+	\ifdynkin@Coxeter@above%
+		\dynkinEdgeLabel{1}{2}{\dynkin@gonality}%
+	\else%
+		\dynkinEdgeLabel*{1}{2}{\dynkin@gonality}%
+	\fi%
 }%
 
 %% \extendedAdynkin
@@ -5183,9 +5261,15 @@
 					\dynkinEdge*{SingleEdge}%
 						{\the\dynkin@rank@minus@one}%
 						{\the\dynkin@rank}%
-					\dynkinEdgeLabel%
-						{\the\dynkin@rank@minus@one}%
-						{\the\dynkin@rank}{4}%
+					\ifdynkin@Coxeter@above%
+						\dynkinEdgeLabel%
+							{\the\dynkin@rank@minus@one}%
+							{\the\dynkin@rank}{4}%
+					\else%
+						\dynkinEdgeLabel*%
+							{\the\dynkin@rank@minus@one}%
+							{\the\dynkin@rank}{4}%
+					\fi%					
 				\else%
 					\ifnum\dynkin@ply<3\relax%
 						\dynkinEdge*{DoubleEdge}%
@@ -5211,7 +5295,11 @@
 	\Cdynkin{}%
 	\ifdynkin@Coxeter%
 		\dynkinEdge*{SingleEdge}{0}{1}%
-		\dynkinEdgeLabel{0}{1}{4}%
+		\ifdynkin@Coxeter@above%
+			\dynkinEdgeLabel{0}{1}{4}%
+		\else%
+			\dynkinEdgeLabel*{0}{1}{4}%
+		\fi%
 	\else%
 		\dynkinEdge*{DoubleEdge}{0}{1}%
 	\fi%	
@@ -5391,8 +5479,11 @@
 	\xdef\dynkin@gonality{6}%
 	\dynkinPlaceRootHere*{0}{below}{above}%
 	\dynkinEast%
+	\let\extended@G@old@order\dynkin@ordering%
+	\xdef\dynkin@ordering{Carter}%
 	\Gdynkin%
 	\dynkinEdge*{SingleEdge}{0}{1}%
+	\xdef\dynkin@ordering{\extended@G@old@order}%
 }%
 
 %% \extendedHdynkin 
@@ -5423,7 +5514,11 @@
 	\dynkin@rank=1\relax%
 	\Adynkin%
 	\dynkinEdge*{SingleEdge}{0}{1}%
-	\dynkinEdgeLabel{0}{1}{\infty}%
+	\ifdynkin@Coxeter@above%
+		\dynkinEdgeLabel{0}{1}{\infty}%
+	\else%
+		\dynkinEdgeLabel*{0}{1}{\infty}%
+	\fi%
 }%
 \newcount\dynkin@height@minus@one%
 %% \twistedAdynkin 
@@ -5531,6 +5626,8 @@
 		\fi%
 	\fi%
 }%
+
+\newif\iftwisted@D@old@dynkin@reverse@arrows
 %% \twistedDdynkin 
 %% Draws a twisted D series affine Dynkin diagram.
 \NewDocumentCommand\twistedDdynkin{}%
@@ -5546,7 +5643,17 @@
 				\dynkinPlaceRootRelativeTo*{1}{0}{east}{below}{above}%
 				\dynkinPlaceRootRelativeTo*{2}{1}{east}{below}{above}%
 				\dynkinEdge*{SingleEdge}{0}{1}%
-				\dynkinTripleEdge*{2}{1}%
+				\ifdynkin@reverse@arrows%
+					\global\dynkin@reverse@arrowsfalse\relax%
+				\else%
+					\global\dynkin@reverse@arrowstrue\relax%
+				\fi%
+				\dynkinTripleEdge*{1}{2}%
+				\ifdynkin@reverse@arrows%
+					\global\dynkin@reverse@arrowsfalse\relax%
+				\else%
+					\global\dynkin@reverse@arrowstrue\relax%
+				\fi%
 			\else%
 				\ClassError%
 					{Dynkin diagrams}%

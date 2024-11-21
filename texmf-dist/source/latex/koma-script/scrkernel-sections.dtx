@@ -1,7 +1,7 @@
 % \iffalse meta-comment
 % ======================================================================
 % scrkernel-sections.dtx
-% Copyright (c) Markus Kohm, 2002-2023
+% Copyright (c) Markus Kohm, 2002-2024
 %
 % This file is part of the LaTeX2e KOMA-Script bundle.
 %
@@ -18,7 +18,7 @@
 %
 % This work consists of all files listed in MANIFEST.md.
 % ======================================================================
-%%% From File: $Id: scrkernel-sections.dtx 4069 2023-06-29 08:55:54Z kohm $
+%%% From File: $Id: scrkernel-sections.dtx 4130 2024-10-24 08:14:37Z kohm $
 % The runs of run-time file generation:
 %<preidentify>%%%            (run: preidentify)
 % - everything that is needed before selfidentification of resulting files
@@ -40,9 +40,9 @@
 \ifx\ProvidesFile\undefined\def\ProvidesFile#1[#2]{}\fi
 \begingroup
   \def\filedate$#1: #2-#3-#4 #5${\gdef\filedate{#2/#3/#4}}
-  \filedate$Date: 2023-06-29 10:55:54 +0200 (Do, 29. Jun 2023) $
+  \filedate$Date: 2024-10-24 10:14:37 +0200 (Do, 24. Okt 2024) $
   \def\filerevision$#1: #2 ${\gdef\filerevision{r#2}}
-  \filerevision$Revision: 4069 $
+  \filerevision$Revision: 4130 $
   \edef\reserved@a{%
     \noexpand\endgroup
     \noexpand\ProvidesFile{scrkernel-sections.dtx}%
@@ -2427,13 +2427,9 @@
       \relax
       \FamilyKeyStateProcessed
     }{%
-%<trace>      \typeout{TRACE: option tocstyle=##1}%
-%<trace>      \typeout{TRACE: command=\scr@dsc@current}%
       \scr@ifundefinedorrelax{scr@dte@def@l@##1}{%
-%<trace>        \typeout{TRACE: style not defined}%
         \FamilyKeyStateUnknownValue
       }{%
-%<trace>        \typeout{TRACE: style defined}%
         \@namedef{scr@dte@\scr@dsc@current @style}{##1}%
         \@namedef{scr@tso@\scr@dsc@current @style}{##1}%
         \FamilyKeyStateProcessed
@@ -2480,13 +2476,10 @@
 % \changes{v3.20}{2015/11/12}{dummy options for main pass removed}
 % Now, we know the style and can activate all the options of the style.
 %    \begin{macrocode}
-%<trace>    \typeout{TRACE: style=\@nameuse{scr@\scr@dsc@current @style}}%
     \@nameuse{scr@dsc@style@\@nameuse{scr@\scr@dsc@current @style}@options}%
 %    \end{macrocode}
 % And initialize the ToC style.
 %    \begin{macrocode}
-%<trace>    \typeout{TRACE: tocstyle=%
-%<trace>      \@nameuse{scr@tso@\scr@dsc@current @style}}%
     \scr@ifundefinedorrelax{scr@tso@\scr@dsc@current @style}{%
       \scr@ifundefinedorrelax{l@\scr@dsc@current}{%
         \@namedef{scr@tso@\scr@dsc@current @style}{default}%
@@ -3304,6 +3297,31 @@
     \@ifpackageloaded{bookmark}{}{%
       \if@scr@autoloadbookmarkpackage
 %    \end{macrocode}
+% \changes{v3.42}{2024/06/04}{load \pkg{bookmark} only if available}
+% Now we test for existing package file \file{bookmark.sty}. If it does not
+% exist, we show a warning an deactivate option \opt{bookmarkpackage}.
+%    \begin{macrocode}
+        \IfFileExists{bookmark.sty}{}{%
+          \ClassWarningNoLine{\KOMAClassName}{%
+            Using `bookmark' together with `hyperref' is
+            recommended,\MessageBreak
+            because of handling of possible bookmark level gaps.\MessageBreak
+            However, the package seems not to be installed and\MessageBreak
+            therefore cannot be loaded automatically.\MessageBreak
+            It is recommended to install package `bookmark'!\MessageBreak
+            However, you can avoid this warning without\MessageBreak
+            installation of package `bookmark', if you'd
+            deactivate\MessageBreak
+            automatically loading of `bookmark' using KOMA-Script\MessageBreak
+            option `bookmarkpackage=false' before
+            \string\begin{document}%
+          }%
+          \@scr@autoloadbookmarkpackagefalse
+          \KOMA@kav@replacevalue{\KOMAClassFileName}{bookmarkpackage}{false}%
+        }%
+      \fi
+      \if@scr@autoloadbookmarkpackage
+%    \end{macrocode}
 % \changes{v3.27}{2019/06/26}{try to translate \pkg{hyperref} driver to
 %   \pkg{bookmark} driver option}
 % The name of the \pkg{hyperref} driver is in \cs{Hy@driver}. But
@@ -3385,18 +3403,22 @@
         }%
 %    \end{macrocode}
 % \changes{v3.26b}{2019/01/17}{workaround for \cs{@beginmainauxhook} added}
-% \changes{v3.38}{2022/10/04}{\pkg{auxhook} not needed with newer \pkg{hyperref}}
+% \changes{v3.38}{2022/10/04}{\pkg{auxhook} not needed with newer
+%   \pkg{hyperref}}
+% \changes{v3.99}{2024/02/10}{no workaround for old \pkg{hyperref}}
 % Sometimes \pkg{auxhook} is not able to recognize that it cannot use a
 % patch of \cs{document} to execute \cs{@beginmainauxhook} if it is loaded via
 % \cs{AtBeginDocument}. In this case we do it here.
 %    \begin{macrocode}
+%<*!v4>
         \@ifpackagelater{hyperref}{2022/09/22}{}{%
           \ifx\@beginmainauxhook\relax
           \else
             \if@filesw
               \ClassWarning{\KOMAClassName}{%
                 seems someone has broken package `auxhook'.\MessageBreak
-                Usually this happens, if `auxhook' is loaded or used\MessageBreak
+                Usually this happens, if `auxhook' is loaded or
+                used\MessageBreak
                 implicitly or explicitly by patching
                 \string\document%
                 \scr@ifundefinedorrelax{AtEndPreamble}{}{%
@@ -3412,6 +3434,7 @@
             \fi
           \fi
         }%  
+%</!v4>
       \fi  
     }%
   }%
@@ -4932,12 +4955,13 @@
   \csname #1mark\expandafter\endcsname\expandafter{\@currentheadentry}%
 %    \end{macrocode}
 % \changes{v2.8g}{2001/07/18}{support for \cs{float@addtolists}}
+% \changes{v3.43}{2024/10/24}{support for \cs{float@addtolists} removed}
 % \changes{v3.28}{2019/11/19}{\cs{iftocfeature} replaced by \cs{Iftocfeature}}
 % Depending on feature \texttt{chapteratlist} we have to add a vertical space
 % to other directories. And for compatibility we also support the deprecated
 % \cs{float@addtolists} but not without warning.
 % \begin{description}
-% \item[ToDo:] Why do we add the gap here but also use \cs{addctontentsline}
+% \item[ToDo:] Why do we add the gap here but also use \cs{addcontentsline}
 %   in \cs{addchaptertocentry}? Is this a bug? Should this be standardized?
 % \end{description}
 %    \begin{macrocode}
@@ -4947,10 +4971,12 @@
         \addtocontents{\@currext}{\protect\addvspace{\@chapterlistsgap}}%
       }{}%
     }%
-    \@ifundefined{float@addtolists}{}{%
-      \scr@float@addtolists@warning
-      \float@addtolists{\protect\addvspace{\@chapterlistsgap}}%
-    }%
+    \expandafter\ifnum \scr@v@is@lt{3.43}\relax
+      \@ifundefined{float@addtolists}{}{%
+        \scr@float@addtolists@warning
+        \float@addtolists{\protect\addvspace{\@chapterlistsgap}}%
+      }%
+    \fi
   \fi
 %    \end{macrocode}
 % \changes{v3.18}{2015/05/22}{\cs{@makechapterhead} replaced by
@@ -5427,6 +5453,7 @@
 % \changes{v3.12}{2013/09/24}{using\cs{addxcontentsline}}
 % \changes{v3.28}{2019/11/19}{\cs{iftocfeature} replaced by
 %   \cs{Iftocfeature}}
+% \changes{v3.43}{2024/10/24}{\cs{float@addtolists} warning removed}
 % We do not use \cs{addcontentsline} directly for the entries to the table of
 % contents. Using
 % \begin{quote}
@@ -5453,7 +5480,6 @@
         \addxcontentsline{\@currext}{chapteratlist}[{#1}]{#2}%
       }{}%
     }%
-    \@ifundefined{float@addtolists}{}{\scr@float@addtolists@warning}%
   \fi
 }
 %    \end{macrocode}

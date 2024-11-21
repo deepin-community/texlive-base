@@ -32,9 +32,6 @@
 -- and covered by LPPL is defined by the unpacking scripts (with
 -- extension |.ins|) which are part of the distribution.
 --
-
-Babel = Babel or {}
-
 Babel.cjk_characters = {
   [0x0021]={c='ex'},
   [0x0022]={c='qu'},
@@ -196,14 +193,39 @@ Babel.cjk_characters = {
   [0x301D]={c='op'},
   [0x301E]={c='cl'},
   [0x301F]={c='cl'},
+  [0x3043]={c='cj'},
+  [0x3045]={c='cj'},
+  [0x3047]={c='cj'},
+  [0x3049]={c='cj'},
+  [0x3063]={c='cj'},
+  [0x3083]={c='cj'},
+  [0x3085]={c='cj'},
+  [0x3087]={c='cj'},
+  [0x308E]={c='cj'},
+  [0x3095]={c='cj'},
+  [0x3096]={c='cj'},
   [0x303B]={c='ns'},
   [0x303C]={c='ns'},
+  [0x3041]={c='cj'},
   [0x309B]={c='ns'},
   [0x309C]={c='ns'},
   [0x309D]={c='ns'},
   [0x309E]={c='ns'},
   [0x30A0]={c='ns'},
+  [0x30A1]={c='cj'},
+  [0x30A3]={c='cj'},
+  [0x30A5]={c='cj'},
+  [0x30A7]={c='cj'},
+  [0x30A9]={c='cj'},
+  [0x30C3]={c='cj'},
+  [0x30E3]={c='cj'},
+  [0x30E5]={c='cj'},
+  [0x30E7]={c='cj'},
+  [0x30EE]={c='cj'},
+  [0x30F5]={c='cj'},
+  [0x30F6]={c='cj'},
   [0x30FB]={c='ns'},
+  [0x30FC]={c='cj'},
   [0x30FD]={c='ns'},
   [0x30FE]={c='ns'},
   [0xA015]={c='ns'},
@@ -273,25 +295,33 @@ Babel.cjk_characters = {
   [0xFF61]={c='cl', w='h'},
   [0xFF62]={c='op', w='h'},
   [0xFF63]={c='cl', w='h'},
-  [0xFF64]={c='cl', w='h'}
+  [0xFF64]={c='cl', w='h'},
+  [0xFF70]={c='cj'}
 }
 
 Babel.cjk_class = setmetatable ( Babel.cjk_characters, {
   __index = function(_, k)
     if (k >= 0xAC00  and k <= 0xD7A3)      -- H2/H3
-        or (k >= 0x2E80  and k <= 0x9FFF)
+        or (k >= 0x2E80  and k <= 0x31E9)  -- Skip small
+        or (k >= 0x3200  and k <= 0x9FFF)
         or (k >= 0xA000  and k <= 0xA48F)  -- Yi
         or (k >= 0xA490  and k <= 0xA4CF)  -- Yi
         or (k >= 0xF900  and k <= 0xFAFF)
         or (k >= 0xFE10  and k <= 0xFE1F)
         or (k >= 0xFE30  and k <= 0xFE6F)
-        or (k >= 0xFF00  and k <= 0xFFEF)
+        or (k >= 0xFF00  and k <= 0xFF66)  -- Skip small
+        or (k >= 0xFF70  and k <= 0xFFEF)
         or (k >= 0x1F000 and k <= 0x1FFFD)
         or (k >= 0x20000 and k <= 0x2FFFD)
         or (k >= 0x30000 and k <= 0x3FFFD) then
       return {c='I'}
     elseif (k >= 0x20A0  and k <= 0x20CF) then
       return {c='pr'}
+    elseif (k >= 0x31F0  and k <= 0x31FF)
+        or (k >= 0xFF67  and k <= 0xFF6F)
+        or (k >= 0x1B150 and k <= 0x1B152)
+        or (k >= 0x1B164 and k <= 0x1B167) then
+      return {c='cj'}
     else
       return {c='O'}
     end

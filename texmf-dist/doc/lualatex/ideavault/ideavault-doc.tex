@@ -1,0 +1,198 @@
+\documentclass[11pt]{article}
+\usepackage{ideavault}
+\author{Tomasz M. Czarkowski}
+\title{Idea Vault}
+
+\begin{document}
+\maketitle
+
+\section{Why}
+\par Assume, You are writing something large. For example, like me, a TT RPG system.
+\par Often You will find Yourself wanting to declare some concept (idea, if You indulge me) and later print it all over the place, without needing to copy and paste \textbf{it}
+\par For really complicated projects, You may want to classify some ideas using tags, or make them depend on each other.
+\par This is what the Idea Vault is used for.
+
+\section{Dependencies}
+\par Lua\LaTeX --- this is Lua\LaTeX package and will not work without Lua.
+\par Additionally, Idea Vault requires some packages (most of them for styling the printed idea).
+\begin{itemize}
+\item \texttt{bookmark}
+\item \texttt{xargs}
+\item \texttt{luacode}
+\item \texttt{xpatch}
+\item \texttt{mdframed}
+\item \texttt{needspace}
+\end{itemize}
+
+\section{Usage}
+\par For idea creation there is \texttt{\textbackslash{}createIdea}, while for printing them there are a few more:
+\begin{itemize}
+\item \texttt{\textbackslash{}printIdea} -- prints one idea
+\item \texttt{\textbackslash{}printAllWithPrefix} -- prints all ideas in given prefix
+\item \texttt{\textbackslash{}printAllWithTag} -- prints all ideas in given prefix that have given tag
+\end{itemize}
+
+\subsection{\textbackslash{}createIdea}
+\begin{verbatim}
+\createIdea[prefix]{name}{content}[dependencies][tags][weight]
+\end{verbatim}
+\begin{itemize}
+\item \texttt{prefix}: prefix to locate the idea in. By default, equals to \texttt{default}.
+\item \texttt{name}: name of the idea. If such name exists in prefix, it will be overwritten
+\item \texttt{content}: valid LaTeX code for the content of idea. It will be evaluated at invocation time.
+\item \texttt{dependencies}: each dependency is Lua pair of strings, multiple dependencies are separated with comma.
+\item \texttt{tags}: each tag is Lua string, multiple tags are separated with comma.
+\item \texttt{weight}: a number used for sorting ideas when multiple are printed at the same time. By default, equal to \texttt{-1}.
+\end{itemize}
+\par Note: due to how \texttt{xkeyval} treats \{\}, for ideas with exactly one dependency, You need to add one space after the dependency, while for multi dependency there is no need.
+\par Example:
+\begin{verbatim}
+\createIdea[somePrefix]{Not So Great Idea}{
+\par Boring content
+}[]["tag2"][1]
+
+\createIdea[somePrefix]{Great Idea}{
+ \par Long content
+ \par Very Interesting
+}[{"somePrefix", "Not So Great Idea"} ]["tag1"][13]
+\end{verbatim}
+
+\subsection{\textbackslash{}printIdea}
+\begin{verbatim}
+\printIdea[prefix][style]{name}
+\end{verbatim}
+
+\begin{itemize}
+\item \texttt{prefix}: prefix to locate the idea in. By default, equals to \texttt{default}.
+\item \texttt{style}: style for printing the idea. For options, see later.
+\item \texttt{name}: name of the idea.
+\end{itemize}
+
+\par Example:
+\begin{verbatim}
+\printIdea[somePrefix][lcbf]{Great Idea}
+\end{verbatim}
+
+\subsection{\textbackslash{}printAllWithPrefix}
+\begin{verbatim}
+\printIdea[prefix][style]
+\end{verbatim}
+
+\begin{itemize}
+\item \texttt{prefix}: prefix to print.
+\item \texttt{style}: style for printing the idea. For options, see later.
+\end{itemize}
+
+\par Example:
+\begin{verbatim}
+\printAllWithPrefix[somePrefix][lcbf]
+\end{verbatim}
+
+\subsection{\textbackslash{}printAllWithTag}
+\begin{verbatim}
+\printIdea[prefix][style]{tag}
+\end{verbatim}
+
+\begin{itemize}
+\item \texttt{prefix}: prefix to locate the ideas in.
+\item \texttt{style}: style for printing the idea. For options, see later.
+\item \texttt{tag}: tag to print
+\end{itemize}
+
+\par Example:
+\begin{verbatim}
+\printAllWithTag[somePrefix][lcbf]{tag1}
+\end{verbatim}
+
+\section{Style}
+\par Printing style is decided by one letter flags.
+\begin{itemize}
+\item \texttt{f}: Frame whole idea
+\item \texttt{c}: Center whole idea
+\item \texttt{b}: Create bookmark leading to the idea
+\item \texttt{l}: Use Large font for the name
+\item \texttt{L}: Use LARGE font for the name
+\item \texttt{h}: Use huge font for the name
+\item \texttt{H}: Use Huge font for the name
+\item \texttt{s}: Reserve some space using needspace to avoid awkward pagebreaks
+\item \texttt{e}: emph the name
+\item \texttt{q}: Do not print the name
+\item \texttt{p}: New page before printing the idea (useful when doing serial printing, for example via \texttt{printAllWithTag})
+\item \texttt{P}: New page after printing the idea (useful when doing serial printing, for example via \texttt{printAllWithTag})
+\end{itemize}
+
+\section{Debugging}
+\par By default, this package avoids spamming too much to stdout, but sometimes it would be useful to see what idea creation/printing is triggering some problems.
+\subsection{\textbackslash{}debugEnable}
+\begin{verbatim}
+\debugEnable
+\end{verbatim}
+\par Enables debug output --- remember, it may be quite overwhelming if there are a lot of ideas.
+\subsection{\textbackslash{}debugDisable}
+\begin{verbatim}
+\debugDisable
+\end{verbatim}
+\par Disables debug output. Debug output is disabled by default, so it's only use is to revert the effect of enabling it.
+
+\section{Example}
+\par This is short example of code, and it's result. Extended example can be found in file \texttt{example.tex}.
+\subsection{Code}
+\begin{verbatim}
+\createIdea[somePrefix]{Not So Great Idea}{
+\par Boring content
+}[]["tag2"][1]
+
+\createIdea[somePrefix]{Great Idea}{
+\par Long content
+\par Very Interesting
+}[{"somePrefix", "Not So Great Idea"} ]["tag1"][13]
+
+\createIdea[somePrefix2]{Third Idea}{
+\par Third try is even longer
+\par But not very
+\par Only 3 lines
+}[{"somePrefix", "Not So Great Idea"}, {"somePrefix", "Great Idea"}][][21]
+
+\par Here is a Great Idea:
+\printIdea[somePrefix][lcf]{Great Idea}
+\vspace{1em}
+\par Here are all ideas in prefix \texttt{somePrefix}:
+\printAllWithPrefix[somePrefix][lcf]
+\vspace{1em}
+\par Here are all ideas in prefix \texttt{somePrefix} with tag \texttt{tag1}:
+\printAllWithTag[somePrefix][lcf]{tag1}
+\vspace{1em}
+\par And here is Third Idea, presenting nested dependencies:
+\printIdea[somePrefix2][lcf]{Third Idea}
+
+\end{verbatim}
+\subsection{Result}
+
+\createIdea[somePrefix]{Not So Great Idea}{
+\par Boring content
+}[]["tag2"][1]
+
+\createIdea[somePrefix]{Great Idea}{
+\par Long content
+\par Very Interesting
+}[{"somePrefix", "Not So Great Idea"} ]["tag1"][13]
+
+\createIdea[somePrefix2]{Third Idea}{
+\par Third try is even longer
+\par But not very
+\par Only 3 lines
+}[{"somePrefix", "Not So Great Idea"}, {"somePrefix", "Great Idea"}][][21]
+
+\par Here is a Great Idea:
+\printIdea[somePrefix][lcf]{Great Idea}
+\vspace{1em}
+\par Here are all ideas in prefix \texttt{somePrefix}:
+\printAllWithPrefix[somePrefix][lcf]
+\vspace{1em}
+\par Here are all ideas in prefix \texttt{somePrefix} with tag \texttt{tag1}:
+\printAllWithTag[somePrefix][lcf]{tag1}
+\vspace{1em}
+\par And here is Third Idea, presenting nested dependencies:
+\printIdea[somePrefix2][lcf]{Third Idea}
+
+\end{document}

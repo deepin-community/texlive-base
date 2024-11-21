@@ -73,30 +73,32 @@
 %% find a complete unmodified copy of LaTeX2e at
 %% <http://mirror.ctan.org/tex-archive/macros/latex/base/>.
 %% 
-%%% From File: $Id: scrkernel-version.dtx 4070 2023-07-07 07:08:40Z kohm $
-\begingroup
-  \catcode`\@11\relax
-  \ifx\KOMAScriptVersion\undefined
-    \newcommand*{\@CheckKOMAScriptVersion}[1]{%
+%%% From File: $Id: scrkernel-version.dtx 4133 2024-10-24 09:54:28Z kohm $
+\providecommand*{\@CheckKOMAScriptVersion}{%
+  \begingroup
+    \ExplSyntaxOff
+    \@@CheckKOMAScriptVersion
+}
+\providecommand*{\@@CheckKOMAScriptVersion}[1]{%
+    \@ifundefined{KOMAScriptVersion}{%
       \gdef\KOMAScriptVersion{#1}%
-    }%
-  \else
-    \newcommand*{\@CheckKOMAScriptVersion}[1]{%
+    }{%
       \def\@tempa{#1}%
       \ifx\KOMAScriptVersion\@tempa\else
-        \@latex@warning@no@line{%
-          \noexpand\KOMAScriptVersion\space is
-          `\KOMAScriptVersion',\MessageBreak
+        \GenericWarning{\space\@spaces\@spaces\@spaces\@spaces}{%
+          Version warning:
+          \noexpand\KOMAScriptVersion is
+          `\csname KOMAScriptVersion\endcsname',\MessageBreak
           but `#1' was expected!\MessageBreak
           You should not use classes, packages or files
           from\MessageBreak
-          different KOMA-Script versions%
+          different KOMA-Script versions\@gobble
         }%
       \fi
-    }
-  \fi
-  \@CheckKOMAScriptVersion{2023/07/07 v3.41 KOMA-Script}%
-\endgroup
+    }%
+  \endgroup
+}
+\@CheckKOMAScriptVersion{2024/10/24 v3.43 KOMA-Script}%
 \providecommand*{\scr@clsextension}{\@clsextension}
 \AtBeginDocument{%
   \let\scr@clsextension\@clsextension
@@ -108,13 +110,13 @@
   letter%
 }
 \ProvidesClass{\KOMAClassName}[%
-  2023/07/07 v3.41 KOMA-Script
+  2024/10/24 v3.43 KOMA-Script
   document class (\ClassName)%
 ]
-%%% From File: $Id: scrkernel-basics.dtx 4051 2023-04-26 16:01:28Z kohm $
+%%% From File: $Id: scrkernel-basics.dtx 4074 2023-07-14 15:56:59Z kohm $
 %%%            (run: load)
 \RequirePackage{scrkbase}[\KOMAScriptVersion]
-%%% From File: $Id: scrkernel-compatibility.dtx 4054 2023-05-10 14:35:36Z kohm $
+%%% From File: $Id: scrkernel-compatibility.dtx 4133 2024-10-24 09:54:28Z kohm $
 %%%            (run: init)
 \newcommand*
   {\scr@compatibility}{\scr@v@last}
@@ -203,10 +205,12 @@
 \@namedef{scr@v@3.39}{20}
 \@namedef{scr@v@3.40}{20}
 \@namedef{scr@v@3.41}{21}
-\@namedef{scr@v@last}{21}
-%%% From File: $Id: scrkernel-typearea.dtx 4032 2023-04-17 09:45:11Z kohm $
+\@namedef{scr@v@3.42}{21}
+\@namedef{scr@v@3.43}{3430}
+\@namedef{scr@v@last}{3430}
+%%% From File: $Id: scrkernel-typearea.dtx 4100 2024-02-01 09:40:30Z kohm $
 %%%            (run: init)
-%%% From File: $Id: scrkernel-compatibility.dtx 4054 2023-05-10 14:35:36Z kohm $
+%%% From File: $Id: scrkernel-compatibility.dtx 4133 2024-10-24 09:54:28Z kohm $
 %%%            (run: option)
 \KOMA@key{version}[last]{%
   \scr@ifundefinedorrelax{scr@v@#1}{%
@@ -238,7 +242,7 @@
         old KOMA-Script release. However, in that case you\MessageBreak
         could also need old releases of other packages and\MessageBreak
         even of the LaTeX kernel.\MessageBreak
-        You should also note, that the KOMA-Script developers\MessageBreak
+        Please also note, that the KOMA-Script developers\MessageBreak
         refuse support for documents using `version=#1'.\MessageBreak
         We recommend to eliminate all deprecated options\MessageBreak
         and commands. We also recommend to not use option\MessageBreak
@@ -275,7 +279,7 @@
 \newcommand*{\scr@v@is@eq}[1]{%
   \scr@compatibility=\@nameuse{scr@v@#1}
 }
-%%% From File: $Id: scrkernel-miscellaneous.dtx 4032 2023-04-17 09:45:11Z kohm $
+%%% From File: $Id: scrkernel-miscellaneous.dtx 4094 2023-12-05 16:17:40Z kohm $
 %%%            (run: option)
 \KOMA@key{draft}[true]{%
   \KOMA@set@ifkey{draft}{@tempswa}{#1}%
@@ -350,7 +354,7 @@
 }
 \AtEndOfClass
   {\LoadLetterOption{DIN}}
-%%% From File: $Id: scrkernel-language.dtx 4032 2023-04-17 09:45:11Z kohm $
+%%% From File: $Id: scrkernel-language.dtx 4107 2024-04-10 17:24:53Z kohm $
 %%%            (run: option)
 \newif\if@orgdate\@orgdatetrue
 \KOMA@key{numericaldate}[true]{%
@@ -523,11 +527,11 @@
                            {sfdefaults}{\if@sfdefaults true\else false\fi}%
   \fi
 }
-%%% From File: $Id: scrkernel-variables.dtx 4032 2023-04-17 09:45:11Z kohm $
+%%% From File: $Id: scrkernel-variables.dtx 4129 2024-10-23 19:02:04Z texhackse $
 %%%            (run: option)
 %%% From File: $Id: scrkernel-pseudolengths.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: option)
-%%% From File: $Id: scrkernel-typearea.dtx 4032 2023-04-17 09:45:11Z kohm $
+%%% From File: $Id: scrkernel-typearea.dtx 4100 2024-02-01 09:40:30Z kohm $
 %%%            (run: options)
 \KOMA@key{twoside}[true]{%
   \if@atdocument\else\PassOptionsToPackage{twoside=#1}{typearea}\fi%
@@ -1004,7 +1008,7 @@
   \relax}
 %%% From File: $Id: scrkernel-listsandtabulars.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: option)
-%%% From File: $Id: scrkernel-notepaper.dtx 4032 2023-04-17 09:45:11Z kohm $
+%%% From File: $Id: scrkernel-notepaper.dtx 4113 2024-06-07 08:20:20Z kohm $
 %%%            (run: option)
 \KOMA@ifkey{firsthead}{@firsthead}
 \KOMAExecuteOptions{firsthead=true}
@@ -1132,6 +1136,7 @@
   \begingroup
     \KOMA@set@ncmdkey{locfield}{@tempa}{{wide}{0},{narrow}{1}}{#1}%
     \ifx\FamilyKeyState\FamilyKeyStateProcessed
+      \aftergroup\FamilyKeyStateProcessed
       \ifcase\@tempa
         \endgroup
         \@bigloctrue
@@ -1500,7 +1505,7 @@
         \def\scr@symbol@fax{\FAX}%
         \def\scr@symbol@email{\Email}%
         \def\scr@symbol@mobilephone{\Mobilefone}%
-        \def\scr@symbol@www{\@empty}%
+        \let\scr@symbol@www\@empty
       }{%
         \def\scr@symbol@phone{\faPhone}%
         \def\scr@symbol@fax{\faFax}%
@@ -1562,13 +1567,13 @@
 \newcommand*{\scr@symbol@www}{\undefined}
 %%% From File: $Id: scrkernel-addressfiles.dtx 4032 2023-04-17 09:45:11Z kohm $
 %%%            (run: option)
-%%% From File: $Id: scrkernel-miscellaneous.dtx 4032 2023-04-17 09:45:11Z kohm $
+%%% From File: $Id: scrkernel-miscellaneous.dtx 4094 2023-12-05 16:17:40Z kohm $
 %%%            (run: execoption)
 \KOMAExecuteOptions{%
   parskip=false,%
 }
 \KOMAProcessOptions\relax
-%%% From File: $Id: scrkernel-compatibility.dtx 4054 2023-05-10 14:35:36Z kohm $
+%%% From File: $Id: scrkernel-compatibility.dtx 4133 2024-10-24 09:54:28Z kohm $
 %%%            (run: body)
 \AtBeginDocument{%
   \begingroup
@@ -2129,7 +2134,7 @@
   \@nomath\sfb}
 \DeclareRobustCommand*{\cal}{\@fontswitch\relax\mathcal}
 \DeclareRobustCommand*{\mit}{\@fontswitch\relax\mathnormal}
-%%% From File: $Id: scrkernel-miscellaneous.dtx 4032 2023-04-17 09:45:11Z kohm $
+%%% From File: $Id: scrkernel-miscellaneous.dtx 4094 2023-12-05 16:17:40Z kohm $
 %%%            (run: body)
 \setlength{\skip\@mpfootins}{\skip\footins}
 \setlength\fboxsep{3\p@}
@@ -2165,9 +2170,9 @@
   \endgroup
   \edef\is@thispageodd@setlabel{%
     \if@filesw
-      \unexpanded{\protected@write\@auxout{\let\arabic\relax}}{%
+      \unexpanded{\protected@write\@auxout{\let\number\relax}}{%
         \noexpand\string
-        \noexpand\new@tpo@label{\scr@tpo}{\noexpand\arabic{page}}}%
+        \noexpand\new@tpo@label{\scr@tpo}{\noexpand\number\c@page}}%
     \fi
     \noexpand\def\noexpand\is@thispageodd@setlabel
     {\unexpanded\expandafter{\is@thispageodd@setlabel}}%
@@ -2222,7 +2227,7 @@
     \reserved@a
     \ifin@\expandafter\@gobble\else\expandafter\@firstofone\fi
   }{%
-    \BeforePackage{#1}{%
+    \expandafter\providecommand\csname scr@class@#1@warning\endcsname{%
       \ClassWarning{\KOMAClassName}{%
         Usage of package `#1' together\MessageBreak
         with a KOMA-Script class is not recommended.\MessageBreak
@@ -2232,6 +2237,9 @@
         Nevertheless, using requested\MessageBreak
         package `#1'%
       }%
+    }%
+    \BeforePackage{#1}{%
+      \csname scr@class@#1@warning\endcsname
     }%
   }%
 }%
@@ -2428,7 +2436,7 @@
 \newcommand*{\LetterOptionNeedsPapersize}[2]{%
   \edef\LOPNP@size{#2}\edef\LOPNP@option{#1}%
 }
-%%% From File: $Id: scrkernel-language.dtx 4032 2023-04-17 09:45:11Z kohm $
+%%% From File: $Id: scrkernel-language.dtx 4107 2024-04-10 17:24:53Z kohm $
 %%%            (run: body)
 \newcommand*{\g@addnumerical@date}[2]{%
   \@ifundefined{date#1}{%
@@ -2439,12 +2447,31 @@
     }%
   }{%
     \expandafter\g@addto@macro\csname date#1\endcsname{%
-      \let\sym@date=\today%
       \def\num@date{#2}%
-      \def\today{\if@orgdate\sym@date\else\num@date\fi}%
+      \ifx\today\sym@num@date
+        \@ifundefined{DTMtoday}{%
+          \ClassWarning{scrlttr2}
+          {%
+            no original date found for language `#1'\MessageBreak
+            --> using numerical date%
+          }%
+          \let\sym@date\num@date
+        }{%
+          \begingroup
+            \gdef\scr@global@tempa{\let\sym@date\DTMtoday}%
+            \def\today{\gdef\scr@global@tempa{\let\sym@date\num@date}}%
+            \sbox\@tempboxa{\sym@date}%
+          \endgroup
+          \scr@global@tempa
+        }%
+      \else
+        \DeclareCommandCopy{\sym@date}{\today}%
+        \let\today=\sym@num@date
+      \fi
     }%
   }%
 }
+\newcommand*{\sym@num@date}{\if@orgdate\sym@date\else\num@date\fi}
 \AtBeginDocument{%
   \@ifundefined{captionsenglish}{\let\captionsenglish\@empty}{}%
   \@ifundefined{dateenglish}{\def\dateenglish{%
@@ -2999,26 +3026,20 @@
     \fi
   \fi
 }
-%%% From File: $Id: scrkernel-variables.dtx 4032 2023-04-17 09:45:11Z kohm $
+%%% From File: $Id: scrkernel-variables.dtx 4129 2024-10-23 19:02:04Z texhackse $
 %%%            (run: body)
-\newcommand*{\newkomavar}{%
-  \kernel@ifstar {\@tempswatrue\@newkomavar}{\@tempswafalse\@newkomavar}}
-\newcommand*{\@newkomavar}[2][\relax]{%
-  \@ifundefined{scr@#2@name}{%
-    \@ifundefined{scr@#2@var}{%
-      \begingroup
-        \def\@tempa{#1}\def\@tempb{\relax}%
-        \ifx\@tempa\@tempb\endgroup\else
-        \endgroup\@namedef{scr@#2@name}{#1}%
-      \fi%
-      \expandafter\let\csname scr@#2@var\endcsname=\@empty
-      \if@tempswa\addtoreffields{#2}\fi
+\NewDocumentCommand{\newkomavar}{som}{%
+  \@ifundefined{scr@#3@name}{%
+    \@ifundefined{scr@#3@var}{%
+      \IfValueT{#2}{\@namedef{scr@#3@name}{#2}}%
+      \@namedef{scr@#3@var}{}%
+      \IfBooleanT{#1}{\addtoreffields{#3}}%
     }{%
       \ClassError{scrlttr2}
       {%
         This should never happen%
       }{%
-        The contents of the KOMA-Script variable `#2'\MessageBreak
+        The description of the KOMA-Script variable `#3'\MessageBreak
         is undefined, but the name of the variable is
         defined.\MessageBreak
         This should never happen. So someone crashs me!%
@@ -3027,38 +3048,19 @@
   }{%
     \ClassError{scrlttr2}
     {%
-      Variable `#2' already defined%
+      Variable `#3' already defined%
     }{%
       I'll ignore this command, if you'll continue.%
     }%
   }%
 }
-\newcommand*{\setkomavar}{%
-  \kernel@ifstar {\@setkomaname}{\@setkomavar}}
-\newcommand*{\@setkomavar}[1]{%
-  \kernel@ifnextchar [%]
-  {\@@setkomavar{#1}}{\@@setkomavar{#1}[\relax]}}
-\newcommand*{\@setkomaname}[2]{%
-  \@ifundefined{scr@#1@var}{%
-    \@komavar@err{set}{#1}%
+\NewDocumentCommand{\setkomavar}{smo+m}{%
+  \Ifkomavar{#2}{%
+    \IfValueT{#3}{\@namedef{scr@#2@name}{#3}}%
+    \@namedef{scr@#2@\IfBooleanTF{#1}{name}{var}}{#4}%
+    \csname scr@#2@postset\IfBooleanTF{#1}{name}{var}\endcsname
   }{%
-    \@namedef{scr@#1@name}{#2}%
-    \csname scr@#1@postsetname\endcsname
-  }%
-}
-\newcommand*{\@@setkomavar}{}
-\long\def\@@setkomavar#1[#2]#3{%
-  \@ifundefined{scr@#1@var}{%
-    \@komavar@err{set}{#1}%
-  }{%
-    \@namedef{scr@#1@var}{#3}%
-    \csname scr@#1@postsetvar\endcsname
-    \begingroup
-      \def\@tempa{#2}\def\@tempb{\relax}%
-      \ifx\@tempa\@tempb\endgroup\else
-      \endgroup\@namedef{scr@#1@name}{#2}%
-      \csname scr@#1@postsetname\endcsname
-    \fi
+    \@koma@var@err{set}{#2}%
   }%
 }
 \newcommand*{\@komavar@err}[2]{%
@@ -3073,20 +3075,15 @@
     you do this.%
   }%
 }
-\DeclareRobustCommand*{\usekomavar}{%
-  \kernel@ifstar {\@usekomaname}{\@usekomavar}}
-\newcommand*{\@usekomavar}[2][\@firstofone]{%
-  \@ifundefined{scr@#2@var}{%
-    \@komavar@err{use}{#2}%
+\NewDocumentCommand{\usekomavar}{sO{\@firstofone}m}{%
+  \Ifkomavar{#3}{%
+    \IfBooleanTF{#1}{%
+      #2{\@nameuse{scr@#3@name}}%
+    }{%
+      #2{\@nameuse{scr@#3@var}}%
+    }%
   }{%
-    #1{\@nameuse{scr@#2@var}}%
-  }%
-}
-\newcommand*{\@usekomaname}[2][\@firstofone]{%
-  \@ifundefined{scr@#2@var}{%
-    \@komavar@err{use}{#2}%
-  }{%
-    #1{\@nameuse{scr@#2@name}}%
+    \@koma@var@err{use}{#3}%
   }%
 }
 \newcommand*{\ifkomavar}{%
@@ -3114,35 +3111,41 @@
   }%
   \Ifkomavarempty
 }
-\DeclareRobustCommand*{\Ifkomavarempty}{%
-  \begingroup
-  \kernel@ifstar {\@tempswatrue\@ifkomavarempty}%
-                 {\@tempswafalse\@ifkomavarempty}%
-}
-\newcommand{\@ifkomavarempty}[1]{%
-    \Ifkomavar{#1}{%
-      \if@tempswa
-        \@ifundefined{scr@#1@name}{%
-          \aftergroup\@firstoftwo
-        }{%
-          \expandafter\ifx\csname scr@#1@name\endcsname\@empty
-            \aftergroup\@firstoftwo
-          \else
-            \aftergroup\@secondoftwo
-          \fi
-        }%
-      \else
-        \expandafter\ifx\csname scr@#1@var\endcsname\@empty
-          \aftergroup\@firstoftwo
+\NewDocumentCommand{\Ifkomavarempty}{sm}{%
+  \Ifkomavar{#2}{%
+    \IfBooleanTF{#1}{%
+      \@ifundefined{scr@#2@name}\@firstoftwo{%
+        \expandafter\ifx\csname scr@#2@name\endcsname\@empty
+          \expandafter\@firstoftwo
         \else
-          \aftergroup\@secondoftwo
+          \expandafter\@secondoftwo
         \fi
-      \fi
+      }%
     }{%
-      \@komavar@err{use}{#1}%
-      \aftergroup\@gobbletwo
+      \expandafter\ifx\csname scr@#2@var\endcsname\@empty
+        \expandafter\@firstoftwo
+      \else
+        \expandafter\@secondoftwo
+      \fi
+    }
+  }{%
+    \@komavar@err{use}{#2}%
+    \@gobbletwo
+  }%
+}
+\NewDocumentCommand{\Ifkomavarxempty}{sm}{%
+  \Ifkomavar{#2}{%
+    \IfBooleanTF{#1}{%
+      \@ifundefined{scr@#2@name}\@firstoftwo{%
+        \Ifstr{\@nameuse{scr@#2@name}}{}%
+      }%
+    }{%
+      \Ifstr{\@nameuse{scr@#2@var}}{}%
     }%
-  \endgroup
+  }{%
+    \@komavar@err{use}{#2}%
+    \@gobbletwo
+  }%
 }
 \newcommand*{\foreachkomavar}[2]{%
   \@for \reserved@a:=#1\do{%
@@ -3303,7 +3306,7 @@
     Internal macro `\string\@addtoplength' is deprecated.\MessageBreak
     Please use `\string\addtoplength' instead}%
   \addtoplength}
-%%% From File: $Id: scrkernel-typearea.dtx 4032 2023-04-17 09:45:11Z kohm $
+%%% From File: $Id: scrkernel-typearea.dtx 4100 2024-02-01 09:40:30Z kohm $
 %%%            (run: body)
 \let\@BCOR                =\relax
 \let\@@BCOR               =\relax
@@ -3906,7 +3909,7 @@
 \setlength\arrayrulewidth{.4\p@}
 \setlength\doublerulesep{2\p@}
 \setlength\tabbingsep{\labelsep}
-%%% From File: $Id: scrkernel-notepaper.dtx 4032 2023-04-17 09:45:11Z kohm $
+%%% From File: $Id: scrkernel-notepaper.dtx 4113 2024-06-07 08:20:20Z kohm $
 %%%            (run: body)
 
 \newkomavar{firsthead}
@@ -4260,7 +4263,6 @@
 }
 \newcommand*{\@foldmarks}{%
   \if@fold%
-    \typeout{Foldmarks: yes}%
     \move@topt
     \ifdim \useplength{pfoldmarklength}=\z@
       \setplength{pfoldmarklength}{4mm}%
@@ -4288,8 +4290,6 @@
     \@hfoldmark{B}%
     \@vfoldmark{L}%
     \move@frompt
-  \else
-    \typeout{Foldmarks: no}%
   \fi%
 }
 \newif\if@savevbox@warning\@savevbox@warningtrue
@@ -4316,7 +4316,6 @@
 }
 \newcommand*{\@firstheadfootfield}{%
   \if@firsthead
-    \typeout{Head of first page}%
     \move@topt\vskip\useplength{firstheadvpos}%
     \vb@t@z{%
       \rlap{\move@topl
@@ -4352,11 +4351,9 @@
     }%
     \vskip-\useplength{firstheadvpos}\move@frompt
   \else
-    \typeout{No head at first page}%
   \fi
   \move@topt
   \if@firstfoot
-    \typeout{Foot of first page}%
     \vb@t@z{%
       \rlap{\move@topl
          \ifdim\useplength{firstfoothpos}<\paperwidth
@@ -4386,8 +4383,6 @@
         }%
       }%
     }%
-  \else
-    \typeout{No foot at first page}%
   \fi
   \move@frompt%
   {%
@@ -4407,7 +4402,6 @@
 }
 \newcommand*{\@addrfield}{%
   \ifcase \ifnum\@afieldmode=5 \@ne\else\@afieldmode\fi\relax
-    \typeout{Address: No}%
   \or
     \begingroup%
       \if@baddr
@@ -4428,7 +4422,6 @@
       \or
         \edef\@tempa{\@tempa\@tempb A-Priority}\def\@tempb{,\space}%
       \fi
-      \typeout{Address (\@tempa\@tempb addressee)}%
     \endgroup%
     \move@topt\vskip\useplength{toaddrvpos}%
     \vb@t@z{{\setparsizes{\z@}{\z@}{\z@ plus 1fil}\par@updaterelative
@@ -4515,7 +4508,6 @@
       \or
         \edef\@tempa{\@tempa\@tempb A-Priority}\def\@tempb{,\space}%
       \fi
-      \typeout{Address (\@tempa\@tempb addressee)}%
     \endgroup%
     \move@topt\vskip\useplength{toaddrvpos}%
     \vb@t@z{{%
@@ -4669,9 +4661,7 @@
     \Ifkomavarempty{location}{\setkomavar{location}{\null}}{}%
   \fi
   \Ifkomavarempty{location}{%
-    \typeout{Location field: empty}%
   }{%
-    \typeout{Location field: yes}%
     \ifdim \useplength{lochpos}=\z@%
       \setplength{lochpos}{\useplength{toaddrhpos}}%
     \fi
@@ -4913,9 +4903,7 @@
 }
 \newcommand*{\@makelettertitle}{%
   \Ifkomavarempty{title}{%
-    \typeout{Title: no}%
   }{%
-    \typeout{Title: yes}%
     {\setparsizes{\z@}{\z@}{\z@ plus 1fil}\par@updaterelative
       \centering\LARGE\usekomafont{lettertitle}\usekomavar{title}\par}%
     \vskip\baselineskip%
@@ -4924,19 +4912,15 @@
 \newcommand*{\@subjfield}{{%
     \setparsizes{\z@}{\z@}{\z@ plus 1fil}\par@updaterelative
     \Ifkomavarempty{subject}{%
-      \typeout{Subject: no}%
     }{%
       \ifx\raggedsubject\@empty
         \ifdim\useplength{subjectvpos}=\z@
           \if@subjafter%
-            \typeout{Subject: after opening}%
             \let\raggedsubject\centering%
           \else
-            \typeout{Subject: before opening}%
             \def\raggedsubject{\noindent\@hangfrom}%
           \fi
         \else
-          \typeout{Subject: at absolute vertical position}%
           \def\raggedsubject{\noindent\@hangfrom}%
         \fi
       \fi
@@ -5208,17 +5192,25 @@
 \newkomavar{backaddressseparator}
 \setkomavar{backaddressseparator}{,\nobreakspace}
 \newkomavar[\if@scrsymbols\scr@symbol@phone\else\phonename\fi]{phoneseparator}
-\setkomavar{phoneseparator}{\if@scrsymbols\else:\fi\nobreakspace}
+\setkomavar{phoneseparator}{%
+  \Ifkomavarxempty*{phoneseparator}{}{\if@scrsymbols\else:\fi\nobreakspace}%
+}
 \newkomavar[%
   \if@scrsymbols\scr@symbol@mobilephone\else\mobilephonename\fi
 ]{mobilephoneseparator}
 \setkomavar{mobilephoneseparator}{\usekomavar{phoneseparator}}
 \newkomavar[\if@scrsymbols\scr@symbol@fax\else\faxname\fi]{faxseparator}
-\setkomavar{faxseparator}{\if@scrsymbols\else:\fi\nobreakspace}
+\setkomavar{faxseparator}{%
+  \Ifkomavarxempty*{faxseparator}{}{\if@scrsymbols\else:\fi\nobreakspace}%
+}
 \newkomavar[\if@scrsymbols\scr@symbol@email\else\emailname\fi]{emailseparator}
-\setkomavar{emailseparator}{\if@scrsymbols\else:\fi\nobreakspace}
+\setkomavar{emailseparator}{%
+  \Ifkomavarxempty*{emailseparator}{}{\if@scrsymbols\else:\fi\nobreakspace}%
+}
 \newkomavar[\if@scrsymbols\scr@symbol@www\else\wwwname\fi]{urlseparator}
-\setkomavar{urlseparator}{\if@scrsymbols\else:\nobreakspace\fi}
+\setkomavar{urlseparator}{%
+  \Ifkomavarxempty*{urlseparator}{}{\if@scrsymbols\else:\fi\nobreakspace}%
+}
 \newkomavar{zipcodeseparator}
 \setkomavar{zipcodeseparator}{\,--\,}
 \newkomavar[\headfromname]{fromname}

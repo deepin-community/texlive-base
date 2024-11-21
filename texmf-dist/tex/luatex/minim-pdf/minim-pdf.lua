@@ -229,7 +229,13 @@ local function determine_parent_node(current, se)
         end
     end
     if not c then
-        alloc.err('Structure type mismatch: %s in %s', se.struct, current.struct)
+        if tagging_enabled() then
+            alloc.err('Structure type mismatch: %s in %s',
+                    pdf_name(se.struct), pdf_name(current.struct))
+        else
+            alloc.msg('Warning (minim-pdf): Structure type mismatch (%s in %s)',
+                    pdf_name(se.struct), pdf_name(current.struct))
+        end
     end
     return c or current
 end
@@ -820,6 +826,13 @@ alloc.luadef('lastdestinationname', function() tex.sprint(last_dest_name()) end)
 
 -- provide the arguments to \pdfextension startlink
 local link_types = { }
+local function make_link_attr(s)
+    local attr = { 'attr {\\csname minim:linkattr\\endcsname' }
+    if s.attr then table.insert(attr, s.attr) end
+    if s.alt or s.contents then insert_formatted(attr, '/Contents %s', pdf_string(s.alt or s.contents)) end
+    table.insert(attr, '}')
+    return attr
+end
 alloc.luadef('hyper:makelink', function()
     local s = options_scanner()
         :argument('alt'):argument('contents') -- same thing
@@ -832,18 +845,32 @@ alloc.luadef('hyper:makelink', function()
         userf = link_types.first
     end
     local user = userf()
-    attr = { 'attr {\\csname minim:linkattr\\endcsname' }
-    if s.attr then table.insert(attr, s.attr) end
-    if s.alt or s.contents then insert_formatted(attr, '/Contents %s', pdf_string(s.alt or s.contents)) end
-    insert_formatted(attr, '} user {%s}', user)
+    local attr = make_link_attr(s)
     tex.sprint(table.concat(attr, ' '))
+    tex.sprint('user {')
+    tex.write(user)
+    tex.sprint('}\\ignorespaces')
 end)
+
+local function scan_escaped_argument(chars_to_escape)
+    local stored = { }
+    for char in string.utfvalues(chars_to_escape) do
+        stored[char] = tex.getcatcode(char)
+        tex.setcatcode(char, 12)
+    end
+    local res = token.scan_argument()
+    for char, code in pairs(stored) do
+        tex.setcatcode(char, code)
+    end
+    return res
+end
 
 function link_types.dest()
     return string.format('/Subtype/Link /A <</S/GoTo /D %s>>', pdf_string(token.scan_argument()))
 end
 function link_types.url()
-    return string.format('/Subtype/Link /A <</S/URI /URI %s>>', pdf_string(token.scan_argument()))
+    local url = scan_escaped_argument ('~#$%^&_')
+    return string.format('/Subtype/Link /A <</S/URI /URI %s>>', pdf_string(url))
 end
 
 function link_types.user() return token.scan_argument() end
@@ -855,7 +882,7 @@ function link_types.last() return '/Subtype/Link /A <</S/Named /N/LastPage>>' en
 -- 1 bookmarks (outlines)
 
 -- start with a dummy top-level bookmark
-local bookmarks = { { count = 0 } }
+local bookmarks = { { count = 0, level = 0 } }
 structure[1].bookmark = bookmarks[1]
 
 local function write_bookmarks()
@@ -870,13 +897,13 @@ local function write_bookmarks()
         ' <</Type /Outlines /First %s 0 R /Last %s 0 R /Count %s >> ',
         bookmarks[2].outline_obj, bookmarks[1].last.outline_obj, #bookmarks - 1))
     -- write bookmark objects
-    for i=2, #bookmarks do
+    for i=2, #bookmarks do -- skip the root (i=1)
         local bm, res = bookmarks[i], { }
         insert_formatted(res, '<< /Title %s\n/Parent %s 0 R /Dest %s', pdf_string(bm.title),
             bm.parent and bm.parent.outline_obj or bookmarks[1].outline_obj, pdf_string(bm.dest))
         if bm.next then insert_formatted(res, '/Next %s 0 R', bm.next.outline_obj) end
         if bm.prev then insert_formatted(res, '/Prev %s 0 R', bm.prev.outline_obj) end
-        if bm.struct and bm.struct.objnum then
+        if bm.struct and bm.struct.objnum then -- false if no structures are written out
             insert_formatted(res, '/SE %s 0 R', bm.struct.objnum)
         end
         if bm.count > 0 then
@@ -888,37 +915,51 @@ local function write_bookmarks()
 end
 
 function M.add_bookmark(bm)
-    local se = current_structure_element()
+    local pbm
+    if bm.level then
+        for i = #bookmarks, 1, -1 do
+            pbm = bookmarks[i]
+            if pbm.level < bm.level then
+                break
+            end
+        end
+    else
+        local se = current_structure_element()
+        if se.bookmark then
+            return alloc.err('Structure element %s already has a bookmark', pdf_name(se.struct))
+        end
+        se.bookmark, bm.struct = bm, se
+        -- derive parent from strucrure
+        pbm = se.parent
+        while not pbm.bookmark do
+            pbm = pbm.parent
+        end
+        pbm = pbm.bookmark
+    end
+    -- initial values; links to other bookmarks
     bm.parent, bm.count = false, 0
     bm.dest = bm.dest or write_new_dest()
-    se.bookmark, bm.struct = bm, se
-    -- find and update the parent bookmarks
-    local p = se.parent
-    while p do
-        local pbm = p.bookmark
-        if pbm then
-            if not bm.parent then
-                if pbm.last then pbm.last.next = bm end
-                bm.parent, bm.prev = pbm, pbm.last
-                pbm.first, pbm.last = pbm.first or bm, bm
-            end
-            -- update the count until the first closed bookmark
-            pbm.count = pbm.count + 1
-            p = pbm.open and pbm.parent
-        else
-            p = p.parent
-        end
-    end
+    if pbm.last then pbm.last.next = bm end
+    bm.parent, bm.prev = pbm, pbm.last
+    pbm.first, pbm.last = pbm.first or bm, bm
+    bm.level = bm.level or (pbm.level + 1)
+    -- update the count until the first closed bookmarks
+    repeat
+        pbm.count = pbm.count + 1
+        pbm = pbm.open and pbm.parent
+    until not pbm
+    -- append to the list
     table.insert(bookmarks, bm)
 end
 
 alloc.luadef('outline', function()
-    local s = options_scanner()
+    local bm = options_scanner()
         :keyword('open', 'closed')
         :string('dest')
+        :int('level')
         :scan()
-    s.title = token.scan_string()
-    M.add_bookmark(s)
+    bm.title = token.scan_string()
+    M.add_bookmark(bm)
 end, 'protected')
 
 
@@ -987,7 +1028,7 @@ alloc.luadef('embedfile', function()
         t.name = t.file or alloc.err('No name specified for embedded file stream')
     end
     t.name = pdf_string(t.name or '(unnamed)')
-    local fs, ef = M.embed_file(t, t.global)
+    local fs, _ = M.embed_file(t, t.global)
     -- where to attach?
     if t.global then
         table.insert(attached_files, { name = t.name, objnum = fs } )

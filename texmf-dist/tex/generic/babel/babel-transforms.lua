@@ -32,29 +32,16 @@
 -- and covered by LPPL is defined by the unpacking scripts (with
 -- extension |.ins|) which are part of the distribution.
 --
-
 Babel.linebreaking.replacements = {}
 Babel.linebreaking.replacements[0] = {}  -- pre
 Babel.linebreaking.replacements[1] = {}  -- post
 
--- Discretionaries contain strings as nodes
-function Babel.str_to_nodes(fn, matches, base)
-  local n, head, last
-  if fn == nil then return nil end
-  for s in string.utfvalues(fn(matches)) do
-    if base.id == 7 then
-      base = base.replace
-    end
-    n = node.copy(base)
-    n.char    = s
-    if not head then
-      head = n
-    else
-      last.next = n
-    end
-    last = n
+function Babel.tovalue(v)
+  if type(v) == 'table' then
+    return Babel.locale_props[v[1]].vars[v[2]] or v[3]
+  else
+    return v
   end
-  return head
 end
 
 Babel.fetch_subtext = {}
@@ -187,6 +174,7 @@ Babel.us_char = string.char(31)
 function Babel.hyphenate_replace(head, mode)
   local u = unicode.utf8
   local lbkr = Babel.linebreaking.replacements[mode]
+  local tovalue = Babel.tovalue
 
   local word_head = head
 
@@ -227,6 +215,7 @@ function Babel.hyphenate_replace(head, mode)
           print('=====')
         end
         local new  -- used when inserting and removing nodes
+        local dummy_node -- used by after
 
         local matches = { u.match(w, p, last_match) }
 
@@ -271,7 +260,8 @@ function Babel.hyphenate_replace(head, mode)
         -- rc = the replacement table index
         local rc = 0
 
-        while rc < last-first+1 do -- for each replacement
+------- TODO. dummy_node?
+        while rc < last-first+1 or dummy_node do -- for each replacement
           if Babel.debug then
             print('.....', rc + 1)
           end
@@ -303,11 +293,31 @@ function Babel.hyphenate_replace(head, mode)
           end
 
           if crep then
-            step = crep.step or 0
+            step = crep.step or step
+          end
+
+          if crep and crep.after then
+            crep.insert = true
+            if dummy_node then
+              item = dummy_node
+            else -- TODO. if there is a node after?
+              d = node.copy(item_base)
+              head, item = node.insert_after(head, item, d)
+              dummy_node = item
+            end
+          end
+
+          if crep and not crep.after and dummy_node then
+            node.remove(head, dummy_node)
+            dummy_node = nil
           end
 
           if (not enabled) or (crep and next(crep) == nil) then -- = {}
-            last_match = save_last    -- Optimization
+            if step == 0 then
+              last_match = save_last    -- Optimization
+            else
+              last_match = utf8.offset(w, sc+step)
+            end
             goto next
 
           elseif crep == nil or crep.remove then
@@ -368,9 +378,9 @@ function Babel.hyphenate_replace(head, mode)
             d.replace = Babel.str_to_nodes(crep.no, matches, item_base)
             d.attr = item_base.attr
             if crep.pre == nil then  -- TeXbook p96
-              d.penalty = crep.penalty or tex.hyphenpenalty
+              d.penalty = tovalue(crep.penalty) or tex.hyphenpenalty
             else
-              d.penalty = crep.penalty or tex.exhyphenpenalty
+              d.penalty = tovalue(crep.penalty) or tex.exhyphenpenalty
             end
             placeholder = '|'
             head, new = node.insert_before(head, item, d)
@@ -381,28 +391,37 @@ function Babel.hyphenate_replace(head, mode)
           elseif crep and crep.penalty then
             d = node.new(14, 0)   -- (penalty, userpenalty)
             d.attr = item_base.attr
-            d.penalty = crep.penalty
+            d.penalty = tovalue(crep.penalty)
             head, new = node.insert_before(head, item, d)
 
           elseif crep and crep.space then
             -- 655360 = 10 pt = 10 * 65536 sp
             d = node.new(12, 13)      -- (glue, spaceskip)
             local quad = font.getfont(item_base.font).size or 655360
-            node.setglue(d, crep.space[1] * quad,
-                            crep.space[2] * quad,
-                            crep.space[3] * quad)
+            node.setglue(d, tovalue(crep.space[1]) * quad,
+                            tovalue(crep.space[2]) * quad,
+                            tovalue(crep.space[3]) * quad)
             if mode == 0 then
               placeholder = ' '
             end
+            head, new = node.insert_before(head, item, d)
+
+          elseif crep and crep.norule then
+            -- 655360 = 10 pt = 10 * 65536 sp
+            d = node.new(2, 3)      -- (rule, empty) = \no*rule
+            local quad = font.getfont(item_base.font).size or 655360
+            d.width   = tovalue(crep.norule[1]) * quad
+            d.height  = tovalue(crep.norule[2]) * quad
+            d.depth   = tovalue(crep.norule[3]) * quad
             head, new = node.insert_before(head, item, d)
 
           elseif crep and crep.spacefactor then
             d = node.new(12, 13)      -- (glue, spaceskip)
             local base_font = font.getfont(item_base.font)
             node.setglue(d,
-              crep.spacefactor[1] * base_font.parameters['space'],
-              crep.spacefactor[2] * base_font.parameters['space_stretch'],
-              crep.spacefactor[3] * base_font.parameters['space_shrink'])
+              tovalue(crep.spacefactor[1]) * base_font.parameters['space'],
+              tovalue(crep.spacefactor[2]) * base_font.parameters['space_stretch'],
+              tovalue(crep.spacefactor[3]) * base_font.parameters['space_shrink'])
             if mode == 0 then
               placeholder = ' '
             end
@@ -411,9 +430,21 @@ function Babel.hyphenate_replace(head, mode)
           elseif mode == 0 and crep and crep.space then
             -- ERROR
 
+          elseif crep and crep.kern then
+            d = node.new(13, 1)      -- (kern, user)
+            local quad = font.getfont(item_base.font).size or 655360
+            d.attr = item_base.attr
+            d.kern = tovalue(crep.kern) * quad
+            head, new = node.insert_before(head, item, d)
+
+          elseif crep and crep.node then
+            d = node.new(crep.node[1], crep.node[2])
+            d.attr = item_base.attr
+            head, new = node.insert_before(head, item, d)
+
           end  -- ie replacement cases
 
-          -- Shared by disc, space and penalty.
+          -- Shared by disc, space(factor), kern, node and penalty.
           if sc == 1 then
             word_head = head
           end
@@ -437,6 +468,11 @@ function Babel.hyphenate_replace(head, mode)
             print('.....', '/')
             Babel.debug_hyph(w, w_nodes, sc, first, last, last_match)
         end
+
+      if dummy_node then
+        node.remove(head, dummy_node)
+        dummy_node = nil
+      end
 
       end  -- for match
 
@@ -516,6 +552,14 @@ function Babel.capture_kashida(key, wt)
     Babel.kashida_wts = { wt }
   end
   return 'kashida = ' .. wt
+end
+
+function Babel.capture_node(id, subtype)
+  local sbt = 0
+  for k, v in pairs(node.subtypes(id)) do
+    if v == subtype then sbt = k end
+  end
+  return 'node = {' .. node.id(id) .. ', ' .. sbt .. '}'
 end
 
 -- Experimental: applies prehyphenation transforms to a string (letters

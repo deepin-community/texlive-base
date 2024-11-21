@@ -18,16 +18,16 @@
 %
 % This work consists of all files listed in MANIFEST.md.
 % ======================================================================
-%%% From File: $Id: scrkernel-variables.dtx 4032 2023-04-17 09:45:11Z kohm $
+%%% From File: $Id: scrkernel-variables.dtx 4129 2024-10-23 19:02:04Z texhackse $
 %<option>%%%            (run: option)
 %<body>%%%            (run: body)
 %<*dtx>
 \ifx\ProvidesFile\undefined\def\ProvidesFile#1[#2]{}\fi
 \begingroup
   \def\filedate$#1: #2-#3-#4 #5${\def\filedate{#2/#3/#4}}
-  \filedate$Date: 2023-04-17 11:45:11 +0200 (Mo, 17. Apr 2023) $
+  \filedate$Date: 2024-10-23 21:02:04 +0200 (Mi, 23. Okt 2024) $
   \def\filerevision$#1: #2 ${\def\filerevision{r#2}}
-  \filerevision$Revision: 4032 $
+  \filerevision$Revision: 4129 $
   \xdef\fileinfo{\filedate\space\filerevision\space}
   \edef\reserved@a{%
     \noexpand\endgroup
@@ -72,6 +72,10 @@
 % You can find the user documentation the commands implemented here in the
 % \KOMAScript{} manual, either the German \file{scrguide-de.pdf} or the
 % English \file{scrguide-en.pdf}.
+%
+% \DescribeCommand{\Ifkomavarxempty}
+% Similar to \cs{Ifkomavarempty} but the variable or description will be
+% expanded before testing.
 % 
 % \MaybeStop{\PrintIndex}
 %
@@ -87,50 +91,40 @@
 %
 % \subsection{Commands and macros for variables}
 %
-% \begin{command}{\newkomavar*,\newkomavar}
+% \begin{command}{newkomavar}
 % \changes{v2.8q}{2002/01/14}{added}
 % \changes{v3.20}{2016/04/12}{\cs{@ifstar} replaced \cs{kernel@ifstar} by}
+% \changes{v3.42}{2023/08/25}{new implementation using \cs{NewDocumentCommand}}
 % We have two kinds of fields and so variables:
 % \begin{itemize}
 % \item to be printed in the reference line,
 % \item for other purpose, but not printed in the reference line.
 % \end{itemize}
-% But it is also possible to add variables later to (or
-% even remove them from the reference line. But the star variant
-% \cs{newkomavar*} automatically adds a variable to (the end of) the reference
-% line.
-% \begin{macro}{\@newkomavar}
-% Because of the star variant (and because we currently do not use
-% \pkg{xparse}), we need an internal command.
-% Both \cs{newkomavar} and \cs{newkomavar*} have one optional argument
-% (\texttt{\#1}), the \meta{output name}. It is intended to be printed. In
-% opposite to this the first mandatory argument (\texttt{\#2}) is the
-% \meta{name} of the variable. It is not indented to be printed but used for access
-% only. Only \emph{command sequence} characters are allowed here. It is
-% recommended to use only letters for the \meta{name}. Internally
+% But it is also possible to add variables later to (or even remove them from
+% the reference line. But the star variant \cs{newkomavar*} automatically adds
+% a variable to (the end of) the reference line.  Both \cs{newkomavar} and
+% \cs{newkomavar*} have one optional argument, the \meta{description}. It is
+% intended to be printed. In opposite to this the first mandatory argument is
+% the \meta{name} of the variable. It is not indented to be printed but used
+% for access only. Only \emph{command sequence} characters are allowed
+% here. It is recommended to use only letters for the \meta{name}. Internally
 % macro \cs{scr@\meta{name}@name} and \cs{scr@\meta{name}@var} are
 % defined. The second one is initialized to be empty.
 %    \begin{macrocode}
 %<*body>
-\newcommand*{\newkomavar}{%
-  \kernel@ifstar {\@tempswatrue\@newkomavar}{\@tempswafalse\@newkomavar}}
-\newcommand*{\@newkomavar}[2][\relax]{%
-  \@ifundefined{scr@#2@name}{%
-    \@ifundefined{scr@#2@var}{%
-      \begingroup
-        \def\@tempa{#1}\def\@tempb{\relax}%
-        \ifx\@tempa\@tempb\endgroup\else
-        \endgroup\@namedef{scr@#2@name}{#1}%
-      \fi%
-      \expandafter\let\csname scr@#2@var\endcsname=\@empty
-      \if@tempswa\addtoreffields{#2}\fi
+\NewDocumentCommand{\newkomavar}{som}{%
+  \@ifundefined{scr@#3@name}{%
+    \@ifundefined{scr@#3@var}{%
+      \IfValueT{#2}{\@namedef{scr@#3@name}{#2}}%
+      \@namedef{scr@#3@var}{}%
+      \IfBooleanT{#1}{\addtoreffields{#3}}%
     }{%
 %<class>      \ClassError{scrlttr2}
 %<package>      \PackageError{scrletter}
       {%
         This should never happen%
       }{%
-        The contents of the KOMA-Script variable `#2'\MessageBreak
+        The description of the KOMA-Script variable `#3'\MessageBreak
         is undefined, but the name of the variable is
         defined.\MessageBreak
         This should never happen. So someone crashs me!%
@@ -140,75 +134,55 @@
 %<class>    \ClassError{scrlttr2}
 %<package>    \PackageError{scrletter}
     {%
-      Variable `#2' already defined%
+      Variable `#3' already defined%
     }{%
       I'll ignore this command, if you'll continue.%
     }%
   }%
 }
 %    \end{macrocode}
+% \begin{macro}{\@newkomavar}
+% \changes{v3.42}{2023/08/25}{removed}
 % \end{macro}
 % \end{command}
 %
-% \begin{command}{\setkomavar*,\setkomavar}
+% \begin{command}{\setkomavar}
 % \changes{v2.8q}{2002/01/14}{added}
 % \changes{v3.08}{2010/10/28}{\cs{scr@\emph{Name}@postsetname} and
 %   \cs{scr@\emph{Name}@postsetvar} added}
 % \changes{v3.20}{2016/04/12}{\cs{@ifstar} replaced by \cs{kernel@ifstar}}
+% \changes{v3.20}{2016/04/12}{\cs{@ifnextchar} replaced by
+%  \cs{kernel@ifnextchar}}
+% \changes{v3.42}{2024/04/24}{new implementation using
+%   \cs{NewDocumentCommand}}
+% \changes{v3.43}{2024/10/23}{add missing call of \cs{scr@\emph{name}@postsetname}
+%   and \cs{scr@\meta{name}@postsetvar}}
 % After defining a new variable we also need a command to set the
 % \meta{value}. This is the second mandatory argument (\texttt{\#3}) of
 % \cs{setkomavar}. The first mandatory argument (\texttt{\#2}) once again is
-% the \meta{name}. The \meta{output name} can be set with the
-% optional first argument (\texttt{\#1}).  But for the case only the
-% \meta{output name} should be changed but not the \meta{value} there is an
-% additional star variant \cs{setkomavar*}. This has only two mandatory argument:
-% \meta{name} (\texttt{\#1}) and \meta{output name} (\texttt{\#2}). Both also
-% executes two hooks \cs{scr@\meta{name}@postsetname} and
-% \cs{scr@\meta{name}@postsetvar} after setting the \meta{output name}
-% resp. the \meta{value}. So package authors can define additional actions for
-% the case a variable changes.
-% \begin{macro}{\@setkomavar}
-% \changes{v2.8q}{2002/01/14}{added}
-% \changes{v3.20}{2016/04/12}{\cs{@ifnextchar} replaced by \cs{kernel@ifnextchar}}
-% \begin{macro}{\@@setkomavar}
-% \changes{v2.8q}{2002/01/14}{added}
-% \begin{macro}{\@setkomaname}
-% \changes{v2.8q}{2002/01/14}{added}
-% Because of the star variant and the optional argument additional helper
-% macros are needed.
+% the \meta{name}. The \meta{description} can be set with the optional first
+% argument (\texttt{\#1}).  But for the case only the \meta{description}
+% should be changed but not the \meta{value} there is an additional star
+% variant \cs{setkomavar*}. This has only two mandatory argument: \meta{name}
+% (\texttt{\#1}) and \meta{description} (\texttt{\#2}). Both also executes two
+% hooks \cs{scr@\meta{name}@postsetname} and \cs{scr@\meta{name}@postsetvar}
+% after setting the \meta{description} resp. the \meta{value}. So package
+% authors can define additional actions for the case a variable changes.
 %    \begin{macrocode}
-\newcommand*{\setkomavar}{%
-  \kernel@ifstar {\@setkomaname}{\@setkomavar}}
-\newcommand*{\@setkomavar}[1]{%
-  \kernel@ifnextchar [%]
-  {\@@setkomavar{#1}}{\@@setkomavar{#1}[\relax]}}
-\newcommand*{\@setkomaname}[2]{%
-  \@ifundefined{scr@#1@var}{%
-    \@komavar@err{set}{#1}%
+\NewDocumentCommand{\setkomavar}{smo+m}{%
+  \Ifkomavar{#2}{%
+    \IfValueT{#3}{\@namedef{scr@#2@name}{#3}}%
+    \@namedef{scr@#2@\IfBooleanTF{#1}{name}{var}}{#4}%
+    \csname scr@#2@postset\IfBooleanTF{#1}{name}{var}\endcsname
   }{%
-    \@namedef{scr@#1@name}{#2}%
-    \csname scr@#1@postsetname\endcsname
-  }%
-}
-\newcommand*{\@@setkomavar}{}
-\long\def\@@setkomavar#1[#2]#3{%
-  \@ifundefined{scr@#1@var}{%
-    \@komavar@err{set}{#1}%
-  }{%
-    \@namedef{scr@#1@var}{#3}%
-    \csname scr@#1@postsetvar\endcsname
-    \begingroup
-      \def\@tempa{#2}\def\@tempb{\relax}%
-      \ifx\@tempa\@tempb\endgroup\else
-      \endgroup\@namedef{scr@#1@name}{#2}%
-      \csname scr@#1@postsetname\endcsname
-    \fi
+    \@koma@var@err{set}{#2}%
   }%
 }
 %    \end{macrocode}
-% \end{macro}^^A \@setkomaname
-% \end{macro}^^A \@@setkomavar
-% \end{macro}^^A \@setkomavar
+% \begin{macro}{\@setkomavar,\@@setkomavar,\@setkomaname}
+% \changes{v2.8q}{2002/01/14}{added}
+% \changes{v3.42}{2023/08/25}{removed}
+% \end{macro}^^A \@setkomavar, \@@setkomavar, \@setkomaname
 % \end{command}^^A \setkomavar*,\setkomavar
 %
 % \begin{macro}{\@komavar@err}
@@ -232,39 +206,37 @@
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{command}{\usekomavar*,\usekomavar}
+% \begin{command}{\usekomavar}
 % \changes{v2.8q}{2002/01/14}{added}
 % \changes{v2.9i}{2002/09/04}{robust}
+% \changes{v2.9i}{2002/09/04}{optional argument}
+% \changes{v2.9j}{2002/09/18}{\cs{@firstofone} as default for the optional
+%   argument}
 % \changes{v3.20}{2016/04/12}{\cs{@ifstar} replaced by \cs{kernel@ifstar}}
-% User command to get either the \meta{output name} (star variant) or the
+% \changes{v3.42}{2023/08/25}{new implementation using \cs{NewDocumentCommand}}
+% User command to get either the \meta{description} (star variant) or the
 % \meta{value} (non-star variant) of a variable. Once again the first
 % mandatory argument (\texttt{\#2}) is the \meta{name} of the value. Both also
 % have an optional first argument (\texttt{\#1}) \meta{code}. The \meta{code}
-% is added before the \meta{output name} or \meta{value} in the output
-% stream and these are used as argument. You use it, e.g., to define a command
-% with the content of \meta{output name} or \meta{value} or change the formatting.
-% \begin{macro}{\@usekomavar,\@usekomaname}
-% \changes{v2.8q}{2002/01/14}{added}
-% \changes{v2.9i}{2002/09/04}{optional argument}
-% \changes{v2.9j}{2002/09/18}{\cs{@firstofone} as default for the optional argument}
+% is added before the \meta{description} or \meta{value} in the output stream
+% and these are used as argument. You use it, e.g., to define a command with
+% the content of \meta{description} or \meta{value} or change the formatting.
 %    \begin{macrocode}
-\DeclareRobustCommand*{\usekomavar}{%
-  \kernel@ifstar {\@usekomaname}{\@usekomavar}}
-\newcommand*{\@usekomavar}[2][\@firstofone]{%
-  \@ifundefined{scr@#2@var}{%
-    \@komavar@err{use}{#2}%
+\NewDocumentCommand{\usekomavar}{sO{\@firstofone}m}{%
+  \Ifkomavar{#3}{%
+    \IfBooleanTF{#1}{%
+      #2{\@nameuse{scr@#3@name}}%
+    }{%
+      #2{\@nameuse{scr@#3@var}}%
+    }%
   }{%
-    #1{\@nameuse{scr@#2@var}}%
-  }%
-}
-\newcommand*{\@usekomaname}[2][\@firstofone]{%
-  \@ifundefined{scr@#2@var}{%
-    \@komavar@err{use}{#2}%
-  }{%
-    #1{\@nameuse{scr@#2@name}}%
+    \@koma@var@err{use}{#3}%
   }%
 }
 %    \end{macrocode}
+% \begin{macro}{\@usekomavar,\@usekomaname}
+% \changes{v2.8q}{2002/01/14}{added}
+% \changes{v3.42}{2023/08/25}{removed}
 % \end{macro}^^A \@usekomavar,\@usekomaname
 % \end{command}
 %
@@ -299,28 +271,25 @@
 % \end{command}
 %
 %
-% \begin{command}{\ifkomavarempty*,\ifkomavarempty,\Ifkomavarempty*,\Ifkomavarempty}
+% \begin{command}{\ifkomavarempty,\Ifkomavarempty}
 % \changes{v2.8q}{2002/01/14}{added}
 % \changes{v2.9i}{2002/09/04}{spurious spaced removed}
 % \changes{v2.9i}{2002/09/04}{robust}
+% \changes{v3.03}{2009/03/04}{using \cs{ifkomavar}}
+% \changes{v3.03}{2009/03/04}{don't read the arguments but delegate them}
 % \changes{v3.20}{2016/04/12}{\cs{@ifstar} replaced by \cs{kernel@ifstar}}
 % \changes{v3.28}{2019/11/15}{\cs{ifkomavarempty} renamed to \cs{Ifkomavar}}
+% \changes{v3.28}{2019/11/15}{\cs{ifkomavar} replaced by \cs{Ifkomavar}}
+% \changes{v3.42}{2023/08/25}{new implementation using \cs{NewDocumentCommand}}
 % \cs{Ifkomavarempty} tests if the variable with the \meta{name} of
 % \texttt{\#1} is defined and the \meta{value} (non-star variant)
-% resp. \meta{output name} (star variant) is empty. If it is undefined or
+% resp. \meta{description} (star variant) is empty. If it is undefined or
 % empty the \meta{code} of \texttt{\#2} is executed. If is defined and not
 % empty the \meta{code} of \texttt{\#3} is executed.
 % The old command \cs{ifkomavarempty} resp. \cs{ifkomavarempty*} is deprecated
 % and should not be used any longer. This incompatible change has been done,
 % because of a new recommendation of The \LaTeX{} Team (who does break its own
 % recommendation, e.g., with \cs{ifToplevel}, \cs{ifthenelse} \dots).
-% \begin{macro}{\if@komavarempty}
-% \changes{v2.8q}{2002/01/14}{added}
-% \changes{v3.03}{2009/03/04}{using \cs{ifkomavar}}
-% \changes{v3.03}{2009/03/04}{don't read the arguments but delegate them}
-% \changes{v3.28}{2019/11/15}{\cs{ifkomavar} replaced by \cs{Ifkomavar}}
-% Because of the star variant (and because we are currently not using
-% \pkg{xparse}) we need an internal helper macro.
 %    \begin{macrocode}
 \newcommand*{\ifkomavarempty}{%
 %<package>  \PackageWarning{scrletter}{%
@@ -332,39 +301,57 @@
   }%
   \Ifkomavarempty
 }
-\DeclareRobustCommand*{\Ifkomavarempty}{%
-  \begingroup
-  \kernel@ifstar {\@tempswatrue\@ifkomavarempty}%
-                 {\@tempswafalse\@ifkomavarempty}%
-}
-\newcommand{\@ifkomavarempty}[1]{%
-    \Ifkomavar{#1}{%
-      \if@tempswa
-        \@ifundefined{scr@#1@name}{%
-          \aftergroup\@firstoftwo
-        }{%
-          \expandafter\ifx\csname scr@#1@name\endcsname\@empty
-            \aftergroup\@firstoftwo
-          \else
-            \aftergroup\@secondoftwo
-          \fi
-        }%
-      \else
-        \expandafter\ifx\csname scr@#1@var\endcsname\@empty
-          \aftergroup\@firstoftwo
+\NewDocumentCommand{\Ifkomavarempty}{sm}{%
+  \Ifkomavar{#2}{%
+    \IfBooleanTF{#1}{%
+      \@ifundefined{scr@#2@name}\@firstoftwo{%
+        \expandafter\ifx\csname scr@#2@name\endcsname\@empty
+          \expandafter\@firstoftwo
         \else
-          \aftergroup\@secondoftwo
+          \expandafter\@secondoftwo
         \fi
-      \fi
+      }%
     }{%
-      \@komavar@err{use}{#1}%
-      \aftergroup\@gobbletwo
-    }%
-  \endgroup
+      \expandafter\ifx\csname scr@#2@var\endcsname\@empty
+        \expandafter\@firstoftwo
+      \else
+        \expandafter\@secondoftwo
+      \fi
+    }
+  }{%
+    \@komavar@err{use}{#2}%
+    \@gobbletwo
+  }%
 }
 %    \end{macrocode}
+% \begin{macro}{\if@komavarempty}
+% \changes{v2.8q}{2002/01/14}{added}
+% \changes{v3.42}{2023/08/25}{removed}
 % \end{macro}%^^A \@ifkomavarempty
-% \end{command}%^^A \ifkomavarempty* … \Ifkomavarempty
+% \end{command}%^^A \ifkomavarempty, \Ifkomavarempty
+%
+% \begin{command}{\Ifkomavarxempty}
+% \changes{v3.42}{2023/08/25}{added}
+% This command is similar to the \cs{Ifkomavarempty} but uses \cs{Ifstr} for
+% the comparison and therefore does a full expansion of the variable
+% or output name.
+%    \begin{macrocode}
+\NewDocumentCommand{\Ifkomavarxempty}{sm}{%
+  \Ifkomavar{#2}{%
+    \IfBooleanTF{#1}{%
+      \@ifundefined{scr@#2@name}\@firstoftwo{%
+        \Ifstr{\@nameuse{scr@#2@name}}{}%
+      }%
+    }{%
+      \Ifstr{\@nameuse{scr@#2@var}}{}%
+    }%
+  }{%
+    \@komavar@err{use}{#2}%
+    \@gobbletwo
+  }%
+}
+%    \end{macrocode}  
+% \end{command}
 %
 %
 % \begin{command}{\foreachkomavar}

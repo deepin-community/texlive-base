@@ -32,17 +32,20 @@
 %% where one can also log issues in case there are any.
 %% 
 %% 
-%% File: latex-lab-sec.dtx (C) Copyright 2022-2023 LaTeX Project
-\def\ltlabsecdate{2023-10-16}
-\def\ltlabsecversion{0.84b}
+%% File: latex-lab-sec.dtx (C) Copyright 2022-2024 LaTeX Project
+\def\ltlabsecdate{2024-10-04}
+\def\ltlabsecversion{0.84f}
 \ProvidesExplPackage {latex-lab-testphase-sec} {\ltlabsecdate} {\ltlabsecversion}
   {Code related to the tagging of sectioning commands}
 \RequirePackage{latex-lab-kernel-changes}
 \seq_new:N   \g__tag_sec_stack_seq
-\seq_gpush:Nn\g__tag_sec_stack_seq {{Document}{-100}}
+\seq_gpush:Nn\g__tag_sec_stack_seq {{Document}{-100}{2}}
+\cs_new:Npn \__tag_get_data_current_Sect:
+ {
+   \exp_last_unbraced:Ne\use_iii:nnn{\seq_item:Nn\g__tag_sec_stack_seq{1}}
+ }
 \bool_new:N     \l__tag_sec_Sect_bool
 \bool_set_true:N\l__tag_sec_Sect_bool
-
 \cs_new_protected:Npn\__tag_sec_begin:nn #1 #2 %#1 level #2 keyval
   {
     \tag_struct_begin:n
@@ -50,7 +53,8 @@
          tag= {\int_compare:nNnTF {#1}={-1}{Part}{Sect}}
         ,#2
       }
-    \seq_gpush:Nx \g__tag_sec_stack_seq {{\g__tag_struct_tag_tl}{\int_eval:n{#1}}}
+    \seq_gpush:Ne \g__tag_sec_stack_seq
+      {{\g__tag_struct_tag_tl}{\int_eval:n{#1}}{\g__tag_struct_stack_current_tl}}
   }
 \msg_new:nnn { tag } {wrong-sect-nesting}
   {
@@ -61,12 +65,12 @@
 \cs_new_protected:Npn\__tag_sec_end:n #1 % #1 level
   {
     \seq_get:NN \g__tag_sec_stack_seq \l__tag_tmpa_tl
-    \int_compare:nNnT {#1}<{\exp_last_unbraced:NV\use_ii:nn\l__tag_tmpa_tl+1}
+    \int_compare:nNnT {#1}<{\exp_last_unbraced:NV\use_ii:nnn\l__tag_tmpa_tl+1}
       {
         \seq_get:NN\g__tag_struct_tag_stack_seq \l__tag_tmpb_tl
         \exp_args:Nee
           \tl_if_eq:nnTF
-            {\exp_last_unbraced:NV\use_i:nn\l__tag_tmpa_tl}
+            {\exp_last_unbraced:NV\use_i:nnn\l__tag_tmpa_tl}
             {\exp_last_unbraced:NV\use_i:nn\l__tag_tmpb_tl}
             {
               \seq_gpop:NN \g__tag_sec_stack_seq \l__tag_tmpa_tl
@@ -74,8 +78,8 @@
               \__tag_sec_end:n {#1}
             }
             {
-              \msg_warning:nnxx {tag}{wrong-sect-nesting}
-               { \exp_last_unbraced:NV\use_i:nn \l__tag_tmpa_tl }
+              \msg_warning:nnee {tag}{wrong-sect-nesting}
+               { \exp_last_unbraced:NV\use_i:nnn \l__tag_tmpa_tl }
                { \exp_last_unbraced:NV\use_i:nn \l__tag_tmpb_tl }
             }
       }
@@ -187,7 +191,7 @@
           \IfBooleanTF
             {#1}
             { \@spart {#3} }
-            { \@part [#2]{#3} }
+            { \@part [{#2}]{#3} }
          \tag_tool:n {sec-stop-part}
          }
        }
@@ -219,7 +223,7 @@
         \IfBooleanTF
           {#1}
           { \@schapter {#3} }
-          { \@chapter [#2]{#3} }
+          { \@chapter [{#2}]{#3} }
         \tag_tool:n {sec-stop-chapter}
       }
      \RenewDocumentCommand\part{ s O{#3} m }
@@ -257,7 +261,7 @@
         \IfBooleanTF
           {#1}
           { \@spart {#3} }
-          { \@part [#2]{#3} }
+          { \@part [{#2}]{#3} }
         \tag_tool:n{sec-stop-part}
       }
     }
@@ -292,6 +296,7 @@
 \cs_new_protected:Npn \@kernel@tag@hangfrom #1
   {
      \tagstructbegin{tag=\l__tag_para_tag_tl}
+     \cs_if_exist_use:N \__tag_gincr_para_begin_int:
      \tagstructbegin{tag=Lbl}
      \setbox\@tempboxa
        \hbox
@@ -302,9 +307,9 @@
             {\tagmcbegin{tag=Lbl}}
            {#1}
          }
-   \tag_stop:n{hangfrom}
+   \tag_suspend:n{hangfrom}
    \hangindent \wd\@tempboxa\noindent
-   \tag_start:n{hangfrom}
+   \tag_resume:n{hangfrom}
    \tagmcbegin{}\box\@tempboxa\tagmcend\tagstructend\tagmcbegin{}}
 \cs_new_protected:Npn \@kernel@tag@svsec
   {
@@ -328,7 +333,7 @@
   \@tempskipa #5\relax
   \ifdim \@tempskipa>\z@
     \begingroup
-    \tagtool{para-flattened=true} % or \bool_set_true\l__tag_para_flattened_bool
+    \tagtool{para-flattened=true} % or \bool_set_true\l_@@_para_flattened_bool
       #6{%
          \ifnum #2>\c@secnumdepth
           \@hangfrom {\hskip #3\relax\@svsec}%

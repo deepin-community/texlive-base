@@ -1,4 +1,4 @@
-%%^^A%%  fontspec-code-keyval.dtx -- part of FONTSPEC <wspr.io/fontspec>
+%%^^A%%  fontspec-code-keyval.dtx -- part of FONTSPEC <latex3.github.io/fontspec>
 
 % \section{Font loading (\pkg{keyval}) definitions}
 %
@@ -61,7 +61,6 @@
   {
     \bool_set_true:N \l_@@_nobf_bool
     \bool_set_true:N \l_@@_noit_bool
-    \bool_set_true:N \l_@@_external_bool
     \tl_set:Nn \l_@@_font_path_tl {#1}
     \@@_font_is_file:
 %<*XE>
@@ -87,6 +86,19 @@
   }
 \tl_clear:N \l_@@_extension_tl
 \@@_keys_define_code:nnn {fontspec} {Extension} {}
+%    \end{macrocode}
+%
+% \paragraph{\feat{KpseOnly}}
+% If the font is specified by filename, only search for it through kpse.
+% \XeTeX\ does not support finding system fonts by filename so this is always implicitly set
+% there.
+%    \begin{macrocode}
+\@@_keys_define_code:nnn {fontspec-preparse-external} {KpseOnly}
+  {
+    \bool_set_true:N \l_@@_external_kpse_bool
+    \bool_if:NT \l_@@_external_bool \@@_font_is_file:
+  }
+\@@_keys_define_code:nnn {fontspec} {KpseOnly} {}
 %    \end{macrocode}
 %
 %
@@ -161,7 +173,7 @@
 %    \begin{macrocode}
 \@@_keys_define_code:nnn {fontspec-preparse} {Script}
   {
-%<XE>    \keys_set:nn {fontspec-renderer} {Renderer=OpenType}
+%<XE>    \tl_if_empty:NT \l_@@_renderer_tl { \keys_set:nn {fontspec-renderer} {Renderer=OpenType} }
     \tl_set:Nn \l_@@_script_name_tl {#1}
   }
 %    \end{macrocode}
@@ -169,7 +181,7 @@
 %    \begin{macrocode}
 \@@_keys_define_code:nnn {fontspec-preparse} {Language}
   {
-%<XE>    \keys_set:nn {fontspec-renderer} {Renderer=OpenType}
+%<XE>    \tl_if_empty:NT \l_@@_renderer_tl { \keys_set:nn {fontspec-renderer} {Renderer=OpenType} }
     \tl_set:Nn \l_@@_lang_name_tl {#1}
   }
 %    \end{macrocode}
@@ -261,12 +273,12 @@
             \seq_put_right:Nx \l_@@_bf_series_seq {\bfdefault}
           }
 
-        \tl_if_eq:oxT \g_@@_curr_series_tl {\bfdefault}
+        \tl_if_eq:oeT \g_@@_curr_series_tl {\bfdefault}
           {
             \tl_set_eq:NN \l_@@_fontname_bf_tl \l_@@_curr_bfname_tl
           }
 
-        \prop_put:NxV \l_@@_nfss_prop {BoldFont-\g_@@_curr_series_tl} \l_@@_curr_bfname_tl
+        \prop_put:NeV \l_@@_nfss_prop {BoldFont-\g_@@_curr_series_tl} \l_@@_curr_bfname_tl
 
 %<debug>\typeout{Setting~bold~font~"\l_@@_curr_bfname_tl"~with~series~"\g_@@_curr_series_tl"}
 
@@ -323,7 +335,7 @@
 \@@_keys_define_code:nnn {fontspec-preparse} {BoldFeatures}
   {
     \clist_put_right:Nn \l_@@_fontfeat_bf_clist {#1}
-%  \prop_put:NxV \l_@@_nfss_prop
+%  \prop_put:NeV \l_@@_nfss_prop
 %     {BoldFont-\g_@@_curr_series_tl} \l_@@_curr_bfname_tl
   }
 \@@_keys_define_code:nnn {fontspec-preparse} {ItalicFeatures}
@@ -463,8 +475,8 @@
 %
 % \paragraph{Scale}
 % If the input isn't one of the pre-defined string options, then
-% it's gotta be numerical. \cs{fontspec_calc_scale:n} does all the work in
-% the auto-scaling cases.
+% it's gotta be numerical. \cs{fontspec_calc_scale:n} and \cs{fontspec_calc_scale:nn}
+% do all the work in the auto-scaling cases.
 %    \begin{macrocode}
 \@@_keys_define_code:nnn {fontspec} {Scale}
   {
@@ -472,8 +484,10 @@
       {
         {MatchLowercase} { \@@_calc_scale:n {5} }
         {MatchUppercase} { \@@_calc_scale:n {8} }
+        {MatchAveragecase} { \@@_calc_scale:nn {5} {8} }
       }
       { \tl_set:Nx \l_@@_scale_tl {#1} }
+      \@@_info:n {set-scale}
   }
 %    \end{macrocode}
 %
@@ -520,7 +534,6 @@
                        \dim_to_fp:n {\l_@@_tmpb_dim}   }
         }
 
-      \@@_info:n {set-scale}
       \exp_args:NNNx
     \group_end:
     \tl_set:Nx \l_@@_scale_tl { \l_@@_scale_tl }
@@ -529,6 +542,26 @@
 % \end{macro}
 %
 %
+% \begin{macro}{\@@_calc_scale:nn}
+% This macro calls \cs{fontspec_calc_scale:n} twice
+% and then sets the scale to the average of the two results.
+%    \begin{macrocode}
+\cs_new:Nn \@@_calc_scale:nn
+{
+    \group_begin:
+      \__fontspec_calc_scale:n {#1}
+      \tl_set_eq:NN \l_@@_tmp_tl \l_@@_scale_tl
+      \__fontspec_calc_scale:n {#2}
+      \tl_set:Nx \l_@@_scale_tl
+        {
+          \fp_eval:n { (\l_@@_tmp_tl + \l_@@_scale_tl)/2 }
+        }
+      \exp_args:NNNx
+    \group_end:
+    \tl_set:Nx \l_@@_scale_tl { \l_@@_scale_tl }
+  }
+%    \end{macrocode}
+% \end{macro}
 % \begin{macro}{\@@_set_font_dimen:NnN}
 % This function sets the dimension |#1| (for font |#3|) to `fontdimen' |#2|
 % for either font dimension 5 (x-height) or 8 (cap-height). If, for some
@@ -675,26 +708,61 @@
 %    \end{macrocode}
 %
 % \paragraph{Color}
-% Hooks into pkg{xcolor}, which names its colours \texttt{\char`\\color@<name>}.
+% Test first if the color is a named l3color, then if it is a color from
+% \pkg{xcolor}, which names its colours \texttt{\char`\\color@<name>}.
+% If this fails the argument is assumed to be a hex color.
+%
 %    \begin{macrocode}
 \@@_keys_define_code:nnn {fontspec} {Color}
   {
-    \cs_if_exist:cTF { \token_to_str:N \color@ #1 }
+%<*XE>
+    \color_if_exist:nTF {#1}
       {
-        \convertcolorspec{named}{#1}{HTML}\l_@@_hexcol_tl
+        \color_export:nnN {#1} {HTML}\l_@@_hexcol_tl
       }
       {
-        \int_compare:nTF { \tl_count:n {#1} == 6 }
-          { \tl_set:Nn \l_@@_hexcol_tl {#1} }
+        \cs_if_exist:cTF { \token_to_str:N \color@ #1 }        
           {
-            \int_compare:nTF { \tl_count:n {#1} == 8 }
-              { \fontspec_parse_colour:viii #1 }
+            \convertcolorspec{named}{#1}{HTML}\l_@@_hexcol_tl
+          }
+          {
+            \int_compare:nTF { \tl_count:n {#1} == 6 }
+              { \tl_set:Nn \l_@@_hexcol_tl {#1} }
               {
-                \bool_if:NF \l_@@_firsttime_bool
-                  { \@@_warning:nx {bad-colour} {#1} }
+                \int_compare:nTF { \tl_count:n {#1} == 8 }
+                  { \fontspec_parse_colour:viii #1 }
+                  {
+                    \bool_if:NF \l_@@_firsttime_bool
+                      { \@@_warning:nx {bad-colour} {#1} }
+                  }
               }
           }
       }
+%</XE>
+%<*LU>
+    \color_if_exist:nTF {#1}
+      {
+        \tl_set:Nn \l_@@_hexcol_tl {#1}
+      }
+      {
+        \cs_if_exist:cTF { \token_to_str:N \color@ #1 }        
+          {
+            \convertcolorspec{named}{#1}{HTML}\l_@@_hexcol_tl
+          }
+          {
+            \int_compare:nTF { \tl_count:n {#1} == 6 }
+              { \tl_set:Nn \l_@@_hexcol_tl {#1} }
+              {
+                \int_compare:nTF { \tl_count:n {#1} == 8 }
+                  { \fontspec_parse_colour:viii #1 }
+                  {
+                    \bool_if:NF \l_@@_firsttime_bool
+                      { \@@_warning:nx {bad-colour} {#1} }
+                  }
+              }
+          }
+      }      
+%</LU>
   }
 %    \end{macrocode}
 %
@@ -723,6 +791,7 @@
       }
     \tl_set:Nx \l_@@_opacity_tl
       {
+%<LU>      ,
         \int_compare:nT { \l_@@_tmp_int <= "F } {0} % zero pad
         \int_to_hex:n { \l_@@_tmp_int }
       }
@@ -760,14 +829,21 @@
 % \subsubsection{Continuous font axes}
 %
 %    \begin{macrocode}
+%<*XE>
 \@@_keys_define_code:nnn {fontspec} {Weight}
   {
     \@@_update_featstr:n{weight=#1}
   }
+%</XE>
+%<LU>\@@_define_opentype_variation_axis:nn {Weight} {wght}
+%<*XE>
 \@@_keys_define_code:nnn {fontspec} {Width}
   {
     \@@_update_featstr:n{width=#1}
   }
+%</XE>
+%<LU>\@@_define_opentype_variation_axis:nn {Width} {wdth}
+\@@_define_opentype_variation_axis:nn {Slant} {slnt}
 \@@_keys_define_code:nnn {fontspec} {OpticalSize}
 %<*XE>
   {
@@ -793,6 +869,23 @@
     \tl_set:Nn \l_@@_optical_size_tl {/ S = #1}
   }
 %</LU>
+%    \end{macrocode}
+%
+% For other potentially font specific variation axes, there is a raw setter available:
+%    \begin{macrocode}
+\@@_keys_define_code:nnn {fontspec-opentype} {RawAxis}
+  {
+    \prop_gput_from_keyval:Nn \g_@@_rawvariations_prop {#1}
+  }
+%    \end{macrocode}
+%
+% \subsubsection{Variation instances}
+%
+%    \begin{macrocode}
+\@@_keys_define_code:nnn {fontspec-opentype} {Instance}
+  {
+    \tl_gset:Nn \g_@@_instance_tl {#1}
+  }
 %    \end{macrocode}
 %
 % \subsubsection{Font transformations}
@@ -912,9 +1005,10 @@
 
 % /©
 % ------------------------------------------------
-% The FONTSPEC package  <wspr.io/fontspec>
+% The FONTSPEC package  <latex3.github.io/fontspec>
 % ------------------------------------------------
-% Copyright  2004-2022  Will Robertson, LPPL "maintainer"
+% Copyright  2022-2024  The LaTeX project,  LPPL "maintainer"
+% Copyright  2004-2022  Will Robertson
 % Copyright  2009-2015  Khaled Hosny
 % Copyright  2013       Philipp Gesang
 % Copyright  2013-2016  Joseph Wright

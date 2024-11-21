@@ -4,7 +4,7 @@
 %
 % Copyright (C) 1999 Frank Mittelbach, Chris Rowley, David Carlisle
 %           (C) 2004-2008 Frank Mittelbach, The LaTeX Project
-%           (C) 2009-2023 The LaTeX Project
+%           (C) 2009-2024 The LaTeX Project
 %
 % It may be distributed and/or modified under the conditions of the
 % LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -55,7 +55,7 @@
 %   \begin{itemize}\def\makelabel##1{\hss\llap{\bfseries##1}}}{\end{itemize}}
 %
 % \title{^^A
-%   The \textsf{xparse} package\\ Document command parser^^A
+%   The \pkg{xparse} package\\ Document command parser^^A
 % }
 %
 % \author{^^A
@@ -67,11 +67,26 @@
 %    }^^A
 % }
 %
-% \date{Released 2023-10-10}
+% \date{Released 2024-08-16}
 %
 % \maketitle
 %
 % \begin{documentation}
+%
+% \section{Introduction}
+%
+% \begin{center}
+%   \bfseries This package is obsolete with the October 2020 \LaTeX{} release.
+% \end{center}
+%
+% With new formats, \cs{NewDocumentCommand}, etc., are available in
+% the format. Other than for a small number of now-deprecated
+% argument types and support functions, package authors should transition
+% their code to avoid loading \pkg{xparse}. An updated version of the
+% documentation covering the full set of functionality available in
+% the kernel is available in \texttt{usrguide}.
+%
+% \section{Old introduction}
 %
 % The \pkg{xparse} package provides a high-level interface for
 % producing document-level commands. In that way, it is intended as
@@ -1064,7 +1079,7 @@
 %    \end{macrocode}
 %
 %    \begin{macrocode}
-\ProvidesExplPackage{xparse}{2023-10-10}{}
+\ProvidesExplPackage{xparse}{2024-08-16}{}
   {L3 Experimental document command parser}
 %    \end{macrocode}
 %
@@ -1421,13 +1436,30 @@
 %
 % \begin{macro}{\@@_get_arg_spec:NTF}
 %   If the command is not an \pkg{xparse} command, complain.  If it is,
-%   its second \enquote{item} is the argument specification.
+%   its second \enquote{item} is the argument specification unless the
+%   command is optimised: in the latter case, we can reconstruct the
+%   spec.
 %    \begin{macrocode}
 \cs_gset_protected:Npn \@@_get_arg_spec:NTF #1#2#3
   {
     \__kernel_cmd_if_xparse:NTF #1
       {
-        \tl_set:Ne \ArgumentSpecification { \tl_item:Nn #1 { 2 } }
+        \tl_set:Ne \ArgumentSpecification
+          {
+            \exp_args:No \tl_if_head_eq_meaning:nNTF {#1} \@@_start_optimized:
+              {
+                \prg_replicate:nn
+                  {
+                    \str_count:e
+                      {
+                        \exp_args:Nc \cs_parameter_spec:N
+                          { \cs_to_str:N #1 \c_space_tl code }
+                      } / 2
+                  }
+                  { m }
+              }
+              { \tl_item:Nn #1 { 2 } }
+          }
         #2
       }
       {#3}

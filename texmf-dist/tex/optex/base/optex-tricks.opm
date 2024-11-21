@@ -1,6 +1,6 @@
 %% This is part of the OpTeX project, see http://petr.olsak.net/optex
 
-\_codedecl \_undefined {OpTeX tricks ready to autoload <2023-11-15>} % chunks loaded on demand
+\_codedecl \_undefined {OpTeX tricks ready to autoload <2024-05-07>} % chunks loaded on demand
 
 % Selected OpTeX tricks are here, they are auto-loaded if the macro is used first
 % namespace: optextrick
@@ -59,6 +59,25 @@
 
 \_nspublic \hours \minutes \seconds \weekday \Othe ;
 
+\_trick 0132 \thedimen ;
+%%%%%%%%%%%%
+
+\_sdef {_thedimen:pt}{1}
+\_sdef {_thedimen:cm}{28.4527559}
+\_sdef {_thedimen:mm}{2.84527559}
+\_sdef {_thedimen:in}{72.27}
+\_sdef {_thedimen:sp}{(1/65536)}
+\_sdef {_thedimen:pc}{12}
+\_sdef {_thedimen:bp}{1.00375}
+\_sdef {_thedimen:dd}{1.070008643}
+\_sdef {_thedimen:cc}{12.8401037}
+\_sdef {_thedimen:em}{(\number\fontdimen6\font/65536)}
+\_sdef {_thedimen:ex}{(\number\fontdimen5\font/65536)}
+
+\_def\thedimen #1#2#3{\_nnum{\_expr[5]{%
+   \_number\_dimexpr#1\_relax / 65536 / \_trycs{_thedimen:#2#3}{5000000000}}}#2#3}
+
+
 \_trick 0063 \showpglists ;
 %%%%%%%%%%%%
 
@@ -81,6 +100,52 @@
    \_fi
 }
 
+\_trick 0133 \shownodes ;
+%%%%%%%%%%%%
+
+\_def\shownodes#1{%
+   \_ifcat\_noexpand#1\_relax \_def\.tmp{#1}\_tmpnum=#1\_ea\.shownodesA
+   \_else \_def\.tmp{}\_afterfi{\_afterassignment\.shownodesA \_tmpnum=#1}\_fi
+}
+\_def\.shownodesA{%
+   \_wterm{==== Box \_the\_tmpnum\_space (\_ea\_string\.tmp):}%
+   \_directlua{
+   local nodetree = require("nodetree")
+   nodetree.print(tex.box[\_the\_tmpnum])
+}}
+
+
+\_trick 0134 \rebox \leftfill \rightfill \lrfill ;
+%%%%%%%%%%%%
+
+\_def\rebox{\_directlua{
+   local nod = tex.box[token.scan_int()]      % read head node of the given box
+   if not(nod==nil) and nod.id==1 then        % given box must be \vbox
+       for n in node.traverse(nod.head) do
+           if n.id==0 then                    % i.e. hlist (\hbox)
+               local nn = node.hpack (n.head) % calculate its natural width
+               n.width = nn.width             % save natural width
+               nn.head = nil  node.free (nn)  % remove created box node
+           end
+       end
+       local nn = node.vpack (nod.head)       % calculate main vlist (\vbox) width
+       nod.width = nn.width                   % save this width to nod.width
+       nn.head = nil  node.free (nn)          % remove created box node
+       for n in node.traverse(nod.head) do
+           if n.id==0 then
+               local nn = node.hpack (n.head, nod.width, "exactly") % \hbox to nod.width
+               n.width = nn.width             % save changed hlist (\hbox) parameters
+               n.glue_order = nn.glue_order n.glue_set = nn.glue_set n.glue_sign = nn.glue_sign
+               nn.head = nil  node.free (nn)  % remove created box node
+           end
+       end
+   end
+}}
+\_def\leftfill {\_leftskip=0pt plus1fill \_parindent=0pt }
+\_def\rightfill{\_rightskip=0pt plus1fill \_parindent=0pt }
+\_def\lrfill{\_leftskip=0pt plus1fill \_rightskip=\_leftskip \_parindent=0pt }
+
+
 \_trick 0101 \runsystem ;
 %%%%%%%%%%%%
 
@@ -94,18 +159,120 @@
 
 \_nspublic \exitstatus ;
 
-\_trick 105 \directoutput ;
-%%%%%%%%%%%
+\_trick 0105 \directoutput ;
+%%%%%%%%%%%%
 
-\_def\directoutput{\_begingroup \_afterassignment\.directoutputA \_setbox0=}
+\_newbox\.outbox
+\_def\directoutput{\_begingroup \_afterassignment\.directoutputA \_setbox\.outbox=}
 \_def\.directoutputA{\_aftergroup \.directoutputB}
-\_def\.directoutputB{\_preshipout0\_box0
-   \_pdfpageheight=\_dimexpr\_ht0+\_dp0+2\_vvkern \_relax
-   \_pdfpagewidth=\_dimexpr\_wd0+2\_hhkern\_relax
+\_def\.directoutputB{\_preshipout\.outbox\_box\.outbox
+   \_pdfpageheight=\_dimexpr\_ht\.outbox+\_dp\.outbox+2\_vvkern \_relax
+   \_pdfpagewidth=\_dimexpr\_wd\.outbox+2\_hhkern\_relax
    \_hoffset=\_hhkern \_voffset=\_vvkern
-   \_shipout\_box0
+   \_shipout\_box\.outbox
    \_incr\_pageno
    \_endgroup
+}
+
+\_trick 0135 \directchar ;
+%%%%%%%%%%%%
+
+\_protected\_def\directchar{\_ifmmode \_ea\_Uchar\_else \_quitvmode \_ea\.directcharA\_fi}
+\_def\.directcharA{\_directlua{
+   local n = node.new(29, 256)
+   n.font = font.current()
+   n.char = token.scan_int()
+   node.write(n)
+}}
+
+\_trick 0137 \replmacro ;
+%%%%%%%%%%%%
+
+\_def\replmacro #1{\_ea\.replmacroA\_ea#1\_meaning#1\_relax}
+\_def\.replmacroA #1#2:#3->#4\_relax#5#6#7#8{%
+   {\_let\\=\_nbb \_edef\"{\_string\"}%
+    \_xargs\.replmacroB \{\}\$\&\#\^\~;\_ea
+   }\_ea\.replmacroC\_ea#1\_directlua{
+      local prefixes="\_luaescapestring{#2}"
+      local params="\_luaescapestring{#3}"
+      local body="\_luaescapestring{#4}"
+      prefixes = string.gsub(prefixes,"macro","")
+      \_ifx;#5;\_else prefixes = string.gsub(prefixes,#5)\_fi
+      \_ifx;#6;\_else params   = string.gsub(params,#6)\_fi
+      \_ifx;#7;\_else body     = string.gsub(body,#7)\_fi
+      \_ifx;#8;\_else body     = string.gsub(body,#8)\_fi
+      tex.sprint("{"..prefixes.."}{"..params.."}{"..body.."}")
+   }%
+}
+\_def\.replmacroB #1{\_edef#1{\_csstring#1}}
+\_def\.replmacroC #1#2#3#4{\_useit#2\_def#1#3{#4}}
+
+
+\_trick 0136 \xreplstring ;
+%%%%%%%%%%%%
+
+\_directlua{%
+local scan_toks = token.scan_toks
+local put_next = token.put_next
+local create = token.create
+local lbrace = create(string.byte('{'))
+local rbrace = create(string.byte('}'))
+define_lua_command('xreplstring', function()
+    local macro_name = create(token.scan_csname())
+    put_next(create'_expandafter',
+    lbrace,macro_name,rbrace)
+    local macro_body = scan_toks(false,false)
+    local nested = token.scan_keyword('nested')
+    local find = scan_toks(false,false)
+    local replace = scan_toks(false,false)
+    local find_length = \_csstring\#find
+    local replace_length = \_csstring\#replace
+    local range = \_csstring\#macro_body - find_length + 1
+    local i = 1
+    local nested_level = 0
+    while i <= range do
+        if not nested then
+            if macro_body[i].tok == lbrace.tok then
+               nested_level = nested_level + 1
+            elseif macro_body[i].tok == rbrace.tok then
+               nested_level = nested_level - 1
+            end
+        end
+        if nested_level > 0 then i = i+1 else
+            for j = 0, find_length - 1 do
+                if not nested then
+                    if macro_body[i + j].tok == lbrace.tok then
+                        nested_level = nested_level + 1
+                        i = i+j+1
+                      break
+                    end
+                end
+                if (macro_body[i + j].tok \_csstring\~= find[j+1].tok) then
+                    i = i+1
+                  break
+                else
+                    if j == find_length - 1 then
+                        for t = 0, find_length - 1 do
+                            table.remove(macro_body,i)
+                        end
+                        for t = 0, replace_length - 1 do
+                            table.insert(macro_body,i+t,replace[t+1])
+                        end
+                            range = \_csstring\#macro_body - find_length + 1
+                            i = i+replace_length
+                      break
+                    end
+                end
+            end
+        end
+    end
+    put_next(rbrace)
+    put_next(macro_body)
+    put_next(create'_def',macro_name,lbrace)
+    if macro_name.protected then
+        put_next(create'_protected')
+    end
+end,'global') % we want to keep the meanig after group
 }
 
 \_trick 0078 \algol ;
@@ -173,6 +340,22 @@
    {\LightGrey \_vrule height\_ht0 width\_wd0\Black\_raise1ex\_llap{\.filename\ }}\_egroup
 }
 \_def\ignoreinspic{\_let\_inspicB=\.inspicBnew}
+
+\_trick 0040 \tdnum ;
+%%%%%%%%%%%%
+
+\_def\tdnum #1 {\_isinlist{#1}{.}\_iftrue \_ea\.tdnumG \_else \_ea\.tdnumH \_fi #1\_end}
+\_def\.tdnumG #1.#2\_end {\.tdnumH#1\_end \.decdot \.tdnumB #2\_empty\_empty\_empty}
+\_def\.tdnumH#1\_end{\.tdnumA #1\_empty\_empty\_empty #1\_empty}
+\_def\.tdnumA #1#2#3{\_xcasesof
+   {\_ifx #1\_empty} {\.tdnumB}
+   {\_ifx #2\_empty} {\.tdnumB{}}
+   {\_ifx #3\_empty} {\_ea\.tdnumB\_ignoreit}
+   \_finc          {\.tdnumA}
+}
+\_def\.tdnumB #1#2#3#4{#1#2#3\_ifx#4\_empty\_else \.numsep \_ea\.tdnumB\_ea#4\_fi}
+\_def\.numsep{\,}
+\_def\.decdot{.}
 
 \_trick 0047 \style m \keepstyle ;
 %%%%%%%%%%%%
@@ -735,12 +918,53 @@
       +\_topskip \_relax
 }
 
+\_trick 0129 \pgforeground ;
+%%%%%%%%%%%%
+
+\_newtoks \pgforeground
+
+\_addto\_makefootline{
+   \_istoksempty\pgforeground \_iffalse
+      \_vskip-\_prevdepth
+      \_vskip-\_vsize
+      \_vskip-\_voffset
+      \_istoksempty\_footline \_iffalse \_vskip-\_footlinedist \_fi
+      \_nointerlineskip
+      \_moveleft\_hoffset \_vbox{\_the\pgforeground}
+   \_fi
+}
+
+\_trick 0130 \onlyifnew ;
+%%%%%%%%%%%%
+
+\_def \onlyifnew#1#2{\_begingroup
+   \_edef\.tmpA{\_csstring #2}%
+   \_edef\.tmpB{\_string #2}%
+   \_ea\_ifcsname\.tmpA\_endcsname
+   \_ifx\.tmpA\.tmpB% #2 has no backslash
+   \_def\.onlyifnewA{#1{_optextrick_onlyifnewB}}\_else
+   \_def\.onlyifnewA{#1\_optextrick_onlyifnewB}\_fi
+   \_else
+   \_ifx\.tmpA\.tmpB
+   \_def\.onlyifnewA{#1{#2}}\_else
+   \_def\.onlyifnewA{#1#2}\_fi
+   \_fi\_ea\_endgroup\.onlyifnewA}
+
+%%%%%%%%%%%%
 \_trick end ;
 
 \_endcode
 
+2024-05-07 \replmacro added
+2024-05-02 \xreplstring added
+2024-04-15 \directchar added
+2024-03-21 \rebox added
+2024-03-19 \shownodes added
+2024-03-09 \thedimen added
+2024-02-13 \onlyifnew added
+2024-02-12 \pgforeground added
 2023-11-15 \correctvsize added
-2023-11-09 \makeLOF, \makeLOT aded
+2023-11-09 \makeLOF, \makeLOT added
 2023-11-08 \ispageodd, \seccc added
 2023-11-07 \settabs \import \incrpp added
 2023-11-05 \twoblocks, \pstart added

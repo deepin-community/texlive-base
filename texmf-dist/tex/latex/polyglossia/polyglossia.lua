@@ -1,6 +1,6 @@
 --
 -- polyglossia.lua
--- part of polyglossia v1.66 -- 2023/12/11
+-- part of polyglossia v2.3 -- 2024/09/23
 --
 
 local module_name = "polyglossia"
@@ -26,20 +26,13 @@ end
 polyglossia = polyglossia or {}
 local polyglossia = polyglossia
 
-local function select_language(lang, id)
-    polyglossia.current_language = lang
-end
-
-local function set_default_language(lang, id)
-    polyglossia.default_language = lang
-end
-
 local function load_tibt_eol()
     require('polyglossia-tibt')
 end
 
 -- predefined l@nohyphenation or LuaTeX's maximum value for \language
 local nohyphid = luatexbase.registernumber'l@nohyphenation' or 16383
+token.set_char('l@nohyphenation', nohyphid)
 
 -- key `nohyphenation` is for .sty file when possibly undefined l@nohyphenation
 local newloader_loaded_languages = { nohyphenation = nohyphid }
@@ -83,7 +76,7 @@ local function newloader(langentry)
             end
 
             -- language info will be written into the .log file
-            local s = { "Language data for " .. langentry }
+            local s = { }
             for k, v in pairs(langdata) do
                 if type(v) == 'table' then -- for 'synonyms'
                     s[#s+1] = k .. "\t" .. table.concat(v,',')
@@ -91,7 +84,10 @@ local function newloader(langentry)
                     s[#s+1] = k .. "\t" .. tostring(v)
                 end
             end
-            log_info(table.concat(s,"\n"))
+            local a = {}
+	    for _,n in pairs(s) do table.insert(a, n) end
+            table.sort(a)
+            log_info("Language data for " .. langentry .. "\n" .. table.concat(a,"\n"))
 
             --
             -- LaTeX's \newlanguage increases language register (count19),
@@ -101,7 +97,7 @@ local function newloader(langentry)
             -- this possible situation, our newloader() function will
             -- unfortunately overwrite the language \lang@xyz.
             --
-            -- Threfore here we will compare LaTeX's \newlanguage number with
+            -- Therefore here we will compare LaTeX's \newlanguage number with
             -- LuaTeX's lang.new() id and select the bigger one for our new
             -- language object. Also we will update LaTeX's language register
             -- by this new id, so that another possible \newlanguage should not
@@ -116,7 +112,7 @@ local function newloader(langentry)
             local newlangid = math.max(langcnt, langid)
             -- set language register for possible \newlanguage
             tex.setcount('global', lang_register, newlangid)
-            -- get new lang object if needeed
+            -- get new lang object if needed
             if langid ~= newlangid then
                 langobject = lang.new(newlangid)
             end
@@ -151,11 +147,6 @@ local function newloader(langentry)
     end
 end
 
-polyglossia.select_language = select_language
-polyglossia.set_default_language = set_default_language
 polyglossia.load_tibt_eol = load_tibt_eol
 polyglossia.newloader = newloader
 polyglossia.newloader_loaded_languages = newloader_loaded_languages
--- global variables:
--- polyglossia.default_language
--- polyglossia.current_language

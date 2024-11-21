@@ -59,11 +59,13 @@
 \usepackage{fontspec}
 \setmainfont{erewhon}
 \setsansfont{Cabin}[Scale=MatchLowercase]
-\setmonofont{VeraMono.ttf}[
+\setmonofont{iosevka}[
   Scale = MatchLowercase,
-  ItalicFont     = VeraMoIt.ttf,
-  BoldFont       = VeraMoBd.ttf,
-  BoldItalicFont = VeraMoBI.ttf,
+  Extension      = .ttf,
+  UprightFont    = *-regular,
+  ItalicFont     = *-italic,
+  BoldFont       = *-bold,
+  BoldItalicFont = *-bolditalic,
   HyphenChar=None,
   Color=5D1D00,
   ]
@@ -208,7 +210,7 @@
 %    \pkg{lua-typo}, il suffit d’ajouter dans le préambule la ligne %\\
 %    |\usepackage[All]{lua-typo}|
 %
-%    La version courante (0.85) nécessite un noyau LaTeX récent,
+%    La version courante (\fileversion) nécessite un noyau LaTeX récent,
 %    2022/06/01 ou ultérieur. Ceux qui ne disposent que d’un noyau
 %    antérieur à 2021/06/01 reçoivent un message d’erreur
 %    «\texttt{Unable to register callback}» ; une version «rollback »
@@ -310,6 +312,13 @@
 %      d’une page termine une phrase et qu’il est court (au plus
 %      |\luatypoMinLen=4| lettres), on le signale.
 %    \end{description}
+%
+%    \section{Incompatibilités connues}
+%
+%    La version actuelle de \pkg{lua-typo} est incompatible avec
+%    l’extension \pkg{reledmac}. Si celle-ci est chargée, aucune
+%    vérification n’est effectuée par \pkg{lua-typo}, l’utilisateur
+%    en est informé par un message dans le fichier \file{.log}.
 %
 %    \section{Paramétrage personnalisé}
 %
@@ -528,9 +537,9 @@
 %    it can be loaded this way: |\usepackage[All]{lua-typo}[=v0.4]|.
 %
 %    \enlargethispage*{\baselineskip}
-%    Version 0.85 requires a LaTeX kernel dated 2022/06/01 or later.
-%    Another ``rollback’’ version |[=v0.65]| has been added for those
-%    who run an older kernel.
+%    The current version (\fileversion) requires a LaTeX kernel dated
+%    2022/06/01 or later.  Another ``rollback’’ version |[=v0.65]| has
+%    been added for those who run an older kernel.
 %
 %    See files \file{demo.tex} and \file{demo.pdf} for a short example
 %    (in French).
@@ -614,6 +623,12 @@
 %        letters).
 %
 %      \end{description}
+%
+%    \section{Known issues}
+%
+%    \pkg{lua-typo} is currently incompatible with the \pkg{reledmac}
+%    package.  When the latter is loaded, no check is performed by
+%    \pkg{lua-typo}, a warning is issued in the \file{.log} file.
 %
 %    \section{Customisation}
 %
@@ -752,7 +767,7 @@
 %<+scan>\ProvidesPackage{scan-page}
 %<+dtx>\ProvidesFile{lua-typo.dtx}
 %<*dtx|sty|scan>
-                [2024-01-12 v.0.86 Daniel Flipo]
+                [2024-04-18 v.0.87 Daniel Flipo]
 %</dtx|sty|scan>
 %<*sty>
 % \fi
@@ -1001,8 +1016,20 @@ luatypo = { }
 %   Some defaut values which can be customised in the preamble
 %   are forwarded to Lua AtBeginDocument.
 %
+% \changes{v0.87}{2024/04/18}{Add warning: lua-typo incompatible
+%    with the `reledmac’ package.}
+%
 %    \begin{macrocode}
 \AtBeginDocument{%
+  \@ifpackageloaded{reledmac}%
+    {\PackageWarning{lua-typo}{%
+        'lua-typo' is incompatible with\MessageBreak
+        the 'reledmac' package.\MessageBreak
+        'lua-typo' checking disabled.\MessageBreak
+        Reported}%
+     \LT@Nonetrue
+     \directlua{ luatypo.None = true }%
+    }{}%
   \directlua{
     luatypo.HYPHmax = tex.count.luatypoHyphMax
     luatypo.PAGEmin = tex.count.luatypoPageMin
@@ -1056,10 +1083,10 @@ luatypo = { }
 \ifLT@None
   \directlua{
     texio.write_nl(' ')
-    texio.write_nl('***********************************')
-    texio.write_nl('*** lua-typo loaded with NO option:')
+    texio.write_nl('************************************')
+    texio.write_nl('*** lua-typo running with NO option:')
     texio.write_nl('*** NO CHECK PERFORMED! ***')
-    texio.write_nl('***********************************')
+    texio.write_nl('************************************')
     texio.write_nl(' ')
    }%
 \else
@@ -2095,6 +2122,7 @@ local check_marginnote = function (head, line, colno, vpos, bpmn)
   local MarginparPos    = luatypo.MarginparPos
   local margintol       = luatypo.MParTol
   local marginpp        = tex.getdimen("marginparpush")
+  local textht          = tex.getdimen("textheight")
   local pflag  = false
   local ofirst = true
   local ufirst = true
@@ -2158,7 +2186,6 @@ local check_marginnote = function (head, line, colno, vpos, bpmn)
     last = head
     head = next
   end
-  local textht = tex.getdimen("textheight")
 %<dbg>  local tht  = string.format("%.1fpt", textht/65536)
 %<dbg>  local bott = string.format("%.1fpt", bottom/65536)
 %<dbg>  texio.write_nl('    Bottom=' .. bott)
@@ -2186,6 +2213,9 @@ end
 % \changes{v0.86}{2024/01/10}{Package `stfloats’ adds 1sp to the
 %    external \cs{vbox}. Be less picky regarding height test.}
 %
+% \changes{v0.87}{2024/04/18}{\cs{get\_pagebody} improved: it
+%    failed for crop + hyperref.}
+%
 %    \begin{macrocode}
 local get_pagebody = function (head)
   local textht = tex.getdimen("textheight")
@@ -2199,42 +2229,40 @@ local get_pagebody = function (head)
 %<dbg>  local dp = string.format("%.1fpt", fn.depth/65536)
 %<dbg>  texio.write_nl('get_pagebody: TOP VLIST')
 %<dbg>  texio.write(' ht=' .. ht .. '  dp=' .. dp)
+%    \end{macrocode}
+%    Enter the first \node{vlist} found, recursively scan its
+%    internal \node{vlist}s high enough to include the 'body'
+%    the height of which is known ('textht')…
+%    \begin{macrocode}
   first = fn.list
-  for n in traverse_id(VLIST,first) do
+  repeat
+    for n in traverse_id(VLIST,first) do
 %    \end{macrocode}
 %    Package `stfloats’ seems to add 1sp to the external \cs{vbox}
 %    for each float found on the page.
 %    Add $\pm8$sp tolerance when comparing |n.height| to
 %    |\textheight|.
 %    \begin{macrocode}
-      if n.subtype == 0 and n.height >= textht-1 and
-         n.height <= textht+8                        then
+        if n.subtype == 0 and n.height >= textht-1 then
+           if n.height <= textht+8  then
 %<dbg>         local ht = string.format("%.1fpt",  n.height/65536)
 %<dbg>         texio.write_nl('BODY found: ht=' .. ht)
-%<dbg>         texio.write_nl(', ' .. n.height .. 'sp')
+%<dbg>         texio.write('=' .. n.height .. 'sp')
 %<dbg>         texio.write_nl(' ')
-         body = n
-         break
-      else
+              body = n
+              break
+           else
+              first = n.list
+           end
+        else
 %<dbg>         texio.write_nl('Skip short VLIST:')
 %<dbg>         local ht = string.format("%.1fpt",  n.height/65536)
 %<dbg>         local dp = string.format("%.1fpt",  n.depth/65536)
-%<dbg>         texio.write('ht=' .. ht .. ', ' .. n.height .. 'sp')
+%<dbg>         texio.write('ht=' .. ht .. '=' .. n.height .. 'sp')
 %<dbg>         texio.write(';  dp=' .. dp)
-         local ff = n.list
-         for nn in traverse_id(VLIST,ff) do
-%<dbg>           ht = string.format("%.1fpt",  nn.height/65536)
-%<dbg>           texio.write_nl('  VLIST: ht=' .. ht)
-%<dbg>           texio.write(', ' .. nn.height .. 'sp')
-             if nn.subtype == 0 and nn.height >= textht-1 and
-                nn.height <= textht+8                          then
-%<dbg>          texio.write('  got BODY!')
-                body = nn
-                break
-             end
-         end
-      end
-  end
+        end
+    end
+  until body or not first
   if not body then
      texio.write_nl('***lua-typo ERROR: PAGE BODY *NOT* FOUND!***')
   end
@@ -2666,36 +2694,35 @@ check_vtop = function (top, colno, vpos)
           color_line (head, COLOR)
           backpar = false
        end
-    elseif head and head.id == HLIST and head.subtype == BOX and
-           head.width > 0                                    then
-      if head.height == 0 then
+    elseif head and head.id == HLIST and head.subtype == BOX then
+      if head.width > 0 then
+         if head.height == 0 then
 %    \end{macrocode}
 %    This is a possible margin note.
 %    \begin{macrocode}
-         bpmn, pflag = check_marginnote(head, line, colno, vpos, bpmn)
-         if pflag then pageflag = true end
-      else
+            bpmn, pflag = check_marginnote(head, line, colno, vpos, bpmn)
+            if pflag then pageflag = true end
+            page_bottom, body_bottom = check_EOP(nextnode)
+         else
 %    \end{macrocode}
 %    Leave |check_vtop| if a two columns box starts.
 %    \begin{macrocode}
-         local hf = head.list
-         if hf and hf.id == VLIST and hf.subtype == 0 then
-%<dbg>          texio.write_nl('check_vtop: BREAK => multicol')
-%<dbg>          texio.write_nl(' ')
-            break
-         else
-%    \end{macrocode}
-% \changes{v0.80}{2023/04/18}{hlist-2: added detection of page bottom
-%    and increment line number and vpos.}
-%    This is an |\hbox| (f.i.\ centred), let’s update |vpos|, line
-%    and check for page bottom
-%    \begin{macrocode}
-            vpos = vpos + head.height + head.depth
-            pageline = pageline + 1
-            line = pageline
-            page_bottom, body_bottom = check_EOP (nextnode)
+            local hf = head.list
+            if hf and hf.id == VLIST and hf.subtype == 0 then
+%<dbg>               texio.write_nl('check_vtop: BREAK => multicol')
+%<dbg>               texio.write_nl(' ')
+               break
+            end
          end
       end
+%    \end{macrocode}
+% \changes{v0.80}{2023/04/18}{hlist-2: added detection of page bottom
+%    and increment vpos.}
+%    This is an |\hbox| (f.i.\ centred), let’s update |vpos| and
+%    check for page bottom. Counter pageline is \emph{not} incremented.
+%    \begin{macrocode}
+      vpos = vpos + head.height + head.depth
+      page_bottom, body_bottom = check_EOP (nextnode)
     elseif head.id == HLIST and
           (head.subtype == EQN or head.subtype == ALIGN) and
           (head.height > 0 or head.depth > 0) then
@@ -2810,7 +2837,7 @@ check_vtop = function (top, colno, vpos)
              local n = head
              repeat
                n = n.prev
-             until n.id == HLIST
+             until n.id == HLIST and n.subtype == LINE
              color_line (n, COLOR)
           end
           first_bot = false
@@ -3036,7 +3063,7 @@ return luatypo.check_page
 %    unless option |None| is selected.
 %
 %    \begin{macrocode}
-\AtEndOfPackage{%
+\AtBeginDocument{%
   \directlua{
     if not luatypo.None then
        luatexbase.add_to_callback
@@ -3291,37 +3318,32 @@ local get_pagebody = function (head)
   repeat
     fn = fn.next
   until fn.id == VLIST and fn.height > 0
-  first = fn.list
   local ht = string.format("%.1fpt", fn.height/65536)
   local dp = string.format("%.1fpt", fn.depth/65536)
   texio.write_nl("SKIP vlist: ht=" .. ht .. " dp=" .. dp)
-  for n in traverse_id(VLIST,first) do
-      if n.subtype == 0 and n.height >= textht-1 and
-          n.height <= textht+8                       then
-         local ht = string.format("%.1fpt",  n.height/65536)
-         texio.write_nl('  BODY found: ' .. ht)
-         texio.write(', ' .. n.height .. 'sp')
-         texio.write_nl(' ')
-         body = n
-         break
-       else
-         local ht = string.format("%.1fpt",  n.height/65536)
-         local dp = string.format("%.1fpt",  n.depth/65536)
-         texio.write_nl('  SKIP vlist: ht=' .. ht .. ' dp=' .. dp)
-         local ff = n.list
-         for nn in traverse_id(VLIST,ff) do
-             if nn.subtype == 0 and nn.height >= textht-1 and
-                nn.height <= textht+8                         then
-                ht = string.format("%.1fpt",  nn.height/65536)
-                texio.write_nl('     BODY: ' .. ht)
-                texio.write(', ' .. nn.height .. 'sp')
-                texio.write_nl(' ')
-                body = nn
-                break
-             end
-         end
-      end
-  end
+  first = fn.list
+  repeat
+    for n in traverse_id(VLIST,first) do
+        if n.subtype == 0 and n.height >= textht-1 then
+           if n.height <= textht+8  then
+              local ht = string.format("%.1fpt",  n.height/65536)
+              texio.write_nl('BODY found: ht=' .. ht)
+              texio.write('=' .. n.height .. 'sp')
+              texio.write_nl(' ')
+              body = n
+              break
+           else
+              first = n.list
+           end
+        else
+              texio.write_nl('Skip short VLIST:')
+              local ht = string.format("%.1fpt",  n.height/65536)
+              local dp = string.format("%.1fpt",  n.depth/65536)
+              texio.write('ht=' .. ht .. '=' .. n.height .. 'sp')
+              texio.write(';  dp=' .. dp)
+        end
+    end
+  until body or not first
   if not body then
      texio.write_nl('***lua-typo ERROR: PAGE BODY *NOT* FOUND!***')
   end

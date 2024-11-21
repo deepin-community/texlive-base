@@ -145,7 +145,7 @@ Fig4: [ ls = 2/3       # local scale
  Y: LCintersect(HZ,CC4,C4.rad,R); "Y" at Y above
  X: LCintersect(HZ,CC2,C2.rad);   "X" at X above rjust
 
- Loopover_(`P',`dot(at P)',X,Y,Z)
+ foreach_(`P',`dot(at P)',X,Y,Z)
 
  line dashed from X to Y chop -linewid/2
  RightAngle(A,Z,Y)

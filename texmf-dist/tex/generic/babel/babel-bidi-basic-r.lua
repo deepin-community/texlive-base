@@ -32,9 +32,6 @@
 -- and covered by LPPL is defined by the unpacking scripts (with
 -- extension |.ins|) which are part of the distribution.
 --
-
-Babel = Babel or {}
-
 Babel.bidi_enabled = true
 
 require('babel-data-bidi.lua')
@@ -162,7 +159,7 @@ function Babel.bidi(head, ispar)
       elseif first_d and dir ~= strong_lr then
         dir_mark(head, first_d, last_d, outer)
         first_d, last_d = nil, nil
-     end
+      end
     end
     if dir and not last_lr and dir ~= 'l' and outer == 'r' then
       item.char = characters[item.char] and

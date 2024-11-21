@@ -10,7 +10,7 @@
 %% 
 %%                       The `microtype' package
 %%         Subliminal refinements towards typographical perfection
-%%           Copyright (c) 2004--2023 R Schlicht <w.m.l@gmx.net>
+%%           Copyright (c) 2004--2024 R Schlicht <w.m.l@gmx.net>
 %% 
 %% This work may be distributed and/or modified under the conditions of the
 %% LaTeX Project Public License, either version 1.3c of this license or (at
@@ -30,7 +30,7 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesPackage
   {microtype}
-  [2023/03/13 v3.1a
+  [2024/03/29 v3.1b
    Micro-typographical refinements
    (RS)]
 \def\MT@MT
@@ -269,6 +269,8 @@
 ^^Q  \begingroup\MT@exp@two@c\endgroup\ifx\csname #1\endcsname\relax
 ^^Q    \expandafter\@secondoftwo\else\expandafter\@firstoftwo\fi
 }
+\def\MT@if@expanding@F{\let\MT@if@expanding@F@\MT@if@expanding@F@\@firstofone}
+\def\MT@if@expanding@F@#1#2#3{\relax\relax}
 \def\MT@detokenize@n#1{%
 ^^X  \expandafter\MT@rem@last@space\detokenize{#1} \@nil
 ^^Q  \string#1%
@@ -461,9 +463,9 @@
 \def\MT@addto@setup{\g@addto@macro\MT@setup@}
 \def\MT@with@package@T#1{\@ifpackageloaded{#1}\@firstofone\@gobble}
 \def\MT@with@babel@and@T#1{%
-  \MT@ifdefined@n@T{opt@babel.\@pkgextension}{%
+  \MT@ifdefined@n@T{opt@babel.sty}{%
     \@expandtwoargs\MT@in@clist{#1}
-      {\csname opt@babel.\@pkgextension\endcsname,\@classoptionslist}%
+      {\csname opt@babel.sty\endcsname,\@classoptionslist}%
     \ifMT@inlist@\expandafter\@secondoftwo\else\expandafter\@firstofone\fi
   }\@gobble
 }
@@ -1061,6 +1063,7 @@ time will almost certainly lead to undesired results. Have your choice!}%
   \MT@toks{}%
   \MT@prot@toks{}%
   \let\MT@prot@l\MT@prot@l@
+  \let\MT@prot@get@first@group\MT@prot@get@first@group@
   \let\MT@maybe@textcmd\@firstofone
   \MT@prot@get@firstgroup
 }
@@ -1211,6 +1214,7 @@ time will almost certainly lead to undesired results. Have your choice!}%
     \def\MT@temp*{\MT@exp@one@n\MT@prot@l{\the\MT@toks}}%
   \else
     \let\MT@prot@l\MT@prot@l@tc
+    \let\MT@prot@get@first@group\MT@prot@get@first@group@tc
     \def\MT@temp*##1##2{%
       \let\MT@maybe@textcmd##1%
       \the\MT@toks
@@ -1219,6 +1223,26 @@ time will almost certainly lead to undesired results. Have your choice!}%
       \MT@prot@get@firstgroup@tc##2\MT@nil
     }%
   \fi
+}
+\def\MT@prot@check@C{%
+  \ifx\MT@prot@l\MT@prot@l@tc
+    \def\MT@temp*{\MT@exp@one@n\MT@prot@l{\the\MT@toks}}%
+  \else
+    \let\MT@prot@l\MT@prot@l@tc
+    \let\MT@prot@get@first@group\MT@prot@get@first@group@tc
+    \def\MT@temp*##1{%
+      \the\MT@toks
+      \MT@toks{}%
+      \@ifnextchar[%
+        {\MT@prot@check@C@##1}%
+        {\MT@prot@check@C@##1[]}%
+    }%
+  \fi
+}
+\def\MT@prot@check@C@#1[#2]#3{%
+  \def\MT@maybe@textcmd{#1[#2]}%
+  \MT@prot@toks{#1[#2]{#3}}%
+  \MT@prot@get@firstgroup@tc#3\MT@nil
 }
 \def\MT@prot@check@cmds{%
   {I\ignorespaces}{I\relax}{I\@empty}%
@@ -1233,7 +1257,6 @@ time will almost certainly lead to undesired results. Have your choice!}%
   {T\fontsize}%
   {F\textrm}{F\textsf}{F\texttt}{F\textnormal}%
   {F\textbf}{F\textmd}{F\textit}{F\textsl}{F\textsc}{F\textup}{F\emph}%
-  {F\MakeUppercase}{F\MakeLowercase}%
 }
 \IfFormatAtLeastTF{2020/02/02}
   {\g@addto@macro\MT@prot@check@cmds{%
@@ -1242,7 +1265,8 @@ time will almost certainly lead to undesired results. Have your choice!}%
     {O\fontseriesforce}{O\fontshapeforce}}}
   \relax
 \IfFormatAtLeastTF{2022/11/01}
-  {\g@addto@macro\MT@prot@check@cmds{{F\MakeTitlecase}}}\relax
+  {\g@addto@macro\MT@prot@check@cmds{{C\MakeUppercase}{C\MakeLowercase}{C\MakeTitlecase}}}
+  {\g@addto@macro\MT@prot@check@cmds{{F\MakeUppercase}{F\MakeLowercase}}}
 \@ifclassloaded{ltxdoc}
   {\g@addto@macro\MT@prot@check@cmds{{E\enquote}{E\marg}{E\oarg}{E\parg}{E\cs}}}\relax
 \MT@addto@setup{%
@@ -1297,7 +1321,7 @@ time will almost certainly lead to undesired results. Have your choice!}%
        {{lX}\foreigntextcquote\foreigntextquote}%
        {{lX}\hyphentextcquote\hyphentextquote}}}%
 }
-\def\MT@prot@get@first@group{%
+\def\MT@prot@get@first@group@{%
   \MT@prot@ifcat\bgroup{%
     \def\MT@temp*{\MT@prot@addgroup}%
   }{%
@@ -1891,6 +1915,7 @@ time will almost certainly lead to undesired results. Have your choice!}%
   \g@addto@macro\pickup@font{\begingroup}%
   \MT@with@package@T{trace}{\g@addto@macro\pickup@font{\conditionally@traceoff}}%
   \g@addto@macro\pickup@font{%
+    \MT@if@expanding@F{%
       \escapechar\m@ne
       \MT@let@cn\MT@font{MT@subst@\expandafter\string\font@name}%
       \ifx\MT@font\relax
@@ -1900,7 +1925,7 @@ time will almost certainly lead to undesired results. Have your choice!}%
           \MT@register@subst@font
         \fi
       \fi
-      \MT@setupfont
+      \MT@setupfont}%
     \endgroup
   }%
   \let\MT@pickupfont\pickup@font
@@ -2912,15 +2937,27 @@ time will almost certainly lead to undesired results. Have your choice!}%
 ^^Q    \MT@warning@nl{Patches require the etex extensions. Ignoring them}%
   \fi
 }
-\input{microtype-\MT@engine tex.def}
+\def\MT@get@MT@version#1 #2 #3\@nil{#1 #2}
+\edef\MT@version{\expandafter\expandafter\expandafter\MT@get@MT@version
+  \csname ver@\MT@MT.sty\endcsname\@nil}
+\def\MT@check@MT@version#1#2{%
+  \MT@ifstreq\MT@version{#1}{}{%
+    \MT@warning@nl{Mismatching file versions:\MessageBreak
+       \MT@MT.sty provides:\MessageBreak`\MT@version',\MessageBreak
+       whereas #2 provides:\MessageBreak`#1'.\MessageBreak
+       Please fix your installation}}}
+\input{\MT@MT-\MT@engine tex.def}
+\edef\@tempa{\expandafter\expandafter\expandafter\MT@get@MT@version
+  \csname ver@\MT@MT-\MT@engine tex.def\endcsname\@nil}
+\MT@check@MT@version\@tempa{\MT@MT-\MT@engine tex.def}
 \MT@protrusiontrue
 \define@key{MT}{config}[]{\relax}
-\def\MT@get@config#1config=#2,#3\@nil{%
+\def\MT@temp#1config=#2,#3\@nil{%
   \MT@ifempty{#2}%
     {\def\MT@config@file{\MT@MT.cfg}}%
     {\def\MT@config@file{#2.cfg}}%
 }
-\expandafter\expandafter\expandafter\MT@get@config
+\expandafter\expandafter\expandafter\MT@temp
   \csname opt@\@currname.\@currext\endcsname,config=,\@nil
 \IfFileExists{\MT@config@file}{%
   \MT@info@nl{Loading configuration file \MT@config@file}%

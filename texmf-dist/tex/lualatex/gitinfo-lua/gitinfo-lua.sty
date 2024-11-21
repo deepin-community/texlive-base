@@ -1,5 +1,5 @@
 %% gitinfo-lua.sty
-%% Copyright 2023 E. Nijenhuis
+%% Copyright 2024 E. Nijenhuis
 %
 % This work may be distributed and/or modified under the
 % conditions of the LaTeX Project Public License, either version 1.3c
@@ -14,11 +14,9 @@
 % The Current Maintainer of this work is E. Nijenhuis.
 %
 % This work consists of the files gitinfo-lua.sty gitinfo-lua.pdf
-% gitinfo-cmd.lua and gitinfo-lua.lua
+% gitinfo-lua-cmd.lua, gitinfo-lua-recorder.lua and gitinfo-lua.lua
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{gitinfo-lua}[2023/11/10 Xerdi's Git Package]
-
-\RequirePackage{luacode}
+\ProvidesPackage{gitinfo-lua}[2024/09/14 1.2.0 Xerdi's Git Package]
 
 \directlua{git = require('gitinfo-lua')}
 
@@ -26,6 +24,7 @@
 
 \newif\ifgit@multipleauthors
 \newif\ifgit@setmacros
+\newif\ifgit@toroot
 \pgfkeys{/gitinfo-lua/.is family,
     /gitinfo-lua,
     author sort/.default=false,
@@ -39,7 +38,9 @@
     authors/.style={multiple authors=true},
     set title page macros/.is if=git@setmacros,
     set title page macros=false,
-    titlepage/.style={set title page macros=true}
+    titlepage/.style={set title page macros=true},
+    rootdir/.is if=git@toroot,
+    rootdir=false
 }
 
 \ProcessPgfPackageOptions*
@@ -52,6 +53,15 @@
 \newcommand*\gitdate{\directlua{git:cs_last_commit('git@single@arg', 'cs')}}
 \newcommand*\gitdirectory[1]{\directlua{git:dir('#1')}}
 \newcommand*\gitunsetdirectory{\directlua{git:dir(nil)}}
+\newcommand*\ifgitdirty[2]{%
+    \def\@dirtytrue{1}%
+    \edef\@dirty{\directlua{git:write_is_dirty()}}%
+    \ifx\@dirty\@dirtytrue
+        #1%
+    \else
+        #2%
+    \fi
+}
 
 \newcommand\git@format@author[2]{%
     #1
@@ -80,6 +90,10 @@
     \directlua{git:cs_for_tag('#2', '#1')}%
 }
 \newcommand{\forgittagseq}[1]{\directlua{git:cs_for_tag_sequence('#1')}}
+
+\ifgit@toroot
+    \directlua{git:dir_to_root()}
+\fi
 
 \ifgit@setmacros
     \ifgit@multipleauthors

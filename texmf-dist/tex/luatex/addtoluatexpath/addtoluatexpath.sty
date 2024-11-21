@@ -1,11 +1,26 @@
-\ProvidesPackage{addtoluatexpath}[2023-08-04]
+\ProvidesPackage{addtoluatexpath}[2024-03-14]
 
 \RequirePackage{luacode}
 
 \providecommand{\input@path}{} % initialize input@path if not defined yet
 
 \begin{luacode*}
+  
+  atlp_paths = {"."} -- global table containing paths added by this package
 
+  function atlp_find_file(f) -- find a path in list of atlp_paths
+    for i, k in pairs(atlp_paths) do
+      local fp = kpse.find_file(k ..'/'.. f)
+      if (fp) then
+        return fp
+      end
+    end -- if nothing returned, issue a package error
+    texio.write_nl('addtoluatexpath searched for file: '..f)
+    texio.write_nl('addtoluatexpath searched paths were: '..token.get_macro('input@path'))
+    tex.sprint('\\PackageError{addtoluatexpath}{a file was not found}{}')
+    tex.sprint('\\stop')
+  end
+  
   function atlp_main(atlp_raw) -- add to path from raw string
 
     local atlp_tbl = require'luakeys'().parse(atlp_raw, {naked_as_value=true}) -- paths as table
@@ -19,9 +34,10 @@
     end
 
     for __, p in ipairs(atlp_tbl) do
-      if p:find('*') == nil then -- add paths without *, continue loop after
+      if p:find('*') == nil then -- add paths without *, and continue the loop after
         if not atlp_no_lua then package.path = package.path .. ';'..p..'/?.lua;' end
         if not atlp_no_tex then  token.set_macro('input@path', token.get_macro('input@path')..'{'..p..'/}', 'global') end
+        atlp_paths[#atlp_paths + 1] = p -- append the added path to global list
         goto continue
       end
 

@@ -26,6 +26,8 @@ CTAN_ZIP  = $(NAME).zip
 TDS_ZIP   = $(NAME).tds.zip
 ZIPS      = $(CTAN_ZIP) $(TDS_ZIP)
 
+DOLATEX   = texfot --quiet --tee=/dev/null --ignore "hypdoc" --ignore "^Overfull" --ignore "^Underfull" lualatex -recorder $(DTX)
+
 all: $(GENERATED)
 doc: $(DOC)
 unpack: $(UNPACKED)
@@ -36,14 +38,16 @@ world: all ctan
 .PHONY: all doc unpack ctan tds check world
 
 %.pdf: %.dtx
-	latexmk -lualatex -recorder- -silent $< >/dev/null
+	@$(DOLATEX)
+	@if( grep rerunfilecheck $(NAME).log |grep 'has changed' > /dev/null ); then $(DOLATEX); fi
+	@if( grep 'Rerun to get' $(NAME).log > /dev/null ); then $(DOLATEX); fi
 
 $(UNPACKED): $(DTX)
 	luatex -interaction=batchmode $< >/dev/null
 
 check: $(UNPACKED)
-	luatex   -interaction=batchmode test-$(NAME)-plain.tex  >/dev/null
-	lualatex -interaction=batchmode test-$(NAME)-latex.tex  >/dev/null
+	@texfot --quiet --tee=/dev/null luatex -interaction=batchmode test-$(NAME)-plain.tex
+	@texfot --quiet --tee=/dev/null lualatex -interaction=batchmode test-$(NAME)-latex.tex
 	! grep "blank space"              test-$(NAME)-plain.log
 	! grep "blank space"              test-$(NAME)-latex.log
 

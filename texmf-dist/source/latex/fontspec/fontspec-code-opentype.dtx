@@ -1,4 +1,4 @@
-%%^^A%%  fontspec-code-opentype.dtx -- part of FONTSPEC <wspr.io/fontspec>
+%%^^A%%  fontspec-code-opentype.dtx -- part of FONTSPEC <latex3.github.io/fontspec>
 
 % \section{OpenType definitions code}
 %
@@ -9,6 +9,22 @@
 % \fi
 %
 %
+%
+% \begin{macro}{\@@_define_opentype_variation_axis:nn}
+%    \begin{macrocode}
+\cs_new:Nn \@@_define_opentype_variation_axis:nn
+  {
+    \keys_define:nn {fontspec-opentype}
+      {
+        #1 .code:n = {
+          \prop_gput:Nnn \g_@@_rawvariations_prop { #2 } { ##1 }
+        },
+        #1 .value_required:n = true,
+        #1 .groups:n = {opentype},
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
 %
 % \begin{macro}{\@@_define_opentype_feature_group:n}
 %    \begin{macrocode}
@@ -111,21 +127,8 @@
 \cs_new:Nn \@@_make_OT_feature:nnn
   {
 %<debug>  \typeout{:: @@_make_OT_feature:nnn \exp_not:n { {#1}{#2}{#3} } }
-
-    \bool_set_true:N \l_@@_proceed_bool
-
-    \tl_if_empty:nF {#1}
-      {
-        \exp_args:No \@@_check_ot_feat:NnF \l_@@_fontface_cs_tl {#1}
-          {
-            \@@_warning:nx {icu-feature-not-exist-in-font} {#1}
-            \bool_set_false:N \l_@@_proceed_bool
-          }
-      }
-
     \@@_remove_clashing_featstr:x { #2 , \@@_swap_plus_minus:n {#2} , #3 }
-
-    \bool_if:NT \l_@@_proceed_bool { \@@_update_featstr:n {#2} }
+    \@@_update_featstr:n {#2}
   }
 \cs_generate_variant:Nn \@@_make_OT_feature:nnn {xxx}
 %    \end{macrocode}
@@ -143,7 +146,7 @@
 % font. \cmd\l_@@_script_int\ is used to store
 % the number corresponding to the script tag string.
 %    \begin{macrocode}
-\prg_new_conditional:Nnn \@@_check_script:Nn {TF,T}
+\prg_new_conditional:Nnn \@@_check_script:Nn {TF,T,F}
   {
 %<debug>\typeout{:: _check_script:Nn~#1~/~#2}
     \bool_if:NTF \l_@@_never_check_bool
@@ -200,7 +203,7 @@
 % The script used is whatever's held in \cmd\l_@@_script_int. By default, that's the
 % number corresponding to `|latn|'.
 %    \begin{macrocode}
-\prg_new_conditional:Nnn \@@_check_lang:Nn {TF}
+\prg_new_conditional:Nnn \@@_check_lang:Nn {TF,F}
   {
     \@@_check_lang:NnnTF #1 {#2} {\l_@@_script_tl} {\prg_return_true:} {\prg_return_false:}
   }
@@ -255,7 +258,6 @@
 % \end{macro}
 % \end{macro}
 %
-% \begin{macro}{\@@_check_ot_feat:NnTF}
 % \begin{macro}{\@@_check_ot_feat:NnnnTF}
 % This macro takes an OpenType feature tag and checks if it exists in the current
 % font/script/language.
@@ -264,15 +266,7 @@
 % number corresponding to `|latn|'. The language used is \cmd\l_@@_language_int,
 % by default |0|, the `default language'.
 %    \begin{macrocode}
-\prg_new_conditional:Nnn \@@_check_ot_feat:Nn {TF,F}
-  {
-    \@@_check_ot_feat:NnnnTF #1 {#2} {\l_@@_lang_tl} {\l_@@_script_tl}
-      {\prg_return_true:} {\prg_return_false:}
-  }
-%    \end{macrocode}
-%
-%    \begin{macrocode}
-\prg_new_conditional:Nnn \@@_check_ot_feat:Nnnn {TF,F}
+\prg_new_conditional:Nnn \@@_check_ot_feat:Nnnn {TF,T,F}
   {
     \bool_if:NTF \l_@@_never_check_bool
       { \prg_return_true: }
@@ -321,7 +315,6 @@
       }
   }
 %    \end{macrocode}
-% \end{macro}
 % \end{macro}
 %
 % \subsection{OpenType feature information}
@@ -464,9 +457,10 @@
 
 % /©
 % ------------------------------------------------
-% The FONTSPEC package  <wspr.io/fontspec>
+% The FONTSPEC package  <latex3.github.io/fontspec>
 % ------------------------------------------------
-% Copyright  2004-2022  Will Robertson, LPPL "maintainer"
+% Copyright  2022-2024  The LaTeX project,  LPPL "maintainer"
+% Copyright  2004-2022  Will Robertson
 % Copyright  2009-2015  Khaled Hosny
 % Copyright  2013       Philipp Gesang
 % Copyright  2013-2016  Joseph Wright

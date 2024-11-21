@@ -1,6 +1,6 @@
 % Kale Ewasiuk (kalekje@gmail.com)
-% 2023-12-08
-% Copyright (C) 2021-2023 Kale Ewasiuk
+% 2024-09-30
+% Copyright (C) 2021-2024 Kale Ewasiuk
 %
 % Permission is hereby granted, free of charge, to any person obtaining a copy
 % of this software and associated documentation files (the "Software"), to deal
@@ -22,12 +22,14 @@
 % OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 % OR OTHER DEALINGS IN THE SOFTWARE.
 
-\ProvidesPackage{penlightplus}[2023-12-08]
+\ProvidesPackage{penlightplus}[2024-09-30]
 
 \RequirePackage{luacode}
 \RequirePackage{luakeys}
 \RequirePackage[import]{penlight}
 \RequirePackage{etoolbox}
+\RequirePackage{tokcycle}
+
 
 \DeclareOption{globals}{\luadirect{__PL_GLOBALS__ = true}}
 \DeclareOption{pl}{\directlua{pl = penlight}}
@@ -40,22 +42,36 @@
 
 \global\newcommand{\writePDFmetadata}{\luadirect{penlight.tex.writePDFmetadata()}}
 
-\NewDocumentCommand{\writePDFmetadatakv}{ s m }{
+\NewDocumentCommand{\writePDFmetadatakv}{ s O{f} m }{%
+\MakeluastringCommands[f]{#2}%
 \IfBooleanTF{#1}{% if *, overwrite everything
   \luadirect{
-    __PDFmetadata__ = penlight.luakeys.parse(\luastring{#2})
-      penlight.tex.writePDFmetadata()
+    __PDFmetadata__ = penlight.tex.makePDFtablekv(\plluastringA{#3})
   }}{
     \luadirect{
     __PDFmetadata__ = __PDFmetadata__ or {}
-    penlight.tablex.update(__PDFmetadata__, penlight.luakeys.parse(\luastring{#2}))
-    penlight.tex.writePDFmetadata()
-  }}
+    penlight.tablex.update(__PDFmetadata__, penlight.tex.makePDFtablekv(\plluastringA{#3}))
+  }}%
+  \writePDFmetadata{}%
 }
 
 
 \gdef\luastringT#1{\luastring{\unexpanded\expandafter\expandafter\expandafter{#1}}}  % expand luastring twice
 \global\let\luastringF\luastring  % fully expanded luastring
+
+
+\xtokcycleenvironment\luastringeenv
+  {\addcytoks{##1}}
+  {\processtoks{##1}}
+  {\addcytoks[1]{##1}}
+  {\addcytoks{##1}}
+  {}
+  {\cytoks\expandafter{\expandafter\luastringO\expandafter{\the\cytoks}}}
+
+\def\luastringE#1{\luastringeenv#1\endluastringeenv}
+%\gdef\luastringE#1{\begin{luastringeenv#1\endluastringeenv}
+
+
 
 % allow control over expansion of arguments to a latex function
 \NewDocumentCommand{\MakeluastringCommands}{O{} m }{% #1 the desired commands #2 defaults
@@ -84,22 +100,28 @@
 \newtoggle{luaexpr}\togglefalse{luaexpr}
 
 \begin{luacode*}
-  function toggle_luaexpr(expr)
-    if expr then
-      tex.sprint('\\toggletrue{luaexpr}')
-    else
-      tex.sprint('\\togglefalse{luaexpr}')
-    end
-  end
+
 \end{luacode*}
 
-\NewDocumentCommand{\ifluax}{m m O{}}{%
-  \luadirect{toggle_luaexpr(#1)}%
+\NewDocumentCommand{\ifluax}{m m O{}}{% if lua expression is true do {m} if not [o]
+  \luadirect{penlight.toggle_luaexpr(#1)}%
   \iftoggle{luaexpr}{#2}{#3}%
   \togglefalse{luaexpr}% safety set to false
 }
 
-\NewDocumentCommand{\ifluaxv}{m m O{}}{\ifluax{penlight.hasval(#1)}{#2}[#3]}
+\NewDocumentCommand{\ifluaxv}{m m O{}}{\ifluax{penlight.hasval(#1)}{#2}[#3]}% if lua expression is truthy do {m} else [o]
+
+
+
+
+
+
+\NewDocumentCommand{\caseswitch}{s m +m}{\ignorespaces\luadirect{penlight.caseswitch(\luastring{#1},\luastring{#2},\luastringN{#3})}\unskip}
+% argument 1 is star option, which throws an error if case is not found
+% argument 2 is the case, fully expanded
+% argument 3 is a luakeys table of options, not expanded
+
+
 
 
 
@@ -116,6 +138,10 @@
   penlight.rec_tbl = \luastring{#1}
 }}
 
+\NewDocumentCommand{\tblfrkvCD}{m +m O{}}{\tblfrkv{#1}{#2}[#3]\tblkvundefcheck\tbldefall{}{}}
+%% tbl from key-vals, then check defaults, then define all keys using default format
+\NewDocumentCommand{\tblfrkvNCD}{m +m O{}}{\tblfrkvN{#1}{#2}[#3]\tblkvundefcheck\tbldefall{}{}}
+
 \NewDocumentCommand{\tblfrkvN}{m +m O{}}{\luadirect{%
   penlight.rec_tbl_opts = penlight.luakeys.parse(\luastring{#3})
   penlight.tbls[\luastring{#1}] = penlight.luakeys.parse(string.subpar(\luastringN{#2}), penlight.rec_tbl_opts)
@@ -124,8 +150,52 @@
 
 \NewDocumentCommand{\tblfrcsv}{m +m O{}}{\tblfrkv{#1}{#2}[naked_as_value=true,#3]}
 
+\NewDocumentCommand{\tblfrcsvN}{m +m O{}}{\tblfrkvN{#1}{#2}[naked_as_value=true,#3]}
+
 
 \NewDocumentCommand{\tblkvundefcheck}{}{\luadirect{penlight.check_recent_tbl_undefault()}}% check defaults list and throw error if foreign keys were used
+
+
+
+\NewDocumentCommand{\tblapp}{m m}{\luadirect{% append to a table (ie using integer index)  with a value (second arg) # todo option for string or number
+  __tbl__ = penlight.get_tbl_name(\luastring{#1})
+  table.insert(penlight.tbls[__tbl__], \luastring{#2})
+}}
+
+
+\NewDocumentCommand{\tblappN}{m m}{\luadirect{% append to a table (ie using integer index)  with a value (second arg) # todo option for string or number
+  __tbl__ = penlight.get_tbl_name(\luastring{#1})
+  table.insert(penlight.tbls[__tbl__], \luastringN{#2})
+}}
+
+
+\NewDocumentCommand{\tblcon}{m m}{\luadirect{% concatenate to a table (ie using integer index)  with a  list of comma separated values (second arg) #
+  __tbl__ = penlight.get_tbl_name(\luastring{#1})
+  for k, v in ipairs(penlight.luakeys.parse(string.subpar(\luastring{#2}), {naked_as_value=true})) do
+    table.insert(penlight.tbls[__tbl__], v)
+  end
+}}
+
+
+\NewDocumentCommand{\tblconN}{m m}{\luadirect{% concatenate to a table (ie using integer index)  with a  list of comma separated values (second arg) #
+  __tbl__ = penlight.get_tbl_name(\luastring{#1})
+  for k, v in ipairs(penlight.luakeys.parse(string.subpar(\luastringN{#2}), {naked_as_value=true})) do
+    table.insert(penlight.tbls[__tbl__], v)
+  end
+}}
+
+\NewDocumentCommand{\tbladd}{m m}{\luadirect{% add a kv pair to a table
+  __tbl__, __key__ = penlight.get_tbl_index(\luastring{#1}, true)
+  penlight.tbls[__tbl__][__key__] = \luastring{#2}
+}}
+
+\NewDocumentCommand{\tbladdN}{m m m}{\luadirect{% add a kv pair to a table
+  __tbl__, __key__ = penlight.get_tbl_index(\luastring{#1}, true)
+  penlight.tbls[__tbl__][__key__] = \luastringN{#2}
+}}
+
+
+
 
 \NewDocumentCommand{\tblchg}{ m }{\luadirect{% change recent table
   penlight.rec_tbl = \luastring{#1}
@@ -140,44 +210,39 @@
   penlight.set_tbl_item(\luastring{#1}, \luastring{#2})
 }}
 
-% todo if no definition is provided, assume <tblname><key>
-\NewDocumentCommand{\tbldef}{ m m }{\luadirect{% define a {table key}{def}
-  local _tbl, _key = penlight.get_tbl_index(\luastring{#1})
-  local _tbl_def_ = \luastring{#2}
-  if _tbl_def_ == '' then _tbl_def_ = 'dtbl'.._tbl.._key end
-  token.set_macro(_tbl_def_, tostring(penlight.tbls[_tbl][_key]))
-}}
-
-\NewDocumentCommand{\tbldefall}{ m m }{\luadirect{% define all {table} keys to {table} \table<key1>
-   % todo maybe change tbldef {def} to [def] and make same as table name
-    local _tbl = penlight.get_tbl_name(\luastring{#1})
-    local _tbl_def_ = \luastring{#2}
-     if _tbl_def_ == '' then _tbl_def_ = 'dtbl'.._tbl end
-   for k, v in pairs(penlight.tbls[_tbl]) do
-    token.set_macro(_tbl_def_..k, tostring(v))
-  end
+\NewDocumentCommand{\tblsetN}{m m}{\luadirect{% set item with {value}
+  penlight.set_tbl_item(\luastring{#1}, \luastringN{#2})
 }}
 
 
-\NewDocumentCommand{\tblgdef}{ m m }{\luadirect{% define a table, use * to make global definition
-  token.set_macro(\luastring{#2}, tostring(penlight.get_tbl_item(\luastring{#1})), 'global')
-}}
+\NewDocumentCommand{\tbldef}{ m m }{\luadirect{penlight.def_tbl(\luastring{#1}, \luastring{#2})}}
 
-\NewDocumentCommand{\tbldefxy}{ m m }{\luadirect{penlight.def_tbl_coords(penlight.get_tbl_item(\luastring{#1}), \luastring{#2})}}% define #2x and #2y from a space delimited x-y pair
+% define a table, use * to make global definition
+\NewDocumentCommand{\tblgdef}{ m m }{\luadirect{penlight.def_tbl(\luastring{#1}, \luastring{#2}, 'global')}}
 
+\NewDocumentCommand{\tbldefall}{ m m }{\luadirect{penlight.def_tbl_all(\luastring{#1}, \luastring{#2})}}
+
+\NewDocumentCommand{\tbldefxy}{ m m }{\luadirect{penlight.def_tbl_coords(\luastring{#1}, \luastring{#2})}}% define #2x and #2y from a space delimited x-y pair
 
 \NewDocumentCommand{\tblif}{m m O{}}{\ifluax{penlight.get_tbl_item(\luastring{#1})}{#2}[#3]}
 
 \NewDocumentCommand{\tblifv}{m m O{}}{\ifluaxv{penlight.get_tbl_item(\luastring{#1})}{#2}[#3]}
 
+\NewDocumentCommand{\tblprt}{m}{\luadirect{penlight.wrth(penlight.get_tbl(\luastring{#1}),'penlightplus table: '..\luastring{#1})}}
+
+
+
 
 % legacy code, delete this
 \let\kvtblundefcheck\tblkvundefcheck
-\let\chgtbl\tblchg
-\let\newtbl\tblnew
-\let\gettbl\tblget
-\let\settbl\tblset
-\let\deftbl\tbldef
-\let\gdeftbl\tblgdef
-\let\iftbl\tblif
-\let\iftblv\tblifv
+
+\NewDocumentCommand{\tbladdo}{m m m}{\luadirect{% add a kv pair to a table
+  __tbl__ = penlight.get_tbl_name(\luastring{#1})
+  penlight.tbls[__tbl__][\luastring{#2}] = \luastring{#3}
+}}
+
+\NewDocumentCommand{\tbladdNo}{m m m}{\luadirect{% add a kv pair to a table
+  __tbl__ = penlight.get_tbl_name(\luastring{#1})
+  penlight.tbls[__tbl__][\luastring{#2}] = \luastringN{#3}
+}}
+

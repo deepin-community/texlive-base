@@ -19,8 +19,8 @@ define(`kbdshadewid',`(kbd_u/9)')
                                    top=attribs;  # top attributes '
 define(`kbdkey',
  `pushkeys_(`$2',
-    wdth:kbd_u; hght:kbd_u*14/13+lthick; rad:kbd_u/10;
-    shadewid:kbdshadewid; base:fill_(0.3):N; top:fill_(0.9):N)dnl
+   `wdth:kbd_u; hght:kbd_u*14/13+lthick; rad:kbd_u/10;
+    shadewid:kbdshadewid; base:fill_(0.3):N; top:fill_(0.9):N')dnl
   [ Base: box wid m4wdth ht m4hght rad m4rad m4base 
     Top:  box wid m4wdth-2*m4shadewid ht m4hght-m4shadewid-lthick \
       rad m4rad*(kbd_u-2*m4shadewid)/(kbd_u) with .n \
@@ -53,14 +53,14 @@ define(`stkbdkey',
                                    top=attribs;  # top attributes '
 define(`enterkey',
  `pushkeys_(`$2',
-    wdth:kbd_u*2.26;
+   `wdth:kbd_u*2.26;
     hght:kbd_u*14/13*2+kbdrowsep+linethick bp__;
     bhght: kbd_u*14/13;
     twdth: kbd_u*3/2;
     rad:kbd_u/10;
     shadewid:kbdshadewid;
     base:fill_(0.3):N;
-    top:fill_(0.9):N)dnl
+    top:fill_(0.9):N')dnl
   [ ltx = lthick; r = m4rad*(kbd_u-2*m4shadewid)/(kbd_u)
 # thick outer
     linethick = (m4shadewid+r)/(1bp__); lth2 = lthick/2

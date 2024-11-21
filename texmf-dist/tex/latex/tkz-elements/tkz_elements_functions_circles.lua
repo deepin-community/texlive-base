@@ -1,6 +1,6 @@
 -- tkz_elements_functions_circles.lua
--- date 2024/02/04
--- version 2.00c
+-- date 2024/07/16
+-- version 2.30c
 -- Copyright 2024  Alain Matthes
 -- This work may be distributed and/or modified under the
 -- conditions of the LaTeX Project Public License, either version 1.3
@@ -44,7 +44,6 @@ function orthogonal_through_ (a,b,x,y)
    return circum_center_ (x,y,z)
 end
 
- 
 function inversion_ (c,p,pt)
   local ry = point.abs(c-p)
   local d  = point.abs(c-pt)
@@ -86,7 +85,6 @@ function radical_center_ (c1,p1,c2,p2)
    return h*(c2-c1)/d+c1
 end
 
--- version 1.60 center pour deux cercles ?
 function radical_center3 (C1,C2,C3)
    local t1,t2,t3,t4
    t1,t2 = radical_axis_ (C1.center,C1.through,C2.center,C2.through)
@@ -97,7 +95,6 @@ function radical_center3 (C1,C2,C3)
 return intersection_ll_ (t1,t2,t3,t4)
 end
 end
-
 
 function south_pole_ (c,p)
    local r
@@ -128,7 +125,6 @@ function circlepoint_ (c,t,k)
    return rotation_ (c,phi,t) 
 end
  
--- version 1.60 new
 function midcircle_(C1,C2)
    local state,r,s,t1,t2,T1,T2,p,a,b,c,d,Cx,Cy,i,j
    state =  circles_position_(C1.center,C1.radius,C2.center,C2.radius)

@@ -3,7 +3,7 @@ lib3D.m4                        Macros for rotation, projection, and other
                                 operations on argument triples representing
                                 3D vectors or colors.
 
-* Circuit_macros Version 10.5, copyright (c) 2024 J. D. Aplevich under     *
+* Circuit_macros Version 10.6, copyright (c) 2024 J. D. Aplevich under     *
 * the LaTeX Project Public Licence in file Licence.txt. The files of       *
 * this distribution may be redistributed or modified provided that this    *
 * copyright notice is included and provided that modifications are clearly *
@@ -244,26 +244,34 @@ define(`M4F_P',
 
                                `shadedball( rad,
                                   highlight rad, highlight degrees,
-                                  initial shade, final shade )
+                                  initial gray, final gray | (rf,gf,bf) )
                                 The highlight is by default at
                                 radius rad*3/5 and angle 110 deg
                                 (or arg2 deg); if setlight has been
-                                invoked then the highlight is as
-                                given by its azimuth and elevation arguments'
+                                invoked then its azimuth and elevation arguments
+                                determine highlight position.
+                                Arg5 can be a parenthesized rgb color '
 define(`shadedball',`[ C: (0,0);  r = ifelse(`$1',,circlerad,`$1')
   ifdef(`setlight_',
    `H: (project(sprod3D(r,light3D1,light3D2,light3D3)))
     hr = distance(C,H)',
    `hr = ifelse(`$2',,r*3/5,`$2'); ha = ifelse(`$3',,110,`$3')
     H: (cosd(ha)*hr,sind(ha)*hr)')
-  u0 = ifelse(`$4',,1,`$4'); uf = ifelse(`$5',,0.25,`$5')
+  rgbtohsv(ifelse(`$4',,`1,1,1',``$4',`$4',`$4''),h0,s0,v0)
+  pushdef(`rgbf',`ifelse(`$5',,`(0.25,0.25,0.25)pushdef(`oneshade',1)',
+    substr(`$5',0,1)substr(`$5',decr(len(`$5')),1),(),`$5'pushdef(`oneshade',0),
+    `(`$5',`$5',`$5')pushdef(`oneshade',1)')')
+  rgbtohsv(patsubst(rgbf,`^ *('\|`) *$'),hf,sf,vf)
   rm = r+hr; n = int(rm/(linethick bp__))
-  for i=1 to n-1 do { x = i/n*rm; u = u0+(i/n)^2*(uf-u0)
+  for i=1 to n-1 do { x = i/n*rm; ifelse(oneshade,1,
+     `hs = h0+(i/n)^2*(hf-h0); ss = s0+(i/n)^2*(sf-s0); vs = v0+(i/n)^2*(vf-v0)
+      hsvtorgb(hs,ss,vs,ri,gi,bi)',
+     `hsvtorgb(hf,(i/n)^2,vf,ri,gi,bi)')
     if x <= (r-hr) then {
-      circle rad x thick linethick*1.6 outlined rgbstring(u,u,u) at H } \
-    else { arc cw thick linethick*ifpgf(2,1.6) outlined rgbstring(u,u,u) \
+      circle rad x thick linethick*1.6 outlined rgbstring(ri,gi,bi) at H } \
+    else { arc cw thick linethick*ifpgf(2,1.6) outlined rgbstring(ri,gi,bi) \
       from Cintersect(H,x,C,r) to Cintersect(H,x,C,r,R) with .c at H } }
-  circle rad r ifpgf(+linethick bp__/2) at C
-  `$6']')
+  circle rad r ifpgf(+linethick bp__/2) outlined rgbstring(ri,gi,bi) at C
+  `$6' popdef(`rgbf',`oneshade') ]')
 
 divert(0)dnl

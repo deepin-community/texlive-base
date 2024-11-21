@@ -48,23 +48,23 @@ define(`vectorsize',
 
 [
 R: darrow(right linewid,,,,,,|-)
-  { s_box($R$) dabove(at R.start+(5pt__,0)) }
+  { "$R$" dabove(at R.start+(5pt__,0)) }
 Sum: circle invis "$\sum$"
   darrow(right_ linewid*5/4)
-  { s_box($E$) dabove(at last line) }
+  { "$E$" dabove(at last line) }
   vectorsize(p,at 1/4 along_(last line))
 Gain: shadebox(box "$G = \diag\mat{g_i}$" wid boxwid*1.5 ht boxht*0.75 )
   darrow(,,,,,,!-)
-  { s_box($U^{\prime}$) dabove(at last line) }
+  { "$U^{\prime}$" dabove(at last line) }
 Compensator: shadebox(box wid boxwid*1.5 "\sl Compensator" "$K(s)$")
   darrow(right_ linewid*5/4,,,,,,!-)
   vectorsize(m,at 1/4 along_(last line))
-  { s_box($U$) dabove(at last line) }
+  { "$U$" dabove(at last line) }
 Plant: shadebox(box "\sl Plant" "$H(s)$" )
   dline(right_ linewid*3/4 from Plant.e,,,,!-)
   vectorsize(p,at last line)
 Y: dtee(R)
-  {s_box($Y$) dabove}
+  {"$Y$" dabove}
   darrow(right_ linewid*2/3,t)
 
   dline(down boxht from Y,t)

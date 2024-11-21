@@ -10,6 +10,9 @@ sinclude(examples.dim)  # Change examples to the name of the main LaTeX file.
 define(`backarrow',`darrow(`$1',,,2pt__,6pt__,6pt__,<-|)')
 
 S: s_box(`\includegraphics[width=3in]{Incl}')
+#                           A blank box the size of the included eps figure:
+#S: s_box("\hskip %gin\vrule width 0pt height %gin",\
+#   boxdim(InclA,w),boxdim(InclA,v))
 ifgpic(`S: box invis ht s_ht wid s_wd with .c at S.n')
 
 thinlines_

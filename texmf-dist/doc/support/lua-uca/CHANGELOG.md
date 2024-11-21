@@ -1,5 +1,26 @@
 # Changelog
 
+2024-05-09
+
+  - version `0.1d` released.
+
+2024-05-07
+
+  - fixed French support (thanks to Daniel Flipo).
+ 
+
+2024-05-04
+
+  - fixed Chinese support (thanks to Zeping Lee).
+  - version `0.1c` released.
+
+2022-03-08
+
+  - working on better French support (thanks to Daniel Flipo).
+  - don't use NFC normalization.
+  - added `accents_backward` option.
+
+
 2021-11-10
 
   - version `0.1b` released.

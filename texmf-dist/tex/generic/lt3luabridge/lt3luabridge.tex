@@ -6,7 +6,7 @@
 %%
 %% lt3luabridge.dtx  (with options: `generic-package')
 %% 
-%% Copyright (C) 2016-2022 Vít Novotný
+%% Copyright (C) 2016-2024 Vít Starý Novotný
 %% 
 %% This work may be distributed and/or modified under the
 %% conditions of the LaTeX Project Public License, either version 1.3c
@@ -117,9 +117,34 @@
   =
   { \c_luabridge_method_shell_int }
   {
-    \str_const:Nn
-      \c_luabridge_default_output_dirname_str
-      { . }
+    \sys_if_platform_unix:TF
+      {
+        \str_const:Nn
+          \c_luabridge_default_output_dirname_str
+          { $TEXMF_OUTPUT_DIRECTORY }
+      }
+      {
+        \sys_if_platform_windows:TF
+          {
+            \str_set:Nn
+              \l_tmpa_str
+              { TEXMF_OUTPUT_DIRECTORY }
+            \str_put_left:NV
+              \l_tmpa_str
+              \c_percent_str
+            \str_put_right:NV
+              \l_tmpa_str
+              \c_percent_str
+            \str_const:NV
+              \c_luabridge_default_output_dirname_str
+              \l_tmpa_str
+          }
+          {
+            \str_const:Nn
+              \c_luabridge_default_output_dirname_str
+              { . }
+          }
+      }
     \str_const:Nx
       \c_luabridge_default_helper_script_filename_str
       { \jobname.luabridge.lua }
@@ -150,7 +175,7 @@
           \c_luabridge_default_error_output_filename_str
       }
     \cs_new:Nn
-      \luabridge_now:n
+      \luabridge_tl_set:Nn
       {
         \iow_open:NV
           \g_tmpa_iow
@@ -161,7 +186,7 @@
           \g_luabridge_helper_script_filename_str
         \tl_set:Nx
           \l_tmpa_tl
-          { \tl_to_str:n { #1 } }
+          { \tl_to_str:n { #2 } }
         \regex_replace_all:nnN
           { [\\"] }
           { \\\0 }
@@ -207,14 +232,41 @@
           \g_luabridge_helper_script_filename_str
         \sys_get_shell:xnNTF
           {
-            texlua~
-              \g_luabridge_output_dirname_str /
-              \g_luabridge_helper_script_filename_str
+            \str_if_eq:NNTF
+              \g_luabridge_output_dirname_str
+              \c_luabridge_default_output_dirname_str
+              {
+                \sys_if_platform_windows:TF
+                  {
+                    if~not~defined~TEXMF_OUTPUT_DIRECTORY~(
+                      texlua~
+                        \g_luabridge_helper_script_filename_str
+                    )~else~(
+                      texlua~
+                        \g_luabridge_output_dirname_str /
+                        \g_luabridge_helper_script_filename_str
+                    )
+                  }
+                  {
+                    \sys_if_platform_unix:T
+                      {
+                        TEXMF_OUTPUT_DIRECTORY =
+                          ${TEXMF_OUTPUT_DIRECTORY:-.} \iow_newline:
+                      }
+                    texlua~
+                      \g_luabridge_output_dirname_str /
+                      \g_luabridge_helper_script_filename_str
+                  }
+              }
+              {
+                texlua~
+                  \g_luabridge_output_dirname_str /
+                  \g_luabridge_helper_script_filename_str
+              }
           }
           { }
-          \l_tmpa_tl
+          #1
           {
-            \l_tmpa_tl
           }
           {
             \msg_error:nn
@@ -277,11 +329,11 @@
   { \c_luabridge_method_directlua_int }
   {
     \cs_new:Nn
-      \luabridge_now:n
+      \luabridge_tl_set:Nn
       {
         \tl_set:Nn
           \l_tmpa_tl
-          { #1 }
+          { #2 }
         \tl_set:Nx
           \l_tmpa_tl
           {
@@ -299,12 +351,25 @@
             end~
             \exp_not:V \l_tmpa_tl
           }
-        \lua_now:V
-          \l_tmpa_tl
+        \tl_set:Nf
+          #1
+          {
+            \lua_now:V
+              \l_tmpa_tl
+          }
       }
     \cs_generate_variant:Nn
       \lua_now:n
       { V }
+  }
+\cs_new:Nn
+  \luabridge_now:n
+  {
+    \luabridge_tl_set:Nn
+      \l_tmpb_tl
+      { #1 }
+    \tl_use:N
+      \l_tmpb_tl
   }
 \cs_new_protected:Npn
   \luabridgeExecute

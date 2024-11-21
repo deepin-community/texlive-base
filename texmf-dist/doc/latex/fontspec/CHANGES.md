@@ -1,6 +1,78 @@
 Change history
 ==============
 
+## v2.9e (2024/05/11)
+
+  * Fix regression with automatic detection and selection of small caps when the font
+    script or language was requested but not found. (#517)
+
+  * Add additional tests to check against regressions. (#516, #518)
+  
+  * Improve message in log file when defining a font without small caps.
+  
+  * Demote warnings when Script or Language are requested but not found to the log file
+    instead of the console. (#421)
+
+
+## v2.9d (2024/05/07)
+
+  * Now that `Script` and `Language` are retained even if the font doesn't support them,
+    we can no longer check for font feature existence before applying the OpenType tags.
+    This release removes checking. (#515)
+
+  * Fix bug/regression in loading font families constructed from fonts with different file
+    extensions; e.g.: (#514)
+
+        \setmainfont{MyLato}
+          [
+            UprightFont       = Lato-Regular.ttf ,
+            BoldFont          = FiraSans-Bold.otf ,
+          ]
+
+
+## v2.9c (2024/05/03)
+
+  * Fix copy/paste regression bug with the `Language` feature (primarily exposed through `babel` package). (#513)
+  * Re-sync with `expl3` for deprecated commands.
+
+
+## v2.9b (2024/04/27)
+
+  * Add new `Letters=Uppercase` (LuaLaTeX only) as an interface to `luaotfload`
+    feature which automatically performs case-changing at the font level
+    (i.e., not using macros to process the text tokens). (#461)
+  * Fix long-standing bug when loading fonts which only have extensions specified internally to the font
+    shape (#504). E.g.:
+
+        \setmainfont{pagella}[ UprightFont = texgyrepagella-regular.otf ]
+
+  * If a font is loaded with a specific script (e.g. `Script=CJK`) and it is not
+    available within the font, `fontspec` previously would fall back on a default script.
+    This is now changed to always pass through the requested script so the renderer can
+    make use of that information regardless of whether the font itself supports the script.
+    (#507) 
+  * Remove LuaTeX code that resets various `hypenchar` settings seemingly erroneously. (#344)
+  * Rework documentation to remove reference to local and non-free fonts. This allows
+    compilation via Github Actions, which will aid streamlining/automating releases in the future. (#157, #465)
+  * Adjust approach to removing spaces from font names internally. This may have unintended
+    consequences, please write if so. (#484)
+  * Work around clash if a class defines an option of (say) `math=foo`, where `fontspec`
+    is expecting `math=true`. Now, the global option will be ignored. (#501)
+
+
+## v2.9a (2024/02/13)
+
+  * Added a `Scale=MatchAveragecase` paramater which averages `Scale=MatchLowercase` and `Scale=MatchUppercase`.
+  * Switched options to LaTeX keyval handler.
+  * Added option `verbose` to undo silent/quiet.
+  * `euenc`/`tuenc` options are now obsolete (TU is the only encoding). 
+  * Support variable fonts under LuaLaTeX.
+  * Skip scanning for filenames when loading fonts by name on LuaLaTeX.
+  * Allow restricting filename lookup to kpathsea lookups using `KpseOnly`.
+  * Added support for named colors from l3color.
+  * Support with lualatex spotcolors and cmyk colors in the pdf. 
+
+
 ## v2.8a (2022/01/15)
 
   * Add `SwashFont` and `BoldSwashFont` features to support LaTeX's now-builtin `\textsw`

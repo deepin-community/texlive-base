@@ -1,0 +1,161 @@
+%%
+%% This is file `sunpath.sty',
+%% generated with the docstrip utility.
+%%
+%% The original source files were:
+%%
+%% sunpath.dtx  (with options: `package')
+%% 
+\NeedsTeXFormat{LaTeX2e}[2022/11/01]
+\ProvidesPackage{sunpath}[2024/10/20 v0.5 Draw Sun Path]
+
+
+\RequirePackage{expl3}
+\RequirePackage{tikz}
+\usetikzlibrary{calc,math,through}
+
+
+\pgfkeys{/tikz/.cd,
+  spradius/.store in=\spradius,
+  spradius=5.5,
+  altitude mapping/.store in = \altmapping,
+  altitude mapping=spherical
+}
+
+\makeatletter
+
+\tikzset{
+  cs/azi/.store in=\tikz@cs@azi,
+  cs/alt/.store in=\tikz@cs@alt,
+}
+
+\tikzset{
+  declare function = {
+      spherical(\alt) = \spradius * cos(\alt);
+      equidistance(\alt) = \spradius - \spradius*abs(\alt)/90;
+      altradius(\alt) = \altmapping(\alt);
+      aziangle(\x) = 90 - \x;
+  }
+}
+
+\tikzdeclarecoordinatesystem{sunpath}%
+{
+    \tikzset{cs/.cd,azi=0,alt=0,#1}
+    \tikzmath{
+      \r = altradius(\tikz@cs@alt);
+      \angle = aziangle(\tikz@cs@azi);
+    }
+    \pgfpointadd{\pgfpointxy{0}{0}}{%
+        \pgfpointpolarxy{\angle}{\r}
+    }
+}
+\makeatother
+
+\tikzset{
+  sunpath grid/.style={help lines,color=blue!45!white!80},
+  sunpath tick/.style={draw,thick,color=blue!90!white!80},
+  sunpath minor tick/.style={draw,thin,color=blue!90!white!80},
+  altitude label/.style={
+      font=\footnotesize\sffamily,
+      fill=white,minimum width={width("90")+2pt},
+      inner sep=0.5pt
+  },
+  azimuth label/.style={
+      font=\footnotesize\sffamily,
+      minimum width={width("360")+2pt},
+      inner sep=0.5pt
+  },
+  direction label/.style={
+      font=\normalsize\rmfamily
+  }
+}
+
+
+\NewDocumentCommand\spcrosshair{O{sunpath grid}}{
+    \draw[#1] (-\spradius,0) -- (\spradius,0);
+    \draw[#1] (0,-\spradius) -- (0,\spradius);
+}
+
+\NewDocumentCommand\spgeodirection{O{22pt} O{direction label}}{
+  \foreach \dname / \dgrad in {N/0, E/90, S/180, W/270}{
+      \tikzmath{
+        \polarangle = aziangle(\dgrad);
+      }
+      \coordinate (D) at (\polarangle:\spradius cm + #1);
+      \node[#2,anchor=270-\dgrad] at (D) {\dname};
+  }
+}
+
+\NewDocumentCommand\spaltitudecircle{m O{sunpath grid}}{
+  \foreach \altitude in #1 {
+    \coordinate (A) at (sunpath cs:azi=0,alt=\altitude) ;
+    \path[draw,sunpath grid] (0,0) circle[radius=altradius(\altitude)];
+  }
+}
+
+\NewDocumentCommand\spaltitudelabel{m O{135} O{altitude label}}{
+  \foreach \altitude in #1 {
+      \coordinate (A) at (sunpath cs:azi=#2,alt=\altitude) ;
+      \node [anchor=east,#3] at (A) {\altitude};
+    }
+}
+
+\NewDocumentCommand\spazimuthlabel{m O{azimuth label}}{
+  \foreach \azimuth in #1 {
+      \tikzmath{
+        \polarangle = aziangle(\azimuth);
+      }
+      \coordinate (D) at (\polarangle:\spradius cm + 13pt);
+      \node[#2] at (D) {\azimuth};
+  }
+}
+
+\NewDocumentCommand\spazimuthline{m m m}{
+  \foreach \azimuth in #1{
+      \draw[sunpath grid]
+        (sunpath cs:azi=\azimuth,alt={#2}) -- (sunpath cs:azi=\azimuth,alt={#3});
+  }
+}
+
+\NewDocumentCommand\spazimuthtick{O{6pt} O{2.5pt} O{5pt}}{
+  \foreach \azimuth in {10,20,...,360}{
+    \tikzmath{
+        \pa = aziangle(\azimuth);
+    }
+    \path[sunpath tick] (\pa:\spradius) -- (\pa:{\spradius cm + #1});
+  }
+
+  \foreach \azimuth in {1,2,...,360}{
+    \tikzmath{
+        \pa = aziangle(\azimuth);
+    }
+    \path[sunpath minor tick] (\pa:\spradius) -- (\pa:{\spradius cm + #2});
+  }
+
+  \foreach \azimuth in {15,45,...,345}{
+      \tikzmath{
+          \pa = aziangle(\azimuth);
+      }
+      \path[sunpath minor tick] (\pa:\spradius) -- (\pa:{\spradius cm + #3});
+    }
+}
+
+%%%%%%%%%%%%%%
+%% Copyright (C) 2024 by
+%%   Hong-Phuc Bui
+%% 
+%% It may be distributed and/or modified under the conditions of
+%% the LaTeX Project Public License (LPPL), either version 1.3c of
+%% this license or (at your option) any later version.  The latest
+%% version of this license is in the file:
+%% 
+%%    https://www.latex-project.org/lppl.txt
+%% 
+%% 
+%% This work consists of the files sunpath.dtx,
+%%                                 sunpath.ins,
+%%           and the derived files sunpath.pdf,
+%%                                 sunpath.sty.
+%% 
+%%
+%% End of file `sunpath.sty'.

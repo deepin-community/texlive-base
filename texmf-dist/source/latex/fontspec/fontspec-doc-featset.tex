@@ -1,4 +1,4 @@
-%%^^A%%  fontspec-doc-featset.tex -- part of FONTSPEC <wspr.io/fontspec>
+%%^^A%%  fontspec-doc-featset.tex -- part of FONTSPEC <latex3.github.io/fontspec>
 
 \documentclass[a4paper]{l3doc}
 \usepackage{fontspec-doc-style}
@@ -100,8 +100,8 @@ tabular material to use monospaced numbers, as shown in \exref{aff}.
 If you attempt to \emph{change} an already-selected feature, \pkg{fontspec} will try to de-activate any features that clash with the new ones.
 \Eg, the following two invocations are mutually exclusive:
 \begin{Verbatim}
-\addfontfeature{Numbers=OldStyle}...
-\addfontfeature{Numbers=Lining}...
+\addfontfeatures{Numbers=OldStyle}...
+\addfontfeatures{Numbers=Lining}...
 123
 \end{Verbatim}
 Since |Numbers=Lining| comes last, it takes precedence and deactivates the call |Numbers=OldStyle|.
@@ -109,7 +109,7 @@ Since |Numbers=Lining| comes last, it takes precedence and deactivates the call 
 If you wish to apply the change to only one of the fonts of a family (say, italics only)
 you can write
 \begin{Verbatim}
-\addfontfeature{ItalicFeatures={Numbers=Lowercase}}
+\addfontfeatures{ItalicFeatures={Numbers=Lowercase}}
 \end{Verbatim}
 
 
@@ -157,8 +157,8 @@ features requested.
 }
 
 It is entirely possible that separate fonts in a family will require
-separate options; \eg, Hoefler Text Italic contains various swash
-feature options that are completely unavailable in the upright shapes.
+separate options; \eg, certain italic fonts contains various swash
+feature options that are usually unavailable in the upright (`roman') shapes.
 
 The font features defined at the top level of the optional \cmd\fontspec\
 argument are applied to \emph{all} shapes of the family.
@@ -240,7 +240,7 @@ Support for TrueType Collections has only been tested in \XeTeX, but should also
 \null\quad... \\
 \char`\}}
 
-The \feat{SizeFeature} feature is a little more complicated
+The \feat{SizeFeatures} feature is a little more complicated
 than the previous features discussed. It allows different fonts
 and different font features to be selected for a given font
 family as the point size varies.
@@ -330,7 +330,7 @@ Notably, this mechanism is different to that of the \pkg{color}/\pkg{xcolor}/\pk
 (For example, if you set the colour in a \verb|\setmainfont| command, \verb|\color{...}| and related commands, including hyperlink colouring, will no longer have any effect on text in this font.)
 Therefore, \pkg{fontspec}'s colour commands are best used to set explicit colours in specific situations, and the \pkg{xcolor} package is recommended for more general colour functionality.
 
-The colour is defined as a triplet of two-digit Hex RGB
+The colour can be defined as a triplet of two-digit Hex RGB
 values, with optionally another value for the transparency (where
 |00| is completely transparent and |FF| is opaque.)
 \begin{Lexample}{color}{Selecting colour with transparency.}
@@ -341,35 +341,78 @@ values, with optionally another value for the transparency (where
   {\addfontfeature{Color=DDBB2299}P}\kern-0.5ex
   {\addfontfeature{Color=00BB3399}R}
 \end{Lexample}
-Transparency is supported by \LuaLaTeX; \XeLaTeX\ with the \texttt{xdvipdfmx} driver
-does not support this feature.
 
 If you load the \pkg{xcolor} package, you may use any named colour instead
 of writing the colours in hexadecimal.
 \begin{Verbatim}
  \usepackage{xcolor}
  ...
- \fontspec[Color=red]{Verdana} ...
+ \fontspec[Color=red]{Montserrat-Medium.otf} ...
  \definecolor{Foo}{rgb}{0.3,0.4,0.5}
- \fontspec[Color=Foo]{Verdana} ...
+ \fontspec[Color=Foo]{Montserrat-Medium.otf} ...
 \end{Verbatim}
-The \pkg{color} package is \emph{not} supported; use \pkg{xcolor} instead.
 
-You may specify the transparency with a named colour using the \feat{Opacity}
-feature which takes an decimal from zero to one corresponding to
-transparent to opaque respectively:
+You may also use named colours defined with the color commands of the L3 
+programming layer:
 \begin{Verbatim}
- \fontspec[Color=red,Opacity=0.7]{Verdana} ...
+ \ExplSyntaxOn
+ \color_set:nnn{Foo}{rgb}{0.3,0.4,0.5}
+\ExplSyntaxOff
+ ...
+ \fontspec[Color=Foo]{Montserrat-Medium.otf} ...
+\end{Verbatim}
+
+Color expressions (like \verb+red!50!blue+) are not supported. The \pkg{color} 
+package is \emph{not} supported neither. 
+
+The code will at first test for color names of the L3 layer, then for xcolor 
+names, and at last try to use the argument as a hexadecimal value.
+
+You may specify the transparency with a named colour using the \feat{Opacity} 
+feature, which takes an decimal from zero to one corresponding to transparent 
+to opaque respectively: 
+\begin{Verbatim}
+ \fontspec[Color=red,Opacity=0.7]{Montserrat-Medium.otf} ...
 \end{Verbatim}
 It is still possible to specify a colour in six-char hexadecimal form
 while defining opacity in this way, if you like.
+
+\subsubsection{Color models}
+
+With \XeTeX\ color are always written in the rgb color model into the PDF. 
+When using \LuaTeX, colors with the commands of the L3 layer can be written 
+as rgb or cmyk or as spot color depending on their definition and of the 
+value of the variable \verb+\l_color_fixed_model_tl+. 
+ 
+\subsubsection{Spot colors} 
+With \LuaTeX\ it is possible to use spot colors. This requires the use of the 
+PDF management:
+\begin{Verbatim}
+\DocumentMetadata{}
+\documentclass{article}
+\usepackage{fontspec}
+\ExplSyntaxOn
+ \color_model_new:nnn { sepblue } { Separation }
+    {
+      name = PANTONE~3005~U ,
+      alternative-model = cmyk ,
+      alternative-values = {1, 0.56, 0,0},
+    }
+ \color_set:nnn{spotblue}{sepblue}{1}
+\ExplSyntaxOff
+...
+\fontspec[Color=spotblue]{texgyreheros}
+\end{Verbatim}
+
+ 
 
 \subsection{Scale}
 
 \cmdbox{
  \feat{Scale} = \meta{number} \\
  \feat{Scale} = \opt{MatchLowercase} \\
- \feat{Scale} = \opt{MatchUppercase}
+ \feat{Scale} = \opt{MatchUppercase} \\
+ \feat{Scale} = \opt{MatchAveragecase}
 }
 
 In its explicit form, \feat{Scale} takes a single
@@ -377,18 +420,21 @@ numeric argument for linearly scaling the font, as demonstrated
 in \exref{fontload}.
 
 As well as a numerical argument, the \feat{Scale} feature
-also accepts options \opt{MatchLowercase}
-and \opt{MatchUppercase}, which will scale the font being selected to match
-the current default roman font to either the height of the lowercase or
-uppercase letters, respectively; these features are shown in \exref{scale}.
+also accepts options \opt{MatchLowercase}, \opt{MatchUppercase},
+and \opt{MatchAveragecase}, which will scale the font being selected to match
+the current default roman font to either the height of the lowercase,
+the height of the uppercase letters, or the average of the two,
+respectively; these features are shown in \exref{scale}.
 The amount of scaling used in each instance is reported in the \texttt{.log} file.
 
 \begin{Xexample}{scale}{Automatically calculated scale values.}
-  \setmainfont{Georgia}
-  \newfontfamily\lc[Scale=MatchLowercase]{Verdana}
+  \setmainfont{texgyrepagella-regular.otf}
+  \newfontfamily\lc[Scale=MatchLowercase]{texgyreadventor-regular.otf}
    The perfect match {\lc is hard to find.}\\
-  \newfontfamily\uc[Scale=MatchUppercase]{Arial}
-   L O G O \uc F O N T
+  \newfontfamily\uc[Scale=MatchUppercase]{texgyreheros-regular.otf}
+   L O G O {\uc F O N T}\\
+  \newfontfamily\ac[Scale=MatchAveragecase]{FiraMath-Regular.otf}
+   Lower {\ac and UPPER} CASE
 \end{Xexample}
 
 Additional calls to the \feat{Scale} feature overwrite the settings of the former.
@@ -400,7 +446,8 @@ necessary. For example:
   [ Scale = 1.1 , ScaleAgain = 1.2 ] % -> scale of 1.32
 \end{Verbatim}
 
-Note that when |Scale=MatchLowercase| is used with |\setmainfont|, the new `main'
+Note that when |Scale=MatchLowercase|, |Scale=MatchUppercase|, or |Scale=MatchAverageCase|
+is used with |\setmainfont|, the new `main'
 font of the document will be scaled to match the old default.
 If you wish to automatically scale all fonts except have the main font use `natural'
 scaling, you may write
@@ -566,14 +613,14 @@ of font size. For example, something like:
 In rare situations users may want to mechanically distort the shapes of the glyphs in the current font such as shown in \exref{fake}. Please don't overuse these features; they are \emph{not} a good alternative to having the real shapes.
 
 \begin{Xexample}{fake}{Articifial font transformations.}
-  \fontspec{Quattrocento-Regular.otf} \emph{ABCxyz} \quad
-  \fontspec{Quattrocento-Regular.otf}[FakeSlant=0.2] ABCxyz
+  \fontspec{Quattrocento-Regular.ttf} \emph{ABCxyz} \quad
+  \fontspec{Quattrocento-Regular.ttf}[FakeSlant=0.2] ABCxyz
 
-  \fontspec{Quattrocento-Regular.otf}  ABCxyz \quad
-  \fontspec{Quattrocento-Regular.otf}[FakeStretch=1.2] ABCxyz
+  \fontspec{Quattrocento-Regular.ttf}  ABCxyz \quad
+  \fontspec{Quattrocento-Regular.ttf}[FakeStretch=1.2] ABCxyz
 
-  \fontspec{Quattrocento-Regular.otf} \textbf{ABCxyz} \quad
-  \fontspec{Quattrocento-Regular.otf}[FakeBold=1.5] ABCxyz
+  \fontspec{Quattrocento-Regular.ttf} \textbf{ABCxyz} \quad
+  \fontspec{Quattrocento-Regular.ttf}[FakeBold=1.5] ABCxyz
 \end{Xexample}
 
 If values are omitted, their defaults are as shown above.
@@ -597,10 +644,10 @@ shown in \exref{tracking}.
 The letter spacing parameter is a normalised additive factor (not a scaling factor); it is defined as a percentage of the font size. That is, for a 10\,pt font, a letter spacing parameter of `|1.0|' will add 0.1\,pt between each letter.
 
 \begin{Xexample}{tracking}{The \feat{LetterSpace} feature.}
-  \fontspec{Didot}
+  \setmainfont{Ysabeau-Light.otf}
   \addfontfeature{LetterSpace=0.0}
   USE TRACKING FOR DISPLAY CAPS TEXT \\
-  \addfontfeature{LetterSpace=2.0}
+  \addfontfeature{LetterSpace=3.0}
   USE TRACKING FOR DISPLAY CAPS TEXT
 \end{Xexample}
 
@@ -608,13 +655,98 @@ This functionality is not generally used for lowercase text in modern typesettin
 In particular, small amounts of letter spacing can be very useful, when setting small caps or all caps titles.
 Also see the OpenType \opt{Uppercase} option of the \feat{Letters} feature (\vref{sec:letters}).
 
+
+\section{Variable fonts} \label{sec:variable}
+
+OpenType variable fonts and Multiple Master fonts are parameterised over
+orthogonal font axes, allowing continuous selection along such features
+as weight, width, and optical size.
+
+Currently OpenType variable fonts are only supported in \LuaTeX, while
+Multiple Master fonts only work with \XeTeX.
+
+\subsection{Optical font sizes} \label{sec:aat-opticalsize}
+Whereas traditional OpenType fonts will have only a few separate
+optical sizes, a Variable or Multiple Master font's optical size can be
+specified over a continuous range. Unfortunately, this flexibility makes
+it harder to create an automatic interface through \LaTeX, and the
+optical size for a Variable or Multiple Master font must always be specified
+explicitly.
+\begin{Verbatim}
+  \fontspec{Minion MM Roman}[OpticalSize=11]
+   MM optical size test                    \\
+  \fontspec{Minion MM Roman}[OpticalSize=47]
+   MM optical size test                    \\
+  \fontspec{Minion MM Roman}[OpticalSize=71]
+   MM optical size test                    \\
+\end{Verbatim}
+
+
+\subsection{Weight} \label{sec:variable-weight}
+For fonts with a variable weight axis, the weight can be specified through the
+\feat{Weight} feature. The value should be between 0 and 1000, where typically
+400 corresponds to regular wight and 700 is a bold font.
+\begin{Verbatim}
+  \fontspec{Source Serif Variable}[Weight=700]
+  Bold                                     \\
+  \fontspec{Source Serif Variable}[Weight=200]
+  Extra Light                              \\
+\end{Verbatim}
+
+
+\subsection{Width} \label{sec:variable-width}
+Similarly, the \feat{Width} feature allows specifying the value of the width axis,
+where the value is a percentage of normal width.
+\begin{Verbatim}
+  \fontspec{Noto Serif}[Width=100]
+  Normal Width                             \\
+  \fontspec{Noto Serif}[Width=75]
+  Condensed                                \\
+\end{Verbatim}
+
+\subsection{Slant} \label{sec:variable-slant}
+Also fonts with a slant axis can be controlled with the \feat{Slant} feature.
+In a standard compliant font the value should specify the clockwise angle in degree
+the glyphs are slanted. Therefore for a typical forward leaning slanted font, a
+negative value should be passed.
+
+Many fonts use this feature in non-standard ways, so you might have to experiment
+a bit with the value.
+\begin{Verbatim}
+  \fontspec{Roboto Flex}[Slant=0]
+  Upright                            \\
+  \fontspec{Roboto Flex}[Slant=-5]
+  Slanted                            \\
+\end{Verbatim}
+
+\subsection{Other axes} \label{sec:variable-raw}
+For OpenType variable fonts, additional axis values can be specified
+if the four letter tag of these axes is known.
+Than their value can be set with the \feat{RawAxis} feature:
+\begin{Verbatim}
+  \fontspec{Noto Serif}[RawAxis={CTGR=100}]
+  Maximal contrast                        \\
+  \fontspec{Noto Serif}[RawAxis={CTGR=0}]
+  Regular contrast                        \\
+\end{Verbatim}
+
+\subsection{Instances} \label{sec:variable-instances}
+Instead of manually setting axis values, many fonts contain named instances which are predefined settings of all axes.
+
+To select such an instance, the \feat{Instance} feature can be used:
+\begin{Verbatim}
+  \fontspec{Noto Serif}[Instance=ExtraCondensed Bold]
+  This is in extra condensed bold.
+\end{Verbatim}
+
 \end{document}
 
 % /©
 % ------------------------------------------------
-% The FONTSPEC package  <wspr.io/fontspec>
+% The FONTSPEC package  <latex3.github.io/fontspec>
 % ------------------------------------------------
-% Copyright  2004-2022  Will Robertson, LPPL "maintainer"
+% Copyright  2022-2024  The LaTeX project,  LPPL "maintainer"
+% Copyright  2004-2022  Will Robertson
 % Copyright  2009-2015  Khaled Hosny
 % Copyright  2013       Philipp Gesang
 % Copyright  2013-2016  Joseph Wright

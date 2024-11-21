@@ -138,7 +138,7 @@ movewid = 0.25
         "\tt circle=\"M\")" ljust}
     move right_
     dswitch(,,WBcDIGC,circle="M")
-      {"\tt (,{,}WBcDIGC," ljust at last line.start+(0,-15bp__) \
+      {"\tt (,{,}WBcDIGC," wid 72bp__ ljust at last line.start+(0,-15bp__) \
         "\tt circle=\"M\")" ljust}
     }
 

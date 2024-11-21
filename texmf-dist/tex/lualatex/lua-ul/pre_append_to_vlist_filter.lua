@@ -6,7 +6,7 @@
 --
 -- lua-ul.dtx  (with options: `callback')
 -- 
--- Copyright (C) 2020-2022 by Marcel Krueger
+-- Copyright (C) 2020-2024 by Marcel Krueger
 --
 -- This file may be distributed and/or modified under the
 -- conditions of the LaTeX Project Public License, either
@@ -26,15 +26,11 @@ local flush_node = node.flush_node
 local prepend_prevdepth = node.prepend_prevdepth
 local callback_define
 
-for i=1,5 do
-local name, func = require'debug'.getupvalue(luatexbase.disable_callback, i)
-  if name == 'callback_register' then
-    callback_define = func
-    break
-  end
-end
-if not callback_define then
-  error[[Unable to find callback.define]]
+do
+  local saved_luatexbase, saved_callback_register = luatexbase, callback.register
+  luatexbase.uninstall()
+  callback_define = callback.register
+  luatexbase, callback.register = saved_luatexbase, saved_callback_register
 end
 
 local function filtered_append_to_vlist_filter(box,

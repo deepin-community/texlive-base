@@ -2,7 +2,7 @@ divert(-1)
  
    libgen.m4                    Base macros for dpic and gpic diagrams
 
-* Circuit_macros Version 10.5, copyright (c) 2024 J. D. Aplevich under     *
+* Circuit_macros Version 10.6, copyright (c) 2024 J. D. Aplevich under     *
 * the LaTeX Project Public Licence in file Licence.txt. The files of       *
 * this distribution may be redistributed or modified provided that this    *
 * copyright notice is included and provided that modifications are clearly *
@@ -156,7 +156,7 @@ ifdef(`threeD_init',,
                                    hght=expr; arrowhead height
                                    wdth=expr; arrowhead width'
 define(`sfg_init',`cct_init
-  pushkeys_(`$1',blen:m4bxx; rad:m4rxx; hght:m4hxx; wdth:m4wxx)dnl
+  pushkeys_(`$1',`blen:m4bxx; rad:m4rxx; hght:m4hxx; wdth:m4wxx')dnl
   sfg_wid = ifelse(m4blen,(m4bxx),ifelse(`$1',,linewid/3*2.75,`$1'),m4blen)
   sfg_rad = ifelse(m4rad,(m4rxx),ifelse(`$2',,1/32,`$2'),m4rad)
   sfg_aht = ifelse(m4hght,(m4hxx),ifelse(`$3',,1/16,`$3'),m4hght)
@@ -192,7 +192,7 @@ define(`latexcommand',
    `$2')')
 
 define(`m4announceprocessor',`dnl Do not change the format of the next line:
-`#' `$1' Version 10.5: ifelse(m4picprocessor,gpic,`Gpic',
+`#' `$1' Version 10.6: ifelse(m4picprocessor,gpic,`Gpic',
   m4postprocessor,pstricks,`PSTricks',
   m4postprocessor,pgf,`TikZ PGF',
   m4postprocessor,mfpic,`Mfpic',
@@ -872,7 +872,8 @@ define(`poppushdef',`popdef(`$1')pushdef(`$1',`$2')')
                                identifier:default value:N
                              containing up to 3 fields separated by arg 4
                              (default :). The separators may not appear
-                             elsewhere in the terms.'
+                             elsewhere in the terms and a key must not
+                             be the tail of another key.'
 define(`pushkeys_',`Loopover_(`M4Z',
  `pushkey_(`$1',patsubst(M4Z,ifelse(`$4',,:,`$4'),`,'))dnl',
   patsubst(`$2',ifelse(`$3',,;,`$3'),`,'))')
@@ -884,7 +885,8 @@ define(`pushkeys_',`Loopover_(`M4Z',
                                identifier:default value:N
                              containing up to 3 fields separated by arg 4
                              (default :). The separators may not appear
-                             elsewhere in the terms.'
+                             elsewhere in the terms and a key must not
+                             be the tail of another key.'
 define(`setkeys_',`Loopover_(`M4Z',
  `setkey_(`$1',patsubst(M4Z,ifelse(`$4',,:,`$4'),`,'))dnl',
   patsubst(`$2',ifelse(`$3',,;,`$3'),`,'))')
@@ -960,7 +962,7 @@ define(`f_box',`box ifelse(`$2',,
                                          circle=attributes; '
 define(`dotrad_',(0.02*scale))
 define(`dot',`[ define(`m4ft',`ifelse(`$3',,0,(`$3'))')dnl
-  pushkeys_(`$2',rad:m4nul:N;circle:fill_(m4ft):N)dnl
+  pushkeys_(`$2',`rad:m4nul:N;circle:fill_(m4ft):N')dnl
   ifelse(m4rad,m4nul,`popdef(`m4rad')pushdef(`m4rad',
    `ifinstr(`$2',=,`dotrad_',`ifelse(`$2',,`dotrad_',(`$2'))')')')dnl
   ifdef(`r_',`rgbfill(r_+(1-r_)*m4ft, g_+(1-g_)*m4ft, b_+(1-b_)*m4ft,
@@ -973,7 +975,7 @@ define(`dot',`[ define(`m4ft',`ifelse(`$3',,0,(`$3'))')dnl
                                  keys: size=expr;
                                        line=attributes; (line attributes) '
 define(`cross',`[
-  pushkeys_(`$2',size:m4nul:N;line::N)dnl
+  pushkeys_(`$2',`size:m4nul:N;line::N')dnl
   ifelse(m4size,m4nul,`popdef(`m4size')pushdef(`m4size',
    `ifinstr(`$2',=,(0.05*scale),ifelse(`$2',,(0.05*scale),(`$2')))')')dnl
   line from (0,-m4size/2) to (0,m4size/2) m4line
@@ -1009,25 +1011,28 @@ define(`shadebox',`ifelse(`$1',,box,`$1')
                                   shadowed(box shaded "yellow" rad 0.1 "Text",
                                     shadowthick=3bp__;shadowcolor="lightgray")'
 define(`shadowed',`define(`m4object',`ifelse(`$1',,box,`$1')')dnl
-  pushkeys_(`$3',attrib::N; rad:;
-    shadowthick:lthick*5/4; shadowcolor:"gray":N; shadowangle:-45 )dnl
-  ifelse(m4object,box,`box m4attrib ifelse(m4rad,,,`rad m4rad invis') `$2'
+  pushkeys_(`$3',`attrib::N; rad:;
+    shadowthick:lthick*5/4; shadowcolor:"gray":N; shadowangle:-45')dnl
+  ifelse(m4object,box,
+   `box m4attrib ifelse(m4rad,,,`rad m4rad invis') `$2'
     if last box.thick < 0 then { m4shv = (m4shadowthick+lthick)/2 } \
     else { m4shv=(m4shadowthick+last box.thick bp__)/2 }
+    M4T: (Rect_(m4shv,m4shadowangle))
     ifelse(m4rad,,`{ line thick m4shadowthick/(1bp__) outlined m4shadowcolor \
-      from last box.sw+(m4shv,-m4shv) to last box.se+(m4shv,-m4shv) \
-      then to last box.ne+(m4shv,-m4shv) } ',
+      from last box.sw+(M4T.x,M4T.y) to last box.se+(M4T.x,M4T.y) \
+      then to last box.ne+(M4T.x,M4T.y) }
+      box fill_(1) m4attrib at last box.c ',
      `M4C: last box.c
       { box m4attrib thick m4shadowthick/(1bp__) outlined m4shadowcolor \
-          rad m4rad solid at M4C+(Rect_(m4shv,m4shadowangle)) }
+          rad m4rad solid at M4C+(M4T.x,M4T.y) }
       box fill_(1) rad m4rad m4attrib at M4C ') ',
- `m4object m4attrib invis `$2'
-  M4C: last m4object.c
-  if last m4object.thick < 0 then { m4shv = (m4shadowthick+lthick)/2 } \
-  else { m4shv=(m4shadowthick+last m4object.thick bp__)/2 }
-  { m4object m4attrib thick m4shadowthick/(1bp__) outlined m4shadowcolor \
-      solid at M4C+(Rect_(m4shv,m4shadowangle)) }
-  m4object ifelse(m4object,line,,fill_(1)) m4attrib at M4C ')dnl
+   `m4object m4attrib invis `$2'
+    M4C: last m4object.c
+    if last m4object.thick < 0 then { m4shv = (m4shadowthick+lthick)/2 } \
+    else { m4shv=(m4shadowthick+last m4object.thick bp__)/2 }
+    { m4object m4attrib thick m4shadowthick/(1bp__) outlined m4shadowcolor \
+        solid at M4C+(Rect_(m4shv,m4shadowangle)) }
+    m4object ifelse(m4object,line,,fill_(1)) m4attrib at M4C ')dnl
   popdef(`m4attrib',`m4rad',`m4shadowthick',`m4shadowcolor',`m4shadowangle') ')
 
                                `hatchbox(boxspec,hatchsep,hatchspec,angle)
@@ -1042,8 +1047,9 @@ define(`shadowed',`define(`m4object',`ifelse(`$1',,box,`$1')')dnl
                                   hatchsep=expr;
                                   hatchspec=attributes;
                                   angle=expr; '
-define(`hatchbox',`[pushkeys_(`$1',wid:boxwid:N;ht:boxht:N;box::N;fillcolor::N;
-   hatchsep:0.075*scale;hatchspec::N;angle:45)
+define(`hatchbox',`[
+   pushkeys_(`$1',`wid:boxwid:N; ht:boxht:N; box::N;fillcolor::N;
+     hatchsep:0.075*scale; hatchspec::N; angle:45')
   b = ifelse(`$4',,m4angle,`$4')
   a = pmod((ifelse(b,,45,b)+90),180)-90
   if a >=0 then { B: box ifinstr(`$1',=,`wid m4wid ht m4ht m4box dnl
@@ -1099,12 +1105,12 @@ define(`lbox',`pushdef(`m4bwd',ifelse(`$1',,boxwid,(`$1')))dnl
     then to rvec_(0,neg_(m4bht)/2) \
     then to rvec_(m4bwd,neg_(m4bht)/2) \
     then to rvec_(m4bwd,0) `$3' dnl
-    popdef(`m4bwd')popdef(`m4bht') ')
+    popdef(`m4bwd',`m4bht') ')
 
                                 `rotbox(wid,ht,type attribs,[r=val|t=val])
                                  box oriented in current direction in [] block;
                                  wd and ht are distances between line centers.
-                                 type=attributes eg dotted shaded "green"
+                                 attributes: eg dotted shaded "green"
                                  if arg4 is r=val then the corner radius is val
                                  if arg4 is t=val then a "superellipse"
                                  is drawn using a spline of tension val
@@ -1174,24 +1180,29 @@ define(`rotellipse',
                                 e.g. ellipsearc(2,1,0,pi_,pi_/4,,dashed)
                                 arg5 is the angle of the ellipse wid axis
                                 Internal locations Start, End, C'
+
+                               `ellipsearc(wid,ht,startrads,endrads,
+                                  rotangle,cw|ccw,linetype)
+                                e.g. ellipsearc(2,1,0,pi_,pi_/4,,dashed)
+                                arg5 is the angle of the ellipse wid axis
+                                Internal locations Start, End, C'
 define(`ellipsearc',`[ C: (0,0)
- a_earc = ifelse(`$1',,ellipsewid,`($1)')/2
- b_earc = ifelse(`$2',,ellipseht,`($2)')/2
- sa_earc = ifelse(`$3',,0,`$3')
- ea_earc = ifelse(`$4',,pi_/2,`$4')
- define(`m4ca',`ifelse(`$5',,1,cos(`$5'))')dnl
- define(`m4sa',`ifelse(`$5',,0,sin(`$5'))')dnl
- ifinstr(`$6',ccw,`define(`m4cw',ccw)',
-  `ifinstr(`$6',cw,`define(`m4cw',cw)',`define(`m4cw',ccw)')')
+ a = ifelse(`$1',,ellipsewid,`($1)')/2
+ b = ifelse(`$2',,ellipseht,`($2)')/2
+ sa = ifelse(`$3',,0,`$3')
+ ea = ifelse(`$4',,pi_/2,`$4')
+ pushdef(`m4ca',`ifelse(`$5',,1,cos(`$5'))')dnl
+ pushdef(`m4sa',`ifelse(`$5',,0,sin(`$5'))')dnl
+ pushdef(`m4cw',`ifinstr(`$6',ccw,c,`$6',cw,,c)'cw)dnl
  ifelse(m4cw,ccw,
-  `if ea_earc < sa_earc then { ea_earc += twopi_ }',
-  `if ea_earc > sa_earc then { ea_earc -= twopi_ }')
- n = max(4,floor(abs((ea_earc-sa_earc)/(10*dtor_)))+1)
- for i=0 to n do { aa_earc = sa_earc+i/n*(ea_earc-sa_earc)
-   P[i]: (vrot_(a_earc*cos(aa_earc),b_earc*sin(aa_earc),m4ca,m4sa)) }
+  `if ea < sa then { ea += twopi_ }',
+  `if ea > sa then { ea -= twopi_ }')
+ n = max(4,floor(abs((ea-sa)/(10*dtor_)))+1)
+ for i=0 to n do { aa = sa+i/n*(ea-sa)
+   P[i]: (vrot_(a*cos(aa),b*sin(aa),m4ca,m4sa)) }
  Start: P[0]
  End: P[n]
- fitcurve(P,n,`$7') ]')
+ fitcurve(P,n,`$7') `$8' popdef(`m4cw',`m4sa',`m4ca') ]')
 
                                 Small space for string justification
 #efine(`sp_',`ifgpic(`\hbox{$\:$}')iflatex(`\hbox{$\;$}')')
@@ -1288,19 +1299,26 @@ define(`arcdimension_',`arc invis `$1' ; {
           to M4ArcC+(rect_(m4hr,m4eang)) rad m4hr with .c at M4ArcC } }
   ifelse(`$3',,,`m4lstring(`$3',"`$3'") at M4ArcC+(rect_(m4hr,m4hang))')
   }')
+
                            `polygon(nsides,keys)     regular polygon in [] block
                             keys: line=attribs;      e.g. dashed shaded "red"
                                   rot=degrees;       angle of first vertex V[0]
                                   side|rad=expr;     size by radius or side
-                            Defined points: C, V[0], ... V[nsides-1]'
+                                  radv=expr;         vertex radius
+                            Defined internal points: C, V[0], ... V[nsides]'
 define(`polygon',`[ C: Here; nsides=ifelse(`$1',,3,`$1')
   a=360/nsides; b=(180-a)/2     # interior angles
   pushkeys_(`$2',
-   `line::N; rot:90; side:linewid; rad:m4side*sind(b)/sind(a);')dnl
+   `line::N; rot:90; side:linewid; radv:0; rad:m4`'side*sind(b)/sind(a);')dnl
   for i=0 to nsides-1 do { V[i]: Rect_(m4rad,m4rot+a*i) }
   V[nsides]: 0.5 between V[nsides-1] and V[0]
-  line m4line from V[nsides] to V[0]; for i=1 to nsides do { continue to V[i] }
-  `$3' popdef(`m4line',`m4rot',`m4side',`m4rad') ]')
+#for i=0 to nsides do { sprintf("%g",i) at V[i] above }
+  if m4radv!=0 then { move to V[nsides]
+    for i=0 to nsides-1 do { arcto(V[i],V[i+1],m4radv,m4line) }
+    line m4line to V[nsides] } \
+  else { line m4line from V[nsides] to V[0]; for i=1 to nsides do {
+    continue to V[i] } }
+  `$3' popdef(`m4line',`m4rot',`m4side',`m4radv',`m4rad') ]')
 
                                 `shade(gray value,closed line specs)
                                  Fill an arbitray closed curve with a gray value
@@ -1447,8 +1465,8 @@ m4postprocessor,xfig,
                                        head= attributes (shaded etc)
                                        name=Name (default Sarrow_)'
 define(`sarrow',
- `pushkeys_(`$2',
-   type:O:N;head::N;shaft:m4head:N;wdth:arrowwid;lgth:arrowht;name:Sarrow_:N)dnl
+ `pushkeys_(`$2',`type:O:N; head::N; shaft:m4`'head:N; wdth:arrowwid;
+   lgth:arrowht; name:Sarrow_:N')dnl
   arrow `$1' m4head invis
   m4_dx = last arrow.end.x-last arrow.start.x
   m4_dy = last arrow.end.y-last arrow.start.y
@@ -1681,7 +1699,8 @@ define(`ArcAngle',`arcr(`$2',ifelse(`$4',,arcrad,`$4'),
                                 `RightAngle(Pos1,Pos2,Pos3,linelen,attributes)
                                  Draw a right angle symbol at Pos2
                                  arg4: size
-                                 arg5: line attributes, e.g. outlined "gray"'
+                                 arg5: line attributes, e.g. outlined "gray" or
+                                  e.g., ;dot(at last line.c)'
 define(`RightAngle',
  `RightA_C: `$1'; RightA_N: `$2'; RightA_B: `$3'
 define(`m4AngleLen',`ifelse(`$4',,linewid/5,`$4')')
@@ -1859,7 +1878,8 @@ define(`sinusoid',
                            `graystring(value in [0,1])'
 define(`graystring',`rgbstring(`$1',`$1',`$1')')
 
-                           `ColoredV(box|circle|ellipse,(r,g,b)|((colorseq)),
+                           `ColoredV(box|circle|ellipse,
+                              (r,g,b) | ((colorseq))[:nlines],
                               attributes)
                             box or circle or ellipse in a [] block.
                             If arg2 is blank then all formatting is in
@@ -1873,10 +1893,12 @@ define(`graystring',`rgbstring(`$1',`$1',`$1')')
                                   frac2,r2,g2,b2,
                                   ...
                                       1,rn,gn,bn
+                            The number of colorseq lines drawn can be specified
+                            with the colon (default height/lthick*2).
                             Examples: ColoredV(circle,(1,0,0))
                              ColoredV(ellipse,(1,0.04,1),
                               wid 0.75 ht 1 outlined "magenta" "Goodbye")
-                             ColoredV(box,((0,1,1,0, 1,0,0,1)),
+                             ColoredV(box,((0,1,1,0, 1,0,0,1)):50,
                               outlined "blue" rad 0.1)' 
 define(`ColoredV',`[NeedDpicTools pushdef(`m4obj',ifelse(`$1',,box,`$1'))
   C: m4obj `$3' ifsvg(,invis) # To avoid invalid svg
@@ -1889,13 +1911,15 @@ define(`ColoredV',`[NeedDpicTools pushdef(`m4obj',ifelse(`$1',,box,`$1'))
       with .c at C.n-(0,C.ht*($`'1))}',
    `define m4SObjLine {line outlined rgbstring($`'2,$`'3,$`'4) right \
       C.wid*sqrt(abs(1-(1-($`'1)*2)^2)) with .c at C.n-(0,C.ht*($`'1))}')
-   ShadeObject(m4SObjLine,int(C.ht/lthick*5/4),\
-     ifelse(index(`$2',`(('),0,`patsubst(`$2',^ *`(('\|`))' *$)',
-      `0,1,1,1,1,patsubst(`$2',^ *`('\|`)' *$)')) at C')
-  m4obj ifelse(`$2',,,`m4colorfix(outlined,`$2')') `$3' with .c at C
-  `$5' popdef(`m4obj') ]')
+   pushdef(`linect',`ifinstr(`$2',:,`patsubst(`$2',^.*:\(.*\)$,\1)',
+    `int(C.ht/lthick*2)')')
+   ShadeObject(m4SObjLine,linect,ifelse(index(`$2',`(('),0,
+    `patsubst(`$2',`(('\|`))'.*$)',`0,1,1,1,1,patsubst(`$2',^ *`('\|`)' *$)')) \
+      with .n at C.n') popdef(`linect')
+  m4obj ifelse(`$2',,,index(`$2',`(('),0,,`m4colorfix(outlined,`$2')') `$3' at C
+  `$4' popdef(`m4obj') ]')
 
-                                `rgbstring(color triple: values in [0,1])
+                                `rgbstring(color triple with values in [0,1])
                                    (example rgbstring(0.2,0.3,0.4) )
                                  or, when allowed by the postprocessor,
                                  rgbstring(color name)
@@ -2017,16 +2041,21 @@ define(`definergbcolor',
 `ifpdf(`define(`$1',``'`$2' `$3' `$4'`'')',
 `ifmpost(`command \
  sprintf("color `$1'; `$1':=(%7.5f,%7.5f,%7.5f);",`$2',`$3',`$4')', 
+`ifsvg(`define(`$1',`rgbstring(`$2',`$3',`$4')')',
 `command \
  sprintf("\definecolor{`$1'}{rgb}{%7.5f,%7.5f,%7.5f}%%",`$2',`$3',`$4')')')')')
+')
 
                                 Pstricks conditional command
 define(`psset_',`ifpstricks(`dnl
 command sprintf("\psset{$@}%%")
 ')')
                                 Internal color adjustments
-                   `m4colorfix(outlined|shaded,
-                     "colorname"|colorname|(r,g,b),sprintf(...))'
+                   `m4colorfix(outlined|shaded|colored,
+                     "colorname"|colorname|(r,g,b),sprintf(...))
+                    Not really necessary most of the time; e.g.,
+                    colored rgbstring(r,g,b)" works fine for tikz, pstricks,
+                    and svg'
 define(`m4colorfix',`ifelse(`$1',,,
  `ifelse(`$2',,``$1' "grey"',index(`$2',`"'),0,``$1' `$2'',
   index(`$2',sprintf),0,``$1' `$2'',

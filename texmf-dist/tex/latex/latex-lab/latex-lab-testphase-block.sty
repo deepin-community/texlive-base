@@ -32,18 +32,16 @@
 %% where one can also log issues in case there are any.
 %% 
 %% 
-%% File: latex-lab-block.dtx (C) Copyright 2021-2023 LaTeX Project
-\def\ltlabblockdate{2023-09-01}
-\def\ltlabblockversion{0.8h}
+%% File: latex-lab-block.dtx (C) Copyright 2021-2024 LaTeX Project
+\def\ltlabblockdate{2024-10-11}
+\def\ltlabblockversion{0.8v}
 \ProvidesPackage {latex-lab-testphase-block}
                  [\ltlabblockdate\space v\ltlabblockversion\space
                             blockenv implementation]
-\RequirePackage{xtemplate}
 \RequirePackage{latex-lab-kernel-changes}
 \ExplSyntaxOn
 \tl_new:N \l__block_item_align_tl
 \tl_new:N\l__block_legacy_env_params_tl
-
 \def\@doendpe{\@endpetrue
   \def\par
     {
@@ -60,13 +58,11 @@
   }
 }
 \cs_new_eq:NN \__kernel_displayblock_doendpe: \prg_do_nothing:
-\def\@endpetrue {\global\let\if@endpe\iftrue}
-\def\@endpefalse{\global\let\if@endpe\iffalse}
-\DeclareObjectType{blockenv}{1}
-\DeclareObjectType{block}{1}
-\DeclareObjectType{para}{1}
-\DeclareObjectType{list}{1}
-\DeclareObjectType{item}{1}
+\NewTemplateType{blockenv}{1}
+\NewTemplateType{block}{1}
+\NewTemplateType{para}{1}
+\NewTemplateType{list}{1}
+\NewTemplateType{item}{1}
 \DeclareTemplateInterface{blockenv}{display}{1}
 {
   env-name       : tokenlist ,
@@ -92,6 +88,7 @@
   par-skip       : skip = \parsep ,
   end-skip       : skip = \KeyValue{beginsep} ,                % conflict with name below
   end-par-skip   : skip = \KeyValue{begin-par-skip} ,
+  item-skip      : skip = \itemsep ,
   beginpenalty   : integer = \UseName{@beginparpenalty} ,
   endpenalty     : integer = \UseName{@endparpenalty} ,
   leftmargin     : length = \leftmargin ,
@@ -119,7 +116,7 @@
   item-instance   : instance{item} = basic ,
   item-skip       : skip = \itemsep ,
   item-penalty    : integer = \UseName{@itempenalty} ,
-  item-indent     : length = 0pt ,         % was \itemindent
+  item-indent     : length = \itemindent ,
   label-width     : length = \labelwidth ,
   label-sep       : length = \labelsep ,
   legacy-support   : boolean = false ,
@@ -259,19 +256,19 @@
 \AddToHook{begindocument/before}{
   \RenewDocumentEnvironment{list}{O{} m m }
     {
-      \tl_set:Nn \@itemlabel {#2}
-      \tl_set:Nn \l__block_legacy_env_params_tl {#3}
+      \tl_set:Nn \l__block_legacy_env_params_tl
+         {
+           \tl_set:Nn \@itemlabel {#2}
+           #3
+         }
       \UseInstance{blockenv}{list} {#1}
     }
     { \endblockenv }
 }
-\tl_new:N \l__block_env_params_tl
 \cs_new:Npn \legacylistsetupcode {
     \dim_zero:N \listparindent
     \dim_zero:N \rightmargin
     \dim_zero:N \itemindent
-    \tl_set:Nn \@listctr {}
-    \legacy_if_set_false:n { @nmbrlist } % needed if lists are nested
    \let\makelabel\@mklab % TODO: customize
    \l__block_legacy_env_params_tl
     \legacy_if:nTF { @nmbrlist }
@@ -301,14 +298,14 @@
            \@definecounter {#2}
            \IfNoValueTF {#4}
              {  % @ynthm
-               \tl_gset:cx { the #2 }
+               \tl_gset:ce { the #2 }
                   {
                     \@thmcounter{#2}
                   }
              }
              {  % @xnthm
                \@newctr{#1}[#4]
-               \tl_gset:cx { the #2 }
+               \tl_gset:ce { the #2 }
                   {
                     \expandafter\noexpand\csname the#4\endcsname
                     \@thmcountersep
@@ -409,14 +406,14 @@
   \__block_debug_typeout:n{\l__block_env_name_tl -env-start}
   \tl_if_empty:nF {#1} { \SetTemplateKeys{blockenv}{display}{#1} }
   %    \begin{macrocode}
-  \int_compare:nNnTF \l__block_flattened_level_int > 0
+  \int_compare:nNnTF \l__tag_block_flattened_level_int > 0
       {
-        \int_incr:N \l__block_flattened_level_int
+        \int_incr:N \l__tag_block_flattened_level_int
       }
       {
         \bool_if:NT \l__tag_para_flattened_bool
              {
-               \int_incr:N \l__block_flattened_level_int
+               \int_incr:N \l__tag_block_flattened_level_int
              }
       }
   \tl_if_empty:NF \l__block_inner_level_counter_tl
@@ -437,6 +434,9 @@
            }
      }
   \tag_if_active:T { \use:c { __block_recipe_ \l__block_tagging_recipe_tl : } }
+  \tl_clear:N \@itemlabel
+  \tl_clear:N \@listctr
+  \legacy_if_set_false:n { @nmbrlist }
   \l__block_setup_code_tl
   \__block_debug_typeout:n{use~ instance:~
            \l__block_block_instance_tl - \int_use:N \g_block_nesting_depth_int }
@@ -464,7 +464,10 @@
     }
   \l__block_final_code_tl
 }
-\int_new:N \l__block_flattened_level_int
+\int_if_exist:NF \l__tag_block_flattened_level_int
+  {
+    \int_new:N \l__tag_block_flattened_level_int
+  }
 \newcounter{maxblocklevels}
 \setcounter{maxblocklevels}{6}
 \cs_new:Npn \endblockenv {
@@ -476,15 +479,12 @@
       \mode_leave_vertical:
       \legacy_if_gset_false:n { @inlabel }
     }
-  \legacy_if:nT { @newlist }
-    {
-      \@noitemerr
-      \legacy_if_gset_false:n { @newlist }
-    }
+  \__block_if_list:T { \legacy_if:nT { @newlist } { \@noitemerr } }
   \mode_if_horizontal:TF
        { \__block_skip_remove_last: \__block_skip_remove_last: \par }
        { \@inmatherr{\end{\@currenvir}} }
   \__kernel_displayblock_end:
+  \__block_if_list:T { \legacy_if_gset_false:n { @newlist } }
   \legacy_if:nF { @noparlist }
     {
       \__block_skip_set_to_last:N \l_tmpa_skip
@@ -498,14 +498,16 @@
     }
   \socket_use:n {tagsupport/block-endpe}
 }
+\cs_new:Npn \__block_if_list:T
+   { \tl_if_eq:NnT \l__block_block_instance_tl {list} }
 \cs_new:Npn \__kernel_displayblock_end: {
   \__block_debug_typeout:n{\detokenize{__kernel_displayblock_end:}}
 }
 \socket_new:nn      {tagsupport/block-endpe}{0}
 \socket_new_plug:nnn{tagsupport/block-endpe}{on}
-                    { \legacy_if_gset_true:n  { @endpe } }
+                    { \@endpetrue }
 \socket_new_plug:nnn{tagsupport/block-endpe}{off}
-                    { \legacy_if_gset_false:n { @endpe } }
+                    { \@endpefalse }
 \socket_assign_plug:nn{tagsupport/block-endpe}{on}
 \DeclareTemplateCode{para}{std}{1}
 {
@@ -517,7 +519,7 @@
   fixed-word-spaces = \l__par_fixed_word_spaces_bool ,  % name??
   final-hyphen-demerits = \finalhyphendemerits ,
   cr-cmd                = \\ ,
-  para-class            = \l_tag_para_attr_class_tl ,
+  para-class            = \l__tag_para_attr_class_tl ,
 }
 {
   \tl_if_empty:nF {#1} { \SetTemplateKeys{para}{std}{#1} }
@@ -531,6 +533,7 @@
   par-skip        = \parsep ,
   end-skip        = \l__block_botsep_skip ,
   end-par-skip    = \l__block_parbotsep_skip ,
+  item-skip       = \itemsep ,
   beginpenalty    = \@beginparpenalty ,
   endpenalty      = \@endparpenalty ,
   rightmargin     = \rightmargin ,
@@ -631,6 +634,7 @@
 }
 \tl_new:N \@itemlabel         % should have a top-level definition
 \tl_new:N \@listctr           % should have a top-level definition
+\cs_new_eq:NN \__block_evaluate_saved_user_keys:nn \use_none:nn
 \DeclareTemplateCode{list}{std}{1}
 {
   counter         = \l__block_counter_tl,
@@ -647,18 +651,23 @@
 }
 {
   \__block_debug_typeout:n{template:list:std}
-  \tl_if_empty:nF {#1} { \SetTemplateKeys{list}{std}{#1} }
+  \tl_if_empty:nTF {#1}
+     { \cs_set_eq:NN \__block_evaluate_saved_user_keys:nn \use_none:nn }
+     {
+       \SetTemplateKeys{list}{std}{#1}
+       \cs_set:Npe \__block_evaluate_saved_user_keys:nn ##1##2
+          { \SetTemplateKeys{##1}{##2}{ \exp_not:n{#1} } }
+     }
   \tl_if_empty:NTF \l__block_counter_tl
     {
-     \tl_if_blank:oF \@listctr
-       {
+    \legacy_if:nT { @nmbrlist }
+        {
          \bool_if:NF \l__block_resume_bool
            {
              \int_gset:cn{ c@ \@listctr }
                  { \l__block_counter_start_int - 1 }
            }
-       }
-       { \@nmbrlistfalse }
+        }
     }
     {
      \@nmbrlisttrue
@@ -674,6 +683,7 @@
       \tl_set_eq:NN \@itemlabel \l__block_item_label_tl
     }
     \legacy_if_gset_true:n { @newlist }
+    \cs_set_eq:NN \__block_item_everypar: \__block_item_everypar_first:
   \__block_debug_typeout:n{template:list:std~end}
 }
 \keys_define:nn { template/list/std }
@@ -710,6 +720,7 @@
   {
     \__block_debug_typeout:n{template:item:std}
     \tl_set_eq:NN \l__block_label_given_tl \c_novalue_tl
+    \__block_evaluate_saved_user_keys:nn {item}{std}
     \tl_if_empty:nF{#1}{ \SetTemplateKeys{item}{std}{#1} }
     \tl_if_novalue:oTF \l__block_label_given_tl
       {
@@ -781,8 +792,8 @@
 \cs_new_eq:NN \__kernel_list_label_begin: \prg_do_nothing:
 \cs_new_eq:NN \__kernel_list_label_end:   \prg_do_nothing:
 \cs_new_eq:NN \__block_item_everypar: \prg_do_nothing:
-\AddToHook{para/begin}[lists]{\__block_item_everypar:}
-\DeclareHookRule{para/begin}{lists}{after}{tagpdf}
+\AddToHook{para/begin}[items]{\__block_item_everypar:}
+\DeclareHookRule{para/begin}{items}{after}{tagpdf}
 \cs_new_protected:Npn \__block_item_everypar_std: {
     \__block_debug_typeout:n{item~ everypar \on@line }
     \legacy_if_set_false:n { @minipage }
@@ -806,6 +817,9 @@
          \cs_set_eq:NN \__block_item_everypar: \prg_do_nothing:
        }
 }
+\cs_new:Npn \__block_item_everypar_first: {
+  \legacy_if:nT { @newlist }  { \@noitemerr }
+}
 \cs_new_eq:NN \__kernel_list_label_after: \prg_do_nothing:
 \skip_new:N \l__block_tmpa_skip
 \skip_new:N \l__block_topsepadd_skip
@@ -814,12 +828,18 @@
   \RenewDocumentCommand{\item}{ ={label}o }
     {
       \@inmatherr \item
-      \tl_if_empty:oTF \__block_item_instance:n %%FMi?
-        { \msg_error:nnn { __block } { item-in-nonlist } { \item[{#1}] } }
+      \cs_if_free:NTF \__block_item_instance:n
+        {
+          \@latex@error{Lonely~\string\item--perhaps~a~missing~
+          list~environment}\@ehc
+        }
         {
           \legacy_if:nTF { @newlist }
-            { \__kernel_list_item_begin: }
-            { \__block_inter_item:            }
+            {
+              \__kernel_list_item_begin:
+              \legacy_if_gset_false:n { @newlist }
+            }
+            { \__block_inter_item: }
           \tl_if_novalue:nTF {#1}          % avoids reparsing label={}
             { \__block_item_instance:n { } }
             { \__block_item_instance:n {#1} }
@@ -1010,6 +1030,7 @@
   block-instance = verbatimblock ,
   inner-instance = ,
   final-code     = \legacyverbatimsetup ,
+  para-instance  = justify
 }
 \DeclareInstance{blockenv}{itemize}{display}
 {
@@ -1131,15 +1152,16 @@
 \DeclareInstance{item}{description}{std}
   {
     label-format = \normalfont\bfseries #1 ,
+    label-align = left
   }
 \tag_if_active:T
 {
   \tagpdfsetup
       {
-        newattribute = {justify}    {/O /Layout /TextAlign/Justify},
-        newattribute = {center}     {/O /Layout /TextAlign/Center},
-        newattribute = {raggedright}{/O /Layout /TextAlign/Start},
-        newattribute = {raggedleft} {/O /Layout /TextAlign/End},
+        role/new-attribute = {justify}    {/O /Layout /TextAlign/Justify},
+        role/new-attribute = {center}     {/O /Layout /TextAlign/Center},
+        role/new-attribute = {raggedright}{/O /Layout /TextAlign/Start},
+        role/new-attribute = {raggedleft} {/O /Layout /TextAlign/End},
       }
 }
 \DeclareInstance{para}{center}{std}
@@ -1201,17 +1223,22 @@
         \legacy_if_gset_false:n { @endpe }
       }
       {
-        \int_compare:nNnT \l__block_flattened_level_int < 2
+        \int_compare:nNnT \l__tag_block_flattened_level_int < 2
             {
-              \int_gincr:N \g__tag_para_main_begin_int
-              \tagstructbegin{tag=\l__tag_para_main_tag_tl}
+              \__tag_gincr_para_main_begin_int:
+              \tag_struct_begin:n
+                {
+                  tag=\l__tag_para_main_tag_tl,
+                  attribute-class=\l__tag_para_main_attr_class_tl,
+                }
+              \__tag_para_main_store_struct:
             }
       }
   }
   \cs_set:Npn \__block_beginpar_hmode:N #1
      {
         \tag_mc_end:
-        \int_gincr:N \g__tag_para_end_int
+        \__tag_gincr_para_end_int:
         \__block_debug_typeout:n{increment~ /P \on@line }
         \bool_if:NT \l__tag_para_show_bool
           { \tag_mc_begin:n{artifact}
@@ -1234,7 +1261,7 @@
                {
                  \__block_debug_typeout:n{Structure-end~
                    \l__tag_para_main_tag_tl\space after~ displayblock \on@line }
-                 \int_gincr:N \g__tag_para_main_end_int
+                 \__tag_gincr_para_main_end_int:
                  \tag_struct_end: %text-unit
                }
            }
@@ -1257,16 +1284,21 @@
      {
        \bool_if:NF \l__tag_para_flattened_bool
           {
-            \int_gincr:N \g__tag_para_main_begin_int
-            \tag_struct_begin:n{tag=\l__tag_para_main_tag_tl}
+            \__tag_gincr_para_main_begin_int:
+            \tag_struct_begin:n
+              {
+                tag=\l__tag_para_main_tag_tl,
+                attribute-class=\l__tag_para_main_attr_class_tl,
+              }
+            \__tag_para_main_store_struct:
           }
       }
-   \int_gincr:N \g__tag_para_begin_int
+   \__tag_gincr_para_begin_int:
    \__block_debug_typeout:n{increment~ P \on@line }
    \tag_struct_begin:n
        {
           tag=\l__tag_para_tag_tl
-         ,attribute-class=\l_tag_para_attr_class_tl
+         ,attribute-class=\l__tag_para_attr_class_tl
        }
    \__tag_check_para_begin_show:nn {green}{#1}
    \tag_mc_begin:n {}
@@ -1274,15 +1306,20 @@
 \cs_new_protected:Npn \__block_start_para_structure_unconditionally:n #1 {
    \bool_if:NF \l__tag_para_flattened_bool
        {
-         \int_gincr:N \g__tag_para_main_begin_int
-         \tag_struct_begin:n{tag=\l__tag_para_main_tag_tl}
+         \__tag_gincr_para_main_begin_int:
+         \tag_struct_begin:n
+           {
+             tag=\l__tag_para_main_tag_tl,
+             attribute-class=\l__tag_para_main_attr_class_tl,
+           }
+         \__tag_para_main_store_struct:
        }
-   \int_gincr:N \g__tag_para_begin_int
+   \__tag_gincr_para_begin_int:
    \__block_debug_typeout:n{increment~ P \on@line }
    \tag_struct_begin:n
        {
           tag=\l__tag_para_tag_tl
-         ,attribute-class=\l_tag_para_attr_class_tl
+         ,attribute-class=\l__tag_para_attr_class_tl
        }
    \__tag_check_para_begin_show:nn {green}{#1}
    \tag_mc_begin:n {}
@@ -1292,14 +1329,14 @@
   {
     \bool_if:NT \l__tag_para_bool
       {
-        \int_gincr:N \g__tag_para_end_int
+        \__tag_gincr_para_end_int:
         \__block_debug_typeout:n{increment~ /P \on@line }
         \tag_mc_end:
         \__tag_check_para_end_show:nn {red}{}
         \tag_struct_end:
         \bool_if:NF \l__tag_para_flattened_bool
          {
-           \int_gincr:N \g__tag_para_main_end_int
+           \__tag_gincr_para_main_end_int:
            \tag_struct_end:
          }
       }
@@ -1334,7 +1371,7 @@
 \DeclareRobustCommand*\begin[1]{%
   \UseHook{env/#1/before}%
   \@ifundefined{#1}%
-    {\def\reserved@a{\@latex@error{Environment #1 undefined}\@eha}}%
+    {\def\reserved@a{\@latex@error{Environment~#1~undefined}\@eha}}%
     {\def\reserved@a{\def\@currenvir{#1}%
         \edef\@currenvline{\on@line}%
         \@execute@begin@hook{#1}%
@@ -1349,7 +1386,7 @@
 {
   \bool_if:NF \l__tag_para_flattened_bool
    {
-     \int_gincr:N \g__tag_para_main_end_int
+     \__tag_gincr_para_main_end_int:
      \tag_struct_end:
    }
    \@endpefalse
@@ -1369,7 +1406,7 @@
   \__block_debug_typeout:n{block-end \on@line}
   \legacy_if:nT { @endpe }
     {
-      \int_gincr:N \g__tag_para_main_end_int
+      \__tag_gincr_para_main_end_int:
       \__block_debug_typeout:n{close~ /text-unit \on@line}
       \tagstructend
     }
@@ -1384,11 +1421,11 @@
 {
   \tagpdfsetup
       {
+        role/new-attribute = {itemize}{/O /List /ListNumbering/Unordered},
+        role/new-attribute = {enumerate}{/O /List /ListNumbering/Ordered},
+        role/new-attribute = {description}{/O /List /ListNumbering/Description},
         % default if unknown
-        newattribute = {list}{/O /List /ListNumbering/None},
-        newattribute = {itemize}{/O /List /ListNumbering/Unordered},
-        newattribute = {enumerate}{/O /List /ListNumbering/Ordered},
-        newattribute = {description}{/O /List /ListNumbering/Description},
+        role/new-attribute = {list}{/O /List /ListNumbering/Unordered},
       }
 }
 \def\LItag{LI}
@@ -1413,19 +1450,22 @@
 \cs_set:Npn \__block_list_item_end: {
   \legacy_if:nT { @endpe }
     {
-      \int_gincr:N \g__tag_para_main_end_int
+      \__tag_gincr_para_main_end_int:
       \tagstructend                           % text-unit
     }
   \tagstructend \tagstructend   % end LBody, LI
 }
 \cs_set:Npn \__block_list_end: {
-  \legacy_if:nT { @endpe }
+  \legacy_if:nF { @newlist }
     {
-      \int_gincr:N \g__tag_para_main_end_int
-      \tagstructend                       % text-unit
-      \__block_debug_typeout:n{Structure-end~ P~ at~ list-end \on@line }
+      \legacy_if:nT { @endpe }
+        {
+          \__tag_gincr_para_main_end_int:
+          \tagstructend                       % text-unit
+          \__block_debug_typeout:n{Structure-end~ P~ at~ list-end \on@line }
+        }
+      \tagstructend\tagstructend  % end LBody, LI
     }
-  \tagstructend\tagstructend  % end LBody, LI
   \tagstructend               % end L
 }
 }

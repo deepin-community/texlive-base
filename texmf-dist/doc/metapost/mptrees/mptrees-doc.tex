@@ -10,6 +10,7 @@
 \usepackage{unicode-math}
 \setmainfont{STIX Two Text}
 \setmathfont{STIX Two Math}
+\usepackage{fontawesome5}
 
 \usepackage{geometry}
 \geometry{hmargin=2cm,vmargin={1.5cm,1.8cm},includefoot}
@@ -17,7 +18,7 @@
   \usepackage[bottom]{footmisc}
 
   \usepackage{mflogo}
-  
+
   \usepackage[output-decimal-marker={,}]{siunitx}
   \usepackage{esvect}
   \usepackage{nicefrac}
@@ -25,12 +26,11 @@
   \usepackage{multicol}
   \setlength{\multicolsep}{3pt}
   \setlength{\columnsep}{0pt}
-  
+
   \usepackage[toc]{multitoc}
-  
+
   \usepackage{enumitem}
-%  \setlist[description]{font=\ttfamily\bfseries\color{blue}}
-  
+
   \usepackage[svgnames]{xcolor}
 
   \usepackage{graphicx}
@@ -38,7 +38,7 @@
   \usepackage{url}
   \usepackage{verbatim}
   \usepackage{fancyvrb}
-  
+
   \usepackage{array}
   \usepackage{colortbl}
   \usepackage{tabularx}
@@ -53,7 +53,7 @@
             beginfig(1);}
 \everyendmplib{endfig;}
 \mplibnumbersystem{decimal}
-            
+
 \usepackage{tcolorbox}
 \tcbuselibrary{listings,skins}%,documentation}
 
@@ -181,7 +181,7 @@
 
 \DeclareTCBListing[auto counter]{exemple}{ !O{} }{
     enhanced,
-    title=Exemple \thetcbcounter,
+    title=Example \thetcbcounter,
     coltitle=black,
     fonttitle=\bfseries,
     attach boxed title to top left,
@@ -263,15 +263,14 @@ colback=red!10!white,colframe=red!50!black]
 
 
 
-
+\part{Trees}
 
 \section{Overview}
 
-This package is intended to simplify the drawing of probability trees with \MP. It provides one main command and several parameters to control the output.
+The first aim of this package is to simplify the drawing of probability trees (or other kind of "tree") with \MP. It provides one main command and several parameters to control the output.
 
 It can be used in standalone files with two compilations (\verb|latexmp| package is loaded) but  also  with Lua\LaTeX{} and \verb|luamplib| package.
 
-%Some of the following constructions need to be enclosed between \verb|begintree| and \verb|endtree|.
 
 \begin{rpobjet}{tree[<i>][<j>](<dim1>,<dim2>,...)(<ev1>,<prob1>,<ev2>,<prob2>,...)}{picture}
 Probability tree located in column \verb|i| and row \verb|j| (see figure below). \verb|dim1|, \verb|dim2|,... can be numerics or pairs and control the dimension of the tree. \verb|ev1|, \verb|prob1|... can be strings or pictures and will be printed (using \verb|latexmp| if strings) at the end of the edge (the event) and above the edge (the probability).
@@ -514,7 +513,7 @@ draw tree[2][1](3cm,2cm)(...);
 
 In the fisrt case, \verb|scaleev| is changed globally while in the second case, the change only applies to the first tree.
 
- 
+
 \subsection{Event}
 
 \begin{mptparam}{scaleev}{numeric}{1}
@@ -529,6 +528,8 @@ Numeric controlling the scale of the label at the end of the edge (the event).
 
 \begin{mptparam}{nodeformat}{string}{""}
 String that indicates how the events are printed (the shape of path around the event). Possible values are (for now) \verb|"bbox"|, \verb|"circle"|, \verb|"superellipse"|.
+
+See below for personalised values.
 \end{mptparam}
 
 \begin{exemple}[lefthand ratio=0.65]
@@ -562,6 +563,30 @@ draw stree[1][1](3cm,2cm)("$A$","$B$");
 \begin{exemple}[lefthand ratio=0.65]
 nodefgcolor:=(0.7,0.4,0.7);
 draw stree[1][1](3cm,2cm)("$A$","$B$");
+\end{exemple}
+
+\begin{rpobjet}{nodeshape(expr A,B)}{cycle path}
+It is also possible to redefine the path defining the node. Simply rewrite the \verb|nodeshape| macro, which must take a picture as parameter and whose result must be a cycle path.
+
+The parameter passed to the macro is the figure representing the drawing of the event (normally the name of the event). You may use it, or not, in the macro definition.
+\end{rpobjet}
+
+\begin{exemple}[lefthand ratio=0.6]
+vardef nodeshape(expr p)=
+  fullcircle xscaled 1cm yscaled 0.6cm
+enddef;
+
+draw stree[1][1](3cm,3cm)("$A$","$B$");
+\end{exemple}
+
+
+\begin{exemple}[lefthand ratio=0.7]
+vardef nodeshape(expr p)=
+  llcorner p..ulcorner p..urcorner p..lrcorner p--cycle
+enddef;
+
+nodebgcolor:=0.7white;
+draw stree[1][1](3cm,3cm)("$A$","$B$");
 \end{exemple}
 
 
@@ -759,6 +784,10 @@ When the boolean \verb|edgearrow| is set to true, edges end with an arrow.
 String which indicates the shape of the edge. Possible values are  \verb|segment|, \verb|curve|, \verb|broken|.
 
 Note that double quotes have to be replaced by single quotes when this parameter is changed locally inside the \verb|tree| macro.
+
+
+See below for personalised values.
+
 \end{mptparam}
 
 
@@ -789,7 +818,7 @@ Note that double quotes have to be replaced by single quotes when this parameter
 \begin{mptparam}{brokenlineratio}{numeric}{0.2}
  If string \verb|branchtype| is set to \verb|broken|, \verb|brokenlineratio| indicates the ratio between the length of the first segment of the broken line and the total length of the horizontal space.
  \end{mptparam}
- 
+
 \begin{exemple}[lefthand ratio=0.6]
  branchtype:="broken";
  draw stree[1][1](3cm,3cm)("$A$","$B$");
@@ -810,6 +839,23 @@ Note that double quotes have to be replaced by single quotes when this parameter
  draw stree[1][1](3cm,3cm)("$A$","$B$");
 \end{exemple}
 
+\begin{rpobjet}{edgeshape(expr A,B)}{path}
+It is possible to completely redefine the path defining the edge. Simply rewrite the \verb|edgeshape| macro, which must take two pairs as parameters and whose result must be a path.
+
+The first parameter represents the start point and the second the end point.
+
+\end{rpobjet}
+
+\begin{exemple}[lefthand ratio=0.6]
+vardef edgeshape(expr S,E)=
+ save a;numeric a;a=angle(E-S);
+ S--((0.25cm,0) rotated (a+30) shifted 0.5[S,E])
+  --((0.25cm,0) rotated (a-150) shifted 0.5[S,E])
+  --E
+enddef;
+
+draw stree[1][1](3cm,3cm)("$A$","$B$");
+\end{exemple}
 
 
 \section{Regular trees}
@@ -1049,7 +1095,783 @@ draw stree[5][9]()("'u'|1","'o'|1");
 endtree;
 \end{exemple}
 
+\part{Graphs}
+\section{Overview}
+This package can also be used to draw graphs. In this case, you need to define the nodes by their coordinates and indicate the edges to be drawn. Various commands allow you to draw graphs quickly, but it is also possible to finely control the drawing of each node and edge.
+
+\section{Nodes}
+\subsection{Definition}
+
+\begin{rpdeclaration}{defnodes(<pair1>,<pair2>,...)}
+The easiest way to define the nodes : just put a list of pairs. This command does not draw anything, it just defines an array of pairs corresponding to the coordinates. By default the array name is \verb|A[]|.
+\end{rpdeclaration}
+
+\begin{mptparam}{defnodename}{string}{"A"}
+Default node array name.
+\end{mptparam}
+
+\begin{mptparam}{nodename}{string}{"array"}
+String indicating how the nodes are stored and labels are drawns:
+\begin{itemize}[nosep]
+\item with \verb|nodename="array"|, nodes are stored  in \verb|A[]| and labelled  \verb|A1|, \verb|A2|,...
+\item with \verb|nodename="Alph"|, nodes are stored and labelled  \verb|A|, \verb|B|,...
+\item with \verb|nodename="alph"|, nodes are stored and labelled  \verb|a|, \verb|b|,...
+\item with \verb|nodename="arabic"|, nodes are stored  in \verb|A[]|,... but are labelled $1$, $2$,...
+\end{itemize}
+\end{mptparam}
+
+\begin{rpdeclaration}{defnode(<token>,<pair>)}
+Nodes can be defined one by one. \verb|<token>| is the node's name and \verb|<pair>| its coordinates.
+\end{rpdeclaration}
+
+\subsection{Drawing}
+
+\begin{rplabel}{drawnodes.<pos>(<nodei>,<nodej>,...)}
+Draw all the indicated nodes. These nodes can be designated either by name or by rank. If the list is empty, all the nodes are drawn. \verb|pos| can be empty or \verb|lft|, \verb|rt|, etc. or an angle.
+\end{rplabel}
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodes((0cm,0cm),(2cm,0),(4cm,0));
+drawnodes(1,3);
+\end{exemple}
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodes((0cm,0cm),(2cm,0),(4cm,0));
+drawnodes(A1,A3);
+\end{exemple}
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodes((0cm,0cm),(2cm,0),(4cm,0));
+drawnodes();
+\end{exemple}
+
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodename:="N";
+defnodes((0cm,0cm),(2cm,0),(4cm,0));
+drawnodes();
+\end{exemple}
+
+
+\begin{exemple}[lefthand ratio = 0.6]
+nodename:="Alph";
+defnodes((0cm,0cm),(2cm,0),(4cm,0));
+drawnodes();
+\end{exemple}
+
+\begin{exemple}[lefthand ratio = 0.6]
+nodename:="alph";
+defnodes((0cm,0cm),(2cm,0),(4cm,0));
+drawnodes();
+\end{exemple}
+
+\begin{exemple}[lefthand ratio = 0.6]
+nodename:="arabic";
+defnodes((0cm,0cm),(2cm,0),(4cm,0));
+drawnodes();
+\end{exemple}
+
+\begin{mptparam}{printnodename}{boolean}{true}
+When set to false, node names are not printed.
+\end{mptparam}
+
+\begin{exemple}[lefthand ratio = 0.6]
+printnodename:=false;
+defnodes((0cm,0cm),(2cm,0),(4cm,0));
+drawnodes();
+\end{exemple}
+
+
+\begin{mptparam}{nodeformat}{string}{""}
+String that indicates how the nodes are printed (the shape of path around the node). Possible values are (for now) \verb|"bbox"|, \verb|"circle"|, \verb|"superellipse"| and \verb|"square"|.
+
+See below for personalised values.
+\end{mptparam}
+
+
+\begin{mptparam}{nodewidth}{numeric}{0.6cm}
+Node width...
+\end{mptparam}
+
+\begin{exemple}[lefthand ratio = 0.6]
+nodeformat:="square";
+nodewidth:=1cm;
+defnodes((0cm,0cm),(2cm,0),(4cm,0));
+drawnodes();
+\end{exemple}
+
+\begin{exemple}[lefthand ratio = 0.6]
+nodewidth:=0.2cm;
+defnodes((0cm,0cm),(2cm,0),(4cm,0));
+drawnodes.bot();
+\end{exemple}
+
+\begin{mptparam}{naturalwidth}{boolean}{false}
+When set to true, the width of the node adapts to the content.
+\end{mptparam}
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodename:="AA";
+naturalwidth:=true;
+defnodes((0cm,0cm),(2cm,0),(4cm,0));
+drawnodes();
+\end{exemple}
+
+\begin{mptparam}{nodelinewidth}{numeric}{1}
+Line width of the path around the node.
+\end{mptparam}
+
+\begin{mptparam}{nodelinecolor}{color}{black}
+Color of the path around the node.
+\end{mptparam}
+
+\begin{mptparam}{nodebgcolor}{color}{white}
+Color of the background of the region delimited by the previous path.
+\end{mptparam}
+
+\begin{mptparam}{nodefgcolor}{color}{black}
+Color of the text.
+\end{mptparam}
+
+
+\begin{exemple}[lefthand ratio = 0.6]
+nodelinecolor:=(0.8,0,0);
+nodebgcolor:=(1,0.5,0.5);
+nodefgcolor:=white;
+nodeformat:="superellipse";
+defnodes((0cm,0cm),(2cm,0),(4cm,0));
+drawnodes();
+\end{exemple}
+
+
+\begin{rpobjet}{nodeshape(expr A,B)}{(cycle) path}
+In the same way as for trees, it is also possible to redefine the path defining the node. Simply rewrite the \verb|nodeshape| macro, which must take a picture as parameter and whose result must be a cycle path.
+
+The parameter passed to the macro is the figure representing the drawing of the event (normally the name of the event). You may use it, or not, in the macro definition.
+
+Note that in the path definition, the coordinates $(0,0)$ correspond to the node coordinates.
+
+\end{rpobjet}
+
+\begin{exemple}[lefthand ratio = 0.65]
+vardef nodeshape(expr p)=
+  fullcircle xscaled 1.5nodewidth yscaled 0.8nodewidth
+enddef;
+
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+drawnodes();
+\end{exemple}
+
+
+\begin{exemple}[lefthand ratio = 0.65]
+vardef nodeshape(expr p)=
+  pair c,h,v;
+  h:=lrcorner p - llcorner p;
+  v:=ulcorner p - llcorner p;
+  c:=center p;
+  (c-h -- c+v -- c+h -- c-v -- cycle) shifted -c
+enddef;
+
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+drawnodes();
+\end{exemple}
+
+
+
+
+\begin{rpdeclaration}{drawnodes(<nodes>) withbgcolor <color>}
+While \verb|withcolor| applies to lines and labels, \verb|withbgcolor| applies to the filling of nodes.
+\end{rpdeclaration}
+
+\begin{exemple}[lefthand ratio = 0.63]
+nodelinecolor:=(0.8,0,0);
+nodebgcolor:=(1,0.5,0.5);
+nodefgcolor:=white;
+nodeformat:="superellipse";
+defnodes((0cm,0cm),(2cm,0),(4cm,0));
+drawnodes() withcolor black withbgcolor (0.6,0.6,1);
+\end{exemple}
+
+
+\begin{rplabel}{drawnode.<pos>(<node>,<label>)}
+The nodes can be drawn one by one, specifying the text to be displayed if necessary.
+\end{rplabel}
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodes((0cm,0cm),(2cm,0),(4cm,0));
+drawnode[60](1);
+drawnode(2,"$\sqrt{2}$") withbgcolor 0.7white;
+drawnode.bot(A3,"Node");
+\end{exemple}
+
+\section{Edges}
+\subsection{Undirected edges}
+
+\begin{rplabel}{drawedges.<pos>(<(Na,Nb)>,<string1>,<(Nc,Nd)>,<string2>,...)(<angle1>,<angle2>)}
+Draw undirected edges between Node Na and node Nb, between node Nc and node Nd,... Na, Nb, Nc, Nd... must be integers. You can't refer to the nodes with their name.
+
+If present, the string is printed at the position indicated in relation to the middle of the edge (by default).
+
+By default, the edge is a segment. If an angle is specified, it is added to the angle at the start of the edge and subtracted from the angle at the end of the edge. If two angles are specified, they are added to the start and end angles respectively.
+\end{rplabel}
+
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+drawnodes();
+drawedges((1,2),(3,1))();
+\end{exemple}
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+drawnodes();
+drawedges((1,2),(3,1),"$p$")();
+\end{exemple}
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+drawnodes();
+drawedges.bot((1,2),(3,1),"$p$")();
+\end{exemple}
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+drawnodes();
+drawedges((1,2),(3,1))(30);
+\end{exemple}
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+drawnodes();
+drawedges((1,2),(3,1))(40,10);
+\end{exemple}
+
+
+
+\begin{rplabel}{drawedge.<pos>(<Na>,<Nb>)(<angle1>,<angle2>,<string>)}
+The edges can be drawn one by one.In this case, Na, Nb can be the node name.  The label or weight must be indicated in the second set of parameters.
+\end{rplabel}
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+drawnodes();
+drawedge(1,2)();
+drawedge.bot(1,3)("$p$");
+drawedge(2,3)(30,"2");
+\end{exemple}
+
+\subsection{Directed edges}
+
+\begin{rplabel}{drawdiredges.<pos>(<(Na,Nb)>,<string1>,<(Nc,Nd)>,<string2>,...)(<angle1>,<angle2>)}
+Draw directed edges from Node Na to node Nb, from node Nc to node Nd,... Na, Nb, Nc, Nd... must be integers. You can't refer to the nodes with their name.
+
+If present, the string is printed at the position indicated in relation to the middle of the edge (by default).
+
+By default, the edge is a segment. If an angle is specified, it is added to the angle at the start of the edge and subtracted from the angle at the end of the edge. If two angles are specified, they are added to the start and end angles respectively.
+\end{rplabel}
+
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+drawnodes();
+drawdiredges((1,2),"35",(3,1),"$p$")();
+\end{exemple}
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+drawnodes();
+drawdiredges.bot((1,2),(3,1),"$p$")(30);
+\end{exemple}
+
+\begin{rplabel}{drawdiredge.<pos>(<Na>,<Nb>)(<angle1>,<angle2>,<string>)}
+The directed edges can be drawn one by one. In this case, Na, Nb can be the node name. The label or weight must be indicated in the second set of parameters.
+\end{rplabel}
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+drawnodes();
+drawdiredge(1,2)();
+drawdiredge.bot(1,3)("$p$");
+drawdiredge(2,3)(30,"2");
+\end{exemple}
+
+\subsection{Loops}
+\begin{rplabel}{draw(dir)edge.<pos>(<Na>,<Na>)(<angle1>,<angle2>,<string>)}
+Previous commands can be used to draw loops. If present, \verb|angle1| indicates the angle of the loop with horizontal direction. Default value is 90.
+\end{rplabel}
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+drawnodes();
+drawdiredge(1,1)();
+drawedge(3,3)(-150);
+drawdiredge.bot(2,2)(-90,"a");
+\end{exemple}
+
+
+\subsection{Parameters}
+\begin{mptparam}{edgelinewidth}{numeric}{1}
+Width of the edge.
+\end{mptparam}
+
+\begin{exemple}[lefthand ratio = 0.6]
+edgelinewidth:=2;
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+drawnodes();
+drawedges((1,2),(3,1),"$p$")();
+\end{exemple}
+
+\begin{mptparam}{nodeedgeoffset}{numeric}{0}
+Space between the node and the edge.
+\end{mptparam}
+
+\begin{exemple}[lefthand ratio = 0.6]
+nodeedgeoffset:=0.3cm;
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+drawnodes();
+drawedges((1,2),(3,1),"$p$")();
+\end{exemple}
+
+\begin{mptparam}{startedgeshift}{numeric}{0}
+Space added at the beginning of the edge.
+\end{mptparam}
+
+\begin{mptparam}{endedgeshift}{numeric}{0}
+Space added at the end of the edge.
+\end{mptparam}
+
+\begin{mptparam}{edgeshift}{numeric}{0}
+Space added at both start and end of the edge.
+\end{mptparam}
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+drawnodes();
+drawedges((1,2),(1,3),"$p$")();
+startedgeshift:=-0.3cm;endedgeshift:=-0.1cm;
+drawedges((1,3))() withcolor blue;
+edgeshift:=0.2cm;
+drawedges((1,2))() withcolor blue;
+\end{exemple}
+
+
+\begin{mptparam}{probformat}{string}{""}
+String that indicates how the weights are printed (the shape of the path). Possible values are (for now) \verb|"bbox"|, \verb|"circle"|, \verb|"superellipse"| and \verb|"square"|.
+
+\end{mptparam}
+
+
+\begin{mptparam}{problinecolor}{color}{black}
+Color of the path around the weight.
+\end{mptparam}
+
+\begin{mptparam}{probgcolor}{color}{white}
+Color of the background of the region delimited by the previous path.
+\end{mptparam}
+
+\begin{mptparam}{probfgcolor}{color}{black}
+Color of the text.
+\end{mptparam}
+
+\begin{exemple}[lefthand ratio = 0.6]
+problinecolor:=(0.8,0,0);
+probbgcolor:=(1,0.5,0.5);
+probfgcolor:=white;
+probformat:="square";
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+drawnodes();
+drawedges((1,2),"35",(3,1),"$p$")();
+\end{exemple}
+
+\begin{mptparam}{posprob}{numeric}{0.5}
+Position of the weight on the edge.
+\end{mptparam}
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+posprob:=0.75;
+drawnodes();
+drawedges((1,2),"35",(3,1),"$p$")();
+\end{exemple}
+
+\begin{mptparam}{edgearrowpos}{numeric}{1}
+Position of  arrowhead on the edge.
+\end{mptparam}
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+edgearrowpos:=0.5;
+drawnodes();
+drawdiredges.bot((1,2),(3,1),"$p$")();
+\end{exemple}
+
+\begin{mptparam}{loopangle}{numeric}{90}
+Loop direction. It can be specified in the command parameters.
+\end{mptparam}
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+loopangle:=-90;
+drawnodes();
+drawdiredges((1,1),(2,2),(3,3))();
+\end{exemple}
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+drawnodes();
+drawdiredges((1,1),(2,2),(3,3))(-90);
+\end{exemple}
+
+\begin{mptparam}{loopstartangle}{numeric}{30}
+Angle between the path direction at node center and loop direction.
+\end{mptparam}
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+loopstartangle:=90;
+drawnodes();
+drawdiredges((1,1),(2,2),(3,3))(-90);
+\end{exemple}
+
+
+\begin{mptparam}{loopsize}{numeric}{1.5nodesize}
+Loop size.
+\end{mptparam}
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodes((0cm,0cm),(2cm,0cm),(4cm,0));
+loopsize:=1.5cm;
+drawnodes();
+drawdiredges((1,1),(2,2),(3,3))();
+\end{exemple}
+
+\begin{rpobjet}{edgeshape(expr A,B)}{path}
+In the same way as for trees, it is also possible to completely redefine the path defining the edge. Simply rewrite the \verb|edgeshape| macro, which must take two pairs as parameters and whose result must be a path.
+
+The first parameter represents the start point and the second the end point.
+
+\end{rpobjet}
+
+\begin{exemple}[lefthand ratio = 0.6]
+vardef edgeshape(expr A,B)=
+ save a;numeric a;a=angle(B-A);
+ A--((0.25cm,0) rotated (a+30) shifted 0.5[A,B])
+  --((0.25cm,0) rotated (a-150) shifted 0.5[A,B])
+  --B
+enddef;
+
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+drawnodes();
+drawedge(1,2)();
+drawdiredge(3,1)();
+\end{exemple}
+
+
+\section{Complete graphs}
+
+\begin{rplabel}{draw(dir)graph.<pos>(<(Na,Nb)>,<string1>,<(Nc,Nd)>,<string2>,...)(<angle1>,<angle2>)}
+These commands are shortcuts for drawing both nodes and edges.
+\end{rplabel}
+
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+drawgraph((1,2),"35",(3,1),"$p$")();
+\end{exemple}
+
+\begin{exemple}[lefthand ratio = 0.6]
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+nodewidth:=0.2cm;
+drawdirgraph.bot((1,2),(3,1),(2,2))(30);
+\end{exemple}
+
+
+\section{Grids}
+To facilitate node placement, use the following command to draw a grid.
+
+\begin{rplabel}{drawgrid(<xmin>,<ymin>,<xmax>,<ymax>)(<unit>,<step>)}
+Command for drawing a grid. Minimum values are optional and equal to 0 by default. The unit and step values are also optional and default to 1 cm and 1 respectively.
+\end{rplabel}
+
+\begin{exemple}[lefthand ratio = 0.6]
+drawgrid(4,4)();
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+drawnodes();
+drawedges((1,2),(3,1))();
+\end{exemple}
+
+\begin{exemple}[lefthand ratio = 0.6]
+drawgrid(-1,-1,5,3)(1cm,0.5);
+defnodes((0cm,0cm),(2cm,2cm),(4cm,0));
+drawnodes();
+drawedges((1,2),(3,1))();
+\end{exemple}
+
+\begin{exemple}[lefthand ratio = 0.6]
+u:=0.75cm;
+drawgrid(-1,-1,5,3)(u);
+defnodes((0,0),(2u,2u),(4u,0));
+drawnodes();
+drawedges((1,2),(3,1))();
+\end{exemple}
+
+
+\section{Examples}
+
+\subsection*{Weighted graph}
+\begin{exemple}[listing above text]
+u:=0.8cm;
+nodewidth:=0.15cm;
+nodebgcolor:=black;
+printnodename:=false;
+defnodes((5u,0),(0,3u),(2u,4u),(7u,4u),(3u,6u),(2u,7u),(12u,7u),(7u,8u),
+                                                                   (10u,8u),(9.5u,9.5u));
+drawnodes();
+drawedges((1,2),"9",(1,3),"9",(1,4),"8",(1,7),"18")();
+drawedges((2,3),"3",(2,6),"6")();
+drawedges((3,4),"9",(3,5),"2",(3,6),"4")();
+drawedges((4,5),"8",(4,7),"10",(4,8),"7",(4,9),"9")();
+drawedges((5,6),"2",(5,8),"9")();
+drawedges((6,8),"9")();
+drawedges((7,9),"3",(7,10),"4")();
+drawedges((8,9),"5",(8,10),"4")();
+drawedges((9,10),"1")();
+\end{exemple}
+
+
+\subsection*{Minimum spanning tree}
+\begin{exemple}[listing above text]
+u:=0.8cm;
+nodewidth:=0.15cm;
+nodebgcolor:=black;
+printnodename:=false;
+defnodes((5u,0),(0,3u),(2u,4u),(7u,4u),(3u,6u),(2u,7u),(12u,7u),(7u,8u),
+                                                                   (10u,8u),(9.5u,9.5u));
+drawnodes();
+drawoptions(withcolor 0.7white);
+drawedges((1,2),"9",(1,3),"9",(1,7),"18")();
+drawedges((2,6),"6")();
+drawedges((3,4),"9",(3,6),"4")();
+drawedges((4,7),"10",(4,9),"9")();
+drawedges((5,8),"9")();
+drawedges((6,8),"9")();
+drawedges((7,10),"4")();
+drawedges((8,9),"5")();
+drawoptions(withcolor black);
+edgelinewidth:=2;
+drawedges((1,4),"8",(2,3),"3",(3,5),"2",(4,5),"8",(5,6),"2",(4,8),"7",
+                                                     (8,10),"4",(9,10),"1",(7,9),"3")();
+\end{exemple}
+
+
+\subsection*{Graph colouring}
+
+\begin{exemple}[lefthand ratio = 0.6]
+printnodename:=false;
+nodewidth:=0.3cm;
+for i=1 upto 7:
+  defnodes(((2cm,0) rotated (360*i/7)));
+endfor
+nodebgcolor:=red;
+drawnodes(2,6);
+nodebgcolor:=blue;
+drawnodes(1,4);
+nodebgcolor:=green;
+drawnodes(3,5,7);
+drawedges((1,5),(1,6),(1,7),(2,3),(2,4),(2,5),
+             (3,4),(4,5),(4,6),(4,7),(6,7))();
+\end{exemple}
+
+\bigskip
+With Lua\LaTeX{} and \verb|luamplib| package you can use \verb|\includegraphics| inside a \MP{} code:
+
+\begin{exemple}[listing above text]
+u:=0.5cm;
+nodewidth:=0.4cm;
+nodename:="arabic";
+printnodename:=false;
+draw btex \includegraphics[width=10cm]{france-region.jpg} etex;
+% picture from https://capcarto.fr/telechargements/
+draw grid(20,18)(u);
+defnodes((4.5u,12.5u),(7.5u,14.5u),(5u,10u),(9.5u,16.5u),(10u,13u),
+          (15u,13u),(9u,12u),(12u,11u),(6u,8u),(11u,7u),(9u,3u),
+          (15u,5u),(19u,1u));
+nodebgcolor:=red;
+drawnodes(7,4,11,13);
+nodebgcolor:=green;
+drawnodes(2,10,6);
+nodebgcolor:=blue;
+drawnodes(5,3,12);
+nodebgcolor:=(1,1,0);
+drawnodes(1,8,9);
+drawedges((1,2),(1,3),(2,3),(2,4),(2,5),(2,7),(3,7),(3,9),(4,5),
+          (4,6),(5,6),(5,7),(5,8),(6,8),(7,8),(7,9),(7,10),(8,10),
+          (9,10),(9,11),(10,11),(10,12),(11,12))();
+\end{exemple}
+
+
+
+\subsection*{Markov chain}
+
+\begin{exemple}[lefthand ratio = 0.6]
+scaleprob:=0.8;
+u:=1.6cm;
+nodebgcolor:=0.8white;
+defnodes((0,0),(2u,0),(u,1.5u));
+drawnodes();
+drawoptions(withcolor red);
+drawdiredges((1,2),"$0.5$",(1,3),"$0.3$")(-25);
+drawdiredge(1,1)("$0.2$",210);
+drawoptions(withcolor blue);
+drawdiredges((2,1),"$0.1$",(2,3),"$0.3$")(-25);
+drawdiredge(2,2)("$0.6$",-30);
+drawoptions(withcolor 0.5green);
+drawdiredges((3,1),"$0.7$",(3,2),"$0.2$")(-25);
+drawdiredge(3,3)("$0.1$");
+\end{exemple}
+
+\subsection*{Hypercube $Q_3$}
+
+\begin{exemple}[lefthand ratio = 0.65]
+u:=3cm;
+nodewidth:=0.3cm;
+edgelinewidth:=2;
+pair p; p:=(0.4u,0.4u);
+defnodes((0,0),(u,0),(0,u),(u,u));
+defnodes((0,0)+p,(u,0)+p,(0,u)+p,(u,u)+p);
+nodebgcolor:=black;nodelinecolor:=black;
+drawnode.lrt(6,"101");
+nodebgcolor:=red;nodelinecolor:=red;
+drawnode.llft(1,"000");drawnode.lrt(2,"001");
+drawnode.rt(4,"011");drawnode.lrt(5,"100");
+nodebgcolor:=blue;nodelinecolor:=blue;
+drawnode.lft(3,"010");drawnode.ulft(7,"110");
+drawnode.urt(8,"111");
+drawedges((1,3),(3,4),(2,6),(4,8),(6,8),(5,6),(5,7))();
+drawedges((3,7),(7,8))() withcolor blue;
+drawedges((1,2),(1,5),(2,4))() withcolor red;
+\end{exemple}
+
+\subsection*{Three utilities problem}
+
+With  Lua\LaTeX{}, \verb|luamplib| and \verb|fontawesome5| packages.
+
+\begin{exemple}[lefthand ratio = 0.7]
+u:=1.2cm;
+defnodes((u,2u),(2u,2u),(3u,2u),(u,u),(2u,u),(3u,u));
+nodelinecolor:=white;
+drawnode(1,"\large \faHome");
+drawnode(2,"\large \faHome");
+drawnode(3,"\large \faHome");
+nodebgcolor:=black;nodefgcolor:=blue;
+drawnode(4,"\faWater");
+nodefgcolor:=red;drawnode(5,"\faBurn");
+nodefgcolor:=(1,1,0);drawnode(6,"\faBolt");
+drawedges((1,4),(2,4),(2,5),(2,6),(3,6))();
+drawedges((1,5),(5,3))(-115);
+vardef edgeshape(expr A,B)=
+save a;numeric a;a=angle(B-A);s:=if A>B: - fi 1;
+A..(0.7[A,B]+(0.35(B-A) rotated (s*90))){dir a}..B
+enddef;
+drawedges((4,3))();
+edgelinewidth:=2;drawedges((6,1))() withcolor (1,0.5,0);
+\end{exemple}
+
+\subsection*{Various}
+
+\begin{exemple}[lefthand ratio = 0.6]
+nodebgcolor:=0.7white;
+nodewidth:=0.2cm;
+
+for i=1 upto 7:
+  defnode(A[i],(2cm,0) rotated (360*i/7));
+  drawnode[360*i/7](i);
+  for j=1 upto i-1:
+    drawedge(i,j)();
+  endfor
+endfor
+\end{exemple}
+
+\begin{exemple}[lefthand ratio = 0.6]
+nodebgcolor:=0.7white;
+nodewidth:=0.2cm;
+printnodename:=false;
+
+u:=0.7cm;
+defnodes((3u,-3u));
+drawnode(1);
+for i=1 upto 4:
+ for j=1 upto 4:
+  defnodes((0,-2u) rotatedaround((0,-3u),90j)
+                      rotated 90i);
+ endfor
+ defnodes((3u,-3u) rotated (90i));
+ drawnodes(5i-3,5i-2,5i-1,5i,5i+1);
+ drawedges((5i-4,5i-3),(5i-3,5i-2),(5i-2,5i-1),
+             (5i-1,5i),(5i,5i-3),(5i-1,5i+1))();
+endfor;
+\end{exemple}
+
+
+\begin{exemple}[listing above text,before lower=\footnotesize]
+u:=1.2cm;
+nodewidth:=0.4cm;
+defnodes((0,0.6u),(3u,0.6u),(5u,0),(8u,0),(10u,0.6u),(13u,0.6u),(0,-0.6u),
+                                            (3u,-0.6u),(10u,-0.6u),(13u,-0.6u));
+nodeedgeoffset:=-0.2cm;
+nodebgcolor:=0.8white;
+edgelinewidth:=0.2cm;
+vardef edgeshape (expr A,B)=A{dir 0}..{dir 0}B enddef;
+drawedges((1,2))() withcolor red;
+drawedges((5,6))() withcolor red;
+drawedges((7,8))() withcolor blue;
+drawedges((9,10))() withcolor blue;
+endedgeshift:=0.1cm;   drawedges((2,3))() withcolor red;
+endedgeshift:=-0.1cm;  drawedges((8,3))() withcolor blue;
+endedgeshift:=0cm;
+startedgeshift:=0.1cm; drawedges((4,5))() withcolor red;
+startedgeshift:=-0.1cm;drawedges((4,9))() withcolor blue;
+edgeshift:=0.1cm;      drawedges((3,4))() withcolor red;
+edgeshift:=-0.1cm;     drawedges((3,4))() withcolor blue;
+drawnode.bot(1,"C.H.U.");
+drawnode.bot(2,"Berges de Maine");
+drawnode.bot(5,"Hôtel de Ville");
+drawnode.bot(6,"Foch - Maison bleue");
+drawnode.bot(7,"Doutre");
+drawnode.bot(8,"Place Molière");
+drawnode.bot(9,"Conservatoire");
+drawnode.bot(10,"Montaigne");
+vardef nodeshape(expr p)=
+  (halfcircle shifted (0,0.5)--
+   halfcircle scaled -1 shifted (0,-0.5)--
+    cycle) scaled nodewidth
+enddef;
+drawnode.bot(3,"Saint-Serge");
+drawnode.bot(4,"Centre de Congrès");
+\end{exemple}
+
+\begin{exemple}[listing above text]
+vardef nodeshape(expr p)=
+% From "Drawing with Metapost" by Toby Thurston
+% https://github.com/thruston/Drawing-with-Metapost/
+ for i=1 upto 20:
+  (0.4cm if odd(i): - else: + fi 3+ uniformdeviate 3,0) rotated (i*360/20) --
+ endfor cycle
+enddef;
+vardef edgeshape(expr A,B)=
+ save an;numeric an;an:=angle(B-A);
+ A{dir (an + 60*(uniformdeviate 2-1))}..
+ 0.5[A,B]{dir (180+an)}..
+ {dir (an + 60*(uniformdeviate 2-1))}B
+enddef;
+nodebgcolor:=(1,0.5,0);
+nodelinecolor:=0.6red;
+nodefgcolor:=0.6red;
+linecolor:=0.5green;
+edgelinewidth:=1.5;
+defnodes((0cm,0cm),(4cm,2cm),(8cm,1cm),(5cm,-3cm));
+drawnodes();
+drawedges((1,2),(2,3),(3,4),(1,4))();
+\end{exemple}
 
 \end{document}
-
-

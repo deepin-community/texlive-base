@@ -17,6 +17,7 @@ define(`Meter',`[ Box: box wid boxwid*3/2 fill_(1)
   arc cw from C+(-r,0) to C+(r,0) with .c at C
   arrow from C+(-r/4,0) to C+(0.9*r,0.9*r) ]')
 
+[
 X: Bus(,shaded rgbstring(0.5,0.5,1) "X")
 A1: Bus(from X.start+(0,-boxht*3/2), shaded "red" "A")
 A2: Bus(from 2 between X.start and A1.start, shaded "red" "A")
@@ -27,5 +28,27 @@ A2: Bus(from 2 between X.start and A1.start, shaded "red" "A")
   Meter with .e at X.end
   box wid boxwid*1.2 ht boxht*1.2 fill_(1) at A2.end-(4.5*boxwid,0) \
    "svg_it(R)svg_sub(svg_psi)svg_sup(svg_pi/2,,,-1.2ex)"
+  ]
 
+#.PE
+#.PS
+# SQUIDDPV.m4
+[
+cct_init(svg_font(sans-serif,11bp__))
+
+down_
+S1: SQUID
+  "J1" at S1.J1 above rjust wid 15bp__
+  "J2" at S1.J2 above ljust
+
+S2: SQUID(3,dimen_*1.5,-120) at S1.e+(elen_,0)
+  "J1" at S2.J1 above rjust
+  "J2" at S2.J2 below ljust
+  "J3" at S2.J3 above ljust
+  arcrad = S2.C.rad*0.7
+  arc from S2.c+(Rect_(arcrad,-135)) to S2.c+(Rect_(arcrad,-45)) \
+   with .c at S2.C ->
+  ] with .w at last [].e+(boxht,0)
+
+ command "</g>" # end font
 .PE

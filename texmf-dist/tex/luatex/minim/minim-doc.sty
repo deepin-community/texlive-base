@@ -7,6 +7,7 @@
 
 \input minim
 %\decompressedpdf
+%\debugmetapost
 
 \pdfalevel 3a
 \pdfualevel 1
@@ -42,7 +43,7 @@
 \font\tenrm {Latin Modern Roman:script=latn;protrusion=default;} at 10pt
 \font\tenbf {Latin Modern Roman/B:script=latn;} at 10pt
 \font\tenit {Latin Modern Roman/I:script=latn;} at 10pt
-\font\tentt {Latin Modern Mono:script=latn;+smcp;} at 10pt
+\font\tentt {Latin Modern Mono:script=latn;} at 10pt
 \font\title {Latin Modern Roman/B:script=latn;} at 12pt
 \font\Title {Latin Modern Roman/B:script=latn;} at 16pt
 
@@ -97,7 +98,7 @@
 % 1 the minim symbol
 
 \newbox\notehead
-\newmetapostinstance \mnmMP
+\newmetapostinstance [jobname='logo'] \mnmMP
 \runmetapost \mnmMP {
 beginfig(1)
     w:=1/27; pickup pencircle scaled 1/9;
@@ -122,25 +123,8 @@ endfig;}
 
 % 1 document structure
 
-% page artifacts
-\edef\tmp{\markartifact{Pagination /Subtype/Footer}{\the\footline}}
-\footline\expandafter{\tmp}
-
-% footnotes
-\edef\footnoterule{\markartifact{Layout}\footnoterule}
-\catcode`\@=11
-\def\footnote#1{\let\@sf\empty % parameter #2 (the text) is read later
-  \ifhmode\edef\@sf{\spacefactor\the\spacefactor}\/\fi
-  \marknoteref{#1}\@sf\vfootnote{#1}}
-\def\vfootnote#1{%
-    \insert\footins\bgroup
-    \interlinepenalty\interfootnotelinepenalty
-    \splittopskip\ht\strutbox % top baseline for broken footnotes
-    \splitmaxdepth\dp\strutbox \floatingpenalty\@MM
-    \leftskip\z@skip \rightskip\z@skip \spaceskip\z@skip \xspaceskip\z@skip
-    \nextpartag{}\marknotelbl{#1}\enspace\startelement{P}%
-    \footstrut\futurelet\next\fo@t}
-\catcode`\@=12
+\autotagplainoutput
+\def\textindent#1{\noindent#1\enspace\ignorespaces}
 
 % \startlist \item x. ... \stoplist
 \def\listskip{\vskip 3pt plus 2pt\vskip-\parskip}
@@ -151,31 +135,26 @@ endfig;}
     \hbox to 2em{\hss\startelement{Lbl}#1.~~}%
     \startelement{LBody}\ignorespaces}
 
+\sectionstructure{section, chapter}
+
 % \chapter Title \par
-\addstructuretype Sect Chapter
 \protected\def\chapter#1 \par{%
     \vfil\break
-    \ensurestopelement{Section}%
-    \global\advance\chapterno1 \global\sectionno0
-    \startelement title{Chapter \the\chapterno}{Chapter}%
+    \markchapter[Chapter \the\chapternr]%
     \outline open {#1}%
     \addtotoc{\chapter{#1}{\lastdestinationname}}%
     \nextpartag{H}\quitvmode
     \red{\Title#1\hfill\copy\notehead}\bigskip\nobreak}
-\newcount \chapterno
 
 % \section Title \par
-\addstructuretype Sect Section
 \protected\def\section#1 \par{%
     \bigskip\penalty-50\relax
-    \global\advance\sectionno1
-    \startelement title{Section \the\chapterno.\the\sectionno}{Section}%
+    \marksection[Section \the\chapternr.\the\sectionnr]%
     \outline closed {#1}%
     \addtotoc{\section{#1}{\lastdestinationname}}%
     \nextpartag{H}\quitvmode
     \red{\title#1}%
     \par\nobreak}
-\newcount \sectionno
 
 % table of contents
 \newtoks\toc \newif\iftoc \toctrue

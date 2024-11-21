@@ -33,17 +33,31 @@
 %% 
 %% 
 %% File: documentmetadata-support.dtx
-\def\documentmetadatasupportversion{1.0f}
-\def\documentmetadatasupportdate{2023-09-01}
+\def\documentmetadatasupportversion{1.0j}
+\def\documentmetadatasupportdate{2024-09-13}
+
 
 \RequirePackage{pdfmanagement-testphase}
 \ExplSyntaxOn\makeatletter
+
+\clist_if_exist:NF \g__pdfmanagement_firstaidoff_clist
+  { \clist_new:N \g__pdfmanagement_firstaidoff_clist }
+\tl_if_exist:NF \g__pdfmanagement_testphase_tl
+ { \tl_new:N \g__pdfmanagement_testphase_tl }
+\cs_new_protected:Npn \@kernel@before@DocumentMetadata
+  {
+    \ifx\Umathcode\@undefined
+    \fontencoding{T1}
+    \renewcommand\encodingdefault{T1}
+    \fi
+  }
 
 \cs_set_protected:Npn \DocumentMetadata #1
   {
     \cs_if_eq:NNTF \documentclass \@twoclasseserror
       { \msg_error:nn { meta } { after-class } }
       {
+        \@kernel@before@DocumentMetadata
         \bool_gset_true:N \g__pdfmanagement_active_bool
         \keys_set_groups:nnn { document / metadata} {init}{ #1 }
         %if no backend has been loaded force it now:
@@ -54,10 +68,24 @@
         \ExplSyntaxOn\makeatletter
           \file_input:n {l3backend-testphase-\c_sys_backend_str.def}
         \ExplSyntaxOff\makeatother
-        \keys_set_filter:nnn  { document / metadata } { init } { lang=en-US, #1 }
+        \keys_set_filter:nnn  { document / metadata } { init } { #1 }
         \bool_if:NT \g__pdfmanagement_active_bool
           {
             \PassOptionsToPackage{customdriver=hgeneric-testphase}{hyperref}
+            \g@addto@macro\@kernel@after@begindocument
+             {
+               \pdfdict_get:nnN {g__pdf_Core/Catalog}{Lang}\l__pdfmanagement_tmpa_tl
+               \quark_if_no_value:NT\l__pdfmanagement_tmpa_tl
+                {
+                  \tl_if_empty:eTF { \BCPdata{main.language} }
+                   { \tl_set:Ne \l__pdfmanagement_tmpb_tl { \BCPdata{language} } }
+                   { \tl_set:Ne \l__pdfmanagement_tmpb_tl { \BCPdata{main.language} } }
+                  \msg_warning:nne { meta } { lang-missing }{ \l__pdfmanagement_tmpb_tl }
+                  \exp_last_unbraced:Ne
+                   \AddToDocumentProperties{[document]{lang}{\l__pdfmanagement_tmpb_tl}}
+                  \pdfmanagement_add:nne {Catalog} {Lang}{(\l__pdfmanagement_tmpb_tl)}
+                }
+             }
           }
         \hook_use_once:n {pdfmanagement/add}
         \cs_set_protected:Npn \DocumentMetadata ##1
@@ -105,7 +133,7 @@
     % this uses internal command from pdfmeta, it should probably move there ...
     ,pdfstandard .code:n =
       {
-        \exp_args:Nnx
+        \exp_args:Nne
         \keys_set:nn {document / metadata} {_pdfstandard=\str_uppercase:n{#1}}
       }
     ,_pdfstandard .choices:nn =
@@ -117,9 +145,33 @@
           }
         \AddToDocumentProperties [document]{pdfstandard}{#1}
       }
+    ,_pdfstandard / A-4F .code:n =
+      {
+        \prop_if_exist:cTF { g__pdfmeta_standard_pdf/A-4F_prop }
+          {
+            \prop_gset_eq:Nc \g__pdfmeta_standard_prop { g__pdfmeta_standard_pdf/A-4F_prop }
+          }
+          {
+            \prop_gset_eq:Nc \g__pdfmeta_standard_prop { g__pdfmeta_standard_pdf/A-4_prop }
+            \prop_gput:Nnn   \g__pdfmeta_standard_prop{conformance}{F}
+          }
+        \AddToDocumentProperties [document]{pdfstandard}{A-4F}
+      }
+    ,_pdfstandard / A-4E .code:n =
+      {
+        \prop_if_exist:cTF { g__pdfmeta_standard_pdf/A-4E_prop }
+          {
+            \prop_gset_eq:Nc \g__pdfmeta_standard_prop { g__pdfmeta_standard_pdf/A-4E_prop }
+          }
+          {
+            \prop_gset_eq:Nc \g__pdfmeta_standard_prop { g__pdfmeta_standard_pdf/A-4_prop }
+            \prop_gput:Nnn   \g__pdfmeta_standard_prop{conformance}{E}
+          }
+        \AddToDocumentProperties [document]{pdfstandard}{A-4E}
+      }
     ,_pdfstandard / unknown .code:n =
       {
-        \msg_warning:nnn{pdf}{unknown-standard}{#1}
+        \msg_error:nnn{pdf}{unknown-standard}{#1}
       }
     ,testphase .multichoice:
     ,testphase / tagpdf .code:n =
@@ -130,7 +182,7 @@
               {
                 \RequirePackage{tagpdf}
                 \AddToDocumentProperties [document]{testphase/tagpdf}{loaded}
-                \tagpdfsetup{activate,paratagging,interwordspace}
+                \tagpdfsetup{activate,para/tagging,activate/spaces}
                 \AddToDocumentProperties [document]{tagging}{active}
                 \AddToDocumentProperties [document]{tagging/para}{active}
                 \AddToDocumentProperties [document]{tagging/interwordspace}{active}
@@ -167,7 +219,7 @@
             package/tagpdf/after
           }
           {
-             \tagpdfsetup{paratagging-show}
+             \tagpdfsetup{debug/show=para}
           }
       }
     ,debug / log .code:n =
@@ -177,7 +229,7 @@
            package/tagpdf/after
           }
           {
-             \tagpdfsetup{log=#1}
+             \tagpdfsetup{debug/log=#1}
           }
       }
     ,debug / tagpdf .code:n =
@@ -210,6 +262,11 @@
              {
                LaTeX-lab~package~'#1'~not~found.
               }
+\msg_new:nnn { meta } { lang-missing }
+             {
+               The~language~has~not~been~set~in~\token_to_str:N
+               \DocumentMetadata.\\Setting~it~to~'#1'~as~fallback.
+             }
 \ExplSyntaxOff\makeatother
 \endinput
 %%
